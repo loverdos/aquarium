@@ -12,18 +12,17 @@
         <class>gr.grnet.aquarium.model.Organization</class>
         <properties>
 
-            <!--<property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
             <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
             <property name="javax.persistence.jdbc.url" value="jdbc:h2:database"/>
             <property name="javax.persistence.jdbc.password" value=""/>
             <property name="javax.persistence.jdbc.user" value="scott"/>
-            -->
 
-            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.MySQLPlatform"/>
+            <!--<property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.MySQLPlatform"/>
             <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>
             <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost/aquarium"/>
             <property name="javax.persistence.jdbc.password" value="aquarium"/>
-            <property name="javax.persistence.jdbc.user" value="aquarium"/>
+            <property name="javax.persistence.jdbc.user" value="aquarium"/>-->
 
             <!-- Logging -->
             <property name="eclipselink.logging.level" value="FINE"/>
