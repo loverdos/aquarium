@@ -158,5 +158,6 @@
   </reporting>
   <modules>
     <module>model</module>
+    <module>logic</module>
   </modules>
 </project>
