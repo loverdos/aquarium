@@ -1,0 +1,16 @@
+target*
+runner/*
+*.class
+*.classpath
+*.DS_Store
+*.project
+*.settings
+*.externalToolBuilders
+/.idea/
+bin/
+.metadata
+*.*~
+*.iml
+*.ipr
+*.iws
+*.db
