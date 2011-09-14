@@ -11,6 +11,7 @@
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
+  <groupId>gr.grnet.aquarium</groupId>
   <artifactId>model</artifactId>
   <name>Aquarium Data Model</name>
 
