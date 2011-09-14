@@ -18,5 +18,5 @@ class Group extends Entity {
   @JoinTable(name="USER_GROUP",
              joinColumns = Array(new JoinColumn(name="USER_ID")),
              inverseJoinColumns = Array(new JoinColumn(name="GROUP_ID")))
-  var users : java.util.Set[Group] = new java.util.HashSet[Group]()
+  var users : java.util.Set[User] = new java.util.HashSet[User]()
 }

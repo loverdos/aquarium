@@ -22,7 +22,6 @@
       <groupId>org.scala-libs</groupId>
       <artifactId>scalajpa_2.9.1</artifactId>
       <version>1.4</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

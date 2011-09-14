@@ -10,6 +10,9 @@
         <class>gr.grnet.aquarium.model.Group</class>
         <class>gr.grnet.aquarium.model.User</class>
         <class>gr.grnet.aquarium.model.Organization</class>
+        <class>gr.grnet.aquarium.model.ConsumableResource</class>
+        <class>gr.grnet.aquarium.model.ServiceItem</class>
+        <class>gr.grnet.aquarium.model.ServiceItemConfig</class>
         <properties>
 
             <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>

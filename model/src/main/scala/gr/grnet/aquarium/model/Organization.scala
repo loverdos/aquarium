@@ -22,5 +22,5 @@ class Organization extends Id {
 
   @OneToMany(mappedBy = "org",  targetEntity = classOf[User],
              cascade = Array(CascadeType.REMOVE))
-  var users : java.util.Set[Group] = new java.util.HashSet[Group]()
+  var users : java.util.Set[User] = new java.util.HashSet[User]()
 }
