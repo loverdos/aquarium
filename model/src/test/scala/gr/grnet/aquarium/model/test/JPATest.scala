@@ -1,6 +1,7 @@
 package gr.grnet.aquarium.model.test
 
 import gr.grnet.aquarium.model._
+import scala.collection.JavaConversions._
 import org.scala_libs.jpa.{LocalEMF, ThreadLocalEM}
 import org.junit._
 import Assert._
@@ -73,7 +74,9 @@ class TestJPAWeb {
     assertEquals(2, a.get.configItems.size)
 
     //Entity navigation tests
-    val all = DB.findAll("allServiceItems")
+    val all = DB.findAll[ServiceItem]("allServiceItems")
+    all.foreach(f => asScalaSet(f.configItems).foreach(i => assertFalse(i.quantity < 0)))
+
   }
 
   private def addServiceConfig(srv : ServiceItem,
