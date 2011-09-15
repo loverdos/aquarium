@@ -46,7 +46,7 @@ class TestJPAWeb {
 
     assertTrue(org1.id != org2.id)
 
-    var results = DB.find(classOf[Organization], org1.id)
+    val results = DB.find(classOf[Organization], org1.id)
     assert(results.exists(o => o.id == org1.id))
 
     //Add to entity with composite key
@@ -57,17 +57,30 @@ class TestJPAWeb {
     val res1 = new ConsumableResource
     res1.restype = "CPU"
     res1.unittype = "CPU/hr"
-    res1.cost = 10
+    res1.cost = 10f
     DB.persist(res1)
 
     val res2 = new ConsumableResource
     res2.restype = "RAM"
     res2.unittype = "MB/hr"
-    res2.cost = 11
+    res2.cost = 11f
     DB.persist(res2)
 
-    addServiceConfig(srv1, res1, 4)
-    addServiceConfig(srv1, res2, 128)
+    def addServiceConfig(srv : ServiceItem,
+                               res : ConsumableResource,
+                               value : Float) {
+      val srvcfg2 = new ServiceItemConfig
+      srvcfg2.item = srv
+      srvcfg2.resource = res
+      srvcfg2.quantity = value
+      srv.configItems.add(srvcfg2)
+      res.configItems.add(srvcfg2)
+      DB.persist(srvcfg2)
+      DB.flush()
+    }
+
+    addServiceConfig(srv1, res1, 4f)
+    addServiceConfig(srv1, res2, 128f)
 
     val a = DB.find(classOf[ServiceItem], srv1.id)
     assert(a.exists(o => o.id == srv1.id))
@@ -75,21 +88,7 @@ class TestJPAWeb {
 
     //Entity navigation tests
     val all = DB.findAll[ServiceItem]("allServiceItems")
-    all.foreach(f => asScalaSet(f.configItems).foreach(i => assertFalse(i.quantity < 0)))
-
-  }
-
-  private def addServiceConfig(srv : ServiceItem,
-                               res : ConsumableResource,
-                               value : Int) {
-    val srvcfg2 = new ServiceItemConfig
-    srvcfg2.item = srv
-    srvcfg2.resource = res
-    srvcfg2.quantity = value
-    srv.configItems.add(srvcfg2)
-    res.configItems.add(srvcfg2)
-    DB.persist(srvcfg2)
-    DB.flush()
+    all.foreach(f => asScalaSet(f.configItems).foreach(i => assertFalse(i.quantity <= 0)))
   }
 
   @After

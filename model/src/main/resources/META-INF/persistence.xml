@@ -5,37 +5,41 @@
              version="1.0">
 
 
-    <persistence-unit name="aquarium" transaction-type="RESOURCE_LOCAL">
-        <class>gr.grnet.aquarium.model.Entity</class>
-        <class>gr.grnet.aquarium.model.Group</class>
-        <class>gr.grnet.aquarium.model.User</class>
-        <class>gr.grnet.aquarium.model.Organization</class>
-        <class>gr.grnet.aquarium.model.ConsumableResource</class>
-        <class>gr.grnet.aquarium.model.ServiceItem</class>
-        <class>gr.grnet.aquarium.model.ServiceItemConfig</class>
-        <properties>
+  <persistence-unit name="aquarium" transaction-type="RESOURCE_LOCAL">
 
-            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
-            <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:h2:database"/>
-            <property name="javax.persistence.jdbc.password" value=""/>
-            <property name="javax.persistence.jdbc.user" value="scott"/>
+    <class>gr.grnet.aquarium.model.Entity</class>
+    <class>gr.grnet.aquarium.model.Group</class>
+    <class>gr.grnet.aquarium.model.User</class>
+    <class>gr.grnet.aquarium.model.Organization</class>
+    <class>gr.grnet.aquarium.model.ConsumableResource</class>
+    <class>gr.grnet.aquarium.model.ServiceItem</class>
+    <class>gr.grnet.aquarium.model.ServiceItemConfig</class>
+    <class>gr.grnet.aquarium.model.RuntimeData</class>
+    <class>gr.grnet.aquarium.model.Bill</class>
 
-            <!--<property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.MySQLPlatform"/>
-            <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost/aquarium"/>
-            <property name="javax.persistence.jdbc.password" value="aquarium"/>
-            <property name="javax.persistence.jdbc.user" value="aquarium"/>-->
+    <properties>
 
-            <!-- Logging -->
-            <property name="eclipselink.logging.level" value="FINE"/>
-            <property name="eclipselink.logging.timestamp" value="true"/>
-            <property name="eclipselink.logging.session" value="true"/>
-            <property name="eclipselink.logging.thread" value="false"/>
+      <!--<property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+    <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+    <property name="javax.persistence.jdbc.url" value="jdbc:h2:database"/>
+    <property name="javax.persistence.jdbc.password" value=""/>
+    <property name="javax.persistence.jdbc.user" value="scott"/>-->
 
-            <property name="eclipselink.ddl-generation" value="create-tables"/>
-            <property name="eclipselink.ddl-generation.output-mode" value="database"/>
-        </properties>
-    </persistence-unit>
+      <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.MySQLPlatform"/>
+      <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>
+      <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost/aquarium"/>
+      <property name="javax.persistence.jdbc.password" value="aquarium"/>
+      <property name="javax.persistence.jdbc.user" value="aquarium"/>
+
+      <!-- Logging -->
+      <property name="eclipselink.logging.level" value="FINE"/>
+      <property name="eclipselink.logging.timestamp" value="true"/>
+      <property name="eclipselink.logging.session" value="true"/>
+      <property name="eclipselink.logging.thread" value="false"/>
+
+      <property name="eclipselink.ddl-generation" value="create-tables"/>
+      <property name="eclipselink.ddl-generation.output-mode" value="database"/>
+    </properties>
+  </persistence-unit>
 
 </persistence>

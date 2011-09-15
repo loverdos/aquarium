@@ -13,4 +13,8 @@ class ServiceItem extends Id {
   @OneToMany(mappedBy = "item",  targetEntity = classOf[ServiceItemConfig],
              cascade = Array(CascadeType.ALL))
   var configItems : java.util.Set[ServiceItemConfig] = new java.util.HashSet[ServiceItemConfig]()
+
+  @OneToMany(mappedBy = "item",  targetEntity = classOf[Bill],
+             cascade = Array(CascadeType.ALL))
+  var bill : java.util.Set[Bill] = new java.util.HashSet[Bill]()
 }
