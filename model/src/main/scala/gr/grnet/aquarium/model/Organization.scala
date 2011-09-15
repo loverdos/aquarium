@@ -17,10 +17,10 @@ class Organization extends Id {
   var parent : Organization = _
 
   @OneToMany(mappedBy = "org",  targetEntity = classOf[Group],
-             cascade = Array(CascadeType.REMOVE))
+             cascade = Array(CascadeType.ALL))
   var groups : java.util.Set[Group] = new java.util.HashSet[Group]()
 
   @OneToMany(mappedBy = "org",  targetEntity = classOf[User],
-             cascade = Array(CascadeType.REMOVE))
+             cascade = Array(CascadeType.ALL))
   var users : java.util.Set[User] = new java.util.HashSet[User]()
 }

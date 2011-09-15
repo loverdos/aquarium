@@ -6,9 +6,6 @@ import javax.persistence._
 @javax.persistence.Entity
 class ConsumableResource extends Id {
 
-  @Column(name = "NAME")
-  var name : String = _
-
   @Column(name = "RESOURCE_TYPE")
   var restype : String = _
 
@@ -19,6 +16,6 @@ class ConsumableResource extends Id {
   var cost : Float = _
 
   @OneToMany(mappedBy = "resource",  targetEntity = classOf[ServiceItemConfig],
-             cascade = Array(CascadeType.REMOVE))
+             cascade = Array(CascadeType.ALL))
   var configItems : java.util.Set[ServiceItemConfig] = new java.util.HashSet[ServiceItemConfig]()
 }

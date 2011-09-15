@@ -12,7 +12,7 @@ class User extends Entity {
 
   @ManyToMany(targetEntity = classOf[Group],
               mappedBy = "users",
-              cascade = Array(CascadeType.PERSIST, CascadeType.MERGE))
+              cascade = Array(CascadeType.ALL))
   var groups : java.util.Set[Group] = new java.util.HashSet[Group]()
 
 }

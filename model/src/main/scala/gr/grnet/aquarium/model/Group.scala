@@ -10,11 +10,12 @@ class Group extends Entity {
   @JoinColumn(name = "SUB_GROUP_ID")
   var group :Group = _
 
-  @ManyToOne(optional = true)
+  @ManyToOne(cascade = Array(CascadeType.ALL),
+             optional = true)
   var org : Organization = _
 
   @ManyToMany(targetEntity = classOf[User],
-              cascade= Array(CascadeType.PERSIST, CascadeType.MERGE))
+              cascade= Array(CascadeType.ALL))
   @JoinTable(name="USER_GROUP",
              joinColumns = Array(new JoinColumn(name="USER_ID")),
              inverseJoinColumns = Array(new JoinColumn(name="GROUP_ID")))
