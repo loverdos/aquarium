@@ -1,6 +1,7 @@
 package gr.grnet.aquarium.model
 
 import javax.persistence._
+import java.util.{HashSet, Set}
 
 @javax.persistence.Entity
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
@@ -14,4 +15,12 @@ abstract class Entity extends Id {
 
   @Column(name = "CREDITS", nullable = true)
   var credits: Int = 0
+
+  @OneToMany(mappedBy = "entity",  targetEntity = classOf[Permission],
+             cascade = Array(CascadeType.ALL))
+  var permissions : Set[Permission] = new HashSet[Permission]()
+
+  @OneToMany(mappedBy = "owner",  targetEntity = classOf[ServiceItem],
+             cascade = Array(CascadeType.ALL))
+  var serviceItems : Set[ServiceItem] = new HashSet[ServiceItem]()
 }

@@ -1,6 +1,7 @@
 package gr.grnet.aquarium.model
 
 import javax.persistence._
+import java.util.{Set, HashSet}
 
 @Table(name = "SERVICE_ITEM_CONFIG")
 @javax.persistence.Entity
@@ -21,5 +22,5 @@ class ServiceItemConfig extends Id {
 
   @OneToMany(mappedBy = "item",  targetEntity = classOf[RuntimeData],
              cascade = Array(CascadeType.ALL))
-  var runtime : java.util.Set[RuntimeData] = new java.util.HashSet[RuntimeData]()
+  var runtime : Set[RuntimeData] = new HashSet[RuntimeData]()
 }
