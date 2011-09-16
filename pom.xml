@@ -60,6 +60,10 @@
       <name>java.net Maven2 Repository</name>
       <url>http://download.java.net/maven/2/</url>
     </repository>
+    <repository>
+      <id>EclipseLink Repo</id>
+      <url>http://www.eclipse.org/downloads/download.php?r=1&amp;nf=1&amp;file=/rt/eclipselink/maven.repo</url>
+    </repository>
   </repositories>
 
   <pluginRepositories>
@@ -94,12 +98,50 @@
       <version>4.7</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.eclipse.persistence</groupId>
+      <artifactId>eclipselink</artifactId>
+      <version>2.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>1.3.160</version>
+    </dependency>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.17</version>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-libs</groupId>
+      <artifactId>scalajpa_2.9.1</artifactId>
+      <version>1.4</version>
+    </dependency>
   </dependencies>
 
   <!--Configuration shared with subprojects-->
   <build>
     <sourceDirectory>src/main/scala</sourceDirectory>
     <testSourceDirectory>src/test/scala</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>${basedir}/src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>${project.build.directory}/generated-resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>${basedir}/src/test/resources</directory>
+      </testResource>
+      <testResource>
+        <directory>${project.build.directory}/generated-resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>org.scala-tools</groupId>
@@ -161,6 +203,7 @@
           <scmCommentPrefix/>
         </configuration>
       </plugin>
+      <!-- Redmine maven plugin -->
       <plugin>
         <groupId>org.nuiton.jredmine</groupId>
         <artifactId>maven-jredmine-plugin</artifactId>
@@ -180,10 +223,32 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.9</version>
         <configuration>
           <useFile>false</useFile>
           <reportFormat>plain</reportFormat>
         </configuration>
+      </plugin>
+      <!-- Shared resources -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>unpack-shared-resources</id>
+            <goals>
+              <goal>unpack-dependencies</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <outputDirectory>${project.build.directory}/generated-resources
+              </outputDirectory>
+              <includeArtifactIds>shared</includeArtifactIds>
+              <includeGroupIds>gr.grnet.aquarium</includeGroupIds>
+              <excludeTransitive>true</excludeTransitive>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
