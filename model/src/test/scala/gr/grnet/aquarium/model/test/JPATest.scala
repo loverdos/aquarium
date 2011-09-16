@@ -88,7 +88,11 @@ class TestJPAWeb {
 
     //Entity navigation tests
     val all = DB.findAll[ServiceItem]("allServiceItems")
-    all.foreach(f => asScalaSet(f.configItems).foreach(i => assertFalse(i.quantity <= 0)))
+    all.foreach {
+      f => asScalaSet(f.configItems).foreach {
+        i => assertFalse(i.quantity <= 0)
+      }
+    }
   }
 
   @After

@@ -1,7 +1,13 @@
-Welcome to the Lift JPA Archetype. To run the sample app:
+Aquarium
+--------
 
-mvn install
-cd web
-mvn jetty:run
+Aquarium offers resource sharing and charging services for all services
+in the Okeanos cloud.
 
-Then point your favorite browser to http://localhost:9090/
+Building
+--------
+
+-Install Java 1.6 and Maven 3
+-Run mvn install
+
+
