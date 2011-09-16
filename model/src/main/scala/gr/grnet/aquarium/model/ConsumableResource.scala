@@ -6,6 +6,7 @@ import javax.persistence._
 @javax.persistence.Entity
 class ConsumableResource extends Id {
 
+  // TODO: The following should be an enum
   @Column(name = "RESOURCE_TYPE")
   var restype : String = _
 

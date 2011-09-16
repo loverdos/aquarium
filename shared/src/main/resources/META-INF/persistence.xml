@@ -15,6 +15,12 @@
     <class>gr.grnet.aquarium.model.ServiceItemConfig</class>
     <class>gr.grnet.aquarium.model.RuntimeData</class>
     <class>gr.grnet.aquarium.model.Bill</class>
+    <class>gr.grnet.aquarium.model.Action</class>
+    <class>gr.grnet.aquarium.model.DefaultPermission</class>
+    <class>gr.grnet.aquarium.model.Permission</class>
+    <class>gr.grnet.aquarium.model.ServiceTemplate</class>
+    <class>gr.grnet.aquarium.model.ResourceType</class>
+    <class>gr.grnet.aquarium.model.EntityType</class>
 
     <properties>
       <property name="eclipselink.target-database"

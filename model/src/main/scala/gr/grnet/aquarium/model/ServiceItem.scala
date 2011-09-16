@@ -5,8 +5,8 @@ import javax.persistence._
 @javax.persistence.Entity
 @Table(name = "SERVICE_ITEM")
 @NamedQueries(Array(
-  new NamedQuery(name="allServiceItems", query="select si from ServiceItem si"),
-  new NamedQuery(name="servItemsPerEntity", query="select si from ServiceItem si")
+  new NamedQuery(name="allSi", query="select si from ServiceItem si"),
+  new NamedQuery(name="siPerEntity", query="select si from ServiceItem ")
 ))
 class ServiceItem extends Id {
 
@@ -20,4 +20,9 @@ class ServiceItem extends Id {
   @OneToMany(mappedBy = "item",  targetEntity = classOf[Bill],
              cascade = Array(CascadeType.ALL))
   var bill : java.util.Set[Bill] = new java.util.HashSet[Bill]()
+
+  @ManyToOne(cascade = Array(CascadeType.ALL),
+             targetEntity = classOf[ServiceTemplate])
+  @JoinColumn(name = "SERVICE_TEMPLATE_ID")
+  var template : ServiceTemplate = _
 }

@@ -87,7 +87,7 @@ class TestJPAWeb {
     assertEquals(2, a.get.configItems.size)
 
     //Entity navigation tests
-    val all = DB.findAll[ServiceItem]("allServiceItems")
+    val all = DB.findAll[ServiceItem]("allSi")
     all.foreach {
       f => asScalaSet(f.configItems).foreach {
         i => assertFalse(i.quantity <= 0)
