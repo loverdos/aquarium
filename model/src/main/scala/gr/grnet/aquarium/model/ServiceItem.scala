@@ -4,7 +4,10 @@ import javax.persistence._
 
 @javax.persistence.Entity
 @Table(name = "SERVICE_ITEM")
-@NamedQuery(name="allServiceItems", query="select si from ServiceItem si")
+@NamedQueries(Array(
+  new NamedQuery(name="allServiceItems", query="select si from ServiceItem si"),
+  new NamedQuery(name="servItemsPerEntity", query="select si from ServiceItem si")
+))
 class ServiceItem extends Id {
 
   @Column(name = "URL")

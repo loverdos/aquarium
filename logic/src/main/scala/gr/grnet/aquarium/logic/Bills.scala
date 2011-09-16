@@ -1,10 +1,11 @@
 package gr.grnet.aquarium.logic
 
-import gr.grnet.aquarium.model.User
+import gr.grnet.aquarium.model._
+import java.util.Date
 
 trait Bills {
 
-  def calc_bill(u : User) = {
+  def calcBill(e : Entity, from : Date, to : Date) = {
 
   }
 }
