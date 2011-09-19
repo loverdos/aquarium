@@ -1,6 +1,7 @@
 package gr.grnet.aquarium.model
 
 import javax.persistence._
+import java.util.{Set, HashSet}
 
 @javax.persistence.Entity
 @DiscriminatorValue("1")
@@ -13,6 +14,5 @@ class User extends Entity {
   @ManyToMany(targetEntity = classOf[Group],
               mappedBy = "users",
               cascade = Array(CascadeType.ALL))
-  var groups : java.util.Set[Group] = new java.util.HashSet[Group]()
-
+  var groups : Set[Group] = new HashSet[Group]()
 }
