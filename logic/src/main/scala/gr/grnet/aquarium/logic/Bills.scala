@@ -6,7 +6,7 @@ import collection.JavaConversions._
 
 trait Bills {
 
-  def calcBill(e: Entity) = calcBill(e, None, None, None)
+  def calcBill(e: Entity) : Float = calcBill(e, None, None, None)
 
   /**
    * Calculate the bills for all resources used by the user
