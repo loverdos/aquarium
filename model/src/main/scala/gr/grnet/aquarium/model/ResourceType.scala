@@ -1,7 +1,7 @@
 package gr.grnet.aquarium.model
 
 import javax.persistence._
-import java.util.{Set, HashSet}
+import java.util.{HashSet, Set}
 
 @javax.persistence.Entity
 @Table(name = "RESOURCE_TYPE")
@@ -21,6 +21,10 @@ class ResourceType extends Id {
              cascade = Array(CascadeType.ALL))
   var consResources : Set[ConsumableResource] = new HashSet[ConsumableResource]()
 
+  @ManyToMany(targetEntity = classOf[ServiceTemplate],
+              mappedBy = "resTypes",
+              cascade= Array(CascadeType.ALL))
+  var srvTemplates : Set[ServiceTemplate] = new HashSet[ServiceTemplate]()
 }
 
 object ResourceType {

@@ -24,4 +24,9 @@ abstract class Entity extends Id {
   @OneToMany(mappedBy = "owner",  targetEntity = classOf[ServiceItem],
              cascade = Array(CascadeType.ALL))
   var serviceItems : Set[ServiceItem] = new HashSet[ServiceItem]()
+
+  @ManyToMany(targetEntity = classOf[Organization],
+              mappedBy = "entities",
+              cascade = Array(CascadeType.ALL))
+  var organizations : Set[Organization] = new HashSet[Organization]()
 }

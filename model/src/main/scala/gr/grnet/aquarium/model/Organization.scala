@@ -1,6 +1,7 @@
 package gr.grnet.aquarium.model
 
 import javax.persistence._
+import java.util.{Set, HashSet}
 
 @Table(name = "ORGANIZATION")
 @javax.persistence.Entity
@@ -16,11 +17,10 @@ class Organization extends Id {
   @JoinColumn(name = "PARENT_ORG_ID")
   var parent : Organization = _
 
-  @OneToMany(mappedBy = "org",  targetEntity = classOf[Group],
-             cascade = Array(CascadeType.ALL))
-  var groups : java.util.Set[Group] = new java.util.HashSet[Group]()
-
-  @OneToMany(mappedBy = "org",  targetEntity = classOf[User],
-             cascade = Array(CascadeType.ALL))
-  var users : java.util.Set[User] = new java.util.HashSet[User]()
+  @ManyToMany(targetEntity = classOf[Entity],
+              cascade = Array(CascadeType.ALL))
+  @JoinTable(name="ENTITY_ORGANIZATION",
+             joinColumns = Array(new JoinColumn(name="ENTITY_ID")),
+             inverseJoinColumns = Array(new JoinColumn(name="ORGANIZATION_ID")))
+  var entities : Set[Entity] = new HashSet[Entity]()
 }
