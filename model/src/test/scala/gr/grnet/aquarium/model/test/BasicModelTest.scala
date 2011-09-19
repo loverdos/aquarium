@@ -6,9 +6,7 @@ import org.scala_libs.jpa.{LocalEMF, ThreadLocalEM}
 import org.junit._
 import Assert._
 
-object DB extends LocalEMF("aquarium") with ThreadLocalEM {}
-
-class TestJPAWeb {
+class BasicModelTest {
 
   @Before
   def before() = {
@@ -55,13 +53,13 @@ class TestJPAWeb {
     DB.persist(srv1)
 
     val res1 = new ConsumableResource
-    res1.restype = "CPU"
+    res1.restype = ResourceType.CPU
     res1.unittype = "CPU/hr"
     res1.cost = 10f
     DB.persist(res1)
 
     val res2 = new ConsumableResource
-    res2.restype = "RAM"
+    res2.restype = ResourceType.RAM
     res2.unittype = "MB/hr"
     res2.cost = 11f
     DB.persist(res2)
@@ -97,6 +95,6 @@ class TestJPAWeb {
 
   @After
   def after() = {
-    DB.getTransaction.rollback
+    DB.getTransaction.rollback()
   }
 }

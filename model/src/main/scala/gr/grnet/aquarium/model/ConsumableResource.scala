@@ -1,14 +1,16 @@
 package gr.grnet.aquarium.model
 
 import javax.persistence._
+import java.util.{Set, HashSet}
 
 @Table(name = "CONSUMABLE_RESOURCE")
 @javax.persistence.Entity
 class ConsumableResource extends Id {
 
-  // TODO: The following should be an enum
-  @Column(name = "RESOURCE_TYPE")
-  var restype : String = _
+  @ManyToOne (cascade = Array(CascadeType.ALL),
+              targetEntity = classOf[ResourceType])
+  @JoinColumn(name = "RESOURCE_TYPE_ID")
+  var restype : ResourceType = _
 
   @Column(name = "UNIT_TYPE")
   var unittype : String = _
@@ -18,5 +20,5 @@ class ConsumableResource extends Id {
 
   @OneToMany(mappedBy = "resource",  targetEntity = classOf[ServiceItemConfig],
              cascade = Array(CascadeType.ALL))
-  var configItems : java.util.Set[ServiceItemConfig] = new java.util.HashSet[ServiceItemConfig]()
+  var configItems : Set[ServiceItemConfig] = new HashSet[ServiceItemConfig]()
 }
