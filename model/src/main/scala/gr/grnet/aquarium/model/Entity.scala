@@ -8,6 +8,7 @@ import java.util.{HashSet, Set}
 @DiscriminatorColumn(name="ENTITY_TYPE",
   discriminatorType=DiscriminatorType.INTEGER
 )
+@Table(name="ENTITY")
 abstract class Entity extends Id {
 
   @Column(name = "NAME")
@@ -20,7 +21,7 @@ abstract class Entity extends Id {
              cascade = Array(CascadeType.ALL))
   var permissions : Set[Permission] = new HashSet[Permission]()
 
-  @OneToMany(mappedBy = "owner",  targetEntity = classOf[ServiceItem],
+  /*@OneToMany(mappedBy = "owner",  targetEntity = classOf[ServiceItem],
              cascade = Array(CascadeType.ALL))
-  var serviceItems : Set[ServiceItem] = new HashSet[ServiceItem]()
+  var serviceItems : Set[ServiceItem] = new HashSet[ServiceItem]()*/
 }

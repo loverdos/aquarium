@@ -7,8 +7,13 @@ import java.util.{Set, HashSet}
 @Table(name = "ENTITY_TYPE")
 class EntityType extends Id {
 
+  @Transient
   val USER = 0x1
+
+  @Transient
   val GROUP = 0x2
+
+  @Transient
   val ORGANIZATION = 0x4
 
   @Column(name = "TYPE")

@@ -23,8 +23,8 @@
     <class>gr.grnet.aquarium.model.EntityType</class>
 
     <properties>
-      <property name="eclipselink.target-database"
-                value="org.eclipse.persistence.platform.database.MySQLPlatform"/>
+
+      <!-- Common configuration -->
       <property name="javax.persistence.jdbc.driver"
                 value="com.mysql.jdbc.Driver"/>
       <property name="javax.persistence.jdbc.url"
@@ -32,14 +32,26 @@
       <property name="javax.persistence.jdbc.password" value="aquarium"/>
       <property name="javax.persistence.jdbc.user" value="aquarium"/>
 
-      <!-- Logging -->
-      <property name="eclipselink.logging.level" value="FINE"/>
+      <!-- EclipseLink configuration -->
+      <property name="eclipselink.target-database"
+                value="org.eclipse.persistence.platform.database.MySQLPlatform"/>
+      <property name="eclipselink.logging.level" value="INFO"/>
       <property name="eclipselink.logging.timestamp" value="true"/>
       <property name="eclipselink.logging.session" value="true"/>
-      <property name="eclipselink.logging.thread" value="false"/>
-
+      <property name="eclipselink.logging.thread" value="true"/>
       <property name="eclipselink.ddl-generation" value="create-tables"/>
       <property name="eclipselink.ddl-generation.output-mode" value="database"/>
+
+      <!-- Hibernate configuration -->
+      <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
+      <property name="hibernate.hbm2ddl.auto" value="update"/>
+      <property name="hibernate.show_sql" value="true"/>
+
+      <!-- OpenJPA configuration -->
+      <property name="openjpa.jdbc.DBDictionary" value="mysql"/>
+      <property name="openjpa.Log" value="DefaultLevel=TRACE, SQL=TRACE"/>
+      <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema(ForeignKeys=true)"/>
+
     </properties>
   </persistence-unit>
 

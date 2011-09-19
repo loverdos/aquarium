@@ -15,12 +15,12 @@ class Bill extends Id {
   var cost : Float = _
 
   @ManyToOne(cascade = Array(CascadeType.ALL),
-                targetEntity = classOf[ServiceItemConfig])
+             targetEntity = classOf[gr.grnet.aquarium.model.Entity])
   @JoinColumn(name = "ENTITY_ID")
   var entity : gr.grnet.aquarium.model.Entity = _
 
   @ManyToOne(cascade = Array(CascadeType.ALL),
-                targetEntity = classOf[ServiceItem])
+             targetEntity = classOf[ServiceItem])
   @JoinColumn(name = "SERVICE_ITEM_ID")
   var item : ServiceItem = _
 }

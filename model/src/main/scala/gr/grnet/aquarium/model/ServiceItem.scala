@@ -3,22 +3,22 @@ package gr.grnet.aquarium.model
 import java.util.{Set, HashSet}
 import javax.persistence._
 
-@javax.persistence.Entity
-@Table(name = "SERVICE_ITEM")
 @NamedQueries(Array(
   new NamedQuery(name="allSi", query="select si from ServiceItem si"),
   new NamedQuery(name="siPerEntity",
                  query="select si from ServiceItem si where si.owner = :owner")
 ))
+@javax.persistence.Entity
+@Table(name = "SERVICE_ITEM")
 class ServiceItem extends Id {
 
   @Column(name = "URL")
   var url : String = ""
 
   @ManyToOne(cascade = Array(CascadeType.ALL),
-             targetEntity = classOf[ServiceItem])
+             targetEntity = classOf[gr.grnet.aquarium.model.Entity])
   @JoinColumn(name = "ENTITY_ID")
-  var owner : gr.grnet.aquarium.model.Entity = _
+  var owner : gr.grnet.aquarium.model.Entity  = _
 
   @OneToMany(mappedBy = "item",  targetEntity = classOf[ServiceItemConfig],
              cascade = Array(CascadeType.ALL))
@@ -26,7 +26,7 @@ class ServiceItem extends Id {
 
   @OneToMany(mappedBy = "item",  targetEntity = classOf[Bill],
              cascade = Array(CascadeType.ALL))
-  var bill : java.util.Set[Bill] = new java.util.HashSet[Bill]()
+  var bill : Set[Bill] = new HashSet[Bill]()
 
   @ManyToOne(cascade = Array(CascadeType.ALL),
              targetEntity = classOf[ServiceTemplate])

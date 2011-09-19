@@ -12,12 +12,12 @@ class Permission extends Id {
   var action : Action = _
 
   @ManyToOne(cascade = Array(CascadeType.ALL),
-             targetEntity = classOf[Entity])
+             targetEntity = classOf[gr.grnet.aquarium.model.Entity])
   @JoinColumn(name = "ENTITY_ID")
-  var entity : Entity = _
+  var entity : gr.grnet.aquarium.model.Entity  = _
 
   @ManyToOne(cascade = Array(CascadeType.ALL),
-             targetEntity = classOf[Entity])
+             targetEntity = classOf[ServiceItem])
   @JoinColumn(name = "SERVICE_ITEM_ID")
   var item : ServiceItem = _
 }
