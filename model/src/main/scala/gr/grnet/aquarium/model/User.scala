@@ -7,10 +7,6 @@ import java.util.{Set, HashSet}
 @DiscriminatorValue("1")
 class User extends Entity {
 
-  @ManyToOne(optional = true)
-  @JoinColumn(name = "ORG_ID", referencedColumnName = "ID")
-  var org : Organization = _
-
   @ManyToMany(targetEntity = classOf[Group],
               mappedBy = "users",
               cascade = Array(CascadeType.ALL))
