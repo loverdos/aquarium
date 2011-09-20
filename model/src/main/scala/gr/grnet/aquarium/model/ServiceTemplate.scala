@@ -21,7 +21,7 @@ class ServiceTemplate extends Id {
   @ManyToMany(targetEntity = classOf[ResourceType],
               cascade = Array(CascadeType.ALL))
   @JoinTable(name="SERVICE_TEMPLATE_RESOURCES",
-             joinColumns = Array(new JoinColumn(name="RESOURCE_TYPE_ID")),
+             joinColumns = Array(new JoinColumn(name="SERVICE_TEMPLATE_ID")),
              inverseJoinColumns = Array(new JoinColumn(name="RESOURCE_ID")))
   var resTypes : Set[ResourceType] = new HashSet[ResourceType]()
 }
