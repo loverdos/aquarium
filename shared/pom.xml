@@ -38,5 +38,53 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>exporttestdbmysql</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <property>
+          <name>export</name>
+          <value>1</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>dbunit-maven-plugin</artifactId>
+            <version>1.0-beta-3</version>
+            <dependencies>
+              <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>5.1.17</version>
+              </dependency>
+            </dependencies>
+            <configuration>
+              <driver>com.mysql.jdbc.Driver</driver>
+              <url>jdbc:mysql://localhost/aquarium</url>
+              <username>aquarium</username>
+              <password>aquarium</password>
+            </configuration>
+            <executions>
+              <execution>
+                <phase>test</phase>
+                <goals>
+                  <goal>export</goal>
+                </goals>
+                <!-- specific configurations -->
+                <configuration>
+                  <format>xml</format>
+                  <dest>target/dbunit/export.xml</dest>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>
 

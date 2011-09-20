@@ -239,7 +239,7 @@
           <downloadJavadocs>true</downloadJavadocs>
         </configuration>
       </plugin>
-      <!-- Make sure tests display results in console and not in files-->
+      <!-- Make sure tests display failures at the console-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
