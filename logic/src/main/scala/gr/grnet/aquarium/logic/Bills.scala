@@ -29,13 +29,13 @@ trait Bills {
         }.map {
           rt => ci.resource.cost * rt.measurement
         }.reduce { // Per config item
-          (cost, acc) => acc + cost
+          (total, cost) => total + cost
         }
       }.reduce { // Per service item
-        (cost, acc) => acc + cost
+        (total, cost) => total + cost
       }
     }.reduce { // Per entity
-      (cost, acc) => acc + cost
+      (total, cost) => total + cost
     }
   }
 }

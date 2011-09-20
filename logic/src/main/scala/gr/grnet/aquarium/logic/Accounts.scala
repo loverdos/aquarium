@@ -11,7 +11,8 @@ trait Accounts {
 
 
   def addUserToOrg(u : User, o : Organization) = {
-    o.users.add(u)
+    o.entities.add(u)
+    u.organizations.add(o)
     DB.persist(o)
   }
 
