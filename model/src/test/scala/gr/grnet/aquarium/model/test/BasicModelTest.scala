@@ -54,14 +54,18 @@ class BasicModelTest {
 
     val res1 = new ConsumableResource
     res1.restype = ResourceType.CPU
-    res1.unittype = "CPU/hr"
-    res1.cost = 10f
+    res1.name = "x86 CPU"
+    res1.period = Period.HOUR.toString
+    res1.unit = "CPU MIN"
+    res1.cost = 1.1f
     DB.persist(res1)
 
     val res2 = new ConsumableResource
     res2.restype = ResourceType.RAM
-    res2.unittype = "MB/hr"
-    res2.cost = 11f
+    res1.name = "RAM"
+    res1.period = Period.HOUR.toString
+    res1.unit = "MB"
+    res2.cost = 0.02f
     DB.persist(res2)
 
     def addServiceConfig(srv : ServiceItem,

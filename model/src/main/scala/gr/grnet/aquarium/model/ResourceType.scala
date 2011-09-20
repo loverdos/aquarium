@@ -28,11 +28,11 @@ class ResourceType extends Id {
 }
 
 object ResourceType {
-  def CPU = getResourceByType(0x1, "CPU")
-  def RAM = getResourceByType(0x2, "RAM")
-  def DISKSPACE = getResourceByType(0x4, "DISKSPACE")
+  def CPU          = getResourceByType(0x1, "CPU")
+  def RAM          = getResourceByType(0x2, "RAM")
+  def DISKSPACE    = getResourceByType(0x4, "DISKSPACE")
   def NETBANDWIDTH = getResourceByType(0x8, "NETBANDWIDTH")
-  def LICENSE = getResourceByType(0x10, "LICENSE")
+  def LICENSE      = getResourceByType(0x10, "LICENSE")
 
   private def getResourceByType(restype : Int, name : String) : ResourceType = {
     val res = DB.findAll[ResourceType]("restypeFromType",
