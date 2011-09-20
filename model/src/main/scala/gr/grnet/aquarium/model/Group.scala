@@ -10,10 +10,6 @@ class Group extends Entity {
   @JoinColumn(name = "SUB_GROUP_ID")
   var group :Group = _
 
-  @ManyToOne(cascade = Array(CascadeType.ALL),
-             optional = true)
-  var org : Organization = _
-
   @ManyToMany(targetEntity = classOf[User],
               cascade= Array(CascadeType.ALL))
   @JoinTable(name="USER_GROUP",
