@@ -1,0 +1,26 @@
+[
+    {
+        "model": "gr.grnet.aquarium.model.EntityType",
+        "pk": 1,
+        "fields": {
+            "name" : "USER",
+            "type" : "1"
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.EntityType",
+        "pk": 2,
+        "fields": {
+            "name" : "GROUP",
+            "type" : "2"
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.User",
+        "pk": 1,
+        "fields": {
+            "name" : "user1",
+            "credits" : "100"
+   	    }
+    }
+]

@@ -13,7 +13,7 @@ class Organization extends Id {
   @Column(name = "CREDITS")
   var credits: Int = 0
 
-  @ManyToOne(optional = true)
+  @ManyToOne(targetEntity = classOf[Organization])
   @JoinColumn(name = "PARENT_ORG_ID")
   var parent : Organization = _
 

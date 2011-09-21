@@ -5,7 +5,7 @@ import java.util.{Set, HashSet}
 
 @javax.persistence.Entity
 @DiscriminatorValue("1")
-class User extends Entity {
+class User extends gr.grnet.aquarium.model.Entity {
 
   @ManyToMany(targetEntity = classOf[Group],
               mappedBy = "users",

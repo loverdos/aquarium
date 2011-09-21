@@ -1,390 +1,58 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <dataset>
-  <table name="ACTION">
-    <column>ID</column>
-    <column>NAME</column>
-  </table>
-  <table name="BILL">
-    <column>ID</column>
-    <column>COST</column>
-    <column>WHEN_CALCULATED</column>
-    <column>ENTITY_ID</column>
-    <column>SERVICE_ITEM_ID</column>
-  </table>
-  <table name="CONSUMABLE_RESOURCE">
-    <column>ID</column>
-    <column>COST</column>
-    <column>NAME</column>
-    <column>PERIOD</column>
-    <column>UNIT</column>
-    <column>RESOURCE_TYPE_ID</column>
-    <row>
-      <value>1</value>
-      <value>1.0</value>
-      <value><![CDATA[x64 CPU]]></value>
-      <value>HOUR</value>
-      <value><![CDATA[CPU MINS]]></value>
-      <value>2</value>
-    </row>
-    <row>
-      <value>2</value>
-      <value>0.2</value>
-      <value>RAM</value>
-      <value>HOUR</value>
-      <value>MB</value>
-      <value>3</value>
-    </row>
-    <row>
-      <value>3</value>
-      <value>0.0010</value>
-      <value><![CDATA[VIRT DISK]]></value>
-      <value>HOUR</value>
-      <value>MB</value>
-      <value>4</value>
-    </row>
-    <row>
-      <value>4</value>
-      <value>0.0020</value>
-      <value><![CDATA[VIRT NET IFACE]]></value>
-      <value>HOUR</value>
-      <value>MB</value>
-      <value>5</value>
-    </row>
-    <row>
-      <value>5</value>
-      <value>2.0</value>
-      <value><![CDATA[MATLAB LICENSE]]></value>
-      <value>DAY</value>
-      <value>PIECE</value>
-      <value>6</value>
-    </row>
-    <row>
-      <value>6</value>
-      <value>1.0</value>
-      <value><![CDATA[WINDOWS LICENSE]]></value>
-      <value>MONTH</value>
-      <value>PIECE</value>
-      <value>6</value>
-    </row>
-  </table>
-  <table name="DEFAULT_PERMISSION">
-    <column>ID</column>
-    <column>ACTION_ID</column>
-    <column>ENTITY_TYPE_ID</column>
-    <column>SERVICE_TEMPLATE_ID</column>
-  </table>
-  <table name="ENTITY">
-    <column>ENTITY_TYPE</column>
-    <column>ID</column>
-    <column>CREDITS</column>
-    <column>NAME</column>
-    <column>SUB_GROUP_ID</column>
-    <row>
-      <value>1</value>
-      <value>2</value>
-      <value>100</value>
-      <value>user1</value>
-      <null/>
-    </row>
-    <row>
-      <value>1</value>
-      <value>3</value>
-      <value>30</value>
-      <value>user2</value>
-      <null/>
-    </row>
-    <row>
-      <value>2</value>
-      <value>4</value>
-      <value>150</value>
-      <value>group1</value>
-      <null/>
-    </row>
-    <row>
-      <value>2</value>
-      <value>5</value>
-      <value>0</value>
-      <value>group2</value>
-      <null/>
-    </row>
-    <row>
-      <value>2</value>
-      <value>6</value>
-      <value>200</value>
-      <value>group3</value>
-      <value>5</value>
-    </row>
-    <row>
-      <value>2</value>
-      <value>7</value>
-      <value>10</value>
-      <value>lab1</value>
-      <null/>
-    </row>
-    <row>
-      <value>2</value>
-      <value>8</value>
-      <value>0</value>
-      <value>lab2</value>
-      <null/>
-    </row>
-  </table>
-  <table name="ENTITY_ORGANIZATION">
-    <column>ENTITY_ID</column>
-    <column>ORGANIZATION_ID</column>
-    <row>
-      <value>3</value>
-      <value>5</value>
-    </row>
-    <row>
-      <value>4</value>
-      <value>5</value>
-    </row>
-    <row>
-      <value>7</value>
-      <value>7</value>
-    </row>
-  </table>
-  <table name="ENTITY_TYPE">
-    <column>ID</column>
-    <column>TYPE</column>
-    <column>NAME</column>
-    <row>
-      <value>1</value>
-      <value>1</value>
-      <value>USER</value>
-    </row>
-    <row>
-      <value>2</value>
-      <value>2</value>
-      <value>GROUP</value>
-    </row>
-    <row>
-      <value>3</value>
-      <value>4</value>
-      <value>ORGANIZATION</value>
-    </row>
-  </table>
-  <table name="ORGANIZATION">
-    <column>ID</column>
-    <column>CREDITS</column>
-    <column>NAME</column>
-    <column>PARENT_ORG_ID</column>
-    <row>
-      <value>3</value>
-      <value>300</value>
-      <value>AUEB</value>
-      <null/>
-    </row>
-    <row>
-      <value>4</value>
-      <value>400</value>
-      <value>NTUA</value>
-      <null/>
-    </row>
-    <row>
-      <value>5</value>
-      <value>100</value>
-      <value>SENSE</value>
-      <value>3</value>
-    </row>
-    <row>
-      <value>6</value>
-      <value>0</value>
-      <value>ECE</value>
-      <value>4</value>
-    </row>
-    <row>
-      <value>7</value>
-      <value>100</value>
-      <value>CSLAB</value>
-      <value>6</value>
-    </row>
-  </table>
-  <table name="PERMISSION">
-    <column>ID</column>
-    <column>ACTION_ID</column>
-    <column>ENTITY_ID</column>
-    <column>SERVICE_ITEM_ID</column>
-  </table>
-  <table name="RESOURCE_TYPE">
-    <column>ID</column>
-    <column>NAME</column>
-    <column>TYPE</column>
-    <row>
-      <value>2</value>
-      <value>CPU</value>
-      <value>1</value>
-    </row>
-    <row>
-      <value>3</value>
-      <value>RAM</value>
-      <value>2</value>
-    </row>
-    <row>
-      <value>4</value>
-      <value>DISKSPACE</value>
-      <value>4</value>
-    </row>
-    <row>
-      <value>5</value>
-      <value>NETBANDWIDTH</value>
-      <value>8</value>
-    </row>
-    <row>
-      <value>6</value>
-      <value>LICENCE</value>
-      <value>16</value>
-    </row>
-  </table>
-  <table name="RUNTIME_DATA">
-    <column>ID</column>
-    <column>MEASUREMENT</column>
-    <column>TIMESTAMP</column>
-    <column>SERVICE_ITEM_CONFIG_ID</column>
-    <row>
-      <value>13</value>
-      <value>0.02</value>
-      <value><![CDATA[2011-09-20 12:04:32.0]]></value>
-      <value>1</value>
-    </row>
-    <row>
-      <value>14</value>
-      <value>0.03</value>
-      <value><![CDATA[2011-09-20 12:02:25.0]]></value>
-      <value>1</value>
-    </row>
-    <row>
-      <value>15</value>
-      <value>0.05</value>
-      <value><![CDATA[2011-09-20 11:58:43.0]]></value>
-      <value>1</value>
-    </row>
-    <row>
-      <value>16</value>
-      <value>1232.0</value>
-      <value><![CDATA[2011-09-20 12:04:32.0]]></value>
-      <value>4</value>
-    </row>
-    <row>
-      <value>17</value>
-      <value>432.0</value>
-      <value><![CDATA[2011-09-20 12:02:52.0]]></value>
-      <value>4</value>
-    </row>
-  </table>
-  <table name="SERVICE_ITEM">
-    <column>ID</column>
-    <column>URL</column>
-    <column>ENTITY_ID</column>
-    <column>SERVICE_TEMPLATE_ID</column>
-    <row>
-      <value>2</value>
-      <value>/2/1</value>
-      <value>2</value>
-      <value>1</value>
-    </row>
-  </table>
-  <table name="SERVICE_ITEM_CONFIG">
-    <column>ID</column>
-    <column>QUANTITY</column>
-    <column>SERVICE_ITEM_ID</column>
-    <column>CONSUMABLE_RESOURCE_ID</column>
-    <row>
-      <value>1</value>
-      <value>1.0</value>
-      <value>2</value>
-      <value>1</value>
-    </row>
-    <row>
-      <value>2</value>
-      <value>256.0</value>
-      <value>2</value>
-      <value>2</value>
-    </row>
-    <row>
-      <value>3</value>
-      <value>4096.0</value>
-      <value>2</value>
-      <value>3</value>
-    </row>
-    <row>
-      <value>4</value>
-      <value>2.0</value>
-      <value>2</value>
-      <value>4</value>
-    </row>
-  </table>
-  <table name="SERVICE_TEMPLATE">
-    <column>ID</column>
-    <column>NAME</column>
-    <row>
-      <value>1</value>
-      <value>VirtualMachine</value>
-    </row>
-    <row>
-      <value>2</value>
-      <value>PithosStorage</value>
-    </row>
-    <row>
-      <value>3</value>
-      <value>SharedNet</value>
-    </row>
-    <row>
-      <value>4</value>
-      <value>VM-SAAS</value>
-    </row>
-  </table>
-  <table name="SERVICE_TEMPLATE_RESOURCES">
-    <column>SERVICE_TEMPLATE_ID</column>
-    <column>RESOURCE_ID</column>
-    <row>
-      <value>1</value>
-      <value>3</value>
-    </row>
-    <row>
-      <value>1</value>
-      <value>4</value>
-    </row>
-    <row>
-      <value>1</value>
-      <value>5</value>
-    </row>
-    <row>
-      <value>1</value>
-      <value>6</value>
-    </row>
-    <row>
-      <value>2</value>
-      <value>5</value>
-    </row>
-    <row>
-      <value>3</value>
-      <value>6</value>
-    </row>
-    <row>
-      <value>4</value>
-      <value>3</value>
-    </row>
-    <row>
-      <value>4</value>
-      <value>4</value>
-    </row>
-    <row>
-      <value>4</value>
-      <value>5</value>
-    </row>
-  </table>
-  <table name="USER_GROUP">
-    <column>USER_ID</column>
-    <column>GROUP_ID</column>
-    <row>
-      <value>2</value>
-      <value>5</value>
-    </row>
-    <row>
-      <value>3</value>
-      <value>4</value>
-    </row>
-  </table>
+  <ENTITY_TYPE ID="1" TYPE="1" NAME="USER"/>
+  <ENTITY_TYPE ID="2" TYPE="2" NAME="GROUP"/>
+  <ENTITY_TYPE ID="3" TYPE="4" NAME="ORGANIZATION"/>
+  <RESOURCE_TYPE ID="2" NAME="CPU" TYPE="1"/>
+  <RESOURCE_TYPE ID="3" NAME="RAM" TYPE="2"/>
+  <RESOURCE_TYPE ID="4" NAME="DISKSPACE" TYPE="4"/>
+  <RESOURCE_TYPE ID="5" NAME="NETBANDWIDTH" TYPE="8"/>
+  <RESOURCE_TYPE ID="6" NAME="LICENCE" TYPE="16"/>
+  <ENTITY ENTITY_TYPE="1" ID="2" CREDITS="100" NAME="user1"/>
+  <ENTITY ENTITY_TYPE="1" ID="3" CREDITS="30" NAME="user2"/>
+  <ENTITY ENTITY_TYPE="2" ID="4" CREDITS="150" NAME="group1"/>
+  <ENTITY ENTITY_TYPE="2" ID="5" CREDITS="0" NAME="group2"/>
+  <ENTITY ENTITY_TYPE="2" ID="6" CREDITS="200" NAME="group3" SUB_GROUP_ID="5"/>
+  <ENTITY ENTITY_TYPE="2" ID="7" CREDITS="10" NAME="lab1"/>
+  <ENTITY ENTITY_TYPE="2" ID="8" CREDITS="0" NAME="lab2"/>
+  <ENTITY_ORGANIZATION ENTITY_ID="3" ORGANIZATION_ID="5"/>
+  <ENTITY_ORGANIZATION ENTITY_ID="4" ORGANIZATION_ID="5"/>
+  <ENTITY_ORGANIZATION ENTITY_ID="7" ORGANIZATION_ID="7"/>
+  <SERVICE_ITEM ID="2" URL="/2/1" ENTITY_ID="2" SERVICE_TEMPLATE_ID="1"/>
+  <SERVICE_ITEM_CONFIG ID="4" QUANTITY="1.0" SERVICE_ITEM_ID="2" CONSUMABLE_RESOURCE_ID="3"/>
+  <SERVICE_ITEM_CONFIG ID="5" QUANTITY="256.0" SERVICE_ITEM_ID="2" CONSUMABLE_RESOURCE_ID="4"/>
+  <SERVICE_ITEM_CONFIG ID="6" QUANTITY="4096.0" SERVICE_ITEM_ID="2" CONSUMABLE_RESOURCE_ID="5"/>
+  <SERVICE_ITEM_CONFIG ID="7" QUANTITY="2.0" SERVICE_ITEM_ID="2" CONSUMABLE_RESOURCE_ID="6"/>
+  <SERVICE_TEMPLATE ID="1" NAME="VirtualMachine"/>
+  <SERVICE_TEMPLATE ID="2" NAME="PithosStorage"/>
+  <SERVICE_TEMPLATE ID="3" NAME="SharedNet"/>
+  <SERVICE_TEMPLATE ID="4" NAME="VM-SAAS"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="1" RESOURCE_ID="3"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="1" RESOURCE_ID="4"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="1" RESOURCE_ID="5"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="1" RESOURCE_ID="6"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="2" RESOURCE_ID="5"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="3" RESOURCE_ID="6"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="4" RESOURCE_ID="3"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="4" RESOURCE_ID="4"/>
+  <SERVICE_TEMPLATE_RESOURCES SERVICE_TEMPLATE_ID="4" RESOURCE_ID="5"/>
+  <CONSUMABLE_RESOURCE ID="3" COST="1.0" NAME="x64 CPU" PERIOD="HOUR" UNIT="CPU MINS" RESOURCE_TYPE_ID="2"/>
+    <CONSUMABLE_RESOURCE ID="4" COST="0.2" NAME="RAM" PERIOD="DAY" UNIT="MB" RESOURCE_TYPE_ID="3"/>
+    <CONSUMABLE_RESOURCE ID="5" COST="0.0010" NAME="VIRT DISK" PERIOD="HOUR" UNIT="MB" RESOURCE_TYPE_ID="4"/>
+    <CONSUMABLE_RESOURCE ID="6" COST="0.0020" NAME="VIRT NET IFACE" PERIOD="HOUR" UNIT="MB" RESOURCE_TYPE_ID="5"/>
+    <CONSUMABLE_RESOURCE ID="7" COST="2.0" NAME="MATLAB LICENSE" PERIOD="DAY" UNIT="PIECE" RESOURCE_TYPE_ID="6"/>
+    <CONSUMABLE_RESOURCE ID="8" COST="1.0" NAME="WINDOWS LICENSE" PERIOD="MONTH" UNIT="PIECE" RESOURCE_TYPE_ID="6"/>
+  <RUNTIME_DATA ID="2" MEASUREMENT="0.02" TIMESTAMP="2011-09-20 12:04:32.0" SERVICE_ITEM_CONFIG_ID="4"/>
+    <RUNTIME_DATA ID="3" MEASUREMENT="0.03" TIMESTAMP="2011-09-20 12:02:25.0" SERVICE_ITEM_CONFIG_ID="4"/>
+    <RUNTIME_DATA ID="4" MEASUREMENT="0.05" TIMESTAMP="2011-09-20 11:58:43.0" SERVICE_ITEM_CONFIG_ID="4"/>
+    <RUNTIME_DATA ID="5" MEASUREMENT="1232.0" TIMESTAMP="2011-09-20 12:04:32.0" SERVICE_ITEM_CONFIG_ID="7"/>
+    <RUNTIME_DATA ID="6" MEASUREMENT="432.0" TIMESTAMP="2011-09-20 12:02:52.0" SERVICE_ITEM_CONFIG_ID="7"/>
+  <ORGANIZATION ID="3" CREDITS="300" NAME="AUEB"/>
+  <ORGANIZATION ID="4" CREDITS="400" NAME="NTUA"/>
+  <ORGANIZATION ID="5" CREDITS="100" NAME="SENSE" PARENT_ORG_ID="3"/>
+  <ORGANIZATION ID="6" CREDITS="0" NAME="ECE" PARENT_ORG_ID="4"/>
+  <ORGANIZATION ID="7" CREDITS="100" NAME="CSLAB" PARENT_ORG_ID="6"/>
+
+  <USER_GROUP USER_ID="2" GROUP_ID="5"/>
+  <USER_GROUP USER_ID="3" GROUP_ID="4"/>
 </dataset>

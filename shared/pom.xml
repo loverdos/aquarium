@@ -66,6 +66,9 @@
               <url>jdbc:mysql://localhost/aquarium</url>
               <username>aquarium</username>
               <password>aquarium</password>
+              <ordered>true</ordered>
+              <format>flat</format>
+              <dest>target/dbunit/export.xml</dest>
             </configuration>
             <executions>
               <execution>
@@ -74,10 +77,6 @@
                   <goal>export</goal>
                 </goals>
                 <!-- specific configurations -->
-                <configuration>
-                  <format>xml</format>
-                  <dest>target/dbunit/export.xml</dest>
-                </configuration>
               </execution>
             </executions>
           </plugin>

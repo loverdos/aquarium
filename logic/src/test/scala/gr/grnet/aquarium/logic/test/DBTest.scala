@@ -1,9 +1,13 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit.{AfterClass, BeforeClass}
-import gr.grnet.aquarium.model.DB
 import org.dbunit._
+import database.DatabaseSequenceFilter
+import dataset.FilteredDataSet
+import dataset.xml.{FlatXmlDataSetBuilder, FlatXmlDataSet, XmlDataSet}
+import operation.DatabaseOperation
 import xml._
+import gr.grnet.aquarium.model._
 
 object DBTest {
 
@@ -13,9 +17,9 @@ object DBTest {
     val xml = XML.load(getClass.getResourceAsStream("/META-INF/persistence.xml"))
 
     def getConfig(value : String) = {
-      println("Searching for:" + value) 
+      println("Searching for:" + value)
       val a = xml.descendant_or_self.filter {
-        node => (node \ "name").text == value
+        node => (node \ "@name").text == value
       }.head
 
       a.attribute("value").get.text
@@ -26,13 +30,17 @@ object DBTest {
     val passwd = getConfig ("javax.persistence.jdbc.password")
     val url = getConfig("javax.persistence.jdbc.url")
 
-    println ("Driver:", driver, "\n")
-    
-    //Init JPA
-    DB.getTransaction().begin()
-    val tester = new JdbcDatabaseTester(driver, url, uname, passwd)
+    // Make sure the DB schema is there
+    if (!DB.isOpen())
+      DB.openEM()
 
-    DB.getTransaction().commit()
+    val tester = new JdbcDatabaseTester(driver, url, uname, passwd)
+    val filter = new DatabaseSequenceFilter(tester.getConnection)
+    
+    val ds = new FilteredDataSet(filter,
+      new FlatXmlDataSetBuilder().build(getClass.getResourceAsStream("/testdata.xml")))
+    DatabaseOperation.REFRESH.execute(tester.getConnection, ds)
+
   }
 
   @AfterClass
