@@ -19,8 +19,8 @@ class EntityType extends Id {
   @Column(name = "TYPE")
   var entType : Int = 0
 
-  @Column(name = "NAME")
-  var name : String = _
+  @Column(name = "NAME", nullable = false)
+  var name : String = ""
 
   @OneToMany(mappedBy = "enttype",  targetEntity = classOf[DefaultPermission],
              cascade = Array(CascadeType.ALL))

@@ -2,7 +2,7 @@ package gr.grnet.aquarium.logic.test
 
 import gr.grnet.aquarium.model.DB
 import gr.grnet.aquarium.logic.test._
-import org.junit.{After, Before}
+import org.junit.{After, Before, Test}
 
 
 class AccountsTest extends DBTest {
@@ -14,6 +14,7 @@ class AccountsTest extends DBTest {
     loadFixture()
   }
 
+  @Test
   def AccountsTest() = {
   }
 
