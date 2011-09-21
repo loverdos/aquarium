@@ -1,16 +1,24 @@
 package gr.grnet.aquarium.logic.test
 
-import org.junit.Test
+import gr.grnet.aquarium.model.DB
+import org.junit.{After, Before, Test}
 
-class BillTest {
+class BillTest extends DBTest {
 
-   def BillTest = {
-
-
+  @Before
+  def before() = {
+    if (!DB.getTransaction.isActive)
+      DB.getTransaction.begin
+    loadFixture()
   }
 
   @Test
   def testCalcBill = {
-    DBTest.before()
+
+  }
+
+  @After
+  def after() = {
+    DB.getTransaction.rollback()
   }
 }

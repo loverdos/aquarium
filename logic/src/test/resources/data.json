@@ -4,7 +4,7 @@
         "pk": 1,
         "fields": {
             "name" : "USER",
-            "type" : "1"
+            "type" : 1.2
    	    }
     },
     {
@@ -12,7 +12,7 @@
         "pk": 2,
         "fields": {
             "name" : "GROUP",
-            "type" : "2"
+            "type" : 2
    	    }
     },
     {
@@ -20,7 +20,7 @@
         "pk": 1,
         "fields": {
             "name" : "user1",
-            "credits" : "100"
+            "credits" : 100.0
    	    }
     }
 ]
