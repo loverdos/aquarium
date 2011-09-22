@@ -49,17 +49,10 @@ trait DBTest {
     val model = record.get("model").get.toString()
     val fields = record.get("fields").get
 
-    var fieldMap = fields match {
+    val fieldMap = fields match {
       case v: Map[_, _] => fields.asInstanceOf[Map[String, Any]]
       case _ => throw new Exception("Not supported: ".concat(fields.toString))
     }
-
-    //The pk JSON field is mapped to the id field for all Aquarium objects
-    //Add it to the field map to be processed the same way as other fields
-     record.get("pk").get match {
-       case None => println
-       case _ => fieldMap += ("id" -> record.get("pk").get)
-     }
 
     //Create an object instance
     val obj = loadClass[AnyRef](model).newInstance()
@@ -82,7 +75,22 @@ trait DBTest {
     }
 
     //Save the object
-    DB.merge(obj)
+    DB.persistAndFlush(obj)
+
+    //Special treatment for the ID field: we allow JPA to set it above, but
+    //we reset it to what the fixture specifies by hand
+    updatePK(obj.getClass.getSimpleName, obj.getV("id").asInstanceOf[Long],
+      record.get("pk").get.asInstanceOf[Double].longValue())
+    DB.flush()
+  }
+
+  def updatePK(entity : String, oldid: Long, newid : Long) = {
+    val q = DB.createQuery(
+      "update " + entity +
+      " set id=:newid where id = :oldid")
+    q.setParameter("newid", newid)
+    q.setParameter("oldid", oldid)
+    q.executeUpdate()
   }
 
   /* The scala JSON parser returns:

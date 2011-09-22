@@ -8,6 +8,6 @@ trait Id {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "ID")
   @BeanProperty
-  var id: Long = _
+  var id: Long = 0
 
 }
