@@ -4,7 +4,12 @@ import gr.grnet.aquarium.model._
 import scala.io.Source
 import scala.util.parsing.json._
 
-trait DBTest {
+/** Loads [[https://docs.djangoproject.com/en/dev/howto/initial-data/ Django-style]]
+  *  fixtures in the database. It expects an open entity manager.
+  *
+  * @author Georgios Gousios <gousiosg@grnet.gr>
+  */
+trait FixtureLoader {
 
   implicit def loadClass[T <: AnyRef](name: String): Class[T] = {
     val clazz = Class.forName(name, true, this.getClass.getClassLoader)
@@ -23,14 +28,21 @@ trait DBTest {
     }
 
     def setV(name: String, value: Any): Unit = {
-      ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.asInstanceOf[AnyRef])
+      ref.getClass.getMethods.find(
+        _.getName == name + "_$eq"
+      ).get.invoke(ref, value.asInstanceOf[AnyRef])
     }
   }
 
-  def loadFixture() {
+  /** Loads a fixture from classpath
+    *
+    * @param fixture The fixture path to load the test data from. It should
+    *                be relative to the classpath root.  
+    */
+  def loadFixture(fixture : String) {
 
     val json = Source.fromInputStream(
-      getClass.getClassLoader.getResourceAsStream("data.json")
+      getClass.getClassLoader.getResourceAsStream(fixture)
     ).mkString
     val data = JSON.parseFull(json).get
 
@@ -44,10 +56,13 @@ trait DBTest {
     }
   }
 
-  def addRecord(record: Map[String, Any]): Unit = {
+  private def addRecord(record: Map[String, Any]): Unit = {
     //Top level record fields
     val model = record.get("model").get.toString()
     val fields = record.get("fields").get
+    val id = record.get("pk").getOrElse(
+      throw new Exception("The pk field is missing from record: " + record)
+    ).asInstanceOf[Double].longValue()
 
     val fieldMap = fields match {
       case v: Map[_, _] => fields.asInstanceOf[Map[String, Any]]
@@ -57,7 +72,7 @@ trait DBTest {
     //Create an object instance
     val obj = loadClass[AnyRef](model).newInstance()
 
-    //Set the remaining fields
+    //Set the field values
     fieldMap.keys.foreach {
       k =>
         val classField = obj.getV(k)
@@ -77,14 +92,15 @@ trait DBTest {
     //Save the object
     DB.persistAndFlush(obj)
 
-    //Special treatment for the ID field: we allow JPA to set it above, but
-    //we reset it to what the fixture specifies by hand
-    updatePK(obj.getClass.getSimpleName, obj.getV("id").asInstanceOf[Long],
-      record.get("pk").get.asInstanceOf[Double].longValue())
+    /* Special treatment for the ID field: we allow JPA to set on persist, but
+     * we reset it here to what the fixture specifies. This is to bypass
+     * JPA's strict 'no-primary-key-updates' rule
+     */
+    updatePK(obj.getClass.getSimpleName, obj.getV("id").asInstanceOf[Long], id)
     DB.flush()
   }
 
-  def updatePK(entity : String, oldid: Long, newid : Long) = {
+  private def updatePK(entity : String, oldid: Long, newid : Long) = {
     val q = DB.createQuery(
       "update " + entity +
       " set id=:newid where id = :oldid")
@@ -96,8 +112,10 @@ trait DBTest {
   /* The scala JSON parser returns:
   *   -Strings for values in quotes
   *   -Doubles if the value is a number, not in quotes
+  *
+  *   The following methods do type conversions by hand
   */
-  def getDoubleValue(dbField: Any, value: Double) = {
+  private def getDoubleValue(dbField: Any, value: Double) = {
     dbField match {
       case s if dbField.isInstanceOf[String] => value.toString
       case l if dbField.isInstanceOf[Long] => value.longValue
@@ -107,7 +125,7 @@ trait DBTest {
     }
   }
 
-  def getStringValue(dbField: Any, value: String) = {
+  private def getStringValue(dbField: Any, value: String) = {
     dbField match {
       case s if dbField.isInstanceOf[String] => value
       case l if dbField.isInstanceOf[Long] => value.toLong
@@ -117,7 +135,7 @@ trait DBTest {
     }
   }
 
-  def getFieldValue(field: Any, value: Any) = {
+  private def getFieldValue(field: Any, value: Any) = {
     value match {
       case v: Double => getDoubleValue(field, value.asInstanceOf[Double])
       case v: String => getStringValue(field, value.asInstanceOf[String])

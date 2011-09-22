@@ -5,13 +5,13 @@ import gr.grnet.aquarium.logic.test._
 import org.junit.{After, Before, Test}
 
 
-class AccountsTest extends DBTest {
+class AccountsTest extends FixtureLoader {
 
   @Before
   def before() = {
     if (!DB.getTransaction.isActive)
       DB.getTransaction.begin
-    loadFixture()
+    loadFixture("data.json")
   }
 
   @Test
