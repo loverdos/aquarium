@@ -70,7 +70,9 @@ trait DBTest {
         val classField = obj.getV(k)
 
         classField match {
-          case None =>
+          case null => throw new Exception ("Type for field: " + k +
+            " in class: " + model + " is unknown (possibly: no default value" +
+            " for field in declaring class)")
           case _ =>
         }
 
