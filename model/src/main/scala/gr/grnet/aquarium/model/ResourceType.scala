@@ -15,7 +15,7 @@ class ResourceType extends Id {
   var resType : Int = 0
 
   @Column(name = "NAME")
-  var name : String = _
+  var name : String = ""
 
   @OneToMany(mappedBy = "restype",  targetEntity = classOf[ConsumableResource],
              cascade = Array(CascadeType.ALL))
