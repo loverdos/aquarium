@@ -11,4 +11,9 @@ class User extends gr.grnet.aquarium.model.Entity {
               mappedBy = "users",
               cascade = Array(CascadeType.ALL))
   var groups : Set[Group] = new HashSet[Group]()
+
+  @ManyToMany(targetEntity = classOf[Organization],
+              mappedBy = "users",
+              cascade = Array(CascadeType.ALL))
+  var organizations: Set[Organization] = new HashSet[Organization]
 }

@@ -8,7 +8,7 @@ import java.util.{Set, HashSet}
 class Group extends Entity {
 
   @ManyToOne(optional = true)
-  @JoinColumn(name = "SUB_GROUP_ID")
+  @JoinColumn(name = "PARENT_GROUP_ID")
   var group : Group = _
 
   @ManyToMany(targetEntity = classOf[User],
