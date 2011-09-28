@@ -18,7 +18,7 @@ class ServiceItemConfig extends Id {
   var resource : ConsumableResource = _
 
   @Column(name = "QUANTITY")
-  var quantity: Float = _
+  var quantity: Float = 0.0F
 
   @OneToMany(mappedBy = "item",  targetEntity = classOf[RuntimeData],
              cascade = Array(CascadeType.ALL))

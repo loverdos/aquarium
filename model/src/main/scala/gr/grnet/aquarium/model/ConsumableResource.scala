@@ -8,7 +8,7 @@ import java.util.{Set, HashSet}
 class ConsumableResource extends Id {
 
   @Column(name = "NAME")
-  var name : String = _
+  var name : String = ""
 
   @ManyToOne (cascade = Array(CascadeType.ALL),
               targetEntity = classOf[ResourceType])
@@ -16,13 +16,13 @@ class ConsumableResource extends Id {
   var restype : ResourceType = _
 
   @Column(name = "UNIT")
-  var unit : String = _
+  var unit : String = ""
 
   @Column(name = "PERIOD")
-  var period : String = _
+  var period : String = ""
 
   @Column(name = "COST")
-  var cost : Float = _
+  var cost : Float = 0.0F
 
   @OneToMany(mappedBy = "resource",  targetEntity = classOf[ServiceItemConfig],
              cascade = Array(CascadeType.ALL))

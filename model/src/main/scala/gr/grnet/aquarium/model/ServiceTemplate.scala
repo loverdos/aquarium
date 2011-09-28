@@ -8,7 +8,7 @@ import java.util.{HashSet, Set}
 class ServiceTemplate extends Id {
 
   @Column(name = "NAME")
-  var name : String = _
+  var name : String = ""
 
   @OneToMany(mappedBy = "template",  targetEntity = classOf[DefaultPermission],
              cascade = Array(CascadeType.ALL))
