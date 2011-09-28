@@ -69,15 +69,21 @@ trait FixtureLoader {
       getClass.getClassLoader.getResourceAsStream(fixture)
     ).mkString
     val data = JSON.parseFull(json).get
+    System.err.print("Loading fixture " + fixture + ":")
+    var i = 0
 
     data match {
-      case x: List[Any] => x.foreach(
+      case x: List[Any] => x.foreach{
         f => f match {
           case y: Map[String, Any] => addRecord(y)
           case _ => throw new Exception("Not supported: ".concat(f.toString))
-        })
+        }
+        i += 1
+        System.err.print(".")
+      }
       case _ => throw new Exception("Input JSON must be an array")
     }
+    System.err.println(i + " entries loaded")
   }
 
   /** Processes a single fixture record */
@@ -149,6 +155,7 @@ trait FixtureLoader {
           obj.setV(k, typedValue)
         }
     }
+
     DB.flush()
   }
 
@@ -162,7 +169,7 @@ trait FixtureLoader {
   }
 
   /** Set the referenced object in a many to one relationship*/
-  def setManyToOne(dao: AnyRef, fieldName: String, fieldValue: Double) = {
+  private def setManyToOne(dao: AnyRef, fieldName: String, fieldValue: Double) = {
     val other = DB.find(dao.getT(fieldName), fieldValue.longValue()).getOrElse(
       throw new Exception("Cannot find related object for " + dao.getClass +
         ", field: " + fieldName + " value: " + fieldValue)
@@ -176,7 +183,7 @@ trait FixtureLoader {
    * type cannot be retrieved through the Set implementing the relationship
    * due to type erasure. 
    */
-  def setOneToMany(dao: AnyRef, fieldName: String,fieldValues: List[Double]) = {
+  private def setOneToMany(dao: AnyRef, fieldName: String,fieldValues: List[Double]) = {
 
     val field = findField(dao.getClass, fieldName).getOrElse(
       throw new Exception("Cannot find field:" + fieldName +
@@ -226,7 +233,7 @@ trait FixtureLoader {
   }
 
   /** Get a named field reference in a class hierarchy */
-  def findField(clazz: Class[_], field: String) : Option[Field] = {
+  private def findField(clazz: Class[_], field: String) : Option[Field] = {
     if (clazz == null)
       return None
 
@@ -241,7 +248,7 @@ trait FixtureLoader {
    *  ManyToOne annotation property targetEntity matches the provided one.
    *  The search is done iteratively in the class hierarchy.
    */
-  def findAnotField(clazz: Class[_], target: Class[_]) : Option[Field] = {
+  private def findAnotField(clazz: Class[_], target: Class[_]) : Option[Field] = {
     if (clazz == null)
       return None
 
