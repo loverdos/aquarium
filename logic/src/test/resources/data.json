@@ -65,7 +65,7 @@
     },
         {
         "model": "gr.grnet.aquarium.model.Organization",
-        "pk": 3,
+        "pk": 1,
         "fields": {
             "name" : "AUEB",
             "credits" : 300
@@ -73,7 +73,7 @@
     },
     {
         "model": "gr.grnet.aquarium.model.Organization",
-        "pk": 4,
+        "pk": 2,
         "fields": {
             "name" : "NTUA",
             "credits" : 200
@@ -81,34 +81,34 @@
     },
     {
         "model": "gr.grnet.aquarium.model.Organization",
-        "pk": 5,
+        "pk": 3,
         "fields": {
             "name" : "SENSE",
             "credits" : 100,
-            "parent" : 3
+            "parent" : 1
    	    }
     },
     {
         "model": "gr.grnet.aquarium.model.Organization",
-        "pk": 6,
+        "pk": 4,
         "fields": {
             "name" : "ECE",
             "credits" : 0,
+            "parent" : 2
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.Organization",
+        "pk": 5,
+        "fields": {
+            "name" : "CSLAB",
+            "credits" : 100,
             "parent" : 4
    	    }
     },
     {
-        "model": "gr.grnet.aquarium.model.Organization",
-        "pk": 7,
-        "fields": {
-            "name" : "CSLAB",
-            "credits" : 100,
-            "parent" : 6
-   	    }
-    },
-    {
         "model": "gr.grnet.aquarium.model.User",
-        "pk": 2,
+        "pk": 6,
         "fields": {
             "name" : "user1",
             "credits" : 100
@@ -116,25 +116,25 @@
     },
     {
         "model": "gr.grnet.aquarium.model.User",
-        "pk": 3,
+        "pk": 7,
         "fields": {
             "name" : "user2",
             "credits" : 30,
-            "organizations" : [5]
+            "organizations" : [3]
    	    }
     },
     {
         "model": "gr.grnet.aquarium.model.Group",
-        "pk": 4,
+        "pk": 8,
         "fields": {
             "name" : "group1",
             "credits" : 150,
-            "organizations" : [5]
+            "organizations" : [2]
    	    }
     },
     {
         "model": "gr.grnet.aquarium.model.Group",
-        "pk": 5,
+        "pk": 9,
         "fields": {
             "name" : "group2",
             "credits" : 0
@@ -142,7 +142,7 @@
     },
     {
         "model": "gr.grnet.aquarium.model.Group",
-        "pk": 8,
+        "pk": 10,
         "fields": {
             "name" : "lab2",
             "credits" : 0
@@ -150,20 +150,20 @@
     },
     {
         "model": "gr.grnet.aquarium.model.Group",
-        "pk": 7,
+        "pk": 11,
         "fields": {
             "name" : "lab1",
             "credits" : 10,
-            "organizations" : [7]
+            "organizations" : [5]
    	    }
     },
     {
         "model": "gr.grnet.aquarium.model.Group",
-        "pk": 6,
+        "pk": 12,
         "fields": {
             "name" : "group3",
             "credits" : 200,
-            "group" : 5
+            "parent" : 10
    	    }
     }
 ]
