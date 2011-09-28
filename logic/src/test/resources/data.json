@@ -25,7 +25,7 @@
     },
     {
         "model": "gr.grnet.aquarium.model.ResourceType",
-        "pk": 2,
+        "pk": 1,
         "fields": {
             "name" : "CPU",
             "resType" : 1
@@ -33,7 +33,7 @@
     },
     {
         "model": "gr.grnet.aquarium.model.ResourceType",
-        "pk": 3,
+        "pk": 2,
         "fields": {
             "name" : "RAM",
             "resType" : 2
@@ -41,7 +41,7 @@
     },
     {
         "model": "gr.grnet.aquarium.model.ResourceType",
-        "pk": 4,
+        "pk": 3,
         "fields": {
             "name" : "DISKSPACE",
             "resType" : 4
@@ -49,7 +49,7 @@
     },
     {
         "model": "gr.grnet.aquarium.model.ResourceType",
-        "pk": 5,
+        "pk": 4,
         "fields": {
             "name" : "NETBANDWIDTH",
             "resType" : 8
@@ -57,7 +57,7 @@
     },
     {
         "model": "gr.grnet.aquarium.model.ResourceType",
-        "pk": 6,
+        "pk": 5,
         "fields": {
             "name" : "LICENCE",
             "resType" : 16
@@ -120,7 +120,7 @@
         "fields": {
             "name" : "user2",
             "credits" : 30,
-            "organizations" : [3]
+            "organizations" : [3, 5]
    	    }
     },
     {
@@ -164,6 +164,149 @@
             "name" : "group3",
             "credits" : 200,
             "parent" : 10
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceTemplate",
+        "pk": 1,
+        "fields": {
+            "name" : "VirtualMachine",
+            "resTypes" : [1,2,3,4]
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceTemplate",
+        "pk": 2,
+        "fields": {
+            "name" : "PithosStorage",
+            "resTypes" : [4]
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceTemplate",
+        "pk": 3,
+        "fields": {
+            "name" : "SharedNet",
+            "resTypes" : [5]
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceTemplate",
+        "pk": 4,
+        "fields": {
+            "name" : "VM-SSAAS",
+            "resTypes" : [1,2,3,4,5]
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ConsumableResource",
+        "pk": 1,
+        "fields": {
+            "name" : "x64 CPU",
+            "restype" : 1,
+            "unit" : "CPU MINS",
+            "period" : "HOUR",
+            "cost" : 1
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ConsumableResource",
+        "pk": 2,
+        "fields": {
+            "name" : "RAM",
+            "restype" : 2,
+            "unit" : "MB",
+            "period" : "DAY",
+            "cost" : 0.2
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ConsumableResource",
+        "pk": 3,
+        "fields": {
+            "name" : "VIRT DISK",
+            "restype" : 3,
+            "unit" : "MB",
+            "period" : "HOUR",
+            "cost" : 0.001
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ConsumableResource",
+        "pk": 4,
+        "fields": {
+            "name" : "VIRT NET IFACE",
+            "restype" : 4,
+            "unit" : "MB",
+            "period" : "HOUR",
+            "cost" : 0.002
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ConsumableResource",
+        "pk": 5,
+        "fields": {
+            "name" : "MATLAB LICENSE",
+            "restype" : 5,
+            "unit" : "PIECE",
+            "period" : "DAY",
+            "cost" : 2
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ConsumableResource",
+        "pk": 6,
+        "fields": {
+            "name" : "WINDOWS LICENSE",
+            "restype" : 5,
+            "unit" : "PIECE",
+            "period" : "MONTH",
+            "cost" : 1
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceItem",
+        "pk": 1,
+        "fields": {
+            "url" : "/foo/bar/1",
+            "owner" : 6,
+            "template" : 1
+        }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceItemConfig",
+        "pk": 1,
+        "fields": {
+            "item" : 1,
+            "resource" : 1,
+            "quantity" : 2
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceItemConfig",
+        "pk": 2,
+        "fields": {
+            "item" : 1,
+            "resource" : 2,
+            "quantity" : 256
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceItemConfig",
+        "pk": 3,
+        "fields": {
+            "item" : 1,
+            "resource" : 3,
+            "quantity" : 4096
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.ServiceItemConfig",
+        "pk": 4,
+        "fields": {
+            "item" : 1,
+            "resource" : 4,
+            "quantity" : 2
    	    }
     }
 ]
