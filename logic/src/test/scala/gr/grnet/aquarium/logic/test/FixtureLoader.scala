@@ -96,7 +96,19 @@ trait FixtureLoader {
     }
 
     //Create an object instance
-    val obj = loadClass[AnyRef](model).newInstance()
+    val tmpObj = loadClass[AnyRef](model).newInstance()
+    //Save the object
+    DB.persistAndFlush(tmpObj)
+
+    /* Special treatment for the ID field: we allow JPA to set on persist, but
+     * we reset it here to what the fixture specifies. This is to bypass
+     * JPA's strict 'no-primary-key-updates' rule
+     */
+    updatePK(tmpObj.getClass.getSimpleName, tmpObj.getV("id").asInstanceOf[Long], id)
+
+    val obj = DB.find(tmpObj.getClass, id).getOrElse(
+      throw new Exception("Cannot find")
+    ).asInstanceOf[AnyRef]
 
     //Set the field values
     fieldMap.keys.foreach {
@@ -137,15 +149,6 @@ trait FixtureLoader {
           obj.setV(k, typedValue)
         }
     }
-
-    //Save the object
-    DB.persistAndFlush(obj)
-
-    /* Special treatment for the ID field: we allow JPA to set on persist, but
-     * we reset it here to what the fixture specifies. This is to bypass
-     * JPA's strict 'no-primary-key-updates' rule
-     */
-    updatePK(obj.getClass.getSimpleName, obj.getV("id").asInstanceOf[Long], id)
     DB.flush()
   }
 
@@ -161,7 +164,8 @@ trait FixtureLoader {
   /** Set the referenced object in a many to one relationship*/
   def setManyToOne(dao: AnyRef, fieldName: String, fieldValue: Double) = {
     val other = DB.find(dao.getT(fieldName), fieldValue.longValue()).getOrElse(
-      throw new Exception("Cannot find related object for ")
+      throw new Exception("Cannot find related object for " + dao.getClass +
+        ", field: " + fieldName + " value: " + fieldValue)
     )
     dao.setV(fieldName, other)
   }
@@ -197,15 +201,27 @@ trait FixtureLoader {
         ", even though the fixture specifies multiple values for field")
     }
 
-    //Add all values specified 
+    //Add all values specified
     fieldValues.foreach {
       v =>
         val other = DB.find(targetType, v.longValue).getOrElse(
           throw new Exception("Cannot find entry of type "+ targetType +
             " with id=" + v.longValue)
         )
-        val refField = dao.getV(fieldName)
-        println(refField)
+        // We make the assumption that *ToMany relationships are mapped by Sets
+        val refField = dao.getV(fieldName).asInstanceOf[Set[Any]]
+        refField.add(other)
+
+        //Find and set the other type of a ManyToMany relationship
+        if (annot.get.isInstanceOf[ManyToMany]) {
+          findAnotField(targetType, dao.getClass) match {
+            case Some(x) => other.asInstanceOf[AnyRef].getV(x.getName).asInstanceOf[Set[Any]].add(dao)
+            case None => throw new Exception("Cannot find a field in class " +
+              targetType + " that corresponds to field " + fieldName + " in " +
+              "class " + dao.getClass
+            )
+          }
+        }
     }
   }
 
@@ -218,6 +234,34 @@ trait FixtureLoader {
     a match {
       case Some(x) => a
       case None => findField(clazz.getSuperclass, field)
+    }
+  }
+
+  /** Get a named field reference for a field whose ManyToMany or
+   *  ManyToOne annotation property targetEntity matches the provided one.
+   *  The search is done iteratively in the class hierarchy.
+   */
+  def findAnotField(clazz: Class[_], target: Class[_]) : Option[Field] = {
+    if (clazz == null)
+      return None
+
+    val a = clazz.getDeclaredFields.find {
+      f =>
+        val field = f.getAnnotations.find {
+          a => a match {
+            case y: ManyToMany => true
+            case _ => false
+          }
+        }
+
+        field match {
+          case Some(x) => x.asInstanceOf[ManyToMany].targetEntity().equals(target)
+          case None => false
+        }
+    }
+    a match {
+      case Some(x) => a
+      case None => findAnotField(clazz.getSuperclass, target)
     }
   }
 
