@@ -9,7 +9,7 @@ class Group extends Entity {
 
   @ManyToOne(optional = true)
   @JoinColumn(name = "PARENT_GROUP_ID")
-  var group : Group = _
+  var parent : Group = _
 
   @ManyToMany(targetEntity = classOf[User],
               cascade= Array(CascadeType.ALL))
@@ -17,4 +17,9 @@ class Group extends Entity {
              joinColumns = Array(new JoinColumn(name="USER_ID")),
              inverseJoinColumns = Array(new JoinColumn(name="GROUP_ID")))
   var users : Set[User] = new HashSet[User]()
+
+  @ManyToMany(targetEntity = classOf[Organization],
+              mappedBy = "groups",
+              cascade = Array(CascadeType.ALL))
+  var organizations: Set[Organization] = new HashSet[Organization]
 }

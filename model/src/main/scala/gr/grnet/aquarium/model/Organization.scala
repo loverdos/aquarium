@@ -19,7 +19,7 @@ class Organization extends Entity {
              inverseJoinColumns = Array(new JoinColumn(name="ORGANIZATION_ID")))
   var users : Set[User] = new HashSet[User]()
 
-  @ManyToMany(targetEntity = classOf[User],
+  @ManyToMany(targetEntity = classOf[Group],
               cascade= Array(CascadeType.ALL))
   @JoinTable(name="GROUP_ORGANIZATION",
              joinColumns = Array(new JoinColumn(name="GROUP_ID")),
