@@ -5,7 +5,7 @@ import scala.io.Source
 import scala.util.parsing.json._
 import java.lang.reflect.Field
 import javax.persistence.{OneToMany, ManyToMany}
-import java.util.Set
+import java.util.{Date, Set}
 
 /**Loads [[https://docs.djangoproject.com/en/dev/howto/initial-data/ Django-style]]
  *  fixtures in the database. It expects an open JPA entity manager. The code
@@ -285,6 +285,7 @@ trait FixtureLoader {
       case x if dbField.isInstanceOf[Int] => value.intValue
       case f if dbField.isInstanceOf[Float] => value.floatValue
       case d if dbField.isInstanceOf[Double] => value
+      case d if dbField.isInstanceOf[Date] => new Date(value.longValue())
     }
   }
 
