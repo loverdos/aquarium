@@ -1,9 +1,12 @@
 package gr.grnet.aquarium.logic.test
 
-import gr.grnet.aquarium.model.DB
-import org.junit.{After, Before, Test}
+import org.junit._
+import Assert._
+import gr.grnet.aquarium.logic.Bills
+import gr.grnet.aquarium.model.{Entity, DB}
 
-class BillTest extends FixtureLoader {
+class BillTest
+  extends FixtureLoader with Bills {
 
   @Before
   def before() = {
@@ -14,7 +17,15 @@ class BillTest extends FixtureLoader {
 
   @Test
   def testCalcBill = {
+    var e = DB.find[Entity](classOf[Entity], 1L)
+    assert(e.get != None)
+    var bill = calcBill(e.get)
+    assert(bill == 0F)
 
+    e = DB.find[Entity](classOf[Entity], 6L)
+    assert(e.get != None)
+    bill = calcBill(e.get)
+    assert(bill != 0F)
   }
 
   @After
