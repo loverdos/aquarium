@@ -1,7 +1,7 @@
 package gr.grnet.aquarium.model
 
-import java.util.Date
 import javax.persistence._
+import java.util.Date
 
 @javax.persistence.Entity
 @Table(name = "RUNTIME_DATA")
@@ -9,10 +9,10 @@ class RuntimeData extends Id {
 
   @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "TIMESTAMP")
-  var timestamp : Date = _
+  var timestamp : Date = new Date()
 
   @Column(name = "MEASUREMENT")
-  var measurement : Float = _
+  var measurement : Float = 0.0F
 
   @ManyToOne(cascade = Array(CascadeType.ALL),
               targetEntity = classOf[ServiceItemConfig])

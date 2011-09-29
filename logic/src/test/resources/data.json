@@ -308,5 +308,50 @@
             "resource" : 4,
             "quantity" : 2
    	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.RuntimeData",
+        "pk": 1,
+        "fields": {
+            "item" : 1,
+            "timestamp" : 1316509472,
+            "measurement" : 0.02
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.RuntimeData",
+        "pk": 2,
+        "fields": {
+            "item" : 1,
+            "timestamp" : 1316509345,
+            "measurement" : 0.043
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.RuntimeData",
+        "pk": 3,
+        "fields": {
+            "item" : 1,
+            "timestamp" : 1316509123,
+            "measurement" : 0.05
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.RuntimeData",
+        "pk": 4,
+        "fields": {
+            "item" : 4,
+            "timestamp" : 1316509472,
+            "measurement" : 1232
+   	    }
+    },
+    {
+        "model": "gr.grnet.aquarium.model.RuntimeData",
+        "pk": 5,
+        "fields": {
+            "item" : 4,
+            "timestamp" : 1316509372,
+            "measurement" : 432
+   	    }
     }
 ]
