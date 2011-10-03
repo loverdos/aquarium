@@ -203,10 +203,7 @@
         "pk": 1,
         "fields": {
             "name" : "x64 CPU",
-            "restype" : 1,
-            "unit" : "CPU MINS",
-            "period" : "HOUR",
-            "cost" : 1
+            "restype" : 1
    	    }
     },
     {
@@ -214,10 +211,7 @@
         "pk": 2,
         "fields": {
             "name" : "RAM",
-            "restype" : 2,
-            "unit" : "MB",
-            "period" : "DAY",
-            "cost" : 0.2
+            "restype" : 2
    	    }
     },
     {
@@ -225,10 +219,7 @@
         "pk": 3,
         "fields": {
             "name" : "VIRT DISK",
-            "restype" : 3,
-            "unit" : "MB",
-            "period" : "HOUR",
-            "cost" : 0.001
+            "restype" : 3
    	    }
     },
     {
@@ -236,10 +227,7 @@
         "pk": 4,
         "fields": {
             "name" : "VIRT NET IFACE",
-            "restype" : 4,
-            "unit" : "MB",
-            "period" : "HOUR",
-            "cost" : 0.002
+            "restype" : 4
    	    }
     },
     {
@@ -247,10 +235,7 @@
         "pk": 5,
         "fields": {
             "name" : "MATLAB LICENSE",
-            "restype" : 5,
-            "unit" : "PIECE",
-            "period" : "DAY",
-            "cost" : 2
+            "restype" : 5
    	    }
     },
     {
@@ -258,10 +243,7 @@
         "pk": 6,
         "fields": {
             "name" : "WINDOWS LICENSE",
-            "restype" : 5,
-            "unit" : "PIECE",
-            "period" : "MONTH",
-            "cost" : 1
+            "restype" : 5
    	    }
     },
     {
