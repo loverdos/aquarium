@@ -2,8 +2,9 @@ package gr.grnet.aquarium.logic
 
 import gr.grnet.aquarium.model._
 import collection.JavaConversions._
-import java.util.{Date}
 import collection.immutable.HashSet
+import collection.mutable.Buffer
+import java.util.Date
 
 trait Bills {
 
@@ -26,22 +27,23 @@ trait Bills {
     }
 
     items.map {
-      si => asScalaSet(si.configItems).map {
-        ci => asScalaSet(ci.runtime).filter {
-          rt => {
-            rt.timestamp.getTime >= from.getOrElse(new Date(0L)).getTime &&
-            rt.timestamp.getTime <= to.getOrElse(new Date()).getTime
-          }
-        }.map {
-          rt => ci.resource.cost * rt.measurement
-        }.fold(0F) { // Per config item
+      si => cost(events(si, from, to))
+    }.fold(0F) { // Per service item
           (total, cost) => total + cost
-        }
-      }.fold(0F) { // Per service item
-        (total, cost) => total + cost
-      }
-    }.fold(0F) { // Per entity
-      (total, cost) => total + cost
     }
+  }
+
+  def cost(events: Buffer[RuntimeData]) : Float = {
+    
+    0F
+  }
+
+  def events(item: ServiceItem, from: Option[Date],
+             to: Option[Date]) : Buffer[RuntimeData] = {
+    val q = DB.createNamedQuery[RuntimeData]("eventsPerItem")
+    q.setParameter("srvItem", item)
+    q.setParameter("from", from.getOrElse(new Date(0L)))
+    q.setParameter("to", from.getOrElse(new Date()))
+    q.findAll
   }
 }
