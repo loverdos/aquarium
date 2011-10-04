@@ -1,9 +1,19 @@
 package gr.grnet.aquarium.logic.accounting.policies
 
-import gr.grnet.aquarium.logic.accounting.{AccountingEvent, Policy}
+import gr.grnet.aquarium.logic.accounting.{InputEventType, AccountingEvent, Policy}
+import collection.immutable.HashMap
 
-class DefaultRatePolicy extends Policy {
+object DefaultRatePolicy extends Policy {
 
-  def calculateAmount(evt: AccountingEvent) {0F}
+  val rates = new HashMap[InputEventType.Value, Float]
 
+  private def init() = {
+    
+  }
+  
+  def calculateAmount(evt: AccountingEvent) : Float = {
+    if (rates.isEmpty) init()
+
+    0F
+  }
 }
