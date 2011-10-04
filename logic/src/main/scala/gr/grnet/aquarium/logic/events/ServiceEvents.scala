@@ -3,8 +3,12 @@ package gr.grnet.aquarium.logic.events
 import net.liftweb.json.Serialization.write
 import java.util.Date
 
-/**Generic event type*/
-trait Event {
+/**Generic event */
+abstract class Event(eventid: Long, w: Date, u: Long) {
+
+  def id() = eventid
+  def when() = w
+  def who() = u
 
   implicit val formats = net.liftweb.json.DefaultFormats
 
@@ -14,21 +18,18 @@ trait Event {
 }
 
 /**Synnefo messages*/
-case class VMCreated(eventid: Long, when: Date, who: Long, vmid: Long) extends Event
-case class VMStarted(eventid: Long, when: Date, who: Long, vmid: Long) extends Event
-case class VMStopped(eventid: Long, when: Date, who: Long, vmid: Long) extends Event
+case class VMCreated(i: Long, w: Date, u: Long, vmid: Long) extends Event(i, w, u)
+case class VMStarted(i: Long, w: Date, u: Long, vmid: Long) extends Event(i, w, u)
+case class VMStopped(i: Long, w: Date, u: Long, vmid: Long) extends Event(i, w, u)
 
 /**Pithos messages*/
-case class FileCreated(eventid: Long, when: Date, who: Long, fname: String, bytes: Long) extends Event
-case class FileUpdated(eventid: Long, when: Date, who: Long, fname: String, bytes: Long) extends Event
-case class FileDeleted(eventid: Long, when: Date, who: Long, fname: String, bytes: Long) extends Event
-case class FileModified(eventid: Long, when: Date, who: Long, fname: String, bytes: Long) extends Event
+case class DiskSpaceChanged(i: Long, w: Date, u: Long, bytes: Long) extends Event(i, w, u)
 
 /**Networking resource usage messages*/
-case class DataUploaded(eventid: Long, when: Date, who: Long, bytes: Long) extends Event
-case class DataDownloaded(eventid: Long, when: Date, who: Long, bytes: Long) extends Event
+case class DataUploaded(i: Long, w: Date, u: Long, bytes: Long) extends Event(i, w, u)
+case class DataDownloaded(i: Long, w: Date, u: Long, bytes: Long) extends Event(i, w, u)
 
 /**SSaaS messages*/
-case class SSaasVMCreated(eventid: Long, when: Date, who: Long, vmid: Long, licenceid: Long) extends Event
-case class SSaasVMStarted(eventid: Long, when: Date, who: Long, vmid: Long, licenceid: Long) extends Event
-case class SSaasVMStopped(eventid: Long, when: Date, who: Long, vmid: Long, licenceid: Long) extends Event
+case class SSaasVMCreated(i: Long, w: Date, u: Long, vmid: Long, licenceid: Long) extends Event(i, w, u)
+case class SSaasVMStarted(i: Long, w: Date, u: Long, vmid: Long, licenceid: Long) extends Event(i, w, u)
+case class SSaasVMStopped(i: Long, w: Date, u: Long, vmid: Long, licenceid: Long) extends Event(i, w, u)
