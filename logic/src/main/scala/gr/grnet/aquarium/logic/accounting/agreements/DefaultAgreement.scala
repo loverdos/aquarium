@@ -5,8 +5,6 @@ import gr.grnet.aquarium.logic.accounting.{InputEventType, Policy, Agreement}
 
 class DefaultAgreement extends Agreement {
 
-  
-
   def policy(et: InputEventType.Value, d: Date) : Policy = {
     null
   }

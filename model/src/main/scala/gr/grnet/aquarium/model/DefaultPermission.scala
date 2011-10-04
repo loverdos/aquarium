@@ -4,7 +4,7 @@ import javax.persistence._
 
 @javax.persistence.Entity
 @Table(name = "DEFAULT_PERMISSION")
-class DefaultPermission extends Id{
+class DefaultPermission extends Id {
 
   @ManyToOne(cascade = Array(CascadeType.ALL),
              targetEntity = classOf[EntityType])

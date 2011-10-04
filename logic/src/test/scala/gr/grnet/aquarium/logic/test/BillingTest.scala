@@ -4,7 +4,6 @@ import org.junit._
 import Assert._
 import gr.grnet.aquarium.logic.Bills
 import gr.grnet.aquarium.model.{Entity, DB}
-import gr.grnet.aquarium.logic.accounting.User
 import gr.grnet.aquarium.logic.accounting.agreements.DefaultAgreement
 
 class BillingTest
@@ -32,8 +31,7 @@ class BillingTest
 
   @Test
   def testAccountingRules() = {
-    val agr = new DefaultAgreement()
-    val u = new User(agr)
+
   }
 
   @After
