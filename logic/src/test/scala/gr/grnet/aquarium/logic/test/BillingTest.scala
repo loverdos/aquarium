@@ -11,7 +11,7 @@ class BillingTest
   def before() = {
     if (!DB.getTransaction.isActive)
       DB.getTransaction.begin
-    loadFixture("data.json")
+    //loadFixture("data.json")
   }
 
   @Test
