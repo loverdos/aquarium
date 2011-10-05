@@ -4,7 +4,7 @@ import java.util.Date
 import gr.grnet.aquarium.model.{Entity, DB}
 
 class InputEvent(et: InputEventType.Value, when: Date,
-                 who: Long, amount: Double) {
+                 who: Long, amount: Double, rel: List[Long]) {
 
   def process() = {}
 
