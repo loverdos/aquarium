@@ -20,10 +20,6 @@ class ServiceItem extends Id {
   @JoinColumn(name = "ENTITY_ID")
   var owner : gr.grnet.aquarium.model.Entity  = _
 
-  @OneToMany(mappedBy = "item",  targetEntity = classOf[ServiceItemConfig],
-             cascade = Array(CascadeType.ALL))
-  var configItems : Set[ServiceItemConfig] = new HashSet[ServiceItemConfig]()
-
   @OneToMany(mappedBy = "item",  targetEntity = classOf[Bill],
              cascade = Array(CascadeType.ALL))
   var bill : Set[Bill] = new HashSet[Bill]()

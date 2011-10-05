@@ -15,7 +15,4 @@ class ConsumableResource extends Id {
   @JoinColumn(name = "RESOURCE_TYPE_ID")
   var restype : ResourceType = _
 
-  @OneToMany(mappedBy = "resource",  targetEntity = classOf[ServiceItemConfig],
-             cascade = Array(CascadeType.ALL))
-  var configItems : Set[ServiceItemConfig] = new HashSet[ServiceItemConfig]()
 }

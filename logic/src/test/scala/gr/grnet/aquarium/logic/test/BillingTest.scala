@@ -1,10 +1,8 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit._
-import Assert._
 import gr.grnet.aquarium.logic.Bills
 import gr.grnet.aquarium.model.{Entity, DB}
-import gr.grnet.aquarium.logic.accounting.agreements.DefaultAgreement
 
 class BillingTest
   extends FixtureLoader with Bills {
@@ -18,15 +16,7 @@ class BillingTest
 
   @Test
   def testCalcBill = {
-    var e = DB.find[Entity](classOf[Entity], 1L)
-    assert(e.get != None)
-    var bill = calcBill(e.get)
-    //assert(bill == 0F)
 
-    e = DB.find[Entity](classOf[Entity], 6L)
-    assert(e.get != None)
-    bill = calcBill(e.get)
-    //assert(bill != 0F)
   }
 
   @Test

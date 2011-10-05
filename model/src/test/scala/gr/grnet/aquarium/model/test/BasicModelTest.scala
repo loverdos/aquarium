@@ -64,33 +64,6 @@ class BasicModelTest {
     
     DB.persist(res2)
 
-    def addServiceConfig(srv : ServiceItem,
-                               res : ConsumableResource,
-                               value : Float) {
-      val srvcfg2 = new ServiceItemConfig
-      srvcfg2.item = srv
-      srvcfg2.resource = res
-      srvcfg2.quantity = value
-      srv.configItems.add(srvcfg2)
-      res.configItems.add(srvcfg2)
-      DB.persist(srvcfg2)
-      DB.flush()
-    }
-
-    addServiceConfig(srv1, res1, 4f)
-    addServiceConfig(srv1, res2, 128f)
-
-    val a = DB.find(classOf[ServiceItem], srv1.id)
-    assert(a.exists(o => o.id == srv1.id))
-    assertEquals(2, a.get.configItems.size)
-
-    //Entity navigation tests
-    val all = DB.findAll[ServiceItem]("allSi")
-    all.foreach {
-      f => asScalaSet(f.configItems).foreach {
-        i => assertFalse(i.quantity <= 0)
-      }
-    }
   }
 
   @After

@@ -37,18 +37,13 @@ object EventProcessor {
 
   /** Find a the first corresponding VM stop event in a list of messages*/
   def findVMStopEvent(events: List[Event], v: VMCreated) : Option[VMStopped] = {
-    if (events.isEmpty) None
-
-    events.head match {
-      case a : VMStopped =>
-        if (a.vmid != v.vmid   ||  //VM is the same
-            a.who() != v.who() ||  //Event user is the same
-            a.when().compareTo(v.when()) <= 0) //Event
-          findVMStopEvent(events.tail, v)
-        else
-          Some(a)
-      case _ => findVMStopEvent(events.tail, v)
-    }
+    events.find{
+      f => (
+        f.id() == v.id() &&
+        f.who() == v.who &&
+        f.when().compareTo(v.when()) > 0) &&
+        f.isInstanceOf[VMStopped]
+    }.asInstanceOf[Option[VMStopped]]
   }
 
   def getEvents(from: Date, to: Date): List[Event] = {
