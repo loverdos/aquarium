@@ -17,6 +17,9 @@ abstract class Entity extends Id {
   @Column(name = "CREDITS", nullable = true)
   var credits: Float = 0
 
+  @Column(name = "AGREEMENT", nullable = true)
+  var agreement: Long = 0
+
   @OneToMany(mappedBy = "entity",  targetEntity = classOf[Permission],
              cascade = Array(CascadeType.ALL))
   var permissions : Set[Permission] = new HashSet[Permission]()
@@ -24,7 +27,4 @@ abstract class Entity extends Id {
   @OneToMany(mappedBy = "owner",  targetEntity = classOf[ServiceItem],
              cascade = Array(CascadeType.ALL))
   var serviceItems : Set[ServiceItem] = new HashSet[ServiceItem]()
-
-  @Column(name = "AGREEMENT", nullable = true)
-  var agreement: Long = 0
 }

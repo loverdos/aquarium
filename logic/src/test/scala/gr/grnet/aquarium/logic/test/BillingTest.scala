@@ -15,13 +15,8 @@ class BillingTest
   }
 
   @Test
-  def testCalcBill = {
-
-  }
-
-  @Test
   def testAccountingRules() = {
-
+    
   }
 
   @After
