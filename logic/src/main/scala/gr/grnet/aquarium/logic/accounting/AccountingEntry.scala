@@ -4,7 +4,7 @@ import java.util.Date
 
 /**The result of processing an accounting event*/
 class AccountingEntry(sourceEvents: List[Long], when: Date,
-                      amount: Float, entryType: AccountingEntryType.Value) {
+                      amount: Double, entryType: AccountingEntryType.Value) {
   
 }
 

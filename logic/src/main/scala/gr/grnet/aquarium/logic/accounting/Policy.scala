@@ -3,7 +3,7 @@ package gr.grnet.aquarium.logic.accounting
 
 abstract class Policy(et: AccountingEntryType.Value) {
 
-  private def makeEntry(event: AccountingEvent, amount: Float) = {
+  private def makeEntry(event: AccountingEvent, amount: Double) = {
     val entry = new AccountingEntry(event.relatedEvents(),
                                     event.date(), amount, et)
   }
@@ -12,5 +12,5 @@ abstract class Policy(et: AccountingEntryType.Value) {
     makeEntry(evt, calculateAmount(evt))
   }
 
-  def calculateAmount(evt: AccountingEvent) : Float
+  def calculateAmount(evt: AccountingEvent) : Double
 }
