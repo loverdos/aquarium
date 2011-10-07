@@ -28,18 +28,23 @@ object EventProcessor {
                 case Some(x) => x.id
                 case None => -1 //Now
               }
+              val totaltime = time.getTime - v.w.getTime
+              assert(totaltime > 0)
               new AccountingEvent(AccountingEventType.VMTime, e.when(),
-                             u, time.getTime - v.w.getTime,
+                             u, totaltime,
                             List(v.id, stopid))
             //          case v : VMStarted =>None
             //          case v : VMStopped =>None
             case v: DiskSpaceChanged =>
+              assert(v.bytes > 0)
               new AccountingEvent(AccountingEventType.DiskSpace,
                              e.when(), u, v.bytes, List(v.id()))
             case v: DataUploaded =>
+              assert(v.bytes > 0)
               new AccountingEvent(AccountingEventType.NetDataUp, e.when, u,
                              v.bytes, List(v.id()))
             case v: DataDownloaded =>
+              assert(v.bytes > 0)
               new AccountingEvent(AccountingEventType.NetDataDown, e.when, u,
                              v.bytes, List(v.id()))
             //          case v : SSaasVMCreated => None
