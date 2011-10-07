@@ -2,6 +2,6 @@ package gr.grnet.aquarium.logic.accounting
 
 
 object AccountingEventType extends Enumeration {
-  type InputEvent = Value
+  type AcountingEvent = Value
   val NetDataUp, NetDataDown, DiskSpace, VMTime = Value
 }
