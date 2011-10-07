@@ -1,12 +1,13 @@
 package gr.grnet.aquarium.logic.accounting
 
 import java.util.Date
-import collection.mutable.{HashMap, Map}
-import gr.grnet.aquarium.logic.accounting.AccountingEventType
+import collection.mutable.HashMap
 
 abstract class Agreement {
 
-  var pricelist : Map[AccountingEventType.Value, Float] = _
+  val id : Long = 0
+
+  val pricelist : Map[AccountingEventType.Value, Float] = Map()
 
   var policies = new HashMap[AccountingEventType.Value, HashMap[Date,Policy]]
 

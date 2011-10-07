@@ -4,10 +4,12 @@ import gr.grnet.aquarium.logic.accounting.{AccountingEventType, Agreement}
 
 object DefaultAgreement extends Agreement {
 
-  val pricelist = Map(
-    AccountingEventType.DiskSpace -> 0.00002,
-    AccountingEventType.NetDataDown -> 0.0001,
-    AccountingEventType.NetDataUp -> 0.0001,
-    AccountingEventType.VMTime -> 0.001
+  override val id = 1L
+
+  override val pricelist = Map (
+    AccountingEventType.DiskSpace -> 0.00002F,
+    AccountingEventType.NetDataDown -> 0.0001F,
+    AccountingEventType.NetDataUp -> 0.0001F,
+    AccountingEventType.VMTime -> 0.001F
   )
 }

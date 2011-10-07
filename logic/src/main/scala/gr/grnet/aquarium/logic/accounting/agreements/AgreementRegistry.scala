@@ -5,7 +5,7 @@ import gr.grnet.aquarium.logic.accounting.Agreement
 object AgreementRegistry {
 
   val agreements = Map (
-    1L -> DefaultAgreement
+    DefaultAgreement.id -> DefaultAgreement
   )
 
   def getAgreement(agrId : Long) : Option[Agreement] = {
