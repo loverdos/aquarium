@@ -31,11 +31,10 @@ class AccountingEvent(et: AccountingEventType.Value, when: Date,
 
     agr.policy(et, when) match {
       case Some(x) => x
-      case None => throw new Exception("No charging policy:" +
-        entity().agreement)
+      case None => throw new Exception("No charging policy for event type:" +
+        et + " in period starting from:" + when)
     }
   }
-
 
   def getRate(): Float = {
     val agreement = AgreementRegistry.getAgreement(entity.agreement)

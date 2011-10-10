@@ -29,7 +29,9 @@ class BillingTest
     u.agreement = DefaultAgreement.id
     u.credits = 100
 
-    val evt = new AccountingEvent(AccountingEventType.VMTime, new Date(4), 1, 15, List())
+    DB.persistAndFlush(u)
+
+    val evt = new AccountingEvent(AccountingEventType.VMTime, new Date(4), u.id, 15, List())
     evt.process()
   }
 
