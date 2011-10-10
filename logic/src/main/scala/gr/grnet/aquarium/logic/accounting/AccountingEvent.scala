@@ -5,7 +5,7 @@ import java.util.Date
 import gr.grnet.aquarium.model.{Entity, DB}
 
 class AccountingEvent(et: AccountingEventType.Value, when: Date,
-                      who: Long, amount: Double, rel: List[Long]) {
+                      who: Long, amount: Float, rel: List[Long]) {
 
   def date() = when
 
@@ -32,7 +32,7 @@ class AccountingEvent(et: AccountingEventType.Value, when: Date,
     agr.policy(et, when) match {
       case Some(x) => x
       case None => throw new Exception("No charging policy for event type:" +
-        et + " in period starting from:" + when)
+        et + " in period starting from:" + when.getTime)
     }
   }
 

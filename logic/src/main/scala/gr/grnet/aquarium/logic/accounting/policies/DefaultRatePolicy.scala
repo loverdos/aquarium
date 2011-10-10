@@ -4,7 +4,7 @@ import gr.grnet.aquarium.logic.accounting.{AccountingEvent, AccountingEntryType,
 
 class DefaultRatePolicy(et: AccountingEntryType.Value) extends Policy(et) {
 
-  def calculateAmount(evt: AccountingEvent) : Double = {
+  def calculateAmount(evt: AccountingEvent) : Float = {
     evt.value() * evt.getRate()
   }
 }
