@@ -52,18 +52,6 @@ class BasicModelTest {
     srv1.url = "http://foo.bar/"
     DB.persist(srv1)
 
-    val res1 = new ConsumableResource
-    res1.restype = ResourceType.CPU
-    res1.name = "x86 CPU"
-
-    DB.persist(res1)
-
-    val res2 = new ConsumableResource
-    res2.restype = ResourceType.RAM
-    res1.name = "RAM"
-    
-    DB.persist(res2)
-
   }
 
   @After

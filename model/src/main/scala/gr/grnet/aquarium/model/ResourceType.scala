@@ -17,22 +17,21 @@ class ResourceType extends Id {
   @Column(name = "NAME")
   var name : String = ""
 
-  @OneToMany(mappedBy = "restype",  targetEntity = classOf[ConsumableResource],
-             cascade = Array(CascadeType.ALL))
-  var consResources : Set[ConsumableResource] = new HashSet[ConsumableResource]()
-
   @ManyToMany(targetEntity = classOf[ServiceTemplate],
               mappedBy = "resTypes",
               cascade= Array(CascadeType.ALL))
   var srvTemplates : Set[ServiceTemplate] = new HashSet[ServiceTemplate]()
+
+  @OneToMany(mappedBy = "restype",  targetEntity = classOf[PriceList],
+             cascade = Array(CascadeType.ALL))
+  var agreements : Set[PriceList] = new HashSet[PriceList]()
 }
 
 object ResourceType {
-  def CPU          = getResourceByType(0x1, "CPU")
-  def RAM          = getResourceByType(0x2, "RAM")
-  def DISKSPACE    = getResourceByType(0x4, "DISKSPACE")
-  def NETBANDWIDTH = getResourceByType(0x8, "NETBANDWIDTH")
-  def LICENSE      = getResourceByType(0x10, "LICENSE")
+  def VMTIME       = getResourceByType(0x1, "CPU")
+  def DISKSPACE    = getResourceByType(0x2, "DISKSPACE")
+  def NETBANDWIDTH = getResourceByType(0x4, "NETBANDWIDTH")
+  def LICENSE      = getResourceByType(0x8, "LICENSE")
 
   private def getResourceByType(restype : Int, name : String) : ResourceType = {
     val res = DB.findAll[ResourceType]("restypeFromType",

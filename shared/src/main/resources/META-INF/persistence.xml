@@ -10,9 +10,7 @@
     <class>gr.grnet.aquarium.model.Group</class>
     <class>gr.grnet.aquarium.model.User</class>
     <class>gr.grnet.aquarium.model.Organization</class>
-    <class>gr.grnet.aquarium.model.ConsumableResource</class>
     <class>gr.grnet.aquarium.model.ServiceItem</class>
-    <class>gr.grnet.aquarium.model.ServiceItemConfig</class>
     <class>gr.grnet.aquarium.model.RuntimeData</class>
     <class>gr.grnet.aquarium.model.Bill</class>
     <class>gr.grnet.aquarium.model.Action</class>
@@ -21,6 +19,8 @@
     <class>gr.grnet.aquarium.model.ServiceTemplate</class>
     <class>gr.grnet.aquarium.model.ResourceType</class>
     <class>gr.grnet.aquarium.model.EntityType</class>
+    <class>gr.grnet.aquarium.model.Agreement</class>
+    <class>gr.grnet.aquarium.model.PriceList</class>
 
     <properties>
 
