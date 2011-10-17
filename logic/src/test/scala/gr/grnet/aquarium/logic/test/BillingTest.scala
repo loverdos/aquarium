@@ -5,9 +5,9 @@ import org.junit.Assert._
 import gr.grnet.aquarium.logic.Bills
 import gr.grnet.aquarium.model.{User, DB}
 import gr.grnet.aquarium.logic.accounting.policies.DefaultRatePolicy
-import java.util.Date
 import gr.grnet.aquarium.logic.accounting.{Agreement, AccountingEvent, AccountingEntryType, AccountingEventType}
 import gr.grnet.aquarium.logic.accounting.agreements.AgreementRegistry
+import java.util.Date
 
 class BillingTest
   extends FixtureLoader with Bills {
@@ -49,11 +49,17 @@ class BillingTest
 
     DB.persistAndFlush(u)
 
-    val evt = new AccountingEvent(AccountingEventType.VMTime,
-      new Date(4), u.id, 15, List())
-    val entry = evt.process()
-
+    // Try with a basic event
+    var evt = new AccountingEvent(AccountingEventType.VMTime,
+      new Date(4), new Date(10), u.id, 15, List())
+    var entry = evt.process()
     assertEquals(entry.amount, 15 * 0.001F, 0.00001)
+
+    // Try with another event type
+    evt = new AccountingEvent(AccountingEventType.DiskSpace,
+      new Date(4), new Date(4), u.id, 12.3F, List())
+    entry = evt.process()
+    assertEquals(entry.amount, 12.3F * 0.00002F, 0.00001)
   }
 
   @After

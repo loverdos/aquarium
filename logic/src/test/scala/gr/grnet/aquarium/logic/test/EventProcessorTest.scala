@@ -7,7 +7,7 @@ import org.junit.Assert._
 
 class EventProcessorTest {
 
-   def getEvents(from: Option[Date], to: Option[Date]): List[Event] = {
+   def getEvents(): List[Event] = {
     //Tmp list of events
     List[Event](
       new VMCreated(1, new Date(123), 2, 1),
@@ -23,7 +23,7 @@ class EventProcessorTest {
   
   @Test
   def testProcess() = {
-    var result = EventProcessor.process(None, None, getEvents)
+    val result = EventProcessor.process(getEvents)(f => true)
     assert(result.size == 6)
   }
 }
