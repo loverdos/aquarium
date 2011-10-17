@@ -1,0 +1,95 @@
+# Generic declarations
+
+# Operators that can be applied.
+operators: [plus, minus, times, div, gt, lt, if, then, else]
+
+implicitvars: # Those get filled in at runtime depending on the applicable policy 
+              # and appropriate input
+  - price  # Denotes the price for the resource in the applicable agreement
+  - volume # Denotes the 
+
+# Resources is what we charge for
+resources: [bandwidthup, bandwidthdown, vmtime, diskspace]
+
+---
+# The default, most generally applicable, agreement
+agreement:
+  name: default
+# Default charging policy, this is what gets applied if no special
+# configuration is specified
+
+# A price list has a validity period and costs per resource
+# prices are in number_credits/costunit per resource
+pricelist:
+  name: default
+    bandwidthup: 0.01
+    bandwidthdown: 0.02
+    vmtime: 0.1 
+    diskspace: 0.05
+    applicable: 
+      #The from/to params define the time frame within which the pricelist is valid
+      from: 0
+
+# A policy defines how the charging calculation is done per resource. It also
+# has a validity period 
+policy:
+  name: default
+  bandwidthup:   {price} times {volume} 
+  bandwidthdown: {price} times {volume}
+  vmtime: {price} times {volume}
+  diskspace: {price} times {volume}
+  applicable: 
+    from: 0
+
+---  
+# The following agreement overrides the default agreement and changes just the
+# price calculation mechanism for the bandwidthup variable
+agreement:
+  overrides: default
+  name: scaledbandwidth
+policy:
+  bandwidthup:  if {volume} gt 15 then 
+                  {volume} times {price} 
+                elsif {volume} gt 15 and {volume} lt 30 then
+                  {volume} times {price} times 1.2
+                else
+                  {volume} times {price} times 1.4
+                end
+---
+# The following agreement defines two different pricelists
+
+agreement:
+  overrides: default
+  name: variablepricelist
+
+pricelist:
+  name: everyTue2
+    bandwidthup: 0.01
+    bandwidthdown: 0.02
+    vmtime: 0.1 
+    diskspace: 0.05
+    applicable:
+      # every tags define repeatable patterns within the overal timeframe
+      # the format for start and end is based on Unix's cron with differences to the
+      # semantics of each field. The following means that the defined pricelist 
+      # is applicable within each timeframe starting at 2:00 every Tuesday and 
+      # ending at 2:00 every Wednesday
+      every:
+        start: "00 00 2 Tue *"
+        end:   "00 00 2 Wed *"
+      from: 0 
+  name: 
+    # apply different rates during peak bandwidth periods
+    bandwidthup: 0.04
+    bandwidthdown: 0.04
+    vmtime: 0.6
+    diskspace: 0.05
+    applicable:
+      every:
+        start: "00 00 12 * *"
+        end:   "00 00 14 * *"
+      every:
+        start: "00 00 18 * *"
+        end:   "00 00 20 * *"
+      from: 0 
+
