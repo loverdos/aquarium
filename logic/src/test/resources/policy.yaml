@@ -1,0 +1,82 @@
+# Generic declarations
+
+# Operators that can be applied.
+creditpolicy:
+  resources:
+    - bandwidthup
+    - bandwidthdown
+    - vmtime
+    - diskspace
+
+  implicitvars:
+    - price
+    - volume
+
+  policies:
+   - policy:
+      name: default
+      bandwidthup: $price times $volume
+      bandwidthdown: $price times $volume
+      vmtime: $price times $volume
+      diskspace: $price times $volume
+      applicable:
+        from: 0
+
+  pricelists:
+    - pricelist: &default
+      name: default
+      bandwidthup: 0.01
+      bandwidthdown: 0.02
+      vmtime: 0.1
+      diskspace: 0.05
+      applicable:
+        from: 0
+    - pricelist: &everyTue2
+      name: everyTue2
+      bandwidthup: 0.01
+      bandwidthdown: 0.02
+      vmtime: 0.1
+      diskspace: 0.05
+      applicable:
+        every:
+          start: "00 00 2 Tue *"
+          end:   "00 00 2 Wed *"
+        from: 0
+    - pricelist:
+      name: foobar
+      bandwidthup: 0.04
+      bandwidthdown: 0.04
+      vmtime: 0.6
+      diskspace: 0.05
+      applicable:
+        every:
+          start: "00 00 12 * *"
+          end:   "00 00 14 * *"
+        every:
+          start: "00 00 18 * *"
+          end:   "00 00 20 * *"
+        from: 0
+
+  agreements:
+    - agreement:
+      name: default
+      policy: *default
+      pricelist: *default
+
+    - agreement:
+      overrides: default
+      name: scaledbandwidth
+      policy:
+        bandwidthup: |
+                if $volume gt 15 then
+                  $volume times $price
+                elsif $volume gt 15 and volume lt 30 then
+                  $volume times $price times 1.2
+                else
+                  $volume times price times 1.4
+                end
+
+    - agreement:
+      overrides: default
+      name: variablepricelist
+
