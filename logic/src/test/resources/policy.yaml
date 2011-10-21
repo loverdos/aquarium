@@ -1,6 +1,3 @@
-# Generic declarations
-
-# Operators that can be applied.
 creditpolicy:
   resources:
     - bandwidthup
@@ -13,12 +10,20 @@ creditpolicy:
     - volume
 
   policies:
-   - policy:
+    - policy:
       name: default
       bandwidthup: $price times $volume
       bandwidthdown: $price times $volume
       vmtime: $price times $volume
       diskspace: $price times $volume
+      applicable:
+        from: 0
+    - policy:
+      name: freedisk
+      bandwidthup: $price times $volume
+      bandwidthdown: $price times $volume
+      vmtime: $price times $volume
+      diskspace: 0
       applicable:
         from: 0
 
