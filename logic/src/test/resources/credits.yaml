@@ -1,0 +1,39 @@
+# Definition of a client type (read: Company, Organization, …)
+
+# This is not necessarily the organizational structure of the client.
+# It may reflect the organizational structure but it actually is the credit structure of the particular client.
+# The credit structure defines the ways that credits can be distributed among the participants.
+#
+# The idea is to provide the policy here and map it to our low-end, generic credit transfer/grouping
+# mechanism(s).
+
+# Also, these structures are kind of static and are considered integral part of the business case each client
+# represents/is characterized by.
+
+structure_def:
+  id: gr.grnet.aquarium.credit.def.GreekUniversityCreditStructure
+  name: Greek University Structure
+  inherits:
+  units:
+    - University
+    - Department
+    - Lab
+    - Professor
+    - Student
+    - Exercise
+  grouping: # What is contained in each unit. This can be a DAG (Directed Acyclic Graph) not just a tree.
+    University:
+      - Department
+      - Lab
+    Department:
+      - Professor
+      - Lab
+      - Course
+      - Student # Is this a undergrad, a postgrad, a PhD?
+    Course:
+      - Professor
+      - Student
+      - Exercise
+    Lab:
+      - Course
+
