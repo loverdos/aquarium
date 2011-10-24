@@ -10,13 +10,13 @@ creditpolicy:
     - volume
 
   policies:
-    - policy:
+    - policy: &default
       name: default
       bandwidthup: $price times $volume
       bandwidthdown: $price times $volume
       vmtime: $price times $volume
       diskspace: $price times $volume
-      applicable:
+      effective:
         from: 0
     - policy:
       name: freedisk
@@ -24,7 +24,7 @@ creditpolicy:
       bandwidthdown: $price times $volume
       vmtime: $price times $volume
       diskspace: 0
-      applicable:
+      effective:
         from: 0
 
   pricelists:
@@ -34,7 +34,7 @@ creditpolicy:
       bandwidthdown: 0.02
       vmtime: 0.1
       diskspace: 0.05
-      applicable:
+      effective:
         from: 0
     - pricelist: &everyTue2
       name: everyTue2
@@ -42,10 +42,11 @@ creditpolicy:
       bandwidthdown: 0.02
       vmtime: 0.1
       diskspace: 0.05
-      applicable:
-        every:
-          start: "00 00 2 Tue *"
-          end:   "00 00 2 Wed *"
+      effective:
+        repeat:
+          - every:
+            start: "00 00 2 Tue *"
+            end:   "00 00 2 Wed *"
         from: 0
     - pricelist:
       name: foobar
@@ -53,13 +54,14 @@ creditpolicy:
       bandwidthdown: 0.04
       vmtime: 0.6
       diskspace: 0.05
-      applicable:
-        every:
-          start: "00 00 12 * *"
-          end:   "00 00 14 * *"
-        every:
-          start: "00 00 18 * *"
-          end:   "00 00 20 * *"
+      effective:
+        repeat:
+          - every:
+            start: "00 00 12 * *"
+            end:   "00 00 14 * *"
+          - every:
+            start: "00 00 18 * *"
+            end:   "00 00 20 * *"
         from: 0
 
   agreements:
