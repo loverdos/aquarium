@@ -90,40 +90,54 @@ object DSL {
 }
 
 case class DSLCreditPolicy (
-  var policies: List[DSLPolicy],
-  var pricelists: List[DSLPriceList],
-  var resources: List[DSLResource],
-  var agreements: List[DSLAgreement]
+  policies: List[DSLPolicy],
+  pricelists: List[DSLPriceList],
+  resources: List[DSLResource],
+  agreements: List[DSLAgreement]
 )
 
 case class DSLResource(
-  var name: String
+  name: String
 )
 
 case class DSLAgreement (
-  var name: String,
-  var overrides: String,
-  var policy : List[DSLPolicy],
-  var pricelist : List[DSLPriceList]
+  name: String,
+  overrides: Option[String],
+  policy : List[DSLPolicy],
+  pricelist : List[DSLPriceList]
 )
 
 case class DSLPolicy (
-  var name: String,
-  var overrides: String,
-  var algorithms: Map[DSLResource, String],
-  var effective: DSLTimeFrame
+  name: String,
+  overrides: String,
+  algorithms: Map[DSLResource, String],
+  effective: DSLTimeFrame
 )
 
 case class DSLPriceList (
-  var name: String,
-  var overrides: String,
-  var prices: Map[DSLResource,  Float],
-  var effective: DSLTimeFrame
+  name: String,
+  overrides: Option[String],
+  prices: Map[DSLResource,  Float],
+  effective: DSLTimeFrame
 )
 
 case class DSLTimeFrame (
-  var name: String,
-  var start: Date,
-  var end: Date,
-  var effective: List[Pair[Date,Date]]
+  from: Date,
+  end: Date,
+  effective: Option[List[DSLTimeFrameRepeat]]
 )
+
+case class DSLTimeFrameRepeat (
+  start: DSLCronSpec,
+  end: DSLCronSpec
+)
+
+case class DSLCronSpec(
+  sec: Int,
+  min: Int,
+  hour: Int,
+  dow: Int,
+  mon: Int
+)
+
+class DSLParseException(msg: String) extends Exception(msg)
