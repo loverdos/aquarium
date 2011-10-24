@@ -5,6 +5,8 @@ import java.io.InputStream
 import scala.collection.JavaConversions._
 import org.slf4j.{LoggerFactory}
 import java.util.Date
+import com.kenai.crontabparser.impl.CronTabParserBridge
+import collection.mutable.Buffer
 
 class DSL
 
@@ -43,7 +45,7 @@ object DSL {
 
     
 
-    val result = DSLPolicy("", "", Map(), DSLTimeFrame("", new Date(0), new Date(1), List()))
+    val result = DSLPolicy("", "", Map(), DSLTimeFrame(new Date(0), new Date(1), None))
     val tmpresults = results ++ List(result)
     List(result) ++ parsePolicies(policies.tail, resources, tmpresults)
   }
@@ -74,6 +76,65 @@ object DSL {
   def mergePolicy(policy: DSLPolicy, onto: DSLPolicy) : DSLPolicy = {
     DSLPolicy(onto.name, onto.overrides,
               mergeMaps(policy.algorithms, onto.algorithms), null)
+  }
+
+  def parseTimeFrame(timeframe: Map[String,_]): DSLTimeFrame = {
+    val from = timeframe.getOrElse("from", throw new DSLParseException("No from field for timeframe")).asInstanceOf[Long]
+
+    val to = timeframe.get("to") match {
+      case Some(x) => new Date(x.asInstanceOf[Long])
+      case None => new Date(Long.MaxValue)
+    }
+
+    val effective = timeframe.get("repeat") match {
+        case Some(x) => parseTimeFrameRepeat(x.asInstanceOf[Map[String,_]])
+        case None => None
+    }
+
+    DSLTimeFrame(new Date(from), to, Option(List()))
+  }
+
+  def parseTimeFrameRepeat(tmr: Map[String,_]): List[DSLTimeFrameRepeat] = {
+    List(DSLTimeFrameRepeat(DSLCronSpec(0,0,0,0,0), DSLCronSpec(0,0,0,0,0)))
+  }
+
+  def parseCronString(input: String): List[DSLCronSpec] = {
+
+    if (input.split(" ").length != 5)
+      throw new DSLParseException("Only five-field cron strings allowed: " + input)
+
+    if (input.contains(','))
+      throw new DSLParseException("Multiple values per field are not allowed: " + input)
+
+    val foo = try {
+      asScalaBuffer(CronTabParserBridge.parse(input))
+    } catch {
+      case e => throw new DSLParseException("Error parsing cron string: " + e.getMessage)
+    }
+
+    def splitMultiVals(input: String): Range = {
+      if (input.equals("*"))
+        return -1 until 0
+
+      if (input.contains('-')) {
+        val ints = input.split('-')
+        ints(0).toInt until ints(1).toInt + 1
+      } else {
+        input.toInt until input.toInt + 1
+      }
+    }
+
+    splitMultiVals(foo.get(0).toString).map(
+      a => splitMultiVals(foo.get(1).toString).map(
+        b => splitMultiVals(foo.get(2).toString).map(
+          c => splitMultiVals(foo.get(3).toString).map(
+            d => splitMultiVals(foo.get(4).toString).map(
+              e => DSLCronSpec(a, b, c, d, e)
+            )
+          ).flatten
+        ).flatten
+      ).flatten
+    ).flatten.toList
   }
 
   def mergeMaps[A, B](a: Map[A, B], b: Map[A, B]): Map[A, B] = {

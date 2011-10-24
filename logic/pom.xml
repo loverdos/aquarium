@@ -21,6 +21,14 @@
       <name>SnakeYAML repository</name>
       <url>http://oss.sonatype.org/content/groups/public/</url>
     </repository>
+
+    <repository>
+      <id>java-crontab-syntax-parser-repo</id>
+      <name>Java CronTab Syntax Parser</name>
+      <url>
+        http://kenai.com/projects/crontab-parser/sources/maven-repo/content/
+      </url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -51,6 +59,11 @@
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
       <version>1.10-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.kenai.crontab-parser</groupId>
+      <artifactId>crontab-parser</artifactId>
+      <version>1.0.1</version>
     </dependency>
   </dependencies>
 </project>

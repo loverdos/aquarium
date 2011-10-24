@@ -31,4 +31,24 @@ class DSLTest {
     assertEquals(result.algorithms.get(bup), Some("def"))
     assertEquals(result.algorithms.get(bdown), Some("foo"))
   }
+
+  @Test
+  def testCronParse = {
+    var input = "12 * * * *"
+    var output = DSL.parseCronString(input)
+    assertEquals(output, List(DSLCronSpec(12, -1, -1, -1, -1)))
+
+    input = "12 4 3 jaN-ApR *"
+    output = DSL.parseCronString(input)
+    assertEquals(output.size, 4)
+    assertEquals(output(2), DSLCronSpec(12, 4, 3, 3, -1))
+
+    input = "12 4 foo jaN-ApR *"
+    try {
+      output = DSL.parseCronString(input)
+      assert(false)
+    } catch {
+      case e: Exception => assert(true)
+    }
+  }
 }
