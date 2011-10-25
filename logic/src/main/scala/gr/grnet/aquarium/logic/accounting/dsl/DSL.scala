@@ -5,7 +5,7 @@ import java.util.Date
 import com.kenai.crontabparser.impl.CronTabParserBridge
 import java.io.{InputStreamReader, InputStream}
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.util.yaml.{YAMLListNode, YAMLHelpers}
+import gr.grnet.aquarium.util.yaml.{YAMLStringNode, YAMLMapNode, YAMLListNode, YAMLHelpers}
 
 /**
  * 
@@ -13,85 +13,113 @@ import gr.grnet.aquarium.util.yaml.{YAMLListNode, YAMLHelpers}
  */
 object DSL extends Loggable {
 
-  object Keys {
+  object Vocabulary {
     val creditpolicy = "creditpolicy"
     val resources = "resources"
     val policies = "policies"
-    val Units = "units"
-    val Grouping = "grouping"
+    val policy = "policy"
+    val name = "name"
+    val overrides = "overrides"
+    val effective = "effective"
+    val from = "from"
+    val to = "to"
+    val every = "every"
+    val repeat = "repeat"
+    val start = "start"
+    val end = "end"
   }
 
   def parse(input: InputStream) : DSLCreditPolicy = {
     logger.debug("Policy parsing started")
 
     val document = YAMLHelpers.loadYAML(new InputStreamReader(input))
-    val policy = document / (Keys.creditpolicy)
+    val policy = document / (Vocabulary.creditpolicy)
 
-    val resources = policy / Keys.resources 
+    val resources = policy / Vocabulary.resources
     logger.debug("Resources %s".format(resources))
 
-    val policies = policy / Keys.policies
+    val policies = policy / Vocabulary.policies
 
     DSLCreditPolicy(List(), List(), List(), List())
   }
 
+  /** Parse top level policy declarations */
   def parsePolicies(policies: YAMLListNode,
                     resources: List[DSLResource],
                     results: List[DSLPolicy]): List[DSLPolicy] = {
 
     val supr = policies.head.mapValue.getOrElse("extends", None)
 
-    val result = DSLPolicy("", "", Map(), DSLTimeFrame(new Date(0), new Date(1), None))
+    val result = DSLPolicy("", Option(""), Map(), DSLTimeFrame(new Date(0), new Date(1), List()))
     val tmpresults = results ++ List(result)
     List(result) ++ parsePolicies(policies.tail, resources, tmpresults)
   }
 
-  /*def getPolicy(policy: DSLPolicy, policies: List[DSLPolicy]) : DSLPolicy = {
-    policy.overrides match {
-      case x: String => getPolicy(policy, policies)
-      case None => policy
+  /** Construct a policy object from a yaml node*/
+  def constructPolicy(policy: YAMLMapNode,
+                      resources: List[DSLResource]): DSLPolicy = {
+    val name = policy / Vocabulary.name match {
+      case x: YAMLStringNode => x.string
+      case _ => throw new DSLParseException("Policy does not have a name")
     }
-  }*/
 
-  def constructPolicy(policy: Map[String, String], resources: List[DSLResource]) : DSLPolicy = {
-    val name = policy.getOrElse("name", None).asInstanceOf[String]
-    val overr = policy.getOrElse("overrides", None).asInstanceOf[String]
+    val overr = policy / Vocabulary.overrides match {
+      case x: YAMLStringNode => Some(x.string)
+      case _ => None
+    }
+
     val algos = resources.map {
       r =>
-        val algo = policy.get(r.name) match {
-          case Some(x) => x
-          case None => ""
+        val algo = policy / r.name match {
+          case x: YAMLStringNode => x.string
+          case _ => ""
         }
         Map(r -> algo)
     }
 
+    val timeframe = policy / Vocabulary.effective match {
+      case x: YAMLMapNode => parseTimeFrame(x)
+      case _ => throw new DSLParseException("No effectivity period for policy %s".format(name))
+    }
+
     DSLPolicy(name, overr,
-              mergeMaps(algos)((v1: String, v2: String) => v1), null)
+      mergeMaps(algos)((v1: String, v2: String) => v1), timeframe)
   }
 
+  /** Merge two policies, field by field */
   def mergePolicy(policy: DSLPolicy, onto: DSLPolicy) : DSLPolicy = {
     DSLPolicy(onto.name, onto.overrides,
               mergeMaps(policy.algorithms, onto.algorithms), null)
   }
 
-  def parseTimeFrame(timeframe: Map[String,_]): DSLTimeFrame = {
-    val from = timeframe.getOrElse("from", throw new DSLParseException("No from field for timeframe")).asInstanceOf[Long]
-
-    val to = timeframe.get("to") match {
-      case Some(x) => new Date(x.asInstanceOf[Long])
-      case None => new Date(Long.MaxValue)
+  /** Parse a timeframe declaration */
+  def parseTimeFrame(timeframe: YAMLMapNode): DSLTimeFrame = {
+    val from = timeframe / Vocabulary.from match {
+      case x: YAMLStringNode => x.string
+      case _ => throw new DSLParseException(
+        "No %s field for timeframe %s".format(Vocabulary.from, timeframe))
     }
 
-    val effective = timeframe.get("repeat") match {
-        case Some(x) => parseTimeFrameRepeat(x.asInstanceOf[Map[String,_]])
-        case None => None
+    val to = timeframe / Vocabulary.to match {
+      case x: YAMLStringNode => new Date(x.string.toLong)
+      case _ => new Date(Long.MaxValue)
     }
 
-    DSLTimeFrame(new Date(from), to, Option(List()))
+    val effective = timeframe / Vocabulary.repeat match {
+      case x: YAMLListNode => parseTimeFrameRepeat(x)
+      case _ => throw new DSLParseException(
+        "No %s field for timeframe %s".format(Vocabulary.every, timeframe))
+    }
+    DSLTimeFrame(new Date(from), to, effective)
   }
 
-  def parseTimeFrameRepeat(tmr: Map[String,_]): List[DSLTimeFrameRepeat] = {
-    List(DSLTimeFrameRepeat(DSLCronSpec(0,0,0,0,0), DSLCronSpec(0,0,0,0,0)))
+  /***/
+  def parseTimeFrameRepeat(tmr: YAMLListNode): List[DSLTimeFrameRepeat] = {
+
+    
+
+    List(DSLTimeFrameRepeat(List(DSLCronSpec(0,0,0,0,0)),
+      List(DSLCronSpec(0,0,0,0,0))))
   }
 
   /** 
@@ -169,7 +197,7 @@ case class DSLAgreement (
 
 case class DSLPolicy (
   name: String,
-  overrides: String,
+  overrides: Option[String],
   algorithms: Map[DSLResource, String],
   effective: DSLTimeFrame
 )
@@ -184,12 +212,12 @@ case class DSLPriceList (
 case class DSLTimeFrame (
   from: Date,
   end: Date,
-  effective: Option[List[DSLTimeFrameRepeat]]
+  every: List[DSLTimeFrameRepeat]
 )
 
 case class DSLTimeFrameRepeat (
-  start: DSLCronSpec,
-  end: DSLCronSpec
+  start: List[DSLCronSpec],
+  end: List[DSLCronSpec]
 )
 
 case class DSLCronSpec(

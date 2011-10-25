@@ -20,8 +20,8 @@ class DSLTest {
     val bup = DSLResource("bup")
     val bdown = DSLResource("bdown")
 
-    val a = DSLPolicy("1", "2", Map(vm -> "abc", bup -> "def"), null)
-    val b = DSLPolicy("2", "", Map(vm -> "xyz", bdown -> "foo"), null)
+    val a = DSLPolicy("1", Some("2"), Map(vm -> "abc", bup -> "def"), null)
+    val b = DSLPolicy("2", Some(""), Map(vm -> "xyz", bdown -> "foo"), null)
 
     val result = DSL.mergePolicy(a, b)
 

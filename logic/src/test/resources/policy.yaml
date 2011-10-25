@@ -17,8 +17,16 @@ creditpolicy:
       vmtime: $price times $volume
       diskspace: $price times $volume
       effective:
+        repeat:
+          - every:
+            start: "00 00 12 * *"
+            end:   "00 00 14 * *"
+          - every:
+            start: "00 00 18 * *"
+            end:   "00 00 20 * *"
         from: 0
-    - policy:
+        to: 124443
+    - policy: &freedisk
       name: freedisk
       bandwidthup: $price times $volume
       bandwidthdown: $price times $volume
