@@ -9,4 +9,7 @@ case class YAMLListNode(list: List[YAMLNode]) extends YAMLNode {
 
   override def listValue = list
   override def isList = true
+
+  def head = YAMLNode(list.head)
+  def tail = YAMLListNode(list.tail)
 }
