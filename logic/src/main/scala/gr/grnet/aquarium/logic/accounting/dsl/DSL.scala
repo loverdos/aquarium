@@ -1,49 +1,45 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import org.yaml.snakeyaml.Yaml
-import java.io.InputStream
 import scala.collection.JavaConversions._
-import org.slf4j.{LoggerFactory}
 import java.util.Date
 import com.kenai.crontabparser.impl.CronTabParserBridge
-import collection.mutable.Buffer
+import java.io.{InputStreamReader, InputStream}
+import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.util.yaml.{YAMLListNode, YAMLHelpers}
 
-class DSL
+/**
+ * 
+ * @author Georgios Gousios <gousiosg@gmail.com>
+ */
+object DSL extends Loggable {
 
-object DSL {
-
-  val logger = LoggerFactory.getLogger(classOf[DSL])
+  object Keys {
+    val creditpolicy = "creditpolicy"
+    val resources = "resources"
+    val policies = "policies"
+    val Units = "units"
+    val Grouping = "grouping"
+  }
 
   def parse(input: InputStream) : DSLCreditPolicy = {
-    val yaml = new Yaml()
-    val policy = yaml.load(input).asInstanceOf[java.util.Map[String,_]].get("creditpolicy")
-
     logger.debug("Policy parsing started")
 
-    val resources = asScalaBuffer(policy.asInstanceOf[java.util.Map[String,_]]
-                                        .get("resources")
-                                        .asInstanceOf[java.util.List[String]]).toList
-    logger.debug("Resources", resources.toString())
+    val document = YAMLHelpers.loadYAML(new InputStreamReader(input))
+    val policy = document / (Keys.creditpolicy)
 
-    val policies = asScalaBuffer(policy.asInstanceOf[java.util.Map[String,_]]
-                                        .get("policies")
-                                        .asInstanceOf[java.util.List[_]])
+    val resources = policy / Keys.resources 
+    logger.debug("Resources %s".format(resources))
 
-    policies.map(
-      p => mapAsScalaMap(p.asInstanceOf[java.util.Map[String,_]])
-    )
-
+    val policies = policy / Keys.policies
 
     DSLCreditPolicy(List(), List(), List(), List())
   }
 
-  def parsePolicies(policies: List[Map[String,_]],
+  def parsePolicies(policies: YAMLListNode,
                     resources: List[DSLResource],
                     results: List[DSLPolicy]): List[DSLPolicy] = {
 
-    val supr = policies.head.getOrElse("extends", None)
-
-    
+    val supr = policies.head.mapValue.getOrElse("extends", None)
 
     val result = DSLPolicy("", "", Map(), DSLTimeFrame(new Date(0), new Date(1), None))
     val tmpresults = results ++ List(result)
@@ -98,6 +94,9 @@ object DSL {
     List(DSLTimeFrameRepeat(DSLCronSpec(0,0,0,0,0), DSLCronSpec(0,0,0,0,0)))
   }
 
+  /** 
+   * Wraps the crontabparser library to parse DSL formatted cron strings.
+   */
   def parseCronString(input: String): List[DSLCronSpec] = {
 
     if (input.split(" ").length != 5)

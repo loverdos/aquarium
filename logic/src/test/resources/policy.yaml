@@ -10,7 +10,7 @@ creditpolicy:
     - volume
 
   policies:
-    - policy: &default
+    - policy: &defpolicy
       name: default
       bandwidthup: $price times $volume
       bandwidthdown: $price times $volume
@@ -28,7 +28,7 @@ creditpolicy:
         from: 0
 
   pricelists:
-    - pricelist: &default
+    - pricelist: &defpricelist
       name: default
       bandwidthup: 0.01
       bandwidthdown: 0.02
@@ -67,8 +67,8 @@ creditpolicy:
   agreements:
     - agreement:
       name: default
-      policy: *default
-      pricelist: *default
+      policy: *defpolicy
+      pricelist: *defpricelist
 
     - agreement:
       overrides: default

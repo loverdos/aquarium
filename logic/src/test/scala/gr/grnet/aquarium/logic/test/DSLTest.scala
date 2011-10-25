@@ -8,7 +8,7 @@ class DSLTest {
 
   @Test
   def testDSLLoad = {
-    var policy = DSL.parse(
+    val policy = DSL.parse(
       getClass.getClassLoader.getResourceAsStream("policy.yaml")
     )
     assertNotNull(policy)
@@ -44,8 +44,15 @@ class DSLTest {
     assertEquals(output(2), DSLCronSpec(12, 4, 3, 3, -1))
 
     input = "12 4 foo jaN-ApR *"
+    assertThrows(DSL.parseCronString(input))
+
+    input = "@midnight"
+    assertThrows(DSL.parseCronString(input))
+  }
+
+  def assertThrows(f: => Unit) = {
     try {
-      output = DSL.parseCronString(input)
+      f
       assert(false)
     } catch {
       case e: Exception => assert(true)
