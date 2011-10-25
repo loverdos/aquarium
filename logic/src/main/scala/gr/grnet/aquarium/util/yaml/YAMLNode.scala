@@ -13,6 +13,7 @@ import scala.collection.JavaConversions._
 trait YAMLNode {
   def /(childName: String): YAMLNode
 
+  def intValue: Int = 0
   def stringValue: String = null
   def listValue: List[YAMLNode] = Nil
   def mapValue: Map[String, YAMLNode] = Map()
@@ -20,6 +21,7 @@ trait YAMLNode {
   def isEmpty = false
 
   def isString = false
+  def isInt = false
   def isMap = false
   def isList = false
   def isUnknown = false
@@ -59,6 +61,8 @@ object YAMLNode {
         YAMLListNode(mappedList)
       case string: String =>
         YAMLStringNode(string)
+      case int: java.lang.Integer =>
+        YAMLIntNode(int)
       case obj =>
         YAMLUnknownNode(obj, obj.getClass.getName)
     }
