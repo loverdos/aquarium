@@ -1,17 +1,26 @@
 package gr.grnet.aquarium.logic.test
 
-import org.junit.Test
 import org.junit.Assert._
 import gr.grnet.aquarium.logic.accounting.dsl._
+import java.io.{StringReader, InputStreamReader}
+import org.junit.{Before, Test}
+import java.util.Date
 
 class DSLTest {
 
-  @Test
-  def testDSLLoad = {
-    val policy = DSL.parse(
+  var creditpolicy : DSLCreditPolicy = _
+
+  def before = {
+    creditpolicy = DSL.parse(
       getClass.getClassLoader.getResourceAsStream("policy.yaml")
     )
-    assertNotNull(policy)
+    assertNotNull(creditpolicy)
+  }
+
+  @Test
+  def testParsePolicies = {
+    before
+    assertEquals(creditpolicy.policies.size, 2)
   }
 
   @Test
@@ -20,8 +29,22 @@ class DSLTest {
     val bup = DSLResource("bup")
     val bdown = DSLResource("bdown")
 
-    val a = DSLPolicy("1", Some("2"), Map(vm -> "abc", bup -> "def"), null)
-    val b = DSLPolicy("2", Some(""), Map(vm -> "xyz", bdown -> "foo"), null)
+    val a = DSLPolicy(
+      "1", Some("2"),
+      Map(vm -> "abc", bup -> "def"),
+      DSLTimeFrame(
+        new Date(0), Option(new Date(12345)), Some(List(
+          DSLTimeFrameRepeat(
+            List(DSLCronSpec(12, 34, 2, -1, -1)),
+            List(DSLCronSpec(12, 34, 4, -1, -1))
+          ))
+        )
+      )
+    )
+    val b = DSLPolicy("2", Some(""),
+      Map(vm -> "xyz", bdown -> "foo"),
+      DSLTimeFrame(new Date(0), Option(new Date(45678)), Option(List()))
+    )
 
     val result = DSL.mergePolicy(a, b)
 
@@ -30,6 +53,30 @@ class DSLTest {
     assertEquals(result.algorithms.get(vm), Some("abc"))
     assertEquals(result.algorithms.get(bup), Some("def"))
     assertEquals(result.algorithms.get(bdown), Some("foo"))
+    assertEquals(1, result.effective.repeat.size)
+  }
+
+  @Test
+  def testMergeTimeframes = {
+    val a = DSLTimeFrame(
+        new Date(0), Option(new Date(12345)), Some(List(
+          DSLTimeFrameRepeat(
+            List(DSLCronSpec(12, 34, 2, -1, -1)),
+            List(DSLCronSpec(12, 34, 4, -1, -1))
+          ))
+        )
+      )
+    val b = DSLTimeFrame(new Date(0), Option(new Date(45678)), Some(List()))
+
+    var result = DSL.mergeTimeFrames(a, b)
+    assertEquals(a.from, result.from)
+    assertEquals(a.to, result.to)
+    assertEquals(1, result.repeat.get.size)
+
+    result = DSL.mergeTimeFrames(b, a)
+    assertEquals(b.from, result.from)
+    assertEquals(b.to, result.to)
+    assertEquals(1, result.repeat.get.size)
   }
 
   @Test
