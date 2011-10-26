@@ -5,7 +5,7 @@ import java.util.Date
 import com.kenai.crontabparser.impl.CronTabParserBridge
 import java.io.{InputStreamReader, InputStream}
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.util.yaml.{YAMLStringNode, YAMLMapNode, YAMLListNode, YAMLHelpers}
+import gr.grnet.aquarium.util.yaml._
 
 /**
  * 
@@ -23,7 +23,6 @@ object DSL extends Loggable {
     val effective = "effective"
     val from = "from"
     val to = "to"
-    val every = "every"
     val repeat = "repeat"
     val start = "start"
     val end = "end"
@@ -35,12 +34,28 @@ object DSL extends Loggable {
     val document = YAMLHelpers.loadYAML(new InputStreamReader(input))
     val policy = document / (Vocabulary.creditpolicy)
 
-    val resources = policy / Vocabulary.resources
-    logger.debug("Resources %s".format(resources))
+    val resources = parseResources (policy./(Vocabulary.resources).asInstanceOf[YAMLListNode])
+    logger.debug("Resources: %s".format(resources))
 
-    val policies = policy / Vocabulary.policies
+    val policies = parsePolicies(
+      policy./(Vocabulary.policies).asInstanceOf[YAMLListNode],
+      resources, List())
+
+    logger.debug("Policies: %s".format(policies))
 
     DSLCreditPolicy(List(), List(), List(), List())
+  }
+
+  /** Parse top level resources declarations */
+  def parseResources(resources: YAMLListNode): List[DSLResource] = {
+    if (resources.isEmpty)
+      return List()
+    resources.head match {
+      case x: YAMLStringNode =>
+        List(DSLResource(x.string)) ++ parseResources(resources.tail)
+      case _ =>
+        throw new DSLParseException("Resource not string:%s".format(resources.head))
+    }
   }
 
   /** Parse top level policy declarations */
@@ -48,9 +63,9 @@ object DSL extends Loggable {
                     resources: List[DSLResource],
                     results: List[DSLPolicy]): List[DSLPolicy] = {
 
-    val supr = policies.head.mapValue.getOrElse("extends", None)
+    val supr = policies.head / Vocabulary.overrides
 
-    val result = DSLPolicy("", Option(""), Map(), DSLTimeFrame(new Date(0), new Date(1), List()))
+    val result = constructPolicy(policies.head.asInstanceOf[YAMLMapNode], resources)
     val tmpresults = results ++ List(result)
     List(result) ++ parsePolicies(policies.tail, resources, tmpresults)
   }
@@ -95,31 +110,43 @@ object DSL extends Loggable {
   /** Parse a timeframe declaration */
   def parseTimeFrame(timeframe: YAMLMapNode): DSLTimeFrame = {
     val from = timeframe / Vocabulary.from match {
-      case x: YAMLStringNode => x.string
+      case x: YAMLIntNode => new Date(x.int)
       case _ => throw new DSLParseException(
         "No %s field for timeframe %s".format(Vocabulary.from, timeframe))
     }
 
     val to = timeframe / Vocabulary.to match {
-      case x: YAMLStringNode => new Date(x.string.toLong)
+      case x: YAMLIntNode => new Date(x.int)
       case _ => new Date(Long.MaxValue)
     }
 
     val effective = timeframe / Vocabulary.repeat match {
-      case x: YAMLListNode => parseTimeFrameRepeat(x)
-      case _ => throw new DSLParseException(
-        "No %s field for timeframe %s".format(Vocabulary.every, timeframe))
+      case x: YAMLListNode => Some(parseTimeFrameRepeat(x))
+      case _ => None
     }
-    DSLTimeFrame(new Date(from), to, effective)
+
+    DSLTimeFrame(from, to, effective)
   }
 
-  /***/
+  /** Parse a time frame repeat block */
   def parseTimeFrameRepeat(tmr: YAMLListNode): List[DSLTimeFrameRepeat] = {
 
-    
+    if (tmr.isEmpty)
+      return List()
 
-    List(DSLTimeFrameRepeat(List(DSLCronSpec(0,0,0,0,0)),
-      List(DSLCronSpec(0,0,0,0,0))))
+    List(DSLTimeFrameRepeat(
+      findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.start),
+      findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.end)
+    )) ++ parseTimeFrameRepeat(tmr.tail)
+  }
+
+  /** Parse a time frame entry (start, end tags) */
+  def findInMap(repeat: YAMLMapNode, tag: String) : List[DSLCronSpec] = {
+    repeat / tag match {
+      case x: YAMLStringNode => parseCronString(x.string)
+      case _ => throw new DSLParseException(
+        "No %s field for repeat entry %s".format(tag, repeat))
+    }
   }
 
   /** 
@@ -128,15 +155,18 @@ object DSL extends Loggable {
   def parseCronString(input: String): List[DSLCronSpec] = {
 
     if (input.split(" ").length != 5)
-      throw new DSLParseException("Only five-field cron strings allowed: " + input)
+      throw new DSLParseException(
+        "Only five-field cron strings allowed: " + input)
 
     if (input.contains(','))
-      throw new DSLParseException("Multiple values per field are not allowed: " + input)
+      throw new DSLParseException(
+        "Multiple values per field are not allowed: " + input)
 
     val foo = try {
       asScalaBuffer(CronTabParserBridge.parse(input))
     } catch {
-      case e => throw new DSLParseException("Error parsing cron string: " + e.getMessage)
+      case e => throw new DSLParseException(
+        "Error parsing cron string: " + e.getMessage)
     }
 
     def splitMultiVals(input: String): Range = {
@@ -212,7 +242,7 @@ case class DSLPriceList (
 case class DSLTimeFrame (
   from: Date,
   end: Date,
-  every: List[DSLTimeFrameRepeat]
+  every: Option[List[DSLTimeFrameRepeat]]
 )
 
 case class DSLTimeFrameRepeat (
