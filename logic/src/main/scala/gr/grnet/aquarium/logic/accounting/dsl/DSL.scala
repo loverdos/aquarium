@@ -1,14 +1,15 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import scala.collection.JavaConversions._
-import java.util.Date
 import com.kenai.crontabparser.impl.CronTabParserBridge
 import java.io.{InputStreamReader, InputStream}
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.yaml._
+import java.util.Date
 
 /**
- * 
+ * A parser and semantic analyser for credit DSL files
+ *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 object DSL extends Loggable {
@@ -43,7 +44,7 @@ object DSL extends Loggable {
 
     logger.debug("Policies: %s".format(policies))
 
-    DSLCreditPolicy(List(), List(), List(), List())
+    DSLCreditPolicy(policies, List(), resources, List())
   }
 
   /** Parse top level resources declarations */
@@ -63,11 +64,16 @@ object DSL extends Loggable {
                     resources: List[DSLResource],
                     results: List[DSLPolicy]): List[DSLPolicy] = {
 
+    policies.head match {
+      case YAMLEmptyNode => return List()
+      case _ =>
+    }
+
+    val policy = constructPolicy(policies.head.asInstanceOf[YAMLMapNode], resources)
     val supr = policies.head / Vocabulary.overrides
 
-    val result = constructPolicy(policies.head.asInstanceOf[YAMLMapNode], resources)
-    val tmpresults = results ++ List(result)
-    List(result) ++ parsePolicies(policies.tail, resources, tmpresults)
+    val tmpresults = results ++ List(policy)
+    List(policy) ++ parsePolicies(policies.tail, resources, tmpresults)
   }
 
   /** Construct a policy object from a yaml node*/
@@ -99,12 +105,6 @@ object DSL extends Loggable {
 
     DSLPolicy(name, overr,
       mergeMaps(algos)((v1: String, v2: String) => v1), timeframe)
-  }
-
-  /** Merge two policies, field by field */
-  def mergePolicy(policy: DSLPolicy, onto: DSLPolicy) : DSLPolicy = {
-    DSLPolicy(onto.name, onto.overrides,
-              mergeMaps(policy.algorithms, onto.algorithms), null)
   }
 
   /** Parse a timeframe declaration */
@@ -194,10 +194,30 @@ object DSL extends Loggable {
     ).flatten.toList
   }
 
+  /** Merge two policies, field by field */
+  def mergePolicy(policy: DSLPolicy, onto: DSLPolicy): DSLPolicy = {
+    DSLPolicy(onto.name, onto.overrides,
+      mergeMaps(policy.algorithms, onto.algorithms),
+      mergeTimeFrames(policy.effective, onto.effective))
+  }
+
+  /** Merge two timeframes */
+  def mergeTimeFrames(timeframe: DSLTimeFrame,
+                      onto: DSLTimeFrame) : DSLTimeFrame = {
+    DSLTimeFrame(new Date(), new Date(), Some(List()))
+  }
+
+  /** Merge input maps on a field by field basis. In case of duplicate keys
+   *  values from the first map are prefered.
+   */
   def mergeMaps[A, B](a: Map[A, B], b: Map[A, B]): Map[A, B] = {
     a ++ b.map{ case (k,v) => k -> (a.getOrElse(k,v)) }
   }
 
+  /** Merge input maps on a field by field basis. In case of duplicate keys,
+   *  the provided function is used to determine which value to keep in the
+   *  merged map.
+   */
   def mergeMaps[A, B](ms: List[Map[A, B]])(f: (B, B) => B): Map[A, B] =
     (Map[A, B]() /: (for (m <- ms; kv <- m) yield kv)) {
       (a, kv) =>
