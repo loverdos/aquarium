@@ -110,11 +110,13 @@ object DSL extends Loggable {
       r =>
         val algo = policy / r.name match {
           case x: YAMLStringNode => x.string
-          case _ => policyTmpl.algorithms.get(r.name) match {
-            case Some(y) => y
-            case None => throw new DSLParseException(("Cannot find " +
-              "calculation algorithm for resource %s in either policy %s or " +
-              "superpolicy %s").format(r.name, name, policyTmpl.name))
+          case _ => policyTmpl.equals(emptyPolicy) match {
+            case false => policyTmpl.algorithms.getOrElse(r,
+              throw new DSLParseException(("Severe! Superpolicy does not " +
+                "specify an algorithm for resource:%s").format(r.name)))
+            case true => throw new DSLParseException(("Cannot find " +
+              "calculation algorithm for resource %s in either policy %s or a" +
+              " superpolicy").format(r.name, name))
           }
         }
         Map(r -> algo)
@@ -122,8 +124,11 @@ object DSL extends Loggable {
 
     val timeframe = policy / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
-      case _ => throw new DSLParseException(("No effectivity period for " +
-        "policy %s").format(name))
+      case _ => policyTmpl.equals(emptyPolicy) match {
+        case false => policyTmpl.effective
+        case true => throw new DSLParseException(("Cannot find effectivity " +
+          "period for policy %s ").format(name))
+      }
     }
 
     DSLPolicy(name, overr,
