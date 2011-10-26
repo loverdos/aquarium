@@ -14,7 +14,7 @@ import java.util.Date
  */
 object DSL extends Loggable {
 
-  object Vocabulary {
+  private object Vocabulary {
     val creditpolicy = "creditpolicy"
     val resources = "resources"
     val policies = "policies"
@@ -28,6 +28,9 @@ object DSL extends Loggable {
     val start = "start"
     val end = "end"
   }
+
+  private val emptyPolicy = DSLPolicy("", None, Map(),
+    DSLTimeFrame(new Date(0), None, Option(List())))
 
   def parse(input: InputStream) : DSLCreditPolicy = {
     logger.debug("Policy parsing started")
@@ -69,15 +72,29 @@ object DSL extends Loggable {
       case _ =>
     }
 
-    val policy = constructPolicy(policies.head.asInstanceOf[YAMLMapNode], resources)
-    val supr = policies.head / Vocabulary.overrides
+    val superName = policies.head / Vocabulary.overrides
+    val policyTmpl = superName match {
+      case y: YAMLStringNode =>
+        results.find(p => p.name.equals(y.string)) match {
+          case Some(x) => x
+          case None => throw new DSLParseException(
+            "Cannot find super policy %s".format(superName))
+        }
+      case YAMLEmptyNode => emptyPolicy
+      case _ => throw new DSLParseException(
+        "Super policy name %s not a string".format())
+    }
+
+    val policy = constructPolicy(policies.head.asInstanceOf[YAMLMapNode],
+      policyTmpl, resources)
 
     val tmpresults = results ++ List(policy)
     List(policy) ++ parsePolicies(policies.tail, resources, tmpresults)
   }
 
   /** Construct a policy object from a yaml node*/
-  def constructPolicy(policy: YAMLMapNode,
+  private def constructPolicy(policy: YAMLMapNode,
+                      policyTmpl: DSLPolicy,
                       resources: List[DSLResource]): DSLPolicy = {
     val name = policy / Vocabulary.name match {
       case x: YAMLStringNode => x.string
@@ -93,14 +110,20 @@ object DSL extends Loggable {
       r =>
         val algo = policy / r.name match {
           case x: YAMLStringNode => x.string
-          case _ => ""
+          case _ => policyTmpl.algorithms.get(r.name) match {
+            case Some(y) => y
+            case None => throw new DSLParseException(("Cannot find " +
+              "calculation algorithm for resource %s in either policy %s or " +
+              "superpolicy %s").format(r.name, name, policyTmpl.name))
+          }
         }
         Map(r -> algo)
     }
 
     val timeframe = policy / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
-      case _ => throw new DSLParseException("No effectivity period for policy %s".format(name))
+      case _ => throw new DSLParseException(("No effectivity period for " +
+        "policy %s").format(name))
     }
 
     DSLPolicy(name, overr,
@@ -141,7 +164,7 @@ object DSL extends Loggable {
   }
 
   /** Parse a time frame entry (start, end tags) */
-  def findInMap(repeat: YAMLMapNode, tag: String) : List[DSLCronSpec] = {
+  private def findInMap(repeat: YAMLMapNode, tag: String) : List[DSLCronSpec] = {
     repeat / tag match {
       case x: YAMLStringNode => parseCronString(x.string)
       case _ => throw new DSLParseException(
@@ -222,7 +245,7 @@ object DSL extends Loggable {
   /** Merge input maps on a field by field basis. In case of duplicate keys
    *  values from the first map are prefered.
    */
-  def mergeMaps[A, B](a: Map[A, B], b: Map[A, B]): Map[A, B] = {
+  private def mergeMaps[A, B](a: Map[A, B], b: Map[A, B]): Map[A, B] = {
     a ++ b.map{ case (k,v) => k -> (a.getOrElse(k,v)) }
   }
 
@@ -230,7 +253,7 @@ object DSL extends Loggable {
    *  the provided function is used to determine which value to keep in the
    *  merged map.
    */
-  def mergeMaps[A, B](ms: List[Map[A, B]])(f: (B, B) => B): Map[A, B] =
+  private def mergeMaps[A, B](ms: List[Map[A, B]])(f: (B, B) => B): Map[A, B] =
     (Map[A, B]() /: (for (m <- ms; kv <- m) yield kv)) {
       (a, kv) =>
         a + (if (a.contains(kv._1))
