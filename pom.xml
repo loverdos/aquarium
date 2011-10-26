@@ -37,7 +37,7 @@
 
   <issueManagement>
     <system>redmine</system>
-    <url>http://code.grnet.gr/projects/aquarium/issuses</url>
+    <url>http://code.grnet.gr/projects/aquarium/issues</url>
   </issueManagement>
 
   <!--Common project settings-->
