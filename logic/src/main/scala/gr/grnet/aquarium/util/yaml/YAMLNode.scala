@@ -61,6 +61,7 @@ object YAMLNode {
         YAMLListNode(mappedList)
       case string: String =>
         YAMLStringNode(string)
+      case x: YAMLNode => x
       case int: java.lang.Integer =>
         YAMLIntNode(int)
       case obj =>
