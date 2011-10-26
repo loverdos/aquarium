@@ -13,7 +13,7 @@
 structure:
   id: "gr.grnet.aquarium.credit.struct.GreekUniversityCreditStructure"
   name: Greek University Structure
-  inherits:
+  inherits: # TODO: Should we inherit an empty structure ?
   credit-holders:
     - University:
       name: University # if omitted, taken as the credit-holders key (University in this case)
@@ -22,10 +22,10 @@ structure:
       members:
         - Department:      # Use the id here and not the name
           credit-distribution:  # List of credit distribution types
-            - AliasFixed # only specific amounts are given to Departments
+            - AliasFixed # only specific amounts are given from Universities to Departments
         - Lab:
           credit-distribution:
-            - AliasFixed # only specific amounts are given to Labs
+            - AliasFixed # only specific amounts are given from Universities to Labs
     - Department:
       members:
         - Professor:
@@ -34,25 +34,26 @@ structure:
         - Lab:
           credit-distribution:
             - AliasAny # A Department has the ability to distribute credits to its Labs in the most flexible way
-        - Course
+        - Course:
           credit-distribution:
             - AliasAny # A Department has the ability to distribute credits to its Courses in the most flexible way
-        - Student # Is this a undergrad, a postgrad, a PhD?
+        - Student: # Is this a undergrad, a postgrad, a PhD?
           credit-distribution:
-            - AliasFixed
+            - AliasFixed # only fixed amounts of credits are distributed to Students
 
     - Lab:
-      name: Lab
-      contains:
-        - Course
-    - Professor:
-      name: Lab
-      contains: []
-    - Student:
-      name: Student
-      contains: []
-    - Exercise:
-      name: Exercise
-      contains: []
+      members:
+        - Course:
+          credit-distribution:
+            - AliasFixed # Lab members get only fixed amounts
+    - Course:
+      members:
+        - Professor # If no credit distribution is defined, then AliasAny is assumed
+        - Exercise
+        - Student
+    - Professor
+    - Student
+    - Exercise
+
   distribution: # describes the policy for the distribution of credits
 
