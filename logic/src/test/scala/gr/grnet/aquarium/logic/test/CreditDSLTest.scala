@@ -9,7 +9,7 @@ class CreditDSLTest {
 
   @Test
   def testDSLLoad = {
-    val structure = CreditsDSL.parseStream(getClass.getClassLoader.getResourceAsStream("credits.yaml"))
+    val structure = CreditsDSL.parseStream(getClass.getClassLoader.getResourceAsStream("credit-structure-greek-uni.yaml"))
     assertNotNull(structure)
   }
 }

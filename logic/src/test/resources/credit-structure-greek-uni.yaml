@@ -1,0 +1,58 @@
+# Definition of a client type (read: Company, Organization, …)
+
+# This is not necessarily the organizational structure of the client.
+# It may reflect the organizational structure but it actually is the credit structure of the particular client.
+# The credit structure defines the ways that credits can be distributed among the participants.
+#
+# The idea is to provide the policy here and map it to our low-end, generic credit transfer/grouping
+# mechanism(s).
+
+# Also, these structures are kind of static and are considered integral part of the business case each client
+# represents/is characterized by.
+
+structure:
+  id: "gr.grnet.aquarium.credit.struct.GreekUniversityCreditStructure"
+  name: Greek University Structure
+  inherits:
+  credit-holders:
+    - University:
+      name: University # if omitted, taken as the credit-holders key (University in this case)
+      id: University   # if omitted, taken as the name (University in this case)
+      type: Composite  # if omitted, inferred by the presence of members
+      members:
+        - Department:      # Use the id here and not the name
+          credit-distribution:  # List of credit distribution types
+            - AliasFixed # only specific amounts are given to Departments
+        - Lab:
+          credit-distribution:
+            - AliasFixed # only specific amounts are given to Labs
+    - Department:
+      members:
+        - Professor:
+          credit-distribution:
+            - AliasAny # A Department has the ability to distribute credits to its Professors in the most flexible way
+        - Lab:
+          credit-distribution:
+            - AliasAny # A Department has the ability to distribute credits to its Labs in the most flexible way
+        - Course
+          credit-distribution:
+            - AliasAny # A Department has the ability to distribute credits to its Courses in the most flexible way
+        - Student # Is this a undergrad, a postgrad, a PhD?
+          credit-distribution:
+            - AliasFixed
+
+    - Lab:
+      name: Lab
+      contains:
+        - Course
+    - Professor:
+      name: Lab
+      contains: []
+    - Student:
+      name: Student
+      contains: []
+    - Exercise:
+      name: Exercise
+      contains: []
+  distribution: # describes the policy for the distribution of credits
+
