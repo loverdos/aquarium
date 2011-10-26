@@ -50,7 +50,7 @@ class BillingTest
     DB.persistAndFlush(u)
 
     // Try with a basic event
-    var evt = new AccountingEvent(AccountingEventType.VMTime,
+    /*var evt = new AccountingEvent(AccountingEventType.VMTime,
       new Date(4), new Date(10), u.id, 15, List())
     var entry = evt.process()
     assertEquals(entry.amount, 15 * 0.001F, 0.00001)
@@ -59,7 +59,7 @@ class BillingTest
     evt = new AccountingEvent(AccountingEventType.DiskSpace,
       new Date(4), new Date(4), u.id, 12.3F, List())
     entry = evt.process()
-    assertEquals(entry.amount, 12.3F * 0.00002F, 0.00001)
+    assertEquals(entry.amount, 12.3F * 0.00002F, 0.00001)*/
   }
 
   @After
