@@ -26,12 +26,8 @@ creditpolicy:
         to: 124443
     - policy: &freedisk
       name: freedisk
-      bandwidthup: $price times $volume
-      bandwidthdown: $price times $volume
-      vmtime: $price times $volume
+      overrides: default
       diskspace: 0
-      effective:
-        from: 0
 
   pricelists:
     - pricelist: &defpricelist
