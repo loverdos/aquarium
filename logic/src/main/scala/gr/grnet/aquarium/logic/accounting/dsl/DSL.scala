@@ -1,14 +1,15 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import scala.collection.JavaConversions._
-import java.util.Date
 import com.kenai.crontabparser.impl.CronTabParserBridge
 import java.io.{InputStreamReader, InputStream}
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.util.yaml.{YAMLStringNode, YAMLMapNode, YAMLListNode, YAMLHelpers}
+import gr.grnet.aquarium.util.yaml._
+import java.util.Date
 
 /**
- * 
+ * A parser and semantic analyser for credit DSL files
+ *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 object DSL extends Loggable {
@@ -23,7 +24,6 @@ object DSL extends Loggable {
     val effective = "effective"
     val from = "from"
     val to = "to"
-    val every = "every"
     val repeat = "repeat"
     val start = "start"
     val end = "end"
@@ -35,12 +35,28 @@ object DSL extends Loggable {
     val document = YAMLHelpers.loadYAML(new InputStreamReader(input))
     val policy = document / (Vocabulary.creditpolicy)
 
-    val resources = policy / Vocabulary.resources
-    logger.debug("Resources %s".format(resources))
+    val resources = parseResources (policy./(Vocabulary.resources).asInstanceOf[YAMLListNode])
+    logger.debug("Resources: %s".format(resources))
 
-    val policies = policy / Vocabulary.policies
+    val policies = parsePolicies(
+      policy./(Vocabulary.policies).asInstanceOf[YAMLListNode],
+      resources, List())
 
-    DSLCreditPolicy(List(), List(), List(), List())
+    logger.debug("Policies: %s".format(policies))
+
+    DSLCreditPolicy(policies, List(), resources, List())
+  }
+
+  /** Parse top level resources declarations */
+  def parseResources(resources: YAMLListNode): List[DSLResource] = {
+    if (resources.isEmpty)
+      return List()
+    resources.head match {
+      case x: YAMLStringNode =>
+        List(DSLResource(x.string)) ++ parseResources(resources.tail)
+      case _ =>
+        throw new DSLParseException("Resource not string:%s".format(resources.head))
+    }
   }
 
   /** Parse top level policy declarations */
@@ -48,11 +64,16 @@ object DSL extends Loggable {
                     resources: List[DSLResource],
                     results: List[DSLPolicy]): List[DSLPolicy] = {
 
-    val supr = policies.head.mapValue.getOrElse("extends", None)
+    policies.head match {
+      case YAMLEmptyNode => return List()
+      case _ =>
+    }
 
-    val result = DSLPolicy("", Option(""), Map(), DSLTimeFrame(new Date(0), new Date(1), List()))
-    val tmpresults = results ++ List(result)
-    List(result) ++ parsePolicies(policies.tail, resources, tmpresults)
+    val policy = constructPolicy(policies.head.asInstanceOf[YAMLMapNode], resources)
+    val supr = policies.head / Vocabulary.overrides
+
+    val tmpresults = results ++ List(policy)
+    List(policy) ++ parsePolicies(policies.tail, resources, tmpresults)
   }
 
   /** Construct a policy object from a yaml node*/
@@ -86,40 +107,46 @@ object DSL extends Loggable {
       mergeMaps(algos)((v1: String, v2: String) => v1), timeframe)
   }
 
-  /** Merge two policies, field by field */
-  def mergePolicy(policy: DSLPolicy, onto: DSLPolicy) : DSLPolicy = {
-    DSLPolicy(onto.name, onto.overrides,
-              mergeMaps(policy.algorithms, onto.algorithms), null)
-  }
-
   /** Parse a timeframe declaration */
   def parseTimeFrame(timeframe: YAMLMapNode): DSLTimeFrame = {
     val from = timeframe / Vocabulary.from match {
-      case x: YAMLStringNode => x.string
+      case x: YAMLIntNode => new Date(x.int)
       case _ => throw new DSLParseException(
         "No %s field for timeframe %s".format(Vocabulary.from, timeframe))
     }
 
     val to = timeframe / Vocabulary.to match {
-      case x: YAMLStringNode => new Date(x.string.toLong)
+      case x: YAMLIntNode => new Date(x.int)
       case _ => new Date(Long.MaxValue)
     }
 
     val effective = timeframe / Vocabulary.repeat match {
-      case x: YAMLListNode => parseTimeFrameRepeat(x)
-      case _ => throw new DSLParseException(
-        "No %s field for timeframe %s".format(Vocabulary.every, timeframe))
+      case x: YAMLListNode => Some(parseTimeFrameRepeat(x))
+      case _ => None
     }
-    DSLTimeFrame(new Date(from), to, effective)
+
+    DSLTimeFrame(from, to, effective)
   }
 
-  /***/
+  /** Parse a time frame repeat block */
   def parseTimeFrameRepeat(tmr: YAMLListNode): List[DSLTimeFrameRepeat] = {
 
-    
+    if (tmr.isEmpty)
+      return List()
 
-    List(DSLTimeFrameRepeat(List(DSLCronSpec(0,0,0,0,0)),
-      List(DSLCronSpec(0,0,0,0,0))))
+    List(DSLTimeFrameRepeat(
+      findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.start),
+      findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.end)
+    )) ++ parseTimeFrameRepeat(tmr.tail)
+  }
+
+  /** Parse a time frame entry (start, end tags) */
+  def findInMap(repeat: YAMLMapNode, tag: String) : List[DSLCronSpec] = {
+    repeat / tag match {
+      case x: YAMLStringNode => parseCronString(x.string)
+      case _ => throw new DSLParseException(
+        "No %s field for repeat entry %s".format(tag, repeat))
+    }
   }
 
   /** 
@@ -128,15 +155,18 @@ object DSL extends Loggable {
   def parseCronString(input: String): List[DSLCronSpec] = {
 
     if (input.split(" ").length != 5)
-      throw new DSLParseException("Only five-field cron strings allowed: " + input)
+      throw new DSLParseException(
+        "Only five-field cron strings allowed: " + input)
 
     if (input.contains(','))
-      throw new DSLParseException("Multiple values per field are not allowed: " + input)
+      throw new DSLParseException(
+        "Multiple values per field are not allowed: " + input)
 
     val foo = try {
       asScalaBuffer(CronTabParserBridge.parse(input))
     } catch {
-      case e => throw new DSLParseException("Error parsing cron string: " + e.getMessage)
+      case e => throw new DSLParseException(
+        "Error parsing cron string: " + e.getMessage)
     }
 
     def splitMultiVals(input: String): Range = {
@@ -164,10 +194,30 @@ object DSL extends Loggable {
     ).flatten.toList
   }
 
+  /** Merge two policies, field by field */
+  def mergePolicy(policy: DSLPolicy, onto: DSLPolicy): DSLPolicy = {
+    DSLPolicy(onto.name, onto.overrides,
+      mergeMaps(policy.algorithms, onto.algorithms),
+      mergeTimeFrames(policy.effective, onto.effective))
+  }
+
+  /** Merge two timeframes */
+  def mergeTimeFrames(timeframe: DSLTimeFrame,
+                      onto: DSLTimeFrame) : DSLTimeFrame = {
+    DSLTimeFrame(new Date(), new Date(), Some(List()))
+  }
+
+  /** Merge input maps on a field by field basis. In case of duplicate keys
+   *  values from the first map are prefered.
+   */
   def mergeMaps[A, B](a: Map[A, B], b: Map[A, B]): Map[A, B] = {
     a ++ b.map{ case (k,v) => k -> (a.getOrElse(k,v)) }
   }
 
+  /** Merge input maps on a field by field basis. In case of duplicate keys,
+   *  the provided function is used to determine which value to keep in the
+   *  merged map.
+   */
   def mergeMaps[A, B](ms: List[Map[A, B]])(f: (B, B) => B): Map[A, B] =
     (Map[A, B]() /: (for (m <- ms; kv <- m) yield kv)) {
       (a, kv) =>
@@ -212,7 +262,7 @@ case class DSLPriceList (
 case class DSLTimeFrame (
   from: Date,
   end: Date,
-  every: List[DSLTimeFrameRepeat]
+  every: Option[List[DSLTimeFrameRepeat]]
 )
 
 case class DSLTimeFrameRepeat (

@@ -18,22 +18,16 @@ creditpolicy:
       diskspace: $price times $volume
       effective:
         repeat:
-          - every:
-            start: "00 00 12 * *"
+          - start: "00 00 12 * *"
             end:   "00 00 14 * *"
-          - every:
-            start: "00 00 18 * *"
+          - start: "00 00 18 * *"
             end:   "00 00 20 * *"
         from: 0
         to: 124443
     - policy: &freedisk
       name: freedisk
-      bandwidthup: $price times $volume
-      bandwidthdown: $price times $volume
-      vmtime: $price times $volume
+      overrides: default
       diskspace: 0
-      effective:
-        from: 0
 
   pricelists:
     - pricelist: &defpricelist
@@ -52,8 +46,7 @@ creditpolicy:
       diskspace: 0.05
       effective:
         repeat:
-          - every:
-            start: "00 00 2 Tue *"
+          - start: "00 00 2 Tue *"
             end:   "00 00 2 Wed *"
         from: 0
     - pricelist:
@@ -64,11 +57,9 @@ creditpolicy:
       diskspace: 0.05
       effective:
         repeat:
-          - every:
-            start: "00 00 12 * *"
+          - start: "00 00 12 * *"
             end:   "00 00 14 * *"
-          - every:
-            start: "00 00 18 * *"
+          - start: "00 00 18 * *"
             end:   "00 00 20 * *"
         from: 0
 
