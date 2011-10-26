@@ -10,7 +10,10 @@ case class YAMLListNode(list: List[YAMLNode]) extends YAMLNode {
   override def listValue = list
   override def isList = true
 
-  def head = YAMLNode(list.head)
+  def head = list match {
+    case Nil    => YAMLEmptyNode
+    case h :: _ => h
+  }
   def tail = YAMLListNode(list.tail)
 
   override def isEmpty = list.isEmpty
