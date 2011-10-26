@@ -116,8 +116,8 @@ object DSL extends Loggable {
     }
 
     val to = timeframe / Vocabulary.to match {
-      case x: YAMLIntNode => new Date(x.int)
-      case _ => new Date(Long.MaxValue)
+      case x: YAMLIntNode => Some(new Date(x.int))
+      case _ => None
     }
 
     val effective = timeframe / Vocabulary.repeat match {
@@ -204,7 +204,19 @@ object DSL extends Loggable {
   /** Merge two timeframes */
   def mergeTimeFrames(timeframe: DSLTimeFrame,
                       onto: DSLTimeFrame) : DSLTimeFrame = {
-    DSLTimeFrame(new Date(), new Date(), Some(List()))
+
+    val to = timeframe.to match {
+      case Some(x) => timeframe.to
+      case None => onto.to
+    }
+
+    val eff = timeframe.repeat match {
+      case None => onto.repeat
+      case Some(x) if x == Nil => onto.repeat
+      case _ => timeframe.repeat
+    }
+
+    DSLTimeFrame(timeframe.from, to, eff)
   }
 
   /** Merge input maps on a field by field basis. In case of duplicate keys
@@ -261,8 +273,8 @@ case class DSLPriceList (
 
 case class DSLTimeFrame (
   from: Date,
-  end: Date,
-  every: Option[List[DSLTimeFrameRepeat]]
+  to: Option[Date],
+  repeat: Option[List[DSLTimeFrameRepeat]]
 )
 
 case class DSLTimeFrameRepeat (
