@@ -12,7 +12,7 @@ import java.io.{StringReader, InputStreamReader, Reader, InputStream}
  */
 object CreditsDSL extends Loggable {
   object Keys {
-    val StructureDef = "structure_def"
+    val StructureDef = "structure"
     val Id = "id"
     val Name = "name"
     val Units = "units"

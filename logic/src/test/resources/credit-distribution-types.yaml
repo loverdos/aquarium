@@ -1,0 +1,21 @@
+credit-distribution:
+  - types:
+    - FixedAny
+    - FixedEqual
+    - OnDemandUnlimited
+    - OnDemandMax
+    - Unknown
+  - aliases: # aliases define named sets of credit distribution types
+    - AliasAny:
+      - FixedAny
+      - FixedEqual
+      - OnDemandUnlimited
+      - OnDemandMax
+    - AliasFixed:
+      - FixedAny
+      - FixedEqual
+      - OnDemandUnlimited
+      - OnDemandMax
+    - AliasOnDemand:
+      - OnDemandUnlimited
+      - OnDemandMax
