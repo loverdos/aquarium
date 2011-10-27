@@ -98,19 +98,20 @@ object DSL extends Loggable {
                       resources: List[DSLResource]): DSLPolicy = {
     val name = policy / Vocabulary.name match {
       case x: YAMLStringNode => x.string
-      case _ => throw new DSLParseException("Policy does not have a name")
+      case YAMLEmptyNode => throw new DSLParseException("Policy does not have a name")
     }
 
     val overr = policy / Vocabulary.overrides match {
       case x: YAMLStringNode => Some(x.string)
-      case _ => None
+      case YAMLEmptyNode => None
     }
 
     val algos = resources.map {
       r =>
         val algo = policy / r.name match {
           case x: YAMLStringNode => x.string
-          case _ => policyTmpl.equals(emptyPolicy) match {
+          case y: YAMLIntNode => y.int.toString
+          case YAMLEmptyNode => policyTmpl.equals(emptyPolicy) match {
             case false => policyTmpl.algorithms.getOrElse(r,
               throw new DSLParseException(("Severe! Superpolicy does not " +
                 "specify an algorithm for resource:%s").format(r.name)))
@@ -120,19 +121,18 @@ object DSL extends Loggable {
           }
         }
         Map(r -> algo)
-    }
+    }.foldLeft(Map[DSLResource, String]())((x,y) => x ++ y)
 
     val timeframe = policy / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
-      case _ => policyTmpl.equals(emptyPolicy) match {
+      case YAMLEmptyNode => policyTmpl.equals(emptyPolicy) match {
         case false => policyTmpl.effective
         case true => throw new DSLParseException(("Cannot find effectivity " +
           "period for policy %s ").format(name))
       }
     }
 
-    DSLPolicy(name, overr,
-      mergeMaps(algos)((v1: String, v2: String) => v1), timeframe)
+    DSLPolicy(name, overr, algos, timeframe)
   }
 
   /** Parse a timeframe declaration */
@@ -145,12 +145,12 @@ object DSL extends Loggable {
 
     val to = timeframe / Vocabulary.to match {
       case x: YAMLIntNode => Some(new Date(x.int))
-      case _ => None
+      case YAMLEmptyNode => None
     }
 
     val effective = timeframe / Vocabulary.repeat match {
       case x: YAMLListNode => Some(parseTimeFrameRepeat(x))
-      case _ => None
+      case YAMLEmptyNode => None
     }
 
     DSLTimeFrame(from, to, effective)
@@ -172,7 +172,7 @@ object DSL extends Loggable {
   private def findInMap(repeat: YAMLMapNode, tag: String) : List[DSLCronSpec] = {
     repeat / tag match {
       case x: YAMLStringNode => parseCronString(x.string)
-      case _ => throw new DSLParseException(
+      case YAMLEmptyNode => throw new DSLParseException(
         "No %s field for repeat entry %s".format(tag, repeat))
     }
   }
@@ -265,6 +265,11 @@ object DSL extends Loggable {
               kv._1 -> f(a(kv._1), kv._2)
             else kv)
     }
+
+  /*Functions to search credit policy by name*/
+  def findResource(policy: DSLCreditPolicy, name: String) : Option[DSLResource] = {
+    policy.resources.find(a => a.name.equals(name))
+  }
 }
 
 case class DSLCreditPolicy (
