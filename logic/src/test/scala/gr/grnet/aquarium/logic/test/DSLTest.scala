@@ -2,8 +2,7 @@ package gr.grnet.aquarium.logic.test
 
 import org.junit.Assert._
 import gr.grnet.aquarium.logic.accounting.dsl._
-import java.io.{StringReader, InputStreamReader}
-import org.junit.{Before, Test}
+import org.junit.{Test}
 import java.util.Date
 
 class DSLTest {
@@ -21,6 +20,16 @@ class DSLTest {
   def testParsePolicies = {
     before
     assertEquals(creditpolicy.policies.size, 2)
+    assertEquals(creditpolicy.policies(0).algorithms.size,
+      creditpolicy.resources.size)
+    assertEquals(creditpolicy.policies(1).algorithms.size,
+      creditpolicy.resources.size)
+
+    val d = DSL.findResource(creditpolicy, "diskspace").get
+    assertNotNone(d)
+
+    assertNotSame(creditpolicy.policies(0).algorithms(d),
+      creditpolicy.policies(1).algorithms(d))
   }
 
   @Test
@@ -104,5 +113,15 @@ class DSLTest {
     } catch {
       case e: Exception => assert(true)
     }
+  }
+
+  def assertNone(a: AnyRef) = a match {
+    case None =>
+    case x => fail()
+  }
+
+  def assertNotNone(a: AnyRef) = a match {
+    case None => fail()
+    case _ =>
   }
 }
