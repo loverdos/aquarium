@@ -5,4 +5,8 @@ package gr.grnet.aquarium.logic.credits.model
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-case class CreditStructure(id: String, name: String, creditStructureDef: CreditStructureDef)
+case class CreditStructure(
+    id: String,
+    name: String,
+    creditStructureDef: CreditStructureClass,
+    members: List[CreditHolder])

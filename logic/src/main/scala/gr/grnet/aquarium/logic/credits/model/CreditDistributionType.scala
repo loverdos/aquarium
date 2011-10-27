@@ -85,7 +85,7 @@ object CreditDistributionType {
     val FixedAny = 10
 
     /**
-     * Credits are distributed (pushed) in fixed values and parts can be divided equally.
+     * Credits are distributed (pushed) in fixed values and parts are divided equally.
      */
     val FixedEqual = 20
 

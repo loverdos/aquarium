@@ -19,14 +19,13 @@ object CreditOrigin {
   }
 }
 
-
 case object OwnCreditOrigin extends CreditOrigin {
   override def isOwn = true
 
   def name = CreditOrigin.Names.Own
 }
 
-case class InheritedCreditOrigin(creditHolder: CreditHolder, creditDistributionType: CreditDistributionType) extends CreditOrigin {
+case class InheritedCreditOrigin(creditHolder: CreditHolderClass, creditDistributionType: CreditDistributionType) extends CreditOrigin {
   override def isInherited = true
 
   def name = CreditOrigin.Names.Own

@@ -10,41 +10,40 @@
 # Also, these structures are kind of static and are considered integral part of the business case each client
 # represents/is characterized by.
 
-structure:
+structure_class:
   id: "gr.grnet.aquarium.credit.struct.GreekUniversityCreditStructure"
   name: Greek University Structure
-  inherits: # TODO: Should we inherit an empty structure ?
-  credit-holders:
+  credit_holders:
     - University:
-      name: University # if omitted, taken as the credit-holders key (University in this case)
+      name: University # if omitted, taken as the credit_holders key (University in this case)
       id: University   # if omitted, taken as the name (University in this case)
       type: Composite  # if omitted, inferred by the presence of members
       members:
         - Department:      # Use the id here and not the name
-          credit-distribution:  # List of credit distribution types
+          credit_distribution:  # List of credit distribution types
             - AliasFixed # only specific amounts are given from Universities to Departments
         - Lab:
-          credit-distribution:
+          credit_distribution:
             - AliasFixed # only specific amounts are given from Universities to Labs
     - Department:
       members:
         - Professor:
-          credit-distribution:
+          credit_distribution:
             - AliasAny # A Department has the ability to distribute credits to its Professors in the most flexible way
         - Lab:
-          credit-distribution:
+          credit_distribution:
             - AliasAny # A Department has the ability to distribute credits to its Labs in the most flexible way
         - Course:
-          credit-distribution:
+          credit_distribution:
             - AliasAny # A Department has the ability to distribute credits to its Courses in the most flexible way
         - Student: # Is this a undergrad, a postgrad, a PhD?
-          credit-distribution:
+          credit_distribution:
             - AliasFixed # only fixed amounts of credits are distributed to Students
 
     - Lab:
       members:
         - Course:
-          credit-distribution:
+          credit_distribution:
             - AliasFixed # Lab members get only fixed amounts
     - Course:
       members:
