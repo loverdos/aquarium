@@ -19,6 +19,8 @@ object DSL extends Loggable {
     val resources = "resources"
     val policies = "policies"
     val policy = "policy"
+    val pricelists = "pricelists"
+    val pricelist = "pricelist"
     val name = "name"
     val overrides = "overrides"
     val effective = "effective"
@@ -30,6 +32,9 @@ object DSL extends Loggable {
   }
 
   private val emptyPolicy = DSLPolicy("", None, Map(),
+    DSLTimeFrame(new Date(0), None, Option(List())))
+
+  private val emptyPriceList = DSLPriceList("", None, Map(),
     DSLTimeFrame(new Date(0), None, Option(List())))
 
   def parse(input: InputStream) : DSLCreditPolicy = {
@@ -46,6 +51,13 @@ object DSL extends Loggable {
       resources, List())
 
     logger.debug("Policies: %s".format(policies))
+
+    val pricelists = parsePriceLists(
+      policy./(Vocabulary.pricelists).asInstanceOf[YAMLListNode],
+      resources, List()
+    )
+
+    logger.debug("Pricelists: %s".format(pricelists))
 
     DSLCreditPolicy(policies, List(), resources, List())
   }
@@ -135,6 +147,75 @@ object DSL extends Loggable {
     DSLPolicy(name, overr, algos, timeframe)
   }
 
+  def parsePriceLists(pricelists: YAMLListNode,
+                    resources: List[DSLResource],
+                    results: List[DSLPriceList]): List[DSLPriceList] = {
+    pricelists.head match {
+      case YAMLEmptyNode => return List()
+      case _ =>
+    }
+
+    val superName = pricelists.head / Vocabulary.overrides
+    val tmpl = superName match {
+      case y: YAMLStringNode =>
+        results.find(p => p.name.equals(y.string)) match {
+          case Some(x) => x
+          case None => throw new DSLParseException(
+            "Cannot find super pricelist %s".format(superName))
+        }
+      case YAMLEmptyNode => emptyPriceList
+      case _ => throw new DSLParseException(
+        "Super pricelist name %s not a string".format())
+    }
+
+    val pl = constructPriceList(pricelists.head.asInstanceOf[YAMLMapNode],
+      tmpl, resources)
+
+    val tmpresults = results ++ List(pl)
+    List(pl) ++ parsePriceLists(pricelists.tail, resources, tmpresults)
+  }
+
+  def constructPriceList(pl: YAMLMapNode, tmpl: DSLPriceList,
+                         resources: List[DSLResource]): DSLPriceList = {
+    val name = pl / Vocabulary.name match {
+      case x: YAMLStringNode => x.string
+      case YAMLEmptyNode => throw new DSLParseException("Policy does not have a name")
+    }
+
+    val overr = pl / Vocabulary.overrides match {
+      case x: YAMLStringNode => Some(x.string)
+      case YAMLEmptyNode => None
+    }
+
+    val prices = resources.map {
+      r =>
+        val algo = pl / r.name match {
+          case x: YAMLStringNode => x.string
+          case y: YAMLIntNode => y.int.toString
+          case z: YAMLDoubleNode => z.double.toString
+          case YAMLEmptyNode => tmpl.equals(emptyPolicy) match {
+            case false => tmpl.prices.getOrElse(r,
+              throw new DSLParseException(("Severe! Superpolicy does not " +
+                "specify an algorithm for resource:%s").format(r.name)))
+            case true => throw new DSLParseException(("Cannot find " +
+              "calculation algorithm for resource %s in either policy %s or a" +
+              " superpolicy").format(r.name, name))
+          }
+        }
+        Map(r -> algo)
+    }.foldLeft(Map[DSLResource, Any]())((x, y) => x ++ y)
+
+    val timeframe = pl / Vocabulary.effective match {
+      case x: YAMLMapNode => parseTimeFrame(x)
+      case YAMLEmptyNode => tmpl.equals(emptyPolicy) match {
+        case false => tmpl.effective
+        case true => throw new DSLParseException(("Cannot find effectivity " +
+          "period for policy %s ").format(name))
+      }
+    }
+    DSLPriceList(name, overr, Map(), timeframe)
+  }
+
   /** Parse a timeframe declaration */
   def parseTimeFrame(timeframe: YAMLMapNode): DSLTimeFrame = {
     val from = timeframe / Vocabulary.from match {
@@ -222,7 +303,7 @@ object DSL extends Loggable {
     ).flatten.toList
   }
 
-  /** Merge two policies, field by field */
+  /** Merge two pricelists, field by field */
   def mergePolicy(policy: DSLPolicy, onto: DSLPolicy): DSLPolicy = {
     DSLPolicy(onto.name, onto.overrides,
       mergeMaps(policy.algorithms, onto.algorithms),

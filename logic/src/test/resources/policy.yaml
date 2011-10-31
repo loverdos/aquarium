@@ -46,8 +46,8 @@ creditpolicy:
       diskspace: 0.05
       effective:
         repeat:
-          - start: "00 00 2 Tue *"
-            end:   "00 00 2 Wed *"
+          - start: "00 02 * * Tue"
+            end:   "00 02 * * Wed"
         from: 0
     - pricelist:
       name: foobar
@@ -57,10 +57,10 @@ creditpolicy:
       diskspace: 0.05
       effective:
         repeat:
-          - start: "00 00 12 * *"
-            end:   "00 00 14 * *"
-          - start: "00 00 18 * *"
-            end:   "00 00 20 * *"
+          - start: "00 12 * * *"
+            end:   "00 14 * * *"
+          - start: "00 18 * * *"
+            end:   "00 20 * * *"
         from: 0
 
   agreements:

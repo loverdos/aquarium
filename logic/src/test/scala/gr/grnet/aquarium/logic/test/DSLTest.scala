@@ -99,6 +99,10 @@ class DSLTest {
     assertEquals(output.size, 4)
     assertEquals(output(2), DSLCronSpec(12, 4, 3, 3, -1))
 
+    input = "12 4 3 jaN-ApR MOn-FRi"
+    output = DSL.parseCronString(input)
+    assertEquals(output.size, 20)
+
     input = "12 4 foo jaN-ApR *"
     assertThrows(DSL.parseCronString(input))
 
