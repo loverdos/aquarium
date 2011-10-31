@@ -8,5 +8,8 @@ case object YAMLEmptyNode extends YAMLNode {
   def /(childName: String) = YAMLEmptyNode
 
   override def isEmpty = true
+
+  def path = ""
+  def withPath(newPath: String) = this
 }
 

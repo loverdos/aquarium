@@ -4,7 +4,7 @@ package gr.grnet.aquarium.util.yaml
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-case class YAMLListNode(list: List[YAMLNode]) extends YAMLNode {
+case class YAMLListNode(path: String,  list: List[YAMLNode]) extends YAMLNode {
   def /(childName: String) = YAMLEmptyNode
 
   override def listValue = list
@@ -14,7 +14,15 @@ case class YAMLListNode(list: List[YAMLNode]) extends YAMLNode {
     case Nil    => YAMLEmptyNode
     case h :: _ => h
   }
-  def tail = YAMLListNode(list.tail)
+  def tail = YAMLListNode(path + "::tail", list.tail)
 
   override def isEmpty = list.isEmpty
+
+  override def foreach[T](f: (YAMLNode) => T) = {
+    for(node <- listValue) {
+      f(node)
+    }
+  }
+
+  def withPath(newPath: String) = this.copy(path = newPath)
 }

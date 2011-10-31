@@ -13,6 +13,11 @@ import scala.collection.JavaConversions._
 trait YAMLNode {
   def /(childName: String): YAMLNode
 
+  def name = path.substring(path.lastIndexOf('/') + 1)
+  
+  def path: String
+  def withPath(newPath: String): YAMLNode
+
   def intValue: Int = 0
   def doubleValue: Double = 0.0
   def stringValue: String = null
@@ -27,6 +32,8 @@ trait YAMLNode {
   def isMap = false
   def isList = false
   def isUnknown = false
+
+  def foreach[T](f: YAMLNode => T): Unit = {}
 }
 
 /**
@@ -35,37 +42,43 @@ trait YAMLNode {
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 object YAMLNode {
-  def apply(obj: AnyRef): YAMLNode = {
+  def concatPaths(parent: String, child: String) = {
+    if(parent == "/") {
+      if(child startsWith "/") {
+        child
+      } else {
+        "/" + child
+      }
+    } else {
+      parent + "/" + child
+    }
+  }
+
+  def indexedPath(basePath: String, index: Int) = "%s[%s]".format(basePath, index)
+
+  def apply(obj: AnyRef, basePath: String = "/"): YAMLNode = {
     obj match {
       case null =>
         YAMLEmptyNode
-      case map: JMap[_, _] =>
-        val workingMap: mutable.Map[String, AnyRef] = map.asInstanceOf[JMap[String, AnyRef]]
-        val mappedMap = workingMap map {
+      case javaMap: JMap[_, _] =>
+        val scalaMap: mutable.Map[String, AnyRef] = javaMap.asInstanceOf[JMap[String, AnyRef]]
+        val nodeMap = scalaMap map {
           case (key, value) if value.isInstanceOf[YAMLNode] =>
-            (key, value).asInstanceOf[(String, YAMLNode)]
+            val yvalue = value.asInstanceOf[YAMLNode]//.withPath(concatPaths(basePath, key))
+            (key, yvalue)
           case (key, value) =>
-            (key, apply(value))
+            (key, apply(value, concatPaths(basePath, key)))
         }
-        YAMLMapNode(mappedMap)
-//      case map: mutable.Map[_, _] =>
-//        val workingMap = map
-//        val mappedMap = workingMap map {
-//          case (key, value) if value.isInstanceOf[YAMLNode] =>
-//            (key, value)
-//          case (key, value) =>
-//            (key, newYAMLNode(value))
-//        }
-//        YAMLMapNode(mappedMap)
-      case list: JList[_] =>
-        val workingList: mutable.Buffer[AnyRef] = list.asInstanceOf[JList[AnyRef]]
-        val mappedList = workingList.map(apply(_)).toList
-        YAMLListNode(mappedList)
+        YAMLMapNode(basePath, nodeMap)
+      case javaList: JList[_] =>
+        val scalaList: mutable.Buffer[AnyRef] = javaList.asInstanceOf[JList[AnyRef]]
+        val nodeList = scalaList.zipWithIndex.map { case (elem, index) => apply(elem, indexedPath(basePath, index)) }.toList
+        YAMLListNode(basePath, nodeList)
       case string: String =>
-        YAMLStringNode(string)
+        YAMLStringNode(basePath, string)
       case x: YAMLNode => x
       case int: java.lang.Integer =>
-        YAMLIntNode(int)
+        YAMLIntNode(basePath, int)
       case double: java.lang.Double =>
         YAMLDoubleNode(double)
       case obj =>

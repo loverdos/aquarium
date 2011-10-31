@@ -1,0 +1,24 @@
+credit-distribution-policies:
+  - how:
+    - types:
+      - FixedAny
+      - FixedEqual
+      - OnDemandUnlimited
+      - OnDemandMax
+      - Algorithmic
+    - aliases: # aliases define named sets of credit distribution types
+      - AliasAny:
+        - FixedAny
+        - FixedEqual
+        - OnDemandUnlimited
+        - OnDemandMax
+      - AliasFixed:
+        - FixedAny
+        - FixedEqual
+      - AliasOnDemand:
+        - OnDemandUnlimited
+        - OnDemandMax
+  - when:
+    - OnCreditArrival
+    - Manual
+    - Periodic

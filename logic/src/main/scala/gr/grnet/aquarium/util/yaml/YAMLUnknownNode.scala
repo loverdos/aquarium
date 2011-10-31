@@ -8,4 +8,7 @@ case class YAMLUnknownNode(unknownObj: AnyRef, actualType: String) extends YAMLN
   def /(childName: String) = this
 
   override def isUnknown = false
+
+  def path = ""
+  def withPath(newPath: String) = this
 }

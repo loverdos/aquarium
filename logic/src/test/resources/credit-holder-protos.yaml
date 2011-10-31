@@ -1,5 +1,0 @@
-credit-holder-protos:
-  - Single:
-      id: "gr.grnet.aquarium.credits.model.holder.Single"
-  - Composite:
-      id: "gr.grnet.aquarium.credits.model.holder.Composite"
