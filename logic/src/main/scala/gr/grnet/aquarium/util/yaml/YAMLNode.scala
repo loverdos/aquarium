@@ -14,6 +14,7 @@ trait YAMLNode {
   def /(childName: String): YAMLNode
 
   def intValue: Int = 0
+  def doubleValue: Double = 0.0
   def stringValue: String = null
   def listValue: List[YAMLNode] = Nil
   def mapValue: Map[String, YAMLNode] = Map()
@@ -22,6 +23,7 @@ trait YAMLNode {
 
   def isString = false
   def isInt = false
+  def isDouble = false
   def isMap = false
   def isList = false
   def isUnknown = false
@@ -64,6 +66,8 @@ object YAMLNode {
       case x: YAMLNode => x
       case int: java.lang.Integer =>
         YAMLIntNode(int)
+      case double: java.lang.Double =>
+        YAMLDoubleNode(double)
       case obj =>
         YAMLUnknownNode(obj, obj.getClass.getName)
     }
