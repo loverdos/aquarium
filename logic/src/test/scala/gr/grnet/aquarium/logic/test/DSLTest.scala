@@ -106,6 +106,9 @@ class DSLTest {
     input = "12 4 foo jaN-ApR *"
     assertThrows(DSL.parseCronString(input))
 
+    input = "12 4 foo jaN-ApR 9"
+    assertThrows(DSL.parseCronString(input))
+
     input = "@midnight"
     assertThrows(DSL.parseCronString(input))
   }

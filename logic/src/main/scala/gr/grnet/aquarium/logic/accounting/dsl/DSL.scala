@@ -271,7 +271,7 @@ object DSL extends Loggable {
       throw new DSLParseException(
         "Multiple values per field are not allowed: " + input)
 
-    val foo = try {
+    val cron = try {
       asScalaBuffer(CronTabParserBridge.parse(input))
     } catch {
       case e => throw new DSLParseException(
@@ -290,11 +290,11 @@ object DSL extends Loggable {
       }
     }
 
-    splitMultiVals(foo.get(0).toString).map(
-      a => splitMultiVals(foo.get(1).toString).map(
-        b => splitMultiVals(foo.get(2).toString).map(
-          c => splitMultiVals(foo.get(3).toString).map(
-            d => splitMultiVals(foo.get(4).toString).map(
+    splitMultiVals(cron.get(0).toString).map(
+      a => splitMultiVals(cron.get(1).toString).map(
+        b => splitMultiVals(cron.get(2).toString).map(
+          c => splitMultiVals(cron.get(3).toString).map(
+            d => splitMultiVals(cron.get(4).toString).map(
               e => DSLCronSpec(a, b, c, d, e)
             )
           ).flatten
@@ -397,11 +397,11 @@ case class DSLTimeFrameRepeat (
 )
 
 case class DSLCronSpec(
-  sec: Int,
   min: Int,
   hour: Int,
-  dow: Int,
-  mon: Int
+  dom: Int,
+  mon: Int,
+  dow: Int
 )
 
 class DSLParseException(msg: String) extends Exception(msg)
