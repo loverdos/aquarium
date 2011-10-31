@@ -80,7 +80,7 @@ object YAMLNode {
       case int: java.lang.Integer =>
         YAMLIntNode(basePath, int)
       case double: java.lang.Double =>
-        YAMLDoubleNode(double)
+        YAMLDoubleNode(basePath, double)
       case obj =>
         YAMLUnknownNode(obj, obj.getClass.getName)
     }
