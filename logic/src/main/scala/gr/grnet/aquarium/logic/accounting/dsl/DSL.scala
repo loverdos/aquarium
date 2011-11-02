@@ -233,13 +233,13 @@ object DSL extends Loggable {
   def parseAgreements(agreements: YAMLListNode,
                       policies: List[DSLPolicy],
                       pricelists: List[DSLPriceList],
-                      results: List[DSLPriceList]): List[DSLAgreement] = {
-     pricelists.head match {
+                      results: List[DSLAgreement]): List[DSLAgreement] = {
+     agreements.head match {
        case YAMLEmptyNode => return List()
        case _ =>
      }
 
-     val superName = agreements.head / Vocabulary.agreements
+     val superName = agreements.head / Vocabulary.overrides
      val tmpl = superName match {
        case y: YAMLStringNode =>
          results.find(p => p.name.equals(y.string)) match {
@@ -249,19 +249,22 @@ object DSL extends Loggable {
          }
        case YAMLEmptyNode => emptyAgreement
        case _ => throw new DSLParseException(
-         "Super agreement name %s not a string".format())
+         "Super agreement name %s not a string".format(superName))
      }
 
-     val agr = constructAgreement(pricelists.head.asInstanceOf[YAMLMapNode],
-       tmpl, resources)
+     val agr = constructAgreement(agreements.head.asInstanceOf[YAMLMapNode],
+       tmpl, policies, pricelists)
 
-     val tmpresults = results ++ List(agt)
-     List(pl) ++ parsePriceLists(pricelists.tail, resources, tmpresults)
+     val tmpresults = results ++ List(agr)
+     List(agr) ++ parseAgreements(agreements.tail, policies, pricelists, tmpresults)
    }
 
 
-  def constructAgreement() = {
-    
+  def constructAgreement(agr: YAMLMapNode,
+                         tmpl: DSLAgreement,
+                         policies: List[DSLPolicy],
+                         pricelists: List[DSLPriceList]) : DSLAgreement = {
+    emptyAgreement
   }
 
 
