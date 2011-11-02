@@ -9,7 +9,7 @@ Welcome to Aquarium's documentation!
 Contents:
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 3 
 
   devguide
   adminguide
