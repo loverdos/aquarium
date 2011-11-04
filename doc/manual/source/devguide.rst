@@ -129,6 +129,13 @@ and 15:00 Sat to 15:00 Sun.
   creditdsl
 
 
+Usage Examples
+^^^^^^^^^^^^^^
+.. toctree::
+
+  unicase 
+
+
 Document Revisions
 ^^^^^^^^^^^^^^^^^^
 
