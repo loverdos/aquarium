@@ -1,16 +1,12 @@
 The credit DSL
 ^^^^^^^^^^^^^^
 
-The Aquarium accounting policy DSL enables administrators to specify accounting
+The credit DSL enables administrators to specify accounting
 processing policies, price lists and combine them arbitrarily into agreements
 applicable to specific users or the whole system. The DSL's primary purpose is
 to facilitate the definition of agreements through defining and composing cost
 calculation policies with price lists.
 
-As the agreements mostly consist of data, while behavior definitions are quite
-limited , the DSL is mostly based on the
-"YAML":http://en.wikipedia.org/wiki/Yaml format. The DSL supports limited
-algorithm definitions through a simple imperative language as defined below.
 
 The DSL supports inheritance for policies, price lists and agreements and composition in the case of agreements.
 
@@ -96,6 +92,5 @@ the language. An agreement is defined in full using the following template:
 - If a ``pricelist`` or ``policy`` name has not been specified, all prices or
   algorithms for the declared resources must be defined in either the processed 
   ``agreement`` or a parent ``agreement``.
-
 
 

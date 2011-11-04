@@ -45,6 +45,10 @@ Common syntax
 The accounting system is a generic event-processing engine that is configured by a
 DSL. The DSL is split in two parts, one for configuring the crediting part
 of accounting and one for configuring who credits are debitted to user accounts.
+The DSL is mostly based on the
+`YAML <http://en.wikipedia.org/wiki/Yaml>`_ format. The DSL supports limited
+algorithm definitions through a simple imperative language as defined below.
+
 
 The following parts are the same for both languages, except if otherwise noted.
 
