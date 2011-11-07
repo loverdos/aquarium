@@ -13,6 +13,7 @@ Contents:
 
   devguide
   adminguide
+  usecase-company
 
 Indices and tables
 ==================

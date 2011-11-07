@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# This is meant to be run from the script's folder.
+
+make latexpdf && ls -al build/latex/*.pdf
+
