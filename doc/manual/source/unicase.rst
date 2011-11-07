@@ -128,7 +128,7 @@ The team is defined as a group and all individual team members are added to it.
 [ckkl]
 
 New price plan and resource
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After some time the service has been active by the NOC, an upgrade to the
 hardware capacity urges the NOC administration to set a lower price to the
@@ -173,6 +173,11 @@ pricelist to end at the point where the new pricelist comes in effect.
         vmtimeD: 2
    
 
-Cross department large-scale experiment is initiated
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Cross department research project is initiated
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The departments of Software Engineering and Statistics have decided to conduct
+an open participation large scale case study with data from OSS repositories.
+To do so, they will need shared space in order to store the data and
+several compute nodes in order to process them. The experiment is open to
+external users, which use one time passwords in order to 
