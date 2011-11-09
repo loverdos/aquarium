@@ -62,9 +62,9 @@ object DSL extends Loggable {
     )
     logger.debug("Pricelists: %s".format(pricelists))
     
-    val agreements = parsePriceLists(
+    val agreements = parseAgreements(
       policy./(Vocabulary.agreements).asInstanceOf[YAMLListNode],
-      resources, List()
+      policies, pricelists, resources, List()
     )
     logger.debug("Agreements: %s".format(agreements))
 
@@ -233,6 +233,7 @@ object DSL extends Loggable {
   def parseAgreements(agreements: YAMLListNode,
                       policies: List[DSLPolicy],
                       pricelists: List[DSLPriceList],
+                      resources: List[DSLResource],
                       results: List[DSLAgreement]): List[DSLAgreement] = {
      agreements.head match {
        case YAMLEmptyNode => return List()
@@ -253,20 +254,72 @@ object DSL extends Loggable {
      }
 
      val agr = constructAgreement(agreements.head.asInstanceOf[YAMLMapNode],
-       tmpl, policies, pricelists)
+       tmpl, policies, pricelists, resources)
 
      val tmpresults = results ++ List(agr)
-     List(agr) ++ parseAgreements(agreements.tail, policies, pricelists, tmpresults)
+     List(agr) ++ parseAgreements(agreements.tail, policies, pricelists,
+       resources, tmpresults)
    }
 
 
   def constructAgreement(agr: YAMLMapNode,
                          tmpl: DSLAgreement,
                          policies: List[DSLPolicy],
-                         pricelists: List[DSLPriceList]) : DSLAgreement = {
-    emptyAgreement
-  }
+                         pricelists: List[DSLPriceList],
+                         resources: List[DSLResource]) : DSLAgreement = {
+     val name = agr / Vocabulary.name match {
+      case x: YAMLStringNode => x.string
+      case YAMLEmptyNode => throw new DSLParseException("Agreement does not " +
+        "have a name")
+    }
 
+    val policy = agr / Vocabulary.policy match {
+      case x: YAMLStringNode => policies.find(p => p.name.equals(x.string)) match {
+        case Some(y) => y
+        case None => throw new DSLParseException(("Cannot find policy " +
+          "named %s").format(x))
+      }
+      case y: YAMLMapNode => tmpl.equals(emptyAgreement) match {
+        case true => throw new DSLParseException(("Incomplete policy " +
+          "definition for agreement %s").format(name))
+        case false =>
+          y.map += ("name" -> YAMLStringNode("/","%s-policy".format(name)))
+          constructPolicy(y, tmpl.policy, resources)
+      }
+      case YAMLEmptyNode => tmpl.equals(emptyAgreement) match {
+        case true => throw new DSLParseException(("No policy " +
+          "for agreement %s").format(name))
+        case false => tmpl.policy
+      }
+    }
+
+    val pricelist = agr / Vocabulary.pricelist match {
+      case x: YAMLStringNode => pricelists.find(p => p.name.equals(x.string)) match {
+        case Some(y) => y
+        case None => throw new DSLParseException(("Cannot find pricelist " +
+          "named %s").format(x))
+      }
+      case y: YAMLMapNode => tmpl.equals(emptyAgreement) match {
+        case true => throw new DSLParseException(("Incomplete pricelist " +
+          "definition for agreement %s").format(name))
+        case false =>
+          y.map += ("name" -> YAMLStringNode("/","%s-pricelist".format(name)))
+          constructPriceList(y, tmpl.pricelist, resources)
+      }
+      case YAMLEmptyNode => tmpl.equals(emptyAgreement) match {
+        case true => throw new DSLParseException(("No policy " +
+          "for agreement %s").format(name))
+        case false => tmpl.pricelist
+      }
+    }
+
+    val overrides = tmpl.equals(emptyAgreement) match {
+      case true => Some(tmpl)
+      case false => None
+    }
+
+    DSLAgreement(name, overrides, policy, pricelist) 
+  }
 
   /** Parse a timeframe declaration */
   def parseTimeFrame(timeframe: YAMLMapNode): DSLTimeFrame = {
@@ -418,7 +471,7 @@ case class DSLResource(
 
 case class DSLAgreement (
   name: String,
-  overrides: Option[String],
+  overrides: Option[DSLAgreement],
   policy : DSLPolicy,
   pricelist : DSLPriceList
 )

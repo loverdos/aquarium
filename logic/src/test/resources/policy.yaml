@@ -38,7 +38,7 @@ creditpolicy:
       diskspace: 0.05
       effective:
         from: 0
-    - pricelist: &everyTue2
+    - pricelist:
       name: everyTue2
       bandwidthup: 0.01
       bandwidthdown: 0.02
@@ -66,8 +66,8 @@ creditpolicy:
   agreements:
     - agreement:
       name: default
-      policy: defpolicy
-      pricelist: defpricelist
+      policy: default
+      pricelist: default
 
     - agreement:
       overrides: default
