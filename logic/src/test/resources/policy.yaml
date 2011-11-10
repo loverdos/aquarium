@@ -38,7 +38,7 @@ creditpolicy:
       diskspace: 0.05
       effective:
         from: 0
-    - pricelist:
+    - pricelist: 
       name: everyTue2
       bandwidthup: 0.01
       bandwidthdown: 0.02

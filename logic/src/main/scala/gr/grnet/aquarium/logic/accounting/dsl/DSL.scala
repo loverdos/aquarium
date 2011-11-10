@@ -5,6 +5,8 @@ import com.kenai.crontabparser.impl.CronTabParserBridge
 import java.io.{InputStreamReader, InputStream}
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.yaml._
+import org.yaml.snakeyaml.Yaml
+import java.lang.StringBuffer
 import java.util.Date
 
 /**
@@ -12,26 +14,8 @@ import java.util.Date
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-object DSL extends Loggable {
 
-  private object Vocabulary {
-    val creditpolicy = "creditpolicy"
-    val resources = "resources"
-    val policies = "policies"
-    val policy = "policy"
-    val pricelists = "pricelists"
-    val pricelist = "pricelist"
-    val agreements = "agreements"
-    val agreement = "agreement"
-    val name = "name"
-    val overrides = "overrides"
-    val effective = "effective"
-    val from = "from"
-    val to = "to"
-    val repeat = "repeat"
-    val start = "start"
-    val end = "end"
-  }
+object DSL extends Loggable {
 
   private val emptyPolicy = DSLPolicy("", None, Map(),
     DSLTimeFrame(new Date(0), None, Option(List())))
@@ -456,6 +440,11 @@ object DSL extends Loggable {
   def findResource(policy: DSLCreditPolicy, name: String) : Option[DSLResource] = {
     policy.resources.find(a => a.name.equals(name))
   }
+}
+
+sealed abstract class DSLTreeNode {
+  abstract def toYaml() : String
+  abstract def children() : List[DSLTreeNode]
 }
 
 case class DSLCreditPolicy (

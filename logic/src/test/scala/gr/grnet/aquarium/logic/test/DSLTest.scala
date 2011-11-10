@@ -113,6 +113,13 @@ class DSLTest {
     assertThrows(DSL.parseCronString(input))
   }
 
+  @Test
+  def testSerialization = {
+    before
+    val a = creditpolicy.toYaml()
+    println(a)
+  }
+
   def assertThrows(f: => Unit) = {
     try {
       f
