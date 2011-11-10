@@ -35,17 +35,13 @@
 
 package gr.grnet.aquarium.logic.test
 
-import gr.grnet.aquarium.model.DB
-import gr.grnet.aquarium.logic.test._
 import org.junit.{After, Before, Test}
 
-
 class AccountsTest extends FixtureLoader {
-
   @Before
   def before() = {
-    if (!DB.getTransaction.isActive)
-      DB.getTransaction.begin
+    if (!TestDB.getTransaction.isActive)
+      TestDB.getTransaction.begin
     //loadFixture("data.json")
   }
 
@@ -55,6 +51,6 @@ class AccountsTest extends FixtureLoader {
 
   @After
   def after() = {
-    DB.getTransaction.rollback()
+    TestDB.getTransaction.rollback()
   }
 }

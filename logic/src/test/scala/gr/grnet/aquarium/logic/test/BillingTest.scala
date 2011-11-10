@@ -38,7 +38,7 @@ package gr.grnet.aquarium.logic.test
 import org.junit._
 import org.junit.Assert._
 import gr.grnet.aquarium.logic.Bills
-import gr.grnet.aquarium.model.{User, DB}
+import gr.grnet.aquarium.model.{User}
 import gr.grnet.aquarium.logic.accounting.policies.DefaultRatePolicy
 import gr.grnet.aquarium.logic.accounting.{Agreement, AccountingEvent, AccountingEntryType, AccountingEventType}
 import gr.grnet.aquarium.logic.accounting.agreements.AgreementRegistry
@@ -49,8 +49,8 @@ class BillingTest
 
   @Before
   def before() = {
-    if (!DB.getTransaction.isActive)
-      DB.getTransaction.begin
+    if (!TestDB.getTransaction.isActive)
+      TestDB.getTransaction.begin
     //loadFixture("data.json")
   }
 
@@ -82,7 +82,7 @@ class BillingTest
     u.agreement = TestAgreement.id
     u.credits = 100
 
-    DB.persistAndFlush(u)
+    TestDB.persistAndFlush(u)
 
     // Try with a basic event
     /*var evt = new AccountingEvent(AccountingEventType.VMTime,
@@ -99,6 +99,6 @@ class BillingTest
 
   @After
   def after() = {
-    DB.getTransaction.rollback
+    TestDB.getTransaction.rollback
   }
 }
