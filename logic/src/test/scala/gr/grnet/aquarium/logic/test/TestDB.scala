@@ -35,22 +35,10 @@
 
 package gr.grnet.aquarium.logic.test
 
-import org.junit.{After, Before, Test}
+import org.scala_libs.jpa.{ThreadLocalEM, LocalEMF}
 
-class AccountsTest extends FixtureLoader {
-  @Before
-  def before() = {
-    if (!TestDB.getTransaction.isActive)
-      TestDB.getTransaction.begin
-    //loadFixture("data.json")
-  }
-
-  @Test
-  def AccountsTest() = {
-  }
-
-  @After
-  def after() = {
-    TestDB.getTransaction.rollback()
-  }
-}
+/**
+ * 
+ * @author Christos KK Loverdos <loverdos@gmail.com>.
+ */
+object TestDB extends LocalEMF("aquarium-test", true) with ThreadLocalEM {}

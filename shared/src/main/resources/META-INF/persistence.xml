@@ -56,4 +56,55 @@
     </properties>
   </persistence-unit>
 
+  <persistence-unit name="aquarium-test" transaction-type="RESOURCE_LOCAL">
+
+    <class>gr.grnet.aquarium.model.Entity</class>
+    <class>gr.grnet.aquarium.model.Group</class>
+    <class>gr.grnet.aquarium.model.User</class>
+    <class>gr.grnet.aquarium.model.Organization</class>
+    <class>gr.grnet.aquarium.model.ServiceItem</class>
+    <class>gr.grnet.aquarium.model.RuntimeData</class>
+    <class>gr.grnet.aquarium.model.Bill</class>
+    <class>gr.grnet.aquarium.model.Action</class>
+    <class>gr.grnet.aquarium.model.DefaultPermission</class>
+    <class>gr.grnet.aquarium.model.Permission</class>
+    <class>gr.grnet.aquarium.model.ServiceTemplate</class>
+    <class>gr.grnet.aquarium.model.ResourceType</class>
+    <class>gr.grnet.aquarium.model.EntityType</class>
+    <class>gr.grnet.aquarium.model.Agreement</class>
+    <class>gr.grnet.aquarium.model.PriceList</class>
+
+    <properties>
+
+      <!-- Common configuration -->
+      <property name="javax.persistence.jdbc.driver"
+                value="org.h2.Driver"/>
+      <property name="javax.persistence.jdbc.url"
+                value="jdbc:h2:aquarium-test"/>
+      <property name="javax.persistence.jdbc.password" value=""/>
+      <property name="javax.persistence.jdbc.user" value=""/>
+
+      <!-- EclipseLink configuration -->
+      <property name="eclipselink.target-database"
+                value="org.eclipse.persistence.platform.database.H2Platform"/>
+      <property name="eclipselink.logging.level" value="FINE"/>
+      <property name="eclipselink.logging.timestamp" value="false"/>
+      <property name="eclipselink.logging.session" value="false"/>
+      <property name="eclipselink.logging.thread" value="false"/>
+      <property name="eclipselink.logging.level.sql" value="FINEST"/>
+      <property name="eclipselink.ddl-generation" value="create-tables"/>
+      <property name="eclipselink.ddl-generation.output-mode" value="database"/>
+
+      <!-- Hibernate configuration -->
+      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+      <property name="hibernate.hbm2ddl.auto" value="update"/>
+      <property name="hibernate.show_sql" value="true"/>
+
+      <!-- OpenJPA configuration -->
+      <property name="openjpa.jdbc.DBDictionary" value="org.apache.openjpa.jdbc.sql.H2Dictionary"/>
+      <property name="openjpa.Log" value="DefaultLevel=TRACE, SQL=TRACE"/>
+      <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema(ForeignKeys=true)"/>
+
+    </properties>
+  </persistence-unit>
 </persistence>

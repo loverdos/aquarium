@@ -139,7 +139,7 @@ trait FixtureLoader {
     //Create an object instance
     val tmpObj = loadClass[AnyRef](model).newInstance()
     //Save the object
-    DB.persistAndFlush(tmpObj)
+    TestDB.persistAndFlush(tmpObj)
 
     /* Special treatment for the ID field: we allow JPA to set on persist, but
      * we reset it here to what the fixture specifies. This is to bypass
@@ -147,7 +147,7 @@ trait FixtureLoader {
      */
     updatePK(tmpObj.getClass.getSimpleName, tmpObj.getV("id").asInstanceOf[Long], id)
 
-    val obj = DB.find(tmpObj.getClass, id).getOrElse(
+    val obj = TestDB.find(tmpObj.getClass, id).getOrElse(
       throw new Exception("Cannot find")
     ).asInstanceOf[AnyRef]
 
@@ -191,11 +191,11 @@ trait FixtureLoader {
         }
     }
 
-    DB.flush()
+    TestDB.flush()
   }
 
   private def updatePK(entity: String, oldid: Long, newid: Long) = {
-    val q = DB.createQuery(
+    val q = TestDB.createQuery(
       "update " + entity +
         " set id=:newid where id = :oldid")
     q.setParameter("newid", newid)
@@ -205,7 +205,7 @@ trait FixtureLoader {
 
   /** Set the referenced object in a many to one relationship*/
   private def setManyToOne(dao: AnyRef, fieldName: String, fieldValue: Double) = {
-    val other = DB.find(dao.getT(fieldName), fieldValue.longValue()).getOrElse(
+    val other = TestDB.find(dao.getT(fieldName), fieldValue.longValue()).getOrElse(
       throw new Exception("Cannot find related object for " + dao.getClass +
         ", field: " + fieldName + " value: " + fieldValue)
     )
@@ -246,7 +246,7 @@ trait FixtureLoader {
     //Add all values specified
     fieldValues.foreach {
       v =>
-        val other = DB.find(targetType, v.longValue).getOrElse(
+        val other = TestDB.find(targetType, v.longValue).getOrElse(
           throw new Exception("Cannot find entry of type "+ targetType +
             " with id=" + v.longValue)
         )

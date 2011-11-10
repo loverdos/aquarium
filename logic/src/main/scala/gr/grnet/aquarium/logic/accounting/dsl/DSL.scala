@@ -478,8 +478,8 @@ object DSL extends Loggable {
 }
 
 sealed abstract class DSLTreeNode {
-  abstract def toYaml() : String
-  abstract def children() : List[DSLTreeNode]
+  def toYaml() : String
+  def children() : List[DSLTreeNode]
 }
 
 case class DSLCreditPolicy (
