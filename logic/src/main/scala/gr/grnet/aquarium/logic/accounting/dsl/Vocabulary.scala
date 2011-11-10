@@ -35,9 +35,8 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-
 /**
- * Vocabulary of terms for 
+ * Vocabulary of terms for the DSL
  */
 object Vocabulary {
   val creditpolicy = "creditpolicy"
