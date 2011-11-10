@@ -23,8 +23,6 @@ The cloud services that the university NOC can offer are the following:
 - File storage service, for storing files
 - Custom virtual private networks
 
-[ckkl]
-
 After installing Aquarium and configuring the external services to talk to it,
 the NOC configures administrator users and specifies the following policy as
 the initial base policy for all users and services. All the remaining
@@ -172,12 +170,3 @@ pricelist to end at the point where the new pricelist comes in effect.
         vmtimeC: 1.5
         vmtimeD: 2
    
-
-Cross department research project is initiated
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The departments of Software Engineering and Statistics have decided to conduct
-an open participation large scale case study with data from OSS repositories.
-To do so, they will need shared space in order to store the data and
-several compute nodes in order to process them. The experiment is open to
-external users, which use one time passwords in order to 

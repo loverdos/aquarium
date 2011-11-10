@@ -62,6 +62,7 @@ The following implicit values are supported:
 - ``price``: Denotes the price for the designated resource in the applicable agreement
 - ``volume``: Denotes the runtime usage of the designated resource
 
+
 Operators
 ~~~~~~~~~
 
