@@ -60,7 +60,7 @@ class DSLTest extends DSL {
     assertEquals(creditpolicy.policies(1).algorithms.size,
       creditpolicy.resources.size)
 
-    val d = findResource(creditpolicy, "diskspace").get
+    val d = creditpolicy.findResource("diskspace").get
     assertNotNone(d)
 
     assertNotSame(creditpolicy.policies(0).algorithms(d),
@@ -68,15 +68,25 @@ class DSLTest extends DSL {
   }
 
   @Test
+  def testParsePricelists = {
+    before
+    assertEquals(creditpolicy.pricelists.size, 3)
+    assertNotNone(creditpolicy.findPriceList("everyTue2"))
+    val res = creditpolicy.findResource("diskspace")
+    assertNotNone(res)
+    assertEquals(creditpolicy.findPriceList("everyTue2").get.prices.get(res.get).get,  0.1F)
+  }
+
+  @Test
   def testCronParse = {
     var input = "12 * * * *"
     var output = parseCronString(input)
-    assertEquals(output, List(DSLCronSpec(12, -1, -1, -1, -1)))
+    assertEquals(output, List(DSLTimeSpec(12, -1, -1, -1, -1)))
 
     input = "12 4 3 jaN-ApR *"
     output = parseCronString(input)
     assertEquals(output.size, 4)
-    assertEquals(output(2), DSLCronSpec(12, 4, 3, 3, -1))
+    assertEquals(output(2), DSLTimeSpec(12, 4, 3, 3, -1))
 
     input = "12 4 3 jaN-ApR MOn-FRi"
     output = parseCronString(input)

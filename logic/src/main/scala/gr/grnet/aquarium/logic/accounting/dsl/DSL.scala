@@ -234,7 +234,7 @@ trait DSL extends Loggable {
         case true => throw new DSLParseException(("Cannot find effectivity period for pricelist %s ").format(name))
       }
     }
-    DSLPriceList(name, overr, Map(), timeframe)
+    DSLPriceList(name, overr, prices, timeframe)
   }
 
   /** Parse top level agreements */
@@ -266,7 +266,6 @@ trait DSL extends Loggable {
      List(agr) ++ parseAgreements(agreements.tail, policies, pricelists,
        resources, tmpresults)
    }
-
 
   def constructAgreement(agr: YAMLMapNode,
                          tmpl: DSLAgreement,
@@ -354,7 +353,7 @@ trait DSL extends Loggable {
 
   /** Parse a time frame entry (start, end tags) */
   private def findInMap(repeat: YAMLMapNode,
-                        tag: String) : List[DSLCronSpec] = {
+                        tag: String) : List[DSLTimeSpec] = {
     repeat / tag match {
       case x: YAMLStringNode => parseCronString(x.string)
       case YAMLEmptyNode => throw new DSLParseException("No %s field for repeat entry %s".format(tag, repeat))
@@ -369,9 +368,8 @@ trait DSL extends Loggable {
    *  - Only 5 field time specs are allowed
    *  - Multiple values per field (e.g. Mon,Wed,Fri) are not allowed. Ranges
    *    (e.g. Mon-Fri) are however allowed.
-   * 
    */
-  def parseCronString(input: String): List[DSLCronSpec] = {
+  def parseCronString(input: String): List[DSLTimeSpec] = {
 
     if (input.split(" ").length != 5)
       throw new DSLParseException("Only five-field cron strings allowed: " + input)
@@ -402,35 +400,12 @@ trait DSL extends Loggable {
         b => splitMultiVals(cron.get(2).toString).map(
           c => splitMultiVals(cron.get(3).toString).map(
             d => splitMultiVals(cron.get(4).toString).map(
-              e => DSLCronSpec(a, b, c, d, e)
+              e => DSLTimeSpec(a, b, c, d, e)
             )
           ).flatten
         ).flatten
       ).flatten
     ).flatten.toList
-  }
-
-  /** Merge input maps on a field by field basis. In case of duplicate keys
-   *  values from the first map are prefered.
-   */
-  private def mergeMaps[A, B](a: Map[A, B], b: Map[A, B]): Map[A, B] = {
-    a ++ b.map{ case (k,v) => k -> (a.getOrElse(k,v)) }
-  }
-
-  /** Merge input maps on a field by field basis. In case of duplicate keys,
-   *  the provided function is used to determine which value to keep in the
-   *  merged map.
-   */
-  private def mergeMaps[A, B](ms: List[Map[A, B]])(f: (B, B) => B): Map[A, B] =
-    (Map[A, B]() /: (for (m <- ms; kv <- m) yield kv)) {
-      (a, kv) =>
-        a + (if (a.contains(kv._1))
-              kv._1 -> f(a(kv._1), kv._2)
-            else kv)
-    }
-
-  def findResource(policy: DSLCreditPolicy, name: String) : Option[DSLResource] = {
-    policy.resources.find(a => a.name.equals(name))
   }
 }
 
@@ -439,7 +414,27 @@ case class DSLCreditPolicy (
   pricelists: List[DSLPriceList],
   resources: List[DSLResource],
   agreements: List[DSLAgreement]
-)
+) {
+  /** Find a resource by name */
+  def findResource(name: String): Option[DSLResource] = {
+    resources.find(a => a.name.equals(name))
+  }
+
+  /** Find a pricelist by name */
+  def findPriceList(name: String): Option[DSLPriceList] = {
+    pricelists.find(a => a.name.equals(name))
+  }
+
+  /** Find a pricelist by name */
+  def findPolicy(name: String): Option[DSLPolicy] = {
+    policies.find(a => a.name.equals(name))
+  }
+
+  /** Find an agreement by name */
+  def findAgreement(name: String): Option[DSLAgreement] = {
+    agreements.find(a => a.name.equals(name))
+  }
+}
 
 case class DSLResource(
   name: String
@@ -473,11 +468,11 @@ case class DSLTimeFrame (
 )
 
 case class DSLTimeFrameRepeat (
-  start: List[DSLCronSpec],
-  end: List[DSLCronSpec]
+  start: List[DSLTimeSpec],
+  end: List[DSLTimeSpec]
 )
 
-case class DSLCronSpec(
+case class DSLTimeSpec(
   min: Int,
   hour: Int,
   dom: Int,
@@ -485,4 +480,5 @@ case class DSLCronSpec(
   dow: Int
 )
 
+/** Exception thrown when a parsing error occurs*/
 class DSLParseException(msg: String) extends Exception(msg)
