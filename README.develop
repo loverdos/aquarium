@@ -1,0 +1,46 @@
+Aquarium Development Guidelines
+-------------------------------
+
+- Prerequisites
+ * Install an 1.6 compatible JDK
+ * Install Maven and add it to the path. Known working version is 3.0.3.
+ 
+
+- Configuring Maven
+
+Aquarium uses Maven for building, dependency management and versioning, backed
+by a Nexus installation for deploying artifacts and mirroring external
+repositories. To enable either of the two, set the following to your
+~/.m2/settings.xml file:
+
+<settings>
+  <servers>
+    <!--
+      Login details for the release and snaphot repos. Set them if you
+      want to deploy to Aquarium's Nexus repository.
+    -->
+    <server>
+      <id>aq-release</id>
+      <username>deployment</username>
+      <password>ASKFORIT</password>
+    </server>
+    <server>
+      <id>aq-snapshot</id>
+      <username>deployment</username>
+      <password>ASKFORIT</password>
+    </server>
+  </servers>
+
+  <mirrors>
+    <--
+      Mirrored versions of publicly available repositories. Use to speed up the
+      build.
+    -->
+    <mirror>
+      <id>nexus</id>
+      <mirrorOf>*</mirrorOf>
+      <url>http://aquarium.dev.grnet.gr:8081/nexus/content/groups/public</url>
+    </mirror>
+    </mirrors>
+</settings>
+
