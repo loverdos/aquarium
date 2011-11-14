@@ -75,6 +75,19 @@
     <url>http://code.grnet.gr/projects/aquarium/issues</url>
   </issueManagement>
 
+  <distributionManagement>
+    <repository>
+      <id>aq-release</id>
+      <name>Aquarium releases repo</name>
+      <url>http://aquarium.dev.grnet.gr:8081/nexus/content/repositories/releases</url>
+    </repository>
+    <snapshotRepository>
+      <id>aq-snapshot</id>
+      <name>Aquarium snapshots repo</name>
+      <url>http://aquarium.dev.grnet.gr:8081/nexus/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <!--Common project settings-->
   <properties>
     <scala.version>2.9.1</scala.version>
@@ -304,6 +317,26 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <!-- Bundle up source code on release/snapshot -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.1.2</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Release plug-in configuration -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.2.1</version>
       </plugin>
     </plugins>
   </build>
