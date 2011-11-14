@@ -34,20 +34,18 @@
   ~ or implied, of GRNET S.A.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <artifactId>aquarium</artifactId>
     <groupId>gr.grnet</groupId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
   </parent>
 
   <groupId>gr.grnet.aquarium</groupId>
   <artifactId>logic</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.1</version>
   <name>Aquarium Business Logic</name>
 
   <repositories>
@@ -70,7 +68,7 @@
     <dependency>
       <groupId>gr.grnet.aquarium</groupId>
       <artifactId>model</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.0.1</version>
     </dependency>
     <dependency>
       <groupId>org.scala-libs</groupId>
@@ -80,7 +78,7 @@
     <dependency>
       <groupId>gr.grnet.aquarium</groupId>
       <artifactId>shared</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.0.1</version>
       <classifier>resources</classifier>
       <type>zip</type>
       <scope>provided</scope>
