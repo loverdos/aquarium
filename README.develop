@@ -32,7 +32,7 @@ repositories. To enable either of the two, set the following to your
   </servers>
 
   <mirrors>
-    <--
+    <!--
       Mirrored versions of publicly available repositories. Use to speed up the
       build.
     -->
