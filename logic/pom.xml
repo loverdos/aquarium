@@ -40,12 +40,12 @@
   <parent>
     <artifactId>aquarium</artifactId>
     <groupId>gr.grnet</groupId>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
   </parent>
 
   <groupId>gr.grnet.aquarium</groupId>
   <artifactId>logic</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2-SNAPSHOT</version>
   <name>Aquarium Business Logic</name>
 
   <repositories>
@@ -68,7 +68,7 @@
     <dependency>
       <groupId>gr.grnet.aquarium</groupId>
       <artifactId>model</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.scala-libs</groupId>
@@ -78,7 +78,7 @@
     <dependency>
       <groupId>gr.grnet.aquarium</groupId>
       <artifactId>shared</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2-SNAPSHOT</version>
       <classifier>resources</classifier>
       <type>zip</type>
       <scope>provided</scope>
