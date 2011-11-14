@@ -213,10 +213,10 @@ trait DSL extends Loggable {
 
     val prices = resources.map {
       r =>
-        val algo = pl / r.name match {
-          case x: YAMLStringNode => x.string
-          case y: YAMLIntNode => y.int.toString
-          case z: YAMLDoubleNode => z.double.toString
+        val price = pl / r.name match {
+          case y: YAMLIntNode => y.int.toFloat
+          case z: YAMLDoubleNode => z.double.toFloat
+          case a: YAMLStringNode => a.string.toFloat
           case YAMLEmptyNode => tmpl.equals(emptyPolicy) match {
             case false => tmpl.prices.getOrElse(r,
               throw new DSLParseException(("Superpolicy does not specify a price for resource:%s").format(r.name)))
@@ -224,8 +224,8 @@ trait DSL extends Loggable {
               "its super pricelist").format(r.name, name))
           }
         }
-        Map(r -> algo)
-    }.foldLeft(Map[DSLResource, Any]())((x, y) => x ++ y)
+        Map(r -> price)
+    }.foldLeft(Map[DSLResource, Float]())((x, y) => x ++ y)
 
     val timeframe = pl / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
