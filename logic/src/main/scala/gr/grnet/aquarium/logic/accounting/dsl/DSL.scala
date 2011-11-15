@@ -85,7 +85,7 @@ trait DSL extends Loggable {
     )
     logger.debug("Agreements: %s".format(agreements))
 
-    DSLCreditPolicy(policies, List(), resources, List())
+    DSLCreditPolicy(policies, pricelists, resources, agreements)
   }
 
   /** Parse top level resources declarations */

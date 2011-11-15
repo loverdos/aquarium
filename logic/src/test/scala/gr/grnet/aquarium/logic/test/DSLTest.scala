@@ -70,12 +70,12 @@ class DSLTest extends DSL {
   @Test
   def testParsePricelists = {
     before
-    /*assertEquals(3, creditpolicy.pricelists.size)
+    assertEquals(3, creditpolicy.pricelists.size)
     assertNotNone(creditpolicy.findPriceList("everyTue2"))
     val res = creditpolicy.findResource("diskspace")
     assertNotNone(res)
-    assertEquals(0.1F, creditpolicy.findPriceList("everyTue2").get.prices.get(res.get).get)
-    */
+    assertEquals(0.05F,
+      creditpolicy.findPriceList("everyTue2").get.prices.get(res.get).get, 0.01F)
   }
 
   @Test
