@@ -36,32 +36,86 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import java.util.Date
+import scala.collection._
 
+/**
+ * A semantic checker for the Aquarium accounting DSL. 
+ *
+ * @author Georgios Gousios <gousiosg@gmail.com>
+ */
 trait DSLSemanticChecks {
 
-  def check(policy: DSLCreditPolicy) : List[DSLConsistencyMsg] = {
+  /**
+   * Functions to apply by default when checking consistency for
+   * [[DSLPolicy]] resources.
+   */
+  val policyChecks = List[DSLPolicy => List[DSLConsistencyMsg]](
+  )
 
-    List[DSLConsistencyMsg]() ++
-      policy.pricelists.flatMap(p => check(p))
+  /**
+   * Functions to apply by default when checking consistency for
+   * [[DSLPriceList]] resources.
+   */
+  val priceListChecks = List[DSLPriceList => List[DSLConsistencyMsg]](
+  )
 
+  /**
+   * Functions to apply by default when checking consistency for
+   * [[DSLAgreement]] resources.
+   */
+  val agreementChecks = List[DSLAgreement => List[DSLConsistencyMsg]](
+  )
 
+  /**
+   * Functions to apply by default when checking consistency for
+   * [[DSLTimeFrame]] resources.
+   */
+  val timeFrameChecks = List[DSLTimeFrame => List[DSLConsistencyMsg]](
+    checkTimeFrameFromTo,
+    checkRepeatHoles
+  )
+
+  /**
+   * Apply a list of consistency checking functions to a DSL entity and
+   * report results.
+   */
+  def check[A](resource: A, checks: List[A => List[DSLConsistencyMsg]]) :
+    List[DSLConsistencyMsg] = {
+    checks.map(f => f(resource)).flatten.toList
   }
 
-  def check(priceList: DSLPriceList) : List[DSLConsistencyMsg] = {
+  /**
+   * Top level consistency check functions. Applies all tests on all resources.
+   */
+  def check(creditPolicy: DSLCreditPolicy) : List[DSLConsistencyMsg] = {
     List[DSLConsistencyMsg]() ++
-      check(priceList.effective)
+      creditPolicy.pricelists.flatMap(p => check(p)) ++
+      creditPolicy.policies.flatMap(p => check(p)) ++
+      creditPolicy.agreements.flatMap(a => check(a))
   }
 
-  def check(time: DSLTimeFrame) : List[DSLConsistencyMsg] = {
+  /** Apply [[DSLPriceList]]-related checks on a pricelist */
+  def check(pl: DSLPriceList): List[DSLConsistencyMsg] = check(pl, priceListChecks)
 
-    val results = List[DSLConsistencyMsg]()
+  /** Apply [[DSLPolicy]]-related checks on a policy */
+  def check(pl: DSLPolicy): List[DSLConsistencyMsg] = check(pl, policyChecks)
 
+  /** Apply [[DSLAgreement]]-related checks on a policy */
+  def check(pl: DSLAgreement): List[DSLConsistencyMsg] = check(pl, agreementChecks)
+
+  /** Apply [[DSLTimeframe]]-related checks on a timeframe */
+  def check(time: DSLTimeFrame): List[DSLConsistencyMsg] = check(time, timeFrameChecks)
+
+  /* -- Checker functions -- */
+  private def checkTimeFrameFromTo(time: DSLTimeFrame) : List[DSLConsistencyMsg] = {
     if (time.from.after(time.to.getOrElse(new Date(0))))
-      results += DSLConsistencyError("")
-
+      List(DSLConsistencyError("foo"))
+    else
+      List()
   }
+
 }
 
-abstract class DSLConsistencyMsg(msg: String)
-case class DSLConsistencyWarn(warn: String) extends DSLConsistencyMsg(warn)
-case class DSLConsistencyError(err: String) extends DSLConsistencyMsg(err)
+sealed trait DSLConsistencyMsg
+case class DSLConsistencyWarn(warn: String) extends DSLConsistencyMsg
+case class DSLConsistencyError(err: String) extends DSLConsistencyMsg

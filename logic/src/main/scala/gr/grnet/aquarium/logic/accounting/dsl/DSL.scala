@@ -43,7 +43,7 @@ import gr.grnet.aquarium.util.yaml._
 import java.util.Date
 
 /**
- * A parser and semantic analyser for the Aquarium accounting DSL. 
+ * A parser for the Aquarium accounting DSL.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
@@ -339,7 +339,7 @@ trait DSL extends Loggable {
     DSLTimeFrame(from, to, effective)
   }
 
-  /** Parse a time frame repeat block */
+  /** Parse a resource frame repeat block */
   def parseTimeFrameRepeat(tmr: YAMLListNode): List[DSLTimeFrameRepeat] = {
 
     if (tmr.isEmpty)
@@ -351,7 +351,7 @@ trait DSL extends Loggable {
     )) ++ parseTimeFrameRepeat(tmr.tail)
   }
 
-  /** Parse a time frame entry (start, end tags) */
+  /** Parse a resource frame entry (start, end tags) */
   private def findInMap(repeat: YAMLMapNode,
                         tag: String) : List[DSLTimeSpec] = {
     repeat / tag match {
@@ -365,7 +365,7 @@ trait DSL extends Loggable {
    * library to parse crontab-like strings. The input format differs from the
    * [[http://en.wikipedia.org/wiki/Cron default cron format]] in the following ways:
    *
-   *  - Only 5 field time specs are allowed
+   *  - Only 5 field resource specs are allowed
    *  - Multiple values per field (e.g. Mon,Wed,Fri) are not allowed. Ranges
    *    (e.g. Mon-Fri) are however allowed.
    */

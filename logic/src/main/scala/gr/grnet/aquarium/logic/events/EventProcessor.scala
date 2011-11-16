@@ -50,7 +50,7 @@ object EventProcessor {
       e =>
         val u = e.who()
         e match {
-          case v: VMStarted => //Find stop event and calculate time usage
+          case v: VMStarted => //Find stop event and calculate resource usage
             val stop = findVMStopEvent(evts, v)
             val time = stop match {
               case Some(x) => x.when
