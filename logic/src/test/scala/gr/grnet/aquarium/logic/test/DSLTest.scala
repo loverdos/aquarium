@@ -40,7 +40,7 @@ import gr.grnet.aquarium.logic.accounting.dsl._
 import org.junit.{Test}
 import java.util.Date
 
-class DSLTest extends DSL {
+class DSLTest extends DSL with TestMethods {
 
   var creditpolicy : DSLCreditPolicy = _
 
@@ -106,24 +106,5 @@ class DSLTest extends DSL {
   @Test
   def testSerialization = {
     before
-  }
-
-  def assertThrows(f: => Unit) = {
-    try {
-      f
-      assert(false)
-    } catch {
-      case e: Exception => assert(true)
-    }
-  }
-
-  def assertNone(a: AnyRef) = a match {
-    case None =>
-    case x => fail()
-  }
-
-  def assertNotNone(a: AnyRef) = a match {
-    case None => fail()
-    case _ =>
   }
 }
