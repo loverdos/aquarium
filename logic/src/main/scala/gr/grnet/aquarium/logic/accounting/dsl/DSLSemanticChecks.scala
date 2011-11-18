@@ -72,6 +72,7 @@ trait DSLSemanticChecks {
    */
   val timeFrameChecks = List[DSLTimeFrame => List[DSLConsistencyMsg]](
     checkTimeFrameFromTo,
+    checkTimeNotInitialized,
     checkRepeatHoles
   )
 
@@ -109,11 +110,39 @@ trait DSLSemanticChecks {
   /* -- Checker functions -- */
   private def checkTimeFrameFromTo(time: DSLTimeFrame) : List[DSLConsistencyMsg] = {
     if (time.from.after(time.to.getOrElse(new Date(0))))
-      List(DSLConsistencyError("foo"))
+      List(DSLConsistencyError("Validity period %s ends before starting".format(time)))
     else
       List()
   }
 
+  private def checkTimeNotInitialized(time: DSLTimeFrame) : List[DSLConsistencyMsg] = {
+    if (time.repeat.get == None)
+      return List()
+
+    val result = new mutable.ListBuffer[DSLConsistencyMsg]
+
+    time.repeat.get.foreach {
+      r =>
+        r.start.foreach {
+          r => if (r.hour == -1 || r.min == -1)
+            result += DSLConsistencyError(
+              "Hours and mins must always be initialized: %s".format(time))
+        }
+
+        r.end.foreach {
+          e =>  if (e.hour == -1 || e.min == -1)
+            result += DSLConsistencyError(
+              "Hours and mins must always be initialized: %s".format(time))
+        }
+    }
+    result.toList
+  }
+
+  private def checkRepeatHoles(time: DSLTimeFrame) : List[DSLConsistencyMsg] = {
+    val repeat = time.repeat.getOrElse(return List())
+
+    List()
+  }
 }
 
 sealed trait DSLConsistencyMsg
