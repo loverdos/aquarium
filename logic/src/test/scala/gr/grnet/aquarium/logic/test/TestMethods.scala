@@ -50,6 +50,7 @@ trait TestMethods {
       assert(false)
     } catch {
       case e: Exception => assert(true)
+      case t: Throwable => assert(true)
     }
   }
 
