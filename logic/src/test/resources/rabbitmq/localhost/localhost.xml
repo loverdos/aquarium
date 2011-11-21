@@ -1,0 +1,13 @@
+<RabbitMQConfigurationModel>
+  <username>aquarium</username>
+  <password>@qu@r1um</password>
+  <host>localhost</host>
+  <port>5672</port>
+  <virtualHost>/</virtualHost>
+  <addresses class="List">
+    <string>localhost</string>
+  </addresses>
+  <connections class="List">
+    <string>localhost</string>
+  </connections>
+</RabbitMQConfigurationModel>

@@ -1,0 +1,6 @@
+<RabbitMQConfigurationsModel>
+  <configurationNames class="List">
+    <string>aquarium_dev</string>
+    <string>localhost</string>
+  </configurationNames>
+</RabbitMQConfigurationsModel>
