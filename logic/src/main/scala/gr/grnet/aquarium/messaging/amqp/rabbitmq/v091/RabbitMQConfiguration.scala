@@ -46,7 +46,17 @@ import gr.grnet.aquarium.util.Loggable
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class RabbitMQConfiguration(val confModel: RabbitMQConfigurationModel) extends AMQPConfiguration with Loggable {
-  private[v091] val _rabbitConnectionFactory = new JackRabbitConnectionFactory
+  private[v091] val _rabbitConnectionFactory = {
+    val _cf = new JackRabbitConnectionFactory
+
+    _cf.setUsername(confModel.username)
+    _cf.setPassword(confModel.password)
+    _cf.setHost(confModel.host)
+    _cf.setPort(confModel.port)
+    _cf.setVirtualHost(confModel.virtualHost)
+
+    _cf
+  }
 
   private val _name = confModel.name
   def name = _name
@@ -61,42 +71,7 @@ class RabbitMQConfiguration(val confModel: RabbitMQConfigurationModel) extends A
 
 
 object RabbitMQConfiguration {
-
   object RCFolders {
     val rabbitmq = "rabbitmq"
-
-    val producers = "producers"
-    val consumers = "consumers"
   }
-
-  object PropFiles {
-    val configurations = "configuration.properties"
-  }
-
-  object PropKeys {
-    val configurations = "configurations"
-
-    // configuration
-    val addresses = "addresses"
-    val username = "username"
-    val password = "password"
-    val host = "host"
-    val virtualHost = "virtualHost"
-    val port = "port"
-    val connections = "connections"
-
-    // connection
-    val exchange = "exchange"
-    val exchangeType = "exchangeType"
-    val exchangeIsDurable = "exchangeIsDurable"
-    val producers = "producers"
-    val consumers = "consumers"
-
-    // producer
-    val routingKey = "routingKey"
-
-    // consumer
-    val queue = "queue"
-  }
-
 }

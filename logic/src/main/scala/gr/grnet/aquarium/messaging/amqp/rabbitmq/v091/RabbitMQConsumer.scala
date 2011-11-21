@@ -48,8 +48,8 @@ class RabbitMQConsumer(private[v091] val owner: RabbitMQConnection, val confMode
   def name = confModel.name
 
   override def toString = {
-      val connName = owner.name
-      val confName = owner.owner.name
-      "RabbitMQConsumer(%s/%s/%s)".format(confName, connName, name)
-    }
+    val connName = owner.name
+    val confName = owner.owner.name
+    "RabbitMQConsumer(%s/%s/%s)".format(confName, connName, name)
+  }
 }
