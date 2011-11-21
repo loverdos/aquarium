@@ -1,6 +1,33 @@
 <RabbitMQConfigurationsModel>
-  <configurationNames class="List">
-    <string>aquarium_dev</string>
-    <string>localhost</string>
-  </configurationNames>
+  <configurations class="List">
+    <RabbitMQConfigurationModel>
+      <name>localhost_aquarium</name>
+      <username>guest</username>
+      <password>guest</password>
+      <host>localhost</host>
+      <port>5672</port>
+      <addresses class="Nil"/>
+      <virtualHost>/</virtualHost>
+      <connections class="List">
+        <RabbitMQConnectionModel>
+          <name>local_connection</name>
+          <exchange>guest_exchange</exchange>
+          <exchangeType>direct</exchangeType>
+          <isDurable>true</isDurable>
+          <producers class="List">
+            <RabbitMQProducerModel>
+              <name>producer1</name>
+              <routingKey>routing.key.all</routingKey>
+            </RabbitMQProducerModel>
+          </producers>
+          <consumers class="List">
+            <RabbitMQConsumerModel>
+              <name>consumer1</name>
+              <queue>queue1</queue>
+            </RabbitMQConsumerModel>
+          </consumers>
+        </RabbitMQConnectionModel>
+      </connections>
+    </RabbitMQConfigurationModel>
+  </configurations>
 </RabbitMQConfigurationsModel>

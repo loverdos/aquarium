@@ -46,13 +46,17 @@ import gr.grnet.aquarium.util.Loggable
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class RabbitMQConfiguration(val confModel: RabbitMQConfigurationModel) extends AMQPConfiguration with Loggable {
-  private val underlyingConnectionFactory = new JackRabbitConnectionFactory
+  private[v091] val _rabbitConnectionFactory = new JackRabbitConnectionFactory
 
   private val _name = confModel.name
   def name = _name
   
-  private lazy val _connections = confModel.connections.map(new RabbitMQConnection(_, underlyingConnectionFactory))
+  private lazy val _connections = confModel.connections.map(new RabbitMQConnection(this, _))
   def connections = _connections
+
+  override def toString = {
+    "RabbitMQConfiguration(%s)".format(name)
+  }
 }
 
 

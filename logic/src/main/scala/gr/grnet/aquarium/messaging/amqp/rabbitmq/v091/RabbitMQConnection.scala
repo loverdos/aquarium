@@ -47,8 +47,8 @@ import com.rabbitmq.client.{Channel => JackRabbitChannel, Connection => JackRabb
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RabbitMQConnection(val confModel: RabbitMQConnectionModel, underlyingConnectionFactory: JackRabbitConnectionFactory) extends AMQPConnection {
-  private[rabbitmq] val underlyingConnection: JackRabbitConnection = underlyingConnectionFactory.newConnection()
+class RabbitMQConnection(private[v091] val owner: RabbitMQConfiguration, val confModel: RabbitMQConnectionModel) extends AMQPConnection {
+  private[v091] val _rabbitConnection: JackRabbitConnection = owner._rabbitConnectionFactory.newConnection()
 
   private val _name = confModel.name
   def name = _name
@@ -58,4 +58,8 @@ class RabbitMQConnection(val confModel: RabbitMQConnectionModel, underlyingConne
 
   private lazy val _consumers = confModel.consumers.map(new RabbitMQConsumer(this, _))
   def consumers = _consumers
+
+  override def toString = {
+    "RabbitMQConnection(%s/%s)".format(owner.name, name)
+  }
 }

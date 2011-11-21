@@ -39,7 +39,7 @@ package xstream
 import com.thoughtworks.xstream.XStream
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import com.ckkloverdos.resource.StreamResource
-import gr.grnet.aquarium.messaging.amqp.rabbitmq.confmodel._
+import gr.grnet.aquarium.messaging.amqp.rabbitmq.v091.confmodel._
 
 
 /**

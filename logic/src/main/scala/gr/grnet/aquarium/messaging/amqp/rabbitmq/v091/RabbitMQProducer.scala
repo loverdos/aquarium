@@ -41,19 +41,21 @@ import confmodel.RabbitMQProducerModel
 import gr.grnet.aquarium.messaging.amqp.AMQPProducer
 import com.rabbitmq.client.{Channel => JackRabbitChannel, Connection => JackRabbitConnection, ConnectionFactory => JackRabbitConnectionFactory}
 import com.rabbitmq.client.AMQP.BasicProperties
+import gr.grnet.aquarium.util.Loggable
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RabbitMQProducer(owner: RabbitMQConnection, val confModel: RabbitMQProducerModel) extends AMQPProducer {
-  private val underlyingChannel = owner.underlyingConnection.createChannel()
+class RabbitMQProducer(private[v091] val owner: RabbitMQConnection, val confModel: RabbitMQProducerModel) extends AMQPProducer with Loggable {
+  private[v091] val _rabbitChannel = owner._rabbitConnection.createChannel()
 
   def name = confModel.name
 
-  private def _publish[A](message: String, headers: Map[String, String])(pre: JackRabbitChannel => Any)(post: JackRabbitChannel => A): A = {
+  private def _publish[A](message: String, headers: Map[String, String])(pre: JackRabbitChannel => Any)(post: JackRabbitChannel => A)(onError: => Exception => Any): A = {
     import scala.collection.JavaConversions._
-    val jrChannel = underlyingChannel
+
+    val jrChannel = _rabbitChannel
     val exchange = owner.confModel.exchange
     val routingKey = confModel.routingKey
     val jrProps = new BasicProperties.Builder().headers(headers).build()
@@ -64,10 +66,16 @@ class RabbitMQProducer(owner: RabbitMQConnection, val confModel: RabbitMQProduce
   }
 
   def publish(message: String, headers: Map[String, String] = Map()) = {
-    _publish(message, headers){_ =>}{_ => ()}
+    _publish(message, headers){_ =>}{_ => ()} {_ => logger.error("publish() from producer %ss".format())}
   }
 
   def publishWithConfirm(message: String, headers: Map[String, String] = Map()) = {
-    _publish(message, headers){_.confirmSelect()}{_.waitForConfirms()}
+    _publish(message, headers) { _.confirmSelect() }{ _.waitForConfirms() } {_ => logger.error("publishWithConfirm() from producer %ss".format())}
+  }
+
+  override def toString = {
+    val connName = owner.name
+    val confName = owner.owner.name
+    "RabbitMQProducer(%s/%s/%s)".format(confName, connName, name)
   }
 }

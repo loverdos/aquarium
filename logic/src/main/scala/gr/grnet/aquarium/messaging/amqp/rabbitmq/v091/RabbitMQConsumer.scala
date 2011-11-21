@@ -44,6 +44,12 @@ import com.rabbitmq.client.{Channel => JackRabbitChannel, Connection => JackRabb
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RabbitMQConsumer(owner: RabbitMQConnection, val confModel: RabbitMQConsumerModel) extends AMQPConsumer {
+class RabbitMQConsumer(private[v091] val owner: RabbitMQConnection, val confModel: RabbitMQConsumerModel) extends AMQPConsumer {
   def name = confModel.name
+
+  override def toString = {
+      val connName = owner.name
+      val confName = owner.owner.name
+      "RabbitMQConsumer(%s/%s/%s)".format(confName, connName, name)
+    }
 }

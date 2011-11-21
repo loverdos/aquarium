@@ -38,11 +38,12 @@ package rabbitmq
 package v091
 
 
-import com.ckkloverdos.resource.StreamResourceContext
 import confmodel.RabbitMQConfigurationsModel
 import gr.grnet.aquarium.util.xstream.XStreamHelpers
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.util.{ConfModel, Loggable, shortClassNameOf}
+import gr.grnet.aquarium.util.{Loggable, shortClassNameOf}
+import com.ckkloverdos.resource.{StreamResource, StreamResourceContext}
+import com.thoughtworks.xstream.XStream
 
 /**
  * 
@@ -62,25 +63,11 @@ object RabbitMQConfigurations extends Loggable {
   }
 
   object PropFiles {
-//    val configurations = "configuration.properties"
     val configurations = "configurations.xml"
   }
 
-  def apply(baseRC: StreamResourceContext): Maybe[RabbitMQConfigurations] = {
-    val xs = XStreamHelpers.DefaultXStream
-    val rabbitMQRC = baseRC / RCFolders.rabbitmq
-
-    val maybeConfsResource = rabbitMQRC.getResource(PropFiles.configurations)
-    val maybeConfsModel = maybeConfsResource.flatMap(XStreamHelpers.parseType[RabbitMQConfigurationsModel](_, xs))
-
-    def logErrors(errors: List[ConfModel.ConfModelError], theClass: Class[_]): String = {
-      val errorMsg = "%s has %s error(s)".format(shortClassNameOf(theClass))
-      logger.error(errorMsg)
-      for(error <- errors) {
-        logger.error(error)
-      }
-      errorMsg
-    }
+  def apply(resource: StreamResource, xs: XStream): Maybe[RabbitMQConfigurations] = {
+    val maybeConfsModel = XStreamHelpers.parseType[RabbitMQConfigurationsModel](resource, xs)
 
     maybeConfsModel match {
       case Just(confsModel) =>
@@ -89,7 +76,11 @@ object RabbitMQConfigurations extends Loggable {
         val confsModelErrors = confsModel.validateConfModel
 
         if(confsModelErrors.size > 0) {
-          val errorMsg = logErrors(confsModelErrors, confsModel.getClass)
+          val errorMsg = "%s has %s error(s)".format(shortClassNameOf(confsModel.getClass))
+          logger.error(errorMsg)
+          for(error <- confsModelErrors) {
+            logger.error(error)
+          }
           Failed(new Exception(errorMsg))
         } else {
           Just(new RabbitMQConfigurations(confsModel))
@@ -99,5 +90,12 @@ object RabbitMQConfigurations extends Loggable {
       case Failed(e, m) =>
         Failed(e, m)
     }
+  }
+  
+  def apply(baseRC: StreamResourceContext, xs: XStream = XStreamHelpers.DefaultXStream): Maybe[RabbitMQConfigurations] = {
+    val rabbitMQRC = baseRC / RCFolders.rabbitmq
+
+    val maybeConfsResource = rabbitMQRC.getResource(PropFiles.configurations)
+    maybeConfsResource.flatMap(this(_, xs))
   }
 }
