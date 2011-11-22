@@ -61,6 +61,11 @@
       <name>Georgios Gousios</name>
       <email>gousiosg@grnet.gr</email>
     </developer>
+    <developer>
+      <id>loverdos</id>
+      <name>Christos KK Loverdos</name>
+      <email>loverdos@grnet.gr</email>
+    </developer>
   </developers>
 
   <scm>
@@ -147,7 +152,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.7</version>
+      <version>4.10</version>
       <scope>test</scope>
     </dependency>
     <dependency>
