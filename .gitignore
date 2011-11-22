@@ -18,3 +18,4 @@ lib_managed/
 all-deps/
 projectFilesBackup/
 project/build/target/
+project/boot/
