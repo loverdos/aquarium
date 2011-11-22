@@ -48,7 +48,17 @@ import gr.grnet.aquarium.util.Loggable
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class RabbitMQProducer(private[v091] val owner: RabbitMQConnection, val confModel: RabbitMQProducerModel) extends AMQPProducer with Loggable {
-  private[v091] val _rabbitChannel = owner._rabbitConnection.createChannel()
+  private[v091] val _rabbitChannel = {
+    val _ch = owner._rabbitConnection.createChannel()
+    logger.info("Created rabbit channel %s for %s".format(_ch, this.toString))
+    val exchange = owner.confModel.exchange
+    val exchangeType = owner.confModel.exchangeType
+    val isDurable = owner.confModel.isDurable
+
+    val ed = _ch.exchangeDeclare(exchange, exchangeType, isDurable)
+    logger.info("Declared exchange %s for %s with result %s".format(exchange, this, ed))
+    _ch
+  }
 
   def name = confModel.name
 
@@ -65,11 +75,11 @@ class RabbitMQProducer(private[v091] val owner: RabbitMQConnection, val confMode
     post(jrChannel)
   }
 
-  def publish(message: String, headers: Map[String, String] = Map()) = {
+  def publishString(message: String, headers: Map[String, String] = Map()) = {
     _publish(message, headers){_ =>}{_ => ()} {_ => logger.error("publish() from producer %s".format())}
   }
 
-  def publishWithConfirm(message: String, headers: Map[String, String] = Map()) = {
+  def publishStringWithConfirm(message: String, headers: Map[String, String] = Map()) = {
     _publish(message, headers) { _.confirmSelect() }{ _.waitForConfirms() } {_ => logger.error("publishWithConfirm() from producer %s".format())}
   }
 

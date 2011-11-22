@@ -24,6 +24,11 @@
             <RabbitMQConsumerModel>
               <name>consumer1</name>
               <queue>queue1</queue>
+              <routingKey>routing.key.all</routingKey>
+              <autoAck>true</autoAck>
+              <queueIsDurable>true</queueIsDurable>
+              <queueIsAutoDelete>true</queueIsAutoDelete>
+              <queueIsExclusive>false</queueIsExclusive>
             </RabbitMQConsumerModel>
           </consumers>
         </RabbitMQConnectionModel>

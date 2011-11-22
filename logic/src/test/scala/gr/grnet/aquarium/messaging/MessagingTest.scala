@@ -35,6 +35,7 @@
 
 package gr.grnet.aquarium.messaging
 
+import amqp.AMQPDeliveryHandler
 import amqp.rabbitmq.v091.confmodel._
 import amqp.rabbitmq.v091.RabbitMQConfigurations.{PropFiles, RCFolders}
 import amqp.rabbitmq.v091.{RabbitMQConsumer, RabbitMQConfigurations}
@@ -43,6 +44,8 @@ import org.junit.Assert._
 import com.ckkloverdos.resource.DefaultResourceContext
 import gr.grnet.aquarium.util.xstream.XStreamHelpers
 import gr.grnet.aquarium.util.Loggable
+import com.ckkloverdos.props.Props
+import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 
 /**
  * 
@@ -53,8 +56,21 @@ class MessagingTest extends Loggable {
   val baseRC = DefaultResourceContext
   val rabbitmqRC = baseRC / RCFolders.rabbitmq
 
+  object Names {
+    val consumer1 = "consumer1"
+    val producer1 = "producer1"
+    val queue1 = "queue1"
+    val routing_key_all = "routing.key.all"
+    val local_connection = "local_connection"
+    val aquarium_exchange = "aquarium_exchange"
+    val direct = "direct"
+    val localhost_aquarium = "localhost_aquarium"
+    val aquarium = "aquarium"
+    val localhost = "localhost"
+  }
+
   private def _genTestConf: String = {
-    val consmod1 = new RabbitMQConsumerModel("consumer1", "queue1")
+    val consmod1 = new RabbitMQConsumerModel("consumer1", "queue1", "routing.key.all", true, true, false, false)
     val prodmod1 = new RabbitMQProducerModel("producer1", "routing.key.all")
     val conn1 = new RabbitMQConnectionModel(
       "local_connection",
@@ -90,14 +106,55 @@ class MessagingTest extends Loggable {
   def testLocalProducer {
     val maybeConfs = RabbitMQConfigurations(baseRC)
     assertTrue(maybeConfs.isJust)
-    for {
+    val maybeProducer = for {
       confs    <- maybeConfs
-      conf     <- confs.findConfiguration("localhost_aquarium")
-      conn     <- conf.findConnection("local_connection")
-      producer <- conn.findProducer("producer1")
+      conf     <- confs.findConfiguration(Names.localhost_aquarium)
+      conn     <- conf.findConnection(Names.local_connection)
+      producer <- conn.findProducer(Names.producer1)
     } yield {
-      logger.debug("Publishing a message from %s".format(producer))
-      producer.publish("Test")
+      producer
+    }
+
+    maybeProducer match {
+      case Just(producer) =>
+        logger.debug("Publishing a message from %s".format(producer))
+        producer.publishString("Test")
+      case NoVal =>
+        fail("No producer named %s".format(Names.producer1))
+      case Failed(e, m) =>
+        fail("%s: %s".format(m, e.getMessage))
+    }
+  }
+
+  @Test
+  def testLocalConsumer {
+    val maybeConfs = RabbitMQConfigurations(baseRC)
+    assertTrue(maybeConfs.isJust)
+
+    val maybeConsumer = for {
+      confs    <- maybeConfs
+      conf     <- confs.findConfiguration(Names.localhost_aquarium)
+      conn     <- conf.findConnection(Names.local_connection)
+      consumer <- conn.findConsumer(Names.consumer1)
+    } yield {
+      consumer
+    }
+
+    maybeConsumer match {
+      case Just(consumer) =>
+        logger.debug("Receiving a message from %s".format(consumer))
+        consumer.newDeliveryAgent(new AMQPDeliveryHandler {
+          def handleStringDelivery(envelope: Props, headers: Props, content: String) = {
+            logger.debug("Received message with")
+            logger.debug("  envelope: %s".format(envelope))
+            logger.debug("  headers : %s".format(headers))
+            logger.debug("  body    : %s".format(content))
+          }
+        })
+      case NoVal =>
+        fail("No consumer named %s".format(Names.consumer1))
+      case Failed(e, m) =>
+        fail("%s: %s".format(m, e.getMessage))
     }
   }
 

@@ -41,4 +41,6 @@ package gr.grnet.aquarium.messaging.amqp
  */
 trait AMQPConsumer {
   def name: String
+
+  def newDeliveryAgent(handler: AMQPDeliveryHandler): AMQPDeliveryAgent
 }

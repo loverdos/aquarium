@@ -35,14 +35,10 @@
 
 package gr.grnet.aquarium.messaging.amqp
 
-import parallel.Future
-
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait AMQPProducer {
-  def name: String
-  def publishString(message: String, headers: Map[String,  String] = Map()): Unit
-  def publishStringWithConfirm(message: String, headers: Map[String,  String] = Map()): Boolean
+trait AMQPDeliveryAgent {
+  def deliverNext: Unit
 }

@@ -67,15 +67,25 @@ case class RabbitMQConfigurationModel(
 }
 
 case class RabbitMQConnectionModel(
-  name: String,
-  exchange: String,
-  exchangeType: String,
-  isDurable: Boolean,
-  producers: List[RabbitMQProducerModel],
-  consumers: List[RabbitMQConsumerModel]
+    name: String,
+    exchange: String,
+    exchangeType: String,
+    isDurable: Boolean,
+    producers: List[RabbitMQProducerModel],
+    consumers: List[RabbitMQConsumerModel]
 ) extends RabbitMQConfModel {
 
 }
 
-case class RabbitMQProducerModel(name: String, routingKey: String) extends RabbitMQConfModel
-case class RabbitMQConsumerModel(name: String, queue: String) extends RabbitMQConfModel
+case class RabbitMQProducerModel(
+    name: String,
+    routingKey: String) extends RabbitMQConfModel
+
+case class RabbitMQConsumerModel(
+    name: String,
+    queue: String,
+    routingKey: String,
+    autoAck: Boolean,
+    queueIsDurable: Boolean,
+    queueIsExclusive: Boolean,
+    queueIsAutoDelete: Boolean) extends RabbitMQConfModel
