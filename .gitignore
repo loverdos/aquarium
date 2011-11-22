@@ -1,12 +1,12 @@
-target*
-runner/*
+target/
+runner/
 *.class
 *.classpath
 *.DS_Store
 *.project
 *.settings
 *.externalToolBuilders
-/.idea/
+.idea/
 bin/
 .metadata
 *.*~
@@ -14,7 +14,7 @@ bin/
 *.ipr
 *.iws
 *.db
-lib_managed
+lib_managed/
 all-deps/
-project/
 projectFilesBackup/
+project/build/target/
