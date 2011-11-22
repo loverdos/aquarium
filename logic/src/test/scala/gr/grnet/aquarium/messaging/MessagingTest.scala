@@ -97,6 +97,7 @@ class MessagingTest extends Loggable {
 
     xml
   }
+
   @Test
   def testConfigurationsExist {
     assertTrue(rabbitmqRC.getResource(PropFiles.configurations).isJust)

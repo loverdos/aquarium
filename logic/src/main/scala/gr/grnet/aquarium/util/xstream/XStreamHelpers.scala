@@ -40,6 +40,7 @@ import com.thoughtworks.xstream.XStream
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import com.ckkloverdos.resource.StreamResource
 import gr.grnet.aquarium.messaging.amqp.rabbitmq.v091.confmodel._
+import gr.grnet.aquarium.store.mongodb.confmodel._
 
 
 /**
@@ -59,11 +60,16 @@ object XStreamHelpers {
   }
   
   def prepareXStreamAliases(xs: XStream): XStream = {
+    // RabbitMQ
     prepareXStreamAlias[RabbitMQConfigurationsModel](xs)
     prepareXStreamAlias[RabbitMQConfigurationModel](xs)
     prepareXStreamAlias[RabbitMQConnectionModel](xs)
     prepareXStreamAlias[RabbitMQProducerModel](xs)
     prepareXStreamAlias[RabbitMQConsumerModel](xs)
+
+    // MongoDB
+    prepareXStreamAlias[MongoDBConfigurationModel](xs)
+    prepareXStreamAlias[ServerAddressConfigurationModel](xs)
 
     xs.alias("List", classOf[::[_]])
     xs.alias("Nil", manifest[Nil.type].erasure)

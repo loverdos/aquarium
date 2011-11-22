@@ -1,0 +1,10 @@
+<MongoDBConfigurationModel>
+  <slaveOK>true</slaveOK>
+  <writeConcern>SAFE</writeConcern>
+  <hosts class="List">
+    <ServerAddressConfigurationModel>
+      <host>aquarium.dev.grnet.gr</host>
+      <port>27017</port>
+    </ServerAddressConfigurationModel>
+  </hosts>
+</MongoDBConfigurationModel>

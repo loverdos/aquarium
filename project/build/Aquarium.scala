@@ -62,7 +62,9 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 		val lib_yaml      = "org.yaml"       % "snakeyaml"       % "1.9"  withSources()
 		val lib_jcrontab  = "com.kenai.crontab-parser" % "crontab-parser" % "1.0.1" withSources()
 		val lib_xstream   = "com.thoughtworks.xstream" % "xstream"     % "1.4.1" withSources()
-		val lib_rabbit    = "com.rabbitmq"   % "amqp-client"     % "2.7.0" withSources()
+		val lib_rabbit    = "com.rabbitmq"   % "amqp-client"       % "2.7.0" withSources()
+//    val lib_mongo     = "org.mongodb"    % "mongo-java-driver" % "2.7.2" withSources()
+    val lib_casbah    = "com.mongodb.casbah" % "casbah-core_2.9.1"  % "2.1.5-1" withSources()
 
 		val lib_converter      = "com.ckkloverdos" % "converter_2.9.1"      % "0.3.0" withSources()
 		val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()
