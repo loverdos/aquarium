@@ -36,14 +36,13 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit._
-import gr.grnet.aquarium.logic.Bills
 import gr.grnet.aquarium.model.{User}
 import gr.grnet.aquarium.logic.accounting.{Agreement, AccountingEventType}
 
 import gr.grnet.aquarium.util.FixtureLoader
 
 class BillingTest
-  extends FixtureLoader with Bills {
+  extends FixtureLoader {
 
   def getDB = TestDB
 
