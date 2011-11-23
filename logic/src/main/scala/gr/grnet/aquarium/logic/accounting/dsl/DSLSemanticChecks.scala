@@ -47,28 +47,28 @@ trait DSLSemanticChecks {
 
   /**
    * Functions to apply by default when checking consistency for
-   * [[DSLPolicy]] resources.
+   * [[gr.grnet.aquarium.logic.dsl.DSLPolicy]] resources.
    */
   val policyChecks = List[DSLPolicy => List[DSLConsistencyMsg]](
   )
 
   /**
    * Functions to apply by default when checking consistency for
-   * [[DSLPriceList]] resources.
+   * [[gr.grnet.aquarium.logic.dsl.DSLPriceList]] resources.
    */
   val priceListChecks = List[DSLPriceList => List[DSLConsistencyMsg]](
   )
 
   /**
    * Functions to apply by default when checking consistency for
-   * [[DSLAgreement]] resources.
+   * [[gr.grnet.aquarium.logic.dsl.DSLAgreement]] resources.
    */
   val agreementChecks = List[DSLAgreement => List[DSLConsistencyMsg]](
   )
 
   /**
    * Functions to apply by default when checking consistency for
-   * [[DSLTimeFrame]] resources.
+   * [[gr.grnet.aquarium.logic.dsl.DSLTimeFrame]] resources.
    */
   val timeFrameChecks = List[DSLTimeFrame => List[DSLConsistencyMsg]](
     checkTimeFrameFromTo,
@@ -95,16 +95,16 @@ trait DSLSemanticChecks {
       creditPolicy.agreements.flatMap(a => check(a))
   }
 
-  /** Apply [[DSLPriceList]]-related checks on a pricelist */
+  /** Apply [[gr.grnet.aquarium.logic.dsl.DSLPriceList]] related checks on a pricelist */
   def check(pl: DSLPriceList): List[DSLConsistencyMsg] = check(pl, priceListChecks)
 
-  /** Apply [[DSLPolicy]]-related checks on a policy */
+  /** Apply [[gr.grnet.aquarium.logic.dsl.DSLPolicy]] related checks on a policy */
   def check(pl: DSLPolicy): List[DSLConsistencyMsg] = check(pl, policyChecks)
 
-  /** Apply [[DSLAgreement]]-related checks on a policy */
+  /** Apply [[gr.grnet.aquarium.logic.dsl.DSLAgreement]] related checks on a policy */
   def check(pl: DSLAgreement): List[DSLConsistencyMsg] = check(pl, agreementChecks)
 
-  /** Apply [[DSLTimeframe]]-related checks on a timeframe */
+  /** Apply [[gr.grnet.aquarium.logic.dsl.DSLTimeframe]] related checks on a timeframe */
   def check(time: DSLTimeFrame): List[DSLConsistencyMsg] = check(time, timeFrameChecks)
 
   /* -- Checker functions -- */
