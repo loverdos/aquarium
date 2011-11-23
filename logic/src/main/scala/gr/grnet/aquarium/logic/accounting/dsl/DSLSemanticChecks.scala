@@ -47,9 +47,9 @@ trait DSLSemanticChecks {
 
   /**
    * Functions to apply by default when checking consistency for
-   * [[gr.grnet.aquarium.logic.dsl.DSLPolicy]] resources.
+   * [[gr.grnet.aquarium.logic.dsl.DSLAlgorithm]] resources.
    */
-  val policyChecks = List[DSLPolicy => List[DSLConsistencyMsg]](
+  val policyChecks = List[DSLAlgorithm => List[DSLConsistencyMsg]](
   )
 
   /**
@@ -88,20 +88,20 @@ trait DSLSemanticChecks {
   /**
    * Top level consistency check functions. Applies all tests on all resources.
    */
-  def check(creditPolicy: DSLCreditPolicy) : List[DSLConsistencyMsg] = {
+  def check(creditPolicy: DSLPolicy) : List[DSLConsistencyMsg] = {
     List[DSLConsistencyMsg]() ++
       creditPolicy.pricelists.flatMap(p => check(p)) ++
-      creditPolicy.policies.flatMap(p => check(p)) ++
+      creditPolicy.algorithms.flatMap(p => check(p)) ++
       creditPolicy.agreements.flatMap(a => check(a))
   }
 
   /** Apply [[gr.grnet.aquarium.logic.dsl.DSLPriceList]] related checks on a pricelist */
   def check(pl: DSLPriceList): List[DSLConsistencyMsg] = check(pl, priceListChecks)
 
-  /** Apply [[gr.grnet.aquarium.logic.dsl.DSLPolicy]] related checks on a policy */
-  def check(pl: DSLPolicy): List[DSLConsistencyMsg] = check(pl, policyChecks)
+  /** Apply [[gr.grnet.aquarium.logic.dsl.DSLAlgorithm]] related checks on a algorithm */
+  def check(pl: DSLAlgorithm): List[DSLConsistencyMsg] = check(pl, policyChecks)
 
-  /** Apply [[gr.grnet.aquarium.logic.dsl.DSLAgreement]] related checks on a policy */
+  /** Apply [[gr.grnet.aquarium.logic.dsl.DSLAgreement]] related checks on a algorithm */
   def check(pl: DSLAgreement): List[DSLConsistencyMsg] = check(pl, agreementChecks)
 
   /** Apply [[gr.grnet.aquarium.logic.dsl.DSLTimeframe]] related checks on a timeframe */

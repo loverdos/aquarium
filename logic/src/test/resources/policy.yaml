@@ -1,4 +1,4 @@
-creditpolicy:
+aquariumpolicy:
   resources:
     - bandwidthup
     - bandwidthdown
@@ -9,8 +9,8 @@ creditpolicy:
     - price
     - volume
 
-  policies:
-    - policy:
+  algorithms:
+    - algorithm:
       name: default
       bandwidthup: $price times $volume
       bandwidthdown: $price times $volume
@@ -24,7 +24,7 @@ creditpolicy:
             end:   "00 00 20 * *"
         from: 0
         to: 124443
-    - policy:
+    - algorithm:
       name: freedisk
       overrides: default
       diskspace: 0
@@ -63,16 +63,24 @@ creditpolicy:
             end:   "00 20 * * *"
         from: 0
 
+  creditplans:
+    - creditplan:
+      name: default
+      credits: 100
+      at: "00 00 * * *"
+      effective:
+        from: 0
+
   agreements:
     - agreement:
       name: default
-      policy: default
+      algorithm: default
       pricelist: default
 
     - agreement:
       overrides: default
       name: scaledbandwidth
-      policy:
+      algorithm:
         bandwidthup: |
                 if $volume gt 15 then
                   $volume times $price

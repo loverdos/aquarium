@@ -42,7 +42,7 @@ import gr.grnet.aquarium.util.TestMethods
 
 class DSLTest extends DSL with TestMethods {
 
-  var creditpolicy : DSLCreditPolicy = _
+  var creditpolicy : DSLPolicy = _
 
   def before = {
     creditpolicy = parse(
@@ -54,17 +54,17 @@ class DSLTest extends DSL with TestMethods {
   @Test
   def testParsePolicies = {
     before
-    assertEquals(creditpolicy.policies.size, 2)
-    assertEquals(creditpolicy.policies(0).algorithms.size,
+    assertEquals(creditpolicy.algorithms.size, 2)
+    assertEquals(creditpolicy.algorithms(0).algorithms.size,
       creditpolicy.resources.size)
-    assertEquals(creditpolicy.policies(1).algorithms.size,
+    assertEquals(creditpolicy.algorithms(1).algorithms.size,
       creditpolicy.resources.size)
 
     val d = creditpolicy.findResource("diskspace").get
     assertNotNone(d)
 
-    assertNotSame(creditpolicy.policies(0).algorithms(d),
-      creditpolicy.policies(1).algorithms(d))
+    assertNotSame(creditpolicy.algorithms(0).algorithms(d),
+      creditpolicy.algorithms(1).algorithms(d))
   }
 
   @Test

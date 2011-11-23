@@ -40,7 +40,7 @@ import com.kenai.crontabparser.impl.CronTabParserBridge
 import java.io.{InputStreamReader, InputStream}
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.yaml._
-import java.util.{Calendar, Date}
+import java.util.Date
 
 /**
  * A parser for the Aquarium accounting DSL.
@@ -49,28 +49,28 @@ import java.util.{Calendar, Date}
  */
 trait DSL extends Loggable {
 
-    /** An empty policy */
-   val emptyPolicy = DSLPolicy("", None, Map(), DSLTimeFrame(new Date(0), None, Option(List())))
+    /** An empty algorithm */
+   val emptyAlgorithm = DSLAlgorithm("", None, Map(), DSLTimeFrame(new Date(0), None, Option(List())))
 
    /** An empty pricelist */
    val emptyPriceList = DSLPriceList("", None, Map(), DSLTimeFrame(new Date(0), None, Option(List())))
 
    /** An empty agreement*/
-   val emptyAgreement = DSLAgreement("", None, emptyPolicy, emptyPriceList)
+   val emptyAgreement = DSLAgreement("", None, emptyAlgorithm, emptyPriceList)
 
   /**
-   * Parse an InputStream containing an Aquarium DSL policy.
+   * Parse an InputStream containing an Aquarium DSL algorithm.
    */
-  def parse(input: InputStream) : DSLCreditPolicy = {
+  def parse(input: InputStream) : DSLPolicy = {
     logger.debug("Policy parsing started")
 
     val document = YAMLHelpers.loadYAML(new InputStreamReader(input))
-    val policy = document / (Vocabulary.creditpolicy)
+    val policy = document / (Vocabulary.aquariumpolicy)
 
     val resources = parseResources(policy./(Vocabulary.resources).asInstanceOf[YAMLListNode])
     logger.debug("Resources: %s".format(resources))
 
-    val policies = parsePolicies(policy./(Vocabulary.policies).asInstanceOf[YAMLListNode],resources, List())
+    val policies = parseAlgorithms(policy./(Vocabulary.algorithms).asInstanceOf[YAMLListNode],resources, List())
     logger.debug("Policies: %s".format(policies))
 
     val pricelists = parsePriceLists(
@@ -85,7 +85,7 @@ trait DSL extends Loggable {
     )
     logger.debug("Agreements: %s".format(agreements))
 
-    DSLCreditPolicy(policies, pricelists, resources, agreements)
+    DSLPolicy(policies, pricelists, resources, agreements)
   }
 
   /** Parse top level resources declarations */
@@ -100,72 +100,72 @@ trait DSL extends Loggable {
     }
   }
 
-  /** Parse top level policy declarations */
-  private def parsePolicies(policies: YAMLListNode,
+  /** Parse top level algorithm declarations */
+  private def parseAlgorithms(algorithms: YAMLListNode,
                     resources: List[DSLResource],
-                    results: List[DSLPolicy]): List[DSLPolicy] = {
+                    results: List[DSLAlgorithm]): List[DSLAlgorithm] = {
 
-    policies.head match {
+    algorithms.head match {
       case YAMLEmptyNode => return List()
       case _ =>
     }
 
-    val superName = policies.head / Vocabulary.overrides
-    val policyTmpl = superName match {
+    val superName = algorithms.head / Vocabulary.overrides
+    val algoTmpl = superName match {
       case y: YAMLStringNode =>
         results.find(p => p.name.equals(y.string)) match {
           case Some(x) => x
-          case None => throw new DSLParseException("Cannot find super policy %s".format(superName))
+          case None => throw new DSLParseException("Cannot find super algorithm %s".format(superName))
         }
-      case YAMLEmptyNode => emptyPolicy
-      case _ => throw new DSLParseException("Super policy name %s not a string".format())
+      case YAMLEmptyNode => emptyAlgorithm
+      case _ => throw new DSLParseException("Super algorithm name %s not a string".format())
     }
 
-    val policy = constructPolicy(policies.head.asInstanceOf[YAMLMapNode],
-      policyTmpl, resources)
+    val algorithm = constructAlgorithm(algorithms.head.asInstanceOf[YAMLMapNode],
+      algoTmpl, resources)
 
-    val tmpresults = results ++ List(policy)
-    List(policy) ++ parsePolicies(policies.tail, resources, tmpresults)
+    val tmpresults = results ++ List(algorithm)
+    List(algorithm) ++ parseAlgorithms(algorithms.tail, resources, tmpresults)
   }
 
-  /** Construct a policy object from a yaml node*/
-  def constructPolicy(policy: YAMLMapNode,
-                      policyTmpl: DSLPolicy,
-                      resources: List[DSLResource]): DSLPolicy = {
-    val name = policy / Vocabulary.name match {
+  /** Construct an algorithm object from a yaml node*/
+  def constructAlgorithm(algorithm: YAMLMapNode,
+                      algoTmpl: DSLAlgorithm,
+                      resources: List[DSLResource]): DSLAlgorithm = {
+    val name = algorithm / Vocabulary.name match {
       case x: YAMLStringNode => x.string
-      case YAMLEmptyNode => throw new DSLParseException("Policy does not have a name")
+      case YAMLEmptyNode => throw new DSLParseException("Algorithm does not have a name")
     }
 
-    val overr = policy / Vocabulary.overrides match {
-      case x: YAMLStringNode => Some(policyTmpl)
+    val overr = algorithm / Vocabulary.overrides match {
+      case x: YAMLStringNode => Some(algoTmpl)
       case YAMLEmptyNode => None
     }
 
     val algos = resources.map {
       r =>
-        val algo = policy / r.name match {
+        val algo = algorithm / r.name match {
           case x: YAMLStringNode => x.string
           case y: YAMLIntNode => y.int.toString
-          case YAMLEmptyNode => policyTmpl.equals(emptyPolicy) match {
-            case false => policyTmpl.algorithms.getOrElse(r,
-              throw new DSLParseException(("Superpolicy does not specify an algorithm for resource:%s").format(r.name)))
+          case YAMLEmptyNode => algoTmpl.equals(emptyAlgorithm) match {
+            case false => algoTmpl.algorithms.getOrElse(r,
+              throw new DSLParseException(("Superalgo does not specify an algorithm for resource:%s").format(r.name)))
             case true => throw new DSLParseException(("Cannot find calculation algorithm for resource %s in either " +
-              "policy %s or a superpolicy").format(r.name, name))
+              "algorithm %s or a superalgorithm").format(r.name, name))
           }
         }
         Map(r -> algo)
     }.foldLeft(Map[DSLResource, String]())((x,y) => x ++ y)
 
-    val timeframe = policy / Vocabulary.effective match {
+    val timeframe = algorithm / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
-      case YAMLEmptyNode => policyTmpl.equals(emptyPolicy) match {
-        case false => policyTmpl.effective
-        case true => throw new DSLParseException(("Cannot find effectivity period for policy %s ").format(name))
+      case YAMLEmptyNode => algoTmpl.equals(emptyAlgorithm) match {
+        case false => algoTmpl.effective
+        case true => throw new DSLParseException(("Cannot find effectivity period for algorithm %s ").format(name))
       }
     }
 
-    DSLPolicy(name, overr, algos, timeframe)
+    DSLAlgorithm(name, overr, algos, timeframe)
   }
 
   /** Parse top level pricelist declarations */
@@ -203,7 +203,7 @@ trait DSL extends Loggable {
     val name = pl / Vocabulary.name match {
       case x: YAMLStringNode => x.string
       case YAMLEmptyNode => throw new DSLParseException(
-        "Policy does not have a name")
+        "Pricelist does not have a name")
     }
 
     val overr = pl / Vocabulary.overrides match {
@@ -217,9 +217,9 @@ trait DSL extends Loggable {
           case y: YAMLIntNode => y.int.toFloat
           case z: YAMLDoubleNode => z.double.toFloat
           case a: YAMLStringNode => a.string.toFloat
-          case YAMLEmptyNode => tmpl.equals(emptyPolicy) match {
+          case YAMLEmptyNode => tmpl.equals(emptyAlgorithm) match {
             case false => tmpl.prices.getOrElse(r,
-              throw new DSLParseException(("Superpolicy does not specify a price for resource:%s").format(r.name)))
+              throw new DSLParseException(("Superpricelist does not specify a price for resource:%s").format(r.name)))
             case true => throw new DSLParseException(("Cannot find price for resource %s in either pricelist %s or " +
               "its super pricelist").format(r.name, name))
           }
@@ -229,7 +229,7 @@ trait DSL extends Loggable {
 
     val timeframe = pl / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
-      case YAMLEmptyNode => tmpl.equals(emptyPolicy) match {
+      case YAMLEmptyNode => tmpl.equals(emptyAlgorithm) match {
         case false => tmpl.effective
         case true => throw new DSLParseException(("Cannot find effectivity period for pricelist %s ").format(name))
       }
@@ -239,7 +239,7 @@ trait DSL extends Loggable {
 
   /** Parse top level agreements */
   private def parseAgreements(agreements: YAMLListNode,
-                      policies: List[DSLPolicy],
+                      policies: List[DSLAlgorithm],
                       pricelists: List[DSLPriceList],
                       resources: List[DSLResource],
                       results: List[DSLAgreement]): List[DSLAgreement] = {
@@ -269,7 +269,7 @@ trait DSL extends Loggable {
 
   def constructAgreement(agr: YAMLMapNode,
                          tmpl: DSLAgreement,
-                         policies: List[DSLPolicy],
+                         policies: List[DSLAlgorithm],
                          pricelists: List[DSLPriceList],
                          resources: List[DSLResource]) : DSLAgreement = {
      val name = agr / Vocabulary.name match {
@@ -277,20 +277,20 @@ trait DSL extends Loggable {
       case YAMLEmptyNode => throw new DSLParseException("Agreement does not have a name")
     }
 
-    val policy = agr / Vocabulary.policy match {
+    val algorithm = agr / Vocabulary.algorithm match {
       case x: YAMLStringNode => policies.find(p => p.name.equals(x.string)) match {
         case Some(y) => y
-        case None => throw new DSLParseException(("Cannot find policy named %s").format(x))
+        case None => throw new DSLParseException(("Cannot find algorithm named %s").format(x))
       }
       case y: YAMLMapNode => tmpl.equals(emptyAgreement) match {
-        case true => throw new DSLParseException(("Incomplete policy definition for agreement %s").format(name))
+        case true => throw new DSLParseException(("Incomplete algorithm definition for agreement %s").format(name))
         case false =>
-          y.map += ("name" -> YAMLStringNode("/","%s-policy".format(name)))
-          constructPolicy(y, tmpl.policy, resources)
+          y.map += ("name" -> YAMLStringNode("/","%s-algorithm".format(name)))
+          constructAlgorithm(y, tmpl.algorithm, resources)
       }
       case YAMLEmptyNode => tmpl.equals(emptyAgreement) match {
-        case true => throw new DSLParseException(("No policy for agreement %s").format(name))
-        case false => tmpl.policy
+        case true => throw new DSLParseException(("No algorithm for agreement %s").format(name))
+        case false => tmpl.algorithm
       }
     }
 
@@ -306,7 +306,7 @@ trait DSL extends Loggable {
           constructPriceList(y, tmpl.pricelist, resources)
       }
       case YAMLEmptyNode => tmpl.equals(emptyAgreement) match {
-        case true => throw new DSLParseException(("No policy for agreement %s").format(name))
+        case true => throw new DSLParseException(("No algorithm for agreement %s").format(name))
         case false => tmpl.pricelist
       }
     }
@@ -316,7 +316,7 @@ trait DSL extends Loggable {
       case false => None
     }
 
-    DSLAgreement(name, overrides, policy, pricelist) 
+    DSLAgreement(name, overrides, algorithm, pricelist)
   }
 
   /** Parse a timeframe declaration */
@@ -408,8 +408,8 @@ trait DSL extends Loggable {
   }
 }
 
-case class DSLCreditPolicy (
-  policies: List[DSLPolicy],
+case class DSLPolicy (
+  algorithms: List[DSLAlgorithm],
   pricelists: List[DSLPriceList],
   resources: List[DSLResource],
   agreements: List[DSLAgreement]
@@ -425,8 +425,8 @@ case class DSLCreditPolicy (
   }
 
   /** Find a pricelist by name */
-  def findPolicy(name: String): Option[DSLPolicy] = {
-    policies.find(a => a.name.equals(name))
+  def findAlgorithm(name: String): Option[DSLAlgorithm] = {
+    algorithms.find(a => a.name.equals(name))
   }
 
   /** Find an agreement by name */
@@ -442,13 +442,13 @@ case class DSLResource(
 case class DSLAgreement (
   name: String,
   overrides: Option[DSLAgreement],
-  policy : DSLPolicy,
+  algorithm : DSLAlgorithm,
   pricelist : DSLPriceList
 )
 
-case class DSLPolicy (
+case class DSLAlgorithm (
   name: String,
-  overrides: Option[DSLPolicy],
+  overrides: Option[DSLAlgorithm],
   algorithms: Map[DSLResource, String],
   effective: DSLTimeFrame
 )

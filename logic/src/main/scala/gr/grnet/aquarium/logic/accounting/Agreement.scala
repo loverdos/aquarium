@@ -51,7 +51,7 @@ abstract class Agreement {
     policies = policies ++ Map(et -> Map(d -> p))
   }
 
-  /** Get applicable policy at the resource that the event occured */
+  /** Get applicable algorithm at the resource that the event occured */
   def policy(et: AccountingEventType.Value, d: Date) : Option[Policy] = {
     val ruleset = policies.getOrElse(et, new HashMap[Date, Policy])
     val keyset = List(new Date(0)) ++

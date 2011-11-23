@@ -39,10 +39,10 @@ package gr.grnet.aquarium.logic.accounting.dsl
  * Vocabulary of terms for the DSL
  */
 object Vocabulary {
-  val creditpolicy = "creditpolicy"
+  val aquariumpolicy = "aquariumpolicy"
   val resources = "resources"
-  val policies = "policies"
-  val policy = "policy"
+  val algorithms = "algorithms"
+  val algorithm = "algorithm"
   val pricelists = "pricelists"
   val pricelist = "pricelist"
   val agreements = "agreements"

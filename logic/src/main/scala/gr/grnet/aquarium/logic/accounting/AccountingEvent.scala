@@ -72,9 +72,9 @@ class AccountingEvent(et: AccountingEventType.Value, start: Date,
         entity().agreement)
     }*/
 
-    /*agr.policy(et, when) match {
+    /*agr.algorithm(et, when) match {
       case Some(x) => x
-      case None => throw new Exception("No charging policy for event type:" +
+      case None => throw new Exception("No charging algorithm for event type:" +
         et + " in period starting from:" + when.getTime)
     }*/
     List()
