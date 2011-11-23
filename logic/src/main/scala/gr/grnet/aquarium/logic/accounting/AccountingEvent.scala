@@ -35,9 +35,7 @@
 
 package gr.grnet.aquarium.logic.accounting
 
-import agreements.AgreementRegistry
 import gr.grnet.aquarium.model.{Entity, DB}
-import policies.DefaultRatePolicy
 import java.util.Date
 
 
@@ -68,11 +66,11 @@ class AccountingEvent(et: AccountingEventType.Value, start: Date,
   }
 
   def policy(): List[Policy] = {
-    val agr = AgreementRegistry.getAgreement(entity().agreement) match {
+    /*val agr = AgreementRegistry.getAgreement(entity().agreement) match {
       case Some(x) => x
       case None => throw new Exception("No agreement with id:" +
         entity().agreement)
-    }
+    }*/
 
     /*agr.policy(et, when) match {
       case Some(x) => x
@@ -83,11 +81,12 @@ class AccountingEvent(et: AccountingEventType.Value, start: Date,
   }
 
   def getRate(): Float = {
-    val agreement = AgreementRegistry.getAgreement(entity.agreement)
+    /*val agreement = AgreementRegistry.getAgreement(entity.agreement)
 
     agreement match {
       case Some(x) => x.pricelist.get(et).getOrElse(0)
       case None => 0
-    }
+    }*/
+    0F
   }
 }

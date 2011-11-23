@@ -36,13 +36,10 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit._
-import org.junit.Assert._
 import gr.grnet.aquarium.logic.Bills
 import gr.grnet.aquarium.model.{User}
-import gr.grnet.aquarium.logic.accounting.policies.DefaultRatePolicy
-import gr.grnet.aquarium.logic.accounting.{Agreement, AccountingEvent, AccountingEntryType, AccountingEventType}
-import gr.grnet.aquarium.logic.accounting.agreements.AgreementRegistry
-import java.util.Date
+import gr.grnet.aquarium.logic.accounting.{Agreement, AccountingEventType}
+
 import gr.grnet.aquarium.util.FixtureLoader
 
 class BillingTest
@@ -70,16 +67,6 @@ class BillingTest
 
   @Test
   def testOverallAccountingRules() = {
-    TestAgreement.addPolicy(AccountingEventType.VMTime,
-      new DefaultRatePolicy(AccountingEntryType.VMTIME_CHARGE), new Date(2))
-    TestAgreement.addPolicy(AccountingEventType.DiskSpace,
-      new DefaultRatePolicy(AccountingEntryType.STORAGE_CHARGE), new Date(2))
-    TestAgreement.addPolicy(AccountingEventType.NetDataDown,
-      new DefaultRatePolicy(AccountingEntryType.NET_CHARGE), new Date(2))
-    TestAgreement.addPolicy(AccountingEventType.NetDataUp,
-      new DefaultRatePolicy(AccountingEntryType.NET_CHARGE), new Date(2))
-
-    AgreementRegistry.addAgreement(TestAgreement)
 
     val u = new User
     u.agreement = TestAgreement.id
