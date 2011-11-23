@@ -36,9 +36,9 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit.Assert._
-import gr.grnet.aquarium.logic.accounting.dsl._
 import org.junit.{Test}
 import java.util.Date
+import gr.grnet.aquarium.logic.accounting.dsl._
 
 class DSLTest extends DSL with TestMethods {
 
@@ -94,13 +94,13 @@ class DSLTest extends DSL with TestMethods {
     assertEquals(output.size, 20)
 
     input = "12 4 foo jaN-ApR *"
-    assertThrows(parseCronString(input))
+    assertThrows[DSLParseException](parseCronString(input))
 
     input = "12 4 foo jaN-ApR 9"
-    assertThrows(parseCronString(input))
+    assertThrows[DSLParseException](parseCronString(input))
 
     input = "@midnight"
-    assertThrows(parseCronString(input))
+    assertThrows[DSLParseException](parseCronString(input))
   }
 
   @Test
