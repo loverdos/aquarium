@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import gr.grnet.aquarium.util.DateUtils
-import java.util.{Calendar, Date}
+import java.util.{GregorianCalendar, Calendar, Date}
 
 /**
  * Utility functions to use when working with DSL types.
@@ -47,19 +47,47 @@ trait DSLUtils extends DateUtils {
 
   /**
    * Get a list of all time periods within which a time frame is active.
+   * If the to date is None, the expansion takes place within a timeframe
+   * between `from .. from` + 1 year. The result is returned sorted by
+   * timeframe start date.
    */
-  def expandTimeRepeat(spec: DSLTimeFrameRepeat, from: Date, to: Option[Date]) : List[(Date, Date)] = {
+  def expandTimeRepeat(spec: DSLTimeFrameRepeat, from: Date, to: Option[Date]):
+    List[(Date, Date)] = {
 
-    
+    assert(spec.start.size == spec.end.size)
 
-    List()
+    val endDate = to match {
+      case None => //One year from now
+        val c = new GregorianCalendar()
+        c.setTime(from)
+        c.add(Calendar.YEAR, 1)
+        c.getTime
+      case Some(y) => y
+    }
+
+    def sorter(x: (Date, Date), y: (Date, Date)) : Boolean =
+      if (y._1 after x._1) true else false
+
+    coExpandTimespecs(spec.start.zip(spec.end), from, endDate) sortWith sorter
   }
 
+  /**
+   * Calculate periods of activity for a list of timespecs
+   */
+  private def coExpandTimespecs(input : List[(DSLTimeSpec, DSLTimeSpec)],
+                                from: Date, to: Date) : List[(Date, Date)] = {
+    if (input.size == 0) return List()
+
+    expandTimeSpec(input.head._1, from, to).zip(
+      expandTimeSpec(input.head._2, from, to)) ++
+        coExpandTimespecs(input.tail, from, to)
+  }
 
   /**
-   * 
+   * Expand a List of timespecs.
    */
-  def expandTimeSpecs(spec: List[DSLTimeSpec], from: Date,  to: Date): List[Date] =
+  def expandTimeSpecs(spec: List[DSLTimeSpec], from: Date,  to: Date):
+    List[Date] =
     spec.flatMap { t => expandTimeSpec(t, from, to)}
 
   /**

@@ -37,10 +37,10 @@ package gr.grnet.aquarium.logic.test
 
 import org.junit.Test
 import org.junit.Assert._
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLUtils, DSLTimeSpec}
-import java.util.{Calendar, Date}
+import java.util.Date
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLTimeFrameRepeat, DSL, DSLUtils, DSLTimeSpec}
 
-class DSLUtilsTest extends DSLUtils {
+class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
 
   @Test
   def testExpandTimeSpec = {
@@ -69,5 +69,40 @@ class DSLUtilsTest extends DSLUtils {
     a = DSLTimeSpec(33, 12, -1, -1, -1)
     result = expandTimeSpec(a, from, to)
     assertEquals(31, result.size)
+  }
+
+  @Test
+  def testExpandTimeSpecs = {
+    val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
+    val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
+
+    val a = DSLTimeSpec(33, 12, -1, -1, 3)
+    var result = expandTimeSpecs(List(a), from, to)
+    assertNotEmpty(result)
+    assertEquals(4, result.size)
+
+    val b = DSLTimeSpec(00, 18, -1, -1, -1)
+    result = expandTimeSpecs(List(a,b), from, to)
+    assertNotEmpty(result)
+    assertEquals(34, result.size)
+  }
+
+  @Test
+  def testExpandTimeRepeat = {
+    val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
+    val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
+
+    var repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
+      parseCronString("00 14 * * *"))
+
+    var result = expandTimeRepeat(repeat, from, Some(to))
+
+    assertNotEmpty(result)
+    assertEquals(31, result.size)
+
+    repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
+      parseCronString("00 14 * * 2"))
+
+    result = expandTimeRepeat(repeat, from, Some(to))
   }
 }
