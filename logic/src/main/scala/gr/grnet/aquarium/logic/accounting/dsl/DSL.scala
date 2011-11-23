@@ -466,53 +466,5 @@ case class DSLTimeFrame (
   repeat: Option[List[DSLTimeFrameRepeat]]
 )
 
-case class DSLTimeFrameRepeat (
-  start: List[DSLTimeSpec],
-  end: List[DSLTimeSpec]
-)
-
-case class DSLTimeSpec(
-  min: Int,
-  hour: Int,
-  dom: Int,
-  mon: Int,
-  dow: Int
-){
-  //Preconditions to force correct values on object creation
-  assert(-1 <= min && 60 > min)
-  assert(-1 <= hour && 24 > hour)
-  assert(-1 <= dom && 31 > dom && dom != 0)
-  assert(-1 <= mon && 12 > mon && mon != 0)
-  assert(-1 <= dow && 7 > dow)
-
-  /** Day of week conversions to stay compatible with [[java.util.Calendar]] */
-  def getCalendarDow(): Int = dow match {
-    case 0 => Calendar.SUNDAY
-    case 1 => Calendar.MONDAY
-    case 2 => Calendar.TUESDAY
-    case 3 => Calendar.WEDNESDAY
-    case 4 => Calendar.THURSDAY
-    case 5 => Calendar.FRIDAY
-    case 6 => Calendar.SATURDAY
-    case 7 => Calendar.SUNDAY
-  }
-
-  /** Month conversions to stay compatible with [[java.util.Calendar]] */
-  def getCalendarMonth(): Int = dow match {
-    case 1 => Calendar.JANUARY
-    case 2 => Calendar.FEBRUARY
-    case 3 => Calendar.MARCH
-    case 4 => Calendar.APRIL
-    case 5 => Calendar.MAY
-    case 6 => Calendar.JUNE
-    case 7 => Calendar.JULY
-    case 8 => Calendar.AUGUST
-    case 9 => Calendar.SEPTEMBER
-    case 10 => Calendar.OCTOBER
-    case 11 => Calendar.NOVEMBER
-    case 12 => Calendar.DECEMBER
-  }
-}
-
 /** Exception thrown when a parsing error occurs*/
 class DSLParseException(msg: String) extends Exception(msg)
