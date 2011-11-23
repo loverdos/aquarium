@@ -43,12 +43,12 @@ import javax.persistence.{OneToMany, ManyToMany}
 import java.util.{Date, Set}
 
 /**Loads [[https://docs.djangoproject.com/en/dev/howto/initial-data/ Django-style]]
- *  fixtures in the database. It expects an open JPA entity manager. The code
- *  makes the following assumptions:
+ * fixtures in the database. It expects an open JPA entity manager. The code
+ * makes the following assumptions:
  *
- *  -All mapped types use the Id trait
- *  -{One,Many}ToMany relationships are mapped with a Set
- *  -The JSON parser returns either Map[String, A], List[A], String or Double
+ *  - All mapped types use the Id trait
+ *  - {One,Many}ToMany relationships are mapped with a Set
+ *  - The JSON parser returns either Map[String, A], List[A], String or Double
  *  (where A is again Double or String), for fields with subfields, arrays,
  *  strings and numbers respectively.
  *
