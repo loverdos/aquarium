@@ -100,9 +100,20 @@ class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
     assertNotEmpty(result)
     assertEquals(31, result.size)
 
-    repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
-      parseCronString("00 14 * * 2"))
-
+    //Expansion outside timeframe
+    repeat = DSLTimeFrameRepeat(parseCronString("00 12 * May *"),
+      parseCronString("00 14 * Sep *"))
     result = expandTimeRepeat(repeat, from, Some(to))
+    assertEquals(0, result.size)
+
+    repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * 5"),
+      parseCronString("00 14 * * 1"))
+    result = expandTimeRepeat(repeat, from, Some(to))
+    assertEquals(4, result.size)
+
+    repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * Mon,Wed,Fri"),
+      parseCronString("00 14 * * Tue,Thu,Sat"))
+    result = expandTimeRepeat(repeat, from, Some(to))
+    assertEquals(13, result.size)
   }
 }
