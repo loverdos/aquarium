@@ -33,12 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium
+package store
 package mongodb
 
 import confmodel.{ServerAddressConfigurationModel, MongoDBConfigurationModel}
 import org.junit.Test
 import org.junit.Assert._
+import org.junit.Assume.assumeTrue
 
 import com.ckkloverdos.resource.DefaultResourceContext
 import MongoDBConnection.{RCFolders, PropFiles, DBNames, CollectionNames}
@@ -68,6 +70,8 @@ class MongoDBStoreTest {
 
   @Test
   def testConnection: Unit = {
+    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
+
     for {
       confResource <- mongodbRC.getLocalResource(PropFiles.local_message_store)
     } {

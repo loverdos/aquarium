@@ -46,6 +46,8 @@ import gr.grnet.aquarium.util.xstream.XStreamHelpers
 import gr.grnet.aquarium.util.Loggable
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
+import org.junit.Assume._
+import gr.grnet.aquarium.LogicTestsAssumptions
 
 /**
  * 
@@ -105,6 +107,8 @@ class MessagingTest extends Loggable {
 
   @Test
   def testLocalProducer {
+    assumeTrue(LogicTestsAssumptions.EnableRabbitMQTests)
+
     val maybeConfs = RabbitMQConfigurations(baseRC)
     assertTrue(maybeConfs.isJust)
     val maybeProducer = for {
@@ -129,6 +133,8 @@ class MessagingTest extends Loggable {
 
   @Test
   def testLocalConsumer {
+    assumeTrue(LogicTestsAssumptions.EnableRabbitMQTests)
+
     val maybeConfs = RabbitMQConfigurations(baseRC)
     assertTrue(maybeConfs.isJust)
 
