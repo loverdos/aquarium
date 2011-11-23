@@ -70,12 +70,19 @@ aquariumpolicy:
       at: "00 00 * * *"
       effective:
         from: 0
+    - creditplan:
+      name: every10days
+      at: "00 00 0,10,20,30 * *"
+      credits: 20
+      effective:
+        from: 0
 
   agreements:
     - agreement:
       name: default
       algorithm: default
       pricelist: default
+      creditplan: default
 
     - agreement:
       overrides: default
@@ -92,5 +99,10 @@ aquariumpolicy:
 
     - agreement:
       overrides: default
-      name: variablepricelist
-
+      name: onemonthexperiment
+      creditplan:
+        at: "00 00 * * *"
+        credits: 100
+        effective:
+          from: 1322061528 #Wed 23 Nov 2011 17:18
+          to: 1324661839 #Fri, 23 Dec 2011 17:37
