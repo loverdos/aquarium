@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.logic.test
 
-import org.junit.Assert._
+import org.junit.Assert.fail
 
 /**
  * Some common Scala-related asserts
@@ -44,23 +44,29 @@ import org.junit.Assert._
  */
 trait TestMethods {
 
-  def assertThrows(f: => Unit) = {
+  def assertThrows[A <: Throwable](f: => Unit)(implicit m: ClassManifest[A]): Unit = {
     try {
       f
-      assert(false)
     } catch {
-      case e: Exception => assert(true)
-      case t: Throwable => assert(true)
+      case e if (m.erasure.isAssignableFrom(e.getClass)) => return
+      case e => fail("Expected error of type " + m.erasure.getName +
+        " not thrown. Instead, " + e.getClass.getName + " was thrown")
     }
+    fail("No exception thrown")
   }
 
   def assertNone(a: AnyRef) = a match {
     case None =>
-    case x => fail()
+    case x => fail("Argument has value")
   }
 
   def assertNotNone(a: AnyRef) = a match {
-    case None => fail()
+    case None => fail("Argument is None")
+    case _ =>
+  }
+
+  def assertNotEmpty[A](a: Traversable[A]) = a.size match {
+    case x if x <= 0 => fail()
     case _ =>
   }
 }
