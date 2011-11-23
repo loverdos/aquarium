@@ -38,9 +38,8 @@ package gr.grnet.aquarium.logic.test
 import java.util.Date
 import gr.grnet.aquarium.logic.events._
 import org.junit.Test
-import org.junit.Assert._
 
-class EventProcessorTest extends TestMethods {
+class EventProcessorTest {
 
    def getEvents(): List[Event] = {
     //Tmp list of events

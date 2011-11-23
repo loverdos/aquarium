@@ -36,8 +36,12 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit.{After, Before, Test}
+import gr.grnet.aquarium.util.FixtureLoader
 
 class AccountsTest extends FixtureLoader {
+
+  def getDB() = TestDB
+
   @Before
   def before() = {
     if (!TestDB.getTransaction.isActive)

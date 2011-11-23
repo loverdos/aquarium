@@ -1,3 +1,5 @@
+package gr.grnet.aquarium.util
+
 /*
  * Copyright 2011 GRNET S.A. All rights reserved.
  *
@@ -33,14 +35,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.test
-
 import gr.grnet.aquarium.model._
 import scala.io.Source
 import scala.util.parsing.json._
 import java.lang.reflect.Field
 import javax.persistence.{OneToMany, ManyToMany}
 import java.util.{Date, Set}
+import org.scala_libs.jpa.{ThreadLocalEM, LocalEMF}
 
 /**Loads [[https://docs.djangoproject.com/en/dev/howto/initial-data/ Django-style]]
  * fixtures in the database. It expects an open JPA entity manager. The code
@@ -55,6 +56,8 @@ import java.util.{Date, Set}
  * @author Georgios Gousios <gousiosg@grnet.gr>
  */
 trait FixtureLoader {
+
+  def getDB(): LocalEMF with ThreadLocalEM
 
   /**Find and load a class in a type-safe manner*/
   implicit def loadClass[T <: AnyRef](name: String): Class[T] = {
@@ -139,7 +142,7 @@ trait FixtureLoader {
     //Create an object instance
     val tmpObj = loadClass[AnyRef](model).newInstance()
     //Save the object
-    TestDB.persistAndFlush(tmpObj)
+    getDB.persistAndFlush(tmpObj)
 
     /* Special treatment for the ID field: we allow JPA to set on persist, but
      * we reset it here to what the fixture specifies. This is to bypass
@@ -147,7 +150,7 @@ trait FixtureLoader {
      */
     updatePK(tmpObj.getClass.getSimpleName, tmpObj.getV("id").asInstanceOf[Long], id)
 
-    val obj = TestDB.find(tmpObj.getClass, id).getOrElse(
+    val obj = getDB.find(tmpObj.getClass, id).getOrElse(
       throw new Exception("Cannot find")
     ).asInstanceOf[AnyRef]
 
@@ -191,11 +194,11 @@ trait FixtureLoader {
         }
     }
 
-    TestDB.flush()
+    getDB.flush()
   }
 
   private def updatePK(entity: String, oldid: Long, newid: Long) = {
-    val q = TestDB.createQuery(
+    val q = getDB.createQuery(
       "update " + entity +
         " set id=:newid where id = :oldid")
     q.setParameter("newid", newid)
@@ -205,7 +208,7 @@ trait FixtureLoader {
 
   /** Set the referenced object in a many to one relationship*/
   private def setManyToOne(dao: AnyRef, fieldName: String, fieldValue: Double) = {
-    val other = TestDB.find(dao.getT(fieldName), fieldValue.longValue()).getOrElse(
+    val other = getDB.find(dao.getT(fieldName), fieldValue.longValue()).getOrElse(
       throw new Exception("Cannot find related object for " + dao.getClass +
         ", field: " + fieldName + " value: " + fieldValue)
     )
@@ -246,7 +249,7 @@ trait FixtureLoader {
     //Add all values specified
     fieldValues.foreach {
       v =>
-        val other = TestDB.find(targetType, v.longValue).getOrElse(
+        val other = getDB.find(targetType, v.longValue).getOrElse(
           throw new Exception("Cannot find entry of type "+ targetType +
             " with id=" + v.longValue)
         )

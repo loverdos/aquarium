@@ -37,8 +37,8 @@ package gr.grnet.aquarium.logic.test
 
 import org.junit.Test
 import org.junit.Assert._
-import gr.grnet.aquarium.util.DateUtils
 import java.util.{Calendar, Date}
+import gr.grnet.aquarium.util.{TestMethods, DateUtils}
 
 class DateUtilsTest extends DateUtils with TestMethods {
 

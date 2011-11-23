@@ -43,9 +43,12 @@ import gr.grnet.aquarium.logic.accounting.policies.DefaultRatePolicy
 import gr.grnet.aquarium.logic.accounting.{Agreement, AccountingEvent, AccountingEntryType, AccountingEventType}
 import gr.grnet.aquarium.logic.accounting.agreements.AgreementRegistry
 import java.util.Date
+import gr.grnet.aquarium.util.FixtureLoader
 
 class BillingTest
   extends FixtureLoader with Bills {
+
+  def getDB = TestDB
 
   @Before
   def before() = {

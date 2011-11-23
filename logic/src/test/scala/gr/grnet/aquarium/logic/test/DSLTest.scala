@@ -37,8 +37,8 @@ package gr.grnet.aquarium.logic.test
 
 import org.junit.Assert._
 import org.junit.{Test}
-import java.util.Date
 import gr.grnet.aquarium.logic.accounting.dsl._
+import gr.grnet.aquarium.util.TestMethods
 
 class DSLTest extends DSL with TestMethods {
 

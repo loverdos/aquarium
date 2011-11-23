@@ -39,6 +39,7 @@ import org.junit.Test
 import org.junit.Assert._
 import java.util.Date
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLTimeFrameRepeat, DSL, DSLUtils, DSLTimeSpec}
+import gr.grnet.aquarium.util.TestMethods
 
 class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
 

@@ -1,3 +1,5 @@
+package gr.grnet.aquarium.util
+
 /*
  * Copyright 2011 GRNET S.A. All rights reserved.
  *
@@ -32,8 +34,6 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
-
-package gr.grnet.aquarium.logic.test
 
 import org.junit.Assert.fail
 
