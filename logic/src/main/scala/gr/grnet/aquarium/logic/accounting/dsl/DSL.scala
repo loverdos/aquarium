@@ -374,24 +374,23 @@ trait DSL extends Loggable {
     if (input.split(" ").length != 5)
       throw new DSLParseException("Only five-field cron strings allowed: " + input)
 
-    if (input.contains(','))
-      throw new DSLParseException("Multiple values per field are not allowed: " + input)
-
     val cron = try {
       asScalaBuffer(CronTabParserBridge.parse(input))
     } catch {
       case e => throw new DSLParseException("Error parsing cron string: " + e.getMessage)
     }
 
-    def splitMultiVals(input: String): Range = {
+    def splitMultiVals(input: String): List[Int] = {
       if (input.equals("*"))
-        return -1 until 0
+        return (-1).until(0).toList
 
       if (input.contains('-')) {
         val ints = input.split('-')
-        ints(0).toInt until ints(1).toInt + 1
+        ints(0).toInt.until(ints(1).toInt + 1).toList
+      } else if (input.contains(',')) {
+        input.split(',').map{i => i.toInt}.toList
       } else {
-        input.toInt until input.toInt + 1
+        input.toInt.until(input.toInt + 1).toList
       }
     }
 

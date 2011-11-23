@@ -80,24 +80,26 @@ class DSLTest extends DSL with TestMethods {
 
   @Test
   def testCronParse = {
-    var input = "12 * * * *"
+    var input = "12 12 * * *"
     var output = parseCronString(input)
-    assertEquals(output, List(DSLTimeSpec(12, -1, -1, -1, -1)))
+    assertEquals(output, List(DSLTimeSpec(12, 12, -1, -1, -1)))
 
     input = "12 4 3 jaN-ApR *"
     output = parseCronString(input)
-    assertEquals(output.size, 4)
+    assertEquals(4, output.size)
     assertEquals(output(2), DSLTimeSpec(12, 4, 3, 3, -1))
 
     input = "12 4 3 jaN-ApR MOn-FRi"
     output = parseCronString(input)
-    assertEquals(output.size, 20)
+    assertEquals(20, output.size)
 
     input = "12 4 foo jaN-ApR *"
     assertThrows[DSLParseException](parseCronString(input))
 
-    input = "12 4 foo jaN-ApR 9"
-    assertThrows[DSLParseException](parseCronString(input))
+    input = "12 4 * jaN,Mar,ApR 6"
+    output = parseCronString(input)
+    assertEquals(3, output.size)
+    assertEquals(DSLTimeSpec(12, 4, -1, 4, 6), output(2))
 
     input = "@midnight"
     assertThrows[DSLParseException](parseCronString(input))
