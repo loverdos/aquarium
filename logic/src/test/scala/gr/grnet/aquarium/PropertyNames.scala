@@ -46,6 +46,12 @@ object PropertyNames {
   val TestSkipMongoDB = "test.skip.mongodb"
 
   // Test configuration files used
-  val MongoDBStoreConf = "mongodb.store.conf"
-  val RabbitMQConf     = "rabbitmq.conf"
+  val MongoDBConfFile  = "mongodb.conf.file"
+  val RabbitMQConfFile = "rabbitmq.conf.file"
+
+  // Configuration items in configuration files
+  val RabbitMQSpecificConf = "rabbitmq.conf"
+  val RabbitMQConnection   = "rabbitmq.connection"
+  val RabbitMQProducer     = "rabbitmq.producer"
+  val RabbitMQConsumer     = "rabbitmq.consumer"
 }

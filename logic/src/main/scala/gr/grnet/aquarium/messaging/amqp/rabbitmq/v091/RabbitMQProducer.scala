@@ -48,7 +48,7 @@ import gr.grnet.aquarium.util.Loggable
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class RabbitMQProducer(private[v091] val owner: RabbitMQConnection, val confModel: RabbitMQProducerModel) extends AMQPProducer with Loggable {
-  private[v091] val _rabbitChannel = {
+  private[v091] lazy val _rabbitChannel = {
     val _ch = owner._rabbitConnection.createChannel()
     logger.info("Created rabbit channel %s for %s".format(_ch, this.toString))
     val exchange = owner.confModel.exchange

@@ -59,7 +59,7 @@ class MongoDBStoreTest extends Loggable {
   val xs = XStreamHelpers.newXStream
 
   lazy val MongoDBPropFile = {
-    val filename = SysProp(PropertyNames.MongoDBStoreConf).value.getOr(PropFiles.local_message_store)
+    val filename = SysProp(PropertyNames.MongoDBConfFile).value.getOr(PropFiles.local_message_store)
     logger.debug("Using mongodb configuration from %s".format(filename))
     filename
   }

@@ -37,23 +37,21 @@ package gr.grnet.aquarium.messaging
 
 import amqp.AMQPDeliveryHandler
 import amqp.rabbitmq.v091.confmodel._
+import amqp.rabbitmq.v091.RabbitMQConfigurations
 import amqp.rabbitmq.v091.RabbitMQConfigurations.{PropFiles, RCFolders}
-import amqp.rabbitmq.v091.{RabbitMQConsumer, RabbitMQConfigurations}
 import org.junit.Test
 import org.junit.Assert._
 import com.ckkloverdos.resource.DefaultResourceContext
 import gr.grnet.aquarium.util.xstream.XStreamHelpers
-import gr.grnet.aquarium.util.Loggable
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import org.junit.Assume._
-import com.ckkloverdos.sys.SysProp._
 import gr.grnet.aquarium.{PropertyNames, LogicTestsAssumptions}
 import com.ckkloverdos.sys.SysProp
-import com.thoughtworks.xstream.XStream
+import gr.grnet.aquarium.util.{LogUtils, Loggable}
 
 /**
- * 
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class RabbitMQTest extends Loggable {
@@ -62,23 +60,63 @@ class RabbitMQTest extends Loggable {
   val baseRC = DefaultResourceContext
   val rabbitmqRC = baseRC / RCFolders.rabbitmq
 
+  def getProp(logger: org.slf4j.Logger, msg: String, name: String, default: String): String = {
+    SysProp(name).value match {
+      case Just(value) =>
+        logger.debug("[%s] Found value '%s' for system property '%s'".format(msg, value, name))
+        value
+      case Failed(e, m) =>
+        logger.error("[%s][%s]: %s".format(m, e.getClass.getName, e.getMessage))
+        logger.error("[%s] Error loading system property '%s'. Using default value '%s'".format(msg, name, default))
+        default
+      case NoVal =>
+        logger.debug("[%s] Found no value for system property '%s'. Using default '%s'".format(msg, name, default))
+        default
+    }
+  }
+
+  // The configuration file we use for the rabbitmq tests
   lazy val RabbitMQPropFile = {
-    val filename = SysProp(PropertyNames.RabbitMQConf).value.getOr(PropFiles.configurations)
-    logger.debug("Using rabbitmq configuration from %s".format(filename))
+    val filename = LogUtils.getSysProp(logger, "Loading rabbitmq configurations", PropertyNames.RabbitMQConfFile, PropFiles.configurations)
+    logger.debug("Using rabbitmq configurations from %s".format(filename))
     filename
   }
 
+  // The specific setup we use.
+  // This is defined in the configuration file
+  lazy val RabbitMQSpecificConfName = {
+    val confname = LogUtils.getSysProp(logger, "Getting specific rabbitmq configuration", PropertyNames.RabbitMQSpecificConf, Names.aquarium_dev_grnet_gr)
+    logger.debug("Using specific rabbitmq configuration: %s".format(confname))
+    confname
+  }
+
+  // The connection we use for testing
+  lazy val RabbitMQConnectionName = {
+    val conname = LogUtils.getSysProp(logger, "Getting rabbitmq connection", PropertyNames.RabbitMQConnection, Names.test_connection)
+    logger.debug("Using rabbitmq connection %s".format(conname))
+    conname
+  }
+
+  // The producer we use for testing
+  lazy val RabbitMQProducerName = {
+    val pname = LogUtils.getSysProp(logger, "Getting rabbitmq producer", PropertyNames.RabbitMQProducer, Names.test_producer)
+    logger.debug("Using rabbitmq producer %s".format(pname))
+    pname
+  }
+
+  // The producer we use for testing
+  lazy val RabbitMQConsumerName = {
+    val cname = LogUtils.getSysProp(logger, "Getting rabbitmq consumer", PropertyNames.RabbitMQConsumer, Names.test_consumer)
+    logger.debug("Using rabbitmq producer %s".format(cname))
+    cname
+  }
+
   object Names {
-    val consumer1 = "consumer1"
-    val producer1 = "producer1"
-    val queue1 = "queue1"
-    val routing_key_all = "routing.key.all"
-    val local_connection = "local_connection"
-    val aquarium_exchange = "aquarium_exchange"
-    val direct = "direct"
-    val localhost_aquarium = "localhost_aquarium"
-    val aquarium = "aquarium"
-    val localhost = "localhost"
+//    val default_connection = "default_connection"
+    val test_connection = "test_connection"
+    val aquarium_dev_grnet_gr = "aquarium.dev.grnet.gr"
+    val test_producer = "test_producer"
+    val test_consumer = "test_consumer"
   }
 
   private def _genTestConf: String = {
@@ -86,21 +124,21 @@ class RabbitMQTest extends Loggable {
     val prodmod1 = new RabbitMQProducerModel("producer1", "routing.key.all")
     val conn1 = new RabbitMQConnectionModel(
       "local_connection",
-    "aquarium_exchange",
-    "direct",
-    true,
-    List(prodmod1),
-    List(consmod1)
+      "aquarium_exchange",
+      "direct",
+      true,
+      List(prodmod1),
+      List(consmod1)
     )
     val conf1 = new RabbitMQConfigurationModel(
-    "localhost_aquarium",
-    "aquarium",
-    "aquarium",
-    "localhost",
-    5672,
-    Nil,
-    "/",
-    List(conn1)
+      "localhost_aquarium",
+      "aquarium",
+      "aquarium",
+      "localhost",
+      5672,
+      Nil,
+      "/",
+      List(conn1)
     )
 
     val model = new RabbitMQConfigurationsModel(List(conf1))
@@ -124,9 +162,9 @@ class RabbitMQTest extends Loggable {
     val maybeProducer = for {
       resource <- maybeResource
       confs    <- RabbitMQConfigurations(resource, xs)
-      conf     <- confs.findConfiguration(Names.localhost_aquarium)
-      conn     <- conf.findConnection(Names.local_connection)
-      producer <- conn.findProducer(Names.producer1)
+      conf     <- confs.findConfiguration(RabbitMQSpecificConfName)
+      conn     <- conf.findConnection(RabbitMQConnectionName)
+      producer <- conn.findProducer(RabbitMQProducerName)
     } yield {
       producer
     }
@@ -136,7 +174,7 @@ class RabbitMQTest extends Loggable {
         logger.debug("Publishing a message from %s".format(producer))
         producer.publishString("Test")
       case NoVal =>
-        fail("No producer named %s".format(Names.producer1))
+        fail("No producer named %s".format(RabbitMQProducerName))
       case Failed(e, m) =>
         fail("%s: %s".format(m, e.getMessage))
     }
@@ -146,14 +184,15 @@ class RabbitMQTest extends Loggable {
   def testLocalConsumer {
     assumeTrue(LogicTestsAssumptions.EnableRabbitMQTests)
 
-    val maybeConfs = RabbitMQConfigurations(baseRC)
-    assertTrue(maybeConfs.isJust)
+    val maybeResource = rabbitmqRC.getResource(RabbitMQPropFile)
+    assertTrue(maybeResource.isJust)
 
     val maybeConsumer = for {
-      confs    <- maybeConfs
-      conf     <- confs.findConfiguration(Names.localhost_aquarium)
-      conn     <- conf.findConnection(Names.local_connection)
-      consumer <- conn.findConsumer(Names.consumer1)
+      resource <- maybeResource
+      confs    <- RabbitMQConfigurations(resource, xs)
+      conf     <- confs.findConfiguration(RabbitMQSpecificConfName)
+      conn     <- conf.findConnection(RabbitMQConnectionName)
+      consumer <- conn.findConsumer(RabbitMQConsumerName)
     } yield {
       consumer
     }
@@ -170,7 +209,7 @@ class RabbitMQTest extends Loggable {
           }
         })
       case NoVal =>
-        fail("No consumer named %s".format(Names.consumer1))
+        fail("No consumer named %s".format(RabbitMQConsumerName))
       case Failed(e, m) =>
         fail("%s: %s".format(m, e.getMessage))
     }

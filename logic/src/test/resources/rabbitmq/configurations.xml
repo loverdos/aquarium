@@ -1,30 +1,32 @@
 <RabbitMQConfigurationsModel>
   <configurations class="List">
+    <!-- aquarium.dev.grnet.gr -->
     <RabbitMQConfigurationModel>
-      <name>localhost_aquarium</name>
-      <username>guest</username>
-      <password>guest</password>
-      <host>localhost</host>
+      <name>aquarium.dev.grnet.gr</name>
+      <username>aquarium</username>
+      <password>@qu@r1um</password>
+      <host>aquarium.dev.grnet.gr</host>
       <port>5672</port>
       <addresses class="Nil"/>
       <virtualHost>/</virtualHost>
       <connections class="List">
+        <!-- test_connection -->
         <RabbitMQConnectionModel>
-          <name>local_connection</name>
-          <exchange>guest_exchange</exchange>
+          <name>test_connection</name>
+          <exchange>aquarium</exchange>
           <exchangeType>direct</exchangeType>
           <isDurable>true</isDurable>
           <producers class="List">
             <RabbitMQProducerModel>
-              <name>producer1</name>
-              <routingKey>routing.key.all</routingKey>
+              <name>test_producer</name>
+              <routingKey>aquarium.test</routingKey>
             </RabbitMQProducerModel>
           </producers>
           <consumers class="List">
             <RabbitMQConsumerModel>
-              <name>consumer1</name>
-              <queue>queue1</queue>
-              <routingKey>routing.key.all</routingKey>
+              <name>test_consumer</name>
+              <queue>aquarium</queue>
+              <routingKey>aquarium.test</routingKey>
               <autoAck>true</autoAck>
               <queueIsDurable>true</queueIsDurable>
               <queueIsAutoDelete>true</queueIsAutoDelete>
@@ -32,6 +34,44 @@
             </RabbitMQConsumerModel>
           </consumers>
         </RabbitMQConnectionModel>
+      </connections>
+    </RabbitMQConfigurationModel>
+
+    <!-- localhost -->
+    <RabbitMQConfigurationModel>
+      <name>localhost</name>
+      <username>guest</username>
+      <password>guest</password>
+      <host>localhost</host>
+      <port>5672</port>
+      <addresses class="Nil"/>
+      <virtualHost>/</virtualHost>
+      <connections class="List">
+        <!-- test_connection -->
+        <RabbitMQConnectionModel>
+          <name>test_connection</name>
+          <exchange>aquarium</exchange>
+          <exchangeType>direct</exchangeType>
+          <isDurable>true</isDurable>
+          <producers class="List">
+            <RabbitMQProducerModel>
+              <name>test_producer</name>
+              <routingKey>aquarium.test</routingKey>
+            </RabbitMQProducerModel>
+          </producers>
+          <consumers class="List">
+            <RabbitMQConsumerModel>
+              <name>test_consumer</name>
+              <queue>aquarium</queue>
+              <routingKey>aquarium.test</routingKey>
+              <autoAck>true</autoAck>
+              <queueIsDurable>true</queueIsDurable>
+              <queueIsAutoDelete>true</queueIsAutoDelete>
+              <queueIsExclusive>false</queueIsExclusive>
+            </RabbitMQConsumerModel>
+          </consumers>
+        </RabbitMQConnectionModel>
+
       </connections>
     </RabbitMQConfigurationModel>
   </configurations>
