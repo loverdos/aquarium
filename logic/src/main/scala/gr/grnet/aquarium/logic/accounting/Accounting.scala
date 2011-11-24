@@ -33,61 +33,18 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.test
+package gr.grnet.aquarium.logic.accounting
 
-import org.junit._
-import gr.grnet.aquarium.model.{User}
-import gr.grnet.aquarium.logic.accounting.{Agreement, AccountingEventType}
+import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 
-import gr.grnet.aquarium.util.FixtureLoader
+/**
+ * 
+ *
+ * @author Georgios Gousios <gousiosg@gmail.com>
+ */
+trait Accounting {
 
-class BillingTest
-  extends FixtureLoader {
-
-  def getDB = TestDB
-
-  @Before
-  def before() = {
-    if (!TestDB.getTransaction.isActive)
-      TestDB.getTransaction.begin
-    //loadFixture("data.json")
-  }
-
-  object TestAgreement extends Agreement {
-    override val id = 0xdeadbabeL
-
-    override val pricelist = Map (
-      AccountingEventType.DiskSpace -> 0.00002F,
-      AccountingEventType.NetDataDown -> 0.0001F,
-      AccountingEventType.NetDataUp -> 0.0001F,
-      AccountingEventType.VMTime -> 0.001F
-    )
-  }
-
-  @Test
-  def testOverallAccountingRules() = {
-
-    val u = new User
-    u.agreement = TestAgreement.id
-    u.credits = 100
-
-    TestDB.persistAndFlush(u)
-
-    // Try with a basic event
-    /*var evt = new AccountingEvent(AccountingEventType.VMTime,
-      new Date(4), new Date(10), u.id, 15, List())
-    var entry = evt.process()
-    assertEquals(entry.amount, 15 * 0.001F, 0.00001)
-
-    // Try with another event type
-    evt = new AccountingEvent(AccountingEventType.DiskSpace,
-      new Date(4), new Date(4), u.id, 12.3F, List())
-    entry = evt.process()
-    assertEquals(entry.amount, 12.3F * 0.00002F, 0.00001)*/
-  }
-
-  @After
-  def after() = {
-    TestDB.getTransaction.rollback
+  def chargeEvent( a: DSLAgreement) : Float = {
+    0F
   }
 }
