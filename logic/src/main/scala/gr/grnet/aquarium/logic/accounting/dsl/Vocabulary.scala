@@ -59,4 +59,7 @@ object Vocabulary {
   val repeat = "repeat"
   val start = "start"
   val end = "end"
+  val unit = "unit"
+  val complex = "complex"
+  val costpolicy = "costpolicy"
 }

@@ -33,24 +33,20 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.dsl
+package gr.grnet.aquarium.util.yaml
 
 /**
- * Represents a chargable resource.
+ * A boolean node
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-case class DSLResource (
-  /** Name of resource */
-  name: String,
+case class YAMLBooleanNode(path: String,  bool: Boolean) extends YAMLNode {
+  def /(childName: String) = YAMLEmptyNode
 
-  /** Informative name for resource charging unit*/
-  unit: String,
+  override def booleanValue = bool
 
-  /** Whether a resource can have many instances */
-  complex: Boolean,
+  override def isBoolean = false
 
-  /** Algorithm used to  */
-  costpolicy: String
-)
+  def withPath(newPath: String) = this.copy(path = newPath)
+}

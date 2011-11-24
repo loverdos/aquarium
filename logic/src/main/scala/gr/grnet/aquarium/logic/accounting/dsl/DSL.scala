@@ -52,6 +52,9 @@ trait DSL extends Loggable {
     /** An empty time frame*/
     val emptyTimeFrame = DSLTimeFrame(new Date(0), None, Option(List()))
 
+   /** An empty resource*/
+   val emptyResource = DSLResource("", "", false, "")
+
     /** An empty algorithm */
    val emptyAlgorithm = DSLAlgorithm("", None, Map(), emptyTimeFrame)
 
@@ -100,16 +103,38 @@ trait DSL extends Loggable {
     DSLPolicy(policies, pricelists, resources, creditplans, agreements)
   }
 
-  /** Parse top level resources declarations */
+  /** Parse resource declarations */
   private def parseResources(resources: YAMLListNode): List[DSLResource] = {
     if (resources.isEmpty)
       return List()
     resources.head match {
-      case x: YAMLStringNode =>
-        List(DSLResource(x.string)) ++ parseResources(resources.tail)
-      case _ =>
-        throw new DSLParseException("Resource not a string:%s".format(resources.head))
+      case x: YAMLMapNode => List(constructResource(x)) ++ parseResources(resources.tail)
+      case _ => throw new DSLParseException("Resource format unknown")
     }
+  }
+
+  def constructResource(resource: YAMLMapNode): DSLResource = {
+    val name = resource / Vocabulary.name match {
+      case x: YAMLStringNode => x.string
+      case YAMLEmptyNode => throw new DSLParseException("Resource does not have a name")
+    }
+
+    val unit = resource / Vocabulary.unit match {
+      case x: YAMLStringNode => x.string
+      case YAMLEmptyNode => throw new DSLParseException("Resource %s does specify a unit".format(name))
+    }
+
+    val complex = resource / Vocabulary.complex match {
+      case x: YAMLBooleanNode => x.bool
+      case _ => throw new DSLParseException("Resource %s does specify a complex value".format(name))
+    }
+
+    val costpolicy = resource / Vocabulary.costpolicy match {
+      case x: YAMLStringNode => x.string
+      case _ => throw new DSLParseException("Resource %s does specify a cost policy".format(name))
+    }
+
+    DSLResource(name, unit, complex, costpolicy)
   }
 
   /** Parse top level algorithm declarations */

@@ -1,9 +1,25 @@
 aquariumpolicy:
   resources:
-    - bandwidthup
-    - bandwidthdown
-    - vmtime
-    - diskspace
+    - resource:
+      name: bandwidthup
+      unit: MB
+      complex: false
+      costpolicy: diff
+    - resource:
+      name: bandwidthdown
+      unit: MB
+      complex: false
+      costpolicy: diff
+    - resource:
+      name: vmtime
+      unit: Hours
+      complex: true
+      costpolicy: onoff
+    - resource:
+      name: diskspace
+      unit: MB
+      complex: false
+      costpolicy: diff
 
   implicitvars:
     - price
