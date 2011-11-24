@@ -67,12 +67,14 @@ object RabbitMQConfigurations extends Loggable {
   }
 
   def apply(resource: StreamResource, xs: XStream): Maybe[RabbitMQConfigurations] = {
+    logger.info("Reading rabbitmq configuration from %s".format(resource.url))
     val maybeConfsModel = XStreamHelpers.parseType[RabbitMQConfigurationsModel](resource, xs)
 
     maybeConfsModel match {
       case Just(confsModel) =>
         // parsed <configurations>.xml (like: rabbitmq/configurations.xml)
         // now have a RabbitMQConfigurationsModel
+        logger.debug("rabbitmq configuration from %s is\n%s".format(resource.url, resource.stringContent.getOr("")))
         val confsModelErrors = confsModel.validateConfModel
 
         if(confsModelErrors.size > 0) {

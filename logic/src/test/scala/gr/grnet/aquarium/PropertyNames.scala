@@ -46,5 +46,6 @@ object PropertyNames {
   val TestSkipMongoDB = "test.skip.mongodb"
 
   // Test configuration files used
-  val MongoDBLocalStoreConf = "mongodb.store.conf"
+  val MongoDBStoreConf = "mongodb.store.conf"
+  val RabbitMQConf     = "rabbitmq.conf"
 }

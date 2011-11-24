@@ -47,16 +47,26 @@ import gr.grnet.aquarium.util.Loggable
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import org.junit.Assume._
-import gr.grnet.aquarium.LogicTestsAssumptions
+import com.ckkloverdos.sys.SysProp._
+import gr.grnet.aquarium.{PropertyNames, LogicTestsAssumptions}
+import com.ckkloverdos.sys.SysProp
+import com.thoughtworks.xstream.XStream
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MessagingTest extends Loggable {
+class RabbitMQTest extends Loggable {
 
+  val xs = XStreamHelpers.DefaultXStream
   val baseRC = DefaultResourceContext
   val rabbitmqRC = baseRC / RCFolders.rabbitmq
+
+  lazy val RabbitMQPropFile = {
+    val filename = SysProp(PropertyNames.RabbitMQConf).value.getOr(PropFiles.configurations)
+    logger.debug("Using rabbitmq configuration from %s".format(filename))
+    filename
+  }
 
   object Names {
     val consumer1 = "consumer1"
@@ -102,17 +112,18 @@ class MessagingTest extends Loggable {
 
   @Test
   def testConfigurationsExist {
-    assertTrue(rabbitmqRC.getResource(PropFiles.configurations).isJust)
+    assertTrue(rabbitmqRC.getResource(RabbitMQPropFile).isJust)
   }
 
   @Test
   def testLocalProducer {
     assumeTrue(LogicTestsAssumptions.EnableRabbitMQTests)
 
-    val maybeConfs = RabbitMQConfigurations(baseRC)
-    assertTrue(maybeConfs.isJust)
+    val maybeResource = rabbitmqRC.getResource(RabbitMQPropFile)
+    assertTrue(maybeResource.isJust)
     val maybeProducer = for {
-      confs    <- maybeConfs
+      resource <- maybeResource
+      confs    <- RabbitMQConfigurations(resource, xs)
       conf     <- confs.findConfiguration(Names.localhost_aquarium)
       conn     <- conf.findConnection(Names.local_connection)
       producer <- conn.findProducer(Names.producer1)
