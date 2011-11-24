@@ -44,6 +44,7 @@ case class DSLPolicy(
   algorithms: List[DSLAlgorithm],
   pricelists: List[DSLPriceList],
   resources: List[DSLResource],
+  creditplans: List[DSLCreditPlan],
   agreements: List[DSLAgreement]
 ) {
 
@@ -60,6 +61,11 @@ case class DSLPolicy(
   /**Find an algorithm by name */
   def findAlgorithm(name: String): Option[DSLAlgorithm] = {
     algorithms.find(a => a.name.equals(name))
+  }
+
+  /**Find a crediplan by name */
+  def findCreditPlan(name: String): Option[DSLCreditPlan] = {
+    creditplans.find(a => a.name.equals(name))
   }
 
   /**Find an agreement by name */

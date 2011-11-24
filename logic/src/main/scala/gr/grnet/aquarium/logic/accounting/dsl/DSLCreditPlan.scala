@@ -36,7 +36,8 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 /**
- * A credit plan specifies 
+ * A credit plan specifies a periodic transfer of credits to the creditor's
+ * account.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
@@ -45,6 +46,6 @@ case class DSLCreditPlan (
   name: String,
   overrides: Option[DSLCreditPlan],
   credits: Float,
-  at: DSLTimeSpec,
+  at: List[DSLTimeSpec],
   effective: DSLTimeFrame
 )

@@ -79,6 +79,16 @@ class DSLTest extends DSL with TestMethods {
   }
 
   @Test
+  def testParseCreditPlans = {
+    before
+    assertEquals(2, creditpolicy.creditplans.size)
+    val plan = creditpolicy.findCreditPlan("every10days")
+    assertNotNone(plan)
+    assertEquals(20, plan.get.credits, 0.1F)
+    assertEquals(4, plan.get.at.size)
+  }
+
+  @Test
   def testCronParse = {
     var input = "12 12 * * *"
     var output = parseCronString(input)

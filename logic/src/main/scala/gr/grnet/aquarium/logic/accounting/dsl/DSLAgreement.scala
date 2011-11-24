@@ -46,5 +46,6 @@ case class DSLAgreement (
   name: String,
   overrides: Option[DSLAgreement],
   algorithm : DSLAlgorithm,
-  pricelist : DSLPriceList
+  pricelist : DSLPriceList,
+  creditplan: DSLCreditPlan
 )

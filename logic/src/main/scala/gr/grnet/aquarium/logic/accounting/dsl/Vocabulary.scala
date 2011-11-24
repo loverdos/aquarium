@@ -40,6 +40,10 @@ package gr.grnet.aquarium.logic.accounting.dsl
  */
 object Vocabulary {
   val aquariumpolicy = "aquariumpolicy"
+  val creditplans = "creditplans"
+  val creditplan = "creditplan"
+  val at = "at"
+  val credits = "credits"
   val resources = "resources"
   val algorithms = "algorithms"
   val algorithm = "algorithm"

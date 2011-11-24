@@ -49,14 +49,21 @@ import java.util.Date
  */
 trait DSL extends Loggable {
 
+    /** An empty time frame*/
+    val emptyTimeFrame = DSLTimeFrame(new Date(0), None, Option(List()))
+
     /** An empty algorithm */
-   val emptyAlgorithm = DSLAlgorithm("", None, Map(), DSLTimeFrame(new Date(0), None, Option(List())))
+   val emptyAlgorithm = DSLAlgorithm("", None, Map(), emptyTimeFrame)
 
    /** An empty pricelist */
-   val emptyPriceList = DSLPriceList("", None, Map(), DSLTimeFrame(new Date(0), None, Option(List())))
+   val emptyPriceList = DSLPriceList("", None, Map(), emptyTimeFrame)
+
+  /** An empty creditplan */
+   val emptyCreditPlan = DSLCreditPlan("", None, 0,
+     List(DSLTimeSpec(0,0,-1,-1,-1)), emptyTimeFrame)
 
    /** An empty agreement*/
-   val emptyAgreement = DSLAgreement("", None, emptyAlgorithm, emptyPriceList)
+   val emptyAgreement = DSLAgreement("", None, emptyAlgorithm, emptyPriceList, emptyCreditPlan)
 
   /**
    * Parse an InputStream containing an Aquarium DSL algorithm.
@@ -78,14 +85,19 @@ trait DSL extends Loggable {
       resources, List()
     )
     logger.debug("Pricelists: %s".format(pricelists))
-    
+
+    val creditplans = parseCreditPlans(
+      policy./(Vocabulary.creditplans).asInstanceOf[YAMLListNode], List()
+    )
+    logger.debug("Creditplans: %s".format(creditplans))
+
     val agreements = parseAgreements(
       policy./(Vocabulary.agreements).asInstanceOf[YAMLListNode],
-      policies, pricelists, resources, List()
+      policies, pricelists, resources, creditplans, List()
     )
     logger.debug("Agreements: %s".format(agreements))
 
-    DSLPolicy(policies, pricelists, resources, agreements)
+    DSLPolicy(policies, pricelists, resources, creditplans, agreements)
   }
 
   /** Parse top level resources declarations */
@@ -231,10 +243,72 @@ trait DSL extends Loggable {
       case x: YAMLMapNode => parseTimeFrame(x)
       case YAMLEmptyNode => tmpl.equals(emptyAlgorithm) match {
         case false => tmpl.effective
-        case true => throw new DSLParseException(("Cannot find effectivity period for pricelist %s ").format(name))
+        case true => throw new DSLParseException(("Cannot find effectivity period for pricelist %s").format(name))
       }
     }
     DSLPriceList(name, overr, prices, timeframe)
+  }
+
+  private def parseCreditPlans(creditsplans: YAMLListNode,
+                               results: List[DSLCreditPlan]) : List[DSLCreditPlan] = {
+    creditsplans.head match {
+      case YAMLEmptyNode => return List()
+      case _ =>
+    }
+
+    val superName = creditsplans.head / Vocabulary.overrides
+    val tmpl = superName match {
+      case y: YAMLStringNode =>
+        results.find(p => p.name.equals(y.string)) match {
+          case Some(x) => x
+          case None => throw new DSLParseException("Cannot find super credit plan %s".format(superName))
+        }
+      case YAMLEmptyNode => emptyCreditPlan
+      case _ => throw new DSLParseException("Super credit plan name %s not a string".format())
+    }
+
+    val plan = constructCreditPlan(creditsplans.head.asInstanceOf[YAMLMapNode], tmpl)
+
+    val tmpresults = results ++ List(plan)
+    List(plan) ++ parseCreditPlans(creditsplans.tail, tmpresults)
+  }
+
+  def constructCreditPlan(plan: YAMLMapNode, tmpl: DSLCreditPlan): DSLCreditPlan = {
+
+    val name = plan / Vocabulary.name match {
+      case x: YAMLStringNode => x.string
+      case YAMLEmptyNode => throw new DSLParseException(
+        "Credit plan does not have a name")
+    }
+
+    val overr = plan / Vocabulary.overrides match {
+      case x: YAMLStringNode => Some(tmpl)
+      case YAMLEmptyNode => None
+    }
+
+    val at = plan / Vocabulary.at match {
+      case x: YAMLStringNode => parseCronString(x.string)
+      case YAMLEmptyNode => throw new DSLParseException(
+        "Credit plan does not define repetition specifier")
+    }
+
+    val credits = plan / Vocabulary.credits match {
+      case x: YAMLIntNode => x.int.toFloat
+      case y: YAMLDoubleNode => y.double.toFloat
+      case YAMLEmptyNode => throw new DSLParseException(
+        "Credit plan does not have a name")
+    }
+
+    val timeframe = plan / Vocabulary.effective match {
+      case x: YAMLMapNode => parseTimeFrame(x)
+      case YAMLEmptyNode => tmpl.equals(emptyCreditPlan) match {
+        case false => tmpl.effective
+        case true => throw new DSLParseException(
+          ("Cannot find effectivity period for creditplan %s").format(name))
+      }
+    }
+
+    DSLCreditPlan(name, overr, credits, at, timeframe)
   }
 
   /** Parse top level agreements */
@@ -242,6 +316,7 @@ trait DSL extends Loggable {
                       policies: List[DSLAlgorithm],
                       pricelists: List[DSLPriceList],
                       resources: List[DSLResource],
+                      creditplans: List[DSLCreditPlan],
                       results: List[DSLAgreement]): List[DSLAgreement] = {
      agreements.head match {
        case YAMLEmptyNode => return List()
@@ -260,18 +335,19 @@ trait DSL extends Loggable {
      }
 
      val agr = constructAgreement(agreements.head.asInstanceOf[YAMLMapNode],
-       tmpl, policies, pricelists, resources)
+       tmpl, policies, pricelists, resources, creditplans)
 
      val tmpresults = results ++ List(agr)
      List(agr) ++ parseAgreements(agreements.tail, policies, pricelists,
-       resources, tmpresults)
+       resources, creditplans, tmpresults)
    }
 
   def constructAgreement(agr: YAMLMapNode,
                          tmpl: DSLAgreement,
                          policies: List[DSLAlgorithm],
                          pricelists: List[DSLPriceList],
-                         resources: List[DSLResource]) : DSLAgreement = {
+                         resources: List[DSLResource],
+                         creditplans: List[DSLCreditPlan]) : DSLAgreement = {
      val name = agr / Vocabulary.name match {
       case x: YAMLStringNode => x.string
       case YAMLEmptyNode => throw new DSLParseException("Agreement does not have a name")
@@ -311,12 +387,29 @@ trait DSL extends Loggable {
       }
     }
 
+    val creditplan = agr / Vocabulary.creditplan match {
+      case x: YAMLStringNode => creditplans.find(p => p.name.equals(x.string)) match {
+        case Some(y) => y
+        case None => throw new DSLParseException(("Cannot find crediplan named %s").format(x))
+      }
+      case y: YAMLMapNode => tmpl.equals(emptyAgreement) match {
+        case true => throw new DSLParseException(("Incomplete creditplan definition for agreement %s").format(name))
+        case false =>
+          y.map += ("name" -> YAMLStringNode("/","%s-pricelist".format(name)))
+          constructCreditPlan(y, tmpl.creditplan)
+      }
+      case YAMLEmptyNode => tmpl.equals(emptyAgreement) match {
+        case true => throw new DSLParseException(("No creditplan for agreement %s").format(name))
+        case false => tmpl.creditplan
+      }
+    }
+
     val overrides = tmpl.equals(emptyAgreement) match {
       case true => Some(tmpl)
       case false => None
     }
 
-    DSLAgreement(name, overrides, algorithm, pricelist)
+    DSLAgreement(name, overrides, algorithm, pricelist, creditplan)
   }
 
   /** Parse a timeframe declaration */
