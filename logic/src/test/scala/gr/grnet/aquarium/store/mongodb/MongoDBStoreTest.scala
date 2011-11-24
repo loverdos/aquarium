@@ -46,15 +46,23 @@ import com.ckkloverdos.resource.DefaultResourceContext
 import MongoDBConnection.{RCFolders, PropFiles, DBNames, CollectionNames}
 import gr.grnet.aquarium.util.xstream.XStreamHelpers
 import com.mongodb.casbah.commons.MongoDBObject
+import com.ckkloverdos.sys.SysProp
+import util.Loggable
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MongoDBStoreTest {
+class MongoDBStoreTest extends Loggable {
   val baseRC = DefaultResourceContext
   val mongodbRC = baseRC / RCFolders.mongodb
   val xs = XStreamHelpers.newXStream
+
+  lazy val MongoDBPropFile = {
+    val filename = SysProp(PropertyNames.MongoDBLocalStoreConf).value.getOr(PropFiles.local_message_store)
+    logger.debug("Using mongodb configuration from %s".format(filename))
+    filename
+  }
 
   private def _getTestConf: String = {
     val address1 = ServerAddressConfigurationModel("aquarium.dev.grnet.gr", 27017)
@@ -65,7 +73,7 @@ class MongoDBStoreTest {
 
   @Test
   def testConfigurationExists: Unit = {
-    assertTrue(mongodbRC.getLocalResource(PropFiles.local_message_store).isJust)
+    assertTrue(mongodbRC.getLocalResource(MongoDBPropFile).isJust)
   }
 
   @Test
@@ -73,19 +81,19 @@ class MongoDBStoreTest {
     assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
 
     for {
-      confResource <- mongodbRC.getLocalResource(PropFiles.local_message_store)
+      confResource <- mongodbRC.getLocalResource(MongoDBPropFile)
     } {
       val xs = XStreamHelpers.newXStream
+      logger.debug("Reading mongodb configuration from %s".format(confResource.url))
+      logger.debug("mongodb configuration is:\n%s".format(confResource.stringContent.getOr("")))
       val maybeModel = XStreamHelpers.parseType[MongoDBConfigurationModel](confResource, xs)
       assertTrue(maybeModel.isJust)
+      val obj = MongoDBObject("1" -> "one", "2" -> "two")
+      logger.debug("Inserting %s into mongodb".format(obj))
       for(model <- maybeModel) {
         val mongo = new MongoDBConnection(model)
-        println(mongo._mongoConnection)
-        println(mongo._mongoConnection.getAllAddress())
-        println(mongo._mongoConnection.getConnectPoint())
         val db = mongo._mongoConnection(DBNames.test)
         val collection = db.apply(CollectionNames.test)
-        val obj = MongoDBObject("1" -> "one", "2" -> "two")
         collection.insert(obj)
       }
     }

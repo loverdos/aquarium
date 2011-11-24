@@ -33,54 +33,18 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
-package mongodb
-
-import confmodel.MongoDBConfigurationModel
-import com.mongodb.casbah.MongoConnection
-import com.mongodb.{WriteConcern, ServerAddress}
-import gr.grnet.aquarium.util.Loggable
+package gr.grnet.aquarium
 
 /**
+ * Test-related proeprty names.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MongoDBConnection(val confModel: MongoDBConfigurationModel) extends Loggable {
+object PropertyNames {
+  // Test enabling/disabling
+  val TestSkipRabbitMQ = "test.skip.rabbitmq"
+  val TestSkipMongoDB = "test.skip.mongodb"
 
-  private[mongodb] lazy val _mongoConnection = {
-    val hosts = confModel.hosts
-    val serverAddresses = hosts.map(sacm => new ServerAddress(sacm.host, sacm.port))
-
-    val mongo = MongoConnection(serverAddresses)
-    logger.info("Created MongoDB connection %s for hosts %s".format(mongo, confModel.hosts.map(h => "%s:%s".format(h.host, h.port)).mkString(", ")))
-
-    if(confModel.slaveOK) {
-      mongo.slaveOk()
-      logger.info("Set slaveOK for MongoDB connection %s".format(mongo))
-    }
-    val writeConcern = WriteConcern.valueOf(confModel.writeConcern)
-    mongo.setWriteConcern(writeConcern)
-    logger.info("Set WriteConcern %s for MongoDB connection %s".format(confModel.writeConcern, mongo))
-
-    mongo
-  }
-}
-
-object MongoDBConnection {
-  object RCFolders {
-    val mongodb = "mongodb"
-  }
-
-  object PropFiles {
-    val local_message_store = "local-message-store.xml"
-    val aquarium_message_store = "aquarium-message-store.xml"
-  }
-  
-  object DBNames {
-    val test = "test"
-  }
-
-  object CollectionNames {
-      val test = "test"
-    }
+  // Test configuration files used
+  val MongoDBLocalStoreConf = "mongodb.store.conf"
 }
