@@ -42,8 +42,8 @@ package gr.grnet.aquarium
  */
 object PropertyNames {
   // Test enabling/disabling
-  val TestSkipRabbitMQ = "test.skip.rabbitmq"
-  val TestSkipMongoDB = "test.skip.mongodb"
+  val TestEnableRabbitMQ = "test.enable.rabbitmq"
+  val TestEnableMongoDB = "test.enable.mongodb"
 
   // Test configuration files used
   val MongoDBConfFile  = "mongodb.conf.file"
