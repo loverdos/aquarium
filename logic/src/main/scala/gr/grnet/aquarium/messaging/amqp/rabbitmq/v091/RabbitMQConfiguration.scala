@@ -50,7 +50,6 @@ class RabbitMQConfiguration(val confModel: RabbitMQConfigurationModel) extends A
     val _cf = new JackRabbitConnectionFactory
 
     logger.debug("Using (username, host, port, virtualHost) = (%s, %s, %s, %s)".format(confModel.username, confModel.host, confModel.port, confModel.virtualHost))
-    logger.debug("Using password %s".format(confModel.password))
     _cf.setUsername(confModel.username)
     _cf.setPassword(confModel.password)
     _cf.setHost(confModel.host)
