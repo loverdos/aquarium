@@ -35,44 +35,28 @@
 
 package gr.grnet.aquarium.logic.events
 
-import net.liftweb.json.{Extraction, parse => parseJson, DefaultFormats, JsonAST, Printer}
-import net.liftweb.json.Xml
-import net.liftweb.json.ext.JodaTimeSerializers
+import net.liftweb.json.{Xml, Printer, Extraction, JsonAST}
 
 /**
- * Event sent to Aquarium by clients for resource accounting.
- * 
- * @author Christos KK Loverdos <loverdos@gmail.com>.
- * @author Georgios Gousios <gousiosg@gmail.com>.
+ * Generic base class for all Aquarium events
+ *
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class ResourceEvent(
-  userId: Long,
-  cliendId: Long,
-  resource: String,
-  timestamp: Long,
-  eventVersion: Short,
-  details: Map[String, String]
-) extends AquariumEvent(timestamp)
 
-object ResourceEvent {
-  val DefaultJsonFormats = DefaultFormats ++ JodaTimeSerializers.all
+abstract class AquariumEvent(timestamp: Long) {
 
-  def fromJson(json: String): ResourceEvent = {
-    implicit val formats = DefaultJsonFormats
-    val jsonAST = parseJson(json)
-    Extraction.extract(jsonAST)
+  def toJValue: JsonAST.JValue = {
+    implicit val formats = ResourceEvent.DefaultJsonFormats
+    Extraction.decompose(this)
   }
 
-  def fromJValue(jsonAST: JsonAST.JValue): ResourceEvent = {
-    implicit val formats = DefaultJsonFormats
-    Extraction.extract(jsonAST)
+  def toJson: String = {
+    Printer.pretty(JsonAST.render(this.toJValue))
   }
 
-  def fromBytes(bytes: Array[Byte]): ResourceEvent = {
-    fromJson(new String(bytes, "UTF-8"))
+  def toBytes: Array[Byte] = {
+    toJson.getBytes("UTF-8")
   }
 
-  def fromXml(xml: String): ResourceEvent = {
-    fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
-  }
+  def toXml = Xml.toXml(toJValue).toString()
 }
