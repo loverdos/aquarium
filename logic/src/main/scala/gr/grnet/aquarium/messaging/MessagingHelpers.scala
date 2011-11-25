@@ -33,18 +33,11 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.messaging.amqp
-
-import com.ckkloverdos.props.Props
-
+package gr.grnet.aquarium.messaging
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait AMQPDeliveryHandler {
-  /**
-   * Returns true if the message was handled OK.
-   */
-  def handleStringDelivery(envelope: Props, headers: Props, content: String): Boolean
+object MessagingHelpers {
 }

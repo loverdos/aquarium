@@ -52,4 +52,9 @@ package object util {
     val cname = theClass.getName
     cname.substring(cname.lastIndexOf(".") + 1)
   }
+
+  def safeToStringOrNull(obj: AnyRef): String = obj match {
+    case null => null
+    case _ => obj.toString
+  }
 }

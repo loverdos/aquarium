@@ -37,20 +37,21 @@ package gr.grnet.aquarium.messaging.amqp
 package rabbitmq
 package v091
 
-import scala.collection.JavaConversions._
 import java.lang.String
-import com.rabbitmq.client.{Envelope, DefaultConsumer}
 import com.rabbitmq.client.AMQP.BasicProperties
 import com.ckkloverdos.props.Props
+import com.rabbitmq.client.{QueueingConsumer, Envelope}
+import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.util.safeToStringOrNull
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RabbitMQDeliveryAgent(consumer: RabbitMQConsumer, handler: AMQPDeliveryHandler) extends AMQPDeliveryAgent {
+class RabbitMQDeliveryAgent(consumer: RabbitMQConsumer, handler: AMQPDeliveryHandler) extends AMQPDeliveryAgent with Loggable {
   import RabbitMQDeliveryAgent.{EnvelopeKeys, BasicPropsKeys}
 
-  val underlyingHandler = new DefaultConsumer(consumer._rabbitChannel) {
+  lazy val underlyingHandler = new QueueingConsumer(consumer._rabbitChannel) {
     override def handleDelivery(
         consumerTag: String,
         envelope: Envelope,
@@ -72,27 +73,37 @@ class RabbitMQDeliveryAgent(consumer: RabbitMQConsumer, handler: AMQPDeliveryHan
           BasicPropsKeys.contentType -> properties.getContentType,
           BasicPropsKeys.contentEncoding -> properties.getContentEncoding,
 //          BasicPropsKeys.headers -> properties.get,
-          BasicPropsKeys.deliveryMode -> properties.getDeliveryMode.toString,
-          BasicPropsKeys.priority -> properties.getPriority.toString,
+          BasicPropsKeys.deliveryMode -> safeToStringOrNull(properties.getDeliveryMode),
+          BasicPropsKeys.priority -> safeToStringOrNull(properties.getPriority),
           BasicPropsKeys.correlationId -> properties.getCorrelationId,
           BasicPropsKeys.replyTo -> properties.getReplyTo,
           BasicPropsKeys.expiration -> properties.getExpiration,
           BasicPropsKeys.messageId -> properties.getMessageId,
-          BasicPropsKeys.timestamp -> properties.getTimestamp.toString,
+          BasicPropsKeys.timestamp -> safeToStringOrNull(properties.getTimestamp),
           BasicPropsKeys.`type` -> properties.getType,
           BasicPropsKeys.userId -> properties.getUserId,
           BasicPropsKeys.appId -> properties.getAppId,
           BasicPropsKeys.clusterId -> properties.getClusterId
         )
       )
-      handler.handleStringDelivery(propsEnvelope, propsHeader, new String(body, "UTF-8"))
+
+      val handledOK = handler.handleStringDelivery(propsEnvelope, propsHeader, new String(body, "UTF-8"))
+
+      if(handledOK && !consumer.confModel.autoAck) {
+        val deliveryTag = envelope.getDeliveryTag
+        logger.debug("Message with delivertTag %s handled OK, sending ACK".format(deliveryTag))
+        consumer._rabbitChannel.basicAck(deliveryTag, false);
+      }
     }
   }
+
   def deliverNext = {
     val queue = consumer.confModel.queue
     val autoAck = consumer.confModel.autoAck
 
     consumer._rabbitChannel.basicConsume(queue, autoAck, underlyingHandler)
+    val delivery = underlyingHandler.nextDelivery()
+    logger.debug("Got delivery %s".format(delivery))
   }
 }
 object RabbitMQDeliveryAgent {

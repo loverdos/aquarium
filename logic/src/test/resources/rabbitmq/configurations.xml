@@ -14,7 +14,7 @@
         <RabbitMQConnectionModel>
           <name>test_connection</name>
           <exchange>aquarium</exchange>
-          <exchangeType>direct</exchangeType>
+          <exchangeType>topic</exchangeType>
           <isDurable>true</isDurable>
           <producers class="List">
             <RabbitMQProducerModel>
@@ -27,9 +27,9 @@
               <name>test_consumer</name>
               <queue>aquarium</queue>
               <routingKey>aquarium.test</routingKey>
-              <autoAck>true</autoAck>
+              <autoAck>false</autoAck>
               <queueIsDurable>true</queueIsDurable>
-              <queueIsAutoDelete>true</queueIsAutoDelete>
+              <queueIsAutoDelete>false</queueIsAutoDelete>
               <queueIsExclusive>false</queueIsExclusive>
             </RabbitMQConsumerModel>
           </consumers>
@@ -51,7 +51,7 @@
         <RabbitMQConnectionModel>
           <name>test_connection</name>
           <exchange>aquarium</exchange>
-          <exchangeType>direct</exchangeType>
+          <exchangeType>topic</exchangeType>
           <isDurable>true</isDurable>
           <producers class="List">
             <RabbitMQProducerModel>
@@ -64,9 +64,9 @@
               <name>test_consumer</name>
               <queue>aquarium</queue>
               <routingKey>aquarium.test</routingKey>
-              <autoAck>true</autoAck>
+              <autoAck>false</autoAck>
               <queueIsDurable>true</queueIsDurable>
-              <queueIsAutoDelete>true</queueIsAutoDelete>
+              <queueIsAutoDelete>false</queueIsAutoDelete>
               <queueIsExclusive>false</queueIsExclusive>
             </RabbitMQConsumerModel>
           </consumers>

@@ -49,6 +49,7 @@ import org.junit.Assume._
 import gr.grnet.aquarium.{PropertyNames, LogicTestsAssumptions}
 import com.ckkloverdos.sys.SysProp
 import gr.grnet.aquarium.util.{LogUtils, Loggable}
+import java.util.Random
 
 /**
  *
@@ -154,7 +155,7 @@ class RabbitMQTest extends Loggable {
   }
 
   @Test
-  def testLocalProducer {
+  def testProducer {
     assumeTrue(LogicTestsAssumptions.EnableRabbitMQTests)
 
     val maybeResource = rabbitmqRC.getResource(RabbitMQPropFile)
@@ -168,11 +169,15 @@ class RabbitMQTest extends Loggable {
     } yield {
       producer
     }
+    
+    logger.debug("Found producer %s".format(maybeProducer))
 
     maybeProducer match {
       case Just(producer) =>
-        logger.debug("Publishing a message from %s".format(producer))
-        producer.publishString("Test")
+        logger.debug("Using %s to publish a message".format(producer))
+        val message = "Test message " + new java.util.Random(System.currentTimeMillis()).nextInt
+        producer.publishString(message)
+        logger.debug("Used %s to publish message %s".format(producer, message))
       case NoVal =>
         fail("No producer named %s".format(RabbitMQProducerName))
       case Failed(e, m) =>
@@ -181,7 +186,7 @@ class RabbitMQTest extends Loggable {
   }
 
   @Test
-  def testLocalConsumer {
+  def testConsumer {
     assumeTrue(LogicTestsAssumptions.EnableRabbitMQTests)
 
     val maybeResource = rabbitmqRC.getResource(RabbitMQPropFile)
@@ -200,14 +205,18 @@ class RabbitMQTest extends Loggable {
     maybeConsumer match {
       case Just(consumer) =>
         logger.debug("Receiving a message from %s".format(consumer))
-        consumer.newDeliveryAgent(new AMQPDeliveryHandler {
-          def handleStringDelivery(envelope: Props, headers: Props, content: String) = {
+        val agent = consumer.newDeliveryAgent(new AMQPDeliveryHandler {
+          def handleStringDelivery(envelope: Props, headers: Props, content: String): Boolean = {
             logger.debug("Received message with")
             logger.debug("  envelope: %s".format(envelope))
             logger.debug("  headers : %s".format(headers))
             logger.debug("  body    : %s".format(content))
+
+            true
           }
         })
+        // wait until delivery
+        agent.deliverNext
       case NoVal =>
         fail("No consumer named %s".format(RabbitMQConsumerName))
       case Failed(e, m) =>

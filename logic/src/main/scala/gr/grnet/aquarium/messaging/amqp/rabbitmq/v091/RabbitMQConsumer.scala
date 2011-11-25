@@ -48,22 +48,29 @@ import gr.grnet.aquarium.util.Loggable
 class RabbitMQConsumer(private[v091] val owner: RabbitMQConnection, val confModel: RabbitMQConsumerModel) extends AMQPConsumer with Loggable  {
   private[v091] val _rabbitChannel = {
     val _ch = owner._rabbitConnection.createChannel()
-    logger.info("Created rabbit channel %s for %s".format(_ch, this.toString))
+
+    logger.info("Created rabbit channel '%s' for '%s'".format(_ch, this.toString))
     val exchange = owner.confModel.exchange
-    val exchangeType = owner.confModel.exchangeType
-    val exchangeIsDurable = owner.confModel.isDurable
+//    val exchangeType = owner.confModel.exchangeType
+//    val exchangeIsDurable = owner.confModel.isDurable
     val queue = confModel.queue
     val routingKey = confModel.routingKey
     val queueIsDurable = confModel.queueIsDurable
     val queueIsAutoDelete = confModel.queueIsAutoDelete
     val queueIsExclusive = confModel.queueIsExclusive
 
-    val ed = _ch.exchangeDeclare(exchange, exchangeType, exchangeIsDurable)
-    logger.info("Declared exchange %s for %s with result %s".format(exchange, this, ed))
+//    val ed = _ch.exchangeDeclare(exchange, exchangeType, exchangeIsDurable)
+//    logger.info("Declared exchange '%s' for %s and got result %s".format(exchange, this, ed))
 
-    _ch.queueDeclare(queue, queueIsDurable, queueIsExclusive, queueIsAutoDelete, null)
+    val qd = _ch.queueDeclare(queue, queueIsDurable, queueIsExclusive, queueIsAutoDelete, null)
+    // (D)urable (E)xclusive (A)uto(D)elete --> DEAD
+    val dead = "(%sdurable, %sexclusive, %sautodelete)".format(
+      Seq(queueIsDurable, queueIsExclusive, queueIsAutoDelete).map(if(_) "" else "not "): _*
+    )
+    logger.info("Declared %s queue '%s' for %s and got result %s".format(dead, queue, this, qd))
 
-    _ch.queueBind(queue, exchange, routingKey)
+    val qb = _ch.queueBind(queue, exchange, routingKey)
+    logger.info("Bound queue '%s' to exchange '%s' with routing key '%s' for %s and got result %s".format(queue, exchange, routingKey, this, qb))
     _ch
   }
 
