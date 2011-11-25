@@ -35,39 +35,31 @@
 
 package gr.grnet.aquarium.messaging
 
-import net.liftweb.json.{Extraction, parse => parseJson, DefaultFormats, Formats, JsonAST, Printer}
-import net.liftweb.json.ext.{JodaTimeSerializers}
+import net.liftweb.json.{Extraction, parse => parseJson, DefaultFormats, JsonAST, Printer}
 import net.liftweb.json.Xml
 
 /**
- * The generic message format used within aquarium.
- * All messages are transformed to this type for further processing within aquarium.
+ * Event sent to Aquarium by clients for resource accounting.
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Georgios Gousios <gousiosg@gmail.com>.
  */
-case class GenericMessage(
-    clientID: String,
-    clientEventID: String,
-    eventType: String,
-    eventTypeVersion: String,
-    timestamp: Long,
-    vmID: String,
-    vmFlavor: String,
-    other: Map[String, String]) {
-
-  def changedValue = other.get(GenericMessage.Keys.changedValue)
-  def aquariumEventID = other.get(GenericMessage.Keys.aquariumEventID)
-
-  def withAquariumEventID(aeid: String) = this.copy(other = other.updated(GenericMessage.Keys.aquariumEventID, aeid))
-  def withChangedValue(cv: String) = this.copy(other = other.updated(GenericMessage.Keys.changedValue, cv))
+case class ResourceEvent(
+  userId: Long,
+  cliendId: Long,
+  resource: String,
+  timestamp: Long,
+  eventVersion: Short,
+  details: Map[String, String]
+) {
 
   def toJValue: JsonAST.JValue = {
-    implicit val formats = GenericMessage.GenericMessageJsonFormats
+    implicit val formats = ResourceEvent.formats
     Extraction.decompose(this)
   }
 
   def toJson: String = {
-    implicit val formats = GenericMessage.GenericMessageJsonFormats
+    implicit val formats = ResourceEvent.formats
     Printer.pretty(JsonAST.render(this.toJValue))
   }
 
@@ -75,33 +67,29 @@ case class GenericMessage(
     toJson.getBytes("UTF-8")
   }
   
-  def toXml = Xml.toXml(toJValue)
+  def toXml = Xml.toXml(toJValue).toString()
 }
 
-object GenericMessage {
-  object Keys {
-    val changedValue    = "changedValue"
-    val aquariumEventID = "aquariumEventID"
-  }
+object ResourceEvent {
+  
+  val formats = DefaultFormats
 
-  val GenericMessageJsonFormats = DefaultFormats ++ JodaTimeSerializers.all
-
-  def fromJson(json: String): GenericMessage = {
-    implicit val formats = GenericMessageJsonFormats
+  def fromJson(json: String): ResourceEvent = {
+    implicit val formats = formats
     val jsonAST = parseJson(json)
     Extraction.extract(jsonAST)
   }
 
-  def fromJValue(jsonAST: JsonAST.JValue): GenericMessage = {
-    implicit val formats = GenericMessageJsonFormats
+  def fromJValue(jsonAST: JsonAST.JValue): ResourceEvent = {
+    implicit val formats = formats
     Extraction.extract(jsonAST)
   }
 
-  def fromBytes(bytes: Array[Byte]): GenericMessage = {
+  def fromBytes(bytes: Array[Byte]): ResourceEvent = {
     fromJson(new String(bytes, "UTF-8"))
   }
 
-  def fromXml(xml: String): GenericMessage = {
+  def fromXml(xml: String): ResourceEvent = {
     fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
   }
 }
