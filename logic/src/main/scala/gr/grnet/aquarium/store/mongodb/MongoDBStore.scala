@@ -47,7 +47,7 @@ import com.ckkloverdos.maybe.NoVal
  */
 class MongoDBStore(connection: MongoDBConnection) extends MessageStore {
   def storeString(message: String) = {
-    val mongo = connection._mongoConnection
+    val mongo = connection._mongo
 
     // FIXME: implement
     NoVal

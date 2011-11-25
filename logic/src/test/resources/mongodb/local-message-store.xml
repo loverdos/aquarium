@@ -1,10 +1,18 @@
-<MongoDBConfigurationModel>
-  <slaveOK>true</slaveOK>
-  <writeConcern>SAFE</writeConcern>
+<MongoDBConnectionModel>
   <hosts class="List">
     <ServerAddressConfigurationModel>
       <host>localhost</host>
       <port>27017</port>
     </ServerAddressConfigurationModel>
   </hosts>
-</MongoDBConfigurationModel>
+
+  <collections class="List">
+    <MongoDBCollectionModel>
+      <name>events</name>
+
+      <mongoDBName>aquarium</mongoDBName>
+      <mongoCollectionName>events</mongoCollectionName>
+      <writeConcern>SAFE</writeConcern>
+    </MongoDBCollectionModel>
+  </collections>
+</MongoDBConnectionModel>

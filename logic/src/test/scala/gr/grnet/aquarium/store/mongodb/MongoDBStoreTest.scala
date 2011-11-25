@@ -37,7 +37,7 @@ package gr.grnet.aquarium
 package store
 package mongodb
 
-import confmodel.{ServerAddressConfigurationModel, MongoDBConfigurationModel}
+import confmodel.{ServerAddressConfigurationModel, MongoDBConnectionModel}
 import org.junit.Test
 import org.junit.Assert._
 import org.junit.Assume.assumeTrue
@@ -45,9 +45,10 @@ import org.junit.Assume.assumeTrue
 import com.ckkloverdos.resource.DefaultResourceContext
 import MongoDBConnection.{RCFolders, PropFiles, DBNames, CollectionNames}
 import gr.grnet.aquarium.util.xstream.XStreamHelpers
-import com.mongodb.casbah.commons.MongoDBObject
 import com.ckkloverdos.sys.SysProp
 import util.Loggable
+import com.mongodb.{BasicDBObject, DBObject}
+import com.ckkloverdos.maybe.Failed
 
 /**
  * 
@@ -59,17 +60,17 @@ class MongoDBStoreTest extends Loggable {
   val xs = XStreamHelpers.newXStream
 
   lazy val MongoDBPropFile = {
-    val filename = SysProp(PropertyNames.MongoDBConfFile).value.getOr(PropFiles.local_message_store)
+    val filename = SysProp(PropertyNames.MongoDBConfFile).value.getOr(PropFiles.aquarium_message_store)
     logger.debug("Using mongodb configuration from %s".format(filename))
     filename
   }
 
-  private def _getTestConf: String = {
-    val address1 = ServerAddressConfigurationModel("aquarium.dev.grnet.gr", 27017)
-    val model = new MongoDBConfigurationModel(List(address1), true, "SAFE")
-    val xml = xs.toXML(model)
-    xml
-  }
+//  private def _getTestConf: String = {
+//    val address1 = ServerAddressConfigurationModel("aquarium.dev.grnet.gr", 27017)
+//    val model = new MongoDBConnectionModel(List(address1), true, )
+//    val xml = xs.toXML(model)
+//    xml
+//  }
 
   @Test
   def testConfigurationExists: Unit = {
@@ -80,21 +81,31 @@ class MongoDBStoreTest extends Loggable {
   def testConnection: Unit = {
     assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
 
+    assertTrue(mongodbRC.getLocalResource(MongoDBPropFile).isJust)
     for {
       confResource <- mongodbRC.getLocalResource(MongoDBPropFile)
     } {
-      val xs = XStreamHelpers.newXStream
-      logger.debug("Reading mongodb configuration from %s".format(confResource.url))
-      logger.debug("mongodb configuration is:\n%s".format(confResource.stringContent.getOr("")))
-      val maybeModel = XStreamHelpers.parseType[MongoDBConfigurationModel](confResource, xs)
+      val maybeModel = XStreamHelpers.parseType[MongoDBConnectionModel](confResource, xs)
+      maybeModel match {
+        case Failed(e, m) => throw e
+        case _ =>
+      }
       assertTrue(maybeModel.isJust)
-      val obj = MongoDBObject("1" -> "one", "2" -> "two")
-      logger.debug("Inserting %s into mongodb".format(obj))
+
       for(model <- maybeModel) {
+        logger.debug("Reading mongodb configuration from %s".format(confResource.url))
+        logger.debug("mongodb configuration is:\n%s".format(confResource.stringContent.getOr("")))
+        val obj = new BasicDBObject("1", 1)
+        logger.debug("Inserting %s into mongodb".format(obj))
         val mongo = new MongoDBConnection(model)
-        val db = mongo._mongoConnection(DBNames.test)
-        val collection = db.apply(CollectionNames.test)
-        collection.insert(obj)
+        val store: Option[MessageStore] = mongo.findCollection("events")
+
+        store match {
+          case Some(store) =>
+            store.storeString("{a: 1}")
+          case None =>
+            logger.warn("No store found")
+        }
       }
     }
   }

@@ -33,28 +33,30 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
-package confmodel
+package gr.grnet.aquarium.store
+package mongodb
 
-import com.mongodb.ServerAddress
-
-////////////////////////////////////////////////////////////////////////////
-// The WriteConcerns are as follows:
-////////////////////////////////////////////////////////////////////////////
-// NONE: No exceptions are raised, even for network issues
-// NORMAL: Exceptions are raised for network issues, but not server errors
-// SAFE: Exceptions are raised for network issues, and server errors; waits on a server for the write operation
-// MAJORITY: Exceptions are raised for network issues, and server errors; waits on a majority of servers for the write operation
-// FSYNC_SAFE: Exceptions are raised for network issues, and server errors; the write operation waits for the server to flush the data to disk
-// JOURNAL_SAFE: Exceptions are raised for network issues, and server errors; the write operation waits for the server to group commit to the journal file on disk
-// REPLICAS_SAFE: Exceptions are raised for network issues, and server errors; waits for at least 2 servers for the write operation
-////////////////////////////////////////////////////////////////////////////
+import confmodel.MongoDBCollectionModel
+import com.mongodb.{WriteConcern, BasicDBObject}
+import gr.grnet.aquarium.util.Loggable
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-case class MongoDBConfigurationModel(
-    hosts: List[ServerAddressConfigurationModel],
-    slaveOK: Boolean,
-    writeConcern: String)
+class MongoDBCollection(private[mongodb] val owner: MongoDBConnection, confModel: MongoDBCollectionModel) extends MessageStore with Loggable {
+  def name = confModel.name
+  
+  private[mongodb] lazy val (_mongoDB, _mongoCollection) = {
+    val db   = owner._mongo.getDB(confModel.mongoDBName)
+    val coll = db.getCollection(confModel.mongoCollectionName)
+    (db, coll)
+  }
+
+  def storeString(message: String) = {
+    val obj = new BasicDBObject("event", message)
+    val writeResult = _mongoCollection.insert(obj, WriteConcern.valueOf(confModel.writeConcern))
+    logger.debug("Wrote message %s and got result %s".format(message, writeResult))
+    null
+  }
+}

@@ -36,8 +36,23 @@
 package gr.grnet.aquarium.store.mongodb
 package confmodel
 
+
+////////////////////////////////////////////////////////////////////////////
+// The WriteConcerns are as follows:
+////////////////////////////////////////////////////////////////////////////
+// NONE: No exceptions are raised, even for network issues
+// NORMAL: Exceptions are raised for network issues, but not server errors
+// SAFE: Exceptions are raised for network issues, and server errors; waits on a server for the write operation
+// MAJORITY: Exceptions are raised for network issues, and server errors; waits on a majority of servers for the write operation
+// FSYNC_SAFE: Exceptions are raised for network issues, and server errors; the write operation waits for the server to flush the data to disk
+// JOURNAL_SAFE: Exceptions are raised for network issues, and server errors; the write operation waits for the server to group commit to the journal file on disk
+// REPLICAS_SAFE: Exceptions are raised for network issues, and server errors; waits for at least 2 servers for the write operation
+////////////////////////////////////////////////////////////////////////////
+
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-case class ServerAddressConfigurationModel(host: String, port: Int)
+case class MongoDBConnectionModel(
+    hosts: List[ServerAddressConfigurationModel],
+    collections: List[MongoDBCollectionModel])

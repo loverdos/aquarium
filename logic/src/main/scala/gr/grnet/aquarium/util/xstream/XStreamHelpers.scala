@@ -68,7 +68,8 @@ object XStreamHelpers {
     prepareXStreamAlias[RabbitMQConsumerModel](xs)
 
     // MongoDB
-    prepareXStreamAlias[MongoDBConfigurationModel](xs)
+    prepareXStreamAlias[MongoDBConnectionModel](xs)
+    prepareXStreamAlias[MongoDBCollectionModel](xs)
     prepareXStreamAlias[ServerAddressConfigurationModel](xs)
 
     xs.alias("List", classOf[::[_]])

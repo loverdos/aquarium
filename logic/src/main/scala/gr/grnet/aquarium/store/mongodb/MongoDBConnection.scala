@@ -36,34 +36,36 @@
 package gr.grnet.aquarium.store
 package mongodb
 
-import confmodel.MongoDBConfigurationModel
-import com.mongodb.casbah.MongoConnection
-import com.mongodb.{WriteConcern, ServerAddress}
+import confmodel.MongoDBConnectionModel
 import gr.grnet.aquarium.util.Loggable
+import scala.collection.JavaConversions._
+import com.mongodb.{Mongo, WriteConcern, ServerAddress}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MongoDBConnection(val confModel: MongoDBConfigurationModel) extends Loggable {
+class MongoDBConnection(val confModel: MongoDBConnectionModel) extends Loggable {
 
-  private[mongodb] lazy val _mongoConnection = {
+  private[mongodb] lazy val _mongo = {
     val hosts = confModel.hosts
-    val serverAddresses = hosts.map(sacm => new ServerAddress(sacm.host, sacm.port))
 
-    val mongo = MongoConnection(serverAddresses)
-    logger.info("Created MongoDB connection %s for hosts %s".format(mongo, confModel.hosts.map(h => "%s:%s".format(h.host, h.port)).mkString(", ")))
-
-    if(confModel.slaveOK) {
-      mongo.slaveOk()
-      logger.info("Set slaveOK for MongoDB connection %s".format(mongo))
+    val mongo = if(hosts.size == 1) {
+      val sacm = hosts.head
+      new Mongo(sacm.host, sacm.port)
+    } else {
+      val serverAddresses = hosts.map(sacm => new ServerAddress(sacm.host, sacm.port))
+      new Mongo(serverAddresses)
     }
-    val writeConcern = WriteConcern.valueOf(confModel.writeConcern)
-    mongo.setWriteConcern(writeConcern)
-    logger.info("Set WriteConcern %s for MongoDB connection %s".format(confModel.writeConcern, mongo))
 
     mongo
   }
+
+
+  private lazy val _collections = confModel.collections.map(new MongoDBCollection(this, _))
+  def collections: List[MongoDBCollection] = _collections
+
+  def findCollection(name: String): Option[MongoDBCollection] = collections.find(_.name == name)
 }
 
 object MongoDBConnection {
@@ -78,9 +80,11 @@ object MongoDBConnection {
   
   object DBNames {
     val test = "test"
+    val aquarium = "aquarium"
   }
 
   object CollectionNames {
-      val test = "test"
-    }
+    val test = "test"
+    val events = "events"
+  }
 }

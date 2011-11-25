@@ -40,4 +40,4 @@ package confmodel
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-case class ServerAddressConfigurationModel(host: String, port: Int)
+case class MongoDBCollectionModel(name: String,  mongoDBName: String, mongoCollectionName: String, writeConcern: String)
