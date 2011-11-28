@@ -46,12 +46,24 @@ import java.util.{GregorianCalendar, Calendar, Date}
 trait DSLUtils extends DateUtils {
 
   /**
+   * Get a list of all timeslots within which a algorithm/pricelist
+   * is effective.
+   */
+  def allEffectiveTimeslots(spec: DSLTimeFrame, from: Date, to: Date):
+    List[(Date, Date)] = {
+
+    
+
+    spec.repeat.flatMap{r =>effectiveTimeslots(r, from, Some(to))} sortWith sorter
+  }
+
+  /**
    * Get a list of all time periods within which a time frame is active.
    * If the to date is None, the expansion takes place within a timeframe
    * between `from .. from` + 1 year. The result is returned sorted by
    * timeframe start date.
    */
-  def expandTimeRepeat(spec: DSLTimeFrameRepeat, from: Date, to: Option[Date]):
+  def effectiveTimeslots(spec: DSLTimeFrameRepeat, from: Date, to: Option[Date]):
     List[(Date, Date)] = {
 
     assert(spec.start.size == spec.end.size)
@@ -65,11 +77,12 @@ trait DSLUtils extends DateUtils {
       case Some(y) => y
     }
 
-    def sorter(x: (Date, Date), y: (Date, Date)) : Boolean =
-      if (y._1 after x._1) true else false
-
     coExpandTimespecs(spec.start.zip(spec.end), from, endDate) sortWith sorter
   }
+
+  
+  private def sorter(x: (Date, Date), y: (Date, Date)) : Boolean =
+    if (y._1 after x._1) true else false
 
   /**
    * Calculate periods of activity for a list of timespecs

@@ -89,14 +89,14 @@ class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
   }
 
   @Test
-  def testExpandTimeRepeat = {
+  def testEffectiveTimeslots = {
     val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
     val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
 
     var repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
       parseCronString("00 14 * * *"))
 
-    var result = expandTimeRepeat(repeat, from, Some(to))
+    var result = effectiveTimeslots(repeat, from, Some(to))
 
     assertNotEmpty(result)
     assertEquals(31, result.size)
@@ -104,17 +104,17 @@ class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
     //Expansion outside timeframe
     repeat = DSLTimeFrameRepeat(parseCronString("00 12 * May *"),
       parseCronString("00 14 * Sep *"))
-    result = expandTimeRepeat(repeat, from, Some(to))
+    result = effectiveTimeslots(repeat, from, Some(to))
     assertEquals(0, result.size)
 
     repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * 5"),
       parseCronString("00 14 * * 1"))
-    result = expandTimeRepeat(repeat, from, Some(to))
+    result = effectiveTimeslots(repeat, from, Some(to))
     assertEquals(4, result.size)
 
     repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * Mon,Wed,Fri"),
       parseCronString("00 14 * * Tue,Thu,Sat"))
-    result = expandTimeRepeat(repeat, from, Some(to))
+    result = effectiveTimeslots(repeat, from, Some(to))
     assertEquals(13, result.size)
   }
 }
