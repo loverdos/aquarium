@@ -138,6 +138,42 @@ class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
     testSuccessiveTimeslots(result)
   }
 
+  @Test
+  def testNonEffectiveTimeslots = {
+    val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
+    val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
+
+    var repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
+      parseCronString("00 14 * * *"))
+
+    var result = ineffectiveTimeslots(repeat, from, Some(to))
+    assertEquals(30, result.size)
+    testSuccessiveTimeslots(result)
+    printTimeslots(result)
+  }
+
+  @Test
+  def testTimeContinuum : Unit = {
+    val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
+    val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
+
+    var repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
+      parseCronString("00 14 * * *"))
+
+    val continuum = effectiveTimeslots(repeat, from, Some(to)) ++
+      ineffectiveTimeslots(repeat, from, Some(to)) sortWith sorter
+
+    testSuccessiveTimeslots(continuum)
+
+    continuum.reduce {
+      (a,b) =>
+        if(a._2.getTime - b._1.getTime > 1)
+          fail("Effectivity timeslots leave gaps: %s %s".format(a, b))
+        a
+    }
+    return
+  }
+
   @tailrec
   private def testSuccessiveTimeslots(result: List[(Date, Date)]): Unit = {
     if (result.isEmpty) return

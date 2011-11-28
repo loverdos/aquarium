@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import gr.grnet.aquarium.util.DateUtils
-import java.util.{GregorianCalendar, Calendar, Date}
+import java.util.{Date, GregorianCalendar, Calendar}
 
 /**
  * Utility functions to use when working with DSL types.
@@ -44,6 +44,29 @@ import java.util.{GregorianCalendar, Calendar, Date}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 trait DSLUtils extends DateUtils {
+
+  /**
+   * Get a list of timeslots within which a timeframe is not effective.
+   */
+  def ineffectiveTimeslots(spec: DSLTimeFrameRepeat, from: Date, to: Option[Date]):
+    List[(Date, Date)] = {
+
+    buildNotEffectiveList(effectiveTimeslots(spec, from, to)) sortWith sorter
+  }
+
+  private def buildNotEffectiveList(l :List[(Date, Date)]) :
+    List[(Date, Date)] = {
+
+    if (l.isEmpty) return List()
+    if (l.tail.isEmpty) return List()
+
+    assert(l.head._2.getTime < l.tail.head._1.getTime)
+
+    List[(Date, Date)]() ++
+      List((new Date(l.head._2.getTime + 1),
+        new Date(l.tail.head._1.getTime - 1))) ++
+      buildNotEffectiveList(l.tail)
+  }
 
   /**
    * Get a list of all timeslots within which a timeframe
@@ -78,8 +101,10 @@ trait DSLUtils extends DateUtils {
     coExpandTimespecs(spec.start.zip(spec.end), from, endDate) sortWith sorter
   }
 
-  
-  private def sorter(x: (Date, Date), y: (Date, Date)) : Boolean =
+  /**
+   * Utility function to put timeslots in increasing start timestamp order
+   */
+  def sorter(x: (Date, Date), y: (Date, Date)) : Boolean =
     if (y._1 after x._1) true else false
 
   /**

@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.logic.accounting
 
-import dsl.{DSLPolicy, DSLAgreement, DSLPriceList, DSLAlgorithm}
+import dsl._
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import java.util.Date
@@ -45,7 +45,7 @@ import java.util.Date
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait Accounting {
+trait Accounting extends DSLUtils {
 
   def chargeEvent(ev: ResourceEvent) : Maybe[Float] = {
 
@@ -67,8 +67,10 @@ trait Accounting {
     }
   }
 
-  def calcChangeChunks(agr: DSLAgreement, value: Float,
+  def calcChangeChunks(agr: DSLAgreement, volume: Float,
                        from: Date, to: Date) : List[ChargeChunk] = {
+
+    val prts = allEffectiveTimeslots(agr.pricelist.effective, from, to)
 
     
 
