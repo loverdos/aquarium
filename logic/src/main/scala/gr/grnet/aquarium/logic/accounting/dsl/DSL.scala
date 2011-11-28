@@ -50,7 +50,7 @@ import java.util.Date
 trait DSL extends Loggable {
 
     /** An empty time frame*/
-    val emptyTimeFrame = DSLTimeFrame(new Date(0), None, Option(List()))
+    val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
 
    /** An empty resource*/
    val emptyResource = DSLResource("", "", false, "")
@@ -450,8 +450,8 @@ trait DSL extends Loggable {
     }
 
     val effective = timeframe / Vocabulary.repeat match {
-      case x: YAMLListNode => Some(parseTimeFrameRepeat(x))
-      case YAMLEmptyNode => None
+      case x: YAMLListNode => parseTimeFrameRepeat(x)
+      case YAMLEmptyNode => List()
     }
 
     DSLTimeFrame(from, to, effective)

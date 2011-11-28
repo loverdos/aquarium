@@ -45,5 +45,5 @@ import java.util.Date
 case class DSLTimeFrame (
   from: Date,
   to: Option[Date],
-  repeat: Option[List[DSLTimeFrameRepeat]]
+  repeat: List[DSLTimeFrameRepeat]
 )

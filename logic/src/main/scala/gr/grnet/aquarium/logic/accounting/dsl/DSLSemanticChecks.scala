@@ -116,12 +116,12 @@ trait DSLSemanticChecks {
   }
 
   private def checkTimeNotInitialized(time: DSLTimeFrame) : List[DSLConsistencyMsg] = {
-    if (time.repeat.get == None)
+    if (time.repeat.isEmpty)
       return List()
 
     val result = new mutable.ListBuffer[DSLConsistencyMsg]
 
-    time.repeat.get.foreach {
+    time.repeat.foreach {
       r =>
         r.start.foreach {
           r => if (r.hour == -1 || r.min == -1)
@@ -139,7 +139,7 @@ trait DSLSemanticChecks {
   }
 
   private def checkRepeatHoles(time: DSLTimeFrame) : List[DSLConsistencyMsg] = {
-    val repeat = time.repeat.getOrElse(return List())
+    val repeat = time.repeat
 
     List()
   }
