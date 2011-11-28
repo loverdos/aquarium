@@ -45,6 +45,8 @@ import net.liftweb.json.{Xml, Printer, Extraction, JsonAST}
 
 abstract class AquariumEvent(timestamp: Long) {
 
+  def validate: Boolean
+
   def toJValue: JsonAST.JValue = {
     implicit val formats = ResourceEvent.DefaultJsonFormats
     Extraction.decompose(this)

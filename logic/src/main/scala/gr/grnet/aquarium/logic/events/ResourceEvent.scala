@@ -35,9 +35,10 @@
 
 package gr.grnet.aquarium.logic.events
 
-import net.liftweb.json.{Extraction, parse => parseJson, DefaultFormats, JsonAST, Printer}
+import net.liftweb.json.{Extraction, parse => parseJson, DefaultFormats, JsonAST}
 import net.liftweb.json.Xml
 import net.liftweb.json.ext.JodaTimeSerializers
+import gr.grnet.aquarium.logic.accounting.Policy
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -52,7 +53,38 @@ case class ResourceEvent(
   timestamp: Long,
   eventVersion: Short,
   details: Map[String, String]
-) extends AquariumEvent(timestamp)
+) extends AquariumEvent(timestamp) {
+
+  def validate() : Boolean = {
+
+    //TODO: Check userId
+
+    //TODO: Get agreement for ev.userid
+    val agreement = "default"
+
+    val agr = Policy.policy.findAgreement(agreement) match {
+      case Some(x) => x
+      case None => return false
+    }
+
+    val resourse = Policy.policy.findResource(resource) match {
+      case Some(x) => x
+      case None => return false
+    }
+
+    if (!details.keySet.contains("value"))
+      return false
+
+    if (resourse.complex && !details.keySet.contains("instance-id"))
+      return false
+
+    
+
+    //TODO: Check client-id
+
+    true
+  }
+}
 
 object ResourceEvent {
   val DefaultJsonFormats = DefaultFormats ++ JodaTimeSerializers.all
