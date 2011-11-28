@@ -35,7 +35,10 @@
 
 package gr.grnet.aquarium.logic.accounting
 
-import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
+import dsl.{DSLPolicy, DSLAgreement, DSLPriceList, DSLAlgorithm}
+import gr.grnet.aquarium.logic.events.ResourceEvent
+import com.ckkloverdos.maybe.{Failed, Just, Maybe}
+import java.util.Date
 
 /**
  * 
@@ -44,7 +47,36 @@ import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
  */
 trait Accounting {
 
-  def chargeEvent( a: DSLAgreement) : Float = {
-    0F
+  def chargeEvent(ev: ResourceEvent) : Maybe[Float] = {
+
+    if (!ev.validate())
+      return Failed(new AccountingException("Message not valid"))
+
+    //From now own, we can trust the event contents
+    val resource = Policy.policy.findResource(ev.resource).get
+
+    
+
+    Just(0F)
+  }
+
+  case class ChargeChunk(value: Float, algorithm: DSLAlgorithm,
+                         priceList: DSLPriceList) {
+    def cost(): Float = {
+      0F
+    }
+  }
+
+  def calcChangeChunks(agr: DSLAgreement, value: Float,
+                       from: Date, to: Date) : List[ChargeChunk] = {
+
+    
+
+    List()
   }
 }
+
+
+
+/** An exception raised when something goes wrong with accounting */
+class AccountingException(msg: String) extends Exception(msg)
