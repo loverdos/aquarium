@@ -46,13 +46,11 @@ import java.util.{GregorianCalendar, Calendar, Date}
 trait DSLUtils extends DateUtils {
 
   /**
-   * Get a list of all timeslots within which a algorithm/pricelist
+   * Get a list of all timeslots within which a timeframe
    * is effective.
    */
   def allEffectiveTimeslots(spec: DSLTimeFrame, from: Date, to: Date):
     List[(Date, Date)] = {
-
-    
 
     spec.repeat.flatMap{r =>effectiveTimeslots(r, from, Some(to))} sortWith sorter
   }

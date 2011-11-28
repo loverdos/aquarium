@@ -38,8 +38,9 @@ package gr.grnet.aquarium.logic.test
 import org.junit.Test
 import org.junit.Assert._
 import java.util.Date
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLTimeFrameRepeat, DSL, DSLUtils, DSLTimeSpec}
 import gr.grnet.aquarium.util.TestMethods
+import gr.grnet.aquarium.logic.accounting.dsl._
+import annotation.tailrec
 
 class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
 
@@ -99,6 +100,7 @@ class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
     var result = effectiveTimeslots(repeat, from, Some(to))
 
     assertNotEmpty(result)
+    testSuccessiveTimeslots(result)
     assertEquals(31, result.size)
 
     //Expansion outside timeframe
@@ -110,11 +112,42 @@ class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
     repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * 5"),
       parseCronString("00 14 * * 1"))
     result = effectiveTimeslots(repeat, from, Some(to))
+    testSuccessiveTimeslots(result)
     assertEquals(4, result.size)
 
     repeat = DSLTimeFrameRepeat(parseCronString("00 12 * * Mon,Wed,Fri"),
       parseCronString("00 14 * * Tue,Thu,Sat"))
     result = effectiveTimeslots(repeat, from, Some(to))
+    testSuccessiveTimeslots(result)
     assertEquals(13, result.size)
+  }
+
+  @Test
+  def testAllEffectiveTimeslots = {
+    val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
+    val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
+
+    val repeat1 = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
+      parseCronString("00 14 * * *"))
+    val repeat2 = DSLTimeFrameRepeat(parseCronString("00 18 * * 5"),
+      parseCronString("00 20 * * 5"))
+    val tf = DSLTimeFrame(from, None, List(repeat1, repeat2))
+
+    val result = allEffectiveTimeslots(tf, from, to)
+    assertEquals(36, result.size)
+    testSuccessiveTimeslots(result)
+  }
+
+  @tailrec
+  private def testSuccessiveTimeslots(result: List[(Date, Date)]): Unit = {
+    if (result.isEmpty) return
+    if (result.tail.isEmpty) return
+    if (result.head._2.after(result.tail.head._1))
+      fail("Effectivity timeslots not successive: %s %s".format(result.head, result.tail.head))
+    testSuccessiveTimeslots(result.tail)
+  }
+
+  private def printTimeslots(result: List[(Date, Date)]) = {
+    result.foreach(p => print("from:%s to:%s\n".format(p._1, p._2)))
   }
 }
