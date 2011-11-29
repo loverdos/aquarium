@@ -55,7 +55,7 @@ object XStreamHelpers {
 
   def prepareXStreamAlias[T : Manifest](xs: XStream): XStream = {
     val theClass = manifest[T].erasure
-    xs.alias(shortClassNameOf(theClass), theClass)
+    xs.alias(shortNameOfClass(theClass), theClass)
     xs
   }
   

@@ -33,51 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.processor.actor
+
+import AquariumActorRoles.AquariumActorRole
+import akka.actor.Actor
 
 /**
- * Utility definitions.
+ * Parent of all Aquarium actors.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-package object util {
-  def tryOption[A](f: => A): Option[A] = {
-    try Some(f)
-    catch {
-      case _: Exception => None
-    }
-  }
-
-  /**
-   * Compute the class name excluding any leading packages.
-   *
-   * This is basically the name after the last dot.
-   */
-  def shortNameOfClass(theClass: Class[_]): String = {
-    val cname = theClass.getName
-    cname.substring(cname.lastIndexOf(".") + 1)
-  }
-
-  /**
-   * For the class of the provided object, compute the class name excluding any leading packages.
-   *
-   * This is basically the name after the last dot.
-   *
-   * The `null` value is mapped to string `"null"`.
-   */
-  def shortClassNameOf(anyRef: AnyRef): String = {
-    anyRef match {
-      case null =>
-        "<null>"
-      case clz: Class[_] =>
-        shortNameOfClass(clz)
-      case obj =>
-        shortNameOfClass(obj.getClass)
-    }
-  }
-
-  def safeToStringOrNull(obj: AnyRef): String = obj match {
-    case null => null
-    case _ => obj.toString
-  }
+trait AquariumActor extends Actor {
+  def role: AquariumActorRole
 }

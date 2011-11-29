@@ -44,6 +44,8 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 	//val repo3 = "jboss" at "http://repository.jboss.org/nexus/content/groups/public/"
 	//val repo4 = "sonatype" at "http://oss.sonatype.org/content/groups/public/"
 	//val repo5 = "jcrontab" at "http://kenai.com/projects/crontab-parser/sources/maven-repo/content/"
+	// val repo6 = "typsafe" at "http://repo.typesafe.com/typesafe/releases/"
+	// val repo7 = "akka" at "http://akka.io/repository/"
 
 	val lib_slf4j     = "org.slf4j"      % "slf4j-api"            % "1.6.1"   withSources()
 	val lib_h2        = "com.h2database" % "h2"                   % "1.3.160" withSources()
@@ -63,8 +65,9 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 		val lib_jcrontab  = "com.kenai.crontab-parser" % "crontab-parser" % "1.0.1" withSources()
 		val lib_xstream   = "com.thoughtworks.xstream" % "xstream"     % "1.4.1" withSources()
 		val lib_rabbit    = "com.rabbitmq"   % "amqp-client"       % "2.7.0" withSources()
-//    val lib_mongo     = "org.mongodb"    % "mongo-java-driver" % "2.7.2" withSources()
-    val lib_casbah    = "com.mongodb.casbah" % "casbah-core_2.9.1"  % "2.1.5-1" withSources()
+   		val lib_mongo     = "org.mongodb"    % "mongo-java-driver" % "2.7.2" withSources()
+    	//val lib_casbah    = "com.mongodb.casbah" % "casbah-core_2.9.1"  % "2.1.5-1" withSources()
+    	val lib_akka = "se.scalablesolutions.akka" % "akka-actor" % "1.3-RC1" withSources()
 
 		val lib_converter      = "com.ckkloverdos" % "converter_2.9.1"      % "0.3.0" withSources()
 		val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()

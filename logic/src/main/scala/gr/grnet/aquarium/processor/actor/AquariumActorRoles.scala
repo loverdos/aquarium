@@ -33,51 +33,23 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.processor.actor
 
 /**
- * Utility definitions.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-package object util {
-  def tryOption[A](f: => A): Option[A] = {
-    try Some(f)
-    catch {
-      case _: Exception => None
-    }
-  }
+object AquariumActorRoles {
+  sealed abstract class AquariumActorRole(val role: String)
 
   /**
-   * Compute the class name excluding any leading packages.
-   *
-   * This is basically the name after the last dot.
+   * The generic router/dispatcher.
    */
-  def shortNameOfClass(theClass: Class[_]): String = {
-    val cname = theClass.getName
-    cname.substring(cname.lastIndexOf(".") + 1)
-  }
+  case object Dispatcher extends AquariumActorRole("Dispatcher")
+
 
   /**
-   * For the class of the provided object, compute the class name excluding any leading packages.
-   *
-   * This is basically the name after the last dot.
-   *
-   * The `null` value is mapped to string `"null"`.
+   * Processes user-related resource events.
    */
-  def shortClassNameOf(anyRef: AnyRef): String = {
-    anyRef match {
-      case null =>
-        "<null>"
-      case clz: Class[_] =>
-        shortNameOfClass(clz)
-      case obj =>
-        shortNameOfClass(obj.getClass)
-    }
-  }
-
-  def safeToStringOrNull(obj: AnyRef): String = obj match {
-    case null => null
-    case _ => obj.toString
-  }
+  case object ResourceProcessor extends AquariumActorRole("ResourceProcessor")
 }

@@ -41,7 +41,7 @@ package v091
 import confmodel.RabbitMQConfigurationsModel
 import gr.grnet.aquarium.util.xstream.XStreamHelpers
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.util.{Loggable, shortClassNameOf}
+import gr.grnet.aquarium.util.{Loggable, shortNameOfClass}
 import com.ckkloverdos.resource.{StreamResource, StreamResourceContext}
 import com.thoughtworks.xstream.XStream
 
@@ -78,7 +78,7 @@ object RabbitMQConfigurations extends Loggable {
         val confsModelErrors = confsModel.validateConfModel
 
         if(confsModelErrors.size > 0) {
-          val errorMsg = "%s has %s error(s)".format(shortClassNameOf(confsModel.getClass))
+          val errorMsg = "%s has %s error(s)".format(shortNameOfClass(confsModel.getClass))
           logger.error(errorMsg)
           for(error <- confsModelErrors) {
             logger.error(error)
