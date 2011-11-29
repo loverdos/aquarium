@@ -46,4 +46,6 @@ case class DSLAlgorithm (
   overrides: Option[DSLAlgorithm],
   algorithms: Map[DSLResource, String],
   effective: DSLTimeFrame
-) extends DSLTimeBoundedItem(effective)
+) extends DSLTimeBoundedItem[DSLAlgorithm](overrides, effective)
+
+
