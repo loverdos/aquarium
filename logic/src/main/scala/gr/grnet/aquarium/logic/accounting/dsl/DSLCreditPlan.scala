@@ -43,8 +43,8 @@ package gr.grnet.aquarium.logic.accounting.dsl
  */
 case class DSLCreditPlan (
   name: String,
-  overrides: Option[DSLCreditPlan],
+  override  val overrides: Option[DSLCreditPlan],
   credits: Float,
   at: List[DSLTimeSpec],
-  effective: DSLTimeFrame
+  override  val effective: DSLTimeFrame
 ) extends DSLTimeBoundedItem[DSLCreditPlan](overrides, effective)

@@ -41,5 +41,5 @@ package gr.grnet.aquarium.logic.accounting.dsl
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-abstract class DSLTimeBoundedItem[T](overrides: Option[T],
-                                     effective: DSLTimeFrame)
+abstract class DSLTimeBoundedItem[T](val overrides: Option[T],
+                                     val effective: DSLTimeFrame)

@@ -43,9 +43,9 @@ package gr.grnet.aquarium.logic.accounting.dsl
  */
 case class DSLAlgorithm (
   name: String,
-  overrides: Option[DSLAlgorithm],
+  override  val overrides: Option[DSLAlgorithm],
   algorithms: Map[DSLResource, String],
-  effective: DSLTimeFrame
+  override  val effective: DSLTimeFrame
 ) extends DSLTimeBoundedItem[DSLAlgorithm](overrides, effective)
 
 
