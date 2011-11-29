@@ -50,7 +50,7 @@ case class ResourceEvent(
   userId: Long,
   cliendId: Long,
   resource: String,
-  timestamp: Long,
+  override val timestamp: Long,
   eventVersion: Short,
   details: Map[String, String]
 ) extends AquariumEvent(timestamp) {

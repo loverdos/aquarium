@@ -33,7 +33,10 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.events
+package gr.grnet.aquarium
+package logic.events
+
+import util.shortClassNameOf
 
 import net.liftweb.json.{Xml, Printer, Extraction, JsonAST}
 
@@ -43,7 +46,7 @@ import net.liftweb.json.{Xml, Printer, Extraction, JsonAST}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-abstract class AquariumEvent(timestamp: Long) {
+abstract class AquariumEvent(val timestamp: Long) {
 
   def validate: Boolean
 
@@ -61,4 +64,6 @@ abstract class AquariumEvent(timestamp: Long) {
   }
 
   def toXml = Xml.toXml(toJValue).toString()
+
+  def eventType: String = shortClassNameOf(this)
 }
