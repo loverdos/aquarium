@@ -46,6 +46,35 @@ import java.util.{Calendar, Date, GregorianCalendar}
  */
 trait DateUtils {
 
+
+  /**
+   * Determines whether a time instant is contained within the
+   * provided timeslot.
+   */
+  def contains(timeslot: (Date, Date), moment: Date): Boolean = {
+
+    if (timeslot._1.before(moment) && timeslot._2.after(moment))
+      return true
+
+    false
+  }
+
+  /**
+   * Determines whether timeslot1 can fully contain timeslot2
+   */
+  def contains(timeslot1: (Date, Date), timeslot2: (Date, Date)): Boolean = {
+    if (timeslot1._1.after(timeslot2._1))
+      return false
+
+    if (timeslot1._2.before(timeslot2._2))
+      return false
+
+    true
+  }
+
+  /**
+   * Search within
+   */
   def findDays(from: Date, to: Date, f: Calendar => Boolean) : List[Date] = {
     val c = new GregorianCalendar()
     val result = new mutable.ListBuffer[Date]()
