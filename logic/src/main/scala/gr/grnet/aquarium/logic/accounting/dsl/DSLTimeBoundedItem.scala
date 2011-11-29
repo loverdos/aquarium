@@ -36,10 +36,10 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 /**
- * A DSL item whose effectivity is constrained by well defined time bounds.
+ * A DSL dsltbi whose effectivity is constrained by well defined time bounds.
  * All time bounded items also support inheritance.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-abstract class DSLTimeBoundedItem[T](val overrides: Option[T],
+abstract class DSLTimeBoundedItem[T](val overrides: Option[DSLTimeBoundedItem[T]],
                                      val effective: DSLTimeFrame)
