@@ -45,7 +45,35 @@ import java.util.{Date, GregorianCalendar, Calendar}
  */
 trait DSLUtils extends DateUtils {
 
-  
+  /**
+   * 
+   */
+  def findEffective[T](timeslot: (Date, Date),
+                       dsltbi: Option[DSLTimeBoundedItem[T]]):
+  Map[(Date, Date), DSLTimeBoundedItem[T]] = {
+
+    val item = dsltbi match {
+      case None => return Map()
+      case _ => dsltbi.get
+    }
+
+    val eff = allEffectiveTimeslots(item.effective, item.effective.from, timeslot._2)
+
+    val res = eff.find(t => contains(t, timeslot)) match {
+      case Some(x) => Map(x -> item)
+      case None => eff.find(t => contains(t, timeslot._1)) match {
+        case Some(y) =>
+          val next = if (eff.lastIndexOf(y) == eff.size - 1)
+                       (new Date(Int.MaxValue), new Date(Int.MaxValue))
+                     else
+                       eff.apply(eff.lastIndexOf(y) + 1)
+          Map((timeslot._1, y._2) -> item) ++ findEffective((next._1, timeslot._2), item.overrides)
+        case None => findEffective(timeslot, item.overrides)
+      }
+    }
+
+    Map() ++ res
+  }
 
   /**
    * Get a list of timeslots within which a timeframe is not effective.
@@ -71,13 +99,27 @@ trait DSLUtils extends DateUtils {
   }
 
   /**
-   * Get a list of all timeslots within which a timeframe
+   * Get a list of all timeslots within which the provided time frame
    * is effective.
    */
-  def allEffectiveTimeslots(spec: DSLTimeFrame, from: Date, to: Date):
-    List[(Date, Date)] = {
+  def allEffectiveTimeslots(spec: DSLTimeFrame):
+  List[(Date, Date)] = {
 
-    spec.repeat.flatMap{r =>effectiveTimeslots(r, from, Some(to))} sortWith sorter
+    spec.repeat.flatMap {
+      r => effectiveTimeslots(r, spec.from, spec.to)
+    } sortWith sorter
+  }
+
+  /**
+   * Get a list of all timeslots within which a timeframe
+   * is effective, whithin the provided time bounds.
+   */
+  def allEffectiveTimeslots(spec: DSLTimeFrame, from: Date, to: Date):
+  List[(Date, Date)] = {
+
+    spec.repeat.flatMap {
+      r => effectiveTimeslots(r, from, Some(to))
+    } sortWith sorter
   }
 
   /**
