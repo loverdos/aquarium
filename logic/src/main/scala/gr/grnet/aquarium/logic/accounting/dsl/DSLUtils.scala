@@ -45,19 +45,40 @@ import java.util.{Date, GregorianCalendar, Calendar}
  */
 trait DSLUtils extends DateUtils {
 
-  /**
-   * 
-   */
-  def findEffective[T](timeslot: (Date, Date),
-                       dsltbi: Option[DSLTimeBoundedItem[T]]):
-  Map[(Date, Date), DSLTimeBoundedItem[T]] = {
+  def resolveEffectiveAlgorithmsForTimeslot(timeslot: (Date, Date),
+                                           agr: DSLAgreement):
+  Map[(Date, Date), DSLAlgorithm] =
+    resolveEffective[DSLAlgorithm](timeslot, Some(agr.algorithm))
 
-    val item = dsltbi match {
+
+  def resolveEffectivePricelistsForTimeslot(timeslot: (Date, Date),
+                                            agr: DSLAgreement):
+  Map[(Date, Date), DSLPriceList] =
+    resolveEffective[DSLPriceList](timeslot, Some(agr.pricelist))
+
+  /**
+   * Resolves the DSLTimeBoundedItem which is active within the
+   * provided timeslot. If the provided timeslot does not fit entirely or at all
+   * into a timeslot within which a DSLTimeBoundedItem is active, then the
+   * resolution takes the following paths:
+   *
+   *  - If the provided timeslot (a) partially fits into the DSLTimeBoundedItem
+   *  timeslot (b) and the next active time slot is (c), then the provided
+   *  timeslot is split in three parts `(a.start...b.end)`,
+   *  `(b.end...c.start)` and `(c.start...a.end)`
+   *
+   */
+  def resolveEffective[T <: DSLTimeBoundedItem[T]](timeslot: (Date, Date),
+                                                   tbi: Option[T]):
+  Map[(Date, Date), T] = {
+
+    val item = tbi match {
       case None => return Map()
-      case _ => dsltbi.get
+      case _ => tbi.get
     }
 
-    val eff = allEffectiveTimeslots(item.effective, item.effective.from, timeslot._2)
+    val eff = allEffectiveTimeslots(item.effective,
+      item.effective.from, timeslot._2)
 
     val res = eff.find(t => contains(t, timeslot)) match {
       case Some(x) => Map(x -> item)
@@ -67,8 +88,14 @@ trait DSLUtils extends DateUtils {
                        (new Date(Int.MaxValue), new Date(Int.MaxValue))
                      else
                        eff.apply(eff.lastIndexOf(y) + 1)
-          Map((timeslot._1, y._2) -> item) ++ findEffective((next._1, timeslot._2), item.overrides)
-        case None => findEffective(timeslot, item.overrides)
+          Map((timeslot._1, y._2) -> item) ++ (
+            if (timeslot._2.before(next._1))
+              resolveEffective((y._2, timeslot._2), item.overrides)
+            else
+              resolveEffective((y._2, next._1), item.overrides) ++
+              resolveEffective((next._1, timeslot._2), item.overrides)
+            )
+        case None => resolveEffective(timeslot, item.overrides)
       }
     }
 
