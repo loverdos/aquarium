@@ -45,6 +45,8 @@ import java.util.{Date, GregorianCalendar, Calendar}
  */
 trait DSLUtils extends DateUtils {
 
+  
+
   /**
    * Get a list of timeslots within which a timeframe is not effective.
    */

@@ -36,14 +36,8 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 /**
- * An algorithm represents the way of calculating costs given a price
- * and a resource usage volume.
+ * A DSL item whose effectivity is constrained by well defined time bounds.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class DSLAlgorithm (
-  name: String,
-  overrides: Option[DSLAlgorithm],
-  algorithms: Map[DSLResource, String],
-  effective: DSLTimeFrame
-) extends DSLTimeBoundedItem(effective)
+abstract class DSLTimeBoundedItem(effective: DSLTimeFrame)

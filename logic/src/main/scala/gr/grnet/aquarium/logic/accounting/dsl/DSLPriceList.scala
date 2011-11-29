@@ -45,4 +45,4 @@ case class DSLPriceList (
   overrides: Option[DSLPriceList],
   prices: Map[DSLResource,  Float],
   effective: DSLTimeFrame
-)
+) extends DSLTimeBoundedItem(effective)
