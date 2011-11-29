@@ -80,16 +80,6 @@
   <dependencies>
     <dependency>
       <groupId>gr.grnet.aquarium</groupId>
-      <artifactId>model</artifactId>
-      <version>0.0.2-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.scala-libs</groupId>
-      <artifactId>scalajpa_2.9.1</artifactId>
-      <version>1.4</version>
-    </dependency>
-    <dependency>
-      <groupId>gr.grnet.aquarium</groupId>
       <artifactId>shared</artifactId>
       <version>0.0.2-SNAPSHOT</version>
       <classifier>resources</classifier>
