@@ -33,6 +33,12 @@ aquariumpolicy:
       vmtime: $price times $volume
       diskspace: $price times $volume
       effective:
+        from: 0
+    - algorithm:
+      name: freedisk
+      overrides: default
+      diskspace: 0
+      effective:
         repeat:
           - start: "00 00 12 * *"
             end:   "00 00 14 * *"
@@ -40,10 +46,6 @@ aquariumpolicy:
             end:   "00 00 20 * *"
         from: 0
         to: 124443
-    - algorithm:
-      name: freedisk
-      overrides: default
-      diskspace: 0
 
   pricelists:
     - pricelist: 
@@ -56,6 +58,7 @@ aquariumpolicy:
         from: 0
     - pricelist: 
       name: everyTue2
+      override: default
       bandwidthup: 0.01
       bandwidthdown: 0.02
       vmtime: 0.1
@@ -67,6 +70,7 @@ aquariumpolicy:
         from: 0
     - pricelist:
       name: foobar
+      override: default
       bandwidthup: 0.04
       bandwidthdown: 0.04
       vmtime: 0.6
@@ -103,6 +107,7 @@ aquariumpolicy:
     - agreement:
       overrides: default
       name: scaledbandwidth
+      pricelist: foobar
       algorithm:
         bandwidthup: |
                 if $volume gt 15 then

@@ -174,6 +174,31 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     return
   }
 
+  @Test
+  def testFindEffective = {
+    before
+
+    val agr = creditpolicy.findAgreement("scaledbandwidth").get
+
+    val ts1 = 1322649482000L //Wed, 30 Nov 2011 10:38:02 GMT
+    val ts2 = 1322656682000L //Wed, 30 Nov 2011 12:38:02 GMT
+    val ts3 = 1322660282000L //Wed, 30 Nov 2011 13:38:02 GMT
+    val ts4 = 1322667482000L //Wed, 30 Nov 2011 15:38:02 GMT
+    val ts5 = 1322689082000L //Wed, 30 Nov 2011 21:38:02 GMT
+
+    var pricelists = resolveEffectivePricelistsForTimeslot((new Date(ts1), new Date(ts2)), agr)
+    assertEquals(2, pricelists.keySet.size)
+
+    pricelists = resolveEffectivePricelistsForTimeslot((new Date(ts2), new Date(ts3)), agr)
+    assertEquals(1, pricelists.keySet.size)
+
+    pricelists = resolveEffectivePricelistsForTimeslot((new Date(ts1), new Date(ts4)), agr)
+    assertEquals(3, pricelists.keySet.size)
+
+    pricelists = resolveEffectivePricelistsForTimeslot((new Date(ts1), new Date(ts5)), agr)
+    assertEquals(5, pricelists.keySet.size)
+  }
+
   @tailrec
   private def testSuccessiveTimeslots(result: List[(Date, Date)]): Unit = {
     if (result.isEmpty) return
