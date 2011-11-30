@@ -43,6 +43,8 @@ import java.util.{Date, GregorianCalendar, Calendar}
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
+
+
 trait DSLUtils extends DateUtils {
 
   def resolveEffectiveAlgorithmsForTimeslot(timeslot: (Date, Date),
