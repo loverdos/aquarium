@@ -40,16 +40,7 @@ import org.junit.{Test}
 import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.util.TestMethods
 
-class DSLTest extends DSL with TestMethods {
-
-  var creditpolicy : DSLPolicy = _
-
-  def before = {
-    creditpolicy = parse(
-      getClass.getClassLoader.getResourceAsStream("policy.yaml")
-    )
-    assertNotNull(creditpolicy)
-  }
+class DSLTest extends DSLTestBase with TestMethods {
 
   @Test
   def testParsePolicies = {

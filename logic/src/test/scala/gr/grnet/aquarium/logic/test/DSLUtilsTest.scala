@@ -37,12 +37,12 @@ package gr.grnet.aquarium.logic.test
 
 import org.junit.Test
 import org.junit.Assert._
-import java.util.Date
 import gr.grnet.aquarium.util.TestMethods
 import gr.grnet.aquarium.logic.accounting.dsl._
 import annotation.tailrec
+import java.util.Date
 
-class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
+class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
 
   @Test
   def testExpandTimeSpec = {
@@ -149,7 +149,7 @@ class DSLUtilsTest extends DSLUtils with TestMethods with DSL {
     var result = ineffectiveTimeslots(repeat, from, Some(to))
     assertEquals(30, result.size)
     testSuccessiveTimeslots(result)
-    printTimeslots(result)
+    //printTimeslots(result)
   }
 
   @Test
