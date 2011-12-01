@@ -51,6 +51,6 @@ class AquariumDispatcher extends AquariumActor {
   protected def receive = {
     case message: ResourceEvent =>
       // Dispatch to resource processor
-      resourceEventProcessor ! message
+      resourceEventProcessor forward message
   }
 }

@@ -67,7 +67,10 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 		val lib_rabbit    = "com.rabbitmq"   % "amqp-client"       % "2.7.0" withSources()
    		val lib_mongo     = "org.mongodb"    % "mongo-java-driver" % "2.7.2" withSources()
     	//val lib_casbah    = "com.mongodb.casbah" % "casbah-core_2.9.1"  % "2.1.5-1" withSources()
-    	val lib_akka = "se.scalablesolutions.akka" % "akka-actor" % "1.3-RC1" withSources()
+    	val lib_akka_actor  = "se.scalablesolutions.akka" % "akka-actor" % "1.3-RC1" withSources()
+    	val lib_akka_remote = "se.scalablesolutions.akka" % "akka-remote" % "1.3-RC1" withSources()
+
+    	val lib_akka_test = "se.scalablesolutions.akka" % "akka-testkit" % "1.3-RC1" % "test" withSources()
 
 		val lib_converter      = "com.ckkloverdos" % "converter_2.9.1"      % "0.3.0" withSources()
 		val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()

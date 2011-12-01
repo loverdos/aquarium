@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.logic.events.ResourceEvent
+import akka.event.EventHandler
 
 /**
  * 
@@ -47,6 +48,6 @@ class ResourceEventProcessor extends AquariumActor with ReflectiveAquariumActor 
   def knownMessageTypes = List(classOf[ResourceEvent])
 
   def onResourceEvent(re: ResourceEvent): Unit = {
-    println("Received %s".format(re))
+    EventHandler.debug(this, "Received %s".format(re))
   }
 }
