@@ -37,7 +37,7 @@ package gr.grnet.aquarium.logic.test
 
 import org.junit.Test
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLTimeFrame, DSLTimeFrameRepeat, DSL, DSLUtils}
-import java.util.{GregorianCalendar, Calendar, Date}
+import java.util.{Date, GregorianCalendar, Calendar}
 
 /**
  * Performance tests for various critical path functions.
@@ -54,35 +54,25 @@ class PerfTest extends DSLUtils with DSL {
     var numResolved = 0
 
     val from = new Date(0)
-    val to = new Date(1324214719000L) //Sun Dec 18 15:25:19 +0200 2011
+    var to = new Date(2048576095000L) //Fri, 01 Dec 2034 08:54:55 GMT
+    val today = new Date()
 
     val repeat1 = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
       parseCronString("00 14 * * *"))
     val repeat2 = DSLTimeFrameRepeat(parseCronString("00 18 * * 5"),
       parseCronString("00 20 * * 5"))
-    val tf = DSLTimeFrame(from, None, List(repeat1, repeat2))
+    val tf = DSLTimeFrame(from, Some(to), List(repeat1, repeat2))
+
+    val min = oneYearBack(today, new Date(0)).getTime
+    val max = oneYearAhead(today, new Date(Int.MaxValue * 1000L)).getTime
 
     (1 to iter).foreach {
-      i =>
-        val fromTS = (0 + (scala.math.random * (1324214719000L - 0) + 1)).asInstanceOf[Long]
-        numResolved += allEffectiveTimeslots(tf, new Date(fromTS), to).size
+      i => 
+        val event = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
+        numResolved += allEffectiveTimeslots(tf, event, to).size
     }
 
     var total = System.currentTimeMillis() - start
     print("allEffectiveTimeslots: 1000 calls in %s msec. (%s resolved)\n".format(total, numResolved))
-
-    start = System.currentTimeMillis()
-    numResolved = 0
-    val c = oneYearBack(to, new Date(0))
-    val min = c.getTime
-
-    (1 to iter).foreach {
-      i =>
-        val fromTS = (min + (scala.math.random * (1324214719000L - min) + 1)).asInstanceOf[Long]
-        numResolved += allEffectiveTimeslots(tf, new Date(fromTS), to).size
-    }
-
-    total = System.currentTimeMillis() - start
-    print("allEffectiveTimeslots(1 yr back): 1000 calls in %s msec. (%s resolved)\n".format(total, numResolved))
   }
 }
