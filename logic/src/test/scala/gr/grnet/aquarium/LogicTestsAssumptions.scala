@@ -64,4 +64,5 @@ object LogicTestsAssumptions {
 
   val EnableRabbitMQTests = testPropertyTrue(PropertyNames.TestEnableRabbitMQ)
   val EnableMongoDBTests  = testPropertyTrue(PropertyNames.TestEnableMongoDB)
+  val EnablePerfTests = testPropertyTrue(PropertyNames.TestEnablePerf)
 }

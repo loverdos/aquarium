@@ -43,7 +43,8 @@ package gr.grnet.aquarium
 object PropertyNames {
   // Test enabling/disabling
   val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableMongoDB = "test.enable.mongodb"
+  val TestEnableMongoDB  = "test.enable.mongodb"
+  val TestEnablePerf     = "test.enable.perf"
 
   // Test configuration files used
   val MongoDBConfFile  = "mongodb.conf.file"

@@ -38,6 +38,8 @@ package gr.grnet.aquarium.logic.test
 import org.junit.Test
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLTimeFrame, DSLTimeFrameRepeat, DSL, DSLUtils}
 import java.util.{Date, GregorianCalendar, Calendar}
+import org.junit.Assume._
+import gr.grnet.aquarium.LogicTestsAssumptions
 
 /**
  * Performance tests for various critical path functions.
@@ -48,6 +50,7 @@ class PerfTest extends DSLUtils with DSL {
 
   @Test
   def testAllEffectiveTimeslotPerf = {
+    assumeTrue(LogicTestsAssumptions.EnablePerfTests)
 
     val iter = 1000
     var start = System.currentTimeMillis()
