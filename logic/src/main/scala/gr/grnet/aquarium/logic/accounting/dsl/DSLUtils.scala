@@ -47,6 +47,9 @@ import java.util.{Date, GregorianCalendar, Calendar}
 
 trait DSLUtils extends DateUtils {
 
+  val maxdate = new Date(Int.MaxValue)
+  val mindate = new Date(0)
+
   def resolveEffectiveAlgorithmsForTimeslot(timeslot: (Date, Date),
                                            agr: DSLAgreement):
   Map[(Date, Date), DSLAlgorithm] =
