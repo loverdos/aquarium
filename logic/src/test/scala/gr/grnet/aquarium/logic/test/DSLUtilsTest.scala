@@ -90,6 +90,27 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
   }
 
   @Test
+  def testMergeOverlaps = {
+    var l = List(Timeslot(new Date(12345000), new Date(13345000)),
+      Timeslot(new Date(12845000), new Date(13845000)))
+
+    var result = mergeOverlaps(l)
+    assertEquals(1, result.size)
+    assertEquals(Timeslot(new Date(12345000), new Date(13845000)), result.head)
+
+    l = l ++ List(Timeslot(new Date(13645000), new Date(14845000)))
+    result = mergeOverlaps(l)
+    assertEquals(1, result.size)
+    assertEquals(Timeslot(new Date(12345000), new Date(14845000)), result.head)
+
+    l = l ++ List(Timeslot(new Date(15845000), new Date(16845000)))
+    result = mergeOverlaps(l)
+    assertEquals(2, result.size)
+    assertEquals(Timeslot(new Date(12345000), new Date(14845000)), result.head)
+    assertEquals(Timeslot(new Date(15845000), new Date(16845000)), result.tail.head)
+  }
+
+  @Test
   def testEffectiveTimeslots = {
     val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
     val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
@@ -214,7 +235,7 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     testSuccessiveTimeslots(result.tail)
   }
 
-  private def printTimeslots(result: List[(Date, Date)]) = {
-    result.foreach(p => print("from:%s to:%s\n".format(p._1, p._2)))
+  private def printTimeslots(result: List[Timeslot]) = {
+    result.foreach(p => print("from:%s to:%s\n".format(p.from, p.to)))
   }
 }

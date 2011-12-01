@@ -131,15 +131,34 @@ trait DSLUtils extends DateUtils {
   }
 
   /**
+   * Merges overlapping timeslots. The merge is exhaustive only if the
+   * provided list is sorted in increasing timeslot from order.
+   */
+  def mergeOverlaps(list: List[Timeslot]): List[Timeslot] = {
+    list.foldLeft(List[Timeslot]()) {
+      (a, b) =>
+        if (a.isEmpty)
+          List(b)
+        else if (a.tail.isEmpty)
+          a.head.merge(b)
+        else {
+          val merged = a.tail.head.merge(b)
+          a ++ (if (merged.size == 1) merged else List(b))
+        }
+    }
+  }
+
+  /**
    * Get a list of all timeslots within which the provided time frame
    * is effective.
    */
   def allEffectiveTimeslots(spec: DSLTimeFrame):
   List[Timeslot] = {
 
-    spec.repeat.flatMap {
+    val l = spec.repeat.flatMap {
       r => effectiveTimeslots(r, spec.from, spec.to)
     } sortWith sorter
+    mergeOverlaps(l)
   }
 
   /**
@@ -149,9 +168,10 @@ trait DSLUtils extends DateUtils {
   def allEffectiveTimeslots(spec: DSLTimeFrame, from: Date, to: Date):
   List[Timeslot] = {
 
-    spec.repeat.flatMap {
+    val l = spec.repeat.flatMap {
       r => effectiveTimeslots(r, from, Some(to))
     } sortWith sorter
+    mergeOverlaps(l)
   }
 
   /**
