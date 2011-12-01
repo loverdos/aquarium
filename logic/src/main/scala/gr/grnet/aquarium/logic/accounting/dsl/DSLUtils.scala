@@ -44,21 +44,20 @@ import java.util.{Date, GregorianCalendar, Calendar}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-
 trait DSLUtils extends DateUtils {
 
-  val maxdate = new Date(Int.MaxValue)
+  val maxdate = new Date(Int.MaxValue * 1000L)
   val mindate = new Date(0)
 
-  def resolveEffectiveAlgorithmsForTimeslot(timeslot: (Date, Date),
+  def resolveEffectiveAlgorithmsForTimeslot(timeslot: Timeslot,
                                            agr: DSLAgreement):
-  Map[(Date, Date), DSLAlgorithm] =
+  Map[Timeslot, DSLAlgorithm] =
     resolveEffective[DSLAlgorithm](timeslot, Some(agr.algorithm))
 
 
-  def resolveEffectivePricelistsForTimeslot(timeslot: (Date, Date),
+  def resolveEffectivePricelistsForTimeslot(timeslot: Timeslot,
                                             agr: DSLAgreement):
-  Map[(Date, Date), DSLPriceList] =
+  Map[Timeslot, DSLPriceList] =
     resolveEffective[DSLPriceList](timeslot, Some(agr.pricelist))
 
   /**
@@ -73,34 +72,35 @@ trait DSLUtils extends DateUtils {
    *  `(b.end...c.start)` and `(c.start...a.end)`
    *
    */
-  def resolveEffective[T <: DSLTimeBoundedItem[T]](timeslot: (Date, Date),
+  def resolveEffective[T <: DSLTimeBoundedItem[T]](timeslot: Timeslot,
                                                    tbi: Option[T]):
-  Map[(Date, Date), T] = {
+  Map[Timeslot, T] = {
 
-    val item = tbi match {
+    val policy = tbi match {
       case None => return Map()
       case _ => tbi.get
     }
 
-    val eff = allEffectiveTimeslots(item.effective,
-      item.effective.from, timeslot._2)
+    val eff = allEffectiveTimeslots(policy.effective,
+      oneYearBack(timeslot.from, policy.effective.from),
+      oneYearAhead (timeslot.to, policy.effective.to.getOrElse(maxdate)))
 
-    val res = eff.find(t => contains(t, timeslot)) match {
-      case Some(x) => Map(x -> item)
-      case None => eff.find(t => contains(t, timeslot._1)) match {
+    val res = eff.find(t => t.contains(timeslot)) match {
+      case Some(x) => Map(x -> policy)
+      case None => eff.find(t => t.includes(timeslot.from)) match {
         case Some(y) =>
           val next = if (eff.lastIndexOf(y) == eff.size - 1)
-                       (new Date(Int.MaxValue), new Date(Int.MaxValue))
+                       Timeslot(mindate, maxdate)
                      else
                        eff.apply(eff.lastIndexOf(y) + 1)
-          Map((timeslot._1, y._2) -> item) ++ (
-            if (timeslot._2.before(next._1))
-              resolveEffective((y._2, timeslot._2), item.overrides)
+          Map(Timeslot(timeslot.from, y.to) -> policy) ++ (
+            if (timeslot.to.before(next.from))
+              resolveEffective(Timeslot(y.to, timeslot.from), policy.overrides)
             else
-              resolveEffective((y._2, next._1), item.overrides) ++
-              resolveEffective((next._1, timeslot._2), item.overrides)
+              resolveEffective(Timeslot(y.to, next.from), policy.overrides) ++
+              resolveEffective(Timeslot(next.to, timeslot.from), policy.overrides)
             )
-        case None => resolveEffective(timeslot, item.overrides)
+        case None => resolveEffective(timeslot, policy.overrides)
       }
     }
 
@@ -111,22 +111,22 @@ trait DSLUtils extends DateUtils {
    * Get a list of timeslots within which a timeframe is not effective.
    */
   def ineffectiveTimeslots(spec: DSLTimeFrameRepeat, from: Date, to: Option[Date]):
-    List[(Date, Date)] = {
+    List[Timeslot] = {
 
     buildNotEffectiveList(effectiveTimeslots(spec, from, to)) sortWith sorter
   }
 
-  private def buildNotEffectiveList(l :List[(Date, Date)]) :
-    List[(Date, Date)] = {
+  private def buildNotEffectiveList(l :List[Timeslot]) :
+    List[Timeslot] = {
 
     if (l.isEmpty) return List()
     if (l.tail.isEmpty) return List()
 
-    assert(l.head._2.getTime < l.tail.head._1.getTime)
+    assert(l.head.to.getTime < l.tail.head.from.getTime)
 
-    List[(Date, Date)]() ++
-      List((new Date(l.head._2.getTime + 1),
-        new Date(l.tail.head._1.getTime - 1))) ++
+    List[Timeslot]() ++
+      List(Timeslot(new Date(l.head.to.getTime + 1),
+        new Date(l.tail.head.from.getTime - 1))) ++
       buildNotEffectiveList(l.tail)
   }
 
@@ -135,7 +135,7 @@ trait DSLUtils extends DateUtils {
    * is effective.
    */
   def allEffectiveTimeslots(spec: DSLTimeFrame):
-  List[(Date, Date)] = {
+  List[Timeslot] = {
 
     spec.repeat.flatMap {
       r => effectiveTimeslots(r, spec.from, spec.to)
@@ -147,7 +147,7 @@ trait DSLUtils extends DateUtils {
    * is effective, whithin the provided time bounds.
    */
   def allEffectiveTimeslots(spec: DSLTimeFrame, from: Date, to: Date):
-  List[(Date, Date)] = {
+  List[Timeslot] = {
 
     spec.repeat.flatMap {
       r => effectiveTimeslots(r, from, Some(to))
@@ -161,7 +161,7 @@ trait DSLUtils extends DateUtils {
    * timeframe start date.
    */
   def effectiveTimeslots(spec: DSLTimeFrameRepeat, from: Date, to: Option[Date]):
-    List[(Date, Date)] = {
+    List[Timeslot] = {
 
     assert(spec.start.size == spec.end.size)
 
@@ -180,19 +180,21 @@ trait DSLUtils extends DateUtils {
   /**
    * Utility function to put timeslots in increasing start timestamp order
    */
-  def sorter(x: (Date, Date), y: (Date, Date)) : Boolean =
-    if (y._1 after x._1) true else false
+  def sorter(x: Timeslot, y: Timeslot) : Boolean =
+    if (y.from after x.from) true else false
 
   /**
    * Calculate periods of activity for a list of timespecs
    */
-  private def coExpandTimespecs(input : List[(DSLTimeSpec, DSLTimeSpec)],
-                                from: Date, to: Date) : List[(Date, Date)] = {
+  private def coExpandTimespecs(input: List[(DSLTimeSpec, DSLTimeSpec)],
+                                from: Date, to: Date): List[Timeslot] = {
     if (input.size == 0) return List()
 
     expandTimeSpec(input.head._1, from, to).zip(
-      expandTimeSpec(input.head._2, from, to)) ++
-        coExpandTimespecs(input.tail, from, to)
+      expandTimeSpec(input.head._2, from, to)).map(
+        l => Timeslot(l._1, l._2)
+      ) ++
+      coExpandTimespecs(input.tail, from, to)
   }
 
   /**
