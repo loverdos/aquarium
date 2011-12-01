@@ -38,7 +38,6 @@ package gr.grnet.aquarium.logic.accounting.dsl
 import scala.collection.JavaConversions._
 import com.kenai.crontabparser.impl.CronTabParserBridge
 import java.io.{InputStreamReader, InputStream}
-import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.yaml._
 import java.util.Date
 
@@ -47,7 +46,7 @@ import java.util.Date
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait DSL extends Loggable {
+trait DSL {
 
     /** An empty time frame*/
     val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
@@ -72,33 +71,27 @@ trait DSL extends Loggable {
    * Parse an InputStream containing an Aquarium DSL algorithm.
    */
   def parse(input: InputStream) : DSLPolicy = {
-    logger.debug("Policy parsing started")
 
     val document = YAMLHelpers.loadYAML(new InputStreamReader(input))
     val policy = document / (Vocabulary.aquariumpolicy)
 
     val resources = parseResources(policy./(Vocabulary.resources).asInstanceOf[YAMLListNode])
-    logger.debug("Resources: %s".format(resources))
 
     val policies = parseAlgorithms(policy./(Vocabulary.algorithms).asInstanceOf[YAMLListNode],resources, List())
-    logger.debug("Policies: %s".format(policies))
 
     val pricelists = parsePriceLists(
       policy./(Vocabulary.pricelists).asInstanceOf[YAMLListNode],
       resources, List()
     )
-    logger.debug("Pricelists: %s".format(pricelists))
 
     val creditplans = parseCreditPlans(
       policy./(Vocabulary.creditplans).asInstanceOf[YAMLListNode], List()
     )
-    logger.debug("Creditplans: %s".format(creditplans))
 
     val agreements = parseAgreements(
       policy./(Vocabulary.agreements).asInstanceOf[YAMLListNode],
       policies, pricelists, resources, creditplans, List()
     )
-    logger.debug("Agreements: %s".format(agreements))
 
     DSLPolicy(policies, pricelists, resources, creditplans, agreements)
   }
