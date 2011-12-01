@@ -73,6 +73,34 @@ trait DateUtils {
   }
 
   /**
+   * Returns a date that is either equal to the earliest of
+   * (`d - 1 year`, `limit`)
+   */
+  def oneYearBack(d: Date, limit: Date): Date = {
+    val c = new GregorianCalendar()
+    c.setTime(d)
+    c.add(Calendar.YEAR, -1)
+    if (c.getTime.before(limit))
+      limit
+    else
+      c.getTime
+  }
+
+  /**
+   * Returns a date that is either equal to the earliest of
+   * (`d + 1 year`, `limit`)
+   */
+  def oneYearAhead(d: Date, limit: Date): Date = {
+    val c = new GregorianCalendar()
+    c.setTime(d)
+    c.add(Calendar.YEAR, 1)
+    if (c.getTime.before(limit))
+      c.getTime
+    else
+      limit
+  }
+
+  /**
    * Search within
    */
   def findDays(from: Date, to: Date, f: Calendar => Boolean) : List[Date] = {
