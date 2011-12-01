@@ -73,10 +73,8 @@ class PerfTest extends DSLUtils with DSL {
 
     start = System.currentTimeMillis()
     numResolved = 0
-    val c = new GregorianCalendar()
-    c.setTime(to)
-    c.add(Calendar.YEAR, -1)
-    val min = c.getTime.getTime
+    val c = oneYearBack(to, new Date(0))
+    val min = c.getTime
 
     (1 to iter).foreach {
       i =>
