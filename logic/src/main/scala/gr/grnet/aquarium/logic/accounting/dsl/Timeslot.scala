@@ -43,10 +43,15 @@ import java.util.Date
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class Timeslot(from: Date, to: Date) {
+
+  /* Preconditions to ensure correct object creations */
   assert(from != null)
   assert(to != null)
   assert(from.before(to))
 
+  /**
+   * Check whether this time slot fully contains the provided one.
+   */
   def contains(t: Timeslot) : Boolean = {
     if (this.from.after(t.from))
       return false
@@ -57,8 +62,15 @@ case class Timeslot(from: Date, to: Date) {
     true
   }
 
-  def includes(t: Date) : Boolean = if (from.before(t) && to.after(t)) true else false
+  /**
+   * Check whether this timeslot contains the provided time instant.
+   */
+  def includes(t: Date) : Boolean =
+    if (from.before(t) && to.after(t)) true else false
 
+  /**
+   * Check whether this timeslot overlaps with the provided one.
+   */
   def overlaps(t: Timeslot) : Boolean = {
     if (contains(t) || t.contains(this))
       return true
@@ -69,12 +81,21 @@ case class Timeslot(from: Date, to: Date) {
     false
   }
 
-  def merge(t: Timeslot) : Option[Timeslot] = {
+  /**
+   * Merges this timeslot with the provided one. If the timeslots overlap,
+   * a list with the resulting merge is returned. If the timeslots do not
+   * overlap, the returned list contains both timeslots in increasing start
+   * date order.
+   */
+  def merge(t: Timeslot) : List[Timeslot] = {
     if (overlaps(t)) {
       val nfrom = if (from.before(t.from)) from else t.from
       val nto   = if (to.after(t.to)) to else t.to
-      Some(Timeslot(nfrom, nto))
+      List(Timeslot(nfrom, nto))
     } else
-      None
+      if (this.from.before(t.from))
+        List(this, t)
+      else
+        List(t, this)
   }
 }
