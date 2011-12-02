@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import java.util.Date
+import scala.collection.mutable
 
 /**
  * A representation of a timeslot with a start and end date.
@@ -49,18 +50,18 @@ case class Timeslot(from: Date, to: Date) {
   assert(to != null)
   assert(from.before(to))
 
+  def startsBefore(t: Timeslot) : Boolean = this.from.before(t.from)
+
+  def startsAfter(t: Timeslot) : Boolean = this.from.after(t.from)
+
+  def endsBefore(t: Timeslot) : Boolean = this.to.before(t.to)
+
+  def endsAfter(t: Timeslot) : Boolean = this.to.after(t.to)
+
   /**
    * Check whether this time slot fully contains the provided one.
    */
-  def contains(t: Timeslot) : Boolean = {
-    if (this.from.after(t.from))
-      return false
-
-    if (this.to.before(t.to))
-      return false
-
-    true
-  }
+  def contains(t: Timeslot) : Boolean = t.startsAfter(this) && t.endsBefore(this)
 
   /**
    * Check whether this timeslot contains the provided time instant.
@@ -97,5 +98,75 @@ case class Timeslot(from: Date, to: Date) {
         List(this, t)
       else
         List(t, this)
+  }
+
+  /**
+   * Split the timeslot in two parts at the provided timestamp, if the
+   * timestamp falls within the timeslot boundaries.
+   */
+  def slice(d: Date) : List[Timeslot] =
+    if (includes(d))
+      List(Timeslot(from, d), Timeslot(d,to))
+    else
+      List(this)
+
+  /**
+   * Find and return the timeslots whithin which this Timeslot overrides
+   * with the provided list of timeslots. For example if:
+   * 
+   *  - `this == Timeslot(7,20)`
+   *  - `list == List(Timeslot(1,3), Timeslot(6,8), Timeslot(11,15))`
+   *
+   * the result will be: `List(Timeslot(7,8), Timeslot(11,15))`
+   */
+  def overlappingTimeslots(list: List[Timeslot]) : List[Timeslot] = {
+
+    val result = new mutable.ListBuffer[Timeslot]()
+
+    list.foreach {
+      t =>
+        if (t.contains(this) || this.contains(t)) result += t
+        else if (t.overlaps(this) && t.startsBefore(this)) result += this.slice(t.to).head
+        else if (t.overlaps(this) && t.startsAfter(this)) result += this.slice(t.from).tail.head
+    }
+    result.toList
+  }
+
+  /**
+   * Find and return the timeslots whithin which this Timeslot does not
+   * override with the provided list of timeslots. For example if:
+   *
+   *  - `this == Timeslot(7,20)`
+   *  - `list == List(Timeslot(1,3), Timeslot(6,8), Timeslot(11,15))`
+   *
+   * the result will be: `List(Timeslot(9,10), Timeslot(15,20))`
+   */
+  def nonOverlappingTimeslots(list: List[Timeslot]): List[Timeslot] = {
+
+    def build(acc: List[Timeslot], listPart: List[Timeslot]): List[Timeslot] = {
+      list match {
+        case Nil => acc
+        case x :: Nil => computeGap1(x, this)
+        case x :: y :: rest =>
+          val gap = computeGap2(x, y, this)
+          build(acc ++ gap, y :: rest)
+      }
+    }
+
+    def computeGap1(x: Timeslot, to: Timeslot) : List[Timeslot] =
+      if (x.startsBefore(to) && x.endsBefore(to))
+        List(Timeslot(to.from, x.from))
+      else if (x.startsBefore(to) && x.endsAfter(to))
+        List()
+      else if (x.startsAfter(to) && x.endsAfter(to))
+        List(Timeslot(to.from, x.from))
+      else if (x.startsAfter(to) && x.endsBefore(to))
+        List(Timeslot(to.from, x.from), Timeslot(to.to, x.to))
+      else
+        List()
+
+    def computeGap2(x: Timeslot, y: Timeslot, to: Timeslot) : List[Timeslot] = List()
+
+    build(Nil, list)
   }
 }

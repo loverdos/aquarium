@@ -204,7 +204,6 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
   @Test
   def testFindEffective = {
     before
-
     val agr = creditpolicy.findAgreement("scaledbandwidth").get
 
     val ts1 = 1322649482000L //Wed, 30 Nov 2011 10:38:02 GMT

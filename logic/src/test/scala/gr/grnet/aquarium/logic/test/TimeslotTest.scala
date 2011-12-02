@@ -35,47 +35,44 @@
 
 package gr.grnet.aquarium.logic.test
 
-import org.junit.Test
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLTimeFrame, DSLTimeFrameRepeat, DSL, DSLUtils}
-import java.util.{Date}
-import org.junit.Assume._
-import gr.grnet.aquarium.LogicTestsAssumptions
+import gr.grnet.aquarium.util.TestMethods
+import org.junit.Assert._
+import org.junit.{Test}
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import java.util.Date
 
 /**
- * Performance tests for various critical path functions.
+ * Tests for the Timeslot class
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class PerfTest extends DSLUtils with DSL {
+class TimeslotTest extends TestMethods {
 
   @Test
-  def testAllEffectiveTimeslotPerf = {
-    assumeTrue(LogicTestsAssumptions.EnablePerfTests)
+  def testOverlappingTimeslots = {
+    var t = Timeslot(new Date(7), new Date(20))
+    val list = List(Timeslot(new Date(1), new Date(3)),
+      Timeslot(new Date(6), new Date(8)),
+      Timeslot(new Date(11), new Date(15)))
 
-    val iter = 1000
-    var start = System.currentTimeMillis()
-    var numResolved = 0
+    var result = t.overlappingTimeslots(list)
+    assertEquals(2, result.size)
+    assertEquals(Timeslot(new Date(7), new Date(8)), result.head)
+    assertEquals(Timeslot(new Date(11), new Date(15)), result.tail.head)
 
-    val from = new Date(0)
-    var to = new Date(2048576095000L) //Fri, 01 Dec 2034 08:54:55 GMT
-    val today = new Date()
+    t = Timeslot(new Date(9), new Date(10))
+    result = t.overlappingTimeslots(list)
+    assertEquals(0, result.size)
+  }
 
-    val repeat1 = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
-      parseCronString("00 14 * * *"))
-    val repeat2 = DSLTimeFrameRepeat(parseCronString("00 18 * * 5"),
-      parseCronString("00 20 * * 5"))
-    val tf = DSLTimeFrame(from, Some(to), List(repeat1, repeat2))
+  @Test
+  def testNonOverlappingTimeslots = {
+    var t = Timeslot(new Date(7), new Date(20))
+    val list = List(Timeslot(new Date(1), new Date(3)),
+      Timeslot(new Date(6), new Date(8)),
+      Timeslot(new Date(11), new Date(15)))
 
-    val min = oneYearBack(today, new Date(0)).getTime
-    val max = oneYearAhead(today, new Date(Int.MaxValue * 1000L)).getTime
-
-    (1 to iter).foreach {
-      i => 
-        val event = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
-        numResolved += allEffectiveTimeslots(tf, event, to).size
-    }
-
-    var total = System.currentTimeMillis() - start
-    print("allEffectiveTimeslots: 1000 calls in %s msec. (%s resolved)\n".format(total, numResolved))
+    //var result = t.nonOverlappingTimeslots(list)
+    
   }
 }
