@@ -85,26 +85,13 @@ trait DSLUtils extends DateUtils {
       oneYearBack(timeslot.from, policy.effective.from),
       oneYearAhead (timeslot.to, policy.effective.to.getOrElse(maxdate)))
 
-    val res = eff.find(t => t.contains(timeslot)) match {
-      case Some(x) => Map(x -> policy)
-      case None => eff.find(t => t.includes(timeslot.from)) match {
-        case Some(y) =>
-          val next = if (eff.lastIndexOf(y) == eff.size - 1)
-                       Timeslot(mindate, maxdate)
-                     else
-                       eff.apply(eff.lastIndexOf(y) + 1)
-          Map(Timeslot(timeslot.from, y.to) -> policy) ++ (
-            if (timeslot.to.before(next.from))
-              resolveEffective(Timeslot(y.to, timeslot.from), policy.overrides)
-            else
-              resolveEffective(Timeslot(y.to, next.from), policy.overrides) ++
-              resolveEffective(Timeslot(next.to, timeslot.from), policy.overrides)
-            )
-        case None => resolveEffective(timeslot, policy.overrides)
+    Map() ++
+      timeslot.overlappingTimeslots(eff).flatMap {
+        t => Map(t -> policy)
+      } ++
+      timeslot.nonOverlappingTimeslots(eff).flatMap {
+        t => resolveEffective(t, policy.overrides)
       }
-    }
-
-    Map() ++ res
   }
 
   /**
