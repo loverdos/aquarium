@@ -143,30 +143,30 @@ case class Timeslot(from: Date, to: Date) {
    */
   def nonOverlappingTimeslots(list: List[Timeslot]): List[Timeslot] = {
 
-    def build(acc: List[Timeslot], listPart: List[Timeslot]): List[Timeslot] = {
-      list match {
+    def build(acc: List[Timeslot],
+              listPart: List[Timeslot]): List[Timeslot] = {
+
+      listPart match {
         case Nil => acc
-        case x :: Nil => computeGap1(x, this)
-        case x :: y :: rest =>
-          val gap = computeGap2(x, y, this)
-          build(acc ++ gap, y :: rest)
+        case x :: Nil => build(acc ++ computeGap1(x, this), Nil)
+        case x :: y :: rest => build(acc ++ computeGap2(x, y, this), y :: rest)
       }
     }
 
     def computeGap1(x: Timeslot, to: Timeslot) : List[Timeslot] =
-      if (x.startsBefore(to) && x.endsBefore(to))
-        List(Timeslot(to.from, x.from))
-      else if (x.startsBefore(to) && x.endsAfter(to))
-        List()
-      else if (x.startsAfter(to) && x.endsAfter(to))
-        List(Timeslot(to.from, x.from))
-      else if (x.startsAfter(to) && x.endsBefore(to))
-        List(Timeslot(to.from, x.from), Timeslot(to.to, x.to))
-      else
-        List()
+      if (x.startsBefore(to) && x.endsBefore(to)) List(Timeslot(to.from, x.to))
+      else if (x.startsBefore(to) && x.endsAfter(to)) List()
+      else if (x.startsAfter(to) && x.endsAfter(to)) List(Timeslot(to.from, x.from))
+      else if (x.startsAfter(to) && x.endsBefore(to)) List(Timeslot(to.from, x.from), Timeslot(x.to, to.to))
+      else List()
 
-    def computeGap2(x: Timeslot, y: Timeslot, to: Timeslot) : List[Timeslot] = List()
+    def computeGap2(x: Timeslot, y: Timeslot, to: Timeslot) : List[Timeslot] =
+      if (x.overlaps(to) && !y.overlaps(to)) computeGap1(x, to)
+      else if (x.overlaps(to) && y.overlaps(to)) List(Timeslot(x.to, y.from))
+      else if (!x.overlaps(to) && y.overlaps(to)) computeGap1(y, to)
+      else if (!x.overlaps(to) && !y.overlaps(to)) List()
+      else List()
 
-    build(Nil, list)
+    build(Nil, list).sortWith((a,b) => if (a.from.after(b.from)) true else false)
   }
 }

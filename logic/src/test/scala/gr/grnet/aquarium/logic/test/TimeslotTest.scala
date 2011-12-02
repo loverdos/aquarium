@@ -72,7 +72,8 @@ class TimeslotTest extends TestMethods {
       Timeslot(new Date(6), new Date(8)),
       Timeslot(new Date(11), new Date(15)))
 
-    //var result = t.nonOverlappingTimeslots(list)
+    var result = t.nonOverlappingTimeslots(list)
+    assertEquals(2, result.size)
     
   }
 }
