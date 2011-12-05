@@ -155,6 +155,13 @@ trait DSLUtils extends DateUtils {
   def allEffectiveTimeslots(spec: DSLTimeFrame, from: Date, to: Date):
   List[Timeslot] = {
 
+    //A timeframe with no repetition defined
+    if (spec.repeat.isEmpty) {
+      val fromDate = if (spec.from.before(from)) from else spec.from
+      val toDate = if (spec.to.getOrElse(to).after(to)) to else spec.to.getOrElse(to)
+      return List(Timeslot(fromDate, toDate))
+    }
+
     val l = spec.repeat.flatMap {
       r => effectiveTimeslots(r, from, Some(to))
     } sortWith sorter

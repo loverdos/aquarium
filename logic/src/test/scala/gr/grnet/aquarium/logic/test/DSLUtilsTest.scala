@@ -151,7 +151,7 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
 
   @Test
   def testAllEffectiveTimeslots = {
-    val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
+    var from = new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
     val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
 
     val repeat1 = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
@@ -160,9 +160,13 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
       parseCronString("00 20 * * 5"))
     val tf = DSLTimeFrame(from, None, List(repeat1, repeat2))
 
-    val result = allEffectiveTimeslots(tf, from, to)
+    var result = allEffectiveTimeslots(tf, from, to)
     assertEquals(36, result.size)
     testSuccessiveTimeslots(result)
+
+    result = allEffectiveTimeslots(DSLTimeFrame(new Date(0), None, List()),
+      new Date(14), new Date(40))
+    assertEquals(1, result.size)
   }
 
   @Test
@@ -206,23 +210,26 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     before
     val agr = creditpolicy.findAgreement("scaledbandwidth").get
 
-    val ts1 = 1322649482000L //Wed, 30 Nov 2011 10:38:02 GMT
-    val ts2 = 1322656682000L //Wed, 30 Nov 2011 12:38:02 GMT
-    val ts3 = 1322660282000L //Wed, 30 Nov 2011 13:38:02 GMT
-    val ts4 = 1322667482000L //Wed, 30 Nov 2011 15:38:02 GMT
-    val ts5 = 1322689082000L //Wed, 30 Nov 2011 21:38:02 GMT
+    val ts1 = 1322649482000L //Wed, 30 Nov 2011 12:38:02 EET
+    val ts2 = 1322656682000L //Wed, 30 Nov 2011 14:38:02 EET
+    val ts3 = 1322660282000L //Wed, 30 Nov 2011 15:38:02 EET
+    val ts4 = 1322667482000L //Wed, 30 Nov 2011 17:38:02 EET
+    val ts5 = 1322689082000L //Wed, 30 Nov 2011 23:38:02 EET
 
     var pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts2)), agr)
-    //assertEquals(2, pricelists.keySet.size)
+    assertEquals(2, pricelists.keySet.size)
+    assertNotNone(pricelists.get(new Timeslot(new Date(1322654402000L), new Date(1322656682000L))))
+    assertEquals("foobar", pricelists.head._2.name)
 
     pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts2), new Date(ts3)), agr)
-    //assertEquals(1, pricelists.keySet.size)
+    assertEquals(1, pricelists.keySet.size)
+    assertEquals("default", pricelists.head._2.name)
 
     pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts4)), agr)
-    //assertEquals(3, pricelists.keySet.size)
+    assertEquals(3, pricelists.keySet.size)
 
     pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts5)), agr)
-    //assertEquals(5, pricelists.keySet.size)
+    assertEquals(5, pricelists.keySet.size)
   }
 
   @tailrec
