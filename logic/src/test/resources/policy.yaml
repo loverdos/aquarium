@@ -58,7 +58,7 @@ aquariumpolicy:
         from: 0
     - pricelist: 
       name: everyTue2
-      override: default
+      overrides: default
       bandwidthup: 0.01
       bandwidthdown: 0.02
       vmtime: 0.1
@@ -70,7 +70,7 @@ aquariumpolicy:
         from: 0
     - pricelist:
       name: foobar
-      override: default
+      overrides: default
       bandwidthup: 0.04
       bandwidthdown: 0.04
       vmtime: 0.6
