@@ -95,6 +95,7 @@ class TimeslotTest extends TestMethods {
     assertEquals(Timeslot(new Date(15), new Date(20)), result.head)
 
     result = t.nonOverlappingTimeslots(List())
-    assertEquals(0, result.size)
+    assertEquals(1, result.size)
+    assertEquals(t, result.head)
   }
 }

@@ -146,7 +146,7 @@ case class Timeslot(from: Date, to: Date) {
     val overlaps = list.filter(t => this.overlaps(t))
 
     if (overlaps.isEmpty)
-      return List()
+      return List(this)
 
     def build(acc: List[Timeslot], listPart: List[Timeslot]): List[Timeslot] = {
 
