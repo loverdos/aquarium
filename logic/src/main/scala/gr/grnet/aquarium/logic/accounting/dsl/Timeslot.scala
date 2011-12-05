@@ -125,7 +125,8 @@ case class Timeslot(from: Date, to: Date) {
 
     list.foreach {
       t =>
-        if (t.contains(this) || this.contains(t)) result += t
+        if (t.contains(this)) result += this
+        else if (this.contains(t)) result += t
         else if (t.overlaps(this) && t.startsBefore(this)) result += this.slice(t.to).head
         else if (t.overlaps(this) && t.startsAfter(this)) result += this.slice(t.from).tail.head
     }

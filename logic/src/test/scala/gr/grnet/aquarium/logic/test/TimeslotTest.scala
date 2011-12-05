@@ -63,6 +63,16 @@ class TimeslotTest extends TestMethods {
     t = Timeslot(new Date(9), new Date(10))
     result = t.overlappingTimeslots(list)
     assertEquals(0, result.size)
+
+    t = Timeslot(new Date(10), new Date(50))
+    result = t.overlappingTimeslots(List(Timeslot(new Date(0), new Date(100))))
+    assertEquals(1, result.size)
+    assertEquals(t, result.head)
+
+    t = Timeslot(new Date(0), new Date(100))
+    result = t.overlappingTimeslots(List(Timeslot(new Date(10), new Date(50))))
+    assertEquals(1, result.size)
+    assertEquals(Timeslot(new Date(10), new Date(50)), result.head)
   }
 
   @Test
