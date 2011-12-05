@@ -74,6 +74,27 @@ class TimeslotTest extends TestMethods {
 
     var result = t.nonOverlappingTimeslots(list)
     assertEquals(2, result.size)
-    
+
+    t = Timeslot(new Date(9), new Date(20))
+    result = t.nonOverlappingTimeslots(list)
+    assertEquals(2, result.size)
+
+    t = Timeslot(new Date(9), new Date(20))
+    result = t.nonOverlappingTimeslots(list)
+    assertEquals(2, result.size)
+
+    t = Timeslot(new Date(0), new Date(20))
+    result = t.nonOverlappingTimeslots(list)
+    assertEquals(4, result.size)
+    assertEquals(Timeslot(new Date(0), new Date(1)), result.head)
+    assertEquals(Timeslot(new Date(3), new Date(6)), result.tail.head)
+
+    t = Timeslot(new Date(13), new Date(20))
+    result = t.nonOverlappingTimeslots(list)
+    assertEquals(1, result.size)
+    assertEquals(Timeslot(new Date(15), new Date(20)), result.head)
+
+    result = t.nonOverlappingTimeslots(List())
+    assertEquals(0, result.size)
   }
 }
