@@ -46,6 +46,7 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 	//val repo5 = "jcrontab" at "http://kenai.com/projects/crontab-parser/sources/maven-repo/content/"
 	// val repo6 = "typsafe" at "http://repo.typesafe.com/typesafe/releases/"
 	// val repo7 = "akka" at "http://akka.io/repository/"
+	// repo8 = "twitter" at "http://maven.twttr.com"
 
 	val lib_slf4j     = "org.slf4j"      % "slf4j-api"            % "1.6.1"   withSources()
 	val lib_h2        = "com.h2database" % "h2"                   % "1.3.160" withSources()
@@ -69,8 +70,10 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
     	//val lib_casbah    = "com.mongodb.casbah" % "casbah-core_2.9.1"  % "2.1.5-1" withSources()
     	val lib_akka_actor  = "se.scalablesolutions.akka" % "akka-actor" % "1.3-RC1" withSources()
     	val lib_akka_remote = "se.scalablesolutions.akka" % "akka-remote" % "1.3-RC1" withSources()
+    	val lib_akka_test   = "se.scalablesolutions.akka" % "akka-testkit" % "1.3-RC1" % "test" withSources()
 
-    	val lib_akka_test = "se.scalablesolutions.akka" % "akka-testkit" % "1.3-RC1" % "test" withSources()
+    	val lib_javaxrs     = "javax.ws.rs" % "jsr311-api" % "1.1.1" withSources()
+    	val lib_spray_can   = "cc.spray.can" % "spray-can" % "0.9.2-SNAPSHOT" withSources()
 
 		val lib_converter      = "com.ckkloverdos" % "converter_2.9.1"      % "0.3.0" withSources()
 		val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()

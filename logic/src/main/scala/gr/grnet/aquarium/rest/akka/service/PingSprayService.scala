@@ -33,27 +33,28 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.rest.akka.service
+
+import org.slf4j.LoggerFactory
+import cc.spray.can.HttpMethods.GET
+import akka.actor.Actor
+import cc.spray.can.{HttpHeader, HttpResponse, HttpRequest, RequestContext}
 
 /**
- * Test-related proeprty names.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object PropertyNames {
-  // Test enabling/disabling
-  val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableMongoDB  = "test.enable.mongodb"
-  val TestEnablePerf     = "test.enable.perf"
-  val TestEnableSpray    = "test.enable.spray"
+class PingSprayService extends Actor {
+  private[this] val logger = LoggerFactory.getLogger(getClass)
+//  self.id = "aquarium-rest"
 
-  // Test configuration files used
-  val MongoDBConfFile  = "mongodb.conf.file"
-  val RabbitMQConfFile = "rabbitmq.conf.file"
+  // https://github.com/spray/spray-can/blob/master/server-example/src/main/scala/cc/spray/can/example/TestService.scala
+  val defaultHeaders = List(HttpHeader("Content-Type", "text/plain"))
 
-  // Configuration items in configuration files
-  val RabbitMQSpecificConf = "rabbitmq.conf"
-  val RabbitMQConnection   = "rabbitmq.connection"
-  val RabbitMQProducer     = "rabbitmq.producer"
-  val RabbitMQConsumer     = "rabbitmq.consumer"
+  def response(msg: String, status: Int = 200) = HttpResponse(status, defaultHeaders , msg.getBytes("UTF-8"))
+
+  protected def receive = {
+    case RequestContext(HttpRequest(GET, "/ping", _, _, _), _, responder) =>
+      responder.complete(response("pong " + System.currentTimeMillis()))
+  }
 }

@@ -33,27 +33,53 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.rest.akka.service
+
+import org.junit.Test
+import cc.spray.can.HttpClient._
+import akka.actor.{PoisonPill, Actor}
+import cc.spray.can.{HttpClient, HttpResponse, HttpRequest, HttpServer}
+
+import cc.spray.can.HttpMethods.GET
+import gr.grnet.aquarium.util.Loggable
+import org.junit.Assume._
+import gr.grnet.aquarium.LogicTestsAssumptions
 
 /**
- * Test-related proeprty names.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object PropertyNames {
-  // Test enabling/disabling
-  val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableMongoDB  = "test.enable.mongodb"
-  val TestEnablePerf     = "test.enable.perf"
-  val TestEnableSpray    = "test.enable.spray"
+class PingSprayServiceTest extends Loggable {
+  def show(response: HttpResponse) {
+      println(
+        """|Result from host:
+           |status : {}
+           |headers: {}
+           |body   : {}""".stripMargin,
+        Array(response.status: java.lang.Integer, response.headers, response.bodyAsString)
+      )
+    }
+  @Test
+  def testPing: Unit = {
+    assumeTrue(LogicTestsAssumptions.EnableSprayTests)
+    
+    val server = Actor.actorOf(new HttpServer()).start()
+    val client = Actor.actorOf(new HttpClient()).start()
 
-  // Test configuration files used
-  val MongoDBConfFile  = "mongodb.conf.file"
-  val RabbitMQConfFile = "rabbitmq.conf.file"
+    val dialog = HttpDialog("localhost", 8080)
+    val result = dialog.send(HttpRequest(method = GET, uri = "/ping")).end
+    result onComplete { future =>
+      future.value match {
+        case Some(Right(response)) =>
+          show(response)
+        case other =>
+          logger.error("Error: %s".format(other))
+      }
 
-  // Configuration items in configuration files
-  val RabbitMQSpecificConf = "rabbitmq.conf"
-  val RabbitMQConnection   = "rabbitmq.connection"
-  val RabbitMQProducer     = "rabbitmq.producer"
-  val RabbitMQConsumer     = "rabbitmq.consumer"
+      server ! PoisonPill
+      client ! PoisonPill
+    }
+
+    Thread.sleep(10000)
+  }
 }
