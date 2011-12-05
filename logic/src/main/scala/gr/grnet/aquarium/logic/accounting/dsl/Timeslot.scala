@@ -143,30 +143,24 @@ case class Timeslot(from: Date, to: Date) {
    */
   def nonOverlappingTimeslots(list: List[Timeslot]): List[Timeslot] = {
 
-    def build(acc: List[Timeslot],
-              listPart: List[Timeslot]): List[Timeslot] = {
+    val overlaps = list.filter(t => this.overlaps(t))
+
+    def build(acc: List[Timeslot], listPart: List[Timeslot]): List[Timeslot] = {
 
       listPart match {
         case Nil => acc
-        case x :: Nil => build(acc ++ computeGap1(x, this), Nil)
-        case x :: y :: rest => build(acc ++ computeGap2(x, y, this), y :: rest)
+        case x :: Nil => build(acc, List())
+        case x :: y :: rest =>
+          build(acc ++ List(Timeslot(x.to,  y.from)), y :: rest)
       }
     }
 
-    def computeGap1(x: Timeslot, to: Timeslot) : List[Timeslot] =
-      if (x.startsBefore(to) && x.endsBefore(to)) List(Timeslot(to.from, x.to))
-      else if (x.startsBefore(to) && x.endsAfter(to)) List()
-      else if (x.startsAfter(to) && x.endsAfter(to)) List(Timeslot(to.from, x.from))
-      else if (x.startsAfter(to) && x.endsBefore(to)) List(Timeslot(to.from, x.from), Timeslot(x.to, to.to))
-      else List()
+    val head = overlaps.head
+    val last = overlaps.reverse.head
 
-    def computeGap2(x: Timeslot, y: Timeslot, to: Timeslot) : List[Timeslot] =
-      if (x.overlaps(to) && !y.overlaps(to)) computeGap1(x, to)
-      else if (x.overlaps(to) && y.overlaps(to)) List(Timeslot(x.to, y.from))
-      else if (!x.overlaps(to) && y.overlaps(to)) computeGap1(y, to)
-      else if (!x.overlaps(to) && !y.overlaps(to)) List()
-      else List()
+    val start = if (head.startsAfter(this)) List(Timeslot(this.from, head.from)) else List()
+    val end = if (last.endsBefore(this)) List(Timeslot(this.from, last.from)) else List()
 
-    build(Nil, list).sortWith((a,b) => if (a.from.after(b.from)) true else false)
+    start ++ build(List(), overlaps) ++ end
   }
 }
