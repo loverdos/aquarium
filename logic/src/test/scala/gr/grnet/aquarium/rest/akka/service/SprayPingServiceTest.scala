@@ -37,49 +37,44 @@ package gr.grnet.aquarium.rest.akka.service
 
 import org.junit.Test
 import cc.spray.can.HttpClient._
-import akka.actor.{PoisonPill, Actor}
-import cc.spray.can.{HttpClient, HttpResponse, HttpRequest, HttpServer}
 
 import cc.spray.can.HttpMethods.GET
 import gr.grnet.aquarium.util.Loggable
 import org.junit.Assume._
 import gr.grnet.aquarium.LogicTestsAssumptions
+import cc.spray.can._
+import akka.actor.{Kill, Actor, PoisonPill}
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class PingSprayServiceTest extends Loggable {
-  def show(response: HttpResponse) {
-      println(
-        """|Result from host:
-           |status : {}
-           |headers: {}
-           |body   : {}""".stripMargin,
-        Array(response.status: java.lang.Integer, response.headers, response.bodyAsString)
-      )
-    }
+class SprayPingServiceTest extends Loggable {
   @Test
   def testPing: Unit = {
     assumeTrue(LogicTestsAssumptions.EnableSprayTests)
-    
+
+    val service = Actor.actorOf(new SprayPingService("spray-root-service")).start()
     val server = Actor.actorOf(new HttpServer()).start()
     val client = Actor.actorOf(new HttpClient()).start()
 
     val dialog = HttpDialog("localhost", 8080)
-    val result = dialog.send(HttpRequest(method = GET, uri = "/ping")).end
+    val result = dialog.send(HttpRequest(method = GET, uri = "/ping", headers = HttpHeader("Content-Type", "text/plain; charset=UTF-8")::Nil)).end
     result onComplete { future =>
       future.value match {
         case Some(Right(response)) =>
-          show(response)
+          logger.info("Response class  : %s".format(response.getClass))
+          logger.info("Response status : %s".format(response.status))
+          logger.info("Response headers: %s".format(response.headers.map(hh => (hh.name, hh.value)).mkString(", ")))
+          logger.info("Response body   : %s".format(response.bodyAsString))
         case other =>
           logger.error("Error: %s".format(other))
       }
 
-      server ! PoisonPill
-      client ! PoisonPill
+      service ! PoisonPill
+      client  ! PoisonPill
     }
 
-    Thread.sleep(10000)
+    Thread sleep 100
   }
 }

@@ -153,19 +153,43 @@
     <dependency>
       <groupId>se.scalablesolutions.akka</groupId>
       <artifactId>akka-actor</artifactId>
-      <version>1.3-RC1</version>
+      <version>1.3-RC2</version>
     </dependency>
 
     <dependency>
       <groupId>se.scalablesolutions.akka</groupId>
       <artifactId>akka-remote</artifactId>
-      <version>1.3-RC1</version>
+      <version>1.3-RC2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>se.scalablesolutions.akka</groupId>
+      <artifactId>akka-camel</artifactId>
+      <version>1.3-RC2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel</artifactId>
+      <version>2.7.0</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-jetty</artifactId>
+        <version>2.7.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.camel</groupId>
+      <artifactId>camel-http</artifactId>
+      <version>2.7.0</version>
     </dependency>
 
     <dependency>
       <groupId>se.scalablesolutions.akka</groupId>
       <artifactId>akka-testkit</artifactId>
-      <version>1.3-RC1</version>
+      <version>1.3-RC2</version>
       <scope>test</scope>
     </dependency>
 
@@ -184,7 +208,7 @@
     <dependency>
       <groupId>cc.spray.can</groupId>
       <artifactId>spray-can</artifactId>
-      <version>0.9.1</version>
+      <version>0.9.2-SNAPSHOT</version>
     </dependency>
   </dependencies>
 </project>
