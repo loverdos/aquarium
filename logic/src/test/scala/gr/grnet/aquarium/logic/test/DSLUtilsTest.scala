@@ -215,6 +215,7 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     val ts3 = 1322660282000L //Wed, 30 Nov 2011 15:38:02 EET
     val ts4 = 1322667482000L //Wed, 30 Nov 2011 17:38:02 EET
     val ts5 = 1322689082000L //Wed, 30 Nov 2011 23:38:02 EET
+    val ts6 = 1322555880000L //Tue, 29 Nov 2011 10:38:00 EET
 
     var pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts2)), agr)
     assertEquals(2, pricelists.keySet.size)
@@ -226,10 +227,15 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     assertEquals("default", pricelists.head._2.name)
 
     pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts4)), agr)
-    //assertEquals(3, pricelists.keySet.size)
+    assertEquals(2, pricelists.keySet.size)
+    assertEquals("foobar", pricelists.head._2.name)
+    assertEquals("default", pricelists.tail.head._2.name)
 
     pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts5)), agr)
-    //assertEquals(5, pricelists.keySet.size)
+    assertEquals(4, pricelists.keySet.size)
+
+    pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts6), new Date(ts5)), agr)
+    assertEquals(9, pricelists.keySet.size)
   }
 
   @tailrec
