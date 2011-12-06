@@ -39,6 +39,7 @@ import dsl._
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import java.util.Date
+import collection.immutable.SortedMap
 
 /**
  * 
@@ -50,12 +51,12 @@ trait Accounting extends DSLUtils {
   def chargeEvent(ev: ResourceEvent) : Maybe[Float] = {
 
     if (!ev.validate())
-      return Failed(new AccountingException("Message not valid"))
+      return Failed(new AccountingException("Event not valid"))
 
     //From now own, we can trust the event contents
     val resource = Policy.policy.findResource(ev.resource).get
 
-    
+
 
     Just(0F)
   }
@@ -70,15 +71,47 @@ trait Accounting extends DSLUtils {
   def calcChangeChunks(agr: DSLAgreement, volume: Float,
                        from: Date, to: Date) : List[ChargeChunk] = {
 
-    val prts = allEffectiveTimeslots(agr.pricelist.effective, from, to)
-
-    
+    resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr)
+    resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr)
 
     List()
   }
+
+  def splitChargeChunks(alg: Map[Timeslot, DSLAlgorithm],
+                        price: Map[Timeslot, DSLPriceList]) :
+  (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
+
+    val algsort = alg.toSeq.sortWith((x,y) => sorter(x._1, y._1))
+    val prisort = price.toSeq.sortWith((x,y) => sorter(x._1, y._1))
+
+    // Type: Seq[((Timeslot, DSLAlgorithm),(Timeslot, DSLPriceList))]
+    val zipped = algsort.zip(prisort)
+
+    zipped.find(p => !p._1._1.equals(p._2._1)) match {
+      case None => (alg, price)
+      case Some(x) =>
+        val algTimeslot = x._1._1
+        val priTimeslot = x._2._1
+
+        assert(algTimeslot.from == priTimeslot.from)
+
+        if (algTimeslot.endsAfter(priTimeslot)) {
+          val slices = algTimeslot.slice(priTimeslot.to)
+          val algo = alg.get(algTimeslot).get
+          val newalg = alg - algTimeslot ++
+            Map(slices.apply(0) -> algo) ++ Map(slices.apply(1) -> algo)
+          splitChargeChunks(newalg, price)
+        }
+        else {
+          val slices = priTimeslot.slice(priTimeslot.to)
+          val pl = price.get(priTimeslot).get
+          val newPrice = price - priTimeslot ++
+            Map(slices.apply(0) -> pl) ++ Map(slices.apply(1) -> pl)
+          splitChargeChunks(alg, newPrice)
+        }
+    }
+  }
 }
-
-
 
 /** An exception raised when something goes wrong with accounting */
 class AccountingException(msg: String) extends Exception(msg)
