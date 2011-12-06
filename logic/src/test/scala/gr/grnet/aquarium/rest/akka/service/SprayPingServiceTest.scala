@@ -43,7 +43,80 @@ import gr.grnet.aquarium.util.Loggable
 import org.junit.Assume._
 import gr.grnet.aquarium.LogicTestsAssumptions
 import cc.spray.can._
-import akka.actor.{Kill, Actor, PoisonPill}
+import akka.actor.{Actor, PoisonPill}
+import org.slf4j.LoggerFactory
+
+/**
+ * This class is heavily based on the Spray samples.
+ * Copyright is what copyright Spray has.
+ */
+class SprayPingService(_id: String = "spray-root-service") extends Actor {
+  private[this] val logger = LoggerFactory.getLogger(getClass)
+
+  self.id = _id
+
+  protected def receive = {
+    case RequestContext(HttpRequest(GET, "/", _, _, _), _, responder) =>
+      responder.complete(index)
+
+    case RequestContext(HttpRequest(GET, "/ping", _, _, _), _, responder) =>
+      responder.complete(response("PONG!"))
+
+    case RequestContext(HttpRequest(GET, "/stats", _, _, _), _, responder) => {
+      (serverActor ? GetStats).mapTo[Stats].onComplete {
+        future =>
+          future.value.get match {
+            case Right(stats) => responder.complete {
+              response {
+                "Uptime              : " + (stats.uptime / 1000.0) + " sec\n" +
+                  "Requests dispatched : " + stats.requestsDispatched + '\n' +
+                  "Requests timed out  : " + stats.requestsTimedOut + '\n' +
+                  "Requests open       : " + stats.requestsOpen + '\n' +
+                  "Open connections    : " + stats.connectionsOpen + '\n'
+              }
+            }
+            case Left(ex) => responder.complete(response("Couldn't get server stats due to " + ex, status = 500))
+          }
+      }
+    }
+
+    case RequestContext(HttpRequest(_, _, _, _, _), _, responder) =>
+      responder.complete(response("Unknown resource!", 404))
+
+    case Timeout(method, uri, _, _, _, complete) => complete {
+      HttpResponse(status = 500).withBody("The " + method + " request to '" + uri + "' has timed out...")
+    }
+  }
+
+  ////////////// helpers //////////////
+
+  val defaultHeaders = List(HttpHeader("Content-Type", "text/plain"))
+
+  lazy val serverActor = Actor.registry.actorsFor("spray-can-server").head
+
+  def response(msg: String, status: Int = 200) = HttpResponse(status, defaultHeaders, msg.getBytes("ISO-8859-1"))
+
+  lazy val index = HttpResponse(
+    headers = List(HttpHeader("Content-Type", "text/html")),
+    body =
+      <html>
+        <body>
+          <h1>Say hello to
+            <i>spray-can</i>
+            !</h1>
+          <p>Defined resources:</p>
+          <ul>
+            <li>
+              <a href="/ping">/ping</a>
+            </li>
+            <li>
+              <a href="/stats">/stats</a>
+            </li>
+          </ul>
+        </body>
+      </html>.toString.getBytes("UTF-8")
+  )
+}
 
 /**
  * 
