@@ -33,28 +33,42 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.rest.akka.service
+
+import org.junit.Test
+import org.junit.Assume._
+import akka.actor.{ActorRef, Actor}
+import akka.camel.{Producer, Consumer, CamelServiceManager}
+import org.apache.camel.Message
+import org.apache.camel.impl.DefaultMessage
+import gr.grnet.aquarium.LogicTestsAssumptions
+
+class CamelPingClient(val host: String, val port: Int, path: String) extends Actor with Producer {
+  def endpointUri = "jetty:http://%s:%s%s".format(host, port, path)
+}
 
 /**
- * Test-related proeprty names.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object PropertyNames {
-  // Test enabling/disabling
-  val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableMongoDB  = "test.enable.mongodb"
-  val TestEnablePerf     = "test.enable.perf"
-  val TestEnableSpray    = "test.enable.spray"
-  val TestEnableCamel    = "test.enable.camel"
+class CamelPingServiceTest {
+  @Test
+  def testPing: Unit = {
+    assumeTrue(LogicTestsAssumptions.EnableCamelTests)
+    val client = Actor.actorOf(new CamelPingClient("localhost", 9090, "/ping")).start()
 
-  // Test configuration files used
-  val MongoDBConfFile  = "mongodb.conf.file"
-  val RabbitMQConfFile = "rabbitmq.conf.file"
+    CamelServiceManager.startCamelService
+    CamelServiceManager.mandatoryService.awaitEndpointActivation(1) {
+      Actor.actorOf(new CamelPingService("localhost", 9090, "/ping")).start()
+    }
 
-  // Configuration items in configuration files
-  val RabbitMQSpecificConf = "rabbitmq.conf"
-  val RabbitMQConnection   = "rabbitmq.connection"
-  val RabbitMQProducer     = "rabbitmq.producer"
-  val RabbitMQConsumer     = "rabbitmq.consumer"
+    val msg = new DefaultMessage
+    msg.setHeader("Header1", "Value1")
+    msg.setHeader("Header2", "Value2")
+    msg.setBody("{ yes: \"yes\"}")
+    client ! msg
+
+    Thread sleep 30000
+    CamelServiceManager.stopCamelService
+  }
 }

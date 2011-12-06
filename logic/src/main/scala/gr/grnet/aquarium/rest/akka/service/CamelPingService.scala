@@ -33,28 +33,36 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.rest.akka.service
+
+import akka.actor.Actor
+import akka.camel.Consumer
+import org.apache.camel.Message
+import scala.collection.JavaConversions._
 
 /**
- * Test-related proeprty names.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object PropertyNames {
-  // Test enabling/disabling
-  val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableMongoDB  = "test.enable.mongodb"
-  val TestEnablePerf     = "test.enable.perf"
-  val TestEnableSpray    = "test.enable.spray"
-  val TestEnableCamel    = "test.enable.camel"
+class CamelPingService(val host: String, val port: Int, path: String) extends Actor with Consumer {
+  def endpointUri = "jetty:http://%s:%s%s".format(host, port, path)
 
-  // Test configuration files used
-  val MongoDBConfFile  = "mongodb.conf.file"
-  val RabbitMQConfFile = "rabbitmq.conf.file"
+  protected def receive = {
+    case message: Message =>
+      val theReply = "pong %s %s".format(System.currentTimeMillis(), message.getClass.getName)
+      println("++ MessageID: %s".format(message.getMessageId))
+      println("+++ HEADERS +++")
+      for((k, v) <- message.getHeaders) {
+        println("  %s -> %s".format(k, v))
+      }
+      println("--- HEADERS ---")
+      println("++ BODY: %s".format(message.getBody))
+      println("++ REPLY: %s".format(theReply))
+      self reply theReply
 
-  // Configuration items in configuration files
-  val RabbitMQSpecificConf = "rabbitmq.conf"
-  val RabbitMQConnection   = "rabbitmq.connection"
-  val RabbitMQProducer     = "rabbitmq.producer"
-  val RabbitMQConsumer     = "rabbitmq.consumer"
+    case message: AnyRef =>
+      val theReply = "pong %s %s".format(System.currentTimeMillis(), message.getClass.getName)
+      println("++ REPLY: %s".format(theReply))
+      self reply theReply
+  }
 }
