@@ -41,6 +41,7 @@ import cc.spray.can._
 import akka.actor.Actor
 import gr.grnet.aquarium.util.Loggable
 import net.liftweb.json.JsonAST.JValue
+import net.liftweb.json.{JsonAST, Printer}
 
 /**
  *
@@ -49,12 +50,17 @@ import net.liftweb.json.JsonAST.JValue
 class AquariumRESTService(_id: String = "spray-root-service", version: String) extends Actor with Loggable {
   self.id = _id
 
-  private[this] def jsonResponseOK(body: JValue, pretty: Boolean = false): HttpResponse = {
-    HttpResponse(
-      200,
-      HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil,
-      )
-  }
+//  private[this] def jsonResponseOK(body: JValue, pretty: Boolean = false): HttpResponse = {
+//    HttpResponse(
+//      200,
+//      HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil,
+//      if(pretty) {
+//        Printer.pretty(JsonAST.render(body)).getB
+//      } else {
+//        bo
+//      }
+//      )
+//  }
   protected def receive = {
     case RequestContext(HttpRequest(GET, "/", _, _, _), _, responder) =>
       responder.complete(index)
