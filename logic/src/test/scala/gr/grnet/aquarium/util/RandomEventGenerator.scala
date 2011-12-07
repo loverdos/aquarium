@@ -35,42 +35,60 @@ package gr.grnet.aquarium.util
  * or implied, of GRNET S.A.
  */
 
+import akka.amqp._
 import java.util.Date
 import gr.grnet.aquarium.logic.events.ResourceEvent
+import gr.grnet.aquarium.messaging.AkkaAMQP
+import util.Random
 
 /**
  *  Generates random resource events to use as input for testing and
- *  injects them to the specified queue.
+ *  injects them to the specified exchange.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait RandomEventGenerator {
+trait RandomEventGenerator extends AkkaAMQP {
 
   val userIds = 1 to 100
   val clientIds = 1 to 4
+  val vmIds = 1 to 4000
   val resources = List("bandwidthup", "bandwidthdown", "vmtime", "diskspace")
-  val dateFrom = new Date(1293840000000L) //1/1/2011 0:00:00 GMT
-  val dateTo = new Date(1325376000000L) //1/1/2012 0:00:00 GMT
+  val tsFrom = 1293840000000L //1/1/2011 0:00:00 GMT
+  val tsTo = 1325376000000L   //1/1/2012 0:00:00 GMT
   val eventVersion = 1 to 4
 
+  private val seed = 0xdeadbeef
+  private lazy val rnd = new Random(seed)
+
   /**
-   * Get a next random message
+   * Get the next random message
    */
   def nextResourceEvent() : ResourceEvent = {
+    val res = rnd.shuffle(resources).head
 
+    val extra = res match {
+      case "vmtime" => Map("vmid" -> rnd.nextInt(vmIds.max).toString)
+      case _ => Map[String, String]()
+    }
 
-    ResourceEvent(0,0,"",0L,0,Map())
+    val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
+
+    ResourceEvent(
+      rnd.nextInt(userIds.max),
+      rnd.nextInt(clientIds.max),
+      res,ts,1,extra)
   }
 
   /**
-   * Generate messages and add them to the queue
+   * Generate resource events and publish them to the queue
    */
-  def genAdd(num: Int) = {
+  def genPublish(num: Int) = {
 
     assert(num > 0)
+    val publisher = producer("aquarium")
 
     (1 to num).foreach {
-      n =>
+      n => publisher ! Message(nextResourceEvent.toBytes, "test.msg")
     }
   }
 }

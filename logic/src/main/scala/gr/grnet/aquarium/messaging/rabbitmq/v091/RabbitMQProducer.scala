@@ -79,13 +79,13 @@ class RabbitMQProducer(private[v091] val owner: RabbitMQConnection, val confMode
     _publish(message, headers){_ =>}{_ => ()} {_ => logger.error("publish() from producer %s".format())}
   }
 
-  def publishStringWithConfirm(message: String, headers: Map[String, String] = Map()) = {
+/*  def publishStringWithConfirm(message: String, headers: Map[String, String] = Map()) = {
     _publish(message, headers) {
       _.confirmSelect() }{
       logger.debug("Waiting for confirmation")
       _.waitForConfirms() } {_ => logger.error("publishWithConfirm() from producer %s".format())}
   }
-
+*/
   override def toString = {
     "RabbitMQProducer(%s/%s/%s)".format(owner.owner.name, owner.name, name)
   }

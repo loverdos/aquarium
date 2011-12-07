@@ -33,16 +33,46 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.messaging.amqp
+package gr.grnet.aquarium.messaging
 
-import parallel.Future
+import gr.grnet.aquarium.util.RandomEventGenerator
+import org.junit.Test
+import akka.actor.Actor
+import java.util.concurrent.{TimeUnit, CountDownLatch}
+import akka.amqp.{AMQP, Message, Delivery}
 
 /**
  * 
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ *
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait AMQPProducer {
-  def name: String
-  def publishString(message: String, headers: Map[String,  String] = Map()): Unit
-  //def publishStringWithConfirm(message: String, headers: Map[String,  String] = Map()): Boolean
+
+class AkkaAMQPTest extends RandomEventGenerator {
+
+  @Test
+  def testSendReceive() = {
+    val numMsg = 100
+    val countDown = new CountDownLatch(numMsg)
+    
+    val publisher = producer("aquarium")
+
+    class Consumer extends Actor {
+      def receive = {
+        case Delivery(payload, _, _, _, _, _) =>
+          println("Got message: " + payload)
+          countDown.countDown()
+        case _ =>
+      }
+    }
+
+    consumer("akka-amqp-test", "foo.*", Actor.actorOf(new Consumer))
+
+    (1 to numMsg).foreach{
+      i =>  publisher ! new Message(i.toString.getBytes(), "foo.bar")
+    }
+
+    countDown.await(10, TimeUnit.SECONDS)
+    AMQP.shutdownAll
+    Actor.registry.shutdownAll
+  }
 }

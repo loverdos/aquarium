@@ -33,16 +33,48 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.messaging.amqp
+package gr.grnet.aquarium.messaging
 
-import parallel.Future
+import com.rabbitmq.client.Address
+import akka.actor._
+import akka.amqp.{Topic, AMQP}
+import akka.amqp.AMQP._
 
 /**
- * 
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * Functionality for working with queues.
+ *
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait AMQPProducer {
-  def name: String
-  def publishString(message: String, headers: Map[String,  String] = Map()): Unit
-  //def publishStringWithConfirm(message: String, headers: Map[String,  String] = Map()): Boolean
+
+trait AkkaAMQP {
+
+  private lazy val connection = AMQP.newConnection(
+    ConnectionParameters(
+      Array(new Address("1.2.3.4",5672)),
+      "foob",
+      "bar",
+      "/",
+      5000,
+      None))
+
+  //Queues and exchnages are by default durable and persistent
+  val decl = ActiveDeclaration(durable = true, autoDelete = false)
+
+  //TODO: Methods to load configuration from {file, other resource}
+
+  def consumer(routekey: String, queue: String, receiver: ActorRef) =
+    AMQP.newConsumer(
+      connection = connection,
+      consumerParameters = ConsumerParameters(
+        routingKey = routekey,
+        deliveryHandler = receiver,
+        queueName = Some(queue),
+        queueDeclaration = decl
+        ))
+
+  def producer(exchange: String) = AMQP.newProducer(
+      connection = connection,
+      producerParameters = ProducerParameters(
+        exchangeParameters = Some(ExchangeParameters(exchange, Topic, decl)),
+        channelParameters = Some(ChannelParameters(prefetchSize = 1))))
 }
