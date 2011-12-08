@@ -62,19 +62,21 @@ trait AkkaAMQP {
 
   //TODO: Methods to load configuration from {file, other resource}
 
-  def consumer(routekey: String, queue: String, receiver: ActorRef) =
+  def consumer(routekey: String, queue: String, exchange: String, recipient: ActorRef, selfAck: Boolean) =
     AMQP.newConsumer(
       connection = connection,
       consumerParameters = ConsumerParameters(
         routingKey = routekey,
-        deliveryHandler = receiver,
+        exchangeParameters = Some(ExchangeParameters(exchange, Topic, decl)),
+        deliveryHandler = recipient,
         queueName = Some(queue),
-        queueDeclaration = decl
+        queueDeclaration = decl,
+        selfAcknowledging = selfAck
         ))
 
   def producer(exchange: String) = AMQP.newProducer(
       connection = connection,
       producerParameters = ProducerParameters(
         exchangeParameters = Some(ExchangeParameters(exchange, Topic, decl)),
-        channelParameters = Some(ChannelParameters(prefetchSize = 1))))
+        channelParameters = Some(ChannelParameters(prefetchSize = 0))))
 }
