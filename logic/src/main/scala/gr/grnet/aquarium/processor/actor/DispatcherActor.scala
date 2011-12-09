@@ -36,20 +36,22 @@
 package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.logic.events.ResourceEvent
-
-import akka.event.EventHandler
-import gr.grnet.aquarium.actor.{ResourceProcessorRole, AquariumActor}
+import akka.actor.ActorRef
+import gr.grnet.aquarium.actor.{DispatcherRole, AquariumActor}
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class ResourceEventProcessor extends AquariumActor with ReflectiveAquariumActor {
-  def role = ResourceProcessorRole
+class DispatcherActor extends AquariumActor {
+  def role = DispatcherRole
 
-  def knownMessageTypes = List(classOf[ResourceEvent])
+  def resourceEventProcessor: ActorRef =
+    AquariumActorFactory.get.makeResourceEventProcessor
 
-  def onResourceEvent(re: ResourceEvent): Unit = {
-    EventHandler.debug(this, "Received %s".format(re))
+  protected def receive = {
+    case message: ResourceEvent =>
+      // Dispatch to resource processor
+      resourceEventProcessor forward message
   }
 }

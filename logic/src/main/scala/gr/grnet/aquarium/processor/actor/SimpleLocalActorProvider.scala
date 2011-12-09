@@ -35,24 +35,35 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import akka.actor.Actor
-import Actor.actorOf
+import com.ckkloverdos.props.Props
+import gr.grnet.aquarium.actor._
+import akka.actor.ActorRef
+
 
 /**
- * The simplest of all actor factory implementation.
+ * All actors are provided locally.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object DefaultAquariumActorFactory extends AquariumActorFactory {
-  def makeDispatcher = {
-    val actor = actorOf[DispatcherActor]
-    actor.start
-    actor
+class SimpleLocalActorProvider extends ActorProvider {
+  @throws(classOf[Exception])
+  def actorForRole(role: ActorRole, hints: Props = Props.empty) = {
+    SimpleLocalActorProvider.ActorRefByRoles.get(role) match {
+      case Some(actorRef) ⇒
+        actorRef
+      case None ⇒
+        throw new Exception("Cannot create actor for role %s".format(role))
+    }
   }
+}
 
-  def makeResourceEventProcessor = {
-    val actor = actorOf[ResourceProcessorActor]
-    actor.start()
-    actor
+object SimpleLocalActorProvider {
+  lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
+    (DispatcherRole :: ResourceProcessorRole :: Nil) map { role ⇒
+      (role, role.actorType)
+    } toMap
+  
+  lazy val ActorRefByRoles: Map[ActorRole, ActorRef] = ActorClassByRole map { case (role, clazz) ⇒
+    (role, akka.actor.Actor.actorOf(clazz).start())
   }
 }

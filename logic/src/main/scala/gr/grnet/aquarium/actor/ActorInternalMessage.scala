@@ -33,26 +33,20 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium.actor
 
-import akka.actor.Actor
-import Actor.actorOf
+import com.ckkloverdos.props.Props
 
 /**
- * The simplest of all actor factory implementation.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object DefaultAquariumActorFactory extends AquariumActorFactory {
-  def makeDispatcher = {
-    val actor = actorOf[DispatcherActor]
-    actor.start
-    actor
-  }
+sealed trait ActorInternalMessage
 
-  def makeResourceEventProcessor = {
-    val actor = actorOf[ResourceProcessorActor]
-    actor.start()
-    actor
-  }
-}
+case object AquariumStarting
+case object AquariumStopping
+
+/**
+ *
+ */
+case class ActorConfigure(props: Props)

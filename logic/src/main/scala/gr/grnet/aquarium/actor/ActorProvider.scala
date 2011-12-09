@@ -33,26 +33,22 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium.actor
 
-import akka.actor.Actor
-import Actor.actorOf
+import akka.actor.ActorRef
+import com.ckkloverdos.props.Props
 
 /**
- * The simplest of all actor factory implementation.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object DefaultAquariumActorFactory extends AquariumActorFactory {
-  def makeDispatcher = {
-    val actor = actorOf[DispatcherActor]
-    actor.start
-    actor
-  }
-
-  def makeResourceEventProcessor = {
-    val actor = actorOf[ResourceProcessorActor]
-    actor.start()
-    actor
-  }
+trait ActorProvider {
+  /**
+   * Tries to find and provide the actor of specific `role`.
+   * Any extra info needed for the provision is given with the `hints` parameter.
+   *
+   * If no such actor is found, then this method throws an exception.
+   */
+  @throws(classOf[Exception])
+  def actorForRole(role: ActorRole, hints: Props = Props.empty): ActorRef
 }

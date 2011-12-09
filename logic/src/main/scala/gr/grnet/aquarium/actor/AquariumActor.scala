@@ -46,3 +46,4 @@ import akka.actor.Actor
 trait AquariumActor extends Actor {
   def role: ActorRole
 }
+

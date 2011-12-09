@@ -1,5 +1,8 @@
 package gr.grnet.aquarium.actor
 
+import gr.grnet.aquarium.processor.actor.{ResourceProcessorActor, DispatcherActor}
+
+
 /*
  * Copyright 2011 GRNET S.A. All rights reserved.
  *
@@ -35,14 +38,19 @@ package gr.grnet.aquarium.actor
  * or implied, of GRNET S.A.
  */
 
-sealed abstract class ActorRole(val role: String)
+/**
+ * Each actor plays one role. This is a one-to-one correspondance.
+ */
+sealed abstract class ActorRole(val role: String, val actorType: Class[_ <: AquariumActor])
 
 /**
  * The generic router/dispatcher.
  */
-case object DispatcherRole extends ActorRole("DispatcherRole")
+case object DispatcherRole extends ActorRole("DispatcherRole", classOf[DispatcherActor]) {
+
+}
 
 /**
  * Processes user-related resource events.
  */
-case object ResourceProcessorRole extends ActorRole("ResourceProcessorRole")
+case object ResourceProcessorRole extends ActorRole("ResourceProcessorRole", classOf[ResourceProcessorActor])
