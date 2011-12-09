@@ -45,16 +45,15 @@ import akka.amqp.AMQP._
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-
 trait AkkaAMQP {
 
   private lazy val connection = AMQP.newConnection(
     ConnectionParameters(
-      Array(new Address("1.2.3.4",5672)),
-      "foob",
-      "bar",
+      Array(new Address("aquarium.dev.grnet.gr",5672)),
+      "aquarium",
+      "@qu@r1um",
       "/",
-      5000,
+      1000,
       None))
 
   //Queues and exchnages are by default durable and persistent
