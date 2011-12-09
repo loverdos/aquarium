@@ -35,19 +35,41 @@
 
 package gr.grnet.aquarium
 
+import actor.ActorProvider
 import com.ckkloverdos.resource._
 import com.ckkloverdos.sys.SysProp
-import com.ckkloverdos.maybe.{Failed, Just, NoVal}
+import com.ckkloverdos.props.Props
+import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
+import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MasterConf(masterConf: StreamResource) {
+class MasterConf(props: Props) {
+  import MasterConf.Keys
+
+  private[this] val _actorProvider: ActorProvider = {
+    val className = props.getEx(Keys.actor_provider_class)
+    val actorProvider = defaultClassLoader.loadClass(className).newInstance().asInstanceOf[ActorProvider]
+    
+    actorProvider match {
+      case configurable: Configurable ⇒
+        configurable configure props
+    }
+
+    actorProvider
+  }
+
+  def defaultClassLoader = Thread.currentThread().getContextClassLoader
+  
+  def actorProvider = _actorProvider
 }
 
 object MasterConf {
+  implicit val DefaultConverters = TheDefaultConverters
+
   val MasterConfName = "aquarium.properties"
 
   /**
@@ -108,5 +130,42 @@ object MasterConf {
     }
   }
 
-  lazy val MasterConf = new MasterConf(MasterConfResource)
+  lazy val MasterConfProps = {
+    val maybeProps = Props apply MasterConfResource
+    maybeProps match {
+      case Just(props) ⇒
+        props
+      case NoVal ⇒
+        throw new RuntimeException("Could not load master configuration file: %s".format(MasterConfName))
+      case Failed(e, m) ⇒
+        throw new RuntimeException(m, e)
+    }
+  }
+
+  lazy val MasterConf = {
+    Maybe(new MasterConf(MasterConfProps)) match {
+      case Just(masterConf) ⇒
+        masterConf
+      case NoVal ⇒
+        throw new RuntimeException("Could not initialize master configuration file: %s".format(MasterConfName))
+      case Failed(e, m) ⇒
+        throw new RuntimeException(m, e)
+    }
+  }
+
+  /**
+   * Defines the names of all the known keys inside the master properties file.
+   */
+  final object Keys {
+    /**
+     * The Aquarium version. Will be reported in any due occasion.
+     */
+    final val version = "version"
+
+    /**
+     * The fully qualified name of the class that implements the `ActorProvider`.
+     * Will be instantiated reflectively and should have a public default constructor.
+     */
+    final val actor_provider_class = "actor.provider.class"
+  }
 }
