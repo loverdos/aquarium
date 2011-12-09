@@ -33,11 +33,11 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium.actor
 
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.actor._
 import akka.actor.ActorRef
+import gr.grnet.aquarium.Configurable
 
 
 /**
@@ -45,7 +45,11 @@ import akka.actor.ActorRef
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class SimpleLocalActorProvider extends ActorProvider {
+class SimpleLocalActorProvider extends ActorProvider with Configurable {
+  def configure(props: Props): Unit = {
+
+  }
+
   @throws(classOf[Exception])
   def actorForRole(role: ActorRole, hints: Props = Props.empty) = {
     SimpleLocalActorProvider.ActorRefByRoles.get(role) match {
