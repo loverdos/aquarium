@@ -62,6 +62,12 @@ class MasterConf(props: Props) {
     actorProvider
   }
 
+  def get(prop: String): String =
+    props.get(prop) match {
+      case Just(y) => y
+      case _ => ""
+    }
+
   def defaultClassLoader = Thread.currentThread().getContextClassLoader
   
   def actorProvider = _actorProvider
