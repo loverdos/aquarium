@@ -39,6 +39,7 @@ import com.rabbitmq.client.Address
 import akka.actor._
 import akka.amqp.{Topic, AMQP}
 import akka.amqp.AMQP._
+import gr.grnet.aquarium.MasterConf
 
 /**
  * Functionality for working with queues.
@@ -47,19 +48,27 @@ import akka.amqp.AMQP._
  */
 trait AkkaAMQP {
 
-  private lazy val connection = AMQP.newConnection(
-    ConnectionParameters(
-      Array(new Address("aquarium.dev.grnet.gr",5672)),
-      "aquarium",
-      "@qu@r1um",
-      "/",
-      1000,
-      None))
+  private lazy val connection = {
+
+    val servers = MasterConf.MasterConf.get(MasterConf.Keys.amqp_servers)
+    val port = MasterConf.MasterConf.get(MasterConf.Keys.amqp_port).toInt
+
+    val addresses = servers.split(",").foldLeft(Array[Address]()){
+      (x,y) => x ++ Array(new Address(y, port))
+    }
+
+    AMQP.newConnection(
+      ConnectionParameters(
+        addresses,
+        MasterConf.MasterConf.get(MasterConf.Keys.amqp_username),
+        MasterConf.MasterConf.get(MasterConf.Keys.amqp_password),
+        MasterConf.MasterConf.get(MasterConf.Keys.amqp_vhost),
+        1000,
+        None))
+  }
 
   //Queues and exchnages are by default durable and persistent
   val decl = ActiveDeclaration(durable = true, autoDelete = false)
-
-  //TODO: Methods to load configuration from {file, other resource}
 
   def consumer(routekey: String, queue: String, exchange: String, recipient: ActorRef, selfAck: Boolean) =
     AMQP.newConsumer(

@@ -173,5 +173,32 @@ object MasterConf {
      * Will be instantiated reflectively and should have a public default constructor.
      */
     final val actor_provider_class = "actor.provider.class"
+
+    /**
+     * Comma separated list of amqp servers running in active-active
+     * configuration.
+     */
+    final val amqp_servers = "amqp.servers"
+
+    /**
+     * Comma separated list of amqp servers running in active-active
+     * configuration.
+     */
+    final val amqp_port = "amqp.port"
+
+    /**
+     * User name for connecting with the AMQP server
+     */
+    final val amqp_username = "amqp.username"
+
+    /**
+     * Passwd for connecting with the AMQP server
+     */
+    final val amqp_password = "amqp.passwd"
+
+    /**
+     * Virtual host on the AMQP server
+     */
+    final val amqp_vhost = "amqp.vhost"
   }
 }
