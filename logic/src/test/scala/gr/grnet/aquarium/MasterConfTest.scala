@@ -35,6 +35,7 @@
 
 package gr.grnet.aquarium
 
+import actor.DispatcherRole
 import org.junit.Test
 import org.junit.Assert._
 import org.junit.Assume.assumeTrue
@@ -48,5 +49,23 @@ class MasterConfTest {
   def testExists: Unit = {
     val rc = MasterConf.MasterConfResource
     assertTrue(MasterConf.MasterConfName, rc.exists)
+  }
+
+  @Test
+  def testLoad: Unit = {
+    val mc = MasterConf.MasterConf
+  }
+
+  @Test
+  def testGetActorProvider: Unit = {
+    val mc = MasterConf.MasterConf
+    val ap = mc.actorProvider
+  }
+
+  @Test
+  def testGetDispatcherActor: Unit = {
+    val mc = MasterConf.MasterConf
+    val ap = mc.actorProvider
+    val dispatcher = ap.actorForRole(DispatcherRole)
   }
 }
