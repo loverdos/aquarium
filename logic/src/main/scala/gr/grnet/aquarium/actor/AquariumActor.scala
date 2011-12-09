@@ -33,23 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium
+package actor
+
+import akka.actor.Actor
 
 /**
- * 
+ * Parent of all Aquarium actors.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object AquariumActorRoles {
-  sealed abstract class AquariumActorRole(val role: String)
-
-  /**
-   * The generic router/dispatcher.
-   */
-  case object Dispatcher extends AquariumActorRole("Dispatcher")
-
-
-  /**
-   * Processes user-related resource events.
-   */
-  case object ResourceProcessor extends AquariumActorRole("ResourceProcessor")
+trait AquariumActor extends Actor {
+  def role: ActorRole
 }

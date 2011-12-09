@@ -33,80 +33,20 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium
 
 import org.junit.Test
 import org.junit.Assert._
 import org.junit.Assume.assumeTrue
 
-import akka.actor.Actor
-import java.lang.Object
-
-//import akka.actor.Actor.
-
-
-class EchoActor extends Actor {
-  def receive = {
-    case message =>
-      println("%s received: %s".format(this, message))
-      //self.reply("REPLY from EchoActor for '%s'".format(message))
-  }
-}
-
-class SilentActor extends Actor {
-  def receive = {
-    case message =>
-  }
-}
-
-class EchoProxy extends ActorProxy("echo")
-class SilentProxy extends ActorProxy("silent")
-
-object ClientPart {
-  import Constants._
-
-  def start(): Unit = Actor.remote.start(LocalHost, LocalPort)
-  def stop(): Unit  = Actor.remote.shutdownClientModule()
-
-  val echo   = Actor.actorOf[EchoProxy].start()
-  val silent = Actor.actorOf[SilentProxy].start()
-}
-
-object ServerPart {
-  import Constants._
-
-  def start(): Unit = {
-    Actor.remote.start(RemoteHost, RemotePort)
-
-    Actor.remote.register(ActorNameEcho, Actor.actorOf[EchoActor])
-    Actor.remote.register(ActorNameSilent, Actor.actorOf[SilentActor])
-  }
-
-  def stop(): Unit  = Actor.remote.shutdownServerModule()
-}
-
-
 /**
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RemoteActorTest {
+class MasterConfTest {
   @Test
-  def testSendMessage: Unit = {
-    try {
-      ServerPart.start()
-      ClientPart.start()
-
-      ClientPart.echo ! "one"
-      ClientPart.echo ! "two"
-      ClientPart.echo ! "three"
-
-      // Give us some delay to print to the console...
-      Thread.sleep(100)
-    }
-    finally {
-      ServerPart.stop()
-      ClientPart.stop()
-    }
+  def testExists: Unit = {
+    val rc = MasterConf.MasterConfResource
+    assertTrue(MasterConf.MasterConfName, rc.exists)
   }
 }

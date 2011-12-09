@@ -35,14 +35,15 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import AquariumActorRoles.AquariumActorRole
-import akka.actor.Actor
-
 /**
- * Parent of all Aquarium actors.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait AquariumActor extends Actor {
-  def role: AquariumActorRole
+object Constants {
+  val RemoteHost = "localhost"
+  val RemotePort = 2552
+  val LocalHost  = "localhost"
+  val LocalPort  = 2551
+  val ActorNameEcho = "echo"
+  val ActorNameSilent = "silent"
 }

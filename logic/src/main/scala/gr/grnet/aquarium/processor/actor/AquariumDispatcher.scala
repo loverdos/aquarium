@@ -37,13 +37,14 @@ package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import akka.actor.ActorRef
+import gr.grnet.aquarium.actor.{DispatcherRole, AquariumActor}
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class AquariumDispatcher extends AquariumActor {
-  def role = AquariumActorRoles.Dispatcher
+  def role = DispatcherRole
 
   def resourceEventProcessor: ActorRef =
     AquariumActorFactory.get.makeResourceEventProcessor

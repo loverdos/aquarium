@@ -1,3 +1,5 @@
+package gr.grnet.aquarium.actor
+
 /*
  * Copyright 2011 GRNET S.A. All rights reserved.
  *
@@ -33,23 +35,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
-
-import gr.grnet.aquarium.logic.events.ResourceEvent
-
-import akka.event.EventHandler
-import gr.grnet.aquarium.actor.{ResourceProcessorRole, AquariumActor}
+sealed abstract class ActorRole(val role: String)
 
 /**
- * 
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * The generic router/dispatcher.
  */
-class ResourceEventProcessor extends AquariumActor with ReflectiveAquariumActor {
-  def role = ResourceProcessorRole
+case object DispatcherRole extends ActorRole("DispatcherRole")
 
-  def knownMessageTypes = List(classOf[ResourceEvent])
-
-  def onResourceEvent(re: ResourceEvent): Unit = {
-    EventHandler.debug(this, "Received %s".format(re))
-  }
-}
+/**
+ * Processes user-related resource events.
+ */
+case object ResourceProcessorRole extends ActorRole("ResourceProcessorRole")

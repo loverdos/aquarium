@@ -35,8 +35,7 @@
 
 package gr.grnet.aquarium.rest.akka.service
 
-import org.slf4j.LoggerFactory
-import cc.spray.can.HttpMethods.GET
+import cc.spray.can.HttpMethods.{GET, POST}
 import cc.spray.can._
 import akka.actor.Actor
 import gr.grnet.aquarium.util.Loggable
@@ -44,50 +43,59 @@ import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json.{JsonAST, Printer}
 
 /**
+ * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class AquariumRESTService(_id: String = "spray-root-service", version: String) extends Actor with Loggable {
   self.id = _id
 
-//  private[this] def jsonResponseOK(body: JValue, pretty: Boolean = false): HttpResponse = {
-//    HttpResponse(
-//      200,
-//      HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil,
-//      if(pretty) {
-//        Printer.pretty(JsonAST.render(body)).getB
-//      } else {
-//        bo
-//      }
-//      )
-//  }
-  protected def receive = {
-    case RequestContext(HttpRequest(GET, "/", _, _, _), _, responder) =>
-      responder.complete(index)
+  private def jsonResponse200(body: JValue, pretty: Boolean = false): HttpResponse = {
+    val stringBody = Printer.pretty(JsonAST.render(body))
+    stringResponse200(stringBody, "application/json")
+  }
+  
+  private def stringResponse(status: Int, stringBody: String, contentType: String = "application/json"): HttpResponse = {
+    HttpResponse(
+      status,
+      HttpHeader("Content-type", "%s;charset=utf-8".format(contentType)) :: Nil,
+      stringBody.getBytes("UTF-8")
+    )
+  }
 
+  private def stringResponse200(stringBody: String, contentType: String = "application/json"): HttpResponse = {
+    stringResponse(200, stringBody, contentType)
+  }
+
+  protected def receive = {
     case RequestContext(HttpRequest(GET, "/ping", _, _, _), _, responder) =>
-      responder.complete(response("PONG!"))
+      responder.complete(stringResponse200("{pong: %s}".format(System.currentTimeMillis())))
 
     case RequestContext(HttpRequest(GET, "/stats", _, _, _), _, responder) => {
       (serverActor ? GetStats).mapTo[Stats].onComplete {
         future =>
           future.value.get match {
             case Right(stats) => responder.complete {
-              response {
+              stringResponse200 (
                 "Uptime              : " + (stats.uptime / 1000.0) + " sec\n" +
                   "Requests dispatched : " + stats.requestsDispatched + '\n' +
                   "Requests timed out  : " + stats.requestsTimedOut + '\n' +
                   "Requests open       : " + stats.requestsOpen + '\n' +
                   "Open connections    : " + stats.connectionsOpen + '\n'
-              }
+              )
             }
-            case Left(ex) => responder.complete(response("Couldn't get server stats due to " + ex, status = 500))
+            case Left(ex) => responder.complete(stringResponse(500, "Couldn't get server stats due to " + ex, "text/plain"))
           }
       }
     }
 
+    case RequestContext(HttpRequest(POST, "/events", _, _, _), _, responder) =>
+      // POST events here.
+      // FIXME: implement
+      responder.complete(stringResponse200("{pong: %s}".format(System.currentTimeMillis())))
+
     case RequestContext(HttpRequest(_, _, _, _, _), _, responder) =>
-      responder.complete(response("Unknown resource!", 404))
+      responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
 
     case Timeout(method, uri, _, _, _, complete) => complete {
       HttpResponse(status = 500).withBody("The " + method + " request to '" + uri + "' has timed out...")
@@ -99,27 +107,4 @@ class AquariumRESTService(_id: String = "spray-root-service", version: String) e
   val defaultHeaders = List(HttpHeader("Content-Type", "text/plain"))
 
   lazy val serverActor = Actor.registry.actorsFor("spray-can-server").head
-
-  def response(msg: String, status: Int = 200) = HttpResponse(status, defaultHeaders, msg.getBytes("ISO-8859-1"))
-
-  lazy val index = HttpResponse(
-    headers = List(HttpHeader("Content-Type", "text/html")),
-    body =
-      <html>
-        <body>
-          <h1>Say hello to
-            <i>spray-can</i>
-            !</h1>
-          <p>Defined resources:</p>
-          <ul>
-            <li>
-              <a href="/ping">/ping</a>
-            </li>
-            <li>
-              <a href="/stats">/stats</a>
-            </li>
-          </ul>
-        </body>
-      </html>.toString.getBytes("UTF-8")
-  )
 }
