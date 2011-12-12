@@ -44,7 +44,7 @@ import gr.grnet.aquarium.util.Loggable
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MongoDBCollection(private[mongodb] val owner: MongoDBConnection, confModel: MongoDBCollectionModel) extends MessageStore with Loggable {
+class MongoDBCollection(private[mongodb] val owner: MongoDBConnection, confModel: MongoDBCollectionModel) extends Loggable {
   def name = confModel.name
   
   private[mongodb] lazy val (_mongoDB, _mongoCollection) = {

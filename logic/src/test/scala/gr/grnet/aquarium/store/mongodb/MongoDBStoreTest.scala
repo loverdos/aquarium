@@ -98,7 +98,7 @@ class MongoDBStoreTest extends Loggable {
         val obj = new BasicDBObject("1", 1)
         logger.debug("Inserting %s into mongodb".format(obj))
         val mongo = new MongoDBConnection(model)
-        val store: Option[MessageStore] = mongo.findCollection("events")
+        /*val store: Option[EventStore] = mongo.findCollection("events")
 
         store match {
           case Some(store) =>
@@ -106,6 +106,7 @@ class MongoDBStoreTest extends Loggable {
           case None =>
             logger.warn("No store found")
         }
+        */
       }
     }
   }
