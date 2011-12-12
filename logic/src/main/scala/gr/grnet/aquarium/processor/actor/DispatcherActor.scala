@@ -35,23 +35,25 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import gr.grnet.aquarium.logic.events.ResourceEvent
-import akka.actor.ActorRef
-import gr.grnet.aquarium.actor.{DispatcherRole, AquariumActor}
+import gr.grnet.aquarium.actor.{ActorProvider, DispatcherRole, AquariumActor}
+import gr.grnet.aquarium.util.Loggable
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class DispatcherActor extends AquariumActor {
+class DispatcherActor extends AquariumActor with Loggable {
+  private[this] var _actorProvider: ActorProvider = _
+
   def role = DispatcherRole
 
-  def resourceEventProcessor: ActorRef =
-    AquariumActorFactory.get.makeResourceEventProcessor
-
   protected def receive = {
-    case message: ResourceEvent =>
-      // Dispatch to resource processor
-      resourceEventProcessor forward message
+    case ConfigureDispatcher(masterConf) ⇒
+      this._actorProvider = masterConf.actorProvider
+      logger.info("Received actorProvider = %s".format(this._actorProvider))
+
+    case UserBalanceRequest(userId) ⇒
+      self reply UserBalanceResponse(userId, 1000.0)
+
   }
 }

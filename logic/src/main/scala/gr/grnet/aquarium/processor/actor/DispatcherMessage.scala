@@ -35,13 +35,20 @@
 
 package gr.grnet.aquarium.processor.actor
 
+import gr.grnet.aquarium.MasterConf
+
 /**
  * This is the base class of the messages the Dispatcher understands.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-sealed trait DispatcherMessage
+sealed trait DispatcherMessage {
+  def bodyToJson: String = "{}"
+  def isError: Boolean = false
+}
 
-/// REST-related messages
-case class RESTRequest(method: String, uri: String, headers: Map[String, String], body: Array[Byte]) extends DispatcherMessage
-case class RESTResponse(status: Int, headers: Map[String, String], body: Array[Byte]) extends DispatcherMessage
+case class ConfigureDispatcher(masterConf: MasterConf) extends DispatcherMessage
+
+case class UserBalanceRequest(userId: String) extends DispatcherMessage
+case class UserBalanceResponse(userId: String, balance: Double) extends DispatcherMessage
+

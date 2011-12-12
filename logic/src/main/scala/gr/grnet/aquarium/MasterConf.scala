@@ -35,12 +35,13 @@
 
 package gr.grnet.aquarium
 
-import actor.ActorProvider
+import actor.{DispatcherRole, ActorProvider}
 import com.ckkloverdos.resource._
 import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
+import processor.actor.ConfigureDispatcher
 import rest.RESTService
 
 /**
@@ -79,8 +80,10 @@ class MasterConf(val props: Props) {
   def defaultClassLoader = Thread.currentThread().getContextClassLoader
 
   def startServices(): Unit = {
-    _actorProvider.start()
     _restService.start()
+    _actorProvider.start()
+
+    _actorProvider.actorForRole(DispatcherRole) ! ConfigureDispatcher(this)
   }
 
   def stopServices(): Unit = {

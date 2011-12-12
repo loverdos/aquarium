@@ -39,14 +39,15 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 	override def parallelExecution = false
 
 	val repo0 = "aquarium nexus" at "http://aquarium.dev.grnet.gr:8081/nexus/content/groups/public"
-	//val repo1 = "java.net.maven2" at "http://download.java.net/maven/2/"
-	//val repo2 = "EclipseLink Repo" at "http://download.eclipse.org/rt/eclipselink/maven.repo"
-	//val repo3 = "jboss" at "http://repository.jboss.org/nexus/content/groups/public/"
-	//val repo4 = "sonatype" at "http://oss.sonatype.org/content/groups/public/"
-	//val repo5 = "jcrontab" at "http://kenai.com/projects/crontab-parser/sources/maven-repo/content/"
-	// val repo6 = "typsafe" at "http://repo.typesafe.com/typesafe/releases/"
-	// val repo7 = "akka" at "http://akka.io/repository/"
-	// repo8 = "twitter" at "http://maven.twttr.com"
+	val repo1 = "java.net.maven2" at "http://download.java.net/maven/2/"
+	val repo2 = "EclipseLink Repo" at "http://download.eclipse.org/rt/eclipselink/maven.repo"
+	val repo3 = "jboss" at "http://repository.jboss.org/nexus/content/groups/public/"
+	val repo4 = "sonatype" at "http://oss.sonatype.org/content/groups/public/"
+	val repo5 = "jcrontab" at "http://kenai.com/projects/crontab-parser/sources/maven-repo/content/"
+	val repo6 = "typsafe" at "http://repo.typesafe.com/typesafe/releases/"
+	val repo7 = "akka" at "http://akka.io/repository/"
+	val repo8 = "twitter" at "http://maven.twttr.com"
+	val repo9 = "tools-snapshots" at "http://scala-tools.org/repo-snapshots"
 
 	val lib_slf4j     = "org.slf4j"      % "slf4j-api"            % "1.6.1"   withSources()
 	val lib_h2        = "com.h2database" % "h2"                   % "1.3.160" withSources()
@@ -75,6 +76,7 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 
     	val lib_javaxrs     = "javax.ws.rs" % "jsr311-api" % "1.1.1" withSources()
     	val lib_spray_can   = "cc.spray.can" % "spray-can" % "0.9.2-SNAPSHOT" withSources()
+    	val lib_spray_server= "cc.spray.can" % "spray-server" % "0.9.0-SNAPSHOT" withSources()
 
 		val lib_converter      = "com.ckkloverdos" % "converter_2.9.1"      % "0.3.0" withSources()
 		val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()

@@ -33,56 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-
-import com.ckkloverdos.props.Props
-import akka.actor.ActorRef
-import gr.grnet.aquarium.Configurable
-
+package gr.grnet.aquarium.rest.actor
 
 /**
- * All actors are provided locally.
+ * Paths recognized and served by the REST API.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class SimpleLocalActorProvider extends ActorProvider with Configurable {
-  def configure(props: Props): Unit = {
-  }
-
-  def start(): Unit = {
-    for(role <- SimpleLocalActorProvider.KnownRoles) {
-      actorForRole(role)
-    }
-  }
-
-  def stop(): Unit = {
-  }
-
-  @throws(classOf[Exception])
-  def actorForRole(role: ActorRole, hints: Props = Props.empty) = {
-    SimpleLocalActorProvider.ActorRefByRole.get(role) match {
-      case Some(actorRef) ⇒
-        actorRef
-      case None ⇒
-        throw new Exception("Cannot create actor for role %s".format(role))
-    }
-  }
-}
-
-object SimpleLocalActorProvider {
-  // Always set Dispatcher at the end.
-  final val KnownRoles = List(
-    ResourceProcessorRole,
-    RESTRole,
-    DispatcherRole)
-
-  lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
-    KnownRoles map { role ⇒
-      (role, role.actorType)
-    } toMap
-  
-  lazy val ActorRefByRole: Map[ActorRole, ActorRef] =
-    ActorClassByRole map { case (role, clazz) ⇒
-    (role, akka.actor.Actor.actorOf(clazz).start())
-  }
+object RESTPaths {
+  final val UserBalance = "/user/(.+)/balance".r
 }

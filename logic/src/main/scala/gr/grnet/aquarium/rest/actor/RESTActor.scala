@@ -42,8 +42,9 @@ import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json.{JsonAST, Printer}
 import gr.grnet.aquarium.MasterConf
 import akka.actor.{ActorRef, Actor}
-import gr.grnet.aquarium.processor.actor.{RESTResponse, RESTRequest}
 import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
+import RESTPaths.{UserBalance}
+import gr.grnet.aquarium.processor.actor.{UserBalanceRequest, DispatcherMessage}
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -94,36 +95,12 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
       }
     }
 
-    case RequestContext(HttpRequest(post@POST, "/events", headers, body, protocol), _, responder) ⇒
-      // POST events here.
-      val masterConf = MasterConf.MasterConf
-      val actorProvider = masterConf.actorProvider
-      val dispatcher = actorProvider.actorForRole(DispatcherRole)
-      val headersMap = headers map { h => (h.name, h.value) } toMap
-      val futureResponse = dispatcher ask RESTRequest("POST", "/events", headersMap, body)
-
-      futureResponse onComplete { fr ⇒
-        fr.value match {
-          case None ⇒
-            // TODO: Will this ever happen??
-          case Some(Left(throwable)) ⇒
-            // TODO: Log something here and give back some more detailed info
-            responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
-          case Some(Right(actualResponse)) ⇒
-            actualResponse match {
-              case RESTResponse(status, headers, body) ⇒
-                responder complete {
-                  HttpResponse(
-                    status,
-                    headers map { case (k, v) => HttpHeader(k, v)} toList,
-                    body
-                  )
-                }
-              case unknownResponse ⇒
-                // TODO: Log something here and give back some more detailed info
-                responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
-            }
-        }
+    case RequestContext(HttpRequest(GET, uri, headers, body, protocol), _, responder) ⇒
+      uri match {
+        case UserBalance(userId) ⇒
+          callDispatcher(UserBalanceRequest(userId), responder)
+        case _ ⇒
+          responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
       }
 
     case RequestContext(HttpRequest(_, _, _, _, _), _, responder) ⇒
@@ -134,6 +111,34 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
     }
   }
 
+
+  def callDispatcher(message: DispatcherMessage, responder: RequestResponder): Unit = {
+    val masterConf = MasterConf.MasterConf
+    val actorProvider = masterConf.actorProvider
+    val dispatcher = actorProvider.actorForRole(DispatcherRole)
+    val futureResponse = dispatcher ask message
+
+    futureResponse onComplete { future ⇒
+        future.value match {
+          case None ⇒
+          // TODO: Will this ever happen??
+          case Some(Left(error)) ⇒
+            logger.error("Error serving %s: %s".format(message, error))
+            responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+          case Some(Right(actualResponse)) ⇒
+            actualResponse match {
+              case dispatcherResponse: DispatcherMessage if(!dispatcherResponse.isError) ⇒
+                responder.complete(HttpResponse(status = 200, body = dispatcherResponse.bodyToJson.getBytes("UTF-8"), headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
+              case dispatcherResponse: DispatcherMessage ⇒
+                logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
+                responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+              case _ ⇒
+                logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
+                responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+            }
+        }
+    }
+  }
   ////////////// helpers //////////////
 
   val defaultHeaders = List(HttpHeader("Content-Type", "text/plain"))
