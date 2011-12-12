@@ -66,10 +66,14 @@ object Store extends Loggable {
     MasterConf.MasterConf.get(MasterConf.Keys.persistence_port)
   }
 
-  def getConnection(): Option[MessageStore] = {
+  private lazy val db = {
+    MasterConf.MasterConf.get(MasterConf.Keys.persistence_db)
+  }
+
+  def getEventStore(): Option[EventStore] = {
     provider match {
       case "mongodb" =>
-        Some(new MongoDBStore(host, port, uname, passwd))
+        Some(new MongoDBStore(host, port, uname, passwd, db))
       case _ => 
         logger.error("Provider <%s> not supported".format(provider))
         None

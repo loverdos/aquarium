@@ -36,8 +36,11 @@
 package gr.grnet.aquarium.store.mongodb
 
 import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.store.{RecordID, StoreException, EventStore}
 import com.mongodb._
-import gr.grnet.aquarium.store.{MessageStoreException, MessageStore}
+import util.{JSONParseException, JSON}
+import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
+import gr.grnet.aquarium.logic.events.{ResourceEvent, AquariumEvent}
 
 /**
  * Mongodb implementation of the message store.
@@ -46,10 +49,11 @@ import gr.grnet.aquarium.store.{MessageStoreException, MessageStore}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 class MongoDBStore(host: String, port: String,
-                   username: String, passwd: String)
-  extends MessageStore with Loggable {
+                   username: String, passwd: String,
+                   database: String)
+  extends EventStore with Loggable {
 
-  private[mongo] object Connection {
+  private object Connection {
     lazy val mongo: Option[Mongo] = {
       try {
         val addr = new ServerAddress(host, port.toInt)
@@ -67,21 +71,72 @@ class MongoDBStore(host: String, port: String,
     }
   }
 
-  private[store] lazy val events: DB = {
+  private[store] lazy val events: DBCollection = getCollection("events")
+
+  private[store] lazy val users: DBCollection = getCollection("user")
+
+  private[store]def getCollection(name: String): DBCollection = {
     Connection.mongo match {
-      case Some(x) => x.getDB("events")
-      case None => throw new MessageStoreException("No connection to Mongo")
+      case Some(x) =>
+        val db = x.getDB(database)
+        if(!db.authenticate(username, passwd.toCharArray))
+          throw new StoreException("Could not authenticate user %s".format(username))
+        db.getCollection(name)
+      case None => throw new StoreException("No connection to Mongo")
     }
   }
 
-  private[store] lazy val users: DB = {
-    Connection.mongo match {
-      case Some(x) => x.getDB("users")
-      case None => throw new MessageStoreException("No connection to Mongo")
+  /* TODO: Some of the following methods rely on JSON (de-)serialization).
+   * A method based on proper object serialization would be much faster.
+   */
+
+  //EventStore methods
+  def store[A <: AquariumEvent](event: A): Maybe[RecordID] = {
+    try {
+      // Store
+      val obj = JSON.parse(event.toJson).asInstanceOf[DBObject]
+      events.insert(obj)
+
+      // TODO: Make this retrieval a configurable option
+      // Get back to retrieve unique id
+      val q = new BasicDBObject()
+      q.put("id", event.id)
+
+      val cur = events.find(q)
+
+      if (!cur.hasNext) {
+        logger.error("Failed to store event: %s".format(event))
+        Failed(new StoreException("Failed to store event: %s".format(event)))
+      }
+
+      Just(RecordID(cur.next.get("id").toString))
+    } catch {
+      case j: JSONParseException =>
+        logger.error("Error parsing JSON for event %s %s".format(event,j)); Failed(j)
+      case m: MongoException =>
+        logger.error("Unknown Mongo error: %s".format(m)); Failed(m)
     }
   }
 
-  def storeString(message: String) = {
+  def findById[A <: AquariumEvent](id: String): Option[A] = {
+    val q = new BasicDBObject()
+    q.put("id", id)
 
+    val cur = events.find(q)
+
+    if (cur.hasNext)
+      deserialize(cur.next)
+    else
+      None
+  }
+
+  def findByUserId[A <: AquariumEvent](userId: String)
+                                      (sortWith: Option[(A, A) => Boolean]): List[A] = {
+    List()
+  }
+
+  private def deserialize[A <: AquariumEvent](a: DBObject): A = {
+    //TODO: Distinguish events and deserialize appropriately
+    ResourceEvent.fromJson(JSON.serialize(a)).asInstanceOf[A]
   }
 }
