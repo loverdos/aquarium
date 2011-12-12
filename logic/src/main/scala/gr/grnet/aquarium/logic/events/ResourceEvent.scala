@@ -47,13 +47,14 @@ import gr.grnet.aquarium.logic.accounting.Policy
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
 case class ResourceEvent(
+  override val id: String,
   userId: Long,
   cliendId: Long,
   resource: String,
   override val timestamp: Long,
   eventVersion: Short,
   details: Map[String, String]
-) extends AquariumEvent(timestamp) {
+) extends AquariumEvent(id, timestamp) {
 
   def validate() : Boolean = {
 

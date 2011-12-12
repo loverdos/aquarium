@@ -73,6 +73,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
 
     ResourceEvent(
+      rnd.nextString(35),
       rnd.nextInt(userIds.max),
       rnd.nextInt(clientIds.max),
       res,ts,1,extra)

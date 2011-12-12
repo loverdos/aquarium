@@ -46,7 +46,7 @@ import net.liftweb.json.{Xml, Printer, Extraction, JsonAST}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-abstract class AquariumEvent(val timestamp: Long) {
+abstract class AquariumEvent(val id: String, val timestamp: Long) {
 
   def validate: Boolean
 
