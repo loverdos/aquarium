@@ -35,20 +35,9 @@
 
 package gr.grnet.aquarium.store
 
-import com.ckkloverdos.maybe.Maybe
-import net.liftweb.json.JsonAST.JValue
-
-
 /**
- * An abstraction for message stores. We assume that our messages are
- * documents with a string representation, e.g. `JSON`.
+ * Represents an ID given to a message by the store.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait MessageStore {
-  def storeString(message: String): Maybe[MessageID]
-
-  def storeJson(json: JValue): Maybe[MessageID] = {
-    storeString(json.toString)
-  }
-}
+case class RecordID(id: String)

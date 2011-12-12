@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.store
 
 /**
- * Thrown when
+ * Thrown when an error occurs at the persistence layer.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class MessageStoreException(msg: String) extends Exception(msg)
+class StoreException(msg: String) extends Exception(msg)

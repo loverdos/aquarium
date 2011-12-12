@@ -35,9 +35,19 @@
 
 package gr.grnet.aquarium.store
 
+import com.ckkloverdos.maybe.Maybe
+import gr.grnet.aquarium.logic.events.AquariumEvent
+
 /**
- * Represents an ID given to a message by the store.
+ * An abstraction for Aquarium event stores.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Georgios Gousios <gousiosg@gmail.com>.
  */
-case class MessageID(id: String)
+trait EventStore {
+  def store[A <: AquariumEvent](event: A): Maybe[RecordID]
+
+  def findById[A <: AquariumEvent](id: String): Option[A]
+
+  def findByUserId[A <: AquariumEvent](userId: String)(sortWith: Option[(A, A) => Boolean]): List[A]
+}
