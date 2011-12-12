@@ -35,21 +35,53 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import gr.grnet.aquarium.store.MessageStore
-import com.ckkloverdos.maybe.NoVal
+import gr.grnet.aquarium.util.Loggable
+import com.mongodb._
+import gr.grnet.aquarium.store.{MessageStoreException, MessageStore}
 
 /**
  * Mongodb implementation of the message store.
  *
- * Using Casbah as the underlying library.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class MongoDBStore(connection: MongoDBConnection) extends MessageStore {
-  def storeString(message: String) = {
-    val mongo = connection._mongo
+class MongoDBStore(host: String, port: String,
+                   username: String, passwd: String)
+  extends MessageStore with Loggable {
 
-    // FIXME: implement
-    NoVal
+  private[mongo] object Connection {
+    lazy val mongo: Option[Mongo] = {
+      try {
+        val addr = new ServerAddress(host, port.toInt)
+        val opt = new MongoOptions()
+        Some(new Mongo(addr, opt))
+      } catch {
+        case e: MongoException =>
+          logger.error(("Cannot connect to mongo at %s:%s (uname=%s). " +
+            "Cause:").format(host,port,username, e))
+          None
+        case nfe: NumberFormatException =>
+          logger.error("%s is not a valid port number".format(port))
+          None
+      }
+    }
+  }
+
+  private[store] lazy val events: DB = {
+    Connection.mongo match {
+      case Some(x) => x.getDB("events")
+      case None => throw new MessageStoreException("No connection to Mongo")
+    }
+  }
+
+  private[store] lazy val users: DB = {
+    Connection.mongo match {
+      case Some(x) => x.getDB("users")
+      case None => throw new MessageStoreException("No connection to Mongo")
+    }
+  }
+
+  def storeString(message: String) = {
+
   }
 }
