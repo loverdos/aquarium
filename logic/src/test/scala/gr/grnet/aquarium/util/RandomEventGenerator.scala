@@ -36,7 +36,6 @@ package gr.grnet.aquarium.util
  */
 
 import akka.amqp._
-import java.util.Date
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import util.Random
@@ -88,7 +87,9 @@ trait RandomEventGenerator extends AkkaAMQP {
     val publisher = producer("aquarium")
 
     (1 to num).foreach {
-      n => publisher ! Message(nextResourceEvent.toBytes, "test.msg")
+      val event = nextResourceEvent
+      n => publisher ! Message(event.toBytes,
+        "event.%d.%s".format(event.cliendId, event.resource))
     }
   }
 }
