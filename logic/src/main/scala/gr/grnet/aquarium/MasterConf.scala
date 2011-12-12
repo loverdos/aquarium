@@ -47,7 +47,7 @@ import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConver
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MasterConf(props: Props) {
+class MasterConf(val props: Props) {
   import MasterConf.Keys
 
   private[this] val _actorProvider: ActorProvider = {
