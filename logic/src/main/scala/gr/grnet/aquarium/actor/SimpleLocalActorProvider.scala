@@ -52,7 +52,7 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable {
 
   @throws(classOf[Exception])
   def actorForRole(role: ActorRole, hints: Props = Props.empty) = {
-    SimpleLocalActorProvider.ActorRefByRoles.get(role) match {
+    SimpleLocalActorProvider.ActorRefByRole.get(role) match {
       case Some(actorRef) ⇒
         actorRef
       case None ⇒
@@ -67,7 +67,7 @@ object SimpleLocalActorProvider {
       (role, role.actorType)
     } toMap
   
-  lazy val ActorRefByRoles: Map[ActorRole, ActorRef] = ActorClassByRole map { case (role, clazz) ⇒
+  lazy val ActorRefByRole: Map[ActorRole, ActorRef] = ActorClassByRole map { case (role, clazz) ⇒
     (role, akka.actor.Actor.actorOf(clazz).start())
   }
 }

@@ -105,7 +105,7 @@ object MasterConf {
   val ConfBaseFolderSysProp = SysProp("aquarium.conf.base.folder")
 
   /**
-   * The default resource context used in the application. If you need toi
+   * The resource context used in the application.
    */
   lazy val MasterResourceContext = {
     val rc0 = ClasspathBaseResourceContext
@@ -205,5 +205,12 @@ object MasterConf {
      * Comma separated list of exchanges known to aquarium
      */
     final val amqp_exchanges = "amqp.exchanges"
+
+    /**
+     * REST service listening port.
+     *
+     * Default is 8080.
+     */
+    final val rest_port = "rest.port"
   }
 }

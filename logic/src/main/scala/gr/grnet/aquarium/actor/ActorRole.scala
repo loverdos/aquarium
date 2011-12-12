@@ -1,7 +1,3 @@
-package gr.grnet.aquarium.actor
-
-import gr.grnet.aquarium.processor.actor.{ResourceProcessorActor, DispatcherActor}
-
 
 /*
  * Copyright 2011 GRNET S.A. All rights reserved.
@@ -36,7 +32,10 @@ import gr.grnet.aquarium.processor.actor.{ResourceProcessorActor, DispatcherActo
  * documentation are those of the authors and should not be
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
- */
+ */package gr.grnet.aquarium.actor
+
+import gr.grnet.aquarium.processor.actor.{ResourceProcessorActor, DispatcherActor}
+import gr.grnet.aquarium.rest.actor.RESTActor
 
 /**
  * Each actor plays one role. This is a one-to-one correspondance.
@@ -54,3 +53,8 @@ case object DispatcherRole extends ActorRole("DispatcherRole", classOf[Dispatche
  * Processes user-related resource events.
  */
 case object ResourceProcessorRole extends ActorRole("ResourceProcessorRole", classOf[ResourceProcessorActor])
+
+/**
+ * REST request handler.
+ */
+case object RESTRole extends ActorRole("RESTRole", classOf[RESTActor])
