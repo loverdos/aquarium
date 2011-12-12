@@ -1,3 +1,5 @@
+package gr.grnet.aquarium.rest.actor
+
 /*
  * Copyright 2011 GRNET S.A. All rights reserved.
  *
@@ -33,24 +35,22 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.rest.akka.service
-
 import cc.spray.can.HttpMethods.{GET, POST}
 import cc.spray.can._
 import gr.grnet.aquarium.util.Loggable
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json.{JsonAST, Printer}
 import gr.grnet.aquarium.MasterConf
-import gr.grnet.aquarium.actor.DispatcherRole
 import akka.actor.{ActorRef, Actor}
 import gr.grnet.aquarium.processor.actor.{RESTResponse, RESTRequest}
+import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class AquariumRESTService(_id: String = "spray-root-service", version: String) extends Actor with Loggable {
+class RESTActor(_id: String = "spray-root-service", version: String) extends AquariumActor with Loggable {
   self.id = _id
 
   private def jsonResponse200(body: JValue, pretty: Boolean = false): HttpResponse = {
@@ -137,4 +137,6 @@ class AquariumRESTService(_id: String = "spray-root-service", version: String) e
   val defaultHeaders = List(HttpHeader("Content-Type", "text/plain"))
 
   lazy val serverActor = Actor.registry.actorsFor("spray-can-server").head
+
+  def role = RESTRole
 }
