@@ -74,7 +74,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
   protected def receive = {
     case RequestContext(HttpRequest(GET, "/ping", _, _, _), _, responder) ⇒
-      responder.complete(stringResponse200("{pong: %s}".format(System.currentTimeMillis())))
+      responder.complete(stringResponse200("{\"pong\": %s}".format(System.currentTimeMillis())))
 
     case RequestContext(HttpRequest(GET, "/stats", _, _, _), _, responder) ⇒ {
       (serverActor ? GetStats).mapTo[Stats].onComplete {
