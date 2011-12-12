@@ -79,6 +79,7 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 		val lib_converter      = "com.ckkloverdos" % "converter_2.9.1"      % "0.3.0" withSources()
 		val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()
 
+		val lib_test = "com.novocode" % "junit-interface" % "0.7" % "test->default"
 
 		// val model = project(Path.fromFile("../model"), "model", new Model(_))
 	}
