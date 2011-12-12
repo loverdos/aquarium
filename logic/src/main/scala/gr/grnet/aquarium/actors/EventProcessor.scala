@@ -39,6 +39,9 @@ import gr.grnet.aquarium.messaging.AkkaAMQP
 import akka.actor.{ActorRef, Actor}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import akka.amqp.{Reject, Acknowledge, Acknowledged, Delivery}
+import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.store.Store
+import com.ckkloverdos.maybe.{NoVal, Failed, Just}
 
 /**
  * An actor that gets events from the queue, stores them persistently
@@ -46,7 +49,7 @@ import akka.amqp.{Reject, Acknowledge, Acknowledged, Delivery}
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class EventProcessor extends AkkaAMQP {
+class EventProcessor extends AkkaAMQP with Loggable {
 
   case class AckData(deliveryTag: Long, queue: ActorRef)
   case class Persist(event: ResourceEvent, sender: ActorRef, ackData: AckData)
@@ -72,7 +75,7 @@ class EventProcessor extends AkkaAMQP {
 
       case Acknowledged(deliveryTag) =>
 
-      case _ => println("Unknown delivery")
+      case _ => logger.warn("Unknown message")
     }
   }
 
@@ -86,17 +89,27 @@ class EventProcessor extends AkkaAMQP {
           sender ! PersistOK(ackData)
         else
           sender ! PersistFailed(ackData)
-
-      case Acknowledged(deliveryTag) => println("Acked: " + deliveryTag)
-      case _ => println("Unknown delivery")
+      case _ => logger.warn("Unknown message")
     }
 
     def exists(event: ResourceEvent): Boolean = {
-      false
+      Store.getEventStore match {
+        case Some(x) => x.findById(event.id).isEmpty
+        case None => false
+      }
     }
 
     def persist(event: ResourceEvent): Boolean = {
-      true
+      Store.getEventStore match {
+        case Some(x) => x.store(event) match {
+          case Just(x) => true
+          case x: Failed =>
+            logger.error("Could not save event: %s".format(event))
+            false
+          case NoVal => false
+        }
+        case None => false
+      }
     }
   }
 
