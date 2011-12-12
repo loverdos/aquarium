@@ -50,7 +50,9 @@ import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RESTActor(_id: String = "spray-root-service", version: String) extends AquariumActor with Loggable {
+class RESTActor(_id: String) extends AquariumActor with Loggable {
+  def this() = this("spray-root-service")
+
   self.id = _id
 
   private def jsonResponse200(body: JValue, pretty: Boolean = false): HttpResponse = {
