@@ -62,12 +62,15 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable {
 }
 
 object SimpleLocalActorProvider {
+  final val KnownRoles = List(DispatcherRole, ResourceProcessorRole, RESTRole)
+
   lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
-    (DispatcherRole :: ResourceProcessorRole :: Nil) map { role ⇒
+    KnownRoles map { role ⇒
       (role, role.actorType)
     } toMap
   
-  lazy val ActorRefByRole: Map[ActorRole, ActorRef] = ActorClassByRole map { case (role, clazz) ⇒
+  lazy val ActorRefByRole: Map[ActorRole, ActorRef] =
+    ActorClassByRole map { case (role, clazz) ⇒
     (role, akka.actor.Actor.actorOf(clazz).start())
   }
 }
