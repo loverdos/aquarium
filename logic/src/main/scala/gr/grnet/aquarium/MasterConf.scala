@@ -41,6 +41,7 @@ import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
+import rest.RESTService
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -50,16 +51,23 @@ import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConver
 class MasterConf(val props: Props) {
   import MasterConf.Keys
 
-  private[this] val _actorProvider: ActorProvider = {
-    val className = props.getEx(Keys.actor_provider_class)
-    val actorProvider = defaultClassLoader.loadClass(className).newInstance().asInstanceOf[ActorProvider]
-    
-    actorProvider match {
+  private[this] def newInstance[C : Manifest](className: String): C = {
+    val c = defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C]
+    c match {
       case configurable: Configurable ⇒
         configurable configure props
+        c
+      case _ ⇒
+        c
     }
+  }
 
-    actorProvider
+  private[this] val _actorProvider: ActorProvider = {
+    newInstance[ActorProvider](props.getEx(Keys.actor_provider_class))
+  }
+  
+  private[this] val _restService: RESTService = {
+    newInstance[RESTService](props.getEx(Keys.rest_service_class))
   }
 
   def get(prop: String): String =
@@ -69,6 +77,23 @@ class MasterConf(val props: Props) {
     }
 
   def defaultClassLoader = Thread.currentThread().getContextClassLoader
+
+  def startServices(): Unit = {
+    _actorProvider.start()
+    _restService.start()
+  }
+
+  def stopServices(): Unit = {
+    _restService.stop()
+    _actorProvider.stop()
+    
+//    akka.actor.Actor.registry.shutdownAll()
+  }
+
+  def stopServicesWithDelay(millis: Long) {
+    Thread sleep millis
+    stopServices()
+  }
   
   def actorProvider = _actorProvider
 }
@@ -173,6 +198,11 @@ object MasterConf {
      * Will be instantiated reflectively and should have a public default constructor.
      */
     final val actor_provider_class = "actor.provider.class"
+
+    /**
+     * The class that initializes the REST service
+     */
+    final val rest_service_class = "rest.service.class"
 
     /**
      * Comma separated list of amqp servers running in active-active

@@ -51,4 +51,8 @@ trait ActorProvider {
    */
   @throws(classOf[Exception])
   def actorForRole(role: ActorRole, hints: Props = Props.empty): ActorRef
+
+  def start(): Unit
+
+  def stop(): Unit
 }

@@ -55,15 +55,11 @@ import net.liftweb.json.JsonAST.JInt
  */
 class RESTActorTest {
   @Test
-  def testOneCall: Unit = {
+  def testPing: Unit = {
     // Initialize configuration subsystem
     val mc = MasterConf.MasterConf
+    mc.startServices()
     val port = mc.props.getInt(MasterConf.Keys.rest_port).getOr(8080)
-    // Initialize REST actor
-    val rest = mc.actorProvider.actorForRole(RESTRole)
-    // Initialize spray underlying server
-    val server = Actor.actorOf(new SprayHttpServer()).start()
-    val client = Actor.actorOf(new SprayHttpClient()).start()
     val dialog = SprayHttpDialog("localhost", port)
 
     val pingReq = HttpRequest(method = GET, uri = "/ping", headers = HttpHeader("Content-Type", "text/plain; charset=UTF-8")::Nil)
@@ -86,10 +82,7 @@ class RESTActorTest {
           fail("Got nothing")
       }
     }
-    
-    Thread.sleep(3000)
-    server ! PoisonPill
-    client ! PoisonPill
-    Actor.registry.shutdownAll()
+
+    mc.stopServicesWithDelay(1000)
   }
 }

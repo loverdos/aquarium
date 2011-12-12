@@ -33,52 +33,15 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
+package gr.grnet.aquarium.rest
 
-import com.ckkloverdos.props.Props
-import akka.actor.ActorRef
 import gr.grnet.aquarium.Configurable
 
-
 /**
- * All actors are provided locally.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class SimpleLocalActorProvider extends ActorProvider with Configurable {
-  def configure(props: Props): Unit = {
-  }
-
-  def start(): Unit = {
-    for(role <- SimpleLocalActorProvider.KnownRoles) {
-      actorForRole(role)
-    }
-  }
-
-  def stop(): Unit = {
-  }
-
-  @throws(classOf[Exception])
-  def actorForRole(role: ActorRole, hints: Props = Props.empty) = {
-    SimpleLocalActorProvider.ActorRefByRole.get(role) match {
-      case Some(actorRef) ⇒
-        actorRef
-      case None ⇒
-        throw new Exception("Cannot create actor for role %s".format(role))
-    }
-  }
-}
-
-object SimpleLocalActorProvider {
-  final val KnownRoles = List(DispatcherRole, ResourceProcessorRole, RESTRole)
-
-  lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
-    KnownRoles map { role ⇒
-      (role, role.actorType)
-    } toMap
-  
-  lazy val ActorRefByRole: Map[ActorRole, ActorRef] =
-    ActorClassByRole map { case (role, clazz) ⇒
-    (role, akka.actor.Actor.actorOf(clazz).start())
-  }
+trait RESTService {
+  def start(): Unit
+  def stop(): Unit
 }

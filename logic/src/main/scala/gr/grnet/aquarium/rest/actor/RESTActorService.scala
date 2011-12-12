@@ -33,52 +33,37 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
+package gr.grnet.aquarium.rest
+package actor
 
-import com.ckkloverdos.props.Props
-import akka.actor.ActorRef
-import gr.grnet.aquarium.Configurable
-
+import gr.grnet.aquarium.MasterConf
+import gr.grnet.aquarium.actor.RESTRole
+import _root_.akka.actor._
+import cc.spray.can.{ClientConfig, HttpClient, ServerConfig, HttpServer}
 
 /**
- * All actors are provided locally.
- *
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class SimpleLocalActorProvider extends ActorProvider with Configurable {
-  def configure(props: Props): Unit = {
-  }
+class RESTActorService extends RESTService {
+  private[this] var _port: Int = 8080
+  private[this] var _restActor: ActorRef = _
+  private[this] var _serverActor: ActorRef = _
+  private[this] var _clientActor: ActorRef = _
 
   def start(): Unit = {
-    for(role <- SimpleLocalActorProvider.KnownRoles) {
-      actorForRole(role)
-    }
+    val mc = MasterConf.MasterConf
+    this._port = mc.props.getInt(MasterConf.Keys.rest_port).getOr(this._port)
+    this._restActor = mc.actorProvider.actorForRole(RESTRole)
+    // Start Spray subsystem
+    val serverConfig = ServerConfig(port = _port)
+    val clientConfig = ClientConfig()
+    this._serverActor = Actor.actorOf(new HttpServer(serverConfig)).start()
+    this._clientActor = Actor.actorOf(new HttpClient(clientConfig)).start()
   }
 
   def stop(): Unit = {
-  }
-
-  @throws(classOf[Exception])
-  def actorForRole(role: ActorRole, hints: Props = Props.empty) = {
-    SimpleLocalActorProvider.ActorRefByRole.get(role) match {
-      case Some(actorRef) ⇒
-        actorRef
-      case None ⇒
-        throw new Exception("Cannot create actor for role %s".format(role))
-    }
-  }
-}
-
-object SimpleLocalActorProvider {
-  final val KnownRoles = List(DispatcherRole, ResourceProcessorRole, RESTRole)
-
-  lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
-    KnownRoles map { role ⇒
-      (role, role.actorType)
-    } toMap
-  
-  lazy val ActorRefByRole: Map[ActorRole, ActorRef] =
-    ActorClassByRole map { case (role, clazz) ⇒
-    (role, akka.actor.Actor.actorOf(clazz).start())
+    this._serverActor ! PoisonPill
+    this._clientActor ! PoisonPill
   }
 }
