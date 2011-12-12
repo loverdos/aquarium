@@ -242,5 +242,30 @@ object MasterConf {
      * Default is 8080.
      */
     final val rest_port = "rest.port"
+
+    /*
+     * Provider for persistence services
+     */
+    final val persistence_provider = "persistence.provider"
+
+    /**
+     * Hostname for the persistence service
+     */
+    final val persistence_host = "persistence.host"
+
+    /**
+     * Username for connecting to the persistence service
+     */
+    final val persistence_username = "persistence.username"
+
+    /**
+     *  Password for connecting to the persistence service
+     */
+    final val persistence_password = "persistence.password"
+
+    /**
+     *  Password for connecting to the persistence service
+     */
+    final val persistence_port = "persistence.port"
   }
 }
