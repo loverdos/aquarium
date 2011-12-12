@@ -200,5 +200,10 @@ object MasterConf {
      * Virtual host on the AMQP server
      */
     final val amqp_vhost = "amqp.vhost"
+
+    /**
+     * Comma separated list of exchanges known to aquarium
+     */
+    final val amqp_exchanges = "amqp.exchanges"
   }
 }

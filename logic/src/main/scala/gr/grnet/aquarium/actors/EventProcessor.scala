@@ -38,7 +38,6 @@ package gr.grnet.aquarium.actors
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import akka.actor.{ActorRef, Actor}
 import gr.grnet.aquarium.logic.events.ResourceEvent
-import akka.amqp.Reject._
 import akka.amqp.{Reject, Acknowledge, Acknowledged, Delivery}
 
 /**

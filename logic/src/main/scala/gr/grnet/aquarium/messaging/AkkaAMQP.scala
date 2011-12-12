@@ -35,18 +35,19 @@
 
 package gr.grnet.aquarium.messaging
 
-import com.rabbitmq.client.Address
 import akka.actor._
 import akka.amqp.{Topic, AMQP}
 import akka.amqp.AMQP._
 import gr.grnet.aquarium.MasterConf
+import com.rabbitmq.client.Address
+import gr.grnet.aquarium.util.Loggable
 
 /**
  * Functionality for working with queues.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait AkkaAMQP {
+trait AkkaAMQP extends Loggable {
 
   private lazy val connection = {
 
@@ -67,10 +68,15 @@ trait AkkaAMQP {
         None))
   }
 
+  private lazy val exchanges = {
+    MasterConf.MasterConf.get(MasterConf.Keys.amqp_exchanges).split(",")
+  }
+
   //Queues and exchnages are by default durable and persistent
   val decl = ActiveDeclaration(durable = true, autoDelete = false)
 
-  def consumer(routekey: String, queue: String, exchange: String, recipient: ActorRef, selfAck: Boolean) =
+  def consumer(routekey: String, queue: String, exchange: String,
+               recipient: ActorRef, selfAck: Boolean) =
     AMQP.newConsumer(
       connection = connection,
       consumerParameters = ConsumerParameters(
@@ -82,9 +88,15 @@ trait AkkaAMQP {
         selfAcknowledging = selfAck
         ))
 
-  def producer(exchange: String) = AMQP.newProducer(
+  def producer(exchange: String) = {
+    
+    if (!exchanges.contains(exchange))
+      logger.warn("Exchange %s is unknown".format(exchange))
+
+    AMQP.newProducer(
       connection = connection,
       producerParameters = ProducerParameters(
         exchangeParameters = Some(ExchangeParameters(exchange, Topic, decl)),
         channelParameters = Some(ChannelParameters(prefetchSize = 0))))
+  }
 }
