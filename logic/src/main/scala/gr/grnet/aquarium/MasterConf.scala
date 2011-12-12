@@ -267,5 +267,10 @@ object MasterConf {
      *  Password for connecting to the persistence service
      */
     final val persistence_port = "persistence.port"
+
+    /**
+     *  The DB schema to use
+     */
+    final val persistence_db = "persistence.db"
   }
 }
