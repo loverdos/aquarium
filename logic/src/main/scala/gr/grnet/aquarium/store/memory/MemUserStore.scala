@@ -33,45 +33,36 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.store.memory
 
-import actor.DispatcherRole
-import org.junit.Test
-import org.junit.Assert._
-import org.junit.Assume.assumeTrue
+import gr.grnet.aquarium.user.UserState
+import gr.grnet.aquarium.Configurable
+import com.ckkloverdos.props.Props
+import gr.grnet.aquarium.store.{RecordID, UserStore}
+import com.ckkloverdos.maybe.{Just, Maybe}
 
 /**
+ * A user store backed by main memory.
+ *
+ * The IDs returned are the original user IDs.
  * 
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class MasterConfTest {
-  @Test
-  def testExists: Unit = {
-    val rc = MasterConf.MasterConfResource
-    assertTrue(MasterConf.MasterConfName, rc.exists)
+
+class MemUserStore extends UserStore with Configurable {
+  private[this] val map = new java.util.concurrent.ConcurrentHashMap[String, UserState]()
+  
+  def configure(props: Props) = {
   }
 
-  @Test
-  def testLoad: Unit = {
-    val mc = MasterConf.MasterConf
+  def storeUserState(userState: UserState): Maybe[RecordID] = {
+    map.put(userState.userId, userState)
+    Just(RecordID(userState.userId))
   }
 
-  @Test
-  def testGetActorProvider: Unit = {
-    val mc = MasterConf.MasterConf
-    val ap = mc.actorProvider
+  def findUserStateById(id: String) = {
+    Maybe(map.get(id))
   }
 
-  @Test
-  def testGetDispatcherActor: Unit = {
-    val mc = MasterConf.MasterConf
-    val ap = mc.actorProvider
-    val dispatcher = ap.actorForRole(DispatcherRole)
-  }
-
-  @Test
-  def testGetUserStore: Unit = {
-    val mc = MasterConf.MasterConf
-    val userStore = mc.userStore
-  }
+  def findUserStateByUserId(userID: String, atMost: Int) = findUserStateById(userID).toList
 }

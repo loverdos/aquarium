@@ -43,13 +43,15 @@ import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 import processor.actor.ConfigureDispatcher
 import rest.RESTService
+import store.UserStore
+import util.Loggable
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MasterConf(val props: Props) {
+class MasterConf(val props: Props) extends Loggable {
   import MasterConf.Keys
 
   private[this] def newInstance[C : Manifest](className: String): C = {
@@ -64,11 +66,21 @@ class MasterConf(val props: Props) {
   }
 
   private[this] val _actorProvider: ActorProvider = {
-    newInstance[ActorProvider](props.getEx(Keys.actor_provider_class))
+    val instance = newInstance[ActorProvider](props.getEx(Keys.actor_provider_class))
+    logger.info("Loaded ActorProvider: %s".format(instance.getClass))
+    instance
   }
   
   private[this] val _restService: RESTService = {
-    newInstance[RESTService](props.getEx(Keys.rest_service_class))
+    val instance = newInstance[RESTService](props.getEx(Keys.rest_service_class))
+    logger.info("Loaded RESTService: %s".format(instance.getClass))
+    instance
+  }
+
+  private[this] val _userStore: UserStore = {
+    val instance = newInstance[UserStore](props.getEx(Keys.user_store_class))
+    logger.info("Loaded UserStore: %s".format(instance.getClass))
+    instance
   }
 
   def get(prop: String): String =
@@ -99,6 +111,8 @@ class MasterConf(val props: Props) {
   }
   
   def actorProvider = _actorProvider
+
+  def userStore = _userStore
 }
 
 object MasterConf {
@@ -206,6 +220,11 @@ object MasterConf {
      * The class that initializes the REST service
      */
     final val rest_service_class = "rest.service.class"
+
+    /**
+     * The class that implements the User store
+     */
+    final val user_store_class = "user.store.class"
 
     /**
      * Comma separated list of amqp servers running in active-active
