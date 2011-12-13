@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.user
 
+import gr.grnet.aquarium.util.json.JsonSupport
+
 /**
  * A comprehensive representation of the User's state.
  *
@@ -47,9 +49,10 @@ package gr.grnet.aquarium.user
  */
 
 case class UserState(
+  userId: String,
   credits: CreditSnapshot,
   agreement: AgreementSnapshot,
   roles: RolesSnapshot,
   paymentOrders: PaymentOrdersSnapshot,
   ownedGroups: OwnedGroupsSnapshot,
-  groupMemberships: GroupMembershipsSnapshot)
+  groupMemberships: GroupMembershipsSnapshot) extends JsonSupport

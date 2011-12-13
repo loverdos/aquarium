@@ -48,6 +48,7 @@ import cc.spray.can.{HttpResponse, HttpHeader, HttpRequest, HttpServer ⇒ Spray
 import akka.actor.{PoisonPill, Actor}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import net.liftweb.json.JsonAST.JInt
+import gr.grnet.aquarium.util.json.JsonHelpers
 
 /**
  * 
@@ -70,7 +71,7 @@ class RESTActorTest {
           val stringBody = new String(bytesBody, "UTF-8")
           println("!! Got stringBody = %s".format(stringBody))
           // Note that the response is in JSON format, so must parse it
-          implicit val formats = ResourceEvent.DefaultJsonFormats
+          implicit val formats = JsonHelpers.DefaultJsonFormats
           val jValue = net.liftweb.json.parse(stringBody)
           println("!! ==> jValue = %s".format(jValue))
           val pongValue = jValue \ "pong"

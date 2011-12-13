@@ -33,29 +33,22 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package logic.events
+package gr.grnet.aquarium.util.json
 
-import util.shortClassNameOf
-
-import net.liftweb.json.{Xml, Printer, Extraction, JsonAST}
-import util.json.JsonSupport
-import util.xml.XmlSupport
+import net.liftweb.json.{Printer, Extraction, JsonAST}
+import JsonAST.JValue
 
 /**
- * Generic base class for all Aquarium events
- *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * 
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class AquariumEvent(val id: String, val timestamp: Long) extends JsonSupport with XmlSupport {
-
-  def validate: Boolean
-
-  def toBytes: Array[Byte] = {
-    toJson.getBytes("UTF-8")
+trait JsonSupport {
+  def toJValue: JValue = {
+    Extraction.decompose(this)(JsonHelpers.DefaultJsonFormats)
   }
 
-  def eventType: String = shortClassNameOf(this)
+  def toJson: String = {
+    Printer.pretty(JsonAST.render(this.toJValue))
+  }
 }
