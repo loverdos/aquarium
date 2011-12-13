@@ -35,10 +35,9 @@
 
 package gr.grnet.aquarium.logic.events
 
-import net.liftweb.json.{Extraction, parse => parseJson, DefaultFormats, JsonAST}
-import net.liftweb.json.Xml
 import net.liftweb.json.ext.JodaTimeSerializers
 import gr.grnet.aquarium.logic.accounting.Policy
+import net.liftweb.json.{FieldSerializer, Extraction, parse => parseJson, DefaultFormats, JsonAST, Xml}
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -88,7 +87,9 @@ case class ResourceEvent(
 }
 
 object ResourceEvent {
-  val DefaultJsonFormats = DefaultFormats ++ JodaTimeSerializers.all
+  val DefaultJsonFormats = DefaultFormats ++
+    JodaTimeSerializers.all +
+    FieldSerializer[AquariumEvent]()
 
   def fromJson(json: String): ResourceEvent = {
     implicit val formats = DefaultJsonFormats
