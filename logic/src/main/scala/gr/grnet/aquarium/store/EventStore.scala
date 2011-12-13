@@ -45,9 +45,9 @@ import gr.grnet.aquarium.logic.events.AquariumEvent
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
 trait EventStore {
-  def store[A <: AquariumEvent](event: A): Maybe[RecordID]
+  def storeEvent[A <: AquariumEvent](event: A): Maybe[RecordID]
 
-  def findById[A <: AquariumEvent](id: String): Option[A]
+  def findEventById[A <: AquariumEvent](id: String): Option[A]
 
-  def findByUserId[A <: AquariumEvent](userId: String)(sortWith: Option[(A, A) => Boolean]): List[A]
+  def findEventsByUserId[A <: AquariumEvent](userId: Long)(sortWith: Option[(A, A) => Boolean]): List[A]
 }

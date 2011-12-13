@@ -91,7 +91,7 @@ class MongoDBStore(host: String, port: String,
    */
 
   //EventStore methods
-  def store[A <: AquariumEvent](event: A): Maybe[RecordID] = {
+  def storeEvent[A <: AquariumEvent](event: A): Maybe[RecordID] = {
     try {
       // Store
       val obj = JSON.parse(event.toJson).asInstanceOf[DBObject]
@@ -118,7 +118,7 @@ class MongoDBStore(host: String, port: String,
     }
   }
 
-  def findById[A <: AquariumEvent](id: String): Option[A] = {
+  def findEventById[A <: AquariumEvent](id: String): Option[A] = {
     val q = new BasicDBObject()
     q.put("id", id)
 
@@ -130,7 +130,7 @@ class MongoDBStore(host: String, port: String,
       None
   }
 
-  def findByUserId[A <: AquariumEvent](userId: String)
+  def findEventsByUserId[A <: AquariumEvent](userId: Long)
                                       (sortWith: Option[(A, A) => Boolean]): List[A] = {
     List()
   }

@@ -94,14 +94,14 @@ class EventProcessor extends AkkaAMQP with Loggable {
 
     def exists(event: ResourceEvent): Boolean = {
       Store.getEventStore match {
-        case Some(x) => x.findById(event.id).isEmpty
+        case Some(x) => x.findEventById(event.id).isEmpty
         case None => false
       }
     }
 
     def persist(event: ResourceEvent): Boolean = {
       Store.getEventStore match {
-        case Some(x) => x.store(event) match {
+        case Some(x) => x.storeEvent(event) match {
           case Just(x) => true
           case x: Failed =>
             logger.error("Could not save event: %s".format(event))
