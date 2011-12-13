@@ -46,7 +46,7 @@ import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 
 sealed trait UserDataSnapshot[T] extends DataSnapshot[T]
 
-case class CreditSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Long]
+case class CreditSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
 
 case class AgreementSnapshot(data: DSLAgreement, snapshotTime: Long) extends UserDataSnapshot[DSLAgreement]
 
