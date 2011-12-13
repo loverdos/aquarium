@@ -3,8 +3,8 @@
     <!-- aquarium.dev.grnet.gr -->
     <RabbitMQConfigurationModel>
       <name>aquarium.dev.grnet.gr</name>
-      <username>aquarium</username>
-      <password>@qu@r1um</password>
+      <username>***</username>
+      <password>***</password>
       <host>aquarium.dev.grnet.gr</host>
       <port>5672</port>
       <addresses class="Nil"/>
@@ -40,8 +40,8 @@
     <!-- localhost -->
     <RabbitMQConfigurationModel>
       <name>localhost</name>
-      <username>guest</username>
-      <password>guest</password>
+      <username>***</username>
+      <password>***</password>
       <host>localhost</host>
       <port>5672</port>
       <addresses class="Nil"/>
