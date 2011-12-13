@@ -19,3 +19,4 @@ all-deps/
 projectFilesBackup/
 project/build/target/
 project/boot/
+aquarium.properties
