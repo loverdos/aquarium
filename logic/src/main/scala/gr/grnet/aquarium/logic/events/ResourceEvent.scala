@@ -90,7 +90,7 @@ object ResourceEvent {
   def fromJson(json: String): ResourceEvent = {
     implicit val formats = JsonHelpers.DefaultJsonFormats
     val jsonAST = parseJson(json)
-    Extraction.extract(jsonAST)
+    Extraction.extract[ResourceEvent](jsonAST)
   }
 
   def fromJValue(jsonAST: JsonAST.JValue): ResourceEvent = {

@@ -35,21 +35,25 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import org.junit.Test
 import gr.grnet.aquarium.util.{TestMethods, RandomEventGenerator}
 import org.junit.Assume._
 import org.junit.Assert._
-import gr.grnet.aquarium.LogicTestsAssumptions
-import gr.grnet.aquarium.store.{RecordID, Store}
+import gr.grnet.aquarium.store.Store
 import collection.mutable.ArrayBuffer
 import gr.grnet.aquarium.logic.events.ResourceEvent
+import org.junit.{Before, After, Test}
+import gr.grnet.aquarium.store.mongodb.MongoDBStore
+import gr.grnet.aquarium.{MasterConf, LogicTestsAssumptions}
 
 /**
- *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-
 class EventStoreTest extends TestMethods with RandomEventGenerator {
+
+  @Before
+  def before() = {
+
+  }
 
   @Test
   def testStoreEvent() = {
@@ -60,7 +64,20 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
     val result = store.get.storeEvent(event)
     assert(result.isJust)
-    assertEquals(event.id, result.getOr(RecordID("foo")).id)
+  }
+
+  @Test
+  def testFindEventById(): Unit = {
+    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
+
+    val event = nextResourceEvent()
+    val store = Store.getEventStore()
+
+    val result1 = store.get.storeEvent(event)
+    assert(result1.isJust)
+
+    val result2 = store.get.findEventById[ResourceEvent](event.id)
+    assertNotNone(result2)
   }
 
   @Test
@@ -76,10 +93,40 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
         store.get.storeEvent(e)
     }
 
-    val mostUsedId = events.map{x => x.userId}.groupBy(identity).mapValues(_.size).foldLeft((0L,0))((acc, kv) => if (kv._2 > acc._2) kv else acc)._1
-    println("Most used id:" + mostUsedId)
+    val mostUsedId = events
+      .map{x => x.userId}
+      .groupBy(identity)
+      .mapValues(_.size)
+      .foldLeft((0L,0))((acc, kv) => if (kv._2 > acc._2) kv else acc)._1
 
-    store.get.findEventsByUserId(mostUsedId)(None)
-
+    val result = store.get.findEventsByUserId(mostUsedId)(None)
+    assertEquals(events.filter(p => p.userId.equals(mostUsedId)).size, result.size)
   }
+
+  @Test
+  def testMultipleMongos = {
+    val a = getMongo
+    val b = getMongo
+    assertEquals(a.Connection.mongo.get.hashCode(), b.Connection.mongo.get.hashCode())
+  }
+
+  @After
+  override def after() = {
+    val a = getMongo
+
+    val col = a.Connection.mongo.get.getDB(
+      MasterConf.MasterConf.get(MasterConf.Keys.persistence_db)
+    ).getCollection(MongoDBStore.EVENTS_COLLECTION)
+
+    val res = col.find
+    while (res.hasNext)
+      col.remove(res.next)
+  }
+
+  private def getMongo = new MongoDBStore(
+    MasterConf.MasterConf.get(MasterConf.Keys.persistence_host),
+    MasterConf.MasterConf.get(MasterConf.Keys.persistence_port),
+    MasterConf.MasterConf.get(MasterConf.Keys.persistence_username),
+    MasterConf.MasterConf.get(MasterConf.Keys.persistence_password),
+    MasterConf.MasterConf.get(MasterConf.Keys.persistence_db))
 }
