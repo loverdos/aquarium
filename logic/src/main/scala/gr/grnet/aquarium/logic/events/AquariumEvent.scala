@@ -58,4 +58,11 @@ abstract class AquariumEvent(val id: String, val timestamp: Long) extends JsonSu
   }
 
   def eventType: String = shortClassNameOf(this)
+
+  def toMap: Map[String,  Any] =
+    (Map[String, Any]() /: this.getClass.getDeclaredFields) {
+      (a, f) =>
+        f.setAccessible(true)
+        a + (f.getName -> f.get(this))
+      }
 }
