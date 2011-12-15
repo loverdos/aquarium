@@ -55,9 +55,6 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   private[this] var _eventStore: EventStore = _
 
   def configure(props: Props) = {
-    import MasterConf.{MasterConf, Keys}
-    val props = MasterConf.props
-
     this._database = props.getEx(Keys.persistence_db)
     this._username = props.getEx(Keys.persistence_username)
     this._password = props.getEx(Keys.persistence_password)
