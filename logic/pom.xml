@@ -147,12 +147,6 @@
       <version>2.7.2</version>
     </dependency>
 
-    <!--<dependency>
-      <groupId>com.mongodb.casbah</groupId>
-      <artifactId>casbah-core_2.9.1</artifactId>
-      <version>2.1.5-1</version>
-    </dependency>-->
-
     <dependency>
       <groupId>se.scalablesolutions.akka</groupId>
       <artifactId>akka-actor</artifactId>
@@ -196,4 +190,34 @@
       <version>0.9.2-SNAPSHOT</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.2.2</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>gr.grnet.aquarium.Main</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <!-- this is used for inheritance merges -->
+            <phase>package</phase>
+            <!-- bind to the packaging phase -->
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
