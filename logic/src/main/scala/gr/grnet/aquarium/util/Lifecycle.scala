@@ -33,12 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.rest
-
-import gr.grnet.aquarium.util.Lifecycle
+package gr.grnet.aquarium.util
 
 /**
  * 
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait RESTService extends Lifecycle
+
+trait Lifecycle {
+  def start(): Unit
+  def stop(): Unit
+}
