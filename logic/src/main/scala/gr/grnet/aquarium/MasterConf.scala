@@ -57,9 +57,6 @@ class MasterConf(val props: Props) extends Loggable {
   private[this] def newInstance[C : Manifest](className: String): C = {
     val c = defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C]
     c match {
-      case configurable: MasterConfigurable ⇒
-        configurable configure this
-        c
       case configurable: Configurable ⇒
         configurable configure props
         c
