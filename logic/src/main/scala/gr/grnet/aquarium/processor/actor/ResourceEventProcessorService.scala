@@ -69,15 +69,19 @@ class ResourceEventProcessorService extends AkkaAMQP with Loggable
         persister ! Persist(event, Actor.actorOf(this), AckData(deliveryTag, queue.get))
 
       case PersistOK(ackData) =>
+        logger.debug("Stored res event:%s".format(ackData.deliveryTag))
         ackData.queue ! Acknowledge(ackData.deliveryTag)
 
       case PersistFailed(ackData) =>
+        logger.debug("Storing res event:%s failed".format(ackData.deliveryTag))
         ackData.queue ! Reject(ackData.deliveryTag, true)
 
       case Duplicate(ackData) =>
+        logger.debug("Res event:%s is duplicate".format(ackData.deliveryTag))
         ackData.queue ! Reject(ackData.deliveryTag, false)
 
       case Acknowledged(deliveryTag) =>
+        //Forward to the dispatcher
 
       case _ => logger.warn("Unknown message")
     }
