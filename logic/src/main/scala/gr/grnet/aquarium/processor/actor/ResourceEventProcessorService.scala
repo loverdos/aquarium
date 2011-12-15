@@ -66,7 +66,7 @@ class ResourceEventProcessorService extends AkkaAMQP with Loggable
     def receive = {
       case Delivery(payload, _, deliveryTag, isRedeliver, _, queue) =>
         val event = ResourceEvent.fromBytes(payload)
-        persister ! Persist(event, Actor.actorOf(this), AckData(deliveryTag, queue.get))
+        persister ! Persist(event, queueReader, AckData(deliveryTag, queue.get))
 
       case PersistOK(ackData) =>
         logger.debug("Stored res event:%s".format(ackData.deliveryTag))
@@ -120,7 +120,7 @@ class ResourceEventProcessorService extends AkkaAMQP with Loggable
     persister = Actor.actorOf(new Persister)
     queueReader = Actor.actorOf(new QueueReader(persister))
 
-    queueReader.link(persister)
+    queueReader.startLink(persister)
 
     queueReader.start()
     persister.start()

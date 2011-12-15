@@ -108,7 +108,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
   }
 
   @After
-  override def after() = {
+  def after() = {
     val a = getMongo
 
     val col = a.mongo.getDB(
