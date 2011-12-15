@@ -94,3 +94,18 @@ trait RandomEventGenerator extends AkkaAMQP {
     }
   }
 }
+
+object RandomEventGenerator extends RandomEventGenerator {
+
+  def main(args: Array[String]): Unit = {
+
+    var num = 100
+
+    if (args.size > 0)
+      num = args.head.toInt
+
+    println("Publishing %d messages. Hit Ctrl+c to stop".format(num))
+
+    genPublish(num)
+  }
+}
