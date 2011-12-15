@@ -88,14 +88,15 @@ trait RandomEventGenerator extends AkkaAMQP {
     val publisher = producer("aquarium")
 
     (1 to num).foreach {
-      val event = nextResourceEvent
-      n => publisher ! Message(event.toBytes,
-        "event.%d.%s".format(event.cliendId, event.resource))
+      n =>
+        var event = nextResourceEvent
+        publisher ! Message(event.toBytes,
+          "event.%d.%s".format(event.cliendId, event.resource))
     }
   }
 }
 
-object RandomEventGenerator extends RandomEventGenerator {
+object RandomEventGen extends RandomEventGenerator {
 
   def main(args: Array[String]): Unit = {
 

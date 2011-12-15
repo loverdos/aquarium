@@ -101,7 +101,7 @@ class ResourceEventProcessorService extends AkkaAMQP with Loggable
     }
 
     def exists(event: ResourceEvent): Boolean =
-      MasterConf.MasterConf.eventStore.findEventById(event.id).isEmpty
+      !MasterConf.MasterConf.eventStore.findEventById(event.id).isEmpty
 
     def persist(event: ResourceEvent): Boolean = {
       MasterConf.MasterConf.eventStore.storeEvent(event) match {

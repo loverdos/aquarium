@@ -84,7 +84,7 @@ class MongoDBStore(val mongo: Mongo, val database: String,
 
       if (!cur.hasNext) {
         logger.error("Failed to store event: %s".format(event))
-        Failed(new StoreException("Failed to store event: %s".format(event)))
+        return Failed(new StoreException("Failed to store event: %s".format(event)))
       }
 
       Just(RecordID(cur.next.get("_id").toString))
