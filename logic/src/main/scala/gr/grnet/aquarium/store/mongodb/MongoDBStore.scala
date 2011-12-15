@@ -46,46 +46,17 @@ import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.{MasterConf, Configurable}
 
 /**
- * Mongodb implementation of the message store.
+ * Mongodb implementation of the event store (and soon the user store).
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class MongoDBStore extends EventStore with Configurable with Loggable {
+class MongoDBStore(mongo: Mongo, database: String, username: String, password: String) extends EventStore with Loggable {
   private[store] lazy val events: DBCollection = getCollection(MongoDBStore.EVENTS_COLLECTION)
-
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
 
-  private[this] var _mongo: Mongo = _
-  private[this] var _database: String = _
-  private[this] var _username: String = _
-  private[this] var _password: String = _
-
-  def configure(props: Props) = {
-    import MasterConf.{MasterConf, Keys}
-    val props = MasterConf.props
-
-    this._database = props.getEx(Keys.persistence_db)
-    this._username = props.getEx(Keys.persistence_username)
-    this._password = props.getEx(Keys.persistence_password)
-    val host = props.getEx(Keys.persistence_host)
-    val port = props.getInt(Keys.persistence_port).getOr(throw new Exception("Not a valid port number for MongoDB connection"))
-
-    try {
-      val addr = new ServerAddress(host, port)
-      val opt = new MongoOptions()
-      this._mongo = new Mongo(addr, opt)
-    } catch {
-      case e: MongoException =>
-        throw new Exception("Cannot connect to mongo at %s:%s".format(host, port), e)
-    }
-  }
-
   def getCollection(name: String): DBCollection = {
-    val mongo = this._mongo
-    val username = this._username
-    val password = this._password
-    val db = mongo.getDB(this._database)
+    val db = mongo.getDB(database)
     if(!db.authenticate(username, password.toCharArray)) {
       throw new StoreException("Could not authenticate user %s".format(username))
     }

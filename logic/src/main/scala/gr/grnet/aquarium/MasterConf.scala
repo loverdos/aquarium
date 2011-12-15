@@ -43,7 +43,7 @@ import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 import processor.actor.ConfigureDispatcher
 import rest.RESTService
-import store.{EventStore, UserStore}
+import store.{StoreProvider, EventStore, UserStore}
 import util.Loggable
 
 /**
@@ -70,6 +70,12 @@ class MasterConf(val props: Props) extends Loggable {
     logger.info("Loaded ActorProvider: %s".format(instance.getClass))
     instance
   }
+
+  private[this] val _storeProvider: StoreProvider = {
+    val instance = newInstance[StoreProvider](props.getEx(Keys.store_provider_class))
+    logger.info("Loaded StoreProvider: %s".format(instance.getClass))
+    instance
+  }
   
   private[this] val _restService: RESTService = {
     val instance = newInstance[RESTService](props.getEx(Keys.rest_service_class))
@@ -77,16 +83,26 @@ class MasterConf(val props: Props) extends Loggable {
     instance
   }
 
-  private[this] val _userStore: UserStore = {
-    val instance = newInstance[UserStore](props.getEx(Keys.user_store_class))
-    logger.info("Loaded UserStore: %s".format(instance.getClass))
-    instance
+  private[this] val _userStoreM: Maybe[UserStore] = {
+    // If there is a specific `UserStore` implementation specified in the
+    // properties, then this implementation overrides the user store given by
+    // `StoreProvider`.
+    props.get(Keys.user_store_class) map { className ⇒
+      val instance = newInstance[UserStore](className)
+      logger.info("Overriding UserStore provisioning. Implementation given by: %s".format(instance.getClass))
+      instance
+    }
   }
 
-  private[this] val _eventStore: EventStore = {
-    val instance = newInstance[EventStore](props.getEx(Keys.event_store_class))
-    logger.info("Loaded EventStore: %s".format(instance.getClass))
-    instance
+  private[this] val _eventStoreM: Maybe[EventStore] = {
+    // If there is a specific `EventStore` implementation specified in the
+    // properties, then this implementation overrides the event store given by
+    // `StoreProvider`.
+    props.get(Keys.event_store_class) map { className ⇒
+      val instance = newInstance[EventStore](className)
+      logger.info("Overriding EventStore provisioning. Implementation given by: %s".format(instance.getClass))
+      instance
+    }
   }
 
   def get(prop: String): String =
@@ -118,9 +134,21 @@ class MasterConf(val props: Props) extends Loggable {
   
   def actorProvider = _actorProvider
 
-  def userStore = _userStore
+  def userStore = {
+    _userStoreM match {
+      case Just(us) ⇒ us
+      case _        ⇒ storeProvider.userStore
+    }
+  }
 
-  def eventStore = _eventStore
+  def eventStore = {
+    _eventStoreM match {
+      case Just(es) ⇒ es
+      case _        ⇒ storeProvider.eventStore
+    }
+  }
+
+  def storeProvider = _storeProvider
 }
 
 object MasterConf {
@@ -228,6 +256,12 @@ object MasterConf {
      * The class that initializes the REST service
      */
     final val rest_service_class = "rest.service.class"
+
+    /**
+     * The fully qualified name of the class that implements the `StoreProvider`.
+     * Will be instantiated reflectively and should have a public default constructor.
+     */
+    final val store_provider_class = "store.provider.class"
 
     /**
      * The class that implements the User store
