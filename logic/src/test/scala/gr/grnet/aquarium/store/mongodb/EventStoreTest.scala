@@ -38,11 +38,9 @@ package gr.grnet.aquarium.store.mongodb
 import gr.grnet.aquarium.util.{TestMethods, RandomEventGenerator}
 import org.junit.Assume._
 import org.junit.Assert._
-import gr.grnet.aquarium.store.Store
 import collection.mutable.ArrayBuffer
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import org.junit.{Before, After, Test}
-import gr.grnet.aquarium.store.mongodb.MongoDBStore
 import gr.grnet.aquarium.{MasterConf, LogicTestsAssumptions}
 
 /**
@@ -113,7 +111,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
   override def after() = {
     val a = getMongo
 
-    val col = a._mongo.getDB(
+    val col = a.mongo.getDB(
       MasterConf.MasterConf.get(MasterConf.Keys.persistence_db)
     ).getCollection(MongoDBStore.EVENTS_COLLECTION)
 
@@ -122,5 +120,5 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
       col.remove(res.next)
   }
 
-  private def getMongo = new MongoDBStore()
+  private def getMongo = MasterConf.MasterConf.eventStore.asInstanceOf[MongoDBStore]
 }

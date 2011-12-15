@@ -40,8 +40,8 @@ import akka.actor.{ActorRef, Actor}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import akka.amqp.{Reject, Acknowledge, Acknowledged, Delivery}
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.store.Store
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
+import gr.grnet.aquarium.MasterConf
 
 /**
  * An actor that gets events from the queue, stores them persistently
@@ -92,24 +92,17 @@ class EventProcessor extends AkkaAMQP with Loggable {
       case _ => logger.warn("Unknown message")
     }
 
-    def exists(event: ResourceEvent): Boolean = {
-      Store.getEventStore match {
-        case Some(x) => x.findEventById(event.id).isEmpty
-        case None => false
-      }
-    }
+    def exists(event: ResourceEvent): Boolean =
+      MasterConf.MasterConf.eventStore.findEventById(event.id).isEmpty
 
     def persist(event: ResourceEvent): Boolean = {
-      Store.getEventStore match {
-        case Some(x) => x.storeEvent(event) match {
+      MasterConf.MasterConf.eventStore.storeEvent(event) match {
           case Just(x) => true
           case x: Failed =>
             logger.error("Could not save event: %s".format(event))
             false
           case NoVal => false
         }
-        case None => false
-      }
     }
   }
 

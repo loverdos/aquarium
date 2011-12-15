@@ -51,7 +51,8 @@ import gr.grnet.aquarium.{MasterConf, Configurable}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class MongoDBStore(mongo: Mongo, database: String, username: String, password: String) extends EventStore with Loggable {
+class MongoDBStore(val mongo: Mongo, val database: String,
+                   val username: String, val password: String) extends EventStore with Loggable {
   private[store] lazy val events: DBCollection = getCollection(MongoDBStore.EVENTS_COLLECTION)
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
 
