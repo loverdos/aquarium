@@ -43,7 +43,7 @@ import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 import processor.actor.ConfigureDispatcher
 import rest.RESTService
-import store.UserStore
+import store.{EventStore, UserStore}
 import util.Loggable
 
 /**
@@ -57,6 +57,9 @@ class MasterConf(val props: Props) extends Loggable {
   private[this] def newInstance[C : Manifest](className: String): C = {
     val c = defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C]
     c match {
+      case configurable: MasterConfigurable ⇒
+        configurable configure this
+        c
       case configurable: Configurable ⇒
         configurable configure props
         c
@@ -80,6 +83,12 @@ class MasterConf(val props: Props) extends Loggable {
   private[this] val _userStore: UserStore = {
     val instance = newInstance[UserStore](props.getEx(Keys.user_store_class))
     logger.info("Loaded UserStore: %s".format(instance.getClass))
+    instance
+  }
+
+  private[this] val _eventStore: EventStore = {
+    val instance = newInstance[EventStore](props.getEx(Keys.event_store_class))
+    logger.info("Loaded EventStore: %s".format(instance.getClass))
     instance
   }
 
@@ -113,6 +122,8 @@ class MasterConf(val props: Props) extends Loggable {
   def actorProvider = _actorProvider
 
   def userStore = _userStore
+
+  def eventStore = _eventStore
 }
 
 object MasterConf {
@@ -225,6 +236,11 @@ object MasterConf {
      * The class that implements the User store
      */
     final val user_store_class = "user.store.class"
+
+    /**
+     * The class that implements the event store
+     */
+    final val event_store_class = "event.store.class"
 
     /**
      * Comma separated list of amqp servers running in active-active

@@ -71,12 +71,13 @@ object Store extends Loggable {
   }
 
   def getEventStore(): Option[EventStore] = {
-    provider match {
-      case "mongodb" =>
-        Some(new MongoDBStore(host, port, uname, passwd, db))
-      case _ => 
-        logger.error("Provider <%s> not supported".format(provider))
-        None
-    }
+//    provider match {
+//      case "mongodb" =>
+//        Some(new MongoDBStore(host, port, uname, passwd, db))
+//      case _ =>
+//        logger.error("Provider <%s> not supported".format(provider))
+//        None
+//    }
+    None
   }
 }
