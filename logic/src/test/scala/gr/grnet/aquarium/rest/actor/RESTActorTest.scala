@@ -39,7 +39,6 @@ import org.junit.Test
 import org.junit.Assert._
 import org.junit.Assume.assumeTrue
 
-import gr.grnet.aquarium.MasterConf
 import gr.grnet.aquarium.actor.RESTRole
 import cc.spray.can.HttpMethods.{GET, POST}
 import cc.spray.can.HttpClient._
@@ -49,6 +48,7 @@ import akka.actor.{PoisonPill, Actor}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import net.liftweb.json.JsonAST.JInt
 import gr.grnet.aquarium.util.json.JsonHelpers
+import gr.grnet.aquarium.{LogicTestsAssumptions, MasterConf}
 
 /**
  * 
@@ -57,6 +57,8 @@ import gr.grnet.aquarium.util.json.JsonHelpers
 class RESTActorTest {
   @Test
   def testPing: Unit = {
+    assumeTrue(LogicTestsAssumptions.EnableSprayTests)
+    
     // Initialize configuration subsystem
     val mc = MasterConf.MasterConf
     mc.startServices()
