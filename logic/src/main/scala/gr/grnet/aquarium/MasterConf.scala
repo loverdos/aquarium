@@ -41,7 +41,7 @@ import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
-import processor.actor.ConfigureDispatcher
+import processor.actor.{ResourceEventProcessorService, ConfigureDispatcher}
 import rest.RESTService
 import store.{StoreProvider, EventStore, UserStore}
 import util.Loggable
@@ -118,6 +118,10 @@ class MasterConf(val props: Props) extends Loggable {
     }
   }
 
+  private[this] val _resEventProc: ResourceEventProcessorService = {
+    new ResourceEventProcessorService()
+  }
+
   def get(prop: String): String =
     props.get(prop) match {
       case Just(y) => y
@@ -129,14 +133,17 @@ class MasterConf(val props: Props) extends Loggable {
   def startServices(): Unit = {
     _restService.start()
     _actorProvider.start()
+    _resEventProc.start()
 
     _actorProvider.actorForRole(DispatcherRole) ! ConfigureDispatcher(this)
   }
 
   def stopServices(): Unit = {
+    _resEventProc.stop()
     _restService.stop()
     _actorProvider.stop()
-    
+
+
 //    akka.actor.Actor.registry.shutdownAll()
   }
 
