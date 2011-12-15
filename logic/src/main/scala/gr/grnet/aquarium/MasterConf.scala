@@ -55,14 +55,27 @@ class MasterConf(val props: Props) extends Loggable {
   import MasterConf.Keys
 
   private[this] def newInstance[C : Manifest](className: String): C = {
-    val c = defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C]
-    c match {
-      case configurable: Configurable ⇒
-        configurable configure props
-        c
-      case _ ⇒
-        c
+    val instanceM = Maybe(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
+    instanceM match {
+      case Just(instance) ⇒ instance match {
+        case configurable: Configurable ⇒
+          Maybe(configurable configure props) match {
+            case Just(_) ⇒
+              instance
+            case Failed(e, _) ⇒
+              throw new Exception("Could not configure instance of %s".format(className), e)
+            case NoVal ⇒
+              throw new Exception("Could not configure instance of %s".format(className))
+          }
+        case _ ⇒
+          instance
+      }
+      case Failed(e, _) ⇒
+        throw new Exception("Could not instantiate %s".format(className), e)
+      case NoVal ⇒
+        throw new Exception("Could not instantiate %s".format(className))
     }
+
   }
 
   private[this] val _actorProvider: ActorProvider = {
