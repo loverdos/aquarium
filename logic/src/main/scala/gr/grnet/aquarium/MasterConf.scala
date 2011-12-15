@@ -78,25 +78,25 @@ class MasterConf(val props: Props) extends Loggable {
 
   }
 
-  private[this] val _actorProvider: ActorProvider = {
+  private[this] lazy val _actorProvider: ActorProvider = {
     val instance = newInstance[ActorProvider](props.getEx(Keys.actor_provider_class))
     logger.info("Loaded ActorProvider: %s".format(instance.getClass))
     instance
   }
 
-  private[this] val _storeProvider: StoreProvider = {
+  private[this] lazy val _storeProvider: StoreProvider = {
     val instance = newInstance[StoreProvider](props.getEx(Keys.store_provider_class))
     logger.info("Loaded StoreProvider: %s".format(instance.getClass))
     instance
   }
   
-  private[this] val _restService: RESTService = {
+  private[this] lazy val _restService: RESTService = {
     val instance = newInstance[RESTService](props.getEx(Keys.rest_service_class))
     logger.info("Loaded RESTService: %s".format(instance.getClass))
     instance
   }
 
-  private[this] val _userStoreM: Maybe[UserStore] = {
+  private[this] lazy val _userStoreM: Maybe[UserStore] = {
     // If there is a specific `UserStore` implementation specified in the
     // properties, then this implementation overrides the user store given by
     // `StoreProvider`.
@@ -107,7 +107,7 @@ class MasterConf(val props: Props) extends Loggable {
     }
   }
 
-  private[this] val _eventStoreM: Maybe[EventStore] = {
+  private[this] lazy val _eventStoreM: Maybe[EventStore] = {
     // If there is a specific `EventStore` implementation specified in the
     // properties, then this implementation overrides the event store given by
     // `StoreProvider`.
@@ -118,7 +118,7 @@ class MasterConf(val props: Props) extends Loggable {
     }
   }
 
-  private[this] val _resEventProc: ResourceEventProcessorService = {
+  private[this] lazy val _resEventProc: ResourceEventProcessorService = {
     new ResourceEventProcessorService()
   }
 
