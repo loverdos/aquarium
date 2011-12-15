@@ -39,7 +39,6 @@ import akka.amqp._
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import util.Random
-import org.junit.After
 
 /**
  *  Generates random resource events to use as input for testing and
@@ -93,10 +92,5 @@ trait RandomEventGenerator extends AkkaAMQP {
       n => publisher ! Message(event.toBytes,
         "event.%d.%s".format(event.cliendId, event.resource))
     }
-  }
-
-  @After
-  def after() = {
-
   }
 }
