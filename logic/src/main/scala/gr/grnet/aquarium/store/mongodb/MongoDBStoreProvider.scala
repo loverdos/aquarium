@@ -59,10 +59,11 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
     this._username = props.getEx(Keys.persistence_username)
     this._password = props.getEx(Keys.persistence_password)
     val host = props.getEx(Keys.persistence_host)
-    val port = props.getInt(Keys.persistence_port).getOr(throw new Exception("Not a valid port number for MongoDB connection"))
+    val port = props.get(Keys.persistence_port)
+    val foo = port.getOr(throw new Exception("Not a valid port number for MongoDB connection")).toInt
 
     try {
-      val addr = new ServerAddress(host, port)
+      val addr = new ServerAddress(host, foo)
       val opt = new MongoOptions()
       this._mongo = new Mongo(addr, opt)
       this._eventStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
