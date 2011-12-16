@@ -39,7 +39,8 @@ import gr.grnet.aquarium.actor.{ActorProvider, DispatcherRole, AquariumActor}
 import gr.grnet.aquarium.util.Loggable
 
 /**
- * 
+ * Business logic dispatcher.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class DispatcherActor extends AquariumActor with Loggable {

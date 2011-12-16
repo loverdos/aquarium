@@ -32,7 +32,8 @@
  * documentation are those of the authors and should not be
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
- */package gr.grnet.aquarium.actor
+ */
+package gr.grnet.aquarium.actor
 
 import gr.grnet.aquarium.processor.actor.{ResourceProcessorActor, DispatcherActor}
 import gr.grnet.aquarium.rest.actor.RESTActor

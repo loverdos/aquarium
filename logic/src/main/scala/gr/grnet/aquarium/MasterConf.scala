@@ -42,9 +42,8 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 import processor.actor.{ResourceEventProcessorService, ConfigureDispatcher}
-import rest.RESTService
 import store.{StoreProvider, EventStore, UserStore}
-import util.Loggable
+import util.{Lifecycle, Loggable}
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -54,6 +53,9 @@ import util.Loggable
 class MasterConf(val props: Props) extends Loggable {
   import MasterConf.Keys
 
+  /**
+   * Reflectively provide a new instance of a class and configure it appropriately.
+   */
   private[this] def newInstance[C : Manifest](className: String): C = {
     val instanceM = Maybe(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
     instanceM match {
@@ -90,8 +92,8 @@ class MasterConf(val props: Props) extends Loggable {
     instance
   }
   
-  private[this] lazy val _restService: RESTService = {
-    val instance = newInstance[RESTService](props.getEx(Keys.rest_service_class))
+  private[this] lazy val _restService: Lifecycle = {
+    val instance = newInstance[Lifecycle](props.getEx(Keys.rest_service_class))
     logger.info("Loaded RESTService: %s".format(instance.getClass))
     instance
   }

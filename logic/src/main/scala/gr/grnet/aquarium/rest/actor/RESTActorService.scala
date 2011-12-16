@@ -40,12 +40,13 @@ import gr.grnet.aquarium.MasterConf
 import gr.grnet.aquarium.actor.RESTRole
 import _root_.akka.actor._
 import cc.spray.can.{ClientConfig, HttpClient, ServerConfig, HttpServer}
+import gr.grnet.aquarium.util.Lifecycle
 
 /**
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RESTActorService extends RESTService {
+class RESTActorService extends Lifecycle {
   private[this] var _port: Int = 8080
   private[this] var _restActor: ActorRef = _
   private[this] var _serverActor: ActorRef = _
