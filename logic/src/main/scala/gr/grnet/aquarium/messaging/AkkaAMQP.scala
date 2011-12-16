@@ -41,6 +41,10 @@ import akka.amqp.AMQP._
 import gr.grnet.aquarium.MasterConf
 import com.rabbitmq.client.Address
 import gr.grnet.aquarium.util.Loggable
+import akka.dispatch.Dispatchers
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
+import akka.routing.Routing._
+import akka.routing.CyclicIterator
 
 /**
  * Functionality for working with queues.
@@ -49,23 +53,25 @@ import gr.grnet.aquarium.util.Loggable
  */
 trait AkkaAMQP extends Loggable {
 
-  private lazy val connection = {
+  class AMQPConnection {
+    private[messaging] lazy val connection = {
 
-    val servers = MasterConf.MasterConf.get(MasterConf.Keys.amqp_servers)
-    val port = MasterConf.MasterConf.get(MasterConf.Keys.amqp_port).toInt
+      val servers = MasterConf.MasterConf.get(MasterConf.Keys.amqp_servers)
+      val port = MasterConf.MasterConf.get(MasterConf.Keys.amqp_port).toInt
 
-    val addresses = servers.split(",").foldLeft(Array[Address]()){
-      (x,y) => x ++ Array(new Address(y, port))
+      val addresses = servers.split(",").foldLeft(Array[Address]()) {
+        (x, y) => x ++ Array(new Address(y, port))
+      }
+
+      AMQP.newConnection(
+        ConnectionParameters(
+          addresses,
+          MasterConf.MasterConf.get(MasterConf.Keys.amqp_username),
+          MasterConf.MasterConf.get(MasterConf.Keys.amqp_password),
+          MasterConf.MasterConf.get(MasterConf.Keys.amqp_vhost),
+          1000,
+          None))
     }
-
-    AMQP.newConnection(
-      ConnectionParameters(
-        addresses,
-        MasterConf.MasterConf.get(MasterConf.Keys.amqp_username),
-        MasterConf.MasterConf.get(MasterConf.Keys.amqp_password),
-        MasterConf.MasterConf.get(MasterConf.Keys.amqp_vhost),
-        1000,
-        None))
   }
 
   private lazy val exchanges = {
@@ -78,7 +84,7 @@ trait AkkaAMQP extends Loggable {
   def consumer(routekey: String, queue: String, exchange: String,
                recipient: ActorRef, selfAck: Boolean) =
     AMQP.newConsumer(
-      connection = connection,
+      connection = (new AMQPConnection()).connection,
       consumerParameters = ConsumerParameters(
         routingKey = routekey,
         exchangeParameters = Some(ExchangeParameters(exchange, Topic, decl)),
@@ -94,7 +100,7 @@ trait AkkaAMQP extends Loggable {
       logger.warn("Exchange %s is unknown".format(exchange))
 
     AMQP.newProducer(
-      connection = connection,
+      connection = (new AMQPConnection()).connection,
       producerParameters = ProducerParameters(
         exchangeParameters = Some(ExchangeParameters(exchange, Topic, decl)),
         channelParameters = Some(ChannelParameters(prefetchSize = 0))))
