@@ -130,6 +130,10 @@ class MongoDBStore(
       // Get back to retrieve unique id
       val cursor = events.find(_prepareFieldQuery("id", event.id))
 
+      if (!cursor.hasNext) {
+        logger.error("Failed to store event: %s".format(event))
+        return Failed(new StoreException("Failed to store event: %s".format(event)))
+      }
 
       Just(RecordID(cursor.next.get("_id").toString))
     } catch {

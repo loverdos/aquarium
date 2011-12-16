@@ -41,10 +41,6 @@ import akka.amqp.AMQP._
 import gr.grnet.aquarium.MasterConf
 import com.rabbitmq.client.Address
 import gr.grnet.aquarium.util.Loggable
-import akka.dispatch.Dispatchers
-import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
-import akka.routing.Routing._
-import akka.routing.CyclicIterator
 
 /**
  * Functionality for working with queues.
