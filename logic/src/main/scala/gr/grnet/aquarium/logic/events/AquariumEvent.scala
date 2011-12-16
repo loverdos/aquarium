@@ -38,7 +38,6 @@ package logic.events
 
 import util.shortClassNameOf
 
-import net.liftweb.json.{Xml, Printer, Extraction, JsonAST}
 import util.json.JsonSupport
 import util.xml.XmlSupport
 

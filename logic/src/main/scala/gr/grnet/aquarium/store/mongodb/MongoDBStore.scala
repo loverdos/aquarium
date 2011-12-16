@@ -36,14 +36,16 @@
 package gr.grnet.aquarium.store.mongodb
 
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.store.{RecordID, StoreException, EventStore}
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import gr.grnet.aquarium.logic.events.{ResourceEvent, AquariumEvent}
 import com.mongodb.util.JSON
+import gr.grnet.aquarium.store.{UserStore, RecordID, StoreException, EventStore}
+import gr.grnet.aquarium.user.UserState
+import gr.grnet.aquarium.user.UserState.JsonNames
+import gr.grnet.aquarium.util.displayableObjectInfo
+import gr.grnet.aquarium.util.json.JsonSupport
 import com.mongodb._
-import collection.mutable.ListBuffer
-import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.{MasterConf, Configurable}
+import collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * Mongodb implementation of the event store (and soon the user store).
@@ -51,12 +53,17 @@ import gr.grnet.aquarium.{MasterConf, Configurable}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class MongoDBStore(val mongo: Mongo, val database: String,
-                   val username: String, val password: String) extends EventStore with Loggable {
+class MongoDBStore(
+    val mongo: Mongo,
+    val database: String,
+    val username: String,
+    val password: String)
+  extends EventStore with UserStore with Loggable {
+  
   private[store] lazy val events: DBCollection = getCollection(MongoDBStore.EVENTS_COLLECTION)
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
 
-  def getCollection(name: String): DBCollection = {
+  private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
     if(!db.authenticate(username, password.toCharArray)) {
       throw new StoreException("Could not authenticate user %s".format(username))
@@ -64,30 +71,67 @@ class MongoDBStore(val mongo: Mongo, val database: String,
     db.getCollection(name)
   }
 
+  private[this] def _deserializeEvent[A <: AquariumEvent](a: DBObject): A = {
+    //TODO: Distinguish events and deserialize appropriately
+    ResourceEvent.fromJson(JSON.serialize(a)).asInstanceOf[A]
+  }
+  
+  private[this] def _deserializeUserState(dbObj: DBObject): UserState = {
+    val jsonString = JSON.serialize(dbObj)
+    UserState.fromJson(jsonString)
+  }
+
+  private[this] def _makeDBObject(any: JsonSupport): DBObject = {
+    JSON.parse(any.toJson) match {
+      case dbObject: DBObject ⇒
+        dbObject
+      case _ ⇒
+        throw new StoreException("Could not transform %s -> %s".format(displayableObjectInfo(any), classOf[DBObject].getName))
+    }
+  }
+
+  private[this] def _prepareFieldQuery(name: String, value: String): DBObject = {
+    val dbObj = new BasicDBObject(1)
+    dbObj.put(name, value)
+    dbObj
+  }
+
+  private[this] def _insertObject(collection: DBCollection, obj: JsonSupport): DBObject = {
+    val dbObj = _makeDBObject(obj)
+    collection insert dbObj
+    dbObj
+  }
+
+  private[this] def _checkWasInserted(collection: DBCollection, obj: JsonSupport,  idName: String, id: String): String = {
+    val cursor = collection.find(_prepareFieldQuery(idName, id))
+    if (!cursor.hasNext) {
+      val errMsg = "Failed to store %s".format(displayableObjectInfo(obj))
+      logger.error(errMsg)
+      throw new StoreException(errMsg)
+    }
+
+    val retval = cursor.next.get("_id").toString
+    cursor.close()
+    retval
+  }
+
   /* TODO: Some of the following methods rely on JSON (de-)serialization).
    * A method based on proper object serialization would be much faster.
    */
 
-  //EventStore methods
+  //+EventStore
   def storeEvent[A <: AquariumEvent](event: A): Maybe[RecordID] = {
     try {
       // Store
-      val obj = JSON.parse(event.toJson).asInstanceOf[DBObject]
-      events.insert(obj)
+      val dbObj = _makeDBObject(event)
+      events.insert(dbObj)
 
       // TODO: Make this retrieval a configurable option
       // Get back to retrieve unique id
-      val q = new BasicDBObject()
-      q.put("id", event.id)
+      val cursor = events.find(_prepareFieldQuery("id", event.id))
 
-      val cur = events.find(q)
 
-      if (!cur.hasNext) {
-        logger.error("Failed to store event: %s".format(event))
-        return Failed(new StoreException("Failed to store event: %s".format(event)))
-      }
-
-      Just(RecordID(cur.next.get("_id").toString))
+      Just(RecordID(cursor.next.get("_id").toString))
     } catch {
       case m: MongoException =>
         logger.error("Unknown Mongo error: %s".format(m)); Failed(m)
@@ -101,7 +145,7 @@ class MongoDBStore(val mongo: Mongo, val database: String,
     val cur = events.find(q)
 
     if (cur.hasNext)
-      Some(deserialize(cur.next))
+      Some(_deserializeEvent(cur.next))
     else
       None
   }
@@ -119,18 +163,40 @@ class MongoDBStore(val mongo: Mongo, val database: String,
     val buff = new ListBuffer[A]()
 
     while(cur.hasNext)
-      buff += deserialize(cur.next)
+      buff += _deserializeEvent(cur.next)
 
     sortWith match {
       case Some(sorter) => buff.toList.sortWith(sorter)
       case None => buff.toList
     }
   }
+  //-EventStore
 
-  private def deserialize[A <: AquariumEvent](a: DBObject): A = {
-    //TODO: Distinguish events and deserialize appropriately
-    ResourceEvent.fromJson(JSON.serialize(a)).asInstanceOf[A]
+  //+UserStore
+  def storeUserState(userState: UserState): Maybe[RecordID] = {
+    Maybe {
+      val dbObj = _insertObject(users, userState)
+      val id    = _checkWasInserted(users, userState, JsonNames.userId, userState.userId)
+      RecordID(id)
+    }
   }
+
+  def findUserStateByUserId(userId: String): Maybe[UserState] = {
+    Maybe {
+      val queryObj = _prepareFieldQuery(JsonNames.userId, userId)
+      val cursor = events.find(queryObj)
+
+      if(!cursor.hasNext) {
+        cursor.close()
+        null
+      } else {
+        val userState = _deserializeUserState(cursor.next())
+        cursor.close()
+        userState
+      }
+    }
+  }
+  //-UserStore
 }
 
 object MongoDBStore {

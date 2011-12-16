@@ -39,7 +39,7 @@ import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.Configurable
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.store.{RecordID, UserStore}
-import com.ckkloverdos.maybe.{Just, Maybe}
+import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
 
 /**
  * A user store backed by main memory.
@@ -50,19 +50,22 @@ import com.ckkloverdos.maybe.{Just, Maybe}
  */
 
 class MemUserStore extends UserStore with Configurable {
-  private[this] val map = new java.util.concurrent.ConcurrentHashMap[String, UserState]()
+  private[this] val userStateByUserId = new java.util.concurrent.ConcurrentHashMap[String, Just[UserState]]()
   
   def configure(props: Props) = {
   }
 
   def storeUserState(userState: UserState): Maybe[RecordID] = {
-    map.put(userState.userId, userState)
-    Just(RecordID(userState.userId))
+    val userId = userState.userId
+    val userStateJ = Just(userState)
+    userStateByUserId.put(userId, userStateJ)
+    Just(RecordID(userId))
   }
 
-  def findUserStateById(id: String) = {
-    Maybe(map.get(id))
+  def findUserStateByUserId(userId: String) = {
+    userStateByUserId.get(userId) match {
+      case null       ⇒ NoVal
+      case userStateJ ⇒ userStateJ
+    }
   }
-
-  def findUserStateByUserId(userID: String, atMost: Int) = findUserStateById(userID).toList
 }

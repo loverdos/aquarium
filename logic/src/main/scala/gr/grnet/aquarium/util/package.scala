@@ -80,4 +80,8 @@ package object util {
     case null => null
     case _ => obj.toString
   }
+
+  def displayableObjectInfo(obj: AnyRef): String = {
+    "[%s] %s".format(obj.getClass, obj)
+  }
 }

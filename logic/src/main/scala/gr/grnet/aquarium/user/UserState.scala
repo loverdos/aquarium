@@ -35,7 +35,9 @@
 
 package gr.grnet.aquarium.user
 
-import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
+import net.liftweb.json.{Extraction, parse => parseJson, JsonAST, Xml}
+
 
 /**
  * A comprehensive representation of the User's state.
@@ -56,3 +58,30 @@ case class UserState(
   paymentOrders: PaymentOrdersSnapshot,
   ownedGroups: OwnedGroupsSnapshot,
   groupMemberships: GroupMembershipsSnapshot) extends JsonSupport
+
+
+object UserState {
+  final object JsonNames {
+    final val _id = "_id"
+    final val userId = "userId"
+  }
+
+  def fromJson(json: String): UserState = {
+    implicit val formats = JsonHelpers.DefaultJsonFormats
+    val jsonAST = parseJson(json)
+    Extraction.extract[UserState](jsonAST)
+  }
+
+  def fromJValue(jsonAST: JsonAST.JValue): UserState = {
+    implicit val formats = JsonHelpers.DefaultJsonFormats
+    Extraction.extract(jsonAST)
+  }
+
+  def fromBytes(bytes: Array[Byte]): UserState = {
+    fromJson(new String(bytes, "UTF-8"))
+  }
+
+  def fromXml(xml: String): UserState = {
+    fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
+  }
+}
