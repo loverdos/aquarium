@@ -39,8 +39,6 @@ package xstream
 import com.thoughtworks.xstream.XStream
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import com.ckkloverdos.resource.StreamResource
-import gr.grnet.aquarium.store.mongodb.confmodel._
-
 
 /**
  * Utilities for making our life easier with the XStream library.
@@ -59,11 +57,6 @@ object XStreamHelpers {
   }
   
   def prepareXStreamAliases(xs: XStream): XStream = {
-    // MongoDB
-    prepareXStreamAlias[MongoDBConnectionModel](xs)
-    prepareXStreamAlias[MongoDBCollectionModel](xs)
-    prepareXStreamAlias[ServerAddressConfigurationModel](xs)
-
     xs.alias("List", classOf[::[_]])
     xs.alias("Nil", manifest[Nil.type].erasure)
     xs
