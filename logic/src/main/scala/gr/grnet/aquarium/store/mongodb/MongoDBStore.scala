@@ -37,15 +37,15 @@ package gr.grnet.aquarium.store.mongodb
 
 import gr.grnet.aquarium.util.Loggable
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
-import gr.grnet.aquarium.logic.events.{ResourceEvent, AquariumEvent}
 import com.mongodb.util.JSON
-import gr.grnet.aquarium.store.{UserStore, RecordID, StoreException, EventStore}
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.user.UserState.JsonNames
 import gr.grnet.aquarium.util.displayableObjectInfo
 import gr.grnet.aquarium.util.json.JsonSupport
 import com.mongodb._
-import collection.mutable.{ArrayBuffer, ListBuffer}
+import collection.mutable.{ListBuffer}
+import gr.grnet.aquarium.store._
+import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent, AquariumEvent}
 
 /**
  * Mongodb implementation of the event store (and soon the user store).
@@ -58,7 +58,7 @@ class MongoDBStore(
     val database: String,
     val username: String,
     val password: String)
-  extends EventStore with UserStore with Loggable {
+  extends EventStore with UserStore with IMStore with Loggable {
   
   private[store] lazy val events: DBCollection = getCollection(MongoDBStore.EVENTS_COLLECTION)
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
@@ -201,6 +201,18 @@ class MongoDBStore(
     }
   }
   //-UserStore
+
+  //+IMStore
+  def storeUserEvent(event: UserEvent) = null
+
+  def findUserEventById(id: String) = null
+
+  def findUserEventsByUserId[A <: AquariumEvent](userId: Long)(sortWith: Option[(A, A) => Boolean]) = null
+
+  def findLastUserEvent(userId: String) = null
+
+  def userExists(userId: String) = false
+  //-IMStore
 }
 
 object MongoDBStore {

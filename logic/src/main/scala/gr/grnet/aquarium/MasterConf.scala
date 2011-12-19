@@ -42,7 +42,7 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 import processor.actor.{ResourceEventProcessorService, ConfigureDispatcher}
-import store.{StoreProvider, EventStore, UserStore}
+import store.{IMStore, StoreProvider, EventStore, UserStore}
 import util.{Lifecycle, Loggable}
 
 /**
@@ -120,6 +120,17 @@ class MasterConf(val props: Props) extends Loggable {
     }
   }
 
+  private[this] lazy val _IMEventStoreM: Maybe[IMStore] = {
+    // If there is a specific `IMStore` implementation specified in the
+    // properties, then this implementation overrides the event store given by
+    // `IMProvider`.
+    props.get(Keys.im_event_store_class) map { className ⇒
+      val instance = newInstance[IMStore](className)
+      logger.info("Overriding IMStore provisioning. Implementation given by: %s".format(instance.getClass))
+      instance
+    }
+  }
+
   private[this] lazy val _resEventProc: ResourceEventProcessorService = {
     new ResourceEventProcessorService()
   }
@@ -167,6 +178,13 @@ class MasterConf(val props: Props) extends Loggable {
     _eventStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.eventStore
+    }
+  }
+
+  def IMStore = {
+    _IMEventStoreM match {
+      case Just(es) ⇒ es
+      case _        ⇒ storeProvider.imStore
     }
   }
 
@@ -294,6 +312,11 @@ object MasterConf {
      * The class that implements the event store
      */
     final val event_store_class = "event.store.class"
+
+    /**
+     * The class that implements the IM event store
+     */
+    final val im_event_store_class = "imevent.store.class"
 
     /**
      * Comma separated list of amqp servers running in active-active

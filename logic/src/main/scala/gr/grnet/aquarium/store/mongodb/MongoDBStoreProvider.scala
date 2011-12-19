@@ -78,4 +78,8 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   }
 
   def eventStore = _eventStore
+
+  def imStore = {
+    throw new Exception("EventStore not provided by %s. Please configure property '%s'".format(getClass, MasterConf.Keys.user_store_class))
+  }
 }
