@@ -1,5 +1,3 @@
-package gr.grnet.aquarium.util
-
 /*
  * Copyright 2011 GRNET S.A. All rights reserved.
  *
@@ -35,10 +33,13 @@ package gr.grnet.aquarium.util
  * or implied, of GRNET S.A.
  */
 
+package gr.grnet.aquarium.util
+
 import akka.amqp._
-import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import util.Random
+import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
+import java.security.MessageDigest
 
 /**
  *  Generates random resource events to use as input for testing and
@@ -51,7 +52,7 @@ trait RandomEventGenerator extends AkkaAMQP {
   val userIds = 1 to 100
   val clientIds = 1 to 4
   val vmIds = 1 to 4000
-  val resources = List("bandwidthup", "bandwidthdown", "vmtime", "diskspace")
+  val resources = List("vmtime", "bndup", "bnddown", "dsksp")
   val tsFrom = 1293840000000L //1/1/2011 0:00:00 GMT
   val tsTo = 1325376000000L   //1/1/2012 0:00:00 GMT
   val eventVersion = 1 to 4
@@ -60,7 +61,55 @@ trait RandomEventGenerator extends AkkaAMQP {
   private lazy val rnd = new Random(seed)
 
   /**
-   * Get the next random message
+   * Generate a random resource event
+   */
+  def nextUserEvent(): UserEvent = {
+    val md = MessageDigest.getInstance("SHA-1");
+    md.update(rnd.nextString(30).getBytes)
+
+    val sha1 = md.toString
+    val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
+    val id = userIds.apply(rnd.nextInt(100))
+    val event = Array("ACTIVE", "SUSPENDED").apply(rnd.nextInt(2))
+    val idp = Array("LOCAL", "SHIBBOLETH", "OPENID").apply(rnd.nextInt(3))
+    val tenant = Array("TENTANT1", "TENANT2").apply(rnd.nextInt(2))
+    val role = Array("ADMIN", "NORMAL").apply(rnd.nextInt(2))
+
+    UserEvent(sha1, ts, id.toString, 1, 2, event, idp, tenant, Array(role))
+  }
+
+  /**
+   * Generate a random resource event
+   */
+  def genPublishUserEvents(num: Int) = {
+    val publisher = producer("im")
+
+    (1 to num).foreach {
+      n =>
+        var event = nextUserEvent()
+        publisher ! Message(event.toBytes, "")
+    }
+  }
+
+  /**
+   * Generete and publish create events for test users
+   */
+  def initUsers = {
+    val publisher = producer("im")
+
+    userIds.foreach {
+      i =>
+        val md = MessageDigest.getInstance("SHA-1");
+        val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
+        md.update(rnd.nextString(30).getBytes)
+        val sha1 = md.toString
+        val user = UserEvent(sha1, ts, i.toString, 1, 1, "ACTIVE", "LOCAL", "TENTANT1", Array("NORMAL"))
+        publisher ! Message(user.toBytes, "user.%s".format("CREATED"))
+    }
+  }
+
+  /**
+   * Get the next random resource event
    */
   def nextResourceEvent() : ResourceEvent = {
     val res = rnd.shuffle(resources).head
@@ -75,14 +124,14 @@ trait RandomEventGenerator extends AkkaAMQP {
     ResourceEvent(
       rnd.nextString(35),
       rnd.nextInt(userIds.max),
-      rnd.nextInt(clientIds.max),
+      rnd.nextInt(clientIds.max).toShort,
       res,ts,1,extra)
   }
 
   /**
    * Generate resource events and publish them to the queue
    */
-  def genPublish(num: Int) = {
+  def genPublishResEvents(num: Int) = {
 
     assert(num > 0)
     val publisher = producer("aquarium")
@@ -91,7 +140,7 @@ trait RandomEventGenerator extends AkkaAMQP {
       n =>
         var event = nextResourceEvent
         publisher ! Message(event.toBytes,
-          "event.%d.%s".format(event.cliendId, event.resource))
+          "resevent.%d.%s".format(event.clientId, event.resource))
     }
   }
 }
@@ -107,6 +156,6 @@ object RandomEventGen extends RandomEventGenerator {
 
     println("Publishing %d messages. Hit Ctrl+c to stop".format(num))
 
-    genPublish(num)
+    genPublishResEvents(num)
   }
 }
