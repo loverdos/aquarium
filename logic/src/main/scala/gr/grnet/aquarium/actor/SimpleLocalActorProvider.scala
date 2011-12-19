@@ -38,6 +38,8 @@ package gr.grnet.aquarium.actor
 import com.ckkloverdos.props.Props
 import akka.actor.ActorRef
 import gr.grnet.aquarium.Configurable
+import java.util.concurrent.ConcurrentHashMap
+import gr.grnet.aquarium.util.Loggable
 
 
 /**
@@ -45,25 +47,74 @@ import gr.grnet.aquarium.Configurable
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class SimpleLocalActorProvider extends ActorProvider with Configurable {
+class SimpleLocalActorProvider extends ActorProvider with Configurable with Loggable {
+  private[this] val actorCache = new ConcurrentHashMap[ActorRole, ActorRef]
+  private[this] var _props: Props = _
+
   def configure(props: Props): Unit = {
+    this._props = props
+    logger.info("Configured with props: %s".format(props))
   }
 
   def start(): Unit = {
-    for(role <- SimpleLocalActorProvider.KnownRoles) {
+    // Start all actors that need to [be started]
+    val RolesToBeStarted = SimpleLocalActorProvider.RolesToBeStarted
+    logger.info("About to start actors for %s roles: %s".format(RolesToBeStarted.size, RolesToBeStarted))
+    for((role, index) <- RolesToBeStarted.zipWithIndex) {
       actorForRole(role)
+      logger.info("%s. Started actor for role %s".format(index + 1, role))
     }
+
+    // Now that all actors have been started, send them some initialization code
+    val message = ActorProviderConfigured(this)
+    for(role <- RolesToBeStarted) {
+      role match {
+        case DispatcherRole ⇒
+          logger.info("Configuring %s with %s".format(DispatcherRole, message))
+          actorForRole(DispatcherRole) ! message
+        case anyOtherRole ⇒
+          logger.info("Configuring %s with %s".format(anyOtherRole, message))
+          actorForRole(anyOtherRole) ! message
+      }
+    }
+
+    logger.info("Started")
   }
 
   def stop(): Unit = {
+    logger.info("Stopped")
+  }
+
+  private[this] def _fromCacheOrNew(role: ActorRole): ActorRef = {
+    actorCache.get(role) match {
+      case null ⇒
+        val actorRef = akka.actor.Actor.actorOf(role.actorType).start()
+        actorCache.put(role, actorRef)
+        actorRef
+      case actorRef ⇒
+        actorRef
+    }
   }
 
   @throws(classOf[Exception])
   def actorForRole(role: ActorRole, hints: Props = Props.empty) = {
-    SimpleLocalActorProvider.ActorRefByRole.get(role) match {
-      case Some(actorRef) ⇒
-        actorRef
-      case None ⇒
+    // Currently, all actors are initialized to one instance
+    // and user actor are treated specially
+    role match {
+      case RESTRole ⇒
+        _fromCacheOrNew(RESTRole)
+      case DispatcherRole ⇒
+        _fromCacheOrNew(DispatcherRole)
+      case UserActorManagerRole ⇒
+        _fromCacheOrNew(UserActorManagerRole)
+      case UserActorRole ⇒
+        // NOTE: This always creates a new actor and is intended to be called only
+        // from internal API that can manage the created actors.
+        // E.g. UserActorProvider knows how to manage multiple user actors and properly initialize them.
+        //
+        // Note that the returned actor is not initialized!
+        akka.actor.Actor.actorOf(UserActorRole.actorType).start()
+      case _ ⇒
         throw new Exception("Cannot create actor for role %s".format(role))
     }
   }
@@ -71,13 +122,14 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable {
 
 object SimpleLocalActorProvider {
   // Always set Dispatcher at the end.
-  final val KnownRoles = List(
-    ResourceProcessorRole,
+  final val RolesToBeStarted = List(
+//    ResourceProcessorRole,
     RESTRole,
+    UserActorManagerRole,
     DispatcherRole)
 
   lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
-    KnownRoles map { role ⇒
+    RolesToBeStarted map { role ⇒
       (role, role.actorType)
     } toMap
   

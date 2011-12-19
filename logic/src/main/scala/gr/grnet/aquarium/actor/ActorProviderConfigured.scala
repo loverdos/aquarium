@@ -33,27 +33,11 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.actor
 
 /**
- * Test-related proeprty names.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * 
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object PropertyNames {
-  // Test enabling/disabling
-  val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableMongoDB  = "test.enable.mongodb"
-  val TestEnablePerf     = "test.enable.perf"
-  val TestEnableSpray    = "test.enable.spray"
 
-  // Test configuration files used
-  val MongoDBConfFile  = "mongodb.conf.file"
-  val RabbitMQConfFile = "rabbitmq.conf.file"
-
-  // Configuration items in configuration files
-  val RabbitMQSpecificConf = "rabbitmq.conf"
-  val RabbitMQConnection   = "rabbitmq.connection"
-  val RabbitMQProducer     = "rabbitmq.producer"
-  val RabbitMQConsumer     = "rabbitmq.consumer"
-}
+case class ActorProviderConfigured(actorProvider: ActorProvider) extends ActorMessage

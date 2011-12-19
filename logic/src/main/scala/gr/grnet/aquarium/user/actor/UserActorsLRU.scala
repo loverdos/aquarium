@@ -33,27 +33,56 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.user.actor
+
+import org.apache.solr.util.ConcurrentLRUCache
+import akka.actor.ActorRef
+import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 
 /**
- * Test-related proeprty names.
+ * This class holds an LRU cache for the user actors.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * The underlying implementation is borrowed from the Apache lucene+solr project(s).
+ *
+ * The provided collections-like API is neither Java- nor Scala-oriented.
+ * 
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object PropertyNames {
-  // Test enabling/disabling
-  val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableMongoDB  = "test.enable.mongodb"
-  val TestEnablePerf     = "test.enable.perf"
-  val TestEnableSpray    = "test.enable.spray"
 
-  // Test configuration files used
-  val MongoDBConfFile  = "mongodb.conf.file"
-  val RabbitMQConfFile = "rabbitmq.conf.file"
+class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Lifecycle {
+  private[this] val _cache = new ConcurrentLRUCache[String, ActorRef](
+    upperWaterMark,
+    lowerWatermark,
+    ((upperWaterMark + lowerWatermark).toLong / 2).toInt,
+    (3L * upperWaterMark / 4).toInt,
+    true,
+    false,
+    EvictionListener)
+  
+  def put(userId: String, userActor: ActorRef): Unit = {
+    _cache.put(userId, userActor)
+  }
 
-  // Configuration items in configuration files
-  val RabbitMQSpecificConf = "rabbitmq.conf"
-  val RabbitMQConnection   = "rabbitmq.connection"
-  val RabbitMQProducer     = "rabbitmq.producer"
-  val RabbitMQConsumer     = "rabbitmq.consumer"
+  def get(userId: String): Option[ActorRef] = {
+    _cache.get(userId) match {
+      case null     ⇒ None
+      case actorRef ⇒ Some(actorRef)
+    }
+  }
+
+  def size: Int   = _cache.size()
+  def clear: Unit = _cache.clear()
+
+  def start() = {}
+
+  def stop() = {
+    _cache.destroy()
+  }
+  
+  private[this] object EvictionListener extends ConcurrentLRUCache.EvictionListener[String, ActorRef] with Loggable {
+    def evictedEntry(userId: String, actorRef: ActorRef) = {
+      logger.debug("Evicting UserActor for userId = %s".format(userId))
+    }
+  }
 }
+

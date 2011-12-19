@@ -41,8 +41,9 @@ import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
-import processor.actor.{ResourceEventProcessorService, ConfigureDispatcher}
+import processor.actor.{ResourceEventProcessorService}
 import store.{IMStore, StoreProvider, EventStore, UserStore}
+import processor.actor.{ResourceEventProcessorService}
 import util.{Lifecycle, Loggable}
 
 /**
@@ -147,8 +148,6 @@ class MasterConf(val props: Props) extends Loggable {
     _restService.start()
     _actorProvider.start()
     _resEventProc.start()
-
-    _actorProvider.actorForRole(DispatcherRole) ! ConfigureDispatcher(this)
   }
 
   def stopServices(): Unit = {
@@ -317,6 +316,20 @@ object MasterConf {
      * The class that implements the IM event store
      */
     final val im_event_store_class = "imevent.store.class"
+
+    /** The lower mark for the UserActors' LRU, managed by UserActorManager.
+     *
+     * The terminology is borrowed from the (also borrowed) Apache-lucene-solr-based implementation.
+     *
+     */
+    final val user_actors_lru_lower_mark = "user.actors.LRU.lower.mark"
+
+    /**
+     * The upper mark for the UserActors' LRU, managed by UserActorManager.
+     *
+     * The terminology is borrowed from the (also borrowed) Apache-lucene-solr-based implementation.
+     */
+    final val user_actors_lru_upper_mark = "user.actors.LRU.upper.mark"
 
     /**
      * Comma separated list of amqp servers running in active-active

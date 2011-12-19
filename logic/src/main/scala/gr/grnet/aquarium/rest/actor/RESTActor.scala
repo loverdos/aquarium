@@ -44,7 +44,7 @@ import gr.grnet.aquarium.MasterConf
 import akka.actor.{ActorRef, Actor}
 import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
 import RESTPaths.{UserBalance}
-import gr.grnet.aquarium.processor.actor.{UserBalanceRequest, DispatcherMessage}
+import gr.grnet.aquarium.processor.actor.{UserRequestGetBalance, DispatcherMessage}
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -97,7 +97,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
     case RequestContext(HttpRequest(GET, uri, headers, body, protocol), _, responder) ⇒
       uri match {
         case UserBalance(userId) ⇒
-          callDispatcher(UserBalanceRequest(userId), responder)
+          callDispatcher(UserRequestGetBalance(userId, System.currentTimeMillis()), responder)
         case _ ⇒
           responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
       }

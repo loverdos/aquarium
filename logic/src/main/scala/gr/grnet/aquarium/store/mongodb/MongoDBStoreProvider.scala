@@ -39,7 +39,7 @@ import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.{MasterConf, Configurable}
 import gr.grnet.aquarium.MasterConf.Keys
 import com.mongodb.{MongoException, Mongo, MongoOptions, ServerAddress}
-import gr.grnet.aquarium.store.{EventStore, StoreProvider}
+import gr.grnet.aquarium.store.{UserStore, EventStore, StoreProvider}
 
 /**
  * 
@@ -53,6 +53,7 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   private[this] var _password: String = _
 
   private[this] var _eventStore: EventStore = _
+  private[this] var _userStore: UserStore = _
 
   def configure(props: Props) = {
     this._database = props.getEx(Keys.persistence_db)
@@ -66,16 +67,16 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
       val addr = new ServerAddress(host, foo)
       val opt = new MongoOptions()
       this._mongo = new Mongo(addr, opt)
-      this._eventStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
+      val mongoStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
+      this._eventStore = mongoStore
+      this._userStore  = mongoStore
     } catch {
       case e: MongoException =>
         throw new Exception("Cannot connect to mongo at %s:%s".format(host, port), e)
     }
   }
 
-  def userStore = {
-    throw new Exception("EventStore not provided by %s. Please configure property '%s'".format(getClass, MasterConf.Keys.user_store_class))
-  }
+  def userStore = _userStore
 
   def eventStore = _eventStore
 

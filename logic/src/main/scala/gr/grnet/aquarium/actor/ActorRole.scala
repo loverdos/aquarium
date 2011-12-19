@@ -37,6 +37,7 @@ package gr.grnet.aquarium.actor
 
 import gr.grnet.aquarium.processor.actor.{ResourceProcessorActor, DispatcherActor}
 import gr.grnet.aquarium.rest.actor.RESTActor
+import gr.grnet.aquarium.user.actor.{UserActor, UserActorManager}
 
 /**
  * Each actor plays one role. This is a one-to-one correspondance.
@@ -59,3 +60,13 @@ case object ResourceProcessorRole extends ActorRole("ResourceProcessorRole", cla
  * REST request handler.
  */
 case object RESTRole extends ActorRole("RESTRole", classOf[RESTActor])
+
+/**
+ * Role for the actor that is responsible for user actor provisioning.
+ */
+case object UserActorManagerRole extends ActorRole("UserActorManagerRole", classOf[UserActorManager])
+
+/**
+ * User-oriented business logic handler role.
+ */
+case object UserActorRole extends ActorRole("UserActorRole", classOf[UserActor])

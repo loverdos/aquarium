@@ -33,31 +33,60 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium.user.actor
 
 import gr.grnet.aquarium.util.Loggable
+import akka.actor.ActorRef
 import gr.grnet.aquarium.actor._
+import gr.grnet.aquarium.processor.actor.UserRequestGetBalance
+
 
 /**
- * Business logic dispatcher.
+ * Responsible for the management of user actors.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * The rest of the application should send UserActor-related requests
+ * to this actor and not to a UserActor directly, since UserActors are
+ * managed entities. For example, how many UserActor are currently live
+ * in Aquarium is managed by UserActorManager
+ *
+ * Any UserActor-related request sent here is properly forwarded to
+ * the intended UserActor.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class DispatcherActor extends AquariumActor with Loggable {
-  private[this] var _actorProvider: ActorProvider = _
 
-  def role = DispatcherRole
+class UserActorManager extends AquariumActor with Loggable {
+  // TODO: Get the constructor values from configuration
+  private[this] val userActorLRU = new UserActorsLRU(1000, 800)
+  @volatile
+  private[this] var _actorProvider: ActorProvider = _
+  
+  def role = UserActorManagerRole
+
+  private[this] def _launchUserActor(userId: String): ActorRef = {
+    // create a fresh instance
+    val userActor = _actorProvider.actorForRole(UserActorRole)
+    userActor ! UserActorInitWithUserId(userId)
+    userActor ! ActorProviderConfigured(this._actorProvider)
+    userActor
+  }
 
   protected def receive = {
-    case ActorProviderConfigured(actorProvider) ⇒
-      this._actorProvider = actorProvider
-      logger.info("Received actorProvider = %s".format(this._actorProvider))
+    case m @ ActorProviderConfigured(actorProvicer) ⇒
+      this._actorProvider = actorProvicer
+      logger.info("Configured %s with %s".format(this, m))
 
     case m @ UserRequestGetBalance(userId, timestamp) ⇒
       logger.debug("Received %s".format(m))
-      val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
-      // forward to the user actor manager, which in turn will
-      // forward to the appropriate user actor (and create one if it does not exist)
-      userActorManager forward m
+      userActorLRU.get(userId) match {
+        case Some(userActor) ⇒
+          logger.debug("Found user actor and forwarding request %s".format(m))
+          userActor forward m
+        case None ⇒
+          logger.debug("Not found user actor for userId = %s. Launching new actor".format(userId))
+          val userActor = _launchUserActor(userId)
+          logger.debug("Launched new user actor and forwarding request %s".format(m))
+          userActor forward m
+      }
   }
 }
