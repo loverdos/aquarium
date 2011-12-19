@@ -48,7 +48,8 @@ import util.xml.XmlSupport
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class AquariumEvent(val id: String, val timestamp: Long) extends JsonSupport with XmlSupport {
+abstract class AquariumEvent(val id: String, val timestamp: Long)
+  extends JsonSupport with XmlSupport {
 
   def validate: Boolean
 
@@ -56,7 +57,7 @@ abstract class AquariumEvent(val id: String, val timestamp: Long) extends JsonSu
     toJson.getBytes("UTF-8")
   }
 
-  def eventType: String = shortClassNameOf(this)
+  def evtype: String = shortClassNameOf(this)
 
   def toMap: Map[String,  Any] =
     (Map[String, Any]() /: this.getClass.getDeclaredFields) {
