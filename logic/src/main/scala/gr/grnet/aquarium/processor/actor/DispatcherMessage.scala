@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.actor.ActorMessage
+import gr.grnet.aquarium.user.actor.UserActorMessage
 
 /**
  * This is the base class of the messages the Dispatcher understands.

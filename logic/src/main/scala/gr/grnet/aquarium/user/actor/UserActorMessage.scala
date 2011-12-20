@@ -35,11 +35,18 @@
 
 package gr.grnet.aquarium.user.actor
 
+import gr.grnet.aquarium.actor.ActorMessage
+
 /**
+ * Messages handled by a UserActor.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-sealed trait UserActorMessage
+trait UserActorMessage extends ActorMessage
 
 case class UserActorInitWithUserId(userId: String) extends UserActorMessage
+
+case object UserActorPark extends UserActorMessage
+case object UserActorCheckToStop extends UserActorMessage
+case object UserActorStop extends UserActorMessage

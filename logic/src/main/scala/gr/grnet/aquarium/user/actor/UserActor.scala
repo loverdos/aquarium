@@ -36,9 +36,10 @@
 package gr.grnet.aquarium.user.actor
 
 import gr.grnet.aquarium.user.UserState
-import gr.grnet.aquarium.actor.{ActorProviderConfigured, ActorProvider, UserActorRole, AquariumActor}
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.processor.actor.{UserResponseGetBalance, UserRequestGetBalance}
+import scala.PartialFunction
+import gr.grnet.aquarium.actor._
 
 
 /**
@@ -52,52 +53,88 @@ class UserActor extends AquariumActor with Loggable {
   @volatile
   private[this] var _isInitialized: Boolean = false
   @volatile
+  private[this] var _isParked: Boolean = false
+
+  @volatile
   private[this] var _userState: UserState = _
   @volatile
   private[this] var _actorProvider: ActorProvider = _
 
   def role = UserActorRole
 
-  protected def receive = {
+  private[this] def _checkNotParked(m: ActorMessage): Boolean = {
+    if(_isParked) {
+      logger.error("UserActor %s for userId %s is parked but %s was sent to it".format(this, this._userId, m))
+      false
+    } else {
+      true
+    }
+  }
+
+  private[this] def _selfCheckToStop(): Unit = {
+    self ! UserActorCheckToStop
+  }
+
+  protected def receive: Receive = {
+    case UserActorPark ⇒
+      this._isParked = true
+
+    case UserActorCheckToStop ⇒
+      if(_isParked) {
+        self ! UserActorStop
+      }
+
+    case UserActorStop ⇒
+      self.stop()
+
     case m @ UserActorInitWithUserId(userId) ⇒
-      this._userId = userId
-      this._isInitialized = true
-      // TODO: query DB etc to get internal state
-      logger.info("Setup my userId = %s".format(userId))
+      if(_checkNotParked(m)) {
+        this._userId = userId
+        this._isInitialized = true
+        // TODO: query DB etc to get internal state
+        logger.info("Setup my userId = %s".format(userId))
+      }
+      _selfCheckToStop()
 
     case m @ ActorProviderConfigured(actorProvider) ⇒
-      this._actorProvider = actorProvider
-      logger.info("Configured %s with %s".format(this, m))
+      if(_checkNotParked(m)) {
+        this._actorProvider = actorProvider
+        logger.info("Configured %s with %s".format(this, m))
+      }
+      _selfCheckToStop()
 
     case m @ UserRequestGetBalance(userId, timestamp) ⇒
-      if(this._userId != userId) {
-        logger.error("Received %s but my userId = %s".format(m, this._userId))
-        // TODO: throw an exception here
-      } else {
-        // This is the big party.
-        // Get the user state, if it exists and make sure it is not stale.
-
-        // Do we have a user state?
-        if(_userState ne null) {
-          // Yep, we do. See what there is inside it.
-          val credits = _userState.credits
-          val creditsTimestamp = credits.snapshotTime
-
-          // Check if data is stale
-          if(creditsTimestamp + 10000 > timestamp) {
-            // No, it's OK
-            self reply UserResponseGetBalance(userId, credits.data)
-          } else {
-            // Yep, data is stale and must recompute balance
-            // FIXME: implement
-            logger.error("FIXME: Should have computed a new value for %s".format(credits))
-            self reply UserResponseGetBalance(userId, credits.data)
-          }
+      if(_checkNotParked(m)) {
+        if(this._userId != userId) {
+          logger.error("Received %s but my userId = %s".format(m, this._userId))
+          // TODO: throw an exception here
         } else {
-          // Nope. No user state exists. Must reproduce one
-          // FIXME: implement
-          logger.error("FIXME: Should have computed the user state for userId = %s".format(userId))
+          // This is the big party.
+          // Get the user state, if it exists and make sure it is not stale.
+
+          // Do we have a user state?
+          if(_userState ne null) {
+            // Yep, we do. See what there is inside it.
+            val credits = _userState.credits
+            val creditsTimestamp = credits.snapshotTime
+
+            // Check if data is stale
+            if(creditsTimestamp + 10000 > timestamp) {
+              // No, it's OK
+              self reply UserResponseGetBalance(userId, credits.data)
+            } else {
+              // Yep, data is stale and must recompute balance
+              // FIXME: implement
+              logger.error("FIXME: Should have computed a new value for %s".format(credits))
+              self reply UserResponseGetBalance(userId, credits.data)
+            }
+          } else {
+            // Nope. No user state exists. Must reproduce one
+            // FIXME: implement
+            logger.error("FIXME: Should have computed the user state for userId = %s".format(userId))
+          }
         }
       }
+      _selfCheckToStop()
   }
 }
