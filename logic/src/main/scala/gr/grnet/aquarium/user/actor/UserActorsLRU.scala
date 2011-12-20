@@ -82,9 +82,9 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
   private[this] object EvictionListener extends ConcurrentLRUCache.EvictionListener[String, ActorRef] with Loggable {
     def evictedEntry(userId: String, userActor: ActorRef): Unit = {
       logger.debug("Parking UserActor for userId = %s".format(userId))
-      userActor ! UserActorPark
-      // hopefully no need to further track these actors as they now enter a state machine which ultimately leads
-      // to their shutting down
+      // Check this is received after any currently servicing business logic message.
+      userActor ! UserActorStop
+      // Hopefully no need to further track these actors as they will now cause their own death.
     }
   }
 }
