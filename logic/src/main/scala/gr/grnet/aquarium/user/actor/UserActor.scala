@@ -40,6 +40,7 @@ import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.processor.actor.{UserResponseGetBalance, UserRequestGetBalance}
 import scala.PartialFunction
 import gr.grnet.aquarium.actor._
+import com.ckkloverdos.maybe.Maybe
 
 
 /**
@@ -101,6 +102,7 @@ class UserActor extends AquariumActor with Loggable {
           // Nope. No user state exists. Must reproduce one
           // FIXME: implement
           logger.error("FIXME: Should have computed the user state for userId = %s".format(userId))
+          self reply UserResponseGetBalance(userId, Maybe(userId.toDouble).getOr(10.5))
         }
       }
   }

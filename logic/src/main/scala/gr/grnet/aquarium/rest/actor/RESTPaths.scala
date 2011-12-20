@@ -41,5 +41,9 @@ package gr.grnet.aquarium.rest.actor
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 object RESTPaths {
-  final val UserBalance = "/user/(.+)/balance".r
+  /**
+   * Use this URI path to query for the user balance. The parenthesized regular expression part
+   * represents the user ID.
+   */
+  final val UserBalance = "/user/(.+)/balance/?".r
 }

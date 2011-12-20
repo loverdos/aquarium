@@ -36,7 +36,6 @@
 package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.actor.ActorMessage
-import gr.grnet.aquarium.user.actor.UserActorMessage
 
 /**
  * This is the base class of the messages the Dispatcher understands.
@@ -44,7 +43,7 @@ import gr.grnet.aquarium.user.actor.UserActorMessage
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 sealed trait DispatcherMessage extends ActorMessage {
-  def bodyToJson: String = "{}"
+//  def bodyToJson: String = "{}"
   def isError: Boolean = false
 }
 

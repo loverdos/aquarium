@@ -95,12 +95,14 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
     }
 
     case RequestContext(HttpRequest(GET, uri, headers, body, protocol), _, responder) ⇒
+      //+ Main business logic REST URIs are matched here
       uri match {
         case UserBalance(userId) ⇒
           callDispatcher(UserRequestGetBalance(userId, System.currentTimeMillis()), responder)
         case _ ⇒
           responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
       }
+      //- Main business logic REST URIs are matched here
 
     case RequestContext(HttpRequest(_, _, _, _, _), _, responder) ⇒
       responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
@@ -127,7 +129,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
           case Some(Right(actualResponse)) ⇒
             actualResponse match {
               case dispatcherResponse: DispatcherMessage if(!dispatcherResponse.isError) ⇒
-                responder.complete(HttpResponse(status = 200, body = dispatcherResponse.bodyToJson.getBytes("UTF-8"), headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
+                responder.complete(HttpResponse(status = 200, body = dispatcherResponse.toJson.getBytes("UTF-8"), headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
               case dispatcherResponse: DispatcherMessage ⇒
                 logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
                 responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))

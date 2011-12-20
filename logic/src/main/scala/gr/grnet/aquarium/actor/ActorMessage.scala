@@ -35,10 +35,12 @@
 
 package gr.grnet.aquarium.actor
 
+import gr.grnet.aquarium.util.json.JsonSupport
+
 /**
  * Base trait for all messages of the aquarium actors.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait ActorMessage
+trait ActorMessage extends JsonSupport

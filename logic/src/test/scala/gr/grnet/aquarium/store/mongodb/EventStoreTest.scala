@@ -50,7 +50,6 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @Before
   def before() = {
-
   }
 
   @Test
@@ -102,6 +101,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @Test
   def testMultipleMongos = {
+    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
     val a = getMongo
     val b = getMongo
     //assertEquals(a.Connection.mongo.get.hashCode(), b.Connection.mongo.get.hashCode())
@@ -109,6 +109,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @After
   def after() = {
+    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
     val a = getMongo
 
     val col = a.mongo.getDB(

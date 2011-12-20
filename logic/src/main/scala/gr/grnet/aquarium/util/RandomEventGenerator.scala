@@ -124,8 +124,8 @@ trait RandomEventGenerator extends AkkaAMQP {
     ResourceEvent(
       rnd.nextString(35),
       rnd.nextInt(userIds.max),
-      rnd.nextInt(clientIds.max).toShort,
-      res,ts,1,extra)
+      rnd.nextInt(clientIds.max).toString,
+      res,ts,1.toString,extra)
   }
 
   /**
