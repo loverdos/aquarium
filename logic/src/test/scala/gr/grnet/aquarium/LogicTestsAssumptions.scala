@@ -63,7 +63,7 @@ object LogicTestsAssumptions {
   private def testPropertyFalse(name: String): Boolean = !testPropertyTrue(name)
 
   val EnableRabbitMQTests = testPropertyTrue(PropertyNames.TestEnableRabbitMQ)
-  val EnableMongoDBTests  = testPropertyTrue(PropertyNames.TestEnableMongoDB)
+  val EnableStoreTests  = testPropertyTrue(PropertyNames.TestEnableStore)
   val EnablePerfTests = testPropertyTrue(PropertyNames.TestEnablePerf)
   val EnableSprayTests = testPropertyTrue(PropertyNames.TestEnableSpray)
 }

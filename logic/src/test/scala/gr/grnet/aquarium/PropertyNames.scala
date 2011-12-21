@@ -36,24 +36,14 @@
 package gr.grnet.aquarium
 
 /**
- * Test-related proeprty names.
+ * Test-related property names.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 object PropertyNames {
   // Test enabling/disabling
   val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableMongoDB  = "test.enable.mongodb"
+  val TestEnableStore    = "test.enable.store"
   val TestEnablePerf     = "test.enable.perf"
   val TestEnableSpray    = "test.enable.spray"
-
-  // Test configuration files used
-  val MongoDBConfFile  = "mongodb.conf.file"
-  val RabbitMQConfFile = "rabbitmq.conf.file"
-
-  // Configuration items in configuration files
-  val RabbitMQSpecificConf = "rabbitmq.conf"
-  val RabbitMQConnection   = "rabbitmq.connection"
-  val RabbitMQProducer     = "rabbitmq.producer"
-  val RabbitMQConsumer     = "rabbitmq.consumer"
 }

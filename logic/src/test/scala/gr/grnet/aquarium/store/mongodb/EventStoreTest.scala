@@ -35,14 +35,16 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import gr.grnet.aquarium.util.{TestMethods, RandomEventGenerator}
-import org.junit.Assume._
 import org.junit.Assert._
-import collection.mutable.ArrayBuffer
-import gr.grnet.aquarium.logic.events.ResourceEvent
-import org.junit.{Before, After, Test}
+import org.junit.Assume._
 import gr.grnet.aquarium.MasterConf._
+import gr.grnet.aquarium.util.{RandomEventGenerator, TestMethods}
 import gr.grnet.aquarium.LogicTestsAssumptions
+import gr.grnet.aquarium.logic.events.ResourceEvent
+import collection.mutable.ArrayBuffer
+import org.junit.{After, Test, Before}
+
+
 
 /**
  * @author Georgios Gousios <gousiosg@gmail.com>
@@ -55,7 +57,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @Test
   def testStoreEvent() = {
-    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
+    assumeTrue(LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
     val store = MasterConf.eventStore
@@ -66,7 +68,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @Test
   def testFindEventById(): Unit = {
-    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
+    assumeTrue(LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
     val store = MasterConf.eventStore
@@ -80,7 +82,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @Test
   def testfindEventsByUserId(): Unit = {
-    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
+    assumeTrue(LogicTestsAssumptions.EnableStoreTests)
     val events = new ArrayBuffer[ResourceEvent]()
     val store = MasterConf.eventStore
 
@@ -103,7 +105,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @Test
   def testMultipleMongos = {
-    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
+    assumeTrue(LogicTestsAssumptions.EnableStoreTests)
     val a = getMongo
     val b = getMongo
     //assertEquals(a.Connection.mongo.get.hashCode(), b.Connection.mongo.get.hashCode())
@@ -111,7 +113,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @After
   def after() = {
-    assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
+    assumeTrue(LogicTestsAssumptions.EnableStoreTests)
     val a = getMongo
 
     val col = a.mongo.getDB(
