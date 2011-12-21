@@ -35,18 +35,47 @@
 
 import sbt._
 
-class Aquarium(info: ProjectInfo) extends ParentProject(info) {
-	override def parallelExecution = false
+class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
+  override def compileOptions = super.compileOptions ++
+    Seq("-deprecation",
+      "-Xmigration",
+      "-Xcheckinit",
+      "-optimise",
+      "-explaintypes",
+      "-unchecked",
+      "-encoding", "utf8")
+      .map(CompileOption(_))
 
-	val repo0 = "aquarium nexus" at "http://aquarium.dev.grnet.gr:8081/nexus/content/groups/public"
-	// val repo1 = "java.net.maven2" at "http://download.java.net/maven/2/"
-	// val repo2 = "EclipseLink Repo" at "http://download.eclipse.org/rt/eclipselink/maven.repo"
-	// val repo3 = "jboss" at "http://repository.jboss.org/nexus/content/groups/public/"
-	// val repo4 = "sonatype" at "http://oss.sonatype.org/content/groups/public/"
-	// val repo5 = "jcrontab" at "http://kenai.com/projects/crontab-parser/sources/maven-repo/content/"
-	// val repo6 = "typsafe" at "http://repo.typesafe.com/typesafe/releases/"
-	// val repo7 = "akka" at "http://akka.io/repository/"
-	// val repo8 = "twitter" at "http://maven.twttr.com"
+  override def testOptions =
+    super.testOptions ++
+      Seq(TestArgument(TestFrameworks.JUnit, "-q", "-v"))
+
+  override def packageDocsJar = defaultJarPath("-javadoc.jar")
+
+  override def packageSrcJar = defaultJarPath("-sources.jar")
+
+  val sourceArtifact = Artifact.sources(artifactID)
+  val docsArtifact = Artifact.javadoc(artifactID)
+
+  override def packageToPublishActions = super.packageToPublishActions ++ Seq(packageDocs, packageSrc)
+
+  override def packageAction = super.packageAction dependsOn test
+
+  override def managedStyle = ManagedStyle.Maven
+
+  val localDestRepo = Resolver.file("maven-local", Path.userHome / ".m2" / "repository" asFile)
+
+  override def parallelExecution = false
+
+  val repo0 = "aquarium nexus" at "http://aquarium.dev.grnet.gr:8081/nexus/content/groups/public"
+	val repo1 = "java.net.maven2" at "http://download.java.net/maven/2/"
+	val repo2 = "EclipseLink Repo" at "http://download.eclipse.org/rt/eclipselink/maven.repo"
+	val repo3 = "jboss" at "http://repository.jboss.org/nexus/content/groups/public/"
+	val repo4 = "sonatype" at "http://oss.sonatype.org/content/groups/public/"
+	val repo5 = "jcrontab" at "http://kenai.com/projects/crontab-parser/sources/maven-repo/content/"
+	val repo6 = "typsafe" at "http://repo.typesafe.com/typesafe/releases/"
+	val repo7 = "akka" at "http://akka.io/repository/"
+	val repo8 = "twitter" at "http://maven.twttr.com"
 	val repo9 = "tools-snapshots" at "http://scala-tools.org/repo-snapshots"
 	val repoA = "sonatype-snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
 
@@ -56,49 +85,28 @@ class Aquarium(info: ProjectInfo) extends ParentProject(info) {
 	val lib_scalajpa  = "org.scala-libs" % "scalajpa_2.9.1"       % "1.4"     withSources()
 	val lib_elink     = "org.eclipse.persistence"  % "eclipselink" % "2.2.0"   withSources()
 
-	lazy val logic = project("logic", "logic", new Logic(_), model)
-	lazy val model = project("model", "model", new Model(_))
-	lazy val shared = project("shared", "shared", new Shared(_))
+	val lib_liftjson  = "net.liftweb"    % "lift-json_2.9.1" % "2.4-M5"         withSources()
+	val lib_liftjsonX = "net.liftweb"    % "lift-json-ext_2.9.1" % "2.4-M5"         withSources()
+	val lib_yaml      = "org.yaml"       % "snakeyaml"       % "1.9"  withSources()
+	val lib_jcrontab  = "com.kenai.crontab-parser" % "crontab-parser" % "1.0.1" withSources()
+	val lib_xstream   = "com.thoughtworks.xstream" % "xstream"     % "1.4.1" withSources()
+	val lib_rabbit    = "com.rabbitmq"   % "amqp-client"       % "2.5.0" withSources()
+	val lib_mongo     = "org.mongodb"    % "mongo-java-driver" % "2.7.2" withSources()
+	//val lib_casbah    = "com.mongodb.casbah" % "casbah-core_2.9.1"  % "2.1.5-1" withSources()
+	val lib_akka_actor  = "se.scalablesolutions.akka" % "akka-actor"   % "1.3-RC4" withSources()
+	val lib_akka_remote = "se.scalablesolutions.akka" % "akka-remote"  % "1.3-RC4" withSources()
+	val lib_akka_test   = "se.scalablesolutions.akka" % "akka-testkit" % "1.3-RC4" % "test" withSources()
+	val lib_akka_amqp   = "se.scalablesolutions.akka" % "akka-amqp"    % "1.3-RC4" withSources()
 
-	class Logic(info: ProjectInfo) extends DefaultProject(info) {
-		val lib_scalajpa  = "org.scala-libs" % "scalajpa_2.9.1"  % "1.4"            withSources()
-		val lib_liftjson  = "net.liftweb"    % "lift-json_2.9.1" % "2.4-M5"         withSources()
-		val lib_liftjsonX = "net.liftweb"    % "lift-json-ext_2.9.1" % "2.4-M5"         withSources()
-		val lib_yaml      = "org.yaml"       % "snakeyaml"       % "1.9"  withSources()
-		val lib_jcrontab  = "com.kenai.crontab-parser" % "crontab-parser" % "1.0.1" withSources()
-		val lib_xstream   = "com.thoughtworks.xstream" % "xstream"     % "1.4.1" withSources()
-		val lib_rabbit    = "com.rabbitmq"   % "amqp-client"       % "2.5.0" withSources()
-   		val lib_mongo     = "org.mongodb"    % "mongo-java-driver" % "2.7.2" withSources()
-    	//val lib_casbah    = "com.mongodb.casbah" % "casbah-core_2.9.1"  % "2.1.5-1" withSources()
-    	val lib_akka_actor  = "se.scalablesolutions.akka" % "akka-actor"   % "1.3-RC4" withSources()
-    	val lib_akka_remote = "se.scalablesolutions.akka" % "akka-remote"  % "1.3-RC4" withSources()
-    	val lib_akka_test   = "se.scalablesolutions.akka" % "akka-testkit" % "1.3-RC4" % "test" withSources()
-    	val lib_akka_amqp   = "se.scalablesolutions.akka" % "akka-amqp"    % "1.3-RC4" withSources()
+	val lib_javaxrs     = "javax.ws.rs" % "jsr311-api" % "1.1.1" withSources()
+	val lib_spray_can   = "cc.spray.can" % "spray-can" % "0.9.2-SNAPSHOT" withSources()
+	// val lib_spray_server= "cc.spray.can" % "spray-server" % "0.9.0-SNAPSHOT" withSources()
 
-    	val lib_javaxrs     = "javax.ws.rs" % "jsr311-api" % "1.1.1" withSources()
-    	val lib_spray_can   = "cc.spray.can" % "spray-can" % "0.9.2-SNAPSHOT" withSources()
-    	// val lib_spray_server= "cc.spray.can" % "spray-server" % "0.9.0-SNAPSHOT" withSources()
+	val lib_converter      = "com.ckkloverdos" % "converter_2.9.1"      % "0.3.0" withSources()
+	val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()
 
-		val lib_converter      = "com.ckkloverdos" % "converter_2.9.1"      % "0.3.0" withSources()
-		val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()
+	val lib_lucene_core = "org.apache.lucene" % "lucene-core" % "3.5.0" withSources()
+	val lib_solr_core   = "org.apache.solr"   % "solr-core"   % "3.5.0" withSources()
 
-		val lib_lucene_core = "org.apache.lucene" % "lucene-core" % "3.5.0" withSources()
-		val lib_solr_core   = "org.apache.solr"   % "solr-core"   % "3.5.0" withSources()
-
-		val lib_test = "com.novocode" % "junit-interface" % "0.7" % "test->default"
-
-		// val model = project(Path.fromFile("../model"), "model", new Model(_))
-	}
-
-	class Model(info: ProjectInfo) extends DefaultProject(info) {
-		val lib_scalajpa  = "org.scala-libs" % "scalajpa_2.9.1"  % "1.4"            withSources()
-		val lib_persist = "org.eclipse.persistence" % "javax.persistence" % "2.0.3" withSources()
-
-		val lib_junit     = "junit" % "junit" % "4.10" % "test" withSources()
-	}
-
-	class Shared(info: ProjectInfo) extends DefaultProject(info) {
-		// dummy, to avoid looking at pom.xml
-		val lib_persist = "org.eclipse.persistence" % "javax.persistence" % "2.0.3" withSources()
-	}
+	val lib_test = "com.novocode" % "junit-interface" % "0.7" % "test->default"
 }
