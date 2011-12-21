@@ -1,1 +1,0 @@
-The resources in this directory are copied to all generated jars.
