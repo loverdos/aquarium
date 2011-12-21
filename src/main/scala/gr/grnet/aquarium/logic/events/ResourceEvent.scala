@@ -47,7 +47,7 @@ import gr.grnet.aquarium.util.json.JsonHelpers
  */
 case class ResourceEvent(
   override val id: String,
-  userId: Long,
+  userId: String,
   clientId: String,
   resource: String,
   override val timestamp: Long,
