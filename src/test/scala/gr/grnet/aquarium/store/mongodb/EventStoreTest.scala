@@ -44,20 +44,14 @@ import gr.grnet.aquarium.logic.events.ResourceEvent
 import collection.mutable.ArrayBuffer
 import org.junit.{After, Test, Before}
 
-
-
 /**
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 class EventStoreTest extends TestMethods with RandomEventGenerator {
 
-  @Before
-  def before() = {
-  }
-
   @Test
   def testStoreEvent() = {
-    assumeTrue(LogicTestsAssumptions.EnableStoreTests)
+    assume(true, LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
     val store = MasterConf.eventStore
@@ -113,7 +107,6 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
   @After
   def after() = {
-    assumeTrue(LogicTestsAssumptions.EnableStoreTests)
     val a = getMongo
 
     val col = a.mongo.getDB(
