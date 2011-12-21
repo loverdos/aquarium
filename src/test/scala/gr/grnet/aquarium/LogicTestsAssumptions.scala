@@ -49,6 +49,14 @@ import com.ckkloverdos.convert.Converters
  */
 object LogicTestsAssumptions {
   private def testPropertyTrue(name: String): Boolean = {
+    testPropertyTrue(name, false)
+  }
+
+  private def testPropertyTrue(name: String, checkEnableAll: Boolean): Boolean = {
+
+    if(checkEnableAll == false &&
+      testPropertyTrue(PropertyNames.TestEnableAll, true)) return true
+
     implicit val converters = Converters.DefaultConverters
     SysProp(name).value match {
       case Just(value) =>
@@ -66,4 +74,5 @@ object LogicTestsAssumptions {
   val EnableStoreTests  = testPropertyTrue(PropertyNames.TestEnableStore)
   val EnablePerfTests = testPropertyTrue(PropertyNames.TestEnablePerf)
   val EnableSprayTests = testPropertyTrue(PropertyNames.TestEnableSpray)
+  val EnableAllTests = testPropertyTrue(PropertyNames.TestEnableAll)
 }

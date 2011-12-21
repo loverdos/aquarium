@@ -46,4 +46,5 @@ object PropertyNames {
   val TestEnableStore    = "test.enable.store"
   val TestEnablePerf     = "test.enable.perf"
   val TestEnableSpray    = "test.enable.spray"
+  val TestEnableAll      = "test.enable.all"
 }
