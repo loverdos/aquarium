@@ -61,7 +61,7 @@ class AkkaAMQPTest extends RandomEventGenerator {
     val numMsg = 100
     val msgs = new AtomicInteger(0)
 
-    val publisher = producer("aquarium")
+    val publisher = producer(MessagingNames.AQUARIUM_EXCHANGE)
 
     class Consumer extends Actor {
 
@@ -87,7 +87,8 @@ class AkkaAMQPTest extends RandomEventGenerator {
       }
     }
 
-    consumer("foo.#", "akka-amqp-test", "aquarium", Actor.actorOf(new Consumer), false)
+    consumer("foo.#", MessagingNames.TEST_QUEUE,
+      MessagingNames.AQUARIUM_EXCHANGE, Actor.actorOf(new Consumer), false)
     Thread.sleep(2000)
 
     (1 to numMsg).foreach{

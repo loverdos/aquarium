@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import gr.grnet.aquarium.messaging.AkkaAMQP
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import akka.amqp.{Reject, Acknowledge, Acknowledged, Delivery}
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
@@ -51,6 +50,7 @@ import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
 import akka.config.Supervision.SupervisorConfig
 import akka.config.Supervision.OneForOneStrategy
 import java.util.concurrent.ConcurrentSkipListSet
+import gr.grnet.aquarium.messaging.{MessagingNames, AkkaAMQP}
 
 /**
  * An actor that gets events from the queue, stores them persistently
@@ -208,7 +208,10 @@ with Lifecycle {
 
     QueueReaderManager.start()
     PersisterManager.start()
-    consumer("event.#", "resource-events", "aquarium", QueueReaderManager.lb, false)
+
+    consumer("%s.#".format(MessagingNames.RES_EVENT_KEY),
+      MessagingNames.RESOURCE_EVENT_QUEUE, MessagingNames.AQUARIUM_EXCHANGE,
+      QueueReaderManager.lb, false)
   }
 
   def stop() {
