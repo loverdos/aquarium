@@ -64,10 +64,8 @@ trait RandomEventGenerator extends AkkaAMQP {
    * Generate a random resource event
    */
   def nextUserEvent(): UserEvent = {
-    val md = MessageDigest.getInstance("SHA-1");
-    md.update(rnd.nextString(30).getBytes)
 
-    val sha1 = md.toString
+    val sha1 = CryptoUtils.sha1(rnd.nextString(30))
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
     val id = userIds.apply(rnd.nextInt(100))
     val event = Array("ACTIVE", "SUSPENDED").apply(rnd.nextInt(2))
@@ -75,7 +73,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     val tenant = Array("TENTANT1", "TENANT2").apply(rnd.nextInt(2))
     val role = Array("ADMIN", "NORMAL").apply(rnd.nextInt(2))
 
-    UserEvent(sha1, ts, id.toString, 1, 2, event, idp, tenant, Array(role))
+    UserEvent(sha1, ts.toLong, id.toString, 1, 2, event, idp, tenant, Array(role))
   }
 
   /**
@@ -99,10 +97,8 @@ trait RandomEventGenerator extends AkkaAMQP {
 
     userIds.foreach {
       i =>
-        val md = MessageDigest.getInstance("SHA-1");
+        val sha1 = CryptoUtils.sha1(rnd.nextString(30))
         val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
-        md.update(rnd.nextString(30).getBytes)
-        val sha1 = md.toString
         val user = UserEvent(sha1, ts, i.toString, 1, 1, "ACTIVE", "LOCAL", "TENTANT1", Array("NORMAL"))
         publisher ! Message(user.toBytes, "user.%s".format("CREATED"))
     }
@@ -122,8 +118,8 @@ trait RandomEventGenerator extends AkkaAMQP {
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
 
     ResourceEvent(
-      rnd.nextString(35),
-      rnd.nextInt(userIds.max),
+      CryptoUtils.sha1(rnd.nextString(35)),
+      rnd.nextInt(userIds.max).toString,
       rnd.nextInt(clientIds.max).toString,
       res,ts,1.toString,extra)
   }
@@ -140,7 +136,7 @@ trait RandomEventGenerator extends AkkaAMQP {
       n =>
         var event = nextResourceEvent
         publisher ! Message(event.toBytes,
-          "resevent.%d.%s".format(event.clientId, event.resource))
+          "resevent.%s.%s".format(event.clientId, event.resource))
     }
   }
 }

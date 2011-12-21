@@ -32,8 +32,9 @@ class IMStoreTest extends TestMethods with RandomEventGenerator {
   def after() = {
     val a = getMongo
 
-    val col = a.mongo.getDB(MasterConf.get(Keys.persistence_db)
-    ).getCollection(MongoDBStore.EVENTS_COLLECTION)
+    val col = a.mongo.getDB(
+      MasterConf.get(Keys.persistence_db)).getCollection(
+        MongoDBStore.IM_EVENTS_COLLECTION)
 
     val res = col.find
     while (res.hasNext)
