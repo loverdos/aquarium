@@ -35,15 +35,14 @@
 
 package gr.grnet.aquarium
 
-import actor.{DispatcherRole, ActorProvider}
+import actor.{ActorProvider}
 import com.ckkloverdos.resource._
 import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 import processor.actor.{ResourceEventProcessorService}
-import store.{IMStore, StoreProvider, EventStore, UserStore}
-import processor.actor.{ResourceEventProcessorService}
+import store._
 import util.{Lifecycle, Loggable}
 
 /**
@@ -103,7 +102,7 @@ class MasterConf(val props: Props) extends Loggable {
     // If there is a specific `UserStore` implementation specified in the
     // properties, then this implementation overrides the user store given by
     // `StoreProvider`.
-    props.get(Keys.user_store_class) map { className ⇒
+    props.get(Keys.userstore_class) map { className ⇒
       val instance = newInstance[UserStore](className)
       logger.info("Overriding UserStore provisioning. Implementation given by: %s".format(instance.getClass))
       instance
@@ -114,7 +113,7 @@ class MasterConf(val props: Props) extends Loggable {
     // If there is a specific `EventStore` implementation specified in the
     // properties, then this implementation overrides the event store given by
     // `StoreProvider`.
-    props.get(Keys.event_store_class) map { className ⇒
+    props.get(Keys.eventstore_class) map { className ⇒
       val instance = newInstance[EventStore](className)
       logger.info("Overriding EventStore provisioning. Implementation given by: %s".format(instance.getClass))
       instance
@@ -125,9 +124,20 @@ class MasterConf(val props: Props) extends Loggable {
     // If there is a specific `IMStore` implementation specified in the
     // properties, then this implementation overrides the event store given by
     // `IMProvider`.
-    props.get(Keys.im_event_store_class) map { className ⇒
+    props.get(Keys.im_eventstore_class) map { className ⇒
       val instance = newInstance[IMStore](className)
       logger.info("Overriding IMStore provisioning. Implementation given by: %s".format(instance.getClass))
+      instance
+    }
+  }
+
+  private[this] lazy val _WalletEventStoreM: Maybe[WalletStore] = {
+    // If there is a specific `IMStore` implementation specified in the
+    // properties, then this implementation overrides the event store given by
+    // `IMProvider`.
+    props.get(Keys.walletstore_class) map { className ⇒
+      val instance = newInstance[WalletStore](className)
+      logger.info("Overriding WalletStore provisioning. Implementation given by: %s".format(instance.getClass))
       instance
     }
   }
@@ -184,6 +194,13 @@ class MasterConf(val props: Props) extends Loggable {
     _IMEventStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.imStore
+    }
+  }
+
+  def WalletStore = {
+    _WalletEventStoreM match {
+      case Just(es) ⇒ es
+      case _        ⇒ storeProvider.walletStore
     }
   }
 
@@ -305,17 +322,22 @@ object MasterConf {
     /**
      * The class that implements the User store
      */
-    final val user_store_class = "user.store.class"
+    final val userstore_class = "user.store.class"
 
     /**
      * The class that implements the event store
      */
-    final val event_store_class = "event.store.class"
+    final val eventstore_class = "event.store.class"
 
     /**
      * The class that implements the IM event store
      */
-    final val im_event_store_class = "imevent.store.class"
+    final val im_eventstore_class = "imevent.store.class"
+
+    /**
+     * The class that implements the wallet store
+     */
+    final val walletstore_class = "wallet.store.class"
 
     /** The lower mark for the UserActors' LRU, managed by UserActorManager.
      *

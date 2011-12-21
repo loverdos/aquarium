@@ -39,7 +39,7 @@ import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.logic.events.{UserEvent, AquariumEvent}
 
 /**
- * Store for IM events
+ * A store for IM events
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
@@ -47,9 +47,9 @@ trait IMStore {
 
   def storeUserEvent(event: UserEvent): Maybe[RecordID]
 
-  def findUserEventById(id: String): Option[UserEvent]
+  def findUserEventById[A <: UserEvent](id: String): Option[A]
 
-  def findUserEventsByUserId[A <: AquariumEvent](userId: Long)(sortWith: Option[(A, A) => Boolean]): List[A]
+  def findUserEventsByUserId[A <: UserEvent](userId: String)(sortWith: Option[(A, A) => Boolean]): List[A]
 
   def findLastUserEvent(userId: String): Option[UserEvent]
 
