@@ -46,4 +46,10 @@ case class DSLTimeFrame (
   from: Date,
   to: Option[Date],
   repeat: List[DSLTimeFrameRepeat]
-)
+) {
+
+  to match {
+    case Some(x) => assert(x.after(from))
+    case None =>
+  }
+}
