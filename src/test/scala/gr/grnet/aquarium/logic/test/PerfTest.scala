@@ -64,18 +64,22 @@ class PerfTest extends DSLUtils with DSL {
       parseCronString("00 14 * * *"))
     val repeat2 = DSLTimeFrameRepeat(parseCronString("00 18 * * 5"),
       parseCronString("00 20 * * 5"))
-    val tf = DSLTimeFrame(from, Some(to), List(repeat1, repeat2))
 
     val min = oneYearBack(today, new Date(0)).getTime
     val max = oneYearAhead(today, new Date(Int.MaxValue * 1000L)).getTime
 
     (1 to iter).foreach {
       i => 
-        val event = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
-        numResolved += allEffectiveTimeslots(tf, event, to).size
+        val rndStart = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
+        var rndEnd = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
+
+        while (rndEnd.before(rndStart)) rndEnd = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
+        val tf = DSLTimeFrame(rndStart, Some(rndEnd), List(repeat1, repeat2))
+
+        numResolved += allEffectiveTimeslots(tf, new Date(min), new Date(max)).size
     }
 
     var total = System.currentTimeMillis() - start
-    print("allEffectiveTimeslots: 1000 calls in %s msec. (%s resolved)\n".format(total, numResolved))
+    print("allEffectiveTimeslots: %d calls in %s msec. (%s resolved)\n".format(iter, total, numResolved))
   }
 }
