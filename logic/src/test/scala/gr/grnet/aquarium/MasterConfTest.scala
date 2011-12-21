@@ -38,7 +38,6 @@ package gr.grnet.aquarium
 import actor.DispatcherRole
 import org.junit.Test
 import org.junit.Assert._
-import org.junit.Assume.assumeTrue
 
 /**
  * 

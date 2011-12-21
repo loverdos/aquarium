@@ -41,7 +41,8 @@ import org.junit.Assert._
 import collection.mutable.ArrayBuffer
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import org.junit.{Before, After, Test}
-import gr.grnet.aquarium.{MasterConf, LogicTestsAssumptions}
+import gr.grnet.aquarium.MasterConf._
+import gr.grnet.aquarium.LogicTestsAssumptions
 
 /**
  * @author Georgios Gousios <gousiosg@gmail.com>
@@ -57,9 +58,10 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
 
     val event = nextResourceEvent()
-    val store = MasterConf.MasterConf.eventStore
+    val store = MasterConf.eventStore
+    val result = store.storeEvent(event)
 
-    //assert(store.isJust)
+    assert(result.isJust)
   }
 
   @Test
@@ -67,7 +69,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
 
     val event = nextResourceEvent()
-    val store = MasterConf.MasterConf.eventStore
+    val store = MasterConf.eventStore
 
     val result1 = store.storeEvent(event)
     assert(result1.isJust)
@@ -80,7 +82,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
   def testfindEventsByUserId(): Unit = {
     assumeTrue(LogicTestsAssumptions.EnableMongoDBTests)
     val events = new ArrayBuffer[ResourceEvent]()
-    val store = MasterConf.MasterConf.eventStore
+    val store = MasterConf.eventStore
 
     (1 to 100).foreach {
       n =>
@@ -113,7 +115,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     val a = getMongo
 
     val col = a.mongo.getDB(
-      MasterConf.MasterConf.get(MasterConf.Keys.persistence_db)
+      MasterConf.get(Keys.persistence_db)
     ).getCollection(MongoDBStore.EVENTS_COLLECTION)
 
     val res = col.find
@@ -121,5 +123,5 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
       col.remove(res.next)
   }
 
-  private def getMongo = MasterConf.MasterConf.eventStore.asInstanceOf[MongoDBStore]
+  private def getMongo = MasterConf.eventStore.asInstanceOf[MongoDBStore]
 }
