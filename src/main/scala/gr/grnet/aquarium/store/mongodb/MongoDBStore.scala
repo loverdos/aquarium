@@ -191,7 +191,7 @@ class MongoDBStore(
 
   def findEventById[A <: AquariumEvent](id: String): Option[A] = _findById[A](id, events)
 
-  def findEventsByUserId[A <: AquariumEvent](userId: Long)
+  def findEventsByUserId[A <: AquariumEvent](userId: String)
                                             (sortWith: Option[(A, A) => Boolean]): List[A] = {
     val q = new BasicDBObject()
     q.put("userId", userId)

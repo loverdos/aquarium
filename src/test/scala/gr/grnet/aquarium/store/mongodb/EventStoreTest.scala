@@ -91,7 +91,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
       .map{x => x.userId}
       .groupBy(identity)
       .mapValues(_.size)
-      .foldLeft((0L,0))((acc, kv) => if (kv._2 > acc._2) kv else acc)._1
+      .foldLeft(("",0))((acc, kv) => if (kv._2 > acc._2) kv else acc)._1
 
     val result = store.findEventsByUserId(mostUsedId)(None)
     assertEquals(events.filter(p => p.userId.equals(mostUsedId)).size, result.size)

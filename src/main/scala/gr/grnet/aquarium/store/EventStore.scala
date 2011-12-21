@@ -49,5 +49,5 @@ trait EventStore {
 
   def findEventById[A <: AquariumEvent](id: String): Option[A]
 
-  def findEventsByUserId[A <: AquariumEvent](userId: Long)(sortWith: Option[(A, A) => Boolean]): List[A]
+  def findEventsByUserId[A <: AquariumEvent](userId: String)(sortWith: Option[(A, A) => Boolean]): List[A]
 }

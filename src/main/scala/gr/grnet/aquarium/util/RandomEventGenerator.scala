@@ -40,6 +40,7 @@ import gr.grnet.aquarium.messaging.AkkaAMQP
 import util.Random
 import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
 import java.security.MessageDigest
+import scopt.OptionParser
 
 /**
  *  Generates random resource events to use as input for testing and
@@ -143,15 +144,38 @@ trait RandomEventGenerator extends AkkaAMQP {
 
 object RandomEventGen extends RandomEventGenerator {
 
+  case class Config(var i: Boolean = false,
+                    var u: Boolean = false,
+                    var r: Boolean = false,
+                    var nummsg: Int = 100)
+
+  val config = new Config
+
+  private val parser = new OptionParser("scopt") {
+    opt("i", "im-events", "Generate IM events", {config.i = true})
+    opt("u", "user-create", "Generate IM events that create users", {config.u = true})
+    opt("r", "resource-events", "Generate resource events", {config.r = true})
+    arg("nummsgs", "Number of msgs to generate", {num: String => config.nummsg = Integer.parseInt(num)})
+  }
+
   def main(args: Array[String]): Unit = {
 
-    var num = 100
+    if (!parser.parse(args))
+      errexit
 
-    if (args.size > 0)
-      num = args.head.toInt
+    if (!config.i && !config.u && !config.r) {
+      println("One of -i, -u, -r must be specified")
+      errexit
+    }
 
-    println("Publishing %d messages. Hit Ctrl+c to stop".format(num))
-
-    genPublishResEvents(num)
+    println("Publishing %d msgs, hit Ctrl+c to stop".format(config.nummsg))
+    if (config.r) genPublishResEvents(config.nummsg)
+    if (config.u) initUsers
+    if (config.i) genPublishUserEvents(config.nummsg)
+  }
+  
+  private def errexit() = {
+    print(parser.usage)
+    System.exit(-1)
   }
 }
