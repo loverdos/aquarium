@@ -43,7 +43,7 @@ import scala.collection.mutable
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class Timeslot(from: Date, to: Date) {
+case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
 
   /* Preconditions to ensure correct object creations */
   assert(from != null)
@@ -166,5 +166,14 @@ case class Timeslot(from: Date, to: Date) {
     val end = if (last.endsBefore(this)) List(Timeslot(last.to, this.to)) else List()
 
     start ++ build(List(), overlaps) ++ end
+  }
+
+  /**
+   * Compares the starting times of two timeslots.
+   */
+  def compare(that: Timeslot): Int = {
+    if (this.startsBefore(that)) -1
+    else if (this.startsAfter(that)) 1
+    else 0
   }
 }
