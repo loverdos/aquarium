@@ -120,17 +120,6 @@ class MasterConf(val props: Props) extends Loggable {
     }
   }
 
-  private[this] lazy val _IMEventStoreM: Maybe[IMStore] = {
-    // If there is a specific `IMStore` implementation specified in the
-    // properties, then this implementation overrides the event store given by
-    // `IMProvider`.
-    props.get(Keys.im_eventstore_class) map { className ⇒
-      val instance = newInstance[IMStore](className)
-      logger.info("Overriding IMStore provisioning. Implementation given by: %s".format(instance.getClass))
-      instance
-    }
-  }
-
   private[this] lazy val _WalletEventStoreM: Maybe[WalletStore] = {
     // If there is a specific `IMStore` implementation specified in the
     // properties, then this implementation overrides the event store given by
@@ -187,13 +176,6 @@ class MasterConf(val props: Props) extends Loggable {
     _eventStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.eventStore
-    }
-  }
-
-  def IMStore = {
-    _IMEventStoreM match {
-      case Just(es) ⇒ es
-      case _        ⇒ storeProvider.imStore
     }
   }
 

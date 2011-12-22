@@ -54,7 +54,6 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
 
   private[this] var _eventStore: EventStore = _
   private[this] var _userStore: UserStore = _
-  private[this] var _imStore: IMStore = _
   private[this] var _walletStore: WalletStore = _
 
   def configure(props: Props) = {
@@ -72,7 +71,6 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
       val mongoStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
       this._eventStore = mongoStore
       this._userStore  = mongoStore
-      this._imStore  = mongoStore
       this._walletStore  = mongoStore
     } catch {
       case e: MongoException =>
@@ -83,8 +81,6 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   def userStore = _userStore
 
   def eventStore = _eventStore
-
-  def imStore = _imStore
 
   def walletStore = _walletStore
 }

@@ -3,6 +3,7 @@ package gr.grnet.aquarium.logic.events
 import gr.grnet.aquarium.util.json.JsonHelpers
 import net.liftweb.json.{Extraction, parse => parseJson}
 import gr.grnet.aquarium.MasterConf._
+import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 
 /**
  * Represents an incoming user event.
@@ -25,6 +26,10 @@ case class UserEvent(
   assert(state.equalsIgnoreCase("ACTIVE") ||
     state.equalsIgnoreCase("SUSPENDED"))
 
+  if (eventType == 1)
+    if(!state.equalsIgnoreCase("ACTIVE"))
+      assert(false)
+
   /**
    * Validate this event according to the following rules:
    *
@@ -40,31 +45,19 @@ case class UserEvent(
    */
   def validate: Boolean = {
 
-    if (eventType == 1) {
-      if (MasterConf.IMStore.userExists(userId))
-        return false
-
-      if (!state.equalsIgnoreCase("ACTIVE")) return false
-      return true
-    }
-
-    // All user events are of type 2 (modify) from hereon
-    val oldEvent = MasterConf.IMStore.findLastUserEvent(this.userId)
-
-    oldEvent match {
-      case Some(x) =>
-        x.state match {
-          case y if (y.equalsIgnoreCase("SUSPENDED")) => this.state match {
-            case z if (z.equalsIgnoreCase("ACTIVE")) =>  //OK
-            case _ => return false
-          }
-          case y if (y.equalsIgnoreCase("ACTIVE")) =>  this.state match {
-            case z if (z.equalsIgnoreCase("SUSPENDED")) =>
-              if (x.eventType == 2) return false
-            case _ => return false
-          }
+    MasterConf.userStore.findUserStateByUserId(userId) match {
+      case Just(x) =>
+        if (eventType == 1){
+          logger.warn("User to create exists: IMEvent".format(this.toJson));
+          return false
         }
-      case None => return false
+      case NoVal =>
+        if (eventType != 2){
+          logger.warn("Inexistent user to modify. IMEvent:".format(this.toJson))
+          return false
+        }
+      case Failed(x,y) =>
+        logger.warn("Error retrieving user state: %s".format(x))
     }
 
     true

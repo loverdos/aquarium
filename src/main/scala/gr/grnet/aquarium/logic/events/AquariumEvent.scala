@@ -36,10 +36,10 @@
 package gr.grnet.aquarium
 package logic.events
 
-import util.shortClassNameOf
 
 import util.json.JsonSupport
 import util.xml.XmlSupport
+import util.{Loggable, shortClassNameOf}
 
 /**
  * Generic base class for all Aquarium events
@@ -49,7 +49,7 @@ import util.xml.XmlSupport
  */
 
 abstract class AquariumEvent(val id: String, val timestamp: Long)
-  extends JsonSupport with XmlSupport {
+  extends JsonSupport with XmlSupport with Loggable {
 
   def validate: Boolean
 

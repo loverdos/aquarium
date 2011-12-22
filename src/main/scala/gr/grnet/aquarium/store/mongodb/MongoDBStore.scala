@@ -59,8 +59,7 @@ class MongoDBStore(
     val database: String,
     val username: String,
     val password: String)
-  extends EventStore with UserStore
-  with IMStore with WalletStore with Loggable {
+  extends EventStore with UserStore with WalletStore with Loggable {
 
   private[store] lazy val events: DBCollection = getCollection(MongoDBStore.EVENTS_COLLECTION)
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
@@ -225,24 +224,6 @@ class MongoDBStore(
     }
   }
   //-UserStore
-
-  //+IMStore
-  def storeUserEvent(event: UserEvent): Maybe[RecordID] = _store(event, imevents)
-
-  def findUserEventById[A <: UserEvent](id: String): Option[A] = _findById(id, imevents)
-
-  def findUserEventsByUserId[A <: UserEvent](userId: String)(sortWith: Option[(A, A) => Boolean]): List[A] = {
-    val q = new BasicDBObject()
-    q.put("userId", userId)
-
-    _query(q, imevents)(sortWith)
-  }
-
-  def findLastUserEvent(userId: String) =
-    findUserEventsByUserId(userId)(Some(_sortByTimestampDesc)).headOption
-
-  def userExists(userId: String) = false //TODO: Write me
-  //-IMStore
 
   //+WalletStore
   def store(entry: WalletEntry): Maybe[RecordID] = _store(entry, wallets)
