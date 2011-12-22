@@ -81,10 +81,6 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   val repoB = "sonatype-snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
 
   val lib_slf4j = "org.slf4j" % "slf4j-api" % "1.6.1" withSources()
-  val lib_h2 = "com.h2database" % "h2" % "1.3.160" withSources()
-  val lib_mysql = "mysql" % "mysql-connector-java" % "5.1.17"
-  val lib_scalajpa = "org.scala-libs" % "scalajpa_2.9.1" % "1.4" withSources()
-  val lib_elink = "org.eclipse.persistence" % "eclipselink" % "2.2.0" withSources()
 
   val lib_liftjson = "net.liftweb" % "lift-json_2.9.1" % "2.4-M5" withSources()
   val lib_liftjsonX = "net.liftweb" % "lift-json-ext_2.9.1" % "2.4-M5" withSources()
@@ -98,11 +94,12 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   val lib_akka_test = "se.scalablesolutions.akka" % "akka-testkit" % "1.3-RC4" % "test" withSources()
   val lib_akka_amqp = "se.scalablesolutions.akka" % "akka-amqp" % "1.3-RC4" withSources()
 
-  val lib_javaxrs = "javax.ws.rs" % "jsr311-api" % "1.1.1" withSources()
+//  val lib_javaxrs = "javax.ws.rs" % "jsr311-api" % "1.1.1" withSources()
   val lib_spray_can = "cc.spray.can" % "spray-can" % "0.9.2-SNAPSHOT" withSources()
 
-  val lib_converter = "com.ckkloverdos" % "converter_2.9.1" % "0.3.0" withSources()
-  val lib_streamresource = "com.ckkloverdos" % "streamresource_2.9.1" % "0.2.0" withSources()
+  val lib_maybe = "com.ckkloverdos" %% "maybe" % "0.3.0" withSources()
+  val lib_converter = "com.ckkloverdos" %% "converter" % "0.3.0" withSources()
+  val lib_streamresource = "com.ckkloverdos" %% "streamresource" % "0.2.0" withSources()
 
   val lib_lucene_core = "org.apache.lucene" % "lucene-core" % "3.5.0" withSources()
   val lib_solr_core = "org.apache.solr" % "solr-core" % "3.5.0" withSources()
