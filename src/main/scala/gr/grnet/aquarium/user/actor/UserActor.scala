@@ -96,7 +96,7 @@ class UserActor extends AquariumActor with Loggable {
           val creditsTimestamp = credits.snapshotTime
 
           // Check if data is stale
-          if(creditsTimestamp + 10000 > timestamp) {
+          if(creditsTimestamp + _timestampTheshold > timestamp) {
             // No, it's OK
             self reply UserResponseGetBalance(userId, credits.data)
           } else {
