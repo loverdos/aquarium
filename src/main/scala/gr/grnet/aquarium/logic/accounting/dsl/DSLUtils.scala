@@ -37,6 +37,7 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import gr.grnet.aquarium.util.DateUtils
 import java.util.{Date, GregorianCalendar, Calendar}
+import scala.collection.immutable
 
 /**
  * Utility functions to use when working with DSL types.
@@ -49,35 +50,36 @@ trait DSLUtils extends DateUtils {
   val maxdate = new Date(Int.MaxValue * 1000L)
   val mindate = new Date(0)
 
+  /**
+   * Resolves the effective algorithm for each chunk of the
+   * provided timeslot and returns it as a Map
+   */
   def resolveEffectiveAlgorithmsForTimeslot(timeslot: Timeslot,
                                            agr: DSLAgreement):
-  Map[Timeslot, DSLAlgorithm] =
+  immutable.SortedMap[Timeslot, DSLAlgorithm] =
     resolveEffective[DSLAlgorithm](timeslot, Some(agr.algorithm))
 
-
+  /**
+   * Resolves the effective price list for each chunk of the
+   * provided timeslot and returns it as a Map
+   */
   def resolveEffectivePricelistsForTimeslot(timeslot: Timeslot,
                                             agr: DSLAgreement):
-  Map[Timeslot, DSLPriceList] =
+  immutable.SortedMap[Timeslot, DSLPriceList] =
     resolveEffective[DSLPriceList](timeslot, Some(agr.pricelist))
 
   /**
-   * Resolves the DSLTimeBoundedItem which is active within the
-   * provided timeslot. If the provided timeslot does not fit entirely or at all
-   * into a timeslot within which a DSLTimeBoundedItem is active, then the
-   * resolution takes the following paths:
-   *
-   *  - If the provided timeslot (a) partially fits into the DSLTimeBoundedItem
-   *  timeslot (b) and the next active time slot is (c), then the provided
-   *  timeslot is split in three parts `(a.start...b.end)`,
-   *  `(b.end...c.start)` and `(c.start...a.end)`
-   *
+   * Splits the provided timeslot into chunks according to the validity
+   * timeslots specified by the provided time bounded item. It
+   * returns a map whose keys are the timeslot chunks and the values
+   * correspond to the effective time bounded item (algorithm or pricelist).
    */
   def resolveEffective[T <: DSLTimeBoundedItem[T]](timeslot: Timeslot,
                                                    tbi: Option[T]):
-  Map[Timeslot, T] = {
+  immutable.SortedMap[Timeslot, T] = {
 
     val policy = tbi match {
-      case None => return Map()
+      case None => return immutable.SortedMap[Timeslot, T]()
       case _ => tbi.get
     }
 
@@ -85,7 +87,7 @@ trait DSLUtils extends DateUtils {
       oneYearBack(timeslot.from, policy.effective.from),
       oneYearAhead (timeslot.to, policy.effective.to.getOrElse(maxdate)))
 
-    Map() ++
+    immutable.SortedMap[Timeslot, T]() ++
       timeslot.overlappingTimeslots(eff).flatMap {
         t => Map(t -> policy)
       } ++

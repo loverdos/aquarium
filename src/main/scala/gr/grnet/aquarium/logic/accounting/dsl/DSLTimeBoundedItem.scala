@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 /**
- * A DSL tbi whose effectivity is constrained by well defined time bounds.
+ * A DSL time bounded item whose effectivity is constrained by well defined time bounds.
  * All time bounded items also support inheritance.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
