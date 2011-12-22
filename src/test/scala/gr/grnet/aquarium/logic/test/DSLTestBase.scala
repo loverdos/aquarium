@@ -36,7 +36,8 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit.Assert._
-import gr.grnet.aquarium.logic.accounting.dsl.{DSL, DSLPolicy}
+import annotation.tailrec
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSL, DSLPolicy}
 
 /**
  * Base class for tests that require access to a DSL description.
@@ -52,5 +53,14 @@ class DSLTestBase extends DSL {
       getClass.getClassLoader.getResourceAsStream("policy.yaml")
     )
     assertNotNull(creditpolicy)
+  }
+
+  @tailrec
+  final def testSuccessiveTimeslots(result: List[Timeslot]): Unit = {
+    if (result.isEmpty) return
+    if (result.tail.isEmpty) return
+    if (result.head.to.after(result.tail.head.from))
+      fail("Effectivity timeslots not successive: %s %s".format(result.head, result.tail.head))
+    testSuccessiveTimeslots(result.tail)
   }
 }

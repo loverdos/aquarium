@@ -36,9 +36,8 @@
 package gr.grnet.aquarium.logic.accounting
 
 import dsl._
-import gr.grnet.aquarium.logic.events.ResourceEvent
-import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import java.util.Date
+import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 import collection.immutable.SortedMap
 
 /**
@@ -48,27 +47,25 @@ import collection.immutable.SortedMap
  */
 trait Accounting extends DSLUtils {
 
-  def chargeEvent(ev: ResourceEvent) : Maybe[Float] = {
+  def chargeEvent(ev: ResourceEvent) : WalletEntry = {
 
     if (!ev.validate())
-      return Failed(new AccountingException("Event not valid"))
+      throw new AccountingException("Event not valid")
 
     //From now own, we can trust the event contents
     val resource = Policy.policy.findResource(ev.resource).get
 
-
-
-    Just(0F)
+    WalletEntry.zero
   }
 
-  case class ChargeChunk(value: Float, algorithm: DSLAlgorithm,
+  private case class ChargeChunk(value: Float, algorithm: DSLAlgorithm,
                          priceList: DSLPriceList) {
     def cost(): Float = {
       0F
     }
   }
 
-  def calcChangeChunks(agr: DSLAgreement, volume: Float,
+  private def calcChangeChunks(agr: DSLAgreement, volume: Float,
                        from: Date, to: Date) : List[ChargeChunk] = {
 
     resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr)
@@ -77,36 +74,30 @@ trait Accounting extends DSLUtils {
     List()
   }
 
-  def splitChargeChunks(alg: Map[Timeslot, DSLAlgorithm],
-                        price: Map[Timeslot, DSLPriceList]) :
+  private[logic] def splitChargeChunks(alg: SortedMap[Timeslot, DSLAlgorithm],
+                        price: SortedMap[Timeslot, DSLPriceList]) :
   (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
 
-    val algsort = alg.toSeq.sortWith((x,y) => sorter(x._1, y._1))
-    val prisort = price.toSeq.sortWith((x,y) => sorter(x._1, y._1))
+    val zipped = alg.keySet.zip(price.keySet)
 
-    // Type: Seq[((Timeslot, DSLAlgorithm),(Timeslot, DSLPriceList))]
-    val zipped = algsort.zip(prisort)
-
-    zipped.find(p => !p._1._1.equals(p._2._1)) match {
+    zipped.find(p => !p._1.equals(p._2)) match {
       case None => (alg, price)
       case Some(x) =>
-        val algTimeslot = x._1._1
-        val priTimeslot = x._2._1
+        val algTimeslot = x._1
+        val priTimeslot = x._2
 
         assert(algTimeslot.from == priTimeslot.from)
 
         if (algTimeslot.endsAfter(priTimeslot)) {
           val slices = algTimeslot.slice(priTimeslot.to)
           val algo = alg.get(algTimeslot).get
-          val newalg = alg - algTimeslot ++
-            Map(slices.apply(0) -> algo) ++ Map(slices.apply(1) -> algo)
+          val newalg = alg - algTimeslot ++ Map(slices.apply(0) -> algo) ++ Map(slices.apply(1) -> algo)
           splitChargeChunks(newalg, price)
         }
         else {
           val slices = priTimeslot.slice(priTimeslot.to)
           val pl = price.get(priTimeslot).get
-          val newPrice = price - priTimeslot ++
-            Map(slices.apply(0) -> pl) ++ Map(slices.apply(1) -> pl)
+          val newPrice = price - priTimeslot ++ Map(slices.apply(0) -> pl) ++ Map(slices.apply(1) -> pl)
           splitChargeChunks(alg, newPrice)
         }
     }

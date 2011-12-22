@@ -238,14 +238,6 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     assertEquals(9, pricelists.keySet.size)
   }
 
-  @tailrec
-  private def testSuccessiveTimeslots(result: List[Timeslot]): Unit = {
-    if (result.isEmpty) return
-    if (result.tail.isEmpty) return
-    if (result.head.to.after(result.tail.head.from))
-      fail("Effectivity timeslots not successive: %s %s".format(result.head, result.tail.head))
-    testSuccessiveTimeslots(result.tail)
-  }
 
   private def printTimeslots(result: List[Timeslot]) = {
     result.foreach(p => print("from:%s to:%s\n".format(p.from, p.to)))

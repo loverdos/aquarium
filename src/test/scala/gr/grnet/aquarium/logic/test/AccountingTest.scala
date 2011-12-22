@@ -40,6 +40,7 @@ import gr.grnet.aquarium.util.TestMethods
 import org.junit.{Test}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import java.util.Date
+import junit.framework.Assert._
 
 /**
  * Tests for the methods that do accounting
@@ -56,8 +57,22 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
     val agr = creditpolicy.findAgreement("scaledbandwidth").get
 
-    resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr)
-    resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr)
+    val alg = resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr)
+    val price = resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr)
+    val chunks = splitChargeChunks(alg, price)
+    val algChunks = chunks._1
+    val priceChunks = chunks._2
+
+    assertEquals(price.size, algChunks.size)
+    assertEquals(price.size, priceChunks.size)
+
+    algChunks.keySet.zip(priceChunks.keySet).foreach {
+      t => assertEquals(t._1, t._2)
+    }
+
+    testSuccessiveTimeslots(algChunks.keySet.toList)
+    testSuccessiveTimeslots(priceChunks.keySet.toList)
+
     assert(true)
   }
 }
