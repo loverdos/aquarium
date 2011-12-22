@@ -52,6 +52,7 @@ import net.liftweb.json.{Extraction, parse => parseJson, JsonAST, Xml}
 
 case class UserState(
   userId: String,
+  active: Boolean,
   credits: CreditSnapshot,
   agreement: AgreementSnapshot,
   roles: RolesSnapshot,
