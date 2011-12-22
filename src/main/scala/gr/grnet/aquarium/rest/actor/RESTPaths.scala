@@ -45,5 +45,10 @@ object RESTPaths {
    * Use this URI path to query for the user balance. The parenthesized regular expression part
    * represents the user ID.
    */
-  final val UserBalance = "/user/(.+)/balance/?".r
+  final val UserBalancePath = "/user/(.+)/balance/?".r
+
+  /**
+   * Use this URI path to query for the user state.
+   */
+  final val UserStatePath = "/user/(.+)/state/?".r
 }

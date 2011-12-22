@@ -38,7 +38,7 @@ package gr.grnet.aquarium.user.actor
 import gr.grnet.aquarium.util.Loggable
 import akka.actor.ActorRef
 import gr.grnet.aquarium.actor._
-import gr.grnet.aquarium.processor.actor.UserRequestGetBalance
+import gr.grnet.aquarium.processor.actor.{UserRequestGetState, UserRequestGetBalance}
 
 
 /**
@@ -67,7 +67,6 @@ class UserActorManager extends AquariumActor with Loggable {
     // create a fresh instance
     val userActor = _actorProvider.actorForRole(UserActorRole)
     userActor ! UserActorInitWithUserId(userId)
-    userActor ! ActorProviderConfigured(this._actorProvider)
     userActor
   }
 
@@ -77,6 +76,19 @@ class UserActorManager extends AquariumActor with Loggable {
       logger.info("Configured %s with %s".format(this, m))
 
     case m @ UserRequestGetBalance(userId, timestamp) ⇒
+      logger.debug("Received %s".format(m))
+      userActorLRU.get(userId) match {
+        case Some(userActor) ⇒
+          logger.debug("Found user actor and forwarding request %s".format(m))
+          userActor forward m
+        case None ⇒
+          logger.debug("Not found user actor for userId = %s. Launching new actor".format(userId))
+          val userActor = _launchUserActor(userId)
+          logger.debug("Launched new user actor and forwarding request %s".format(m))
+          userActor forward m
+      }
+
+    case m @ UserRequestGetState(userId, timestamp) ⇒
       logger.debug("Received %s".format(m))
       userActorLRU.get(userId) match {
         case Some(userActor) ⇒

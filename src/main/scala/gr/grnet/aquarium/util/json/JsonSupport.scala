@@ -35,8 +35,7 @@
 
 package gr.grnet.aquarium.util.json
 
-import net.liftweb.json.{Printer, Extraction, JsonAST}
-import JsonAST.JValue
+import net.liftweb.json.JsonAST.JValue
 
 /**
  * 
@@ -44,11 +43,7 @@ import JsonAST.JValue
  */
 
 trait JsonSupport {
-  def toJValue: JValue = {
-    Extraction.decompose(this)(JsonHelpers.DefaultJsonFormats)
-  }
+  def toJValue: JValue = JsonHelpers toJValue this
 
-  def toJson: String = {
-    Printer.pretty(JsonAST.render(this.toJValue))
-  }
+  def toJson: String = JsonHelpers toJson this
 }

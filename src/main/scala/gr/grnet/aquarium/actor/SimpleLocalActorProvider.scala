@@ -90,6 +90,7 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
       case null ⇒
         val actorRef = akka.actor.Actor.actorOf(role.actorType).start()
         actorCache.put(role, actorRef)
+        actorRef ! AquariumPropertiesLoaded(this._props)
         actorRef
       case actorRef ⇒
         actorRef
@@ -113,7 +114,10 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
         // E.g. UserActorProvider knows how to manage multiple user actors and properly initialize them.
         //
         // Note that the returned actor is not initialized!
-        akka.actor.Actor.actorOf(UserActorRole.actorType).start()
+        val actorRef = akka.actor.Actor.actorOf(UserActorRole.actorType).start()
+        actorRef ! AquariumPropertiesLoaded(this._props)
+        actorRef ! ActorProviderConfigured(this)
+        actorRef
       case _ ⇒
         throw new Exception("Cannot create actor for role %s".format(role))
     }

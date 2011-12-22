@@ -43,8 +43,8 @@ import net.liftweb.json.{JsonAST, Printer}
 import gr.grnet.aquarium.MasterConf
 import akka.actor.{ActorRef, Actor}
 import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
-import RESTPaths.{UserBalance}
-import gr.grnet.aquarium.processor.actor.{UserRequestGetBalance, DispatcherMessage}
+import RESTPaths.{UserBalancePath, UserStatePath}
+import gr.grnet.aquarium.processor.actor.{DispatcherResponseMessage, UserRequestGetState, UserRequestGetBalance, DispatcherMessage}
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -96,9 +96,12 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
     case RequestContext(HttpRequest(GET, uri, headers, body, protocol), _, responder) ⇒
       //+ Main business logic REST URIs are matched here
+      val millis = System.currentTimeMillis()
       uri match {
-        case UserBalance(userId) ⇒
-          callDispatcher(UserRequestGetBalance(userId, System.currentTimeMillis()), responder)
+        case UserBalancePath(userId) ⇒
+          callDispatcher(UserRequestGetBalance(userId, millis), responder)
+        case UserStatePath(userId) ⇒
+          callDispatcher(UserRequestGetState(userId, millis), responder)
         case _ ⇒
           responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
       }
@@ -123,16 +126,24 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
         future.value match {
           case None ⇒
           // TODO: Will this ever happen??
+
           case Some(Left(error)) ⇒
             logger.error("Error serving %s: %s".format(message, error))
             responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+
           case Some(Right(actualResponse)) ⇒
             actualResponse match {
-              case dispatcherResponse: DispatcherMessage if(!dispatcherResponse.isError) ⇒
-                responder.complete(HttpResponse(status = 200, body = dispatcherResponse.toJson.getBytes("UTF-8"), headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
-              case dispatcherResponse: DispatcherMessage ⇒
+              case dispatcherResponse: DispatcherResponseMessage if(!dispatcherResponse.isError) ⇒
+                logger.debug("Received response: %s".format(dispatcherResponse))
+                logger.debug("Received response (JSON): %s".format(dispatcherResponse.toJson))
+                logger.debug("Received response:body %s".format(dispatcherResponse.responseBody))
+                logger.debug("Received response:body (JSON): %s".format(dispatcherResponse.responseBodyToJson))
+                responder.complete(HttpResponse(status = 200, body = dispatcherResponse.responseBodyToJson.getBytes("UTF-8"), headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
+
+              case dispatcherResponse: DispatcherResponseMessage ⇒
                 logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
                 responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+
               case _ ⇒
                 logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
                 responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))

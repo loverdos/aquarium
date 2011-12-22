@@ -37,10 +37,11 @@ package gr.grnet.aquarium.user.actor
 
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.processor.actor.{UserResponseGetBalance, UserRequestGetBalance}
 import scala.PartialFunction
 import gr.grnet.aquarium.actor._
 import com.ckkloverdos.maybe.Maybe
+import gr.grnet.aquarium.MasterConf
+import gr.grnet.aquarium.processor.actor.{UserResponseGetState, UserRequestGetState, UserResponseGetBalance, UserRequestGetBalance}
 
 
 /**
@@ -57,12 +58,18 @@ class UserActor extends AquariumActor with Loggable {
   private[this] var _userState: UserState = _
   @volatile
   private[this] var _actorProvider: ActorProvider = _
+  @volatile
+  private[this] var _timestampTheshold: Long = _
 
   def role = UserActorRole
 
   protected def receive: Receive = {
     case UserActorStop ⇒
       self.stop()
+
+    case m @ AquariumPropertiesLoaded(props) ⇒
+      this._timestampTheshold = props.getLong(MasterConf.Keys.user_state_timestamp_threshold).getOr(10000)
+      logger.info("Setup my timestampTheshold = %s".format(this._timestampTheshold))
 
     case m @ UserActorInitWithUserId(userId) ⇒
       this._userId = userId
@@ -104,6 +111,16 @@ class UserActor extends AquariumActor with Loggable {
           logger.error("FIXME: Should have computed the user state for userId = %s".format(userId))
           self reply UserResponseGetBalance(userId, Maybe(userId.toDouble).getOr(10.5))
         }
+      }
+
+    case m @ UserRequestGetState(userId, timestamp) ⇒
+      if(this._userId != userId) {
+        logger.error("Received %s but my userId = %s".format(m, this._userId))
+        // TODO: throw an exception here
+      } else {
+        // FIXME: implement
+        logger.error("FIXME: Should have properly computed the user state")
+        self reply UserResponseGetState(userId, this._userState)
       }
   }
 }

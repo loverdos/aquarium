@@ -37,7 +37,9 @@ package gr.grnet.aquarium.util.json
 
 import net.liftweb.json.ext.JodaTimeSerializers
 import gr.grnet.aquarium.logic.events.AquariumEvent
-import net.liftweb.json.{FieldSerializer, DefaultFormats}
+import net.liftweb.json.JsonAST.JValue
+import net.liftweb.json._
+import gr.grnet.aquarium.processor.actor.BalanceValue
 
 /**
  * 
@@ -45,7 +47,19 @@ import net.liftweb.json.{FieldSerializer, DefaultFormats}
  */
 
 object JsonHelpers {
-  val DefaultJsonFormats = DefaultFormats ++
-    JodaTimeSerializers.all +
+  implicit val DefaultJsonFormats = (DefaultFormats ++ JodaTimeSerializers.all) +
     FieldSerializer[AquariumEvent]()
+
+  final def toJValue(any: Any): JValue = {
+    any match {
+      case jValue: JValue ⇒
+        jValue
+      case _ ⇒
+        Extraction.decompose(any)
+    }
+  }
+  
+  final def toJson(any: Any): String = {
+    Printer.pretty(JsonAST.render(toJValue(any)))
+  }
 }
