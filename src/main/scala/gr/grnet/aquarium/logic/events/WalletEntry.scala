@@ -12,7 +12,8 @@ case class WalletEntry(override val id: String,
                        related: Array[String],
                        value: Float,
                        reason: String,
-                       userId: String)
+                       userId: String,
+                       finalized: Boolean)
   extends AquariumEvent(id, timestamp) {
 
   assert(timestamp > 0)
@@ -28,4 +29,6 @@ object WalletEntry {
     val jsonAST = parse(json)
     Extraction.extract[ResourceEvent](jsonAST)
   }
+
+  def zero = WalletEntry("", 1L, Array(),1,"","foo", false)
 }
