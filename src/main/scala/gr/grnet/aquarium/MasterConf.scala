@@ -403,5 +403,16 @@ object MasterConf {
      *  The DB schema to use
      */
     final val persistence_db = "persistence.db"
+
+    /**
+     * A time period in milliseconds for which we can tolerate stale data regarding user state.
+     *
+     * The smaller the value, the more accurate the user credits and other state data are.
+     *
+     * If a request for user state (e.g. balance) is received and the request timestamp exceeds
+     * the timestamp of the last known balance amount by this value, then a re-computation for
+     * the balance is triggered.
+     */
+    final val user_state_timestamp_threshold = "user.state.timestamp.threshold"
   }
 }
