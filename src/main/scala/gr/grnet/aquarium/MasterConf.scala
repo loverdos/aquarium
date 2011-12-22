@@ -179,7 +179,7 @@ class MasterConf(val props: Props) extends Loggable {
     }
   }
 
-  def WalletStore = {
+  def walletStore = {
     _WalletEventStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.walletStore
