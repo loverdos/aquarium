@@ -37,6 +37,7 @@ package gr.grnet.aquarium.user
 
 import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
 import net.liftweb.json.{Extraction, parse => parseJson, JsonAST, Xml}
+import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
 
 
 /**
@@ -58,7 +59,8 @@ case class UserState(
   roles: RolesSnapshot,
   paymentOrders: PaymentOrdersSnapshot,
   ownedGroups: OwnedGroupsSnapshot,
-  groupMemberships: GroupMembershipsSnapshot) extends JsonSupport
+  groupMemberships: GroupMembershipsSnapshot,
+  ownedResources: Map[DSLResource, Any /*ResourceState*/]) extends JsonSupport
 
 
 object UserState {
