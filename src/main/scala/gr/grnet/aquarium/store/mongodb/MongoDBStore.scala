@@ -132,11 +132,14 @@ class MongoDBStore(
       val cursor = col.find(_prepareFieldQuery("id", entry.id))
 
       if (!cursor.hasNext) {
+        cursor.close()
         logger.error("Failed to _store entry: %s".format(entry))
         return Failed(new StoreException("Failed to _store entry: %s".format(entry)))
       }
 
-      Just(RecordID(cursor.next.get("_id").toString))
+      val retval = Just(RecordID(cursor.next.get("_id").toString))
+      cursor.close()
+      retval
     } catch {
       case m: MongoException =>
         logger.error("Unknown Mongo error: %s".format(m)); Failed(m)
@@ -149,24 +152,31 @@ class MongoDBStore(
 
     val cur = col.find(q)
 
-    if (cur.hasNext)
+    val retval = if (cur.hasNext)
       Some(_deserializeEvent(cur.next))
     else
       None
+    
+    cur.close()
+    retval
   }
   
   private[this] def _query[A <: AquariumEvent](q: BasicDBObject,
                                               col: DBCollection)
                                               (sortWith: Option[(A, A) => Boolean]): List[A] = {
     val cur = col.find(q)
-    if (!cur.hasNext)
+    if (!cur.hasNext) {
+      cur.close()
       return List()
+    }
 
     val buff = new ListBuffer[A]()
 
     while(cur.hasNext)
       buff += _deserializeEvent(cur.next)
 
+    cur.close()
+    
     sortWith match {
       case Some(sorter) => buff.toList.sortWith(sorter)
       case None => buff.toList
