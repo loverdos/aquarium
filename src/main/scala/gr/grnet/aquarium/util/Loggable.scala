@@ -43,5 +43,6 @@ import org.slf4j.LoggerFactory
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 trait Loggable {
+  @transient
   protected val logger = LoggerFactory.getLogger(getClass)
 }
