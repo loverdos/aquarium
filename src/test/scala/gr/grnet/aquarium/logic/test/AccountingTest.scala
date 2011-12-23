@@ -63,16 +63,13 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
     val algChunks = chunks._1
     val priceChunks = chunks._2
 
-    assertEquals(price.size, algChunks.size)
-    assertEquals(price.size, priceChunks.size)
-
-    algChunks.keySet.zip(priceChunks.keySet).foreach {
-      t => assertEquals(t._1, t._2)
-    }
+    assertEquals(algChunks.size, priceChunks.size)
 
     testSuccessiveTimeslots(algChunks.keySet.toList)
     testSuccessiveTimeslots(priceChunks.keySet.toList)
 
-    assert(true)
+    algChunks.keySet.zip(priceChunks.keySet).foreach {
+      t => assertEquals(t._1, t._2)
+    }
   }
 }
