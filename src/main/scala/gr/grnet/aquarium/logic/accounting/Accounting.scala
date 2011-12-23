@@ -36,47 +36,88 @@
 package gr.grnet.aquarium.logic.accounting
 
 import dsl._
-import java.util.Date
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 import collection.immutable.SortedMap
+import gr.grnet.aquarium.MasterConf._
+import gr.grnet.aquarium.util.Loggable
+import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
 
 /**
  * 
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait Accounting extends DSLUtils {
-
-  def chargeEvent(ev: ResourceEvent) : WalletEntry = {
+trait Accounting extends DSLUtils with Loggable {
+  
+  def chargeEvent(ev: ResourceEvent) : Maybe[List[WalletEntry]] = {
 
     if (!ev.validate())
-      throw new AccountingException("Event not valid")
+      Failed(new AccountingException("Event not valid"))
 
-    //From now own, we can trust the event contents
+    val userState = MasterConf.userStore.findUserStateByUserId(ev.userId) match {
+      case Just(x) => x
+      case NoVal =>
+        return Failed(new AccountingException("Inexistent user: %s".format(ev.toJson)))
+      case Failed(x,y) =>
+        return Failed(new AccountingException("Error retrieving user state: %s".format(x)))
+    }
+
+    val agreement = userState.agreement.data.name
+
+    val agr = Policy.policy.findAgreement(agreement) match {
+      case Some(x) => x
+      case None => return Failed(
+        new AccountingException("Cannot find agreement:%s".format(agreement)))
+    }
+
     val resource = Policy.policy.findResource(ev.resource).get
 
-    WalletEntry.zero
+    //val chargeChunks = calcChangeChunks(agr, ev.value, ev.resource, )
+
+
+    Just(List(WalletEntry.zero))
   }
 
-  private case class ChargeChunk(value: Float, algorithm: DSLAlgorithm,
-                         priceList: DSLPriceList) {
+  private[logic] case class ChargeChunk(value: Float, algorithm: String,
+                                        price: Float, when: Timeslot) {
+    assert(value > 0)
+    assert(!algorithm.isEmpty)
+
     def cost(): Float = {
-      0F
+      //TODO: Apply the algorithm when we start parsing it
+      value * price
     }
   }
 
   private def calcChangeChunks(agr: DSLAgreement, volume: Float,
-                       from: Date, to: Date) : List[ChargeChunk] = {
+                               res: DSLResource, t: Timeslot): List[ChargeChunk] = {
 
-    resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr)
-    resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr)
+    val alg = resolveEffectiveAlgorithmsForTimeslot(t, agr)
+    val pri = resolveEffectivePricelistsForTimeslot(t, agr)
+    val chunks = splitChargeChunks(alg, pri)
 
-    List()
+    val algChunked = chunks._1
+    val priChunked = chunks._2
+
+    assert(algChunked.size == priChunked.size)
+    val totalTime = t.from.getTime - t.to.getTime
+    algChunked.keySet.map{
+      x =>
+        val amount = volume * (totalTime / (x.to.getTime - x.from.getTime))
+        new ChargeChunk(amount,
+          algChunked.get(x).get.algorithms.getOrElse(res, ""),
+          priChunked.get(x).get.prices.getOrElse(res, 0F), x)
+    }.toList
   }
 
+  /**
+   * Align charge timeslots between algorithms and pricelists. As algorithm
+   * and pricelists can have different effectivity periods, this method
+   * examines them and splits them as necessary.
+   */
   private[logic] def splitChargeChunks(alg: SortedMap[Timeslot, DSLAlgorithm],
                         price: SortedMap[Timeslot, DSLPriceList]) :
-  (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
+    (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
 
     val zipped = alg.keySet.zip(price.keySet)
 
