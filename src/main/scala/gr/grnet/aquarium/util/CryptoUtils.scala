@@ -41,6 +41,7 @@ import java.security.MessageDigest
  * Utility functions for working with Java's Crypto libraries
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object CryptoUtils {
   /**
@@ -56,10 +57,16 @@ object CryptoUtils {
   def sha1Digest = SHA1Prototype.clone().asInstanceOf[MessageDigest]
 
   /**
-   * Get the SHA-1 digest for the provided message
+   * Get the SHA-1 digest for the provided message.
+   * 
+   * If the client code has a cached MessageDigest, then this is passed as the second parameter, otherwise
+   * a fresh instance is used by calling `sha1Digest`.
    */
-  def sha1(message: String): String = {
-    val md = sha1Digest
+  def sha1(message: String, md: MessageDigest = sha1Digest): String = {
+    if(md.getAlgorithm != SHA1Prototype.getAlgorithm) {
+      throw new IllegalArgumentException("MessageDigest passed uses algorith '%s' instead of '%s'".format(md.getAlgorithm, SHA1Prototype.getAlgorithm))
+    }
+
     md.update(message.getBytes)
     md.digest.map(i => "%02x".format(i)).mkString
   }
