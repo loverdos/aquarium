@@ -39,27 +39,46 @@ import net.liftweb.json.ext.JodaTimeSerializers
 import gr.grnet.aquarium.logic.events.AquariumEvent
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json._
-import gr.grnet.aquarium.processor.actor.BalanceValue
 
 /**
- * 
+ * Provides conversion methods from and to JSON.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 object JsonHelpers {
+  /**
+   * The application-wide JSON formats used from the underlying lift-json library.
+   */
   implicit val DefaultJsonFormats = (DefaultFormats ++ JodaTimeSerializers.all) +
     FieldSerializer[AquariumEvent]()
 
-  final def toJValue(any: Any): JValue = {
+  final def anyToJValue(any: Any): JValue = {
     any match {
       case jValue: JValue ⇒
         jValue
+      case json: String ⇒
+        parse(json)
       case _ ⇒
         Extraction.decompose(any)
     }
   }
   
-  final def toJson(any: Any): String = {
-    Printer.pretty(JsonAST.render(toJValue(any)))
+  final def anyToJson(any: Any): String = {
+    Printer.pretty(JsonAST.render(anyToJValue(any)))
+  }
+  
+  final def jsonBytesToObject[A: Manifest](bytes: Array[Byte], encoding: String = "UTF-8"): A = {
+    val json = new String(bytes, encoding)
+    jsonToObject[A](json)
+  } 
+
+  final def jsonToObject[A: Manifest](json: String): A = {
+    val jValue = parse(json)
+    jValueToObject[A](jValue)
+  }
+  
+  final def jValueToObject[A: Manifest](jValue: JValue): A = {
+    Extraction.extract[A](jValue)
   }
 }
