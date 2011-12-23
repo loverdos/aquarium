@@ -60,7 +60,7 @@ case class UserState(
   paymentOrders: PaymentOrdersSnapshot,
   ownedGroups: OwnedGroupsSnapshot,
   groupMemberships: GroupMembershipsSnapshot,
-  ownedResources: Map[DSLResource, Any /*ResourceState*/]) extends JsonSupport
+  ownedResources: OwnedResourcesSnapshot) extends JsonSupport
 
 
 object UserState {

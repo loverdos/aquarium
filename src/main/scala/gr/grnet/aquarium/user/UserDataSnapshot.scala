@@ -36,7 +36,8 @@
 package gr.grnet.aquarium
 package user
 
-import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
+import logic.accounting.dsl.{DSLResource, DSLAgreement}
+
 
 /**
  * Snapshot of data that are user-related.
@@ -57,3 +58,5 @@ case class PaymentOrdersSnapshot(data: List[AnyRef], snapshotTime: Long) extends
 case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
+
+case class OwnedResourcesSnapshot(data: Map[DSLResource, Any /*ResourceState*/], snapshotTime: Long) extends UserDataSnapshot[Map[DSLResource, Any /*ResourceState*/]]
