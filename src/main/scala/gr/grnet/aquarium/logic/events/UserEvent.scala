@@ -13,6 +13,7 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 case class UserEvent(
   override val id: String,
   override val timestamp: Long,
+  var aqTimestamp: Long = 0,
   userId: String,
   eventVersion: Short,
   eventType: Short, //1: create, 2: modify

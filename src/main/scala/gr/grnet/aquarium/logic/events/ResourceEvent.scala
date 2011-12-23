@@ -38,8 +38,6 @@ package gr.grnet.aquarium.logic.events
 import gr.grnet.aquarium.logic.accounting.Policy
 import net.liftweb.json.{Extraction, parse => parseJson, JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
-import gr.grnet.aquarium.MasterConf._
-import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -54,28 +52,12 @@ case class ResourceEvent(
   resource: String,
   override val timestamp: Long,
   eventVersion: String,
+  value: Float,
+  var aqTimestamp: Long = 0,
   details: Map[String, String]
 ) extends AquariumEvent(id, timestamp) {
 
   def validate() : Boolean = {
-
-    val userState = MasterConf.userStore.findUserStateByUserId(userId) match {
-      case Just(x) => x
-      case NoVal =>
-          logger.warn("Inexistent user for resource event: %s".format(this.toJson))
-          return false
-      case Failed(x,y) =>
-        logger.warn("Error retrieving user state: %s".format(x))
-        return false
-    }
-
-    //TODO: Get agreement for ev.userid
-    val agreement = userState.agreement.data.name
-
-    val agr = Policy.policy.findAgreement(agreement) match {
-      case Some(x) => x
-      case None => return false
-    }
 
     val res = Policy.policy.findResource(resource) match {
       case Some(x) => x
