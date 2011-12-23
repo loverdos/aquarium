@@ -40,6 +40,7 @@ import util.Random
 import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
 import scopt.OptionParser
 import gr.grnet.aquarium.messaging.{MessagingNames, AkkaAMQP}
+import java.lang.StringBuffer
 
 /**
  *  Generates random resource events to use as input for testing and
@@ -65,7 +66,7 @@ trait RandomEventGenerator extends AkkaAMQP {
    */
   def nextUserEvent(): UserEvent = {
 
-    val sha1 = CryptoUtils.sha1(rnd.nextString(30))
+    val sha1 = CryptoUtils.sha1(genRndAsciiString(35))
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
     val id = userIds.apply(rnd.nextInt(100))
     val event = Array("ACTIVE", "SUSPENDED").apply(rnd.nextInt(2))
@@ -73,7 +74,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     val tenant = Array("TENTANT1", "TENANT2").apply(rnd.nextInt(2))
     val role = Array("ADMIN", "NORMAL").apply(rnd.nextInt(2))
 
-    UserEvent(sha1, ts.toLong, id.toString, 1, 2, event, idp, tenant, Array(role))
+    UserEvent(sha1, ts.toLong, 0, id.toString, 1, 2, event, idp, tenant, Array(role))
   }
 
   /**
@@ -97,9 +98,9 @@ trait RandomEventGenerator extends AkkaAMQP {
 
     userIds.foreach {
       i =>
-        val sha1 = CryptoUtils.sha1(rnd.nextString(30))
+        val sha1 = CryptoUtils.sha1(genRndAsciiString(35))
         val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
-        val user = UserEvent(sha1, ts, i.toString, 1, 1, "ACTIVE", "LOCAL", "TENTANT1", Array("NORMAL"))
+        val user = UserEvent(sha1, ts, 0, i.toString, 1, 1, "ACTIVE", "LOCAL", "TENTANT1", Array("NORMAL"))
         publisher ! Message(user.toBytes, "%s.%s".format(MessagingNames.IM_EVENT_KEY,"CREATED"))
     }
   }
@@ -115,13 +116,27 @@ trait RandomEventGenerator extends AkkaAMQP {
       case _ => Map[String, String]()
     }
 
+    val value = res match {
+      case "vmtime" => rnd.nextInt(1)
+      case _ => rnd.nextInt(5000)
+    }
+
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
+    val str = genRndAsciiString(35)
 
     ResourceEvent(
-      CryptoUtils.sha1(rnd.nextString(35)),
+      CryptoUtils.sha1(str),
       rnd.nextInt(userIds.max).toString,
       rnd.nextInt(clientIds.max).toString,
-      res,ts,1.toString,extra)
+      res,ts, 1.toString, value, 0, extra)
+  }
+
+  def genRndAsciiString(size: Int): String = {
+    (1 to size).map{
+      i => rnd.nextPrintableChar()
+    }.foldLeft(new StringBuffer()){
+      (a, b) => a.append(b)
+    }.toString
   }
 
   /**
