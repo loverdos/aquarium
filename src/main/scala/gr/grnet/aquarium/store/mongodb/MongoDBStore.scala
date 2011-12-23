@@ -207,9 +207,29 @@ class MongoDBStore(
 
     _query(q, events)(sortWith)
   }
+
+  def findEventsByUserIdAfterTimestamp[A <: AquariumEvent](userId: String, timestamp: Long): List[A] = {
+    val query = new BasicDBObject()
+    query.put("userId", userId)
+    query.put("timestamp", "{\"$gte\": %s}".format(timestamp))
+    
+    val sort = new BasicDBObject()
+    sort.put("timestamp", 1)
+
+    val cursor = events.find(query).sort(sort)
+    val buffer = new scala.collection.mutable.ListBuffer[A]
+    while(cursor.hasNext) {
+      buffer += _deserializeEvent(cursor.next())
+    }
+
+    cursor.close()
+
+    buffer.toList
+  }
   //-EventStore
 
   //+UserStore
+
   def storeUserState(userState: UserState): Maybe[RecordID] = {
     Maybe {
       val dbObj = _insertObject(users, userState)

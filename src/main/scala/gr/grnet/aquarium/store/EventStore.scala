@@ -50,4 +50,11 @@ trait EventStore {
   def findEventById[A <: AquariumEvent](id: String): Option[A]
 
   def findEventsByUserId[A <: AquariumEvent](userId: String)(sortWith: Option[(A, A) => Boolean]): List[A]
+
+  /**
+   * Returns the events for the given User after (or equal) the given timestamp.
+   *
+   * The events are returned in ascending timestamp order.
+   */
+  def findEventsByUserIdAfterTimestamp[A <: AquariumEvent](userId: String, timestamp: Long): List[A]
 }
