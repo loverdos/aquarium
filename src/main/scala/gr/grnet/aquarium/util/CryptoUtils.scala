@@ -35,20 +35,31 @@
 
 package gr.grnet.aquarium.util
 
+import java.security.MessageDigest
+
 /**
  * Utility functions for working with Java's Crypto libraries
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 object CryptoUtils {
+  /**
+   * The SHA-1 MessageDigest prototype. Since these implementations are generally not thread-safe,
+   * we make a prototype here and clone it for every particular use-case.
+   *
+   * Use method `sha1Digest` from client code to get a thread-safe implementation whenever needed.
+   * Also, a result taken from `sha1Digest` can be safely cached.
+   *
+   */
+  final private[this] val SHA1Prototype = MessageDigest.getInstance("SHA-1")
+
+  def sha1Digest = SHA1Prototype.clone().asInstanceOf[MessageDigest]
 
   /**
    * Get the SHA-1 digest for the provided message
    */
   def sha1(message: String): String = {
-    import java.security.MessageDigest
-
-    val md = MessageDigest.getInstance("SHA-1")
+    val md = sha1Digest
     md.update(message.getBytes)
     md.digest.map(i => "%02x".format(i)).mkString
   }
