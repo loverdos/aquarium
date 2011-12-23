@@ -43,6 +43,8 @@ import net.liftweb.json._
 /**
  * Provides conversion methods from and to JSON.
  *
+ * The inderlying library used is lift-json.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
@@ -58,12 +60,16 @@ object JsonHelpers {
       case jValue: JValue ⇒
         jValue
       case json: String ⇒
-        parse(json)
+        jsonToJValue(json)
       case _ ⇒
         Extraction.decompose(any)
     }
   }
-  
+
+  final def jsonToJValue(json: String): JValue = {
+    parse(json)
+  }
+
   final def anyToJson(any: Any): String = {
     Printer.pretty(JsonAST.render(anyToJValue(any)))
   }
