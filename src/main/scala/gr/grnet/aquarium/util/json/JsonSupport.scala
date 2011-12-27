@@ -43,7 +43,7 @@ import net.liftweb.json.JsonAST.JValue
  */
 
 trait JsonSupport {
-  def toJValue: JValue = JsonHelpers toJValue this
+  def toJValue: JValue = JsonHelpers anyToJValue this
 
-  def toJson: String = JsonHelpers toJson this
+  def toJson: String = JsonHelpers anyToJson this
 }
