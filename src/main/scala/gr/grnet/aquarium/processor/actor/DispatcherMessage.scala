@@ -55,7 +55,7 @@ sealed trait DispatcherResponseMessage extends DispatcherMessage {
       case null ⇒
         throw new NullPointerException("Unexpected null response body in %s".format(this))
       case other ⇒
-        JsonHelpers.toJson(other)
+        JsonHelpers.anyToJson(other)
     }
   }
 }
