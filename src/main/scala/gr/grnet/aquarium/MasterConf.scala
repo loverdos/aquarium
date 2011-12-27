@@ -135,11 +135,7 @@ class MasterConf(val props: Props) extends Loggable {
     new ResourceEventProcessorService()
   }
 
-  def get(prop: String): String =
-    props.get(prop) match {
-      case Just(y) => y
-      case _ => ""
-    }
+  def get(key: String, default: String = ""): String = props.getOr(key, default)
 
   def defaultClassLoader = Thread.currentThread().getContextClassLoader
 
