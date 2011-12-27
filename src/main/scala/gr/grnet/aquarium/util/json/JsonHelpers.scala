@@ -43,7 +43,7 @@ import net.liftweb.json._
 /**
  * Provides conversion methods from and to JSON.
  *
- * The inderlying library used is lift-json.
+ * The underlying library used is lift-json.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -55,6 +55,12 @@ object JsonHelpers {
   implicit val DefaultJsonFormats = (DefaultFormats ++ JodaTimeSerializers.all) +
     FieldSerializer[AquariumEvent]()
 
+  /**
+   * Converts a value to JSON AST (Abstract Syntax Tree) by acting a bit intelligently, depending on the actual type
+   * of the given value. In particular, if the given value `any` is already a JSON AST, it is returned
+   * as is. Also, if the given value `any` is a String, it is assumed that the string is already a JSON
+   * representation and then it is parsed to a JSON AST.
+   */
   final def anyToJValue(any: Any): JValue = {
     any match {
       case jValue: JValue ⇒
