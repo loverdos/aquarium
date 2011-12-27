@@ -51,9 +51,11 @@ trait AkkaAMQP extends Loggable {
 
   class AMQPConnection {
     private[messaging] lazy val connection = {
+      import MasterConf.Keys
+      val mc = MasterConf.MasterConf
 
-      val servers = MasterConf.MasterConf.get(MasterConf.Keys.amqp_servers)
-      val port = MasterConf.MasterConf.get(MasterConf.Keys.amqp_port).toInt
+      val servers = mc.get(Keys.amqp_servers)
+      val port = mc.get(Keys.amqp_port).toInt
 
       val addresses = servers.split(",").foldLeft(Array[Address]()) {
         (x, y) => x ++ Array(new Address(y, port))
@@ -62,9 +64,9 @@ trait AkkaAMQP extends Loggable {
       AMQP.newConnection(
         ConnectionParameters(
           addresses,
-          MasterConf.MasterConf.get(MasterConf.Keys.amqp_username),
-          MasterConf.MasterConf.get(MasterConf.Keys.amqp_password),
-          MasterConf.MasterConf.get(MasterConf.Keys.amqp_vhost),
+          mc.get(Keys.amqp_username),
+          mc.get(Keys.amqp_password),
+          mc.get(Keys.amqp_vhost),
           1000,
           None))
     }
