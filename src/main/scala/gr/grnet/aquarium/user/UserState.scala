@@ -70,18 +70,15 @@ object UserState {
   }
 
   def fromJson(json: String): UserState = {
-    implicit val formats = JsonHelpers.DefaultJsonFormats
-    val jsonAST = parseJson(json)
-    Extraction.extract[UserState](jsonAST)
+    JsonHelpers.jsonToObject[UserState](json)
   }
 
   def fromJValue(jsonAST: JsonAST.JValue): UserState = {
-    implicit val formats = JsonHelpers.DefaultJsonFormats
-    Extraction.extract(jsonAST)
+    JsonHelpers.jValueToObject[UserState](jsonAST)
   }
 
   def fromBytes(bytes: Array[Byte]): UserState = {
-    fromJson(new String(bytes, "UTF-8"))
+    JsonHelpers.jsonBytesToObject[UserState](bytes)
   }
 
   def fromXml(xml: String): UserState = {
