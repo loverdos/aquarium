@@ -95,18 +95,15 @@ case class ResourceEvent(
 
 object ResourceEvent {
   def fromJson(json: String): ResourceEvent = {
-    implicit val formats = JsonHelpers.DefaultJsonFormats
-    val jsonAST = parseJson(json)
-    Extraction.extract[ResourceEvent](jsonAST)
+    JsonHelpers.jsonToObject[ResourceEvent](json)
   }
 
   def fromJValue(jsonAST: JsonAST.JValue): ResourceEvent = {
-    implicit val formats = JsonHelpers.DefaultJsonFormats
-    Extraction.extract(jsonAST)
+    JsonHelpers.jValueToObject[ResourceEvent](jsonAST)
   }
 
   def fromBytes(bytes: Array[Byte]): ResourceEvent = {
-    fromJson(new String(bytes, "UTF-8"))
+    JsonHelpers.jsonBytesToObject[ResourceEvent](bytes)
   }
 
   def fromXml(xml: String): ResourceEvent = {
