@@ -91,6 +91,8 @@ case class ResourceEvent(
 
     true
   }
+
+  def isVMEvent: Boolean = details.contains("vmId")
 }
 
 object ResourceEvent {
@@ -108,5 +110,13 @@ object ResourceEvent {
 
   def fromXml(xml: String): ResourceEvent = {
     fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
+  }
+  
+  object JsonNames {
+    final val _id = "_id"
+    final val id = "id"
+    final val userId = "userId"
+    final val timestamp = "timestamp"
+    final val clientId = "clientId"
   }
 }

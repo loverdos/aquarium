@@ -39,12 +39,12 @@ import gr.grnet.aquarium.util.Loggable
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import com.mongodb.util.JSON
 import gr.grnet.aquarium.user.UserState
-import gr.grnet.aquarium.user.UserState.JsonNames
 import gr.grnet.aquarium.util.displayableObjectInfo
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.{ListBuffer}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.logic.events.{WalletEntry, UserEvent, ResourceEvent, AquariumEvent}
+import gr.grnet.aquarium.logic.events.ResourceEvent.JsonNames
 import java.util.Date
 import com.mongodb._
 
@@ -129,7 +129,7 @@ class MongoDBStore(
       col.insert(dbObj)
 
       // Get back to retrieve unique id
-      val cursor = col.find(_prepareFieldQuery("id", entry.id))
+      val cursor = col.find(_prepareFieldQuery(JsonNames.id, entry.id))
 
       if (!cursor.hasNext) {
         cursor.close()
@@ -137,7 +137,7 @@ class MongoDBStore(
         return Failed(new StoreException("Failed to _store entry: %s".format(entry)))
       }
 
-      val retval = Just(RecordID(cursor.next.get("_id").toString))
+      val retval = Just(RecordID(cursor.next.get(JsonNames._id).toString))
       cursor.close()
       retval
     } catch {
@@ -148,7 +148,7 @@ class MongoDBStore(
 
   private[this] def _findById[A <: AquariumEvent](id: String, col: DBCollection) : Option[A] = {
     val q = new BasicDBObject()
-    q.put("id", id)
+    q.put(JsonNames.id, id)
 
     val cur = col.find(q)
 
@@ -203,17 +203,17 @@ class MongoDBStore(
   def findEventsByUserId[A <: AquariumEvent](userId: String)
                                             (sortWith: Option[(A, A) => Boolean]): List[A] = {
     val q = new BasicDBObject()
-    q.put("userId", userId)
+    q.put(JsonNames.userId, userId)
 
     _query(q, events)(sortWith)
   }
 
   def findEventsByUserIdAfterTimestamp[A <: AquariumEvent](userId: String, timestamp: Long): List[A] = {
     val query = new BasicDBObject()
-    query.put("userId", userId)
-    query.put("timestamp", new BasicDBObject("$gte", timestamp))
+    query.put(JsonNames.userId, userId)
+    query.put(JsonNames.timestamp, new BasicDBObject("$gte", timestamp))
     
-    val sort = new BasicDBObject("timestamp", 1)
+    val sort = new BasicDBObject(JsonNames.timestamp, 1)
 
     val cursor = events.find(query).sort(sort)
     val buffer = new scala.collection.mutable.ListBuffer[A]
@@ -263,9 +263,9 @@ class MongoDBStore(
 
   def findUserEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
     val q = new BasicDBObject()
-    q.put("timestamp", new BasicDBObject("$gt", from.getTime))
-    q.put("timestamp", new BasicDBObject("$lt", to.getTime))
-    q.put("userId", userId)
+    q.put(JsonNames.timestamp, new BasicDBObject("$gt", from.getTime))
+    q.put(JsonNames.timestamp, new BasicDBObject("$lt", to.getTime))
+    q.put(JsonNames.userId, userId)
 
     _query[WalletEntry](q, wallets)(Some(_sortByTimestampAsc))
   }
