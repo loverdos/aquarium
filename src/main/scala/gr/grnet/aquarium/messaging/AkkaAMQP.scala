@@ -71,7 +71,8 @@ trait AkkaAMQP extends Loggable {
   }
 
   private lazy val exchanges = {
-    MasterConf.MasterConf.get(MasterConf.Keys.amqp_exchanges).split(",")
+    val mc = MasterConf.MasterConf
+    mc.props.getTrimmedList(MasterConf.Keys.amqp_exchanges)
   }
 
   //Queues and exchnages are by default durable and persistent
