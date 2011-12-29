@@ -74,7 +74,7 @@ case class ResourceEvent(
     true
   }
 
-  def isVMEvent: Boolean = details.contains("vmId")
+  def isVMEvent: Boolean = details.contains(ResourceEvent.JsonNames.vmId)
 }
 
 object ResourceEvent {
@@ -100,5 +100,7 @@ object ResourceEvent {
     final val userId = "userId"
     final val timestamp = "timestamp"
     final val clientId = "clientId"
+
+    final val vmId = "vmId"
   }
 }
