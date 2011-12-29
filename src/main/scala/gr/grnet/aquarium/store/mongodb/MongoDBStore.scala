@@ -78,58 +78,6 @@ class MongoDBStore(
   * A method based on proper object serialization would be much faster.
   */
 
-  private[this] def _makeDBObject(any: JsonSupport): DBObject = {
-    JSON.parse(any.toJson) match {
-      case dbObject: DBObject ⇒
-        dbObject
-      case _ ⇒
-        throw new StoreException("Could not transform %s -> %s".format(displayableObjectInfo(any), classOf[DBObject].getName))
-    }
-  }
-
-  private[this] def _insertObject(collection: DBCollection, obj: JsonSupport): DBObject = {
-    val dbObj = _makeDBObject(obj)
-    collection insert dbObj
-    dbObj
-  }
-
-  private[this] def _checkWasInserted(collection: DBCollection, obj: JsonSupport,  idName: String, id: String): String = {
-    val cursor = collection.find(new BasicDBObject(idName, id))
-    if (!cursor.hasNext) {
-      val errMsg = "Failed to _store %s".format(displayableObjectInfo(obj))
-      logger.error(errMsg)
-      throw new StoreException(errMsg)
-    }
-
-    val retval = cursor.next.get("_id").toString
-    cursor.close()
-    retval
-  }
-
-  private[this] def _store[A <: AquariumEvent](entry: A, col: DBCollection) : Maybe[RecordID] = {
-    try {
-      // Store
-      val dbObj = _makeDBObject(entry)
-      col.insert(dbObj)
-
-      // Get back to retrieve unique id
-      val cursor = col.find(new BasicDBObject(JsonNames.id, entry.id))
-
-      if (!cursor.hasNext) {
-        cursor.close()
-        logger.error("Failed to _store entry: %s".format(entry))
-        return Failed(new StoreException("Failed to _store entry: %s".format(entry)))
-      }
-
-      val retval = Just(RecordID(cursor.next.get(JsonNames._id).toString))
-      cursor.close()
-      retval
-    } catch {
-      case m: MongoException =>
-        logger.error("Unknown Mongo error: %s".format(m)); Failed(m)
-    }
-  }
-
   private[this] def _sortByTimestampAsc[A <: AquariumEvent](one: A, two: A): Boolean = {
     if (one.occurredMillis > two.occurredMillis) false
     else if (one.occurredMillis < two.occurredMillis) true
@@ -143,9 +91,11 @@ class MongoDBStore(
   }
 
   //+ResourceEventStore
-  def storeResourceEvent(event: ResourceEvent): Maybe[RecordID] = _store(event, rcevents)
+  def storeResourceEvent(event: ResourceEvent): Maybe[RecordID] =
+    MongoDBStore.storeAquariumEvent(event, rcevents)
 
-  def findResourceEventById(id: String): Maybe[ResourceEvent] = MongoDBStore.findById(id, rcevents, MongoDBStore.dbObjectToResourceEvent)
+  def findResourceEventById(id: String): Maybe[ResourceEvent] =
+    MongoDBStore.findById(id, rcevents, MongoDBStore.dbObjectToResourceEvent)
 
   def findResourceEventsByUserId(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
@@ -176,13 +126,8 @@ class MongoDBStore(
   //-ResourceEventStore
 
   //+UserStore
-  def storeUserState(userState: UserState): Maybe[RecordID] = {
-    Maybe {
-      val dbObj = _insertObject(users, userState)
-      val id    = _checkWasInserted(users, userState, JsonNames.userId, userState.userId)
-      RecordID(id)
-    }
-  }
+  def storeUserState(userState: UserState): Maybe[RecordID] =
+    MongoDBStore.storeUserState(userState, users)
 
   def findUserStateByUserId(userId: String): Maybe[UserState] = {
     Maybe {
@@ -202,11 +147,16 @@ class MongoDBStore(
   //-UserStore
 
   //+WalletStore
-  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] = _store(entry, wallets)
+  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] =
+    MongoDBStore.storeAquariumEvent(entry, wallets)
 
-  def findWalletEntryById(id: String): Maybe[WalletEntry] = MongoDBStore.findById[WalletEntry](id, wallets, MongoDBStore.dbObjectToWalletEntry)
+  def findWalletEntryById(id: String): Maybe[WalletEntry] =
+    MongoDBStore.findById[WalletEntry](id, wallets, MongoDBStore.dbObjectToWalletEntry)
 
-  def findUserWalletEntries(userId: String) = findUserWalletEntriesFromTo(userId, new Date(0), new Date(Int.MaxValue))
+  def findUserWalletEntries(userId: String) = {
+    // TODO: optimize
+    findUserWalletEntriesFromTo(userId, new Date(0), new Date(Int.MaxValue))
+  }
 
   def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
     val q = new BasicDBObject()
@@ -272,6 +222,47 @@ object MongoDBStore {
         case Some(sorter) => buff.toList.sortWith(sorter)
         case None => buff.toList
       }
+    }
+  }
+
+  def storeAquariumEvent[A <: AquariumEvent](event: A, collection: DBCollection) : Maybe[RecordID] = {
+    storeAny[A](event, collection, JsonNames.id, (e) => e.id, MongoDBStore.jsonSupportToDBObject)
+  }
+
+  def storeUserState(userState: UserState, collection: DBCollection): Maybe[RecordID] = {
+    storeAny[UserState](userState, collection, JsonNames.userId, _.userId, MongoDBStore.jsonSupportToDBObject)
+  }
+
+  def storeAny[A](any: A,
+                  collection: DBCollection,
+                  idName: String,
+                  idValueProvider: (A) => String,
+                  serializer: (A) => DBObject) : Maybe[RecordID] = Maybe {
+    // Store
+    val dbObj = serializer apply any
+    val writeResult = collection insert dbObj
+    writeResult.getLastError().throwOnError()
+
+    // Get back to retrieve unique id
+    val cursor = collection.find(new BasicDBObject(idName, idValueProvider(any)))
+
+    try {
+      // TODO: better way to get _id?
+      if(cursor.hasNext)
+        RecordID(cursor.next().get(JsonNames._id).toString)
+      else
+        throw new StoreException("Could not store %s to %s".format(any, collection))
+    } finally {
+      cursor.close()
+    }
+ }
+
+  def jsonSupportToDBObject(any: JsonSupport): DBObject = {
+    JSON.parse(any.toJson) match {
+      case dbObject: DBObject ⇒
+        dbObject
+      case _ ⇒
+        throw new StoreException("Could not transform %s -> %s".format(displayableObjectInfo(any), classOf[DBObject].getName))
     }
   }
 }
