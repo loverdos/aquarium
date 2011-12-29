@@ -38,7 +38,7 @@ package gr.grnet.aquarium.store.memory
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.Configurable
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.store.{RecordID, UserStore}
+import gr.grnet.aquarium.store.{RecordID, UserStateStore}
 import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
 
 /**
@@ -49,7 +49,7 @@ import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class MemUserStore extends UserStore with Configurable {
+class MemUserStateStore extends UserStateStore with Configurable {
   private[this] val userStateByUserId = new java.util.concurrent.ConcurrentHashMap[String, Just[UserState]]()
   
   def configure(props: Props) = {

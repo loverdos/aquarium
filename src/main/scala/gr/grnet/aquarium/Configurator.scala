@@ -98,13 +98,13 @@ class Configurator(val props: Props) extends Loggable {
     instance
   }
 
-  private[this] lazy val _userStoreM: Maybe[UserStore] = {
-    // If there is a specific `UserStore` implementation specified in the
+  private[this] lazy val _userStateStoreM: Maybe[UserStateStore] = {
+    // If there is a specific `UserStateStore` implementation specified in the
     // properties, then this implementation overrides the user store given by
     // `StoreProvider`.
-    props.get(Keys.userstore_class) map { className ⇒
-      val instance = newInstance[UserStore](className)
-      logger.info("Overriding UserStore provisioning. Implementation given by: %s".format(instance.getClass))
+    props.get(Keys.user_state_store_class) map { className ⇒
+      val instance = newInstance[UserStateStore](className)
+      logger.info("Overriding UserStateStore provisioning. Implementation given by: %s".format(instance.getClass))
       instance
     }
   }
@@ -120,13 +120,13 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
-  private[this] lazy val _WalletEventStoreM: Maybe[WalletStore] = {
+  private[this] lazy val _WalletEventStoreM: Maybe[WalletEntryStore] = {
     // If there is a specific `IMStore` implementation specified in the
     // properties, then this implementation overrides the event store given by
     // `IMProvider`.
-    props.get(Keys.walletstore_class) map { className ⇒
-      val instance = newInstance[WalletStore](className)
-      logger.info("Overriding WalletStore provisioning. Implementation given by: %s".format(instance.getClass))
+    props.get(Keys.wallet_entry_store_class) map { className ⇒
+      val instance = newInstance[WalletEntryStore](className)
+      logger.info("Overriding WalletEntryStore provisioning. Implementation given by: %s".format(instance.getClass))
       instance
     }
   }
@@ -161,24 +161,24 @@ class Configurator(val props: Props) extends Loggable {
   
   def actorProvider = _actorProvider
 
-  def userStore = {
-    _userStoreM match {
+  def userStateStore = {
+    _userStateStoreM match {
       case Just(us) ⇒ us
-      case _        ⇒ storeProvider.userStore
+      case _        ⇒ storeProvider.userStateStore
     }
   }
 
   def resourceEventStore = {
     _resourceEventStoreM match {
       case Just(es) ⇒ es
-      case _        ⇒ storeProvider.eventStore
+      case _        ⇒ storeProvider.resourceEventStore
     }
   }
 
   def walletStore = {
     _WalletEventStoreM match {
       case Just(es) ⇒ es
-      case _        ⇒ storeProvider.walletStore
+      case _        ⇒ storeProvider.walletEntryStore
     }
   }
 
@@ -300,7 +300,7 @@ object Configurator {
     /**
      * The class that implements the User store
      */
-    final val userstore_class = "user.store.class"
+    final val user_state_store_class = "user.state.store.class"
 
     /**
      * The class that implements the resource event store
@@ -313,9 +313,9 @@ object Configurator {
     final val im_eventstore_class = "imevent.store.class"
 
     /**
-     * The class that implements the wallet store
+     * The class that implements the wallet entries store
      */
-    final val walletstore_class = "wallet.store.class"
+    final val wallet_entry_store_class = "wallet.entry.store.class"
 
     /** The lower mark for the UserActors' LRU, managed by UserActorManager.
      *

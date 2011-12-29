@@ -46,7 +46,7 @@ case class UserEvent(
    */
   def validate: Boolean = {
 
-    MasterConfigurator.userStore.findUserStateByUserId(userId) match {
+    MasterConfigurator.userStateStore.findUserStateByUserId(userId) match {
       case Just(x) =>
         if (eventType == 1){
           logger.warn("User to create exists: IMEvent".format(this.toJson));

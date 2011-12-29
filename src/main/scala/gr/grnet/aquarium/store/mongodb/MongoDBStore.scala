@@ -59,7 +59,7 @@ class MongoDBStore(
     val database: String,
     val username: String,
     val password: String)
-  extends ResourceEventStore with UserStore with WalletStore with Loggable {
+  extends ResourceEventStore with UserStateStore with WalletEntryStore with Loggable {
 
   private[store] lazy val rcevents: DBCollection = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
@@ -125,7 +125,7 @@ class MongoDBStore(
   }
   //-ResourceEventStore
 
-  //+UserStore
+  //+UserStateStore
   def storeUserState(userState: UserState): Maybe[RecordID] =
     MongoDBStore.storeUserState(userState, users)
 
@@ -144,9 +144,9 @@ class MongoDBStore(
       }
     }
   }
-  //-UserStore
+  //-UserStateStore
 
-  //+WalletStore
+  //+WalletEntryStore
   def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] =
     MongoDBStore.storeAquariumEvent(entry, wallets)
 
@@ -167,7 +167,7 @@ class MongoDBStore(
 
     MongoDBStore.runQuery[WalletEntry](q, wallets)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
   }
-  //-WalletStore
+  //-WalletEntryStore
 }
 
 object MongoDBStore {

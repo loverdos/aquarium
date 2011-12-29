@@ -36,12 +36,12 @@
 package gr.grnet.aquarium.store
 
 /**
- * 
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 trait StoreProvider {
-  def userStore: UserStore
-  def eventStore: ResourceEventStore
-  def walletStore: WalletStore
+  def userStateStore: UserStateStore
+  def resourceEventStore: ResourceEventStore
+  def walletEntryStore: WalletEntryStore
 }

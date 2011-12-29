@@ -53,8 +53,8 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   private[this] var _password: String = _
 
   private[this] var _eventStore: ResourceEventStore = _
-  private[this] var _userStore: UserStore = _
-  private[this] var _walletStore: WalletStore = _
+  private[this] var _userStore: UserStateStore = _
+  private[this] var _walletStore: WalletEntryStore = _
 
   def configure(props: Props) = {
     this._database = props.getEx(Keys.persistence_db)
@@ -78,9 +78,9 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
     }
   }
 
-  def userStore = _userStore
+  def userStateStore = _userStore
 
-  def eventStore = _eventStore
+  def resourceEventStore = _eventStore
 
-  def walletStore = _walletStore
+  def walletEntryStore = _walletStore
 }

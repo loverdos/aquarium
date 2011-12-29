@@ -1,9 +1,10 @@
 package gr.grnet.aquarium.logic.events
 
 import gr.grnet.aquarium.util.json.JsonHelpers
-import net.liftweb.json._
 
 /**
+ * A WalletEntry is a derived entity. Its data represent money/credits and are calculated based on
+ * resource events.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>

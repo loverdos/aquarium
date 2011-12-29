@@ -5,12 +5,12 @@ import java.util.Date
 import com.ckkloverdos.maybe.Maybe
 
 /**
- * A store for Wallets
+ * A store for Wallet entries.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait WalletStore {
+trait WalletEntryStore {
 
   def storeWalletEntry(entry: WalletEntry): Maybe[RecordID]
 

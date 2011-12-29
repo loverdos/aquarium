@@ -44,7 +44,7 @@ import com.ckkloverdos.maybe.Maybe
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UserStore {
+trait UserStateStore {
   def storeUserState(userState: UserState): Maybe[RecordID]
   def findUserStateByUserId(userId: String): Maybe[UserState]
 }

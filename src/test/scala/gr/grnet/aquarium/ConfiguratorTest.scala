@@ -71,6 +71,6 @@ class ConfiguratorTest {
   @Test
   def testGetUserStore: Unit = {
     val mc = Configurator.MasterConfigurator
-    val userStore = mc.userStore
+    val userStore = mc.userStateStore
   }
 }
