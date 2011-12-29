@@ -38,7 +38,7 @@ package gr.grnet.aquarium.logic.accounting
 import dsl._
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 import collection.immutable.SortedMap
-import gr.grnet.aquarium.MasterConf._
+import gr.grnet.aquarium.Configurator._
 import gr.grnet.aquarium.util.Loggable
 import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
 
@@ -54,7 +54,7 @@ trait Accounting extends DSLUtils with Loggable {
     if (!ev.validate())
       Failed(new AccountingException("Event not valid"))
 
-    val userState = MasterConf.userStore.findUserStateByUserId(ev.userId) match {
+    val userState = MasterConfigurator.userStateStore.findUserStateByUserId(ev.userId) match {
       case Just(x) => x
       case NoVal =>
         return Failed(new AccountingException("Inexistent user: %s".format(ev.toJson)))
