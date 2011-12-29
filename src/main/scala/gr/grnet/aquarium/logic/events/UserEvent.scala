@@ -14,7 +14,6 @@ case class UserEvent(
     override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
     override val occurredMillis: Long, // When it occurred at client side (the sender)
     override val receivedMillis: Long, // When it was received by Aquarium
-    var aqTimestamp: Long = 0,
     userId: String,
     eventVersion: Short,
     eventType: Short, //1: create, 2: modify

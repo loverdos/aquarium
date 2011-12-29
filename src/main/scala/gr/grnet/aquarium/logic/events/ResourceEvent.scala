@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.logic.events
 
 import gr.grnet.aquarium.logic.accounting.Policy
-import net.liftweb.json.{Extraction, parse => parseJson, JsonAST, Xml}
+import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
 
 /**
@@ -46,15 +46,14 @@ import gr.grnet.aquarium.util.json.JsonHelpers
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
 case class ResourceEvent(
-    override val id: String,
+    override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
     userId: String,
     clientId: String,
     resource: String,
-    override val occurredMillis: Long,
-    override val receivedMillis: Long,
+    override val occurredMillis: Long, // When it occurred at client side (the sender)
+    override val receivedMillis: Long, // When it was received by Aquarium
     eventVersion: String,
     value: Float,
-    var aqTimestamp: Long = 0,
     details: Map[String, String])
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 

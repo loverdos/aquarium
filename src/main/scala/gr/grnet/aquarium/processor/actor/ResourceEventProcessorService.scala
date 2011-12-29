@@ -131,7 +131,6 @@ with Lifecycle {
       Configurator.MasterConfigurator.resourceEventStore.findResourceEventById(event.id).isJust
 
     def persist(event: ResourceEvent): Boolean = {
-      event.aqTimestamp = System.currentTimeMillis()
       Configurator.MasterConfigurator.resourceEventStore.storeResourceEvent(event) match {
         case Just(x) => true
         case x: Failed =>
