@@ -26,10 +26,8 @@ case class WalletEntry(
 }
 
 object WalletEntry {
-  def fromJson(json: String): ResourceEvent = {
-    implicit val formats = JsonHelpers.DefaultJsonFormats
-    val jsonAST = parse(json)
-    Extraction.extract[ResourceEvent](jsonAST)
+  def fromJson(json: String): WalletEntry = {
+    JsonHelpers.jsonToObject[WalletEntry](json)
   }
 
   def zero = WalletEntry("", 1L, Nil,1,"","foo", false)
