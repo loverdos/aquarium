@@ -39,7 +39,13 @@ import net.liftweb.json.Xml
 import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
- * 
+ * Mix-in this trait when you need transformation to XML.
+ *
+ * The underlying library used is lift-json.
+ *
+ * The trait assumes the services of `JsonSupport` since it uses `JsonSupport`
+ * for the actual transformation (this is possible thanks to lift-json).
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
