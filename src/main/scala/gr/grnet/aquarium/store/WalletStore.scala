@@ -12,11 +12,11 @@ import com.ckkloverdos.maybe.Maybe
  */
 trait WalletStore {
 
-  def store(entry: WalletEntry): Maybe[RecordID]
+  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID]
 
-  def findEntryById(id: String): Maybe[WalletEntry]
+  def findWalletEntryById(id: String): Maybe[WalletEntry]
 
-  def findAllUserEntries(userId: String): List[WalletEntry]
+  def findUserWalletEntries(userId: String): List[WalletEntry]
 
-  def findUserEntriesFromTo(userId: String, from: Date, to: Date): List[WalletEntry]
+  def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date): List[WalletEntry]
 }

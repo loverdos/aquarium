@@ -202,13 +202,13 @@ class MongoDBStore(
   //-UserStore
 
   //+WalletStore
-  def store(entry: WalletEntry): Maybe[RecordID] = _store(entry, wallets)
+  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] = _store(entry, wallets)
 
-  def findEntryById(id: String): Maybe[WalletEntry] = MongoDBStore.findById[WalletEntry](id, wallets, MongoDBStore.dbObjectToWalletEntry)
+  def findWalletEntryById(id: String): Maybe[WalletEntry] = MongoDBStore.findById[WalletEntry](id, wallets, MongoDBStore.dbObjectToWalletEntry)
 
-  def findAllUserEntries(userId: String) = findUserEntriesFromTo(userId, new Date(0), new Date(Int.MaxValue))
+  def findUserWalletEntries(userId: String) = findUserWalletEntriesFromTo(userId, new Date(0), new Date(Int.MaxValue))
 
-  def findUserEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
+  def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
     val q = new BasicDBObject()
     // TODO: Is this the correct way for an AND query?
     q.put(JsonNames.timestamp, new BasicDBObject("$gt", from.getTime))
