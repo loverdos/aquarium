@@ -128,7 +128,7 @@ with Lifecycle {
     }
 
     def exists(event: ResourceEvent): Boolean =
-      !Configurator.MasterConfigurator.resourceEventStore.findResourceEventById(event.id).isEmpty
+      Configurator.MasterConfigurator.resourceEventStore.findResourceEventById(event.id).isJust
 
     def persist(event: ResourceEvent): Boolean = {
       event.aqTimestamp = System.currentTimeMillis()

@@ -8,12 +8,13 @@ import com.ckkloverdos.maybe.Maybe
  * A store for Wallets
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 trait WalletStore {
 
   def store(entry: WalletEntry): Maybe[RecordID]
 
-  def findEntryById(id: String): Option[WalletEntry]
+  def findEntryById(id: String): Maybe[WalletEntry]
 
   def findAllUserEntries(userId: String): List[WalletEntry]
 

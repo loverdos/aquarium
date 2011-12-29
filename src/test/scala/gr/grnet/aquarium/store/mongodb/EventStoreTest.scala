@@ -111,7 +111,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
 
     val col = a.mongo.getDB(
       MasterConfigurator.get(Keys.persistence_db)
-    ).getCollection(MongoDBStore.EVENTS_COLLECTION)
+    ).getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
 
     val res = col.find
     while (res.hasNext)

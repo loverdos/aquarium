@@ -36,20 +36,20 @@
 package gr.grnet.aquarium.store.mongodb
 
 import gr.grnet.aquarium.util.Loggable
-import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import com.mongodb.util.JSON
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.displayableObjectInfo
 import gr.grnet.aquarium.util.json.JsonSupport
-import collection.mutable.{ListBuffer}
+import collection.mutable.ListBuffer
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.logic.events.{WalletEntry, UserEvent, ResourceEvent, AquariumEvent}
+import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, AquariumEvent}
 import gr.grnet.aquarium.logic.events.ResourceEvent.JsonNames
 import java.util.Date
 import com.mongodb._
+import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 
 /**
- * Mongodb implementation of the event _store (and soon the user _store).
+ * Mongodb implementation of the various aquarium stores.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
@@ -61,7 +61,7 @@ class MongoDBStore(
     val password: String)
   extends ResourceEventStore with UserStore with WalletStore with Loggable {
 
-  private[store] lazy val events: DBCollection = getCollection(MongoDBStore.EVENTS_COLLECTION)
+  private[store] lazy val rcevents: DBCollection = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
   private[store] lazy val imevents: DBCollection = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
   private[store] lazy val wallets: DBCollection = getCollection(MongoDBStore.IM_WALLETS)
@@ -78,16 +78,6 @@ class MongoDBStore(
   * A method based on proper object serialization would be much faster.
   */
 
-  private[this] def _deserializeEvent[A <: AquariumEvent](a: DBObject): A = {
-    //TODO: Distinguish events and deserialize appropriately
-    ResourceEvent.fromJson(JSON.serialize(a)).asInstanceOf[A]
-  }
-
-  private[this] def _deserializeUserState(dbObj: DBObject): UserState = {
-    val jsonString = JSON.serialize(dbObj)
-    UserState.fromJson(jsonString)
-  }
-
   private[this] def _makeDBObject(any: JsonSupport): DBObject = {
     JSON.parse(any.toJson) match {
       case dbObject: DBObject ⇒
@@ -97,12 +87,6 @@ class MongoDBStore(
     }
   }
 
-  private[this] def _prepareFieldQuery(name: String, value: String): DBObject = {
-    val dbObj = new BasicDBObject(1)
-    dbObj.put(name, value)
-    dbObj
-  }
-
   private[this] def _insertObject(collection: DBCollection, obj: JsonSupport): DBObject = {
     val dbObj = _makeDBObject(obj)
     collection insert dbObj
@@ -110,7 +94,7 @@ class MongoDBStore(
   }
 
   private[this] def _checkWasInserted(collection: DBCollection, obj: JsonSupport,  idName: String, id: String): String = {
-    val cursor = collection.find(_prepareFieldQuery(idName, id))
+    val cursor = collection.find(new BasicDBObject(idName, id))
     if (!cursor.hasNext) {
       val errMsg = "Failed to _store %s".format(displayableObjectInfo(obj))
       logger.error(errMsg)
@@ -129,7 +113,7 @@ class MongoDBStore(
       col.insert(dbObj)
 
       // Get back to retrieve unique id
-      val cursor = col.find(_prepareFieldQuery(JsonNames.id, entry.id))
+      val cursor = col.find(new BasicDBObject(JsonNames.id, entry.id))
 
       if (!cursor.hasNext) {
         cursor.close()
@@ -146,43 +130,6 @@ class MongoDBStore(
     }
   }
 
-  private[this] def _findById[A <: AquariumEvent](id: String, col: DBCollection) : Option[A] = {
-    val q = new BasicDBObject()
-    q.put(JsonNames.id, id)
-
-    val cur = col.find(q)
-
-    val retval = if (cur.hasNext)
-      Some(_deserializeEvent(cur.next))
-    else
-      None
-    
-    cur.close()
-    retval
-  }
-  
-  private[this] def _query[A <: AquariumEvent](q: BasicDBObject,
-                                              col: DBCollection)
-                                              (sortWith: Option[(A, A) => Boolean]): List[A] = {
-    val cur = col.find(q)
-    if (!cur.hasNext) {
-      cur.close()
-      return List()
-    }
-
-    val buff = new ListBuffer[A]()
-
-    while(cur.hasNext)
-      buff += _deserializeEvent(cur.next)
-
-    cur.close()
-    
-    sortWith match {
-      case Some(sorter) => buff.toList.sortWith(sorter)
-      case None => buff.toList
-    }
-  }
-
   private[this] def _sortByTimestampAsc[A <: AquariumEvent](one: A, two: A): Boolean = {
     if (one.occurredMillis > two.occurredMillis) false
     else if (one.occurredMillis < two.occurredMillis) true
@@ -196,16 +143,15 @@ class MongoDBStore(
   }
 
   //+ResourceEventStore
-  def storeResourceEvent(event: ResourceEvent): Maybe[RecordID] = _store(event, events)
+  def storeResourceEvent(event: ResourceEvent): Maybe[RecordID] = _store(event, rcevents)
 
-  def findResourceEventById(id: String): Option[ResourceEvent] = _findById(id, events)
+  def findResourceEventById(id: String): Maybe[ResourceEvent] = MongoDBStore.findById(id, rcevents, MongoDBStore.dbObjectToResourceEvent)
 
   def findResourceEventsByUserId(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
-    val q = new BasicDBObject()
-    q.put(JsonNames.userId, userId)
+    val query = new BasicDBObject(JsonNames.userId, userId)
 
-    _query(q, events)(sortWith)
+    MongoDBStore.runQuery(query, rcevents)(MongoDBStore.dbObjectToResourceEvent)(sortWith)
   }
 
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
@@ -215,15 +161,17 @@ class MongoDBStore(
     
     val sort = new BasicDBObject(JsonNames.timestamp, 1)
 
-    val cursor = events.find(query).sort(sort)
-    val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
-    while(cursor.hasNext) {
-      buffer += _deserializeEvent(cursor.next())
+    val cursor = rcevents.find(query).sort(sort)
+
+    try {
+      val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
+      while(cursor.hasNext) {
+        buffer += MongoDBStore.dbObjectToResourceEvent(cursor.next())
+      }
+      buffer.toList
+    } finally {
+      cursor.close()
     }
-
-    cursor.close()
-
-    buffer.toList
   }
   //-ResourceEventStore
 
@@ -238,16 +186,16 @@ class MongoDBStore(
 
   def findUserStateByUserId(userId: String): Maybe[UserState] = {
     Maybe {
-      val queryObj = _prepareFieldQuery(JsonNames.userId, userId)
-      val cursor = events.find(queryObj)
+      val query = new BasicDBObject(JsonNames.userId, userId)
+      val cursor = rcevents find query
 
-      if(!cursor.hasNext) {
+      try {
+        if(cursor.hasNext)
+          MongoDBStore.dbObjectToUserState(cursor.next())
+        else
+          null
+      } finally {
         cursor.close()
-        null
-      } else {
-        val userState = _deserializeUserState(cursor.next())
-        cursor.close()
-        userState
       }
     }
   }
@@ -256,24 +204,74 @@ class MongoDBStore(
   //+WalletStore
   def store(entry: WalletEntry): Maybe[RecordID] = _store(entry, wallets)
 
-  def findEntryById(id: String): Option[WalletEntry] = _findById[WalletEntry](id, wallets)
+  def findEntryById(id: String): Maybe[WalletEntry] = MongoDBStore.findById[WalletEntry](id, wallets, MongoDBStore.dbObjectToWalletEntry)
 
   def findAllUserEntries(userId: String) = findUserEntriesFromTo(userId, new Date(0), new Date(Int.MaxValue))
 
   def findUserEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
     val q = new BasicDBObject()
+    // TODO: Is this the correct way for an AND query?
     q.put(JsonNames.timestamp, new BasicDBObject("$gt", from.getTime))
     q.put(JsonNames.timestamp, new BasicDBObject("$lt", to.getTime))
     q.put(JsonNames.userId, userId)
 
-    _query[WalletEntry](q, wallets)(Some(_sortByTimestampAsc))
+    MongoDBStore.runQuery[WalletEntry](q, wallets)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
   }
   //-WalletStore
 }
 
 object MongoDBStore {
-  def EVENTS_COLLECTION = "events"
+  def RESOURCE_EVENTS_COLLECTION = "rcevents"
   def USERS_COLLECTION = "users"
   def IM_EVENTS_COLLECTION = "imevents"
   def IM_WALLETS = "wallets"
+
+  def dbObjectToResourceEvent(dbObject: DBObject): ResourceEvent = {
+    ResourceEvent.fromJson(JSON.serialize(dbObject))
+  }
+
+  def dbObjectToUserState(dbObj: DBObject): UserState = {
+    UserState.fromJson(JSON.serialize(dbObj))
+  }
+
+  def dbObjectToWalletEntry(dbObj: DBObject): WalletEntry = {
+    WalletEntry.fromJson(JSON.serialize(dbObj))
+  }
+
+  def findById[A >: Null <: AquariumEvent](id: String, collection: DBCollection, deserializer: (DBObject) => A) : Maybe[A] = Maybe {
+    val query = new BasicDBObject(JsonNames.id, id)
+    val cursor = collection find query
+
+    try {
+      if(cursor.hasNext)
+        deserializer apply cursor.next
+      else
+        null: A // will be transformed to NoVal by the Maybe polymorphic constructor
+    } finally {
+      cursor.close()
+    }
+  }
+
+  def runQuery[A <: AquariumEvent](query: BasicDBObject, collection: DBCollection)
+                                  (deserializer: (DBObject) => A)
+                                  (sortWith: Option[(A, A) => Boolean]): List[A] = {
+    val cur = collection find query
+    if(!cur.hasNext) {
+      cur.close()
+      Nil
+    } else {
+      val buff = new ListBuffer[A]()
+
+      while(cur.hasNext) {
+        buff += deserializer apply cur.next
+      }
+
+      cur.close()
+
+      sortWith match {
+        case Some(sorter) => buff.toList.sortWith(sorter)
+        case None => buff.toList
+      }
+    }
+  }
 }

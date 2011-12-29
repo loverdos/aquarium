@@ -47,7 +47,7 @@ import gr.grnet.aquarium.logic.events.ResourceEvent
 trait ResourceEventStore {
   def storeResourceEvent(event: ResourceEvent): Maybe[RecordID]
 
-  def findResourceEventById(id: String): Option[ResourceEvent]
+  def findResourceEventById(id: String): Maybe[ResourceEvent]
 
   def findResourceEventsByUserId(userId: String)(sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent]
 
