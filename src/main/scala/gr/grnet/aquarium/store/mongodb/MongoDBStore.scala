@@ -184,14 +184,14 @@ class MongoDBStore(
   }
 
   private[this] def _sortByTimestampAsc[A <: AquariumEvent](one: A, two: A): Boolean = {
-    if (one.timestamp > two.timestamp) false
-    else if (one.timestamp < two.timestamp) true
+    if (one.occurredMillis > two.occurredMillis) false
+    else if (one.occurredMillis < two.occurredMillis) true
     else true
   }
 
   private[this] def _sortByTimestampDesc[A <: AquariumEvent](one: A, two: A): Boolean = {
-    if (one.timestamp < two.timestamp) false
-    else if (one.timestamp > two.timestamp) true
+    if (one.occurredMillis < two.occurredMillis) false
+    else if (one.occurredMillis > two.occurredMillis) true
     else true
   }
 

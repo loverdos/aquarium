@@ -50,12 +50,12 @@ case class ResourceEvent(
   userId: String,
   clientId: String,
   resource: String,
-  override val timestamp: Long,
+  override val occurredMillis: Long,
   eventVersion: String,
   value: Float,
   var aqTimestamp: Long = 0,
   details: Map[String, String]
-) extends AquariumEvent(id, timestamp) {
+) extends AquariumEvent(id, occurredMillis) {
 
   def validate() : Boolean = {
 

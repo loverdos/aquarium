@@ -12,7 +12,7 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Just}
  */
 case class UserEvent(
   override val id: String,
-  override val timestamp: Long,
+  override val occurredMillis: Long,
   var aqTimestamp: Long = 0,
   userId: String,
   eventVersion: Short,
@@ -21,7 +21,7 @@ case class UserEvent(
   idp: String,
   tenant: String,
   roles: Array[String]
-  ) extends AquariumEvent(id, timestamp) {
+  ) extends AquariumEvent(id, occurredMillis) {
 
   assert(eventType == 1 || eventType == 2)
   assert(state.equalsIgnoreCase("ACTIVE") ||

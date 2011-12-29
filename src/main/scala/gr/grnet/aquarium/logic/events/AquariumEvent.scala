@@ -48,7 +48,7 @@ import util.{Loggable, shortClassNameOf}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class AquariumEvent(val id: String, val timestamp: Long)
+abstract class AquariumEvent(val id: String, val occurredMillis: Long)
   extends JsonSupport with XmlSupport with Loggable {
 
   def validate: Boolean
