@@ -131,6 +131,12 @@
       <id>jcrontab</id>
       <url>http://kenai.com/projects/crontab-parser/sources/maven-repo/content/</url>
     </repository>
+
+    <repository>
+      <name>Typesafe</name>
+      <id>typesafe</id>
+      <url>http://repo.typesafe.com/typesafe/releases/</url>
+    </repository>
   </repositories>
 
   <pluginRepositories>
