@@ -64,7 +64,7 @@ object CryptoUtils {
    */
   def sha1(message: String, md: MessageDigest = sha1Digest): String = {
     if(md.getAlgorithm != SHA1Prototype.getAlgorithm) {
-      throw new IllegalArgumentException("MessageDigest passed uses algorith '%s' instead of '%s'".format(md.getAlgorithm, SHA1Prototype.getAlgorithm))
+      throw new IllegalArgumentException("MessageDigest passed uses algorithm '%s' instead of '%s'".format(md.getAlgorithm, SHA1Prototype.getAlgorithm))
     }
 
     md.update(message.getBytes)
