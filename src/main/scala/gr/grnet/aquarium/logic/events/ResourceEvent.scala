@@ -46,16 +46,17 @@ import gr.grnet.aquarium.util.json.JsonHelpers
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
 case class ResourceEvent(
-  override val id: String,
-  userId: String,
-  clientId: String,
-  resource: String,
-  override val occurredMillis: Long,
-  eventVersion: String,
-  value: Float,
-  var aqTimestamp: Long = 0,
-  details: Map[String, String]
-) extends AquariumEvent(id, occurredMillis) {
+    override val id: String,
+    userId: String,
+    clientId: String,
+    resource: String,
+    override val occurredMillis: Long,
+    override val receivedMillis: Long,
+    eventVersion: String,
+    value: Float,
+    var aqTimestamp: Long = 0,
+    details: Map[String, String])
+  extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
   def validate() : Boolean = {
 

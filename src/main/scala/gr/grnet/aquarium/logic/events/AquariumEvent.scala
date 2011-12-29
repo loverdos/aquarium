@@ -48,8 +48,13 @@ import util.{Loggable, shortClassNameOf}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class AquariumEvent(val id: String, val occurredMillis: Long)
-  extends JsonSupport with XmlSupport with Loggable {
+abstract class AquariumEvent(
+    val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
+    val occurredMillis: Long, // When it occurred at client side (the sender)
+    val receivedMillis: Long) // When it was received by Aquarium
+  extends JsonSupport
+  with    XmlSupport
+  with    Loggable {
 
   def validate: Boolean
 
