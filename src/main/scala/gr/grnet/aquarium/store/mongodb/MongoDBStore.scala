@@ -59,7 +59,7 @@ class MongoDBStore(
     val database: String,
     val username: String,
     val password: String)
-  extends EventStore with UserStore with WalletStore with Loggable {
+  extends ResourceEventStore with UserStore with WalletStore with Loggable {
 
   private[store] lazy val events: DBCollection = getCollection(MongoDBStore.EVENTS_COLLECTION)
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
@@ -195,20 +195,20 @@ class MongoDBStore(
     else true
   }
 
-  //+EventStore
-  def storeEvent[A <: AquariumEvent](event: A): Maybe[RecordID] = _store(event, events)
+  //+ResourceEventStore
+  def storeResourceEvent(event: ResourceEvent): Maybe[RecordID] = _store(event, events)
 
-  def findEventById[A <: AquariumEvent](id: String): Option[A] = _findById[A](id, events)
+  def findResourceEventById(id: String): Option[ResourceEvent] = _findById(id, events)
 
-  def findEventsByUserId[A <: AquariumEvent](userId: String)
-                                            (sortWith: Option[(A, A) => Boolean]): List[A] = {
+  def findResourceEventsByUserId(userId: String)
+                                (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
     val q = new BasicDBObject()
     q.put(JsonNames.userId, userId)
 
     _query(q, events)(sortWith)
   }
 
-  def findEventsByUserIdAfterTimestamp[A <: AquariumEvent](userId: String, timestamp: Long): List[A] = {
+  def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
     val query = new BasicDBObject()
     query.put(JsonNames.userId, userId)
     query.put(JsonNames.timestamp, new BasicDBObject("$gte", timestamp))
@@ -216,7 +216,7 @@ class MongoDBStore(
     val sort = new BasicDBObject(JsonNames.timestamp, 1)
 
     val cursor = events.find(query).sort(sort)
-    val buffer = new scala.collection.mutable.ListBuffer[A]
+    val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
     while(cursor.hasNext) {
       buffer += _deserializeEvent(cursor.next())
     }
@@ -225,10 +225,9 @@ class MongoDBStore(
 
     buffer.toList
   }
-  //-EventStore
+  //-ResourceEventStore
 
   //+UserStore
-
   def storeUserState(userState: UserState): Maybe[RecordID] = {
     Maybe {
       val dbObj = _insertObject(users, userState)

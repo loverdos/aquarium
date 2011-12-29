@@ -54,8 +54,8 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     assume(true, LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
-    val store = MasterConf.eventStore
-    val result = store.storeEvent(event)
+    val store = MasterConf.resourceEventStore
+    val result = store.storeResourceEvent(event)
 
     assert(result.isJust)
   }
@@ -65,12 +65,12 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     assumeTrue(LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
-    val store = MasterConf.eventStore
+    val store = MasterConf.resourceEventStore
 
-    val result1 = store.storeEvent(event)
+    val result1 = store.storeResourceEvent(event)
     assert(result1.isJust)
 
-    val result2 = store.findEventById[ResourceEvent](event.id)
+    val result2 = store.findResourceEventById(event.id)
     assertNotNone(result2)
   }
 
@@ -78,13 +78,13 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
   def testfindEventsByUserId(): Unit = {
     assumeTrue(LogicTestsAssumptions.EnableStoreTests)
     val events = new ArrayBuffer[ResourceEvent]()
-    val store = MasterConf.eventStore
+    val store = MasterConf.resourceEventStore
 
     (1 to 100).foreach {
       n =>
         val e = nextResourceEvent
         events += e
-        store.storeEvent(e)
+        store.storeResourceEvent(e)
     }
 
     val mostUsedId = events
@@ -93,7 +93,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
       .mapValues(_.size)
       .foldLeft(("",0))((acc, kv) => if (kv._2 > acc._2) kv else acc)._1
 
-    val result = store.findEventsByUserId(mostUsedId)(None)
+    val result = store.findResourceEventsByUserId(mostUsedId)(None)
     assertEquals(events.filter(p => p.userId.equals(mostUsedId)).size, result.size)
   }
 
@@ -118,5 +118,5 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
       col.remove(res.next)
   }
 
-  private def getMongo = MasterConf.eventStore.asInstanceOf[MongoDBStore]
+  private def getMongo = MasterConf.resourceEventStore.asInstanceOf[MongoDBStore]
 }

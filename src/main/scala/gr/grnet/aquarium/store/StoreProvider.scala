@@ -42,6 +42,6 @@ package gr.grnet.aquarium.store
 
 trait StoreProvider {
   def userStore: UserStore
-  def eventStore: EventStore
+  def eventStore: ResourceEventStore
   def walletStore: WalletStore
 }

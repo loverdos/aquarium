@@ -109,12 +109,12 @@ class MasterConf(val props: Props) extends Loggable {
     }
   }
 
-  private[this] lazy val _eventStoreM: Maybe[EventStore] = {
+  private[this] lazy val _resourceEventStoreM: Maybe[ResourceEventStore] = {
     // If there is a specific `EventStore` implementation specified in the
     // properties, then this implementation overrides the event store given by
     // `StoreProvider`.
-    props.get(Keys.eventstore_class) map { className ⇒
-      val instance = newInstance[EventStore](className)
+    props.get(Keys.resource_event_store_class) map { className ⇒
+      val instance = newInstance[ResourceEventStore](className)
       logger.info("Overriding EventStore provisioning. Implementation given by: %s".format(instance.getClass))
       instance
     }
@@ -168,8 +168,8 @@ class MasterConf(val props: Props) extends Loggable {
     }
   }
 
-  def eventStore = {
-    _eventStoreM match {
+  def resourceEventStore = {
+    _resourceEventStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.eventStore
     }
@@ -303,9 +303,9 @@ object MasterConf {
     final val userstore_class = "user.store.class"
 
     /**
-     * The class that implements the event store
+     * The class that implements the resource event store
      */
-    final val eventstore_class = "event.store.class"
+    final val resource_event_store_class = "resource.event.store.class"
 
     /**
      * The class that implements the IM event store

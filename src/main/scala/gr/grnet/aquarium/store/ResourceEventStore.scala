@@ -36,25 +36,25 @@
 package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.logic.events.AquariumEvent
+import gr.grnet.aquarium.logic.events.ResourceEvent
 
 /**
- * An abstraction for Aquarium event stores.
+ * An abstraction for Aquarium `ResourceEvent` stores.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
-trait EventStore {
-  def storeEvent[A <: AquariumEvent](event: A): Maybe[RecordID]
+trait ResourceEventStore {
+  def storeResourceEvent(event: ResourceEvent): Maybe[RecordID]
 
-  def findEventById[A <: AquariumEvent](id: String): Option[A]
+  def findResourceEventById(id: String): Option[ResourceEvent]
 
-  def findEventsByUserId[A <: AquariumEvent](userId: String)(sortWith: Option[(A, A) => Boolean]): List[A]
+  def findResourceEventsByUserId(userId: String)(sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent]
 
   /**
    * Returns the events for the given User after (or equal) the given timestamp.
    *
    * The events are returned in ascending timestamp order.
    */
-  def findEventsByUserIdAfterTimestamp[A <: AquariumEvent](userId: String, timestamp: Long): List[A]
+  def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent]
 }

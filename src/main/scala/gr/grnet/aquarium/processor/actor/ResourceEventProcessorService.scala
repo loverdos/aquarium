@@ -128,11 +128,11 @@ with Lifecycle {
     }
 
     def exists(event: ResourceEvent): Boolean =
-      !MasterConf.MasterConf.eventStore.findEventById(event.id).isEmpty
+      !MasterConf.MasterConf.resourceEventStore.findResourceEventById(event.id).isEmpty
 
     def persist(event: ResourceEvent): Boolean = {
       event.aqTimestamp = System.currentTimeMillis()
-      MasterConf.MasterConf.eventStore.storeEvent(event) match {
+      MasterConf.MasterConf.resourceEventStore.storeResourceEvent(event) match {
         case Just(x) => true
         case x: Failed =>
           logger.error("Could not save event: %s".format(event))

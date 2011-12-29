@@ -52,7 +52,7 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   private[this] var _username: String = _
   private[this] var _password: String = _
 
-  private[this] var _eventStore: EventStore = _
+  private[this] var _eventStore: ResourceEventStore = _
   private[this] var _userStore: UserStore = _
   private[this] var _walletStore: WalletStore = _
 
