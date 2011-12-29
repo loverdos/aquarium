@@ -38,6 +38,8 @@ package gr.grnet.aquarium.util.json
 import net.liftweb.json.JsonAST.JValue
 
 /**
+ * Mix-in this trait when you need transformation to JSON, either in AST or String format.
+ * The underlying library used is lift-json.
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
