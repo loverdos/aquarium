@@ -50,8 +50,8 @@ import util.{Lifecycle, Loggable}
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MasterConf(val props: Props) extends Loggable {
-  import MasterConf.Keys
+class Configurator(val props: Props) extends Loggable {
+  import Configurator.Keys
 
   /**
    * Reflectively provide a new instance of a class and configure it appropriately.
@@ -185,7 +185,7 @@ class MasterConf(val props: Props) extends Loggable {
   def storeProvider = _storeProvider
 }
 
-object MasterConf {
+object Configurator {
   implicit val DefaultConverters = TheDefaultConverters
 
   val MasterConfName = "aquarium.properties"
@@ -260,8 +260,8 @@ object MasterConf {
     }
   }
 
-  lazy val MasterConf = {
-    Maybe(new MasterConf(MasterConfProps)) match {
+  lazy val MasterConfigurator = {
+    Maybe(new Configurator(MasterConfProps)) match {
       case Just(masterConf) ⇒
         masterConf
       case NoVal ⇒

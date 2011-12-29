@@ -40,7 +40,7 @@ import cc.spray.can._
 import gr.grnet.aquarium.util.Loggable
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json.{JsonAST, Printer}
-import gr.grnet.aquarium.MasterConf
+import gr.grnet.aquarium.Configurator
 import akka.actor.{ActorRef, Actor}
 import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
 import RESTPaths.{UserBalancePath, UserStatePath}
@@ -117,7 +117,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
 
   def callDispatcher(message: DispatcherMessage, responder: RequestResponder): Unit = {
-    val masterConf = MasterConf.MasterConf
+    val masterConf = Configurator.MasterConfigurator
     val actorProvider = masterConf.actorProvider
     val dispatcher = actorProvider.actorForRole(DispatcherRole)
     val futureResponse = dispatcher ask message

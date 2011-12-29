@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.store.mongodb
 
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.{MasterConf, Configurable}
-import gr.grnet.aquarium.MasterConf.Keys
+import gr.grnet.aquarium.{Configurator, Configurable}
+import gr.grnet.aquarium.Configurator.Keys
 import com.mongodb.{MongoException, Mongo, MongoOptions, ServerAddress}
 import gr.grnet.aquarium.store._
 

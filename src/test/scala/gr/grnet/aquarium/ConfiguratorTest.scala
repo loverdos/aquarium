@@ -43,34 +43,34 @@ import org.junit.Assert._
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class MasterConfTest {
+class ConfiguratorTest {
   @Test
   def testExists: Unit = {
-    val rc = MasterConf.MasterConfResource
-    assertTrue(MasterConf.MasterConfName, rc.exists)
+    val rc = Configurator.MasterConfResource
+    assertTrue(Configurator.MasterConfName, rc.exists)
   }
 
   @Test
   def testLoad: Unit = {
-    val mc = MasterConf.MasterConf
+    val mc = Configurator.MasterConfigurator
   }
 
   @Test
   def testGetActorProvider: Unit = {
-    val mc = MasterConf.MasterConf
+    val mc = Configurator.MasterConfigurator
     val ap = mc.actorProvider
   }
 
   @Test
   def testGetDispatcherActor: Unit = {
-    val mc = MasterConf.MasterConf
+    val mc = Configurator.MasterConfigurator
     val ap = mc.actorProvider
     val dispatcher = ap.actorForRole(DispatcherRole)
   }
 
   @Test
   def testGetUserStore: Unit = {
-    val mc = MasterConf.MasterConf
+    val mc = Configurator.MasterConfigurator
     val userStore = mc.userStore
   }
 }

@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.rest
 package actor
 
-import gr.grnet.aquarium.MasterConf
+import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.actor.RESTRole
 import _root_.akka.actor._
 import cc.spray.can.{ClientConfig, HttpClient, ServerConfig, HttpServer}
@@ -53,8 +53,8 @@ class RESTActorService extends Lifecycle {
   private[this] var _clientActor: ActorRef = _
 
   def start(): Unit = {
-    val mc = MasterConf.MasterConf
-    this._port = mc.props.getInt(MasterConf.Keys.rest_port).getOr(this._port)
+    val mc = Configurator.MasterConfigurator
+    this._port = mc.props.getInt(Configurator.Keys.rest_port).getOr(this._port)
     this._restActor = mc.actorProvider.actorForRole(RESTRole)
     // Start Spray subsystem
     val serverConfig = ServerConfig(port = _port)

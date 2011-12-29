@@ -37,7 +37,7 @@ package gr.grnet.aquarium.store.mongodb
 
 import org.junit.Assert._
 import org.junit.Assume._
-import gr.grnet.aquarium.MasterConf._
+import gr.grnet.aquarium.Configurator._
 import gr.grnet.aquarium.util.{RandomEventGenerator, TestMethods}
 import gr.grnet.aquarium.LogicTestsAssumptions
 import gr.grnet.aquarium.logic.events.ResourceEvent
@@ -54,7 +54,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     assume(true, LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
-    val store = MasterConf.resourceEventStore
+    val store = MasterConfigurator.resourceEventStore
     val result = store.storeResourceEvent(event)
 
     assert(result.isJust)
@@ -65,7 +65,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     assumeTrue(LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
-    val store = MasterConf.resourceEventStore
+    val store = MasterConfigurator.resourceEventStore
 
     val result1 = store.storeResourceEvent(event)
     assert(result1.isJust)
@@ -78,7 +78,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
   def testfindEventsByUserId(): Unit = {
     assumeTrue(LogicTestsAssumptions.EnableStoreTests)
     val events = new ArrayBuffer[ResourceEvent]()
-    val store = MasterConf.resourceEventStore
+    val store = MasterConfigurator.resourceEventStore
 
     (1 to 100).foreach {
       n =>
@@ -110,7 +110,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     val a = getMongo
 
     val col = a.mongo.getDB(
-      MasterConf.get(Keys.persistence_db)
+      MasterConfigurator.get(Keys.persistence_db)
     ).getCollection(MongoDBStore.EVENTS_COLLECTION)
 
     val res = col.find
@@ -118,5 +118,5 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
       col.remove(res.next)
   }
 
-  private def getMongo = MasterConf.resourceEventStore.asInstanceOf[MongoDBStore]
+  private def getMongo = MasterConfigurator.resourceEventStore.asInstanceOf[MongoDBStore]
 }

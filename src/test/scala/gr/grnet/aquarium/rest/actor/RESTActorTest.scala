@@ -48,7 +48,7 @@ import akka.actor.{PoisonPill, Actor}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import net.liftweb.json.JsonAST.JInt
 import gr.grnet.aquarium.util.json.JsonHelpers
-import gr.grnet.aquarium.{LogicTestsAssumptions, MasterConf}
+import gr.grnet.aquarium.{LogicTestsAssumptions, Configurator}
 
 /**
  * 
@@ -60,9 +60,9 @@ class RESTActorTest {
     assumeTrue(LogicTestsAssumptions.EnableSprayTests)
     
     // Initialize configuration subsystem
-    val mc = MasterConf.MasterConf
+    val mc = Configurator.MasterConfigurator
     mc.startServices()
-    val port = mc.props.getInt(MasterConf.Keys.rest_port).getOr(8080)
+    val port = mc.props.getInt(Configurator.Keys.rest_port).getOr(8080)
     val dialog = SprayHttpDialog("localhost", port)
 
     val pingReq = HttpRequest(method = GET, uri = "/ping", headers = HttpHeader("Content-Type", "text/plain; charset=UTF-8")::Nil)

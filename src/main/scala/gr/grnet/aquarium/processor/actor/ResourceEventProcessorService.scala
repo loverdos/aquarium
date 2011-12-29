@@ -37,7 +37,7 @@ package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
-import gr.grnet.aquarium.{MasterConf}
+import gr.grnet.aquarium.{Configurator}
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 
 import akka.actor._
@@ -128,11 +128,11 @@ with Lifecycle {
     }
 
     def exists(event: ResourceEvent): Boolean =
-      !MasterConf.MasterConf.resourceEventStore.findResourceEventById(event.id).isEmpty
+      !Configurator.MasterConfigurator.resourceEventStore.findResourceEventById(event.id).isEmpty
 
     def persist(event: ResourceEvent): Boolean = {
       event.aqTimestamp = System.currentTimeMillis()
-      MasterConf.MasterConf.resourceEventStore.storeResourceEvent(event) match {
+      Configurator.MasterConfigurator.resourceEventStore.storeResourceEvent(event) match {
         case Just(x) => true
         case x: Failed =>
           logger.error("Could not save event: %s".format(event))

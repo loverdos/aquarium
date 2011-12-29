@@ -2,7 +2,7 @@ package gr.grnet.aquarium.logic.events
 
 import gr.grnet.aquarium.util.json.JsonHelpers
 import net.liftweb.json.{Extraction, parse => parseJson}
-import gr.grnet.aquarium.MasterConf._
+import gr.grnet.aquarium.Configurator._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 
 /**
@@ -46,7 +46,7 @@ case class UserEvent(
    */
   def validate: Boolean = {
 
-    MasterConf.userStore.findUserStateByUserId(userId) match {
+    MasterConfigurator.userStore.findUserStateByUserId(userId) match {
       case Just(x) =>
         if (eventType == 1){
           logger.warn("User to create exists: IMEvent".format(this.toJson));

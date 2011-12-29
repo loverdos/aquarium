@@ -38,7 +38,7 @@ package gr.grnet.aquarium.messaging
 import akka.actor._
 import akka.amqp.{Topic, AMQP}
 import akka.amqp.AMQP._
-import gr.grnet.aquarium.MasterConf
+import gr.grnet.aquarium.Configurator
 import com.rabbitmq.client.Address
 import gr.grnet.aquarium.util.Loggable
 
@@ -51,8 +51,8 @@ trait AkkaAMQP extends Loggable {
 
   class AMQPConnection {
     private[messaging] lazy val connection = {
-      import MasterConf.Keys
-      val mc = MasterConf.MasterConf
+      import Configurator.Keys
+      val mc = Configurator.MasterConfigurator
 
       val servers = mc.get(Keys.amqp_servers)
       val port = mc.get(Keys.amqp_port).toInt
@@ -73,8 +73,8 @@ trait AkkaAMQP extends Loggable {
   }
 
   private lazy val exchanges = {
-    val mc = MasterConf.MasterConf
-    mc.props.getTrimmedList(MasterConf.Keys.amqp_exchanges)
+    val mc = Configurator.MasterConfigurator
+    mc.props.getTrimmedList(Configurator.Keys.amqp_exchanges)
   }
 
   //Queues and exchnages are by default durable and persistent

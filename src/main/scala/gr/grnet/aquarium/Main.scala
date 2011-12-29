@@ -48,12 +48,12 @@ object Main extends Loggable {
 
     logger.info("Starting Aquarium")
 
-    MasterConf.MasterConf.startServices()
+    Configurator.MasterConfigurator.startServices()
 
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       def run = {
         logger.info("Shutting down Aquarium")
-        MasterConf.MasterConf.stopServices()
+        Configurator.MasterConfigurator.stopServices()
       }
     }))
 

@@ -40,7 +40,7 @@ import gr.grnet.aquarium.util.Loggable
 import scala.PartialFunction
 import gr.grnet.aquarium.actor._
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.MasterConf
+import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.processor.actor.{UserResponseGetState, UserRequestGetState, UserResponseGetBalance, UserRequestGetBalance}
 
 
@@ -68,7 +68,7 @@ class UserActor extends AquariumActor with Loggable {
       self.stop()
 
     case m @ AquariumPropertiesLoaded(props) ⇒
-      this._timestampTheshold = props.getLong(MasterConf.Keys.user_state_timestamp_threshold).getOr(10000)
+      this._timestampTheshold = props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
       logger.info("Setup my timestampTheshold = %s".format(this._timestampTheshold))
 
     case m @ UserActorInitWithUserId(userId) ⇒
