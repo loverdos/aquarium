@@ -171,7 +171,7 @@ class MongoDBStore(
 }
 
 object MongoDBStore {
-  def RESOURCE_EVENTS_COLLECTION = "rcevents"
+  def RESOURCE_EVENTS_COLLECTION = "resevents"
   def USERS_COLLECTION = "users"
   def IM_EVENTS_COLLECTION = "imevents"
   def IM_WALLETS = "wallets"
