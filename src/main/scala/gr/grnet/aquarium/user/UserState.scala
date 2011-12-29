@@ -52,23 +52,31 @@ import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
  */
 
 case class UserState(
-  userId: String,
-  active: Boolean,
-  credits: CreditSnapshot,
-  agreement: AgreementSnapshot,
-  roles: RolesSnapshot,
-  paymentOrders: PaymentOrdersSnapshot,
-  ownedGroups: OwnedGroupsSnapshot,
-  groupMemberships: GroupMembershipsSnapshot,
-  ownedResources: OwnedResourcesSnapshot) extends JsonSupport
+    userId: String,
+    active: Boolean,
+    credits: CreditSnapshot,
+    agreement: AgreementSnapshot,
+    roles: RolesSnapshot,
+    paymentOrders: PaymentOrdersSnapshot,
+    ownedGroups: OwnedGroupsSnapshot,
+    groupMemberships: GroupMembershipsSnapshot,
+    ownedResources: OwnedResourcesSnapshot)
+  extends JsonSupport {
+
+  private[this] def _allSnapshots: List[Long] = {
+    List(
+      credits.snapshotTime, agreement.snapshotTime, roles.snapshotTime,
+      paymentOrders.snapshotTime, ownedGroups.snapshotTime, groupMemberships.snapshotTime,
+      ownedResources.snapshotTime)
+  }
+
+  def earlierSnapshotTime: Long = _allSnapshots min
+
+  def latestSnapshotTime: Long  = _allSnapshots max
+}
 
 
 object UserState {
-  final object JsonNames {
-    final val _id = "_id"
-    final val userId = "userId"
-  }
-
   def fromJson(json: String): UserState = {
     JsonHelpers.jsonToObject[UserState](json)
   }
