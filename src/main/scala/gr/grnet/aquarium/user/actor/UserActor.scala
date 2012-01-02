@@ -37,11 +37,12 @@ package gr.grnet.aquarium.user.actor
 
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.Loggable
-import scala.PartialFunction
 import gr.grnet.aquarium.actor._
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.processor.actor.{UserResponseGetState, UserRequestGetState, UserResponseGetBalance, UserRequestGetBalance}
+import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
+import java.util.Date
 
 
 /**
@@ -122,5 +123,81 @@ class UserActor extends AquariumActor with Loggable {
         logger.error("FIXME: Should have properly computed the user state")
         self reply UserResponseGetState(userId, this._userState)
       }
+
+    /* Resource API */
+    case m @ UserActorResourceStateRequest(resource, instance) ⇒
+      resourceState(resource, instance)
+
+    case m @ UserActorResourceStateUpdate(resource, instanceid, value) ⇒
+      resourceStateUpdate(resource, instanceid, value)
+
+    case m @ UserActorResourceCreateInstance(resource, instanceid) ⇒
+      createResourceInstance(resource, instanceid)
+
+    case m @ UserActorResourceDeleteInstance(resource, instanceid) ⇒
+      deleteResourceInstance(resource, instanceid)
   }
+
+  /**
+   * Logic to retrieve the state for a resource on request. For complex
+   * resources, it expects an instance id to be registered with the
+   * resource state. For non complex resources, if the resource has not
+   * been used yet, it will create an entry in the state store.
+   */
+  private def resourceState(resource: DSLResource, instanceId: Option[String]):
+  Option[UserActorResourceStateResponse] =
+    resource.isComplex match {
+      case true ⇒ instanceId match {
+        case Some(x) ⇒ _userState.ownedResources.data.get(resource) match {
+          case Some(y) if (y.isInstanceOf[Map[String, Any]]) ⇒
+            val measurement = y.asInstanceOf[Map[String, Any]].get(x)
+            Some(UserActorResourceStateResponse(resource, new Date(_userState.ownedResources.snapshotTime), measurement))
+          case Some(y) ⇒
+            warn("Should never reach this line")
+            Some(UserActorResourceStateResponse(resource, new Date(_userState.ownedResources.snapshotTime), y))
+          case None ⇒
+            err("No instance %s for resource".format(instanceId.get, resource.name))
+            None
+        }
+        case None =>
+          err("No instance id for complex resource %s".format(resource.name))
+          None
+      }
+      case false ⇒ _userState.ownedResources.data.get(resource) match {
+        case Some(y) ⇒
+          Some(UserActorResourceStateResponse(resource, new Date(_userState.ownedResources.snapshotTime), y))
+        case None ⇒
+          debug("First request for resource %s, creating...".format(resource.name))
+          _userState.ownedResources.data += ((resource, ""))
+          return resourceState(resource, None)
+      }
+    }
+
+  /**
+   * Update the current state for a resource
+   */
+  private def resourceStateUpdate(resource: DSLResource,
+                                  instanceid: Option[String],
+                                  value: Any) = None
+
+  /**
+   * Create a new instance for a complex resource
+   */
+  private def createResourceInstance(resource: DSLResource,
+                                    instanceid: String) = None
+
+  /**
+   * Delete a resource instance for a complex resource
+   */
+  private def deleteResourceInstance(resource: DSLResource,
+                                     instanceid: String) = None
+
+  private def debug(msg: String) =
+    logger.debug("UserActor[%s] %s".format(_userId, msg))
+
+  private def warn(msg: String) =
+    logger.warn("UserActor[%s] %s".format(_userId, msg))
+
+  private def err(msg: String) =
+    logger.error("UserActor[%s] %s".format(_userId, msg))
 }

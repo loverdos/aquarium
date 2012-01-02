@@ -37,6 +37,7 @@ package gr.grnet.aquarium
 package user
 
 import logic.accounting.dsl.{DSLResource, DSLAgreement}
+import collection.mutable
 
 
 /**
@@ -59,4 +60,4 @@ case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends U
 
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
-case class OwnedResourcesSnapshot(data: Map[DSLResource, Any /*ResourceState*/], snapshotTime: Long) extends UserDataSnapshot[Map[DSLResource, Any /*ResourceState*/]]
+case class OwnedResourcesSnapshot(val data: mutable.Map[DSLResource, Any /*ResourceState*/], snapshotTime: Long) extends UserDataSnapshot[mutable.Map[DSLResource, Any /*ResourceState*/]]

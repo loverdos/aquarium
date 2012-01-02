@@ -43,7 +43,7 @@ import gr.grnet.aquarium.util.Loggable
 import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
 
 /**
- * 
+ * Methods for converting accounting events to wallet entries.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
@@ -72,7 +72,7 @@ trait Accounting extends DSLUtils with Loggable {
 
     val resource = Policy.policy.findResource(ev.resource).get
 
-    //val chargeChunks = calcChangeChunks(agr, ev.value, ev.resource, )
+    //val chargeChunks = calcChangeChunks(agr, ev.value, resource, )
 
 
     Just(List(WalletEntry.zero))

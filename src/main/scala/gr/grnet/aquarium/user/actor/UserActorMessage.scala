@@ -36,6 +36,8 @@
 package gr.grnet.aquarium.user.actor
 
 import gr.grnet.aquarium.actor.ActorMessage
+import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
+import java.util.Date
 
 /**
  * Messages handled by a UserActor.
@@ -48,3 +50,43 @@ trait UserActorMessage extends ActorMessage
 case class UserActorInitWithUserId(userId: String) extends UserActorMessage
 
 case object UserActorStop extends UserActorMessage
+
+/**
+ * A request to get the current state for a resource. If the resource is
+ * complex, the optional instance field is used to find the appropriate
+ * instance to query.
+ */
+case class UserActorResourceStateRequest(resource: DSLResource,
+                                         instance: Option[String])
+extends UserActorMessage
+
+/**
+ * The response to a
+ * [[gr.grnet.aquarium.user.actor.UserActorResourceStateRequest]] message
+ */
+case class UserActorResourceStateResponse(resource: DSLResource,
+                                          lastUpdate: Date,
+                                          value: Any)
+extends UserActorMessage
+
+/**
+ * Update the state for the resource to the provided value
+ */
+case class UserActorResourceStateUpdate(resource: DSLResource,
+                                        instanceid: Option[String],
+                                        value: Any)
+extends UserActorMessage
+
+/**
+ * Create a new instance for a complex resource
+ */
+case class UserActorResourceCreateInstance(resource: DSLResource,
+                                           instanceid: String)
+extends UserActorMessage
+
+/**
+ * Delete an instance for a complex resource
+ */
+case class UserActorResourceDeleteInstance(resource: DSLResource,
+                                           instanceid: String)
+extends UserActorMessage
