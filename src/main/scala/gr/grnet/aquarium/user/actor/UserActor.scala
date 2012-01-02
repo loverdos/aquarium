@@ -44,8 +44,8 @@ import java.util.Date
 import gr.grnet.aquarium.processor.actor._
 import gr.grnet.aquarium.logic.accounting.Accounting
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
+import gr.grnet.aquarium.user.{OwnedResourcesSnapshot, UserState}
 
 
 /**
@@ -280,8 +280,10 @@ class UserActor extends AquariumActor with Loggable {
           Some(UserActorResourceStateResponse(resource, new Date(_userState.ownedResources.snapshotTime), y))
         case None ⇒
           debug("First request for resource %s, creating...".format(resource.name))
-          _userState.ownedResources.data += ((resource, ""))
-          return resourceState(resource, None)
+          val _ownedResources = _userState.ownedResources
+          val _ownedResourcesData = _ownedResources.data
+          _userState = _userState.copy(ownedResources = _ownedResources.copy(data = _ownedResourcesData.updated(resource, "")))
+          resourceState(resource, None)
       }
     }
 

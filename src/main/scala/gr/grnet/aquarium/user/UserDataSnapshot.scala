@@ -60,7 +60,7 @@ case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends U
 
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
-case class OwnedResourcesSnapshot(val data: mutable.Map[DSLResource, Any /*ResourceState*/], snapshotTime: Long) extends UserDataSnapshot[mutable.Map[DSLResource, Any /*ResourceState*/]]
+case class OwnedResourcesSnapshot(data: Map[DSLResource, Any /*ResourceState*/], snapshotTime: Long) extends UserDataSnapshot[Map[DSLResource, Any /*ResourceState*/]]
 
 /**
  * Bandwidth is counted in MB (?)
