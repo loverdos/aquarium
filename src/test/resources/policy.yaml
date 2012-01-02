@@ -12,9 +12,10 @@ aquariumpolicy:
       costpolicy: diff
     - resource:
       name: vmtime
-      unit: Hours
+      unit: Hour
       complex: true
       costpolicy: onoff
+      descriminatorfield: vmid
     - resource:
       name: diskspace
       unit: MB

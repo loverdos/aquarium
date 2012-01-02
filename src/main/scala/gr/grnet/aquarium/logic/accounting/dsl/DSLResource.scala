@@ -40,17 +40,45 @@ package gr.grnet.aquarium.logic.accounting.dsl
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-
-case class DSLResource (
+abstract class DSLResource (
   /** Name of resource */
-  name: String,
+  val name: String,
 
   /** Informative name for resource charging unit*/
-  unit: String,
+  val unit: String,
 
-  /** Whether a resource can have many instances */
-  complex: Boolean,
-
-  /** Algorithm used to  */
-  costpolicy: String
+  /** Algorithm used to calculate costs */
+  val costpolicy: String
 )
+
+/**
+ * A complex resource can have many chargable instances, separated through
+ * a descriminator field.
+ */
+case class DSLComplexResource (
+  /**Name of resource */
+  override val name: String,
+
+  /**Informative name for resource charging unit*/
+  override val unit: String,
+
+  /**Algorithm used to calculate costs */
+  override val costpolicy: String,
+
+  /**Name of field used to describe a unique instance of the resource*/
+  descriminatorField: String
+) extends DSLResource(name, unit, costpolicy)
+
+/**
+ * A simple resource can only have a single chargable instance.
+ */
+case class DSLSimpleResource (
+  /**Name of resource */
+  override val name: String,
+
+  /**Informative name for resource charging unit*/
+  override val unit: String,
+
+  /**Algorithm used to calculate costs */
+  override val costpolicy: String
+) extends DSLResource(name, unit, costpolicy)

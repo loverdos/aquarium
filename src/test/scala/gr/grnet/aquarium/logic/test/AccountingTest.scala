@@ -55,7 +55,7 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
     val from = new Date(1322555880000L) //Tue, 29 Nov 2011 10:38:00 EET
     val to = new Date(1322689082000L) //Wed, 30 Nov 2011 23:38:02 EET
 
-    val agr = creditpolicy.findAgreement("scaledbandwidth").get
+    val agr = dsl.findAgreement("scaledbandwidth").get
 
     val alg = resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr)
     val price = resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr)

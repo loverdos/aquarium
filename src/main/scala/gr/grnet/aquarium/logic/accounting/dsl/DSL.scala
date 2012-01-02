@@ -52,7 +52,7 @@ trait DSL {
     val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
 
    /** An empty resource*/
-   val emptyResource = DSLResource("", "", false, "")
+   val emptyResource = DSLSimpleResource("", "", "")
 
     /** An empty algorithm */
    val emptyAlgorithm = DSLAlgorithm("", None, Map(), emptyTimeFrame)
@@ -127,7 +127,17 @@ trait DSL {
       case _ => throw new DSLParseException("Resource %s does specify a cost policy".format(name))
     }
 
-    DSLResource(name, unit, complex, costpolicy)
+    complex match {
+      case true =>
+        val field = resource / Vocabulary.descriminatorfield match {
+          case x: YAMLStringNode => x.string
+          case _ => throw new DSLParseException(("Resource %s is complex, " +
+            "but no descriminator field specified").format(name))
+        }
+        DSLComplexResource(name, unit, costpolicy, field)
+      case false =>
+        DSLSimpleResource(name, unit, costpolicy)
+    }
   }
 
   /** Parse top level algorithm declarations */

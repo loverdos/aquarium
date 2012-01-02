@@ -46,13 +46,13 @@ import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSL, DSLPolicy}
  */
 
 class DSLTestBase extends DSL {
-  var creditpolicy: DSLPolicy = _
+  var dsl: DSLPolicy = _
 
   def before = {
-    creditpolicy = parse(
+    dsl = parse(
       getClass.getClassLoader.getResourceAsStream("policy.yaml")
     )
-    assertNotNull(creditpolicy)
+    assertNotNull(dsl)
   }
 
   @tailrec

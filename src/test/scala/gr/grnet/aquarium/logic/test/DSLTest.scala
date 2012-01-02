@@ -45,38 +45,48 @@ class DSLTest extends DSLTestBase with TestMethods {
   @Test
   def testParsePolicies = {
     before
-    assertEquals(creditpolicy.algorithms.size, 2)
-    assertEquals(creditpolicy.algorithms(0).algorithms.size,
-      creditpolicy.resources.size)
-    assertEquals(creditpolicy.algorithms(1).algorithms.size,
-      creditpolicy.resources.size)
+    assertEquals(dsl.algorithms.size, 2)
+    assertEquals(dsl.algorithms(0).algorithms.size,
+      dsl.resources.size)
+    assertEquals(dsl.algorithms(1).algorithms.size,
+      dsl.resources.size)
 
-    val d = creditpolicy.findResource("diskspace").get
+    val d = dsl.findResource("diskspace").get
     assertNotNone(d)
 
-    assertNotSame(creditpolicy.algorithms(0).algorithms(d),
-      creditpolicy.algorithms(1).algorithms(d))
+    assertNotSame(dsl.algorithms(0).algorithms(d),
+      dsl.algorithms(1).algorithms(d))
   }
 
   @Test
   def testParsePricelists = {
     before
-    assertEquals(3, creditpolicy.pricelists.size)
-    assertNotNone(creditpolicy.findPriceList("everyTue2"))
-    val res = creditpolicy.findResource("diskspace")
+    assertEquals(3, dsl.pricelists.size)
+    assertNotNone(dsl.findPriceList("everyTue2"))
+    val res = dsl.findResource("diskspace")
     assertNotNone(res)
     assertEquals(0.05F,
-      creditpolicy.findPriceList("everyTue2").get.prices.get(res.get).get, 0.01F)
+      dsl.findPriceList("everyTue2").get.prices.get(res.get).get, 0.01F)
   }
 
   @Test
   def testParseCreditPlans = {
     before
-    assertEquals(2, creditpolicy.creditplans.size)
-    val plan = creditpolicy.findCreditPlan("every10days")
+    assertEquals(2, dsl.creditplans.size)
+    val plan = dsl.findCreditPlan("every10days")
     assertNotNone(plan)
     assertEquals(20, plan.get.credits, 0.1F)
     assertEquals(4, plan.get.at.size)
+  }
+
+  @Test
+  def testParseResources = {
+    before
+    assertEquals(4, dsl.resources.size)
+    assertNotNone(dsl.findResource("vmtime"))
+    assertTrue(dsl.findResource("vmtime").get.isInstanceOf[DSLComplexResource])
+    assertEquals("vmid", dsl.findResource("vmtime").get.asInstanceOf[DSLComplexResource].descriminatorField)
+    assertTrue(dsl.findResource("diskspace").get.isInstanceOf[DSLSimpleResource])
   }
 
   @Test
