@@ -49,7 +49,9 @@ abstract class DSLResource (
 
   /** Algorithm used to calculate costs */
   val costpolicy: String
-)
+) {
+  def isComplex: Boolean
+}
 
 /**
  * A complex resource can have many chargable instances, separated through
@@ -67,7 +69,9 @@ case class DSLComplexResource (
 
   /**Name of field used to describe a unique instance of the resource*/
   descriminatorField: String
-) extends DSLResource(name, unit, costpolicy)
+) extends DSLResource(name, unit, costpolicy) {
+  override def isComplex = true
+}
 
 /**
  * A simple resource can only have a single chargable instance.
@@ -81,4 +85,6 @@ case class DSLSimpleResource (
 
   /**Algorithm used to calculate costs */
   override val costpolicy: String
-) extends DSLResource(name, unit, costpolicy)
+) extends DSLResource(name, unit, costpolicy) {
+  override def isComplex = false
+}
