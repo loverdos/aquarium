@@ -126,9 +126,10 @@ trait RandomEventGenerator extends AkkaAMQP {
 
     ResourceEvent(
       CryptoUtils.sha1(str),
+      ts, ts,
       rnd.nextInt(userIds.max).toString,
       rnd.nextInt(clientIds.max).toString,
-      res,ts, ts, 1.toString, value, extra)
+      res, 1.toString, value, extra)
   }
 
   def genRndAsciiString(size: Int): String = {
