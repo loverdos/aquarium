@@ -57,7 +57,8 @@ sealed abstract class ResourceType(_name: String) {
   def isBillableType = true
 
   /**
-   * A resource type is independent if it can, by itself only, create a wallet entry.
+   * A resource type is independent if it can, by itself only, create a finalized wallet entry (that is,
+   * it can create, by itself only, credits).
    *
    * It is dependent if it needs one or more other events of he same type to
    */
