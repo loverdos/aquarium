@@ -6,12 +6,18 @@ import gr.grnet.aquarium.util.json.JsonHelpers
  * A WalletEntry is a derived entity. Its data represent money/credits and are calculated based on
  * resource events.
  *
+ * Wallet entries give us a picture of when credits are calculated from resource events.
+ *
  * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 case class WalletEntry(
     override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    override val occurredMillis: Long, // When it occurred at client side (the sender)
+    // When it occurred at client side (the sender).
+    // This denotes the `occurredMillis` attribute of the oldest resource event that is referenced
+    // by `sourceEventIDs`. The reason for this convention is pure from a query-oriented point of view.
+    // See how things are calculated in `UserActor`.
+    override val occurredMillis: Long,
     override val receivedMillis: Long, // When it was received by Aquarium
     sourceEventIDs: List[String],      // The events that triggered this WalletEntry
     value: Float,
@@ -25,6 +31,10 @@ case class WalletEntry(
   assert(!userId.isEmpty)
 
   def validate = true
+  
+  def fromResourceEvent(rceId: String): Boolean = {
+    sourceEventIDs contains rceId
+  }
 }
 
 object WalletEntry {

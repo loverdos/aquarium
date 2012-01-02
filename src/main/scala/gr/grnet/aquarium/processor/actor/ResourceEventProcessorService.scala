@@ -51,6 +51,7 @@ import akka.config.Supervision.OneForOneStrategy
 import java.util.concurrent.ConcurrentSkipListSet
 import gr.grnet.aquarium.messaging.{MessagingNames, AkkaAMQP}
 import akka.amqp._
+import gr.grnet.aquarium.actor.DispatcherRole
 
 /**
  * An actor that gets events from the queue, stores them persistently
@@ -69,6 +70,12 @@ with Lifecycle {
 
   val redeliveries = new ConcurrentSkipListSet[String]()
 
+  private[this] def _configurator: Configurator = Configurator.MasterConfigurator
+  private[this] def _calcStateChanges(resourceEvent: ResourceEvent): Unit = {
+    val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
+    businessLogicDispacther ! ProcessResourceEvent(resourceEvent) // all state change, credit calc etc will happen there
+  }
+
   class QueueReader extends Actor {
 
     def receive = {
@@ -85,8 +92,10 @@ with Lifecycle {
             redeliveries.add(event.id)
             PersisterManager.lb ! Persist(event, QueueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
           }
-        } else
-          PersisterManager.lb ! Persist(event, QueueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
+        } else {
+          val eventWithReceivedMillis = event.copy(receivedMillis = System.currentTimeMillis())
+          PersisterManager.lb ! Persist(eventWithReceivedMillis, QueueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
+        }
 
       case PersistOK(ackData) =>
         logger.debug("Stored event[%s] msg[%d]".format(ackData.msgId, ackData.deliveryTag))
@@ -120,19 +129,20 @@ with Lifecycle {
       case Persist(event, sender, ackData) =>
         if (exists(event))
           sender ! Duplicate(ackData)
-        else if (persist(event))
+        else if (persist(event)) {
           sender ! PersistOK(ackData)
-          // TODO: Hook here for further processing
-        else
+          // TODO: Move to some proper place (after ACK?)
+          _calcStateChanges(event)
+        } else
           sender ! PersistFailed(ackData)
       case _ => logger.warn("Unknown message")
     }
 
     def exists(event: ResourceEvent): Boolean =
-      Configurator.MasterConfigurator.resourceEventStore.findResourceEventById(event.id).isJust
+      _configurator.resourceEventStore.findResourceEventById(event.id).isJust
 
     def persist(event: ResourceEvent): Boolean = {
-      Configurator.MasterConfigurator.resourceEventStore.storeResourceEvent(event) match {
+      _configurator.resourceEventStore.storeResourceEvent(event) match {
         case Just(x) => true
         case x: Failed =>
           logger.error("Could not save event: %s".format(event))

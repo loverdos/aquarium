@@ -35,17 +35,18 @@
 
 package gr.grnet.aquarium.user.actor
 
-import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.Loggable
-import scala.PartialFunction
 import gr.grnet.aquarium.actor._
-import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.Configurator
-import gr.grnet.aquarium.processor.actor.{UserResponseGetState, UserRequestGetState, UserResponseGetBalance, UserRequestGetBalance}
+import gr.grnet.aquarium.processor.actor._
+import gr.grnet.aquarium.logic.accounting.Accounting
+import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
+import gr.grnet.aquarium.user.UserState
+import gr.grnet.aquarium.logic.events.{WalletEntry, ProcessedResourceEvent, ResourceEvent}
 
 
 /**
- * 
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
@@ -57,11 +58,117 @@ class UserActor extends AquariumActor with Loggable {
   @volatile
   private[this] var _userState: UserState = _
   @volatile
-  private[this] var _actorProvider: ActorProvider = _
-  @volatile
   private[this] var _timestampTheshold: Long = _
 
   def role = UserActorRole
+
+  private[this] def _configurator: Configurator = Configurator.MasterConfigurator
+
+  private[this] def processResourceEvent(resourceEvent: ResourceEvent, checkForOlderEvents: Boolean): Unit = {
+    if(checkForOlderEvents) {
+      logger.debug("Checking for events older than %s" format resourceEvent)
+      processOlderResourceEvents(resourceEvent)
+    }
+
+    justProcessTheResourceEvent(resourceEvent, "ACTUAL")
+  }
+
+  /**
+   * Find and process older resource events.
+   *
+   * Older resource events are found based on the latest credit calculation, that is the latest
+   * wallet entry. If there are resource events past that wallet entry, then we deduce that no wallet entries
+   * have been calculated for these resource events and start from there.
+   */
+  private[this] def processOlderResourceEvents(resourceEvent: ResourceEvent): Unit = {
+    assert(_userId == resourceEvent.userId)
+    val rceId = resourceEvent.id
+    val userId = resourceEvent.userId
+    val resourceEventStore = _configurator.resourceEventStore
+    val walletEntriesStore = _configurator.walletStore
+
+    // 1. Find latest wallet entry
+    val latestWalletEntriesM = walletEntriesStore.findLatestUserWalletEntries(userId)
+    latestWalletEntriesM match {
+      case Just(latestWalletEntries) ⇒
+        // The time on which we base the selection of the older events
+        val selectionTime = latestWalletEntries.head.occurredMillis
+
+        // 2. Now find all resource events past the time of the latest wallet entry.
+        //    These events have not been processed, except probably those ones
+        //    that have the same `occurredMillis` with `selectionTime`
+        val oldRCEvents = resourceEventStore.findResourceEventsByUserIdAfterTimestamp(userId, selectionTime)
+
+        // 3. Filter out those resource events for which no wallet entry has actually been
+        //    produced.
+        val rcEventsToProcess = for {
+          oldRCEvent        <- oldRCEvents
+          oldRCEventId      = oldRCEvent.id
+          latestWalletEntry <- latestWalletEntries if(!latestWalletEntry.fromResourceEvent(oldRCEventId) && rceId != oldRCEventId)
+        } yield {
+          oldRCEvent
+        }
+
+        logger.debug("Found %s events older than %s".format(rcEventsToProcess.size, resourceEvent))
+
+        for {
+          rcEventToProcess <- rcEventsToProcess
+        } {
+          justProcessTheResourceEvent(rcEventToProcess, "OLDER")
+        }
+      case NoVal ⇒
+        logger.debug("No events to process older than %s".format(resourceEvent))
+      case Failed(e, m) ⇒
+        logger.error("[%s][%s] %s".format(e.getClass.getName, m, e.getMessage))
+    }
+  }
+
+  private[this] def _calcNewUserState(resourceEvent: ResourceEvent, walletEntries: List[WalletEntry]): Unit = {
+    val walletEntriesStore = _configurator.walletStore
+    // 1. Store the new wallet entries
+    for(walletEntry <- walletEntries) {
+      walletEntriesStore.storeWalletEntry(walletEntry)
+    }
+    // 2. Update user state
+    val newUserState = resourceEvent.calcStateChange(walletEntries, _userState)
+    if(_userState == newUserState) {
+      logger.debug("No state change for %s".format(_userState))
+    } else {
+      logger.debug("State change from %s".format(_userState))
+      logger.debug("State change   to %s".format(newUserState))
+      _userState = newUserState
+    }
+  }
+
+  /**
+   * Process the resource event as if nothing else matters. Just do it.
+   */
+  private[this] def justProcessTheResourceEvent(resourceEvent: ResourceEvent, logLabel: String): Unit = {
+    logger.debug("Processing [%s] %s".format(logLabel, resourceEvent))
+
+    if(resourceEvent.resourceType.isIndependentType) {
+      // There is a one-to-one correspondence from an event to credit diff generation (wallet entry)
+
+      // TODO: find some other way to use the services of Accounting.
+      val accounting = new Accounting {}
+      val walletEntriesM = accounting chargeEvent resourceEvent
+
+      walletEntriesM match {
+        case Just(walletEntries) ⇒
+          _calcNewUserState(resourceEvent, walletEntries)
+        case NoVal ⇒
+          logger.debug("No wallet entries generated for %s".format(resourceEvent))
+          _calcNewUserState(resourceEvent, Nil)
+        case f @ Failed(e, m) ⇒
+          logger.error("[%s][%s] %s".format(e.getClass.getName, m, e.getMessage))
+          // TODO: What else to do on error?
+      }
+    } else {
+      // We need more than one resource event to calculate credit diffs.
+      // FIXME: implement
+      logger.error("Not processing %s".format(resourceEvent))
+    }
+  }
 
   protected def receive: Receive = {
     case UserActorStop ⇒
@@ -77,9 +184,12 @@ class UserActor extends AquariumActor with Loggable {
       // TODO: query DB etc to get internal state
       logger.info("Setup my userId = %s".format(userId))
 
-    case m @ ActorProviderConfigured(actorProvider) ⇒
-      this._actorProvider = actorProvider
-      logger.info("Configured %s with %s".format(this, m))
+//    case m @ ActorProviderConfigured(actorProvider) ⇒
+//      this._actorProvider = actorProvider
+//      logger.info("Configured %s with %s".format(this, m))
+
+    case m @ ProcessResourceEvent(resourceEvent) ⇒
+      processResourceEvent(resourceEvent, true)
 
     case m @ UserRequestGetBalance(userId, timestamp) ⇒
       if(this._userId != userId) {

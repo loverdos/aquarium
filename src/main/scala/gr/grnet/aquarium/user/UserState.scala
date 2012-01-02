@@ -36,8 +36,7 @@
 package gr.grnet.aquarium.user
 
 import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
-import net.liftweb.json.{Extraction, parse => parseJson, JsonAST, Xml}
-import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
+import net.liftweb.json.{parse => parseJson, JsonAST, Xml}
 
 
 /**
@@ -47,6 +46,8 @@ import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
  *
  * The different snapshots need not agree on the snapshot time, ie. some state
  * part may be stale, while other may be fresh.
+ *
+ * The user state is meant to be partially updated according to relevant events landing on Aquarium.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -60,19 +61,24 @@ case class UserState(
     paymentOrders: PaymentOrdersSnapshot,
     ownedGroups: OwnedGroupsSnapshot,
     groupMemberships: GroupMembershipsSnapshot,
-    ownedResources: OwnedResourcesSnapshot)
-  extends JsonSupport {
+    ownedResources: OwnedResourcesSnapshot,
+    bandwidthUp: BandwidthUpSnapshot,
+    bandwidthDown: BandwidthDownSnapshot,
+    diskSpace: DiskSpaceSnapshot
+) extends JsonSupport {
 
   private[this] def _allSnapshots: List[Long] = {
     List(
       credits.snapshotTime, agreement.snapshotTime, roles.snapshotTime,
       paymentOrders.snapshotTime, ownedGroups.snapshotTime, groupMemberships.snapshotTime,
-      ownedResources.snapshotTime)
+      ownedResources.snapshotTime,
+      bandwidthUp.snapshotTime, bandwidthDown.snapshotTime,
+      diskSpace.snapshotTime)
   }
 
-  def earlierSnapshotTime: Long = _allSnapshots min
+  def oldestSnapshotTime: Long = _allSnapshots min
 
-  def latestSnapshotTime: Long  = _allSnapshots max
+  def newestSnapshotTime: Long  = _allSnapshots max
 }
 
 

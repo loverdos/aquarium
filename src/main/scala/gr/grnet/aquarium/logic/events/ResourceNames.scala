@@ -36,7 +36,8 @@
 package gr.grnet.aquarium.logic.events
 
 /**
- * All known resource names are here.
+ * All known resource names are here. These represent the resources that Aquarium can handle.
+ *
  * These must be constants across the platform.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>

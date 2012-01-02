@@ -60,3 +60,33 @@ case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends U
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
 case class OwnedResourcesSnapshot(data: Map[DSLResource, Any /*ResourceState*/], snapshotTime: Long) extends UserDataSnapshot[Map[DSLResource, Any /*ResourceState*/]]
+
+/**
+ * Bandwidth is counted in MB (?)
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class BandwidthUpSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
+
+/**
+ * Bandwidth is counted in MB (?)
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class BandwidthDownSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
+
+/**
+ * Time is counted in seconds (?)
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class VMTimeSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
+
+
+/**
+ * Disk space is counted in MB (?)
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class DiskSpaceSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
+

@@ -37,6 +37,7 @@ package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.actor._
+import gr.grnet.aquarium.logic.events.ResourceEvent
 
 /**
  * Business logic dispatcher.
@@ -61,6 +62,13 @@ class DispatcherActor extends AquariumActor with Loggable {
       userActorManager forward m
 
     case m @ UserRequestGetState(userId, timestamp) ⇒
+      logger.debug("Received %s".format(m))
+      val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
+      // forward to the user actor manager, which in turn will
+      // forward to the appropriate user actor (and create one if it does not exist)
+      userActorManager forward m
+
+    case m @ ProcessResourceEvent(resourceEvent) ⇒
       logger.debug("Received %s".format(m))
       val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
       // forward to the user actor manager, which in turn will

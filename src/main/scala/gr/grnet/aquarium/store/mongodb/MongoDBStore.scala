@@ -45,8 +45,8 @@ import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, AquariumEvent}
 import gr.grnet.aquarium.logic.events.ResourceEvent.JsonNames
 import java.util.Date
+import com.ckkloverdos.maybe.Maybe
 import com.mongodb._
-import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -167,14 +167,50 @@ class MongoDBStore(
 
     MongoDBStore.runQuery[WalletEntry](q, wallets)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
   }
+
+
   //-WalletEntryStore
+  def findLatestUserWalletEntries(userId: String) = {
+    Maybe {
+      val orderBy = new BasicDBObject(JsonNames.occurredMillis, -1) // -1 is descending order
+      val cursor = wallets.find().sort(orderBy)
+
+      try {
+        val buffer = new scala.collection.mutable.ListBuffer[WalletEntry]
+        if(cursor.hasNext) {
+          val walletEntry = MongoDBStore.dbObjectToWalletEntry(cursor.next())
+          buffer += walletEntry
+
+          var _previousOccurredMillis = walletEntry.occurredMillis
+          var _ok = true
+
+          while(cursor.hasNext && _ok) {
+            val walletEntry = MongoDBStore.dbObjectToWalletEntry(cursor.next())
+            var currentOccurredMillis = walletEntry.occurredMillis
+            _ok = currentOccurredMillis == _previousOccurredMillis
+            
+            if(_ok) {
+              buffer += walletEntry
+            }
+          }
+
+          buffer.toList
+        } else {
+          null
+        }
+      } finally {
+        cursor.close()
+      }
+    }
+  }
 }
 
 object MongoDBStore {
-  def RESOURCE_EVENTS_COLLECTION = "resevents"
-  def USERS_COLLECTION = "users"
-  def IM_EVENTS_COLLECTION = "imevents"
-  def IM_WALLETS = "wallets"
+  final val RESOURCE_EVENTS_COLLECTION = "resevents"
+  final val PROCESSED_RESOURCE_EVENTS_COLLECTION = "procresevents"
+  final val USERS_COLLECTION = "users"
+  final val IM_EVENTS_COLLECTION = "imevents"
+  final val IM_WALLETS = "wallets"
 
   def dbObjectToResourceEvent(dbObject: DBObject): ResourceEvent = {
     ResourceEvent.fromJson(JSON.serialize(dbObject))
@@ -202,21 +238,27 @@ object MongoDBStore {
     }
   }
 
-  def runQuery[A <: AquariumEvent](query: BasicDBObject, collection: DBCollection)
+  def runQuery[A <: AquariumEvent](query: DBObject, collection: DBCollection, orderBy: DBObject = null)
                                   (deserializer: (DBObject) => A)
                                   (sortWith: Option[(A, A) => Boolean]): List[A] = {
-    val cur = collection find query
-    if(!cur.hasNext) {
-      cur.close()
+    val cursor0 = collection find query
+    val cursor = if(orderBy ne null) {
+      cursor0 sort orderBy
+    } else {
+      cursor0
+    } // I really know that docs say that it is the same cursor.
+
+    if(!cursor.hasNext) {
+      cursor.close()
       Nil
     } else {
       val buff = new ListBuffer[A]()
 
-      while(cur.hasNext) {
-        buff += deserializer apply cur.next
+      while(cursor.hasNext) {
+        buff += deserializer apply cursor.next
       }
 
-      cur.close()
+      cursor.close()
 
       sortWith match {
         case Some(sorter) => buff.toList.sortWith(sorter)
