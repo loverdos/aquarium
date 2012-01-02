@@ -39,6 +39,7 @@ import gr.grnet.aquarium.logic.accounting.Policy
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.logic.accounting.dsl.DSLComplexResource
+import gr.grnet.aquarium.user.UserState
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -50,12 +51,12 @@ case class ResourceEvent(
     override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
     override val occurredMillis: Long, // When it occurred at client side (the sender)
     override val receivedMillis: Long, // When it was received by Aquarium
-    userId: String,
-    clientId: String,
+    userId: String,                    // The user for which this resource is relevant
+    clientId: String,                  // The unique client identifier (usually some hash)
     resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
     eventVersion: String,
     value: Float,
-    details: Map[String, String])
+    details: ResourceEvent.Details)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
   def validate() : Boolean = {
@@ -74,9 +75,30 @@ case class ResourceEvent(
 
     true
   }
+
+  def resourceType = ResourceType fromResourceEvent this
+
+  def isKnownResourceType = resourceType.isKnownType
+
+  def isBandwidthUpload = resourceType.isBandwidthUpload
+
+  def isBandwidthDownload = resourceType.isBandwidthDownload
+
+  def isDiskSpace = resourceType.isDiskSpace
+
+  def isVMTime = resourceType.isVMTime
+
+  /**
+   * Calculates the new `UserState` based on this resource event, the calculated wallet entries related to this resource
+   * event and the current `UserState`.
+   */
+  def calcStateChange(walletEntries: List[WalletEntry], userState: UserState): UserState =
+    resourceType.calcStateChange(this, walletEntries, userState)
 }
 
 object ResourceEvent {
+  type Details = Map[String, String]
+  
   def fromJson(json: String): ResourceEvent = {
     JsonHelpers.jsonToObject[ResourceEvent](json)
   }
@@ -97,9 +119,13 @@ object ResourceEvent {
     final val _id = "_id"
     final val id = "id"
     final val userId = "userId"
-    final val timestamp = "timestamp"
+    final val timestamp = "timestamp" // TODO: deprecate in favor of "occurredMillis"
+    final val occurredMillis = "occurredMillis"
+    final val receivedMillis = "receivedMillis"
     final val clientId = "clientId"
 
+    // ResourceType: VMTime
     final val vmId = "vmId"
+    final val action = "action" // "on", "off"
   }
 }

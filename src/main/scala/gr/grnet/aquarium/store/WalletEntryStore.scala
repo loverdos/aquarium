@@ -19,4 +19,9 @@ trait WalletEntryStore {
   def findUserWalletEntries(userId: String): List[WalletEntry]
 
   def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date): List[WalletEntry]
+
+  /**
+   * Finds latest wallet entries with same timestamp.
+   */
+  def findLatestUserWalletEntries(userId: String): Maybe[List[WalletEntry]]
 }

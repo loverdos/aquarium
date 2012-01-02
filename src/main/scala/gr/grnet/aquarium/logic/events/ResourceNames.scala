@@ -33,44 +33,24 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
-
-import gr.grnet.aquarium.actor.ActorMessage
-import gr.grnet.aquarium.user.UserState
-import gr.grnet.aquarium.util.json.{JsonSupport, JsonHelpers}
-import gr.grnet.aquarium.logic.events.ResourceEvent
+package gr.grnet.aquarium.logic.events
 
 /**
- * This is the base class of the messages the Dispatcher understands.
+ * All known resource names are here. These represent the resources that Aquarium can handle.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * These must be constants across the platform.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-sealed trait DispatcherMessage extends ActorMessage {
-  def isError: Boolean = false
+
+object ResourceNames {
+  final val bnddown = "bnddown"
+  final val bndup   = "bndup"
+  final val vmtime  = "vmtime"
+  final val dsksp   = "dsksp"
+
+  /**
+   * Special name that designates an unknown resource.
+   */
+  final val unknown = "<unknown>"
 }
-
-sealed trait DispatcherResponseMessage extends DispatcherMessage {
-  def responseBody: Any
-  def responseBodyToJson: String = {
-    responseBody match {
-      case null ⇒
-        throw new NullPointerException("Unexpected null response body in %s".format(this))
-      case other ⇒
-        JsonHelpers.anyToJson(other)
-    }
-  }
-}
-
-case class UserRequestGetBalance(userId: String, timestamp: Long) extends DispatcherMessage
-case class BalanceValue(balance: Double) extends JsonSupport
-case class UserResponseGetBalance(userId: String, balance: Double) extends DispatcherResponseMessage {
-  val responseBody = BalanceValue(balance)
-}
-
-case class UserRequestGetState(userId: String, timestampt: Long) extends DispatcherMessage
-case class UserResponseGetState(userId: String, state: UserState) extends DispatcherResponseMessage {
-  def responseBody = state
-}
-
-case class ProcessResourceEvent(rce: ResourceEvent) extends DispatcherMessage
-
