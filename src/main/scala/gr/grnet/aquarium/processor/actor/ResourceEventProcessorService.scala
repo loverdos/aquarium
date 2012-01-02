@@ -122,6 +122,7 @@ with Lifecycle {
           sender ! Duplicate(ackData)
         else if (persist(event))
           sender ! PersistOK(ackData)
+          // TODO: Hook here for further processing
         else
           sender ! PersistFailed(ackData)
       case _ => logger.warn("Unknown message")

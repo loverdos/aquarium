@@ -62,8 +62,6 @@ abstract class AquariumEvent(
     toJson.getBytes("UTF-8")
   }
 
-  def evtype: String = shortClassNameOf(this)
-
   def toMap: Map[String,  Any] =
     (Map[String, Any]() /: this.getClass.getDeclaredFields) {
       (a, f) =>
