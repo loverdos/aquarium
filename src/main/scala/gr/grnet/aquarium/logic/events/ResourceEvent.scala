@@ -73,18 +73,6 @@ case class ResourceEvent(
 
     true
   }
-
-  def resourceType = ResourceType fromName resource
-
-  def isKnownResourceType = resourceType.isKnownType
-
-  def isBandwidthUpload = resourceType.isBandwidthUpload
-
-  def isBandwidthDownload = resourceType.isBandwidthDownload
-
-  def isDiskSpace = resourceType.isDiskSpace
-
-  def isVMTime = resourceType.isVMTime
 }
 
 object ResourceEvent {
