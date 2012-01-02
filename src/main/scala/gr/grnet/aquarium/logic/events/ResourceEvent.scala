@@ -51,7 +51,7 @@ case class ResourceEvent(
     override val receivedMillis: Long, // When it was received by Aquarium
     userId: String,
     clientId: String,
-    resource: String,                  // TODO: This is actually the resource event type. Should rename
+    resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
     eventVersion: String,
     value: Float,
     details: Map[String, String])
@@ -74,26 +74,20 @@ case class ResourceEvent(
     true
   }
 
-  def eventType: ResourceEventType = ResourceEventType.fromName(resource)
+  def resourceType = ResourceType fromName resource
 
-  def isKnownEventType = eventType.isKnownEventType
+  def isKnownResourceType = resourceType.isKnownType
 
-  def isBandwidthEvent = eventType.isBandwidth
+  def isBandwidthUpload = resourceType.isBandwidthUpload
 
-  def isStorageEvent = eventType.isStorage
+  def isBandwidthDownload = resourceType.isBandwidthDownload
 
-  def isVMEvent = eventType.isVM
+  def isDiskSpace = resourceType.isDiskSpace
+
+  def isVMTime = resourceType.isVMTime
 }
 
 object ResourceEvent {
-  object ResourceEventTypeNames {
-    final val bnddown = "bnddown"
-    final val bndup   = "bndup"
-    final val vmtime  = "vmtime"
-
-    final val unknown = "unknown"
-  }
-
   def fromJson(json: String): ResourceEvent = {
     JsonHelpers.jsonToObject[ResourceEvent](json)
   }
@@ -119,53 +113,4 @@ object ResourceEvent {
 
     final val vmId = "vmId"
   }
-}
-
-
-/**
- * The subclasses (all case objects) define the known resource event types.
- * One or more resource event types are related to a resource. For example, for
- * the resource `bandwidth` we have two resource event types, namely `bndup` and `bnddown`
- * which specify uploading and downloading bandwidth respectively.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- */
-sealed abstract class ResourceEventType(_name: String) {
-  def eventTypeName: String = _name
-  def isKnownEventType = true
-  def isStorage = false
-  def isVM = false
-  def isBandwidth = false
-}
-
-/**
- * Companion object.
- */
-object ResourceEventType {
-  import ResourceEvent.{ResourceEventTypeNames => RCENames}
-
-  def fromName(name: String): ResourceEventType = {
-    name match {
-      case RCENames.bnddown ⇒ BandwidthDown
-      case RCENames.bndup   ⇒ BandwidthUp
-      case RCENames.vmtime  ⇒ VMTime
-      case _                ⇒ UnknownResourceEventType(name)
-    }
-  }
-}
-
-case object BandwidthDown extends ResourceEventType(ResourceEvent.ResourceEventTypeNames.bnddown) {
-  override def isBandwidth = true
-}
-
-case object BandwidthUp extends ResourceEventType(ResourceEvent.ResourceEventTypeNames.bndup) {
-  override def isBandwidth = true
-}
-
-case object VMTime extends ResourceEventType(ResourceEvent.ResourceEventTypeNames.vmtime) {
-  override def isVM = true
-}
-
-case class UnknownResourceEventType(originalName: String) extends ResourceEventType(ResourceEvent.ResourceEventTypeNames.unknown) {
-  override def isKnownEventType = false
 }
