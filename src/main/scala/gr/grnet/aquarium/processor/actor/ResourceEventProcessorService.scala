@@ -39,20 +39,20 @@ final class ResourceEventProcessorService extends EventProcessorService {
   override def persisterThreads: Int = 2
   override def name = "resevtproc"
 
+  override def persisterManager = new PersisterManager
+  override def queueReaderManager = new QueueReaderManager
+
   def start() {
     logger.info("Starting resource event processor service")
 
-    QueueReaderManager.start()
-    PersisterManager.start()
-
     consumer("%s.#".format(MessagingNames.RES_EVENT_KEY),
       MessagingNames.RESOURCE_EVENT_QUEUE, MessagingNames.AQUARIUM_EXCHANGE,
-      QueueReaderManager.lb, false)
+      queueReaderManager.lb, false)
   }
 
   def stop() {
-    QueueReaderManager.stop()
-    PersisterManager.stop()
+    queueReaderManager.stop()
+    persisterManager.stop()
 
     logger.info("Stopping resource event processor service")
   }

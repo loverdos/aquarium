@@ -8,34 +8,34 @@ import gr.grnet.aquarium.logic.events.AquariumEvent
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class IMEventProcessorService extends EventProcessorService {
+final class IMEventProcessorService extends EventProcessorService {
 
-  protected def decode(data: Array[Byte]) = null
+  override def decode(data: Array[Byte]) = null
 
-  protected def forward(resourceEvent: AquariumEvent) {}
+  override def forward(resourceEvent: AquariumEvent) {}
 
-  protected def exists(event: AquariumEvent) = false
+  override def exists(event: AquariumEvent) = false
 
-  protected def persist(event: AquariumEvent) = false
+  override def persist(event: AquariumEvent) = false
 
   override def queueReaderThreads: Int = 1
   override def persisterThreads: Int = 2
   override def name = "imevtproc"
 
+  override def persisterManager = new PersisterManager
+  override def queueReaderManager = new QueueReaderManager
+
   def start() {
     logger.info("Starting IM event processor service")
 
-    QueueReaderManager.start()
-    PersisterManager.start()
-
     consumer("%s.#".format(MessagingNames.IM_EVENT_KEY),
       MessagingNames.IM_EVENT_QUEUE, MessagingNames.IM_EXCHANGE,
-      QueueReaderManager.lb, false)
+      queueReaderManager.lb, false)
   }
 
   def stop() {
-    QueueReaderManager.stop()
-    PersisterManager.stop()
+    queueReaderManager.stop()
+    persisterManager.stop()
 
     logger.info("Stopping IM event processor service")
   }
