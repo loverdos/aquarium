@@ -42,11 +42,11 @@ import gr.grnet.aquarium.util.displayableObjectInfo
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, AquariumEvent}
 import gr.grnet.aquarium.logic.events.ResourceEvent.JsonNames
 import java.util.Date
 import com.ckkloverdos.maybe.Maybe
 import com.mongodb._
+import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent, AquariumEvent}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -59,7 +59,9 @@ class MongoDBStore(
     val database: String,
     val username: String,
     val password: String)
-  extends ResourceEventStore with UserStateStore with WalletEntryStore with Loggable {
+  extends ResourceEventStore with UserStateStore
+  with WalletEntryStore with UserEventStore
+  with Loggable {
 
   private[store] lazy val rcevents: DBCollection = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
   private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
@@ -68,15 +70,11 @@ class MongoDBStore(
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
-    if(!db.authenticate(username, password.toCharArray)) {
+    if(!db.isAuthenticated && !db.authenticate(username, password.toCharArray)) {
       throw new StoreException("Could not authenticate user %s".format(username))
     }
     db.getCollection(name)
   }
-
-  /* TODO: Some of the following methods rely on JSON (de-)serialization).
-  * A method based on proper object serialization would be much faster.
-  */
 
   private[this] def _sortByTimestampAsc[A <: AquariumEvent](one: A, two: A): Boolean = {
     if (one.occurredMillis > two.occurredMillis) false
@@ -168,8 +166,6 @@ class MongoDBStore(
     MongoDBStore.runQuery[WalletEntry](q, wallets)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
   }
 
-
-  //-WalletEntryStore
   def findLatestUserWalletEntries(userId: String) = {
     Maybe {
       val orderBy = new BasicDBObject(JsonNames.occurredMillis, -1) // -1 is descending order
@@ -203,15 +199,35 @@ class MongoDBStore(
       }
     }
   }
+  //-WalletEntryStore
+
+  //+UserEventStore
+  def storeUserEvent(event: UserEvent): Maybe[RecordID] =
+    MongoDBStore.storeAny[UserEvent](event, imevents, JsonNames.userId,
+      _.userId, MongoDBStore.jsonSupportToDBObject)
+
+
+  def findUserEventById(id: String): Maybe[UserEvent] =
+    MongoDBStore.findById[UserEvent](id, wallets, MongoDBStore.dbObjectToUserEvent)
+
+  def findUserEventsByUserId(userId: String)
+                            (sortWith: Option[(UserEvent, UserEvent) => Boolean]): List[UserEvent] = {
+    val query = new BasicDBObject(JsonNames.userId, userId)
+    MongoDBStore.runQuery(query, rcevents)(MongoDBStore.dbObjectToUserEvent)(sortWith)
+  }
+  //-UserEventStore
 }
 
 object MongoDBStore {
   final val RESOURCE_EVENTS_COLLECTION = "resevents"
-  final val PROCESSED_RESOURCE_EVENTS_COLLECTION = "procresevents"
+  //final val PROCESSED_RESOURCE_EVENTS_COLLECTION = "procresevents"
   final val USERS_COLLECTION = "users"
   final val IM_EVENTS_COLLECTION = "imevents"
   final val IM_WALLETS = "wallets"
 
+  /* TODO: Some of the following methods rely on JSON (de-)serialization).
+  * A method based on proper object serialization would be much faster.
+  */
   def dbObjectToResourceEvent(dbObject: DBObject): ResourceEvent = {
     ResourceEvent.fromJson(JSON.serialize(dbObject))
   }
@@ -222,6 +238,10 @@ object MongoDBStore {
 
   def dbObjectToWalletEntry(dbObj: DBObject): WalletEntry = {
     WalletEntry.fromJson(JSON.serialize(dbObj))
+  }
+
+  def dbObjectToUserEvent(dbObj: DBObject): UserEvent = {
+    UserEvent.fromJson(JSON.serialize(dbObj))
   }
 
   def findById[A >: Null <: AquariumEvent](id: String, collection: DBCollection, deserializer: (DBObject) => A) : Maybe[A] = Maybe {

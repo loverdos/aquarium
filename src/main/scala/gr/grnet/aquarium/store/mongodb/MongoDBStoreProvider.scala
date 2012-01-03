@@ -55,6 +55,7 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   private[this] var _eventStore: ResourceEventStore = _
   private[this] var _userStore: UserStateStore = _
   private[this] var _walletStore: WalletEntryStore = _
+  private[this] var _userEventStore: UserEventStore = _
 
   def configure(props: Props) = {
     this._database = props.getEx(Keys.persistence_db)
@@ -72,6 +73,7 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
       this._eventStore = mongoStore
       this._userStore  = mongoStore
       this._walletStore  = mongoStore
+      this._userEventStore  = mongoStore
     } catch {
       case e: MongoException =>
         throw new Exception("Cannot connect to mongo at %s:%s".format(host, port), e)
@@ -83,4 +85,6 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   def resourceEventStore = _eventStore
 
   def walletEntryStore = _walletStore
+
+  def userEventStore = _userEventStore
 }

@@ -44,4 +44,5 @@ trait StoreProvider {
   def userStateStore: UserStateStore
   def resourceEventStore: ResourceEventStore
   def walletEntryStore: WalletEntryStore
+  def userEventStore: UserEventStore
 }

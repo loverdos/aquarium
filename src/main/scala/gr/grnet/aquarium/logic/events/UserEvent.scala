@@ -68,9 +68,13 @@ case class UserEvent(
 }
 
 object UserEvent {
-  def fromJson(json: String): ResourceEvent = {
+  def fromJson(json: String): UserEvent = {
     implicit val formats = JsonHelpers.DefaultJsonFormats
     val jsonAST = parseJson(json)
-    Extraction.extract[ResourceEvent](jsonAST)
+    Extraction.extract[UserEvent](jsonAST)
+  }
+
+  def fromBytes(bytes: Array[Byte]): UserEvent = {
+    JsonHelpers.jsonBytesToObject[UserEvent](bytes)
   }
 }

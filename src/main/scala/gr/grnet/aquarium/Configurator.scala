@@ -41,7 +41,7 @@ import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
-import processor.actor.{IMEventProcessorService, ResourceEventProcessorService, EventProcessorService}
+import processor.actor.{UserEventProcessorService, ResourceEventProcessorService, EventProcessorService}
 import store._
 import util.{Lifecycle, Loggable}
 
@@ -120,6 +120,14 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
+  private[this] lazy val _userEventStoreM: Maybe[UserEventStore] = {
+    props.get(Keys.user_event_store_class) map { className ⇒
+      val instance = newInstance[UserEventStore](className)
+      logger.info("Overriding UserEventStore provisioning. Implementation given by: %s".format(instance.getClass))
+      instance
+    }
+  }
+
   private[this] lazy val _WalletEventStoreM: Maybe[WalletEntryStore] = {
     // If there is a specific `IMStore` implementation specified in the
     // properties, then this implementation overrides the event store given by
@@ -133,7 +141,7 @@ class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _resEventProc: ResourceEventProcessorService = new ResourceEventProcessorService
 
-  private[this] lazy val _imEventProc: EventProcessorService = new IMEventProcessorService
+  private[this] lazy val _imEventProc: EventProcessorService = new UserEventProcessorService
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 
@@ -180,6 +188,13 @@ class Configurator(val props: Props) extends Loggable {
     _WalletEventStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.walletEntryStore
+    }
+  }
+
+  def userEventStore = {
+    _userEventStoreM match {
+      case Just(es) ⇒ es
+      case _        ⇒ storeProvider.userEventStore
     }
   }
 
@@ -311,7 +326,7 @@ object Configurator {
     /**
      * The class that implements the IM event store
      */
-    final val im_eventstore_class = "imevent.store.class"
+    final val user_event_store_class = "user.event.store.class"
 
     /**
      * The class that implements the wallet entries store
