@@ -41,7 +41,7 @@ import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
-import processor.actor.{ResourceEventProcessorService}
+import processor.actor.{IMEventProcessorService, ResourceEventProcessorService, EventProcessorService}
 import store._
 import util.{Lifecycle, Loggable}
 
@@ -131,9 +131,9 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
-  private[this] lazy val _resEventProc: ResourceEventProcessorService = {
-    new ResourceEventProcessorService()
-  }
+  private[this] lazy val _resEventProc: ResourceEventProcessorService = new ResourceEventProcessorService
+
+  private[this] lazy val _imEventProc: EventProcessorService = new IMEventProcessorService
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 
@@ -143,13 +143,14 @@ class Configurator(val props: Props) extends Loggable {
     _restService.start()
     _actorProvider.start()
     _resEventProc.start()
+    _imEventProc.start()
   }
 
   def stopServices(): Unit = {
+    _imEventProc.stop()
     _resEventProc.stop()
     _restService.stop()
     _actorProvider.stop()
-
 
 //    akka.actor.Actor.registry.shutdownAll()
   }

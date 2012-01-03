@@ -13,5 +13,6 @@ object MessagingNames {
   def IM_EVENT_KEY = "imevent"
 
   def RESOURCE_EVENT_QUEUE = "resource-events"
+  def IM_EVENT_QUEUE = "im-events"
   def TEST_QUEUE = "akka-amqp-test"
 }
