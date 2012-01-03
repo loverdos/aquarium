@@ -166,7 +166,7 @@ object RandomEventGen extends RandomEventGenerator {
 
   val config = new Config
 
-  private val parser = new OptionParser("scopt") {
+  private val parser = new OptionParser("RandomEventGen") {
     opt("i", "im-events", "Generate IM events", {config.i = true})
     opt("u", "user-create", "Generate IM events that create users", {config.u = true})
     opt("r", "resource-events", "Generate resource events", {config.r = true})

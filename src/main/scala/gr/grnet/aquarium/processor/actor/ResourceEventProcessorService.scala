@@ -48,10 +48,10 @@ import akka.dispatch.Dispatchers
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
 import akka.config.Supervision.SupervisorConfig
 import akka.config.Supervision.OneForOneStrategy
-import java.util.concurrent.ConcurrentSkipListSet
 import gr.grnet.aquarium.messaging.{MessagingNames, AkkaAMQP}
 import akka.amqp._
 import gr.grnet.aquarium.actor.DispatcherRole
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
 
 /**
  * An actor that gets events from the queue, stores them persistently
@@ -69,6 +69,7 @@ with Lifecycle {
   case class Duplicate(ackData: AckData)
 
   val redeliveries = new ConcurrentSkipListSet[String]()
+  val inFlightEvents = new ConcurrentHashMap[Long, ResourceEvent](200, 0.9F, 4)
 
   private[this] def _configurator: Configurator = Configurator.MasterConfigurator
   private[this] def _calcStateChanges(resourceEvent: ResourceEvent): Unit = {
@@ -81,12 +82,15 @@ with Lifecycle {
     def receive = {
       case Delivery(payload, _, deliveryTag, isRedeliver, _, queue) =>
         val event = ResourceEvent.fromBytes(payload)
+        inFlightEvents.put(deliveryTag, event)
+
         if (isRedeliver) {
-          //Message could not be processed 3 times, just
+          //Message could not be processed 3 times, just ignore it
           if (redeliveries.contains(event.id)) {
             logger.warn("Event[%s] msg[%d] redelivered >2 times. Rejecting".format(event, deliveryTag))
             queue ! Reject(deliveryTag, false)
             redeliveries.remove(event.id)
+            inFlightEvents.remove(deliveryTag)
           } else {
             //Redeliver, but keep track of the message
             redeliveries.add(event.id)
@@ -98,21 +102,23 @@ with Lifecycle {
         }
 
       case PersistOK(ackData) =>
-        logger.debug("Stored event[%s] msg[%d]".format(ackData.msgId, ackData.deliveryTag))
+        logger.debug("Stored event[%s] msg[%d] - %d left".format(ackData.msgId, ackData.deliveryTag, inFlightEvents.size))
         ackData.queue ! Acknowledge(ackData.deliveryTag)
 
       case PersistFailed(ackData) =>
         //Give the message a chance to be processed by other processors
         logger.debug("Storing event[%s] msg[%d] failed".format(ackData.msgId, ackData.deliveryTag))
+        inFlightEvents.remove(ackData.deliveryTag)
         ackData.queue ! Reject(ackData.deliveryTag, true)
 
       case Duplicate(ackData) =>
         logger.debug("Event[%s] msg[%d] is duplicate".format(ackData.msgId, ackData.deliveryTag))
+        inFlightEvents.remove(ackData.deliveryTag)
         ackData.queue ! Reject(ackData.deliveryTag, false)
 
       case Acknowledged(deliveryTag) =>
-        logger.debug("Msg with tag [%d] acked".format(deliveryTag))
-      //TODO: Forward to the dispatcher
+        logger.debug("Msg with tag [%d] acked. Forwarding".format(deliveryTag))
+        _calcStateChanges(inFlightEvents.remove(deliveryTag))
 
       case Rejected(deliveryTag) =>
         logger.debug("Msg with tag [%d] rejected".format(deliveryTag))
@@ -131,8 +137,6 @@ with Lifecycle {
           sender ! Duplicate(ackData)
         else if (persist(event)) {
           sender ! PersistOK(ackData)
-          // TODO: Move to some proper place (after ACK?)
-          _calcStateChanges(event)
         } else
           sender ! PersistFailed(ackData)
       case _ => logger.warn("Unknown message")
