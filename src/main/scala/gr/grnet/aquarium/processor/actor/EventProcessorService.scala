@@ -101,7 +101,9 @@ with Lifecycle {
 
   protected def persisterManager: PersisterManager
   protected def queueReaderManager: QueueReaderManager
-  
+
+  protected val numCPUs = Runtime.getRuntime.availableProcessors
+
   def start(): Unit
   def stop() : Unit
 
@@ -115,7 +117,7 @@ with Lifecycle {
         if (isRedeliver) {
           //Message could not be processed 3 times, just ignore it
           if (redeliveries.contains(event.id)) {
-            logger.warn("Event[%s] msg[%d] redelivered >2 times. Rejecting".format(event, deliveryTag))
+            logger.warn("Actor[%s] - Event[%s] msg[%d] redelivered >2 times. Rejecting".format(self.getUuid(), event, deliveryTag))
             queue ! Reject(deliveryTag, false)
             redeliveries.remove(event.id)
             inFlightEvents.remove(deliveryTag)
@@ -130,28 +132,33 @@ with Lifecycle {
         }
 
       case PersistOK(ackData) =>
-        logger.debug("Stored event[%s] msg[%d] - %d left".format(ackData.msgId, ackData.deliveryTag, inFlightEvents.size))
+        logger.debug("Actor[%s] - Stored event[%s] msg[%d] - %d left".format(self.getUuid(), ackData.msgId, ackData.deliveryTag, inFlightEvents.size))
         ackData.queue ! Acknowledge(ackData.deliveryTag)
 
       case PersistFailed(ackData) =>
         //Give the message a chance to be processed by other processors
-        logger.debug("Storing event[%s] msg[%d] failed".format(ackData.msgId, ackData.deliveryTag))
+        logger.error("Actor[%s] - Storing event[%s] msg[%d] failed".format(self.getUuid(), ackData.msgId, ackData.deliveryTag))
         inFlightEvents.remove(ackData.deliveryTag)
         ackData.queue ! Reject(ackData.deliveryTag, true)
 
       case Duplicate(ackData) =>
-        logger.debug("Event[%s] msg[%d] is setRcvMillis".format(ackData.msgId, ackData.deliveryTag))
+        logger.debug("Actor[%s] - Event[%s] msg[%d] is duplicate".format(self.getUuid(), ackData.msgId, ackData.deliveryTag))
         inFlightEvents.remove(ackData.deliveryTag)
         ackData.queue ! Reject(ackData.deliveryTag, false)
 
       case Acknowledged(deliveryTag) =>
-        logger.debug("Msg with tag [%d] acked. Forwarding...".format(deliveryTag))
+        logger.debug("Actor[%s] - Msg with tag [%d] acked. Forwarding...".format(self.getUuid(), deliveryTag))
         forward(inFlightEvents.remove(deliveryTag))
 
       case Rejected(deliveryTag) =>
-        logger.debug("Msg with tag [%d] rejected".format(deliveryTag))
+        logger.debug("Actor[%s] - Msg with tag [%d] rejected".format(self.getUuid(), deliveryTag))
 
       case _ => logger.warn("Unknown message")
+    }
+
+    override def preStart = {
+      logger.debug("Starting actor QueueReader-%s".format(self.getUuid()))
+      super.preStart
     }
 
     self.dispatcher = queueReaderManager.dispatcher
@@ -161,6 +168,7 @@ with Lifecycle {
 
     def receive = {
       case Persist(event, sender, ackData) =>
+        logger.debug("Persister-%s attempting store".format(self.getUuid()))
         if (exists(event))
           sender ! Duplicate(ackData)
         else if (persist(event)) {
@@ -170,23 +178,27 @@ with Lifecycle {
       case _ => logger.warn("Unknown message")
     }
 
+    override def preStart = {
+      logger.debug("Starting actor Persister-%s".format(self.getUuid()))
+      super.preStart
+    }
+
     self.dispatcher = persisterManager.dispatcher
   }
 
   class QueueReaderManager {
-    val numCPUs = Runtime.getRuntime.availableProcessors
     lazy val lb = loadBalancerActor(new CyclicIterator(actors))
 
     lazy val dispatcher =
       Dispatchers.newExecutorBasedEventDrivenWorkStealingDispatcher(name + "-queuereader")
         .withNewThreadPoolWithLinkedBlockingQueueWithCapacity(1000)
-        .setMaxPoolSize(queueReaderThreads)
-        .setCorePoolSize(1)
+        .setMaxPoolSize(2 * numCPUs)
+        .setCorePoolSize(queueReaderThreads)
         .setKeepAliveTimeInMillis(60000)
         .setRejectionPolicy(new CallerRunsPolicy).build
 
     lazy val actors =
-      for (i <- 0 until numCPUs) yield {
+      for (i <- 0 until 4 * numCPUs) yield {
         val actor = actorOf(new QueueReader)
         supervisor.link(actor)
         actor.start()
@@ -197,19 +209,18 @@ with Lifecycle {
   }
 
   class PersisterManager {
-    val numCPUs = Runtime.getRuntime.availableProcessors
     lazy val lb = loadBalancerActor(new CyclicIterator(actors))
 
     val dispatcher =
       Dispatchers.newExecutorBasedEventDrivenWorkStealingDispatcher(name + "-persister")
         .withNewThreadPoolWithLinkedBlockingQueueWithCapacity(1000)
-        .setMaxPoolSize(persisterThreads)
-        .setCorePoolSize(1)
+        .setMaxPoolSize(2 * numCPUs)
+        .setCorePoolSize(persisterThreads)
         .setKeepAliveTimeInMillis(60000)
         .setRejectionPolicy(new CallerRunsPolicy).build
 
     lazy val actors =
-      for (i <- 0 until numCPUs) yield {
+      for (i <- 0 until 5 * numCPUs) yield {
         val actor = actorOf(new Persister)
         supervisor.link(actor)
         actor.start()

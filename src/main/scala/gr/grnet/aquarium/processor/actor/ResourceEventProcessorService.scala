@@ -1,7 +1,6 @@
 package gr.grnet.aquarium.processor.actor
 
 import com.ckkloverdos.maybe.{Just, Failed, NoVal}
-import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.messaging.MessagingNames
 import gr.grnet.aquarium.logic.events.{AquariumEvent, ResourceEvent}
 
@@ -15,11 +14,13 @@ final class ResourceEventProcessorService extends EventProcessorService {
 
   override def decode(data: Array[Byte]) : AquariumEvent = ResourceEvent.fromBytes(data)
 
-  override def forward(evt: AquariumEvent): Unit = {
+  /*override def forward(evt: AquariumEvent): Unit = {
     val resourceEvent = evt.asInstanceOf[ResourceEvent]
     val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
     businessLogicDispacther ! ProcessResourceEvent(resourceEvent)
-  }
+  }*/
+
+  override def forward(evt: AquariumEvent): Unit = {}
 
   override def exists(event: AquariumEvent): Boolean =
     _configurator.resourceEventStore.findResourceEventById(event.id).isJust
@@ -29,18 +30,21 @@ final class ResourceEventProcessorService extends EventProcessorService {
     _configurator.resourceEventStore.storeResourceEvent(event) match {
       case Just(x) => true
       case x: Failed =>
-        logger.error("Could not save event: %s".format(event))
+        logger.error("Could not save event: %s. Reason:".format(event, x.toString))
         false
       case NoVal => false
     }
   }
 
-  override def queueReaderThreads: Int = 1
-  override def persisterThreads: Int = 2
+  override def queueReaderThreads: Int = 4
+  override def persisterThreads: Int = numCPUs
   override def name = "resevtproc"
 
-  override def persisterManager = new PersisterManager
-  override def queueReaderManager = new QueueReaderManager
+  val persister = new PersisterManager
+  val queueReader = new QueueReaderManager
+
+  override def persisterManager   = persister
+  override def queueReaderManager = queueReader
 
   def start() {
     logger.info("Starting resource event processor service")

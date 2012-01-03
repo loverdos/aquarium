@@ -4,12 +4,13 @@ import gr.grnet.aquarium.messaging.MessagingNames
 import gr.grnet.aquarium.logic.events.{UserEvent, AquariumEvent}
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
 
+
 /**
  * An event processor service for user events coming from the IM system
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-final class UserEventProcessorService extends EventProcessorService {
+class UserEventProcessorService extends EventProcessorService {
 
   override def decode(data: Array[Byte]) = UserEvent.fromBytes(data)
 
@@ -29,12 +30,15 @@ final class UserEventProcessorService extends EventProcessorService {
     }
   }
 
-  override def queueReaderThreads: Int = 1
-  override def persisterThreads: Int = 2
+  override def queueReaderThreads: Int = 4
+  override def persisterThreads: Int = numCPUs
   override def name = "usrevtproc"
 
-  override def persisterManager = new PersisterManager
-  override def queueReaderManager = new QueueReaderManager
+  lazy val persister = new PersisterManager
+  lazy val queueReader = new QueueReaderManager
+
+  override def persisterManager   = persister
+  override def queueReaderManager = queueReader
 
   def start() {
     logger.info("Starting user event processor service")
