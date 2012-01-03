@@ -94,6 +94,8 @@ case class ResourceEvent(
    */
   def calcStateChange(walletEntries: List[WalletEntry], userState: UserState): UserState =
     resourceType.calcStateChange(this, walletEntries, userState)
+
+  def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
 }
 
 object ResourceEvent {

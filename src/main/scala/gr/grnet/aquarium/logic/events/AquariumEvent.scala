@@ -39,7 +39,7 @@ package logic.events
 
 import util.json.JsonSupport
 import util.xml.XmlSupport
-import util.{Loggable, shortClassNameOf}
+import util.Loggable
 
 /**
  * Generic base class for all Aquarium events
@@ -47,7 +47,6 @@ import util.{Loggable, shortClassNameOf}
  * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
 abstract class AquariumEvent(
     val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
     val occurredMillis: Long, // When it occurred at client side (the sender)
@@ -61,6 +60,8 @@ abstract class AquariumEvent(
   def toBytes: Array[Byte] = {
     toJson.getBytes("UTF-8")
   }
+
+  def setRcvMillis(receivedMillis: Long): AquariumEvent
 
   def toMap: Map[String,  Any] =
     (Map[String, Any]() /: this.getClass.getDeclaredFields) {

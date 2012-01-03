@@ -63,6 +63,8 @@ case class UserEvent(
 
     true
   }
+
+  def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
 }
 
 object UserEvent {

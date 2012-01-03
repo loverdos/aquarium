@@ -35,6 +35,8 @@ case class WalletEntry(
   def fromResourceEvent(rceId: String): Boolean = {
     sourceEventIDs contains rceId
   }
+
+  def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
 }
 
 object WalletEntry {
