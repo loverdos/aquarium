@@ -38,14 +38,13 @@ package gr.grnet.aquarium.user.actor
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
-import gr.grnet.aquarium.processor.actor.{UserResponseGetState, UserRequestGetState, UserResponseGetBalance, UserRequestGetBalance}
-import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
 import java.util.Date
 import gr.grnet.aquarium.processor.actor._
-import gr.grnet.aquarium.logic.accounting.Accounting
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 import gr.grnet.aquarium.user.{OwnedResourcesSnapshot, UserState}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLComplexResource, DSLResource}
+import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
 
 
 /**
@@ -53,7 +52,7 @@ import gr.grnet.aquarium.user.{OwnedResourcesSnapshot, UserState}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class UserActor extends AquariumActor with Loggable {
+class UserActor extends AquariumActor with Loggable with Accounting {
   @volatile
   private[this] var _userId: String = _
   @volatile
@@ -146,31 +145,39 @@ class UserActor extends AquariumActor with Loggable {
   /**
    * Process the resource event as if nothing else matters. Just do it.
    */
-  private[this] def justProcessTheResourceEvent(resourceEvent: ResourceEvent, logLabel: String): Unit = {
-    logger.debug("Processing [%s] %s".format(logLabel, resourceEvent))
+  private[this] def justProcessTheResourceEvent(ev: ResourceEvent, logLabel: String): Unit = {
+    logger.debug("Processing [%s] %s".format(logLabel, ev))
 
-    if(resourceEvent.resourceType.isIndependentType) {
-      // There is a one-to-one correspondence from an event to credit diff generation (wallet entry)
-
-      // TODO: find some other way to use the services of Accounting.
-      val accounting = new Accounting {}
-      val walletEntriesM = accounting chargeEvent resourceEvent
-
-      walletEntriesM match {
-        case Just(walletEntries) ⇒
-          _calcNewUserState(resourceEvent, walletEntries)
-        case NoVal ⇒
-          logger.debug("No wallet entries generated for %s".format(resourceEvent))
-          _calcNewUserState(resourceEvent, Nil)
-        case f @ Failed(e, m) ⇒
-          logger.error("[%s][%s] %s".format(e.getClass.getName, m, e.getMessage))
-          // TODO: What else to do on error?
-      }
-    } else {
-      // We need more than one resource event to calculate credit diffs.
-      // FIXME: implement
-      logger.error("Not processing %s".format(resourceEvent))
+    val resource = Policy.policy.findResource(ev.resource) match {
+        case Some(x) => x
+        case None => throw new AccountingException("") //TODO: See what to do here
     }
+
+    val instanceId = resource.isComplex match {
+      case true =>
+        val field = resource.asInstanceOf[DSLComplexResource].descriminatorField
+        ev.details.get(field) match {
+          case Some(x) => Some(x)
+          case None => throw new AccountingException("") //TODO: See what to do here
+        }
+      case false => None
+    }
+
+    // There is a one-to-one correspondence from an event to credit diff generation (wallet entry)
+    val resState = resourceState(resource, instanceId).get
+    val walletEntriesM = chargeEvent(ev, _userState.agreement.data,
+      resState.value, resState.lastUpdate)
+    walletEntriesM match {
+      case Just(walletEntries) ⇒
+        _calcNewUserState(ev, walletEntries)
+      case NoVal ⇒
+        logger.debug("No wallet entries generated for %s".format(ev))
+        _calcNewUserState(ev, Nil)
+      case f@Failed(e, m) ⇒
+        logger.error("[%s][%s] %s".format(e.getClass.getName, m, e.getMessage))
+      // TODO: What else to do on error?
+    }
+
   }
 
   protected def receive: Receive = {
@@ -235,19 +242,6 @@ class UserActor extends AquariumActor with Loggable {
         logger.error("FIXME: Should have properly computed the user state")
         self reply UserResponseGetState(userId, this._userState)
       }
-
-    /* Resource API */
-    case m @ UserActorResourceStateRequest(resource, instance) ⇒
-      resourceState(resource, instance)
-
-    case m @ UserActorResourceStateUpdate(resource, instanceid, value) ⇒
-      resourceStateUpdate(resource, instanceid, value)
-
-    case m @ UserActorResourceCreateInstance(resource, instanceid) ⇒
-      createResourceInstance(resource, instanceid)
-
-    case m @ UserActorResourceDeleteInstance(resource, instanceid) ⇒
-      deleteResourceInstance(resource, instanceid)
   }
 
   /**
@@ -257,16 +251,16 @@ class UserActor extends AquariumActor with Loggable {
    * been used yet, it will create an entry in the state store.
    */
   private def resourceState(resource: DSLResource, instanceId: Option[String]):
-  Option[UserActorResourceStateResponse] =
+  Option[ResourceState] =
     resource.isComplex match {
       case true ⇒ instanceId match {
         case Some(x) ⇒ _userState.ownedResources.data.get(resource) match {
           case Some(y) if (y.isInstanceOf[Map[String, Any]]) ⇒
             val measurement = y.asInstanceOf[Map[String, Any]].get(x)
-            Some(UserActorResourceStateResponse(resource, new Date(_userState.ownedResources.snapshotTime), measurement))
+            Some(ResourceState(resource, new Date(_userState.ownedResources.snapshotTime), measurement))
           case Some(y) ⇒
             warn("Should never reach this line")
-            Some(UserActorResourceStateResponse(resource, new Date(_userState.ownedResources.snapshotTime), y))
+            Some(ResourceState(resource, new Date(_userState.ownedResources.snapshotTime), y))
           case None ⇒
             err("No instance %s for resource".format(instanceId.get, resource.name))
             None
@@ -277,7 +271,7 @@ class UserActor extends AquariumActor with Loggable {
       }
       case false ⇒ _userState.ownedResources.data.get(resource) match {
         case Some(y) ⇒
-          Some(UserActorResourceStateResponse(resource, new Date(_userState.ownedResources.snapshotTime), y))
+          Some(ResourceState(resource, new Date(_userState.ownedResources.snapshotTime), y))
         case None ⇒
           debug("First request for resource %s, creating...".format(resource.name))
           val _ownedResources = _userState.ownedResources
@@ -286,25 +280,6 @@ class UserActor extends AquariumActor with Loggable {
           resourceState(resource, None)
       }
     }
-
-  /**
-   * Update the current state for a resource
-   */
-  private def resourceStateUpdate(resource: DSLResource,
-                                  instanceid: Option[String],
-                                  value: Any) = None
-
-  /**
-   * Create a new instance for a complex resource
-   */
-  private def createResourceInstance(resource: DSLResource,
-                                    instanceid: String) = None
-
-  /**
-   * Delete a resource instance for a complex resource
-   */
-  private def deleteResourceInstance(resource: DSLResource,
-                                     instanceid: String) = None
 
   private def debug(msg: String) =
     logger.debug("UserActor[%s] %s".format(_userId, msg))
