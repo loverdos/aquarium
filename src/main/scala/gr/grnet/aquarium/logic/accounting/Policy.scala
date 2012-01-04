@@ -37,7 +37,7 @@ package gr.grnet.aquarium.logic.accounting
 
 import gr.grnet.aquarium.Configurator._
 import dsl.DSL
-import com.ckkloverdos.maybe.{NoVal, Failed, Just}
+import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.util.Loggable
 import java.io.{InputStream, FileInputStream, File}
 

@@ -38,9 +38,9 @@ package gr.grnet.aquarium.logic.accounting
 import dsl._
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 import collection.immutable.SortedMap
-import gr.grnet.aquarium.Configurator._
-import gr.grnet.aquarium.util.Loggable
-import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
+import com.ckkloverdos.maybe.{Maybe, Failed, Just}
+import java.util.Date
+import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -48,49 +48,57 @@ import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 trait Accounting extends DSLUtils with Loggable {
-  
-  def chargeEvent(ev: ResourceEvent) : Maybe[List[WalletEntry]] = {
+
+  /**
+   * Creates a list of wallet entries by applying the agreement provisions on
+   * the resource state
+   *
+   * @param ev The resource event to create charges for
+   * @param agreement The agreement applicable to the user mentioned in the event
+   * @param resState The current state of the resource
+   * @param lastUpdate The last time the resource state was updated
+   */
+  def chargeEvent(ev: ResourceEvent,
+                  agreement: DSLAgreement,
+                  resState: Any,
+                  lastUpdate: Date):
+  Maybe[List[WalletEntry]] = {
 
     if (!ev.validate())
       Failed(new AccountingException("Event not valid"))
 
-    val userState = MasterConfigurator.userStateStore.findUserStateByUserId(ev.userId) match {
-      case Just(x) => x
-      case NoVal =>
-        return Failed(new AccountingException("Inexistent user: %s".format(ev.toJson)))
-      case Failed(x,y) =>
-        return Failed(new AccountingException("Error retrieving user state: %s".format(x)))
-    }
-
-    val agreement = userState.agreement.data.name
-
-    val agr = Policy.policy.findAgreement(agreement) match {
+    val resource = Policy.policy.findResource(ev.resource) match {
       case Some(x) => x
       case None => return Failed(
-        new AccountingException("Cannot find agreement:%s".format(agreement)))
+        new AccountingException("No resource [%s]".format(ev.resource)))
     }
 
-    val resource = Policy.policy.findResource(ev.resource).get
-
-    //val chargeChunks = calcChangeChunks(agr, ev.value, resource, )
-
-
-    Just(List(WalletEntry.zero))
-  }
-
-  private[logic] case class ChargeChunk(value: Float, algorithm: String,
-                                        price: Float, when: Timeslot) {
-    assert(value > 0)
-    assert(!algorithm.isEmpty)
-
-    def cost(): Float = {
-      //TODO: Apply the algorithm when we start parsing it
-      value * price
+    val amount = resource.isComplex match {
+      case true => 0
+      case false => 1
     }
+
+    val chargeChunks = calcChangeChunks(agreement, amount, resource,
+      Timeslot(lastUpdate, new Date(ev.occurredMillis)))
+
+    val entries = chargeChunks.map {
+      c =>
+        WalletEntry(
+          id = CryptoUtils.sha1(c.id),
+          occurredMillis = lastUpdate.getTime,
+          receivedMillis = System.currentTimeMillis(),
+          sourceEventIDs = List(ev.id),
+          value = c.cost,
+          reason = c.reason,
+          userId = ev.userId,
+          finalized = true
+        )
+    }
+    Just(entries)
   }
 
-  private def calcChangeChunks(agr: DSLAgreement, volume: Float,
-                               res: DSLResource, t: Timeslot): List[ChargeChunk] = {
+ def calcChangeChunks(agr: DSLAgreement, volume: Float,
+                      res: DSLResource, t: Timeslot): List[ChargeChunk] = {
 
     val alg = resolveEffectiveAlgorithmsForTimeslot(t, agr)
     val pri = resolveEffectivePricelistsForTimeslot(t, agr)
@@ -104,9 +112,9 @@ trait Accounting extends DSLUtils with Loggable {
     algChunked.keySet.map{
       x =>
         val amount = volume * (totalTime / (x.to.getTime - x.from.getTime))
-        new ChargeChunk(amount,
+        ChargeChunk(amount,
           algChunked.get(x).get.algorithms.getOrElse(res, ""),
-          priChunked.get(x).get.prices.getOrElse(res, 0F), x)
+          priChunked.get(x).get.prices.getOrElse(res, 0F), x, res)
     }.toList
   }
 
@@ -143,6 +151,27 @@ trait Accounting extends DSLUtils with Loggable {
         }
     }
   }
+}
+
+case class ChargeChunk(value: Float, algorithm: String,
+                       price: Float, when: Timeslot,
+                       resource: DSLResource) {
+  assert(value > 0)
+  assert(!algorithm.isEmpty)
+  assert(resource != null)
+
+  def cost(): Float = {
+    //TODO: Apply the algorithm when we start parsing it
+    value * price
+  }
+
+  def reason(): String =
+    "%d %s of %s from %s to %s @ %d/%s".format(value, resource.unit,
+      resource.name, when.from, when.to, price, resource.unit)
+
+  def id(): String =
+    "%d%s%d%s%s%d".format(value, algorithm, price, when.toString,
+      resource.name, System.currentTimeMillis())
 }
 
 /** An exception raised when something goes wrong with accounting */
