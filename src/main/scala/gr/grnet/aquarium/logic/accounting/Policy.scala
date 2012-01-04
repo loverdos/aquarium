@@ -35,13 +35,45 @@
 
 package gr.grnet.aquarium.logic.accounting
 
+import gr.grnet.aquarium.Configurator._
 import dsl.DSL
+import com.ckkloverdos.maybe.{NoVal, Failed, Just}
+import gr.grnet.aquarium.util.Loggable
+import java.io.{InputStream, FileInputStream, File}
 
 /**
- *  
+ * Searches for and loads the applicable accounting policy
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-object Policy extends DSL {
-  val policy = parse(getClass.getClassLoader.getResourceAsStream("policy.yaml"))
+object Policy extends DSL with Loggable {
+  lazy val policy = {
+
+    // Look for user configured policy first
+    val userConf = MasterConfigurator.props.get(Keys.aquarium_policy) match {
+      case Just(x) => x
+      case _ => logger.info("Cannot find a user configured policy")
+        "policy.yaml"
+    }
+
+    val pol = new File(userConf)
+    val stream = pol.exists() match {
+      case true =>
+        logger.info("Using policy file %s".format(userConf))
+        new FileInputStream(pol)
+      case false =>
+        logger.warn(("Cannot find policy file %s, " +
+          "looking for default policy").format(userConf))
+        getClass.getClassLoader.getResourceAsStream("policy.yaml") match {
+          case x: InputStream =>
+            logger.warn("Using default policy, this is problably bad")
+            x
+          case null =>
+            logger.error("No valid policy file found, Aquarium will fail")
+            null
+        }
+    }
+
+    parse(stream)
+  }
 }

@@ -48,24 +48,24 @@ import java.util.Date
  */
 trait DSL {
 
-    /** An empty time frame*/
-    val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
+  /**An empty time frame*/
+  val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
 
-   /** An empty resource*/
-   val emptyResource = DSLSimpleResource("", "", "")
+  /**An empty resource*/
+  val emptyResource = DSLSimpleResource("", "", "")
 
-    /** An empty algorithm */
-   val emptyAlgorithm = DSLAlgorithm("", None, Map(), emptyTimeFrame)
+  /**An empty algorithm */
+  val emptyAlgorithm = DSLAlgorithm("", None, Map(), emptyTimeFrame)
 
-   /** An empty pricelist */
-   val emptyPriceList = DSLPriceList("", None, Map(), emptyTimeFrame)
+  /**An empty pricelist */
+  val emptyPriceList = DSLPriceList("", None, Map(), emptyTimeFrame)
 
-  /** An empty creditplan */
-   val emptyCreditPlan = DSLCreditPlan("", None, 0,
-     List(DSLTimeSpec(0,0,-1,-1,-1)), emptyTimeFrame)
+  /**An empty creditplan */
+  val emptyCreditPlan = DSLCreditPlan("", None, 0,
+    List(DSLTimeSpec(0, 0, -1, -1, -1)), emptyTimeFrame)
 
-   /** An empty agreement*/
-   val emptyAgreement = DSLAgreement("", None, emptyAlgorithm, emptyPriceList, emptyCreditPlan)
+  /**An empty agreement*/
+  val emptyAgreement = DSLAgreement("", None, emptyAlgorithm, emptyPriceList, emptyCreditPlan)
 
   /**
    * Parse an InputStream containing an Aquarium DSL algorithm.

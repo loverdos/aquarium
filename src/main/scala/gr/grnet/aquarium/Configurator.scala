@@ -422,6 +422,11 @@ object Configurator {
     final val mongo_connection_pool_size = "mongo.connection.pool.size"
 
     /**
+     * Location of the Aquarium accounting policy config file
+     */
+    final val aquarium_policy = "aquarium.policy"
+
+    /**
      * A time period in milliseconds for which we can tolerate stale data regarding user state.
      *
      * The smaller the value, the more accurate the user credits and other state data are.

@@ -3,6 +3,7 @@ package gr.grnet.aquarium.processor.actor
 import com.ckkloverdos.maybe.{Just, Failed, NoVal}
 import gr.grnet.aquarium.messaging.MessagingNames
 import gr.grnet.aquarium.logic.events.{AquariumEvent, ResourceEvent}
+import gr.grnet.aquarium.actor.DispatcherRole
 
 
 /**
@@ -14,13 +15,11 @@ final class ResourceEventProcessorService extends EventProcessorService {
 
   override def decode(data: Array[Byte]) : AquariumEvent = ResourceEvent.fromBytes(data)
 
-  /*override def forward(evt: AquariumEvent): Unit = {
+  override def forward(evt: AquariumEvent): Unit = {
     val resourceEvent = evt.asInstanceOf[ResourceEvent]
     val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
     businessLogicDispacther ! ProcessResourceEvent(resourceEvent)
-  }*/
-
-  override def forward(evt: AquariumEvent): Unit = {}
+  }
 
   override def exists(event: AquariumEvent): Boolean =
     _configurator.resourceEventStore.findResourceEventById(event.id).isJust
@@ -40,8 +39,8 @@ final class ResourceEventProcessorService extends EventProcessorService {
   override def persisterThreads: Int = numCPUs
   override def name = "resevtproc"
 
-  val persister = new PersisterManager
-  val queueReader = new QueueReaderManager
+  lazy val persister = new PersisterManager
+  lazy val queueReader = new QueueReaderManager
 
   override def persisterManager   = persister
   override def queueReaderManager = queueReader

@@ -6,7 +6,7 @@ aquariumpolicy:
       complex: false
       costpolicy: diff
     - resource:
-      name: bnddow
+      name: bnddown
       unit: MB
       complex: false
       costpolicy: diff
