@@ -417,6 +417,11 @@ object Configurator {
     final val persistence_db = "persistence.db"
 
     /**
+     * Maximum number of open connections to MongoDB
+     */
+    final val mongo_connection_pool_size = "mongo.connection.pool.size"
+
+    /**
      * A time period in milliseconds for which we can tolerate stale data regarding user state.
      *
      * The smaller the value, the more accurate the user credits and other state data are.

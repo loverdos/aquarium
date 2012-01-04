@@ -52,38 +52,26 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   private[this] var _username: String = _
   private[this] var _password: String = _
 
-  private[this] var _eventStore: ResourceEventStore = _
-  private[this] var _userStore: UserStateStore = _
-  private[this] var _walletStore: WalletEntryStore = _
-  private[this] var _userEventStore: UserEventStore = _
-
   def configure(props: Props) = {
     this._database = props.getEx(Keys.persistence_db)
     this._username = props.getEx(Keys.persistence_username)
     this._password = props.getEx(Keys.persistence_password)
     val host = props.getEx(Keys.persistence_host)
-    val port = props.get(Keys.persistence_port)
-    val foo = port.getOr(throw new Exception("Not a valid port number for MongoDB connection")).toInt
+    val port = props.getEx(Keys.persistence_port).toInt
 
     try {
-      val addr = new ServerAddress(host, foo)
+      val addr = new ServerAddress(host, port)
+
       val opt = new MongoOptions()
+      opt.connectionsPerHost = props.getEx(Keys.mongo_connection_pool_size).toInt
+      opt.threadsAllowedToBlockForConnectionMultiplier = 8
+
       this._mongo = new Mongo(addr, opt)
-      val mongoStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
-      this._eventStore = mongoStore
-      this._userStore  = mongoStore
-      this._walletStore  = mongoStore
-      this._userEventStore  = mongoStore
     } catch {
       case e: MongoException =>
         throw new Exception("Cannot connect to mongo at %s:%s".format(host, port), e)
     }
   }
-
-  //def userStateStore = _userStore
-  //def resourceEventStore = _eventStore
-  //def walletEntryStore = _walletStore
-  //def userEventStore = _userEventStore
 
   def userStateStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
   def resourceEventStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
