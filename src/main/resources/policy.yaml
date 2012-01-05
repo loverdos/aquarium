@@ -4,12 +4,12 @@ aquariumpolicy:
       name: bndup
       unit: MB
       complex: false
-      costpolicy: diff
+      costpolicy: continuous
     - resource:
       name: bnddown
       unit: MB
       complex: false
-      costpolicy: diff
+      costpolicy: continuous
     - resource:
       name: vmtime
       unit: Hour
@@ -20,7 +20,7 @@ aquariumpolicy:
       name: dsksp
       unit: MB
       complex: false
-      costpolicy: diff
+      costpolicy: continuous
 
   algorithms:
     - algorithm:

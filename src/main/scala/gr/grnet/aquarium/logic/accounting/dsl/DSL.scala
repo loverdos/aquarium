@@ -52,7 +52,7 @@ trait DSL {
   val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
 
   /**An empty resource*/
-  val emptyResource = DSLSimpleResource("", "", "")
+  val emptyResource = DSLSimpleResource("", "", OnOffCostPolicy)
 
   /**An empty algorithm */
   val emptyAlgorithm = DSLAlgorithm("", None, Map(), emptyTimeFrame)
@@ -123,7 +123,7 @@ trait DSL {
     }
 
     val costpolicy = resource / Vocabulary.costpolicy match {
-      case x: YAMLStringNode => x.string
+      case x: YAMLStringNode => DSLCostPolicy(x.string)
       case _ => throw new DSLParseException("Resource %s does specify a cost policy".format(name))
     }
 

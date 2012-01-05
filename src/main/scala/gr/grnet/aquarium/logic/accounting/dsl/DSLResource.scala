@@ -48,7 +48,7 @@ abstract class DSLResource (
   val unit: String,
 
   /** Algorithm used to calculate costs */
-  val costpolicy: String
+  val costpolicy: DSLCostPolicy
 ) {
   def isComplex: Boolean
 }
@@ -65,7 +65,7 @@ case class DSLComplexResource (
   override val unit: String,
 
   /**Algorithm used to calculate costs */
-  override val costpolicy: String,
+  override val costpolicy: DSLCostPolicy,
 
   /**Name of field used to describe a unique instance of the resource*/
   descriminatorField: String
@@ -84,7 +84,8 @@ case class DSLSimpleResource (
   override val unit: String,
 
   /**Algorithm used to calculate costs */
-  override val costpolicy: String
+  override val costpolicy: DSLCostPolicy
 ) extends DSLResource(name, unit, costpolicy) {
   override def isComplex = false
 }
+
