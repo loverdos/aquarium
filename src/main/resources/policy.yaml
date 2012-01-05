@@ -2,12 +2,12 @@ aquariumpolicy:
   resources:
     - resource:
       name: bndup
-      unit: MB
+      unit: MB/hr
       complex: false
       costpolicy: continuous
     - resource:
       name: bnddown
-      unit: MB
+      unit: MB/hr
       complex: false
       costpolicy: continuous
     - resource:
@@ -18,7 +18,7 @@ aquariumpolicy:
       descriminatorfield: vmid
     - resource:
       name: dsksp
-      unit: MB
+      unit: MB/hr
       complex: false
       costpolicy: continuous
 

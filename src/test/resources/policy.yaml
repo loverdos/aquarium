@@ -2,12 +2,12 @@ aquariumpolicy:
   resources:
     - resource:
       name: bandwidthup
-      unit: MB
+      unit: MB/hr
       complex: false
       costpolicy: continuous
     - resource:
       name: bandwidthdown
-      unit: MB
+      unit: MB/hr
       complex: false
       costpolicy: continuous
     - resource:
@@ -18,7 +18,7 @@ aquariumpolicy:
       descriminatorfield: vmid
     - resource:
       name: diskspace
-      unit: MB
+      unit: MB/hr
       complex: false
       costpolicy: continuous
 
