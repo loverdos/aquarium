@@ -43,7 +43,6 @@ package gr.grnet.aquarium.logic.accounting.dsl
  */
 abstract class DSLCostPolicy(name: String)
 
-
 object DSLCostPolicy {
   def apply(name: String): DSLCostPolicy  = {
     name match {
@@ -91,3 +90,27 @@ object OnOffCostPolicy extends DSLCostPolicy("onoff")
  * that should be charged per volume once (e.g. the allocation of a volume)
  */
 object DiscreteCostPolicy extends DSLCostPolicy("discrete")
+
+/**
+ * Encapsulates the possible states that a resource with an
+ * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]]
+ * can be.
+ */
+abstract class OnOffPolicyResourceState(state: String)
+
+object OnOffPolicyResourceState {
+  def apply(name: Any): OnOffPolicyResourceState = {
+    name match {
+      case x: String if (x.equalsIgnoreCase("on"))  => OnResourceState
+      case y: String if (y.equalsIgnoreCase("off")) => OffResourceState
+      case a: Float if (a == 0) => OffResourceState
+      case b: Float if (b == 1) => OnResourceState
+      case i: Int if (i == 0) => OffResourceState
+      case j: Int if (j == 1) => OnResourceState
+      case _ => throw new DSLParseException("Invalid resource state %s".format(name))
+    }
+  }
+}
+
+object OnResourceState  extends OnOffPolicyResourceState("on")
+object OffResourceState extends OnOffPolicyResourceState("off")
