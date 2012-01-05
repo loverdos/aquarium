@@ -176,4 +176,9 @@ case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
     else if (this.startsAfter(that)) 1
     else 0
   }
+
+  /**
+   * Converts the timeslot to the amount of hours it represents
+   */
+  def hours: Float = ((to.getTime - from.getTime)/1000)/60
 }
