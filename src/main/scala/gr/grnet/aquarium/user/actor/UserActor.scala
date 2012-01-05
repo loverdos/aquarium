@@ -42,9 +42,9 @@ import java.util.Date
 import gr.grnet.aquarium.processor.actor._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
-import gr.grnet.aquarium.user.{OwnedResourcesSnapshot, UserState}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLComplexResource, DSLResource}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
+import gr.grnet.aquarium.user.{UserDataSnapshotException, OwnedResourcesSnapshot, UserState}
 
 
 /**
@@ -164,7 +164,12 @@ class UserActor extends AquariumActor with Loggable with Accounting {
     }
 
     // There is a one-to-one correspondence from an event to credit diff generation (wallet entry)
-    val resState = resourceState(resource, instanceId).get
+    val resState = getOrCreateResourceState(resource, instanceId) match {
+      case Just(x) => x
+      case Failed(e, s) => throw e
+      case NoVal => throw new AccountingException("Cannot retrieve resource state")
+    }
+
     val walletEntriesM = chargeEvent(ev, _userState.agreement.data,
       resState.value, resState.lastUpdate)
     walletEntriesM match {
@@ -245,41 +250,45 @@ class UserActor extends AquariumActor with Loggable with Accounting {
   }
 
   /**
-   * Logic to retrieve the state for a resource on request. For complex
-   * resources, it expects an instance id to be registered with the
-   * resource state. For non complex resources, if the resource has not
-   * been used yet, it will create an entry in the state store.
+   * Logic to retrieve the state for a resource on request. If no entry for
+   * the resource has been recorded yet, the resource will be added to the
+   * user state (currently a `Map[DSLResource, Map[String, Float]]`),
+   * with the following convention:
+   *
+   * * if its type is `complex`, then the entry
+   *   `(resource -> Map(instanceId -> 0))` is added
+   * * if its type is `simple`, then the entry
+   *   `(resource -> Map("1" -> 0))` is added
    */
-  private def resourceState(resource: DSLResource, instanceId: Option[String]):
-  Option[ResourceState] =
-    resource.isComplex match {
-      case true ⇒ instanceId match {
-        case Some(x) ⇒ _userState.ownedResources.data.get(resource) match {
-          case Some(y) if (y.isInstanceOf[Map[String, Any]]) ⇒
-            val measurement = y.asInstanceOf[Map[String, Any]].get(x)
-            Some(ResourceState(resource, new Date(_userState.ownedResources.snapshotTime), measurement))
-          case Some(y) ⇒
-            warn("Should never reach this line")
-            Some(ResourceState(resource, new Date(_userState.ownedResources.snapshotTime), y))
-          case None ⇒
-            err("No instance %s for resource".format(instanceId.get, resource.name))
-            None
-        }
+  private def getOrCreateResourceState(resource: DSLResource, instanceId: Option[String]):
+  Maybe[ResourceState] = {
+
+    val instId = resource.isComplex match {
+      case true => instanceId match {
+        case Some(x) => x
         case None =>
-          err("No instance id for complex resource %s".format(resource.name))
-          None
+          logger.error("Complex resource [%s] with instance id null".format(resource))
+          return Failed(new UserDataSnapshotException("Error creating " +
+            "resource entry. Complex resource [%s] with instance id null".format(resource)))
       }
-      case false ⇒ _userState.ownedResources.data.get(resource) match {
-        case Some(y) ⇒
-          Some(ResourceState(resource, new Date(_userState.ownedResources.snapshotTime), y))
-        case None ⇒
-          debug("First request for resource %s, creating...".format(resource.name))
-          val _ownedResources = _userState.ownedResources
-          val _ownedResourcesData = _ownedResources.data
-          _userState = _userState.copy(ownedResources = _ownedResources.copy(data = _ownedResourcesData.updated(resource, "")))
-          resourceState(resource, None)
-      }
+      case false => "1"
     }
+
+    val currentState = _userState.ownedResources.data.get(resource) match {
+      case Some(x) ⇒ x
+      case None ⇒
+        val _ownedResources = _userState.ownedResources
+        val _ownedResourcesData = _ownedResources.data
+
+        _userState = _userState.copy(
+          ownedResources = _ownedResources.copy(
+            data = _ownedResourcesData.updated(resource, Map(instId -> 0F))))
+        return getOrCreateResourceState(resource, instanceId)
+    }
+
+   Just(ResourceState(resource, new Date(_userState.ownedResources.snapshotTime),
+     currentState.getOrElse(instId, 0F)))
+  }
 
   private def debug(msg: String) =
     logger.debug("UserActor[%s] %s".format(_userId, msg))

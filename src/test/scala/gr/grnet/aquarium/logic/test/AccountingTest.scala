@@ -41,6 +41,7 @@ import org.junit.{Test}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import java.util.Date
 import junit.framework.Assert._
+import gr.grnet.aquarium.logic.events.ResourceEvent
 
 /**
  * Tests for the methods that do accounting
@@ -71,5 +72,15 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
     algChunks.keySet.zip(priceChunks.keySet).foreach {
       t => assertEquals(t._1, t._2)
     }
+  }
+
+  @Test
+  def testChargeEvent(): Unit = {
+    before
+    val agr = dsl.findAgreement("scaledbandwidth").get
+    val evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bandwidthup", "1", 123, Map())
+
+    val wallet = chargeEvent(evt, agr, 112, new Date(1325755902000L))
+    wallet.foreach(x => x.foreach(a => println(a.toJson)))
   }
 }

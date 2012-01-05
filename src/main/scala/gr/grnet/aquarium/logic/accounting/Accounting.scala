@@ -51,7 +51,7 @@ trait Accounting extends DSLUtils with Loggable {
 
   /**
    * Creates a list of wallet entries by applying the agreement provisions on
-   * the resource state
+   * the resource state.
    *
    * @param ev The resource event to create charges for
    * @param agreement The agreement applicable to the user mentioned in the event
@@ -60,9 +60,11 @@ trait Accounting extends DSLUtils with Loggable {
    */
   def chargeEvent(ev: ResourceEvent,
                   agreement: DSLAgreement,
-                  resState: Any,
+                  resState: Float,
                   lastUpdate: Date):
   Maybe[List[WalletEntry]] = {
+
+    assert(lastUpdate.getTime < ev.occurredMillis)
 
     if (!ev.validate())
       Failed(new AccountingException("Event not valid"))
@@ -73,13 +75,26 @@ trait Accounting extends DSLUtils with Loggable {
         new AccountingException("No resource [%s]".format(ev.resource)))
     }
 
-    val amount = resource.isComplex match {
-      case true => 0
-      case false => 1
+    val amount = resource.costpolicy match {
+      case ContinuousCostPolicy => resState.asInstanceOf[Float]
+      case DiscreteCostPolicy => ev.value
+      case OnOffCostPolicy =>
+        resState.asInstanceOf[OnOffPolicyResourceState] match {
+          case OnResourceState =>
+            OnOffPolicyResourceState(ev.value) match {
+              case OnResourceState => throw new AccountingException("")
+              case OffResourceState => 1
+            }
+          case OffResourceState =>
+            OnOffPolicyResourceState(ev.value) match {
+              case OnResourceState => 0
+              case OffResourceState => throw new AccountingException("")
+            }
+        }
     }
 
-    val chargeChunks = calcChangeChunks(agreement, amount, resource,
-      Timeslot(lastUpdate, new Date(ev.occurredMillis)))
+    val chargeChunks = calcChangeChunks(agreement, amount,
+      resource, Timeslot(lastUpdate, new Date(ev.occurredMillis)))
 
     val entries = chargeChunks.map {
       c =>
@@ -91,28 +106,50 @@ trait Accounting extends DSLUtils with Loggable {
           value = c.cost,
           reason = c.reason,
           userId = ev.userId,
-          finalized = true
+          finalized = true //TODO: Fix this
         )
     }
     Just(entries)
   }
 
- def calcChangeChunks(agr: DSLAgreement, volume: Float,
-                      res: DSLResource, t: Timeslot): List[ChargeChunk] = {
+  def calcChangeChunks(agr: DSLAgreement, volume: Float,
+                       res: DSLResource, t: Timeslot): List[ChargeChunk] = {
 
     val alg = resolveEffectiveAlgorithmsForTimeslot(t, agr)
     val pri = resolveEffectivePricelistsForTimeslot(t, agr)
     val chunks = splitChargeChunks(alg, pri)
-
     val algChunked = chunks._1
     val priChunked = chunks._2
 
     assert(algChunked.size == priChunked.size)
-    val totalTime = t.from.getTime - t.to.getTime
-    algChunked.keySet.map{
+
+    res.costpolicy match {
+      case DiscreteCostPolicy => calcChargeChunksDiscrete(algChunked, priChunked, volume, res)
+      case _ => calcChargeChunksContinuous(algChunked, priChunked, volume, res)
+    }
+  }
+
+  private[logic]
+  def calcChargeChunksDiscrete(algChunked: Map[Timeslot, DSLAlgorithm],
+                               priChunked: Map[Timeslot, DSLPriceList],
+                               volume: Float, res: DSLResource): List[ChargeChunk] = {
+    assert(algChunked.size == 1)
+    assert(priChunked.size == 1)
+    assert(algChunked.keySet.head.compare(priChunked.keySet.head) == 0)
+
+    List(ChargeChunk(volume,
+      algChunked.values.head.algorithms.getOrElse(res, ""),
+      priChunked.values.head.prices.getOrElse(res, 0F),
+      algChunked.keySet.head, res))
+  }
+
+  private[logic]
+  def calcChargeChunksContinuous(algChunked: Map[Timeslot, DSLAlgorithm],
+                                 priChunked: Map[Timeslot, DSLPriceList],
+                                 volume: Float, res: DSLResource): List[ChargeChunk] = {
+    algChunked.keySet.map {
       x =>
-        val amount = volume * (totalTime / (x.to.getTime - x.from.getTime))
-        ChargeChunk(amount,
+        ChargeChunk(volume,
           algChunked.get(x).get.algorithms.getOrElse(res, ""),
           priChunked.get(x).get.prices.getOrElse(res, 0F), x, res)
     }.toList
@@ -160,18 +197,28 @@ case class ChargeChunk(value: Float, algorithm: String,
   assert(!algorithm.isEmpty)
   assert(resource != null)
 
-  def cost(): Float = {
-    //TODO: Apply the algorithm when we start parsing it
-    value * price
-  }
+  def cost(): Float =
+    //TODO: Apply the algorithm and policy, when we start parsing it
+    resource.costpolicy match {
+      case DiscreteCostPolicy =>
+        value * price
+      case _ =>
+        value * price * when.hours
+    }
 
   def reason(): String =
-    "%d %s of %s from %s to %s @ %d/%s".format(value, resource.unit,
-      resource.name, when.from, when.to, price, resource.unit)
+    resource.costpolicy match {
+      case DiscreteCostPolicy =>
+        "%f %s at %s @ %f/%s".format(value, resource.name, when.from, price,
+          resource.unit)
+      case _ =>
+        "%f %s of %s from %s to %s @ %f/%s".format(value, resource.unit,
+          resource.name, when.from, when.to, price, resource.unit)
+    }
 
   def id(): String =
-    "%d%s%d%s%s%d".format(value, algorithm, price, when.toString,
-      resource.name, System.currentTimeMillis())
+    CryptoUtils.sha1("%f%s%f%s%s%d".format(value, algorithm, price, when.toString,
+      resource.name, System.currentTimeMillis()))
 }
 
 /** An exception raised when something goes wrong with accounting */

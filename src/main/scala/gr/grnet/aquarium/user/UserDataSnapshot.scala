@@ -60,7 +60,19 @@ case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends U
 
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
-case class OwnedResourcesSnapshot(data: Map[DSLResource, Any /*ResourceState*/], snapshotTime: Long) extends UserDataSnapshot[Map[DSLResource, Any /*ResourceState*/]]
+/**
+ * Maintains the current state of resources owned by the user. In order to have a
+ * uniform representation of the resource state for all resource types
+ * (complex or simple) the following convention applies:
+ *
+ *  * If the resource is complex, then `data.get(AResource)` returns a Map of
+ *  `("instance-id" -> current_resource_value)`, as expected.
+ *  * If the resource is simple, then `data.get(AResource)` returns
+ *   `("1" -> current_resource_value)`. This means that simple resources are
+ *   always stored with key 1 as `instance-id`.
+ */
+case class OwnedResourcesSnapshot(data: Map[DSLResource, Map[String, Float]], snapshotTime: Long)
+  extends UserDataSnapshot[Map[DSLResource, Map[String, Float]]]
 
 /**
  * Bandwidth is counted in MB (?)
@@ -90,3 +102,10 @@ case class VMTimeSnapshot(data: Double, snapshotTime: Long) extends UserDataSnap
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 case class DiskSpaceSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
+
+/**
+ * A generic exception thrown when errors occur in dealing with user data snapshots
+ *
+ * @author Georgios Gousios <gousiosg@gmail.com>
+ */
+class UserDataSnapshotException(msg: String) extends Exception(msg)

@@ -53,4 +53,4 @@ case object UserActorStop extends UserActorMessage
 
 case class ResourceState(resource: DSLResource,
                          lastUpdate: Date,
-                         value: Any)
+                         value: Float)
