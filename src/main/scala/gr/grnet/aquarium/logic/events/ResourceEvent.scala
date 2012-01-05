@@ -66,9 +66,6 @@ case class ResourceEvent(
       case None => return false
     }
 
-    if (!details.keySet.contains("value"))
-      return false
-
     if (res.isComplex &&
       !details.keySet.contains(res.asInstanceOf[DSLComplexResource].descriminatorField))
       return false
