@@ -3,6 +3,10 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage[british]{babel}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{color}
+
 \newcommand{\cL}{{\cal L}}
 
 \begin{document}
@@ -12,7 +16,9 @@
 
 \titlebanner{DRAFT---Do not distribute}
 
-\title{Aquarium: Accounting for the Cloud in the Cloud}
+
+
+\title{Aquarium: Billing for the Cloud in the Cloud}
 
 \authorinfo{Georgios Gousios \and Christos Loverdos}
 {GRNet SA}
@@ -34,20 +40,270 @@
 
 \section{Introduction}
 \section{Requirements}
+
+
+\subsection{Application Environment}
+Aquarium is designed and developed as part of the Okeanos project at GRNet. The
+Okeanos project is building a full stack public IaaS system for Greek
+universities, and several services on top of it. Several components comprise
+the Okeanos infrastructure:
+
+\begin{description}
+
+    \item[Synnefo] is an IaaS management console. Users can create and start
+        VMs, monitor their usage, create private internal networks among VMs
+        and connect to them over the web. The service backend is based on
+        Google's Ganneti for VM host management and hundrends of physical
+        VM container nodes.
+
+    \item[Archipelago] is a storage service, based on the Rados
+        distributed object store. It is currently under development, and the
+        plan is to act as the single point of storage for VM images, shared
+        volumes and user files, providing clonable snapshots and distributed
+        fault tolerance.
+    
+    \item[Pithos] is a user oriented file storage service. Currently it its
+        second incarnation, it supports content deduplication, sharing of files
+        and folders and a multitude of clients.
+
+    \item[Astakos] is an identity consolidation system that also acts as the
+        entry point to the entire infrastructure. Users can login using 
+        identities from multiple systems, such as the Shibboleth (SAML) 
+        federation enabled across all Greek universities or their Twitter 
+        accounts.
+
+\end{description}
+
+While all the above systems (and several prospective ones) have different 
+user interfaces and provide different functionalities in the context of
+the GRnet IaaS, they all share a common notion of \emph{resources}, access
+and manipulation options to which they offer to users. 
+
+
+\subsection{Configuration}
+
+Billing systems are by nature open ended. As new services are deployed, new
+resources appear, while others might be phased out.  Moreover, changes to
+company policies may trigger changes to price lists for those resources, while
+ad-hoc requests for large scale computational resources may require special
+pricing policies. In order for a billing system to be able to successfully
+adapt to changing requirements, it must be able to accommodate such changes
+without requiring changes to the application itself. This means that all
+information required for Aquarium in order to perform a billing operation,
+must be provided to it externally. Moreover, to ensure high-availability,
+billing configuration should be updatable while Aquarium is running, or at
+least with minimal downtime, without affecting the operation of external
+systems.
+
+
+
+\subsection{Scaling}
+
+In the context of the Okeanos system, Aquarium provides billing services on a
+per user basis for all resources exposed by other systems. As such, it is in
+the critical path of user requests that modify resource state; all supported
+applications must query Aquarium in order to ensure that the user has enough
+credits to create a new resource. This means that for a large number of users
+(given previous GRNet systems usage by the Greek research community, we
+estimate a concurrency level of 30.000 users), Aquarium must update and
+maintain in a queryable form their credit status, 
+with soft realtime guarantees. 
+
+Being on the critical path also means that Aquarium must be highly resilient,
+too. If Aquarium fails, all supported systems will also fail. Even if Aquarium
+fails for a short period of time, it must not loose any billing events, as this
+will allow users to use resources without paying for them. Moreover, in case of
+failure, Aquarium must not corrupt any billing data under any circumstances,
+while it should reach an operating state very fast after a service restart.
+
 \section{Architecture}
 
+
+
+\section{Implementation}
+
+\subsection{The configuration DSL}
+
+The configuration requirements presented above were addressed by creating a new
+domain specific language ({\sc dsl}), based on the YAML format.  The DSL
+enables administrators to specify billable resources, billing policies and
+price lists and combine them arbitrarily into agreements applicable to specific
+users, user groups or the whole system. 
+The DSL supports inheritance for policies, price lists and agreements and composition in the case of agreements.
+It also facilitates the
+definition of generic, repeatable debiting rules, which are then used by the
+system to refill the user's account with credits on a periodic based.
+
+The DSL is in itself based on five top-level entities, namely:
+
+\begin{description}
+
+    \item[Resources] specify the properties of resources that Aquarium knows
+        about. Apart from the expected ones (name, unit etc), 
+        a resource has two properties that affect billing: \textsf{costpolicy}
+        defines whether the billing operation is to be performed at the moment
+        a billing event has arrived, while the \textsf{complex} attribute defines
+        whether a resource can have many instances per user.
+
+    \item[Pricelists] assign a price tag to each resource, within a timeframe.
+    
+    \item[Algorithms] specify the way the billing operation is done in response
+        to a billing event. The simplest (and default) way is to multiply the 
+        billable quantity with the applicable price. To enable more complex billing
+        scenarios, the Aquarium DSL supports a simple imperative language with
+        a number of implicit variables (e.g. \texttt{price, volume, date}) 
+        that enable administrators to specify, e.g. billing algorithms that
+        scale with billable volume. Similarily to pricelists, algorithms
+        have an applicability timeframe attached to them.
+
+    \item[Crediplans] define a number of credits to give to users and a repetition
+        period.
+
+    \item[Agreements] assign a name to algorithm, pricelist and creditplan triplets,
+        which is then assigned to each user.
+
+\end{description}
+
+
 \begin{figure}
-  \begin{center}
-  
-  \end{center}
-  \caption{Foundational framework of the snork mechanism.}
-  \label{fig-ffsm}
+\lstset{language=ruby, basicstyle=\footnotesize,
+stringstyle=\ttfamily, 
+flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
+
+\begin{lstlisting}
+resources:
+  - resource:
+    name: bandwidthup
+    unit: MB/hr
+    complex: false
+    costpolicy: continuous
+pricelists:
+  - pricelist: 
+    name: default
+    bandwidthup: 0.01
+    effective:
+      from: 0
+  - pricelist: 
+    name: everyTue2
+    overrides: default
+    bandwidthup: 0.1
+    effective:
+      repeat:
+      - start: "00 02 * * Tue"
+        end:   "00 02 * * Wed"
+      from: 1326041177 #Sun, 8 Jan 2012 18:46:27 EET
+algorithms:
+  - algorithm:
+    name: default
+    bandwidthup: $price times $volume
+    effective:
+      from: 0
+agreements:
+  - agreement:
+    name: scaledbandwidth
+    pricelist: everyTue2
+    algorithm:
+      bandwidthup: |
+        if $volume gt 15 then
+          $volume times $price
+        elsif $volume gt 15 and volume lt 30 then
+          $volume times $price times 1.2
+        else
+          $volume times price times 1.4
+        end
+\end{lstlisting}
+
+\caption{A simple billing policy definition.} 
+\label{fig:dsl}
+\end{figure}
+
+In Figure~\ref{fig:dsl}, we present the definition of a simple (albeit valid) 
+policy. The policy parsing is done top down, so the order of definition 
+is important. The definition starts with a resource, whose name is then
+re-used in order to attach a pricelist and a price calculation algorith to it.
+In the case of pricelists, we present an example of \emph{temporal overloading};
+the \texttt{everyTue2} pricelist overrides the default one, but only for 
+all repeating time frames between every Tuesday at 02:00 and Wednesday at
+02:00, starting from the timestamp indicated at the \texttt{from} field. Another
+example of overloading is presented at the definition of the agreement, which
+overloads the default algorithm definition using the imperative part of the
+Aquarium {\sc dsl} to provide a scaling charge algorithm.
+
+\subsection{Billing}
+
+As common to most similar systems, billing in Aquarium is the application of
+a billing contract to an incoming billing event in order to produce an 
+entry for the user's wallet. However, in stark contrast to most other systems,
+which rely on database transactions in order to securely modify the user's
+balance, Aquarium performs account updates asynchronously and concurrently
+for all known users.
+
+Billing events are obtained by a connection to a reliable message queue.
+The billing event format depends on the 
+The actual format of the event is presented in Figure~\ref{fig:resevt}.
+
+\begin{figure}
+\lstset{language=C, basicstyle=\footnotesize,
+stringstyle=\ttfamily, 
+flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
+
+\begin{lstlisting}
+{
+  "id":"4b3288b57e5c1b08a67147c495e54a68655fdab8",
+  "occured":1314829876295,
+  "userId":31,
+  "cliendId":3,
+  "resource":"vmtime",
+  "eventVersion":1,
+  "value": 1,
+  "details":{
+    "vmid":"3300",
+    "action": "on"
+  }
+}
+\end{lstlisting}
+\caption{A billing event example} 
+\label{fig:resevt}
+
 \end{figure}
 
 
 \section{Performance}
+
+To evaluate the performance and scalability of Aquarium, we performed two
+experiments: The first one is a micro-benchmark that measures the time required
+for the basic processing operation performed by Aquarium, which is billing for
+increasing number of messages. The second one demonstrates Aquarium's
+scalability on a single node with respect to the number of users.  In both
+cases, Aquarium was run on a MacBookPro featuring a quad core 2.33{\sc g}hz
+Intel i7 processor and 8{\sc gb} of {\sc ram}. We selected Rabbit{\sc mq} and
+Mongo{\sc db} as the queue and database servers, both of which were run on a
+virtualised 4 core with 4{\sc gb} {\sc ram} Debian Linux server. Both systems
+were run using current versions at the time of benchmarking (2.7.1 for
+Rabbit{\sc mq} and 2.6 for Mongo{\sc db}).  The two systems were connected with
+a full duplex 100Mbps connection.  No particular optimization was performed on
+either back-end system, nor to the {\sc jvm} that run Aquarium. 
+
+To simulate a realistic deployment, Aquarium was configured, using the policy
+{\sc dsl} to handle billing events for 4 types of resources, using 3 overloaded
+pricelists, 2 overloaded algorithms, all of which were combined to 10 different
+agreements, which were randomly (uniformly) assigned to users. To drive the
+benchmarks, we used a synthetic load generator that worked in two stages: it
+first created a configurable number of users and then produced billing events
+that 
+
 \section{Related Work}
+
 \section{Conclusions and Future Work}
+In this paper, we presented Aquarium, a high-performance, generic accounting 
+system, currently tuned for cloud applications.
+
+Aquarium is currently under development, with a first operational version 
+being planned for early 2012. All subsystems are operational, and the system
+can already support 
+
+Aquarium is available under an open source license at 
+\url{https://code.grnet.gr/projects/aquarium}.
 
 \bibliographystyle{abbrvnat}
 \bibliography{aquarium}
