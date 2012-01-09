@@ -202,12 +202,12 @@ class MongoDBStore(
   }
 
   def findPreviousEntry(userId: String, resource: String,
-                        instanceid: String,
+                        instanceId: String,
                         finalized: Option[Boolean]): List[WalletEntry] = {
     val q = new BasicDBObject()
     q.put(WalletJsonNames.userId, userId)
     q.put(WalletJsonNames.resource, resource)
-    q.put(WalletJsonNames.instanceId, instanceid)
+    q.put(WalletJsonNames.instanceId, instanceId)
     finalized match {
       case Some(x) => q.put(WalletJsonNames.finalized, x)
       case None =>

@@ -30,5 +30,5 @@ trait WalletEntryStore {
    * instance id.
    */
   def findPreviousEntry(userId: String, resource: String,
-                        instanceid: String, finalized: Option[Boolean]): List[WalletEntry]
+                        instanceId: String, finalized: Option[Boolean]): List[WalletEntry]
 }

@@ -66,7 +66,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
 
   private[this] def processResourceEvent(resourceEvent: ResourceEvent, checkForOlderEvents: Boolean): Unit = {
     if(checkForOlderEvents) {
-      logger.debug("Checking for events older than %s" format resourceEvent)
+      DEBUG("Checking for events older than %s" format resourceEvent)
       processOlderResourceEvents(resourceEvent)
     }
 
