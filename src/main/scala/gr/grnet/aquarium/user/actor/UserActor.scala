@@ -300,11 +300,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
    */
   private[this] def findUserState(userId: String): Maybe[UserState] = {
     val usersDB = _configurator.storeProvider.userStateStore
-      usersDB.findUserStateByUserId(userId) match {
-        case userStateJ @ Just(userState) ⇒
-          userStateJ
-        case e ⇒ e
-      }
+    usersDB.findUserStateByUserId(userId)
   }
 
   /**
