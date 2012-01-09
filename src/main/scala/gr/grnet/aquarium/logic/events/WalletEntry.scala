@@ -23,6 +23,8 @@ case class WalletEntry(
     value: Float,
     reason: String,
     userId: String,
+    resource: String,
+    instanceid: String,
     finalized: Boolean)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
@@ -44,5 +46,5 @@ object WalletEntry {
     JsonHelpers.jsonToObject[WalletEntry](json)
   }
 
-  def zero = WalletEntry("", 1L, 1L, Nil,1,"","foo", false)
+  def zero = WalletEntry("", 1L, 1L, Nil,1,"","foo", "bar", "0", false)
 }

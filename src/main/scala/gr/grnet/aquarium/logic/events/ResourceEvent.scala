@@ -60,16 +60,26 @@ case class ResourceEvent(
 
   def validate() : Boolean = {
 
-    val res = Policy.policy.findResource(resource) match {
-      case Some(x) => x
-      case None => return false
-    }
-
-    if (res.isComplex &&
-      !details.keySet.contains(res.asInstanceOf[DSLComplexResource].descriminatorField))
+    if (getInstanceId.isEmpty)
       return false
 
     true
+  }
+
+  /**
+   * Return the instance id affected by this resource event. If either the
+   * resource or the instance id field cannot be found, this method returns an
+   * empty String.
+   */
+  def getInstanceId: String = {
+    Policy.policy.findResource(this.resource) match {
+      case None => ""
+      case Some(x) => x.isComplex match {
+        case false => "1"
+        case true =>
+          details.getOrElse(x.asInstanceOf[DSLComplexResource].descriminatorField, "")
+      }
+    }
   }
 
   def setRcvMillis(millis: Long) = copy(receivedMillis = millis)

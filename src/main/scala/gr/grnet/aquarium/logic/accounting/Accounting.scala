@@ -133,6 +133,8 @@ trait Accounting extends DSLUtils with Loggable {
           value = c.cost,
           reason = c.reason,
           userId = ev.userId,
+          resource = ev.resource,
+          instanceid = ev.getInstanceId,
           finalized = isFinal
         )
     }
