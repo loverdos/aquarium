@@ -47,4 +47,18 @@ object WalletEntry {
   }
 
   def zero = WalletEntry("", 1L, 1L, Nil,1,"","foo", "bar", "0", false)
+
+  object JsonNames {
+    final val _id = "_id"
+    final val id = "id"
+    final val occurredMillis = "occurredMillis"
+    final val receivedMillis = "receivedMillis"
+    final val sourceEventIDs = "sourceEventIDs"
+    final val value = "value"
+    final val reason = "reason"
+    final val userId = "userId"
+    final val resource = "resource"
+    final val instanceid = "instanceid"
+    final val finalized = "finalized"
+  }
 }
