@@ -141,7 +141,7 @@ class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _resEventProc: ResourceEventProcessorService = new ResourceEventProcessorService
 
-  private[this] lazy val _imEventProc: EventProcessorService = new UserEventProcessorService
+  private[this] lazy val _imEventProc: UserEventProcessorService = new UserEventProcessorService
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 

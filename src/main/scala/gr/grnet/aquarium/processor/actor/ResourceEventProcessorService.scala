@@ -2,7 +2,7 @@ package gr.grnet.aquarium.processor.actor
 
 import com.ckkloverdos.maybe.{Just, Failed, NoVal}
 import gr.grnet.aquarium.messaging.MessagingNames
-import gr.grnet.aquarium.logic.events.{AquariumEvent, ResourceEvent}
+import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.actor.DispatcherRole
 
 
@@ -11,21 +11,19 @@ import gr.grnet.aquarium.actor.DispatcherRole
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-final class ResourceEventProcessorService extends EventProcessorService {
+final class ResourceEventProcessorService extends EventProcessorService[ResourceEvent] {
 
-  override def decode(data: Array[Byte]) : AquariumEvent = ResourceEvent.fromBytes(data)
+  override def decode(data: Array[Byte]) = ResourceEvent.fromBytes(data)
 
-  override def forward(evt: AquariumEvent): Unit = {
-    val resourceEvent = evt.asInstanceOf[ResourceEvent]
+  override def forward(event: ResourceEvent): Unit = {
     val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
-    businessLogicDispacther ! ProcessResourceEvent(resourceEvent)
+    businessLogicDispacther ! ProcessResourceEvent(event)
   }
 
-  override def exists(event: AquariumEvent): Boolean =
+  override def exists(event: ResourceEvent): Boolean =
     _configurator.resourceEventStore.findResourceEventById(event.id).isJust
 
-  override def persist(evt: AquariumEvent): Boolean = {
-    val event = evt.asInstanceOf[ResourceEvent]
+  override def persist(event: ResourceEvent): Boolean = {
     _configurator.resourceEventStore.storeResourceEvent(event) match {
       case Just(x) => true
       case x: Failed =>

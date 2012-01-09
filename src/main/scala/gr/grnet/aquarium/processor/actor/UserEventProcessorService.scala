@@ -10,17 +10,16 @@ import com.ckkloverdos.maybe.{NoVal, Failed, Just}
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class UserEventProcessorService extends EventProcessorService {
+class UserEventProcessorService extends EventProcessorService[UserEvent] {
 
   override def decode(data: Array[Byte]) = UserEvent.fromBytes(data)
 
-  override def forward(resourceEvent: AquariumEvent) {}
+  override def forward(resourceEvent: UserEvent) {}
 
-  override def exists(event: AquariumEvent) =
+  override def exists(event: UserEvent) =
     _configurator.userEventStore.findUserEventById(event.id).isJust
 
-  override def persist(evt: AquariumEvent) = {
-    val event = evt.asInstanceOf[UserEvent]
+  override def persist(event: UserEvent) = {
     _configurator.userEventStore.storeUserEvent(event) match {
       case Just(x) => true
       case x: Failed =>

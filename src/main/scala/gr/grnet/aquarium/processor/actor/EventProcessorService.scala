@@ -61,12 +61,11 @@ import gr.grnet.aquarium.logic.events.AquariumEvent
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-abstract class EventProcessorService extends AkkaAMQP with Loggable
-with Lifecycle {
+abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with Loggable with Lifecycle {
 
   /* Messages exchanged between the persister and the queuereader */
   case class AckData(msgId: String, deliveryTag: Long, queue: ActorRef)
-  case class Persist(event: AquariumEvent, sender: ActorRef, ackData: AckData)
+  case class Persist(event: E, sender: ActorRef, ackData: AckData)
   case class PersistOK(ackData: AckData)
   case class PersistFailed(ackData: AckData)
   case class Duplicate(ackData: AckData)
@@ -77,7 +76,7 @@ with Lifecycle {
   private val redeliveries = new ConcurrentSkipListSet[String]()
 
   /* Temporarily keeps track of messages while being processed */
-  private val inFlightEvents = new ConcurrentHashMap[Long, AquariumEvent](200, 0.9F, 4)
+  private val inFlightEvents = new ConcurrentHashMap[Long, E](200, 0.9F, 4)
 
   /* Supervisor actor for each event processing operation */
   private lazy val supervisor = Supervisor(SupervisorConfig(
@@ -90,10 +89,10 @@ with Lifecycle {
 
   protected def _configurator: Configurator = Configurator.MasterConfigurator
 
-  protected def decode(data: Array[Byte]): AquariumEvent
-  protected def forward(resourceEvent: AquariumEvent): Unit
-  protected def exists(event: AquariumEvent): Boolean
-  protected def persist(event: AquariumEvent): Boolean
+  protected def decode(data: Array[Byte]): E
+  protected def forward(resourceEvent: E): Unit
+  protected def exists(event: E): Boolean
+  protected def persist(event: E): Boolean
 
   protected def queueReaderThreads: Int
   protected def persisterThreads: Int
@@ -127,7 +126,7 @@ with Lifecycle {
             persisterManager.lb ! Persist(event, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
           }
         } else {
-          val eventWithReceivedMillis = event.setRcvMillis(System.currentTimeMillis())
+          val eventWithReceivedMillis = event.setRcvMillis(System.currentTimeMillis()).asInstanceOf[E]
           persisterManager.lb ! Persist(eventWithReceivedMillis, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
         }
 
