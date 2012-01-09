@@ -41,10 +41,10 @@ import java.util.Date
 import gr.grnet.aquarium.processor.actor._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLSimpleResource, DSLComplexResource}
 import gr.grnet.aquarium.util.{TimeHelpers, Loggable}
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
 import gr.grnet.aquarium.user._
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, DSLSimpleResource, DSLComplexResource}
 
 
 /**
@@ -199,7 +199,8 @@ class UserActor extends AquariumActor with Loggable with Accounting {
                 // TODO: the snapshot time should be per instanceId?
                 // TODO: Related events
                 val walletEntriesM = chargeEvent(ev, agreement, ev.value,
-                  new Date(oldOwnedResources.snapshotTime), List())
+                  new Date(oldOwnedResources.snapshotTime),
+                  findRelatedEntries(resource, ev.getInstanceId))
                 walletEntriesM match {
                   case Just(walletEntries) ⇒
                     _storeWalletEntries(walletEntries)
@@ -275,7 +276,14 @@ class UserActor extends AquariumActor with Loggable with Accounting {
         }
     }
   }
- 
+
+  private[this] def findRelatedEntries(res: DSLResource,
+                                       instid: String): List[WalletEntry] = {
+    val walletDB = _configurator.storeProvider.walletEntryStore
+    return walletDB.findPreviousEntry(_userId, res.name, instid, Some(false))
+  }
+
+
   private[this] def processModifyUser(event: UserEvent): Unit = {
     val now = TimeHelpers.nowMillis
     val newActive = ActiveSuspendedSnapshot(event.isStateActive, now)

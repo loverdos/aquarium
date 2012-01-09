@@ -42,7 +42,8 @@ import gr.grnet.aquarium.util.displayableObjectInfo
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.logic.events.ResourceEvent.JsonNames
+import gr.grnet.aquarium.logic.events.ResourceEvent.{JsonNames => ResourceJsonNames}
+import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
 import java.util.Date
 import com.ckkloverdos.maybe.Maybe
 import com.mongodb._
@@ -97,17 +98,17 @@ class MongoDBStore(
 
   def findResourceEventsByUserId(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
-    val query = new BasicDBObject(JsonNames.userId, userId)
+    val query = new BasicDBObject(ResourceJsonNames.userId, userId)
 
     MongoDBStore.runQuery(query, rcEvents)(MongoDBStore.dbObjectToResourceEvent)(sortWith)
   }
 
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
     val query = new BasicDBObject()
-    query.put(JsonNames.userId, userId)
-    query.put(JsonNames.timestamp, new BasicDBObject("$gte", timestamp))
+    query.put(ResourceJsonNames.userId, userId)
+    query.put(ResourceJsonNames.timestamp, new BasicDBObject("$gte", timestamp))
     
-    val sort = new BasicDBObject(JsonNames.timestamp, 1)
+    val sort = new BasicDBObject(ResourceJsonNames.timestamp, 1)
 
     val cursor = rcEvents.find(query).sort(sort)
 
@@ -129,7 +130,7 @@ class MongoDBStore(
 
   def findUserStateByUserId(userId: String): Maybe[UserState] = {
     Maybe {
-      val query = new BasicDBObject(JsonNames.userId, userId)
+      val query = new BasicDBObject(ResourceJsonNames.userId, userId)
       val cursor = userStates find query
 
       try {
@@ -159,16 +160,16 @@ class MongoDBStore(
   def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
     val q = new BasicDBObject()
     // TODO: Is this the correct way for an AND query?
-    q.put(JsonNames.timestamp, new BasicDBObject("$gt", from.getTime))
-    q.put(JsonNames.timestamp, new BasicDBObject("$lt", to.getTime))
-    q.put(JsonNames.userId, userId)
+    q.put(ResourceJsonNames.timestamp, new BasicDBObject("$gt", from.getTime))
+    q.put(ResourceJsonNames.timestamp, new BasicDBObject("$lt", to.getTime))
+    q.put(ResourceJsonNames.userId, userId)
 
     MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
   }
 
   def findLatestUserWalletEntries(userId: String) = {
     Maybe {
-      val orderBy = new BasicDBObject(JsonNames.occurredMillis, -1) // -1 is descending order
+      val orderBy = new BasicDBObject(ResourceJsonNames.occurredMillis, -1) // -1 is descending order
       val cursor = walletEntries.find().sort(orderBy)
 
       try {
@@ -199,11 +200,26 @@ class MongoDBStore(
       }
     }
   }
+
+  def findPreviousEntry(userId: String, resource: String,
+                        instanceid: String,
+                        finalized: Option[Boolean]): List[WalletEntry] = {
+    val q = new BasicDBObject()
+    q.put(WalletJsonNames.userId, userId)
+    q.put(WalletJsonNames.resource, resource)
+    q.put(WalletJsonNames.instanceid, instanceid)
+    finalized match {
+      case Some(x) => q.put(WalletJsonNames.finalized, x)
+      case None =>
+    }
+
+    MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
+  }
   //-WalletEntryStore
 
   //+UserEventStore
   def storeUserEvent(event: UserEvent): Maybe[RecordID] =
-    MongoDBStore.storeAny[UserEvent](event, userEvents, JsonNames.userId,
+    MongoDBStore.storeAny[UserEvent](event, userEvents, ResourceJsonNames.userId,
       _.userId, MongoDBStore.jsonSupportToDBObject)
 
 
@@ -212,7 +228,7 @@ class MongoDBStore(
 
   def findUserEventsByUserId(userId: String)
                             (sortWith: Option[(UserEvent, UserEvent) => Boolean]): List[UserEvent] = {
-    val query = new BasicDBObject(JsonNames.userId, userId)
+    val query = new BasicDBObject(ResourceJsonNames.userId, userId)
     MongoDBStore.runQuery(query, userEvents)(MongoDBStore.dbObjectToUserEvent)(sortWith)
   }
   //-UserEventStore
@@ -268,7 +284,7 @@ object MongoDBStore {
   }
 
   def findById[A >: Null <: AquariumEvent](id: String, collection: DBCollection, deserializer: (DBObject) => A) : Maybe[A] = Maybe {
-    val query = new BasicDBObject(JsonNames.id, id)
+    val query = new BasicDBObject(ResourceJsonNames.id, id)
     val cursor = collection find query
 
     try {
@@ -311,11 +327,11 @@ object MongoDBStore {
   }
 
   def storeAquariumEvent[A <: AquariumEvent](event: A, collection: DBCollection) : Maybe[RecordID] = {
-    storeAny[A](event, collection, JsonNames.id, (e) => e.id, MongoDBStore.jsonSupportToDBObject)
+    storeAny[A](event, collection, ResourceJsonNames.id, (e) => e.id, MongoDBStore.jsonSupportToDBObject)
   }
 
   def storeUserState(userState: UserState, collection: DBCollection): Maybe[RecordID] = {
-    storeAny[UserState](userState, collection, JsonNames.userId, _.userId, MongoDBStore.jsonSupportToDBObject)
+    storeAny[UserState](userState, collection, ResourceJsonNames.userId, _.userId, MongoDBStore.jsonSupportToDBObject)
   }
 
   def storeAny[A](any: A,
@@ -334,7 +350,7 @@ object MongoDBStore {
     try {
       // TODO: better way to get _id?
       if(cursor.hasNext)
-        RecordID(cursor.next().get(JsonNames._id).toString)
+        RecordID(cursor.next().get(ResourceJsonNames._id).toString)
       else
         throw new StoreException("Could not store %s to %s".format(any, collection))
     } finally {

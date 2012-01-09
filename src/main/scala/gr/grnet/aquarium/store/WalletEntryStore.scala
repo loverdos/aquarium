@@ -24,4 +24,11 @@ trait WalletEntryStore {
    * Finds latest wallet entries with same timestamp.
    */
   def findLatestUserWalletEntries(userId: String): Maybe[List[WalletEntry]]
+
+  /**
+   * Find the previous entry in the user's wallet for the provided resource
+   * instance id.
+   */
+  def findPreviousEntry(userId: String, resource: String,
+                        instanceid: String, finalized: Option[Boolean]): List[WalletEntry]
 }
