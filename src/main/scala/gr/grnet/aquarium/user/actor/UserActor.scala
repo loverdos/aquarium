@@ -111,7 +111,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
           oldRCEvent
         }
 
-        logger.debug("Found %s events older than %s".format(rcEventsToProcess.size, resourceEvent))
+        DEBUG("Found %s events older than %s".format(rcEventsToProcess.size, resourceEvent))
 
         for {
           rcEventToProcess <- rcEventsToProcess
@@ -119,9 +119,9 @@ class UserActor extends AquariumActor with Loggable with Accounting {
           justProcessTheResourceEvent(rcEventToProcess, "OLDER")
         }
       case NoVal ⇒
-        logger.debug("No events to process older than %s".format(resourceEvent))
+        DEBUG("No events to process older than %s".format(resourceEvent))
       case Failed(e, m) ⇒
-        logger.error("[%s][%s] %s".format(e.getClass.getName, m, e.getMessage))
+        ERROR("[%s][%s] %s".format(e.getClass.getName, m, e.getMessage))
     }
   }
 
@@ -145,7 +145,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
    */
   private[this] def justProcessTheResourceEvent(ev: ResourceEvent, logLabel: String): Unit = {
     val start = System.currentTimeMillis
-    logger.debug("Processing [%s] %s".format(logLabel, ev))
+    DEBUG("Processing [%s] %s".format(logLabel, ev))
 
     // Initially, the user state (regarding resources) is empty.
     // So we have to compensate for both a totally empty resource state
@@ -212,36 +212,35 @@ class UserActor extends AquariumActor with Loggable with Accounting {
                     val newCredits = CreditSnapshot(oldCredits + newCreditsSum, StateChangeMillis)
 
                     // Finally, the userState change
-                    logger.debug("For user %s, credits   = %s".format(this._userState.userId, newCredits))
-                    logger.debug("For user %s, resources = %s".format(this._userState.userId, newOwnedResources))
+                    DEBUG("Credits   = %s".format(this._userId, newCredits))
+                    DEBUG("Resources = %s".format(this._userId, newOwnedResources))
                     this._userState = this._userState.copy(
                       credits = newCredits,
                       ownedResources = newOwnedResources
                     )
                   case NoVal ⇒
-                    logger.debug("No wallet entries generated for %s".format(ev))
+                    DEBUG("No wallet entries generated for %s".format(ev))
                   case failed @ Failed(e, m) ⇒
                     failed
                 }
                 
               case NoVal ⇒
-                Failed(new UserDataSnapshotException("No agreement snapshot found for user %s".format(this._userState.userId)))
+                Failed(new UserDataSnapshotException("No agreement snapshot found for user %s".format(this._userId)))
               case failed @ Failed(e, m) ⇒
                 failed
             }
           // 3.2 No, no luck, this is an error
           case NoVal ⇒
-            Failed(new UserDataSnapshotException("No instanceId for resource %s of user %s".format(resource, this._userState.userId)))
+            Failed(new UserDataSnapshotException("No instanceId for resource %s of user %s".format(resource, this._userId)))
           case failed @ Failed(e, m) ⇒
             failed
         }
       // No resource definition found, this is an error
       case None ⇒ // Policy.policy.findResource(ev.resource)
-        Failed(new UserDataSnapshotException("No resource %s found for user %s".format(ev.resource, this._userState.userId)))
+        Failed(new UserDataSnapshotException("No resource %s found for user %s".format(ev.resource, this._userId)))
     }
 
-    logger.debug("Finished %s time: %d ms".format(logLabel, ev, System.currentTimeMillis - start))
-
+    DEBUG("Finished %s time: %d ms".format(logLabel, ev, System.currentTimeMillis - start))
   }
 
   /**
@@ -249,12 +248,12 @@ class UserActor extends AquariumActor with Loggable with Accounting {
    */
   private[this] def processUserEvent(event: UserEvent): Unit = {
     if(event.isCreateUser) {
-      debug("Ignoring %s".format(event))
+      DEBUG("Ignoring %s".format(event))
     } else if(event.isModifyUser) {
       val now = TimeHelpers.nowMillis
       val newActive = ActiveSuspendedSnapshot(event.isStateActive, now)
 
-      debug("New active status = %s".format(newActive))
+      DEBUG("New active status = %s".format(newActive))
 
       this._userState = this._userState.copy( active = newActive )
     }
@@ -272,7 +271,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
       this._userId = userId
       this._isInitialized = true
       // TODO: query DB etc to get internal state
-      logger.info("Setup my userId = %s".format(userId))
+      INFO("Initial setup")
 
     case m @ ProcessResourceEvent(resourceEvent) ⇒
       processResourceEvent(resourceEvent, true)
@@ -282,7 +281,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
 
     case m @ UserRequestGetBalance(userId, timestamp) ⇒
       if(this._userId != userId) {
-        logger.error("Received %s but my userId = %s".format(m, this._userId))
+        ERROR("Received %s but my userId = %s".format(m, this._userId))
         // TODO: throw an exception here
       } else {
         // This is the big party.
@@ -301,34 +300,37 @@ class UserActor extends AquariumActor with Loggable with Accounting {
           } else {
             // Yep, data is stale and must recompute balance
             // FIXME: implement
-            logger.error("FIXME: Should have computed a new value for %s".format(credits))
+            ERROR("FIXME: Should have computed a new value for %s".format(credits))
             self reply UserResponseGetBalance(userId, credits.data)
           }
         } else {
           // Nope. No user state exists. Must reproduce one
           // FIXME: implement
-          logger.error("FIXME: Should have computed the user state for userId = %s".format(userId))
+          ERROR("FIXME: Should have computed the user state for userId = %s".format(userId))
           self reply UserResponseGetBalance(userId, Maybe(userId.toDouble).getOr(10.5))
         }
       }
 
     case m @ UserRequestGetState(userId, timestamp) ⇒
       if(this._userId != userId) {
-        logger.error("Received %s but my userId = %s".format(m, this._userId))
+        ERROR("Received %s but my userId = %s".format(m, this._userId))
         // TODO: throw an exception here
       } else {
         // FIXME: implement
-        logger.error("FIXME: Should have properly computed the user state")
+        ERROR("FIXME: Should have properly computed the user state")
         self reply UserResponseGetState(userId, this._userState)
       }
   }
 
-  private[this] def debug(fmt: String, args: Any*) =
+  private[this] def DEBUG(fmt: String, args: Any*) =
     logger.debug("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
 
-  private[this] def warn(fmt: String, args: Any*) =
+  private[this] def INFO(fmt: String, args: Any*) =
+      logger.info("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
+
+  private[this] def WARN(fmt: String, args: Any*) =
     logger.warn("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
 
-  private[this] def err(fmt: String, args: Any*) =
+  private[this] def ERROR(fmt: String, args: Any*) =
     logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
 }
