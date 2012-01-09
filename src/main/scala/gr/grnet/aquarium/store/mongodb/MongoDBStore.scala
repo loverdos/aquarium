@@ -64,9 +64,9 @@ class MongoDBStore(
   with Loggable {
 
   private[store] lazy val rcevents: DBCollection = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
-  private[store] lazy val users: DBCollection = getCollection(MongoDBStore.USERS_COLLECTION)
+  private[store] lazy val userstates: DBCollection = getCollection(MongoDBStore.USER_STATES_COLLECTION)
   private[store] lazy val imevents: DBCollection = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
-  private[store] lazy val wallets: DBCollection = getCollection(MongoDBStore.IM_WALLETS)
+  private[store] lazy val wallets: DBCollection = getCollection(MongoDBStore.IM_WALLETS_COLLECTION)
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
@@ -125,12 +125,12 @@ class MongoDBStore(
 
   //+UserStateStore
   def storeUserState(userState: UserState): Maybe[RecordID] =
-    MongoDBStore.storeUserState(userState, users)
+    MongoDBStore.storeUserState(userState, userstates)
 
   def findUserStateByUserId(userId: String): Maybe[UserState] = {
     Maybe {
       val query = new BasicDBObject(JsonNames.userId, userId)
-      val cursor = rcevents find query
+      val cursor = userstates find query
 
       try {
         if(cursor.hasNext)
@@ -221,9 +221,9 @@ class MongoDBStore(
 object MongoDBStore {
   final val RESOURCE_EVENTS_COLLECTION = "resevents"
   //final val PROCESSED_RESOURCE_EVENTS_COLLECTION = "procresevents"
-  final val USERS_COLLECTION = "users"
+  final val USER_STATES_COLLECTION = "userstates"
   final val IM_EVENTS_COLLECTION = "imevents"
-  final val IM_WALLETS = "wallets"
+  final val IM_WALLETS_COLLECTION = "wallets"
 
   /* TODO: Some of the following methods rely on JSON (de-)serialization).
   * A method based on proper object serialization would be much faster.
