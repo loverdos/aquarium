@@ -18,7 +18,7 @@ case class  UserEvent(
     eventVersion: Short,
     eventType: Short, //1: create, 2: modify
     state: String,    //ACTIVE, SUSPENDED
-    idp: String,
+    idp: String,      // Identity Provider
     tenant: String,
     roles: List[String])
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
