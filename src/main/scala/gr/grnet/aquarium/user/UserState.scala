@@ -68,6 +68,7 @@ case class UserState(
 
   private[this] def _allSnapshots: List[Long] = {
     List(
+      active.snapshotTime,
       credits.snapshotTime, agreement.snapshotTime, roles.snapshotTime,
       paymentOrders.snapshotTime, ownedGroups.snapshotTime, groupMemberships.snapshotTime,
       ownedResources.snapshotTime)
