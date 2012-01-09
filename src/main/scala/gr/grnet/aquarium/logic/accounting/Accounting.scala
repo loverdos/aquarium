@@ -167,8 +167,8 @@ trait Accounting extends DSLUtils with Loggable {
     assert(algChunked.keySet.head.compare(priChunked.keySet.head) == 0)
 
     List(ChargeChunk(volume,
-      algChunked.values.head.algorithms.getOrElse(res, ""),
-      priChunked.values.head.prices.getOrElse(res, 0F),
+      algChunked.valuesIterator.next.algorithms.getOrElse(res, ""),
+      priChunked.valuesIterator.next.prices.getOrElse(res, 0F),
       algChunked.keySet.head, res))
   }
 
