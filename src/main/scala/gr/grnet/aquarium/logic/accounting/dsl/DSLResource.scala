@@ -40,7 +40,7 @@ package gr.grnet.aquarium.logic.accounting.dsl
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-abstract class DSLResource (
+sealed abstract class DSLResource (
   /** Name of resource */
   val name: String,
 

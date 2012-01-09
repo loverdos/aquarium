@@ -39,7 +39,6 @@ import gr.grnet.aquarium.logic.accounting.Policy
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.logic.accounting.dsl.DSLComplexResource
-import gr.grnet.aquarium.user.UserState
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -72,25 +71,6 @@ case class ResourceEvent(
 
     true
   }
-
-  def resourceType = ResourceType fromResourceEvent this
-
-  def isKnownResourceType = resourceType.isKnownType
-
-  def isBandwidthUpload = resourceType.isBandwidthUpload
-
-  def isBandwidthDownload = resourceType.isBandwidthDownload
-
-  def isDiskSpace = resourceType.isDiskSpace
-
-  def isVMTime = resourceType.isVMTime
-
-  /**
-   * Calculates the new `UserState` based on this resource event, the calculated wallet entries related to this resource
-   * event and the current `UserState`.
-   */
-  def calcStateChange(walletEntries: List[WalletEntry], userState: UserState): UserState =
-    resourceType.calcStateChange(this, walletEntries, userState)
 
   def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
 }

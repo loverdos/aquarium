@@ -38,6 +38,7 @@ package user
 
 import logic.accounting.dsl.{DSLResource, DSLAgreement}
 import collection.mutable
+import logic.events.WalletEntry
 
 
 /**

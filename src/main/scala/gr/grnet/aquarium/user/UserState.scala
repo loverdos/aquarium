@@ -37,6 +37,8 @@ package gr.grnet.aquarium.user
 
 import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
 import net.liftweb.json.{parse => parseJson, JsonAST, Xml}
+import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
+import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 
 
 /**
@@ -61,24 +63,38 @@ case class UserState(
     paymentOrders: PaymentOrdersSnapshot,
     ownedGroups: OwnedGroupsSnapshot,
     groupMemberships: GroupMembershipsSnapshot,
-    ownedResources: OwnedResourcesSnapshot,
-    bandwidthUp: BandwidthUpSnapshot,
-    bandwidthDown: BandwidthDownSnapshot,
-    diskSpace: DiskSpaceSnapshot
+    ownedResources: OwnedResourcesSnapshot
 ) extends JsonSupport {
 
   private[this] def _allSnapshots: List[Long] = {
     List(
       credits.snapshotTime, agreement.snapshotTime, roles.snapshotTime,
       paymentOrders.snapshotTime, ownedGroups.snapshotTime, groupMemberships.snapshotTime,
-      ownedResources.snapshotTime,
-      bandwidthUp.snapshotTime, bandwidthDown.snapshotTime,
-      diskSpace.snapshotTime)
+      ownedResources.snapshotTime)
   }
 
   def oldestSnapshotTime: Long = _allSnapshots min
 
   def newestSnapshotTime: Long  = _allSnapshots max
+
+  def maybeDSLAgreement: Maybe[DSLAgreement] = {
+    agreement match {
+      case snapshot @ AgreementSnapshot(data, _) ⇒
+        data match {
+          case dslAgreement @ DSLAgreement(_, _, _, _, _) ⇒
+            Just(dslAgreement)
+          case _ ⇒
+            Failed(new Exception("No agreement found in snapshot %s for user %s".format(snapshot, userId)))
+        }
+      case _ ⇒
+        Failed(new Exception("No agreement snapshot found for user %s".format(userId)))
+    }
+  }
+  
+  def safeCredits = credits match {
+    case c @ CreditSnapshot(date, millis) ⇒ c
+    case _ ⇒ CreditSnapshot(0, 0)
+  }
 }
 
 

@@ -22,3 +22,8 @@ project/boot/
 
 aquarium.properties
 !src/main/resources/aquarium.properties
+doc/arch/aquarium.aux
+doc/arch/aquarium.bbl
+doc/arch/aquarium.blg
+doc/arch/aquarium.log
+doc/arch/aquarium.pdf

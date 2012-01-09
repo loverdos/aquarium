@@ -35,16 +35,16 @@
 
 package gr.grnet.aquarium.user.actor
 
-import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
 import java.util.Date
 import gr.grnet.aquarium.processor.actor._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLComplexResource, DSLResource}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
-import gr.grnet.aquarium.user.{UserDataSnapshotException, OwnedResourcesSnapshot, UserState}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLSimpleResource, DSLComplexResource, DSLResource}
+import gr.grnet.aquarium.util.{TimeHelpers, Loggable}
+import gr.grnet.aquarium.user.{CreditSnapshot, UserDataSnapshotException, UserState}
 
 
 /**
@@ -125,21 +125,19 @@ class UserActor extends AquariumActor with Loggable with Accounting {
     }
   }
 
-  private[this] def _calcNewUserState(resourceEvent: ResourceEvent, walletEntries: List[WalletEntry]): Unit = {
+  private[this] def _storeWalletEntries(walletEntries: List[WalletEntry]): Unit = {
     val walletEntriesStore = _configurator.walletStore
-    // 1. Store the new wallet entries
     for(walletEntry <- walletEntries) {
       walletEntriesStore.storeWalletEntry(walletEntry)
     }
-    // 2. Update user state
-    val newUserState = resourceEvent.calcStateChange(walletEntries, _userState)
-    if(_userState == newUserState) {
-      logger.debug("No state change for %s".format(_userState))
-    } else {
-      logger.debug("State change from %s".format(_userState))
-      logger.debug("State change   to %s".format(newUserState))
-      _userState = newUserState
-    }
+  }
+
+  private[this] def _calcNewCreditSum(walletEntries: List[WalletEntry]): Double = {
+    val newCredits = for {
+      walletEntry <- walletEntries if(walletEntry.finalized)
+    } yield walletEntry.value.toDouble
+
+    newCredits.sum
   }
 
   /**
@@ -148,41 +146,96 @@ class UserActor extends AquariumActor with Loggable with Accounting {
   private[this] def justProcessTheResourceEvent(ev: ResourceEvent, logLabel: String): Unit = {
     logger.debug("Processing [%s] %s".format(logLabel, ev))
 
-    val resource = Policy.policy.findResource(ev.resource) match {
-        case Some(x) => x
-        case None => throw new AccountingException("") //TODO: See what to do here
-    }
+    // Initially, the user state (regarding resources) is empty.
+    // So we have to compensate for both a totally empty resource state
+    // and the update with new values.
 
-    val instanceId = resource.isComplex match {
-      case true =>
-        val field = resource.asInstanceOf[DSLComplexResource].descriminatorField
-        ev.details.get(field) match {
-          case Some(x) => Some(x)
-          case None => throw new AccountingException("") //TODO: See what to do here
+    // 1. Find the resource definition
+    Policy.policy.findResource(ev.resource) match {
+      case Some(resource) ⇒
+        // 2. Get the instance id and value for the resource
+        val instanceIdM = resource match {
+          // 2.1 If it is complex, from the details map, get the field which holds the instanceId
+          case DSLComplexResource(name, unit, costPolicy, descriminatorField) ⇒
+            ev.details.get(descriminatorField) match {
+              case Some(instanceId) ⇒
+                Just(instanceId)
+              case None ⇒
+                // We should have some value under this key here....
+                Failed(throw new AccountingException("")) //TODO: See what to do here
+            }
+          // 2.2 If it is simple, ...
+          case DSLSimpleResource(name, unit, costPolicy) ⇒
+            // ... by convention, the instanceId of a simple resource is just "1"
+            // @see [[gr.grnet.aquarium.user.OwnedResourcesSnapshot]]
+            Just("1")
         }
-      case false => None
-    }
+        
+        // 3. Did we get a valid instanceId?
+        instanceIdM match {
+          // 3.1 Yes, time to get/update the current state
+          case Just(instanceId) ⇒
+            val oldOwnedResources = _userState.ownedResources
+            // Find or create the new resource instance map
+            val oldOwnedResourcesData = oldOwnedResources.data
+            val oldRCInstanceMap = oldOwnedResourcesData.get(resource) match {
+              case Some(resourceMap) ⇒ resourceMap
+              case None              ⇒ Map[String, Float]()
+            }
+            // Update the new value in the resource instance map
+            val newRCInstanceMap: Map[String, Float] = oldRCInstanceMap.updated(instanceId, ev.value)
 
-    // There is a one-to-one correspondence from an event to credit diff generation (wallet entry)
-    val resState = getOrCreateResourceState(resource, instanceId) match {
-      case Just(x) => x
-      case Failed(e, s) => throw e
-      case NoVal => throw new AccountingException("Cannot retrieve resource state")
-    }
+            val newOwnedResourcesData = oldOwnedResourcesData.updated(resource, newRCInstanceMap)
 
-    val walletEntriesM = chargeEvent(ev, _userState.agreement.data,
-      resState.value, resState.lastUpdate)
-    walletEntriesM match {
-      case Just(walletEntries) ⇒
-        _calcNewUserState(ev, walletEntries)
-      case NoVal ⇒
-        logger.debug("No wallet entries generated for %s".format(ev))
-        _calcNewUserState(ev, Nil)
-      case f@Failed(e, m) ⇒
-        logger.error("[%s][%s] %s".format(e.getClass.getName, m, e.getMessage))
-      // TODO: What else to do on error?
-    }
+            // A. First state diff: the modified resource value
+            val StateChangeMillis = TimeHelpers.nowMillis
+            val newOwnedResources = oldOwnedResources.copy(
+              data = newOwnedResourcesData,
+              snapshotTime = StateChangeMillis
+            )
 
+            // Calculate the wallet entries generated from this resource event
+            _userState.maybeDSLAgreement match {
+              case Just(agreement) ⇒
+                // TODO: the snapshot time should be per instanceId?
+                val walletEntriesM = chargeEvent(ev, agreement, ev.value, new Date(oldOwnedResources.snapshotTime))
+                walletEntriesM match {
+                  case Just(walletEntries) ⇒
+                    _storeWalletEntries(walletEntries)
+
+                    // B. Second state diff: the new credits
+                    val newCreditsSum = _calcNewCreditSum(walletEntries)
+                    val oldCredits    = _userState.safeCredits.data
+                    val newCredits = CreditSnapshot(oldCredits + newCreditsSum, StateChangeMillis)
+
+                    // Finally, the userState change
+                    logger.debug("For user %s, credits   = %s".format(this._userState.userId, newCredits))
+                    logger.debug("For user %s, resources = %s".format(this._userState.userId, newOwnedResources))
+                    this._userState = this._userState.copy(
+                      credits = newCredits,
+                      ownedResources = newOwnedResources
+                    )
+                  case NoVal ⇒
+                    logger.debug("No wallet entries generated for %s".format(ev))
+                  case failed @ Failed(e, m) ⇒
+                    failed
+                }
+                
+              case NoVal ⇒
+                Failed(new Exception("No agreement snapshot found for user %s".format(this._userState.userId)))
+              case failed @ Failed(e, m) ⇒
+                failed
+            }
+          // 3.2 No, no luck, this is an error
+          case NoVal ⇒
+            Failed(new Exception("No instanceId for resource %s of user %s".format(resource, this._userState.userId)))
+          case failed @ Failed(e, m) ⇒
+            failed
+        }
+      // No resource definition found, this is an error
+      case None ⇒ // Policy.policy.findResource(ev.resource)
+        Failed(new Exception("No resource %s found for user %s".format(ev.resource, this._userState.userId)))
+    }
   }
 
   protected def receive: Receive = {
@@ -247,47 +300,6 @@ class UserActor extends AquariumActor with Loggable with Accounting {
         logger.error("FIXME: Should have properly computed the user state")
         self reply UserResponseGetState(userId, this._userState)
       }
-  }
-
-  /**
-   * Logic to retrieve the state for a resource on request. If no entry for
-   * the resource has been recorded yet, the resource will be added to the
-   * user state (currently a `Map[DSLResource, Map[String, Float]]`),
-   * with the following convention:
-   *
-   * * if its type is `complex`, then the entry
-   *   `(resource -> Map(instanceId -> 0))` is added
-   * * if its type is `simple`, then the entry
-   *   `(resource -> Map("1" -> 0))` is added
-   */
-  private def getOrCreateResourceState(resource: DSLResource, instanceId: Option[String]):
-  Maybe[ResourceState] = {
-
-    val instId = resource.isComplex match {
-      case true => instanceId match {
-        case Some(x) => x
-        case None =>
-          logger.error("Complex resource [%s] with instance id null".format(resource))
-          return Failed(new UserDataSnapshotException("Error creating " +
-            "resource entry. Complex resource [%s] with instance id null".format(resource)))
-      }
-      case false => "1"
-    }
-
-    val currentState = _userState.ownedResources.data.get(resource) match {
-      case Some(x) ⇒ x
-      case None ⇒
-        val _ownedResources = _userState.ownedResources
-        val _ownedResourcesData = _ownedResources.data
-
-        _userState = _userState.copy(
-          ownedResources = _ownedResources.copy(
-            data = _ownedResourcesData.updated(resource, Map(instId -> 0F))))
-        return getOrCreateResourceState(resource, instanceId)
-    }
-
-   Just(ResourceState(resource, new Date(_userState.ownedResources.snapshotTime),
-     currentState.getOrElse(instId, 0F)))
   }
 
   private def debug(msg: String) =

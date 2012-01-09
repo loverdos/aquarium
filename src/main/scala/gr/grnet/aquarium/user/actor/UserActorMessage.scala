@@ -50,7 +50,3 @@ trait UserActorMessage extends ActorMessage
 case class UserActorInitWithUserId(userId: String) extends UserActorMessage
 
 case object UserActorStop extends UserActorMessage
-
-case class ResourceState(resource: DSLResource,
-                         lastUpdate: Date,
-                         value: Float)
