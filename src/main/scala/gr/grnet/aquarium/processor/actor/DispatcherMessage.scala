@@ -38,7 +38,7 @@ package gr.grnet.aquarium.processor.actor
 import gr.grnet.aquarium.actor.ActorMessage
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.json.{JsonSupport, JsonHelpers}
-import gr.grnet.aquarium.logic.events.ResourceEvent
+import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
 
 /**
  * This is the base class of the messages the Dispatcher understands.
@@ -73,4 +73,5 @@ case class UserResponseGetState(userId: String, state: UserState) extends Dispat
 }
 
 case class ProcessResourceEvent(rce: ResourceEvent) extends DispatcherMessage
+case class ProcessUserEvent(ue: UserEvent) extends DispatcherMessage
 

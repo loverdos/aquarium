@@ -90,7 +90,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
   protected def _configurator: Configurator = Configurator.MasterConfigurator
 
   protected def decode(data: Array[Byte]): E
-  protected def forward(resourceEvent: E): Unit
+  protected def forward(event: E): Unit
   protected def exists(event: E): Boolean
   protected def persist(event: E): Boolean
 

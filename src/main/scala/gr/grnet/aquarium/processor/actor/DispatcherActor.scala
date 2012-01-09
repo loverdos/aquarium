@@ -49,30 +49,29 @@ class DispatcherActor extends AquariumActor with Loggable {
 
   def role = DispatcherRole
 
+  private[this] def _forwardToUserManager(m: DispatcherMessage): Unit = {
+    logger.debug("Received %s".format(m))
+    val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
+    // forward to the user actor manager, which in turn will
+    // forward to the appropriate user actor (and create one if it does not exist)
+    userActorManager forward m
+  }
+
   protected def receive = {
     case ActorProviderConfigured(actorProvider) ⇒
       this._actorProvider = actorProvider
       logger.info("Received actorProvider = %s".format(this._actorProvider))
 
     case m @ UserRequestGetBalance(userId, timestamp) ⇒
-      logger.debug("Received %s".format(m))
-      val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
-      // forward to the user actor manager, which in turn will
-      // forward to the appropriate user actor (and create one if it does not exist)
-      userActorManager forward m
+      _forwardToUserManager(m)
 
     case m @ UserRequestGetState(userId, timestamp) ⇒
-      logger.debug("Received %s".format(m))
-      val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
-      // forward to the user actor manager, which in turn will
-      // forward to the appropriate user actor (and create one if it does not exist)
-      userActorManager forward m
+      _forwardToUserManager(m)
 
     case m @ ProcessResourceEvent(resourceEvent) ⇒
-      logger.debug("Received %s".format(m))
-      val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
-      // forward to the user actor manager, which in turn will
-      // forward to the appropriate user actor (and create one if it does not exist)
-      userActorManager forward m
+      _forwardToUserManager(m)
+
+    case m @ ProcessUserEvent(userEvent) ⇒
+      _forwardToUserManager(m)
   }
 }

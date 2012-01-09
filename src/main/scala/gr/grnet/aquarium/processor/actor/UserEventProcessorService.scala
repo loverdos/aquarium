@@ -3,6 +3,7 @@ package gr.grnet.aquarium.processor.actor
 import gr.grnet.aquarium.messaging.MessagingNames
 import gr.grnet.aquarium.logic.events.{UserEvent, AquariumEvent}
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
+import gr.grnet.aquarium.actor.DispatcherRole
 
 
 /**
@@ -14,7 +15,10 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
 
   override def decode(data: Array[Byte]) = UserEvent.fromBytes(data)
 
-  override def forward(resourceEvent: UserEvent) {}
+  override def forward(event: UserEvent) = {
+    val dispatcher = _configurator.actorProvider.actorForRole(DispatcherRole)
+    dispatcher ! ProcessUserEvent(event)
+  }
 
   override def exists(event: UserEvent) =
     _configurator.userEventStore.findUserEventById(event.id).isJust
