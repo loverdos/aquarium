@@ -61,13 +61,14 @@ trait Accounting extends DSLUtils with Loggable {
   def chargeEvent(ev: ResourceEvent,
                   agreement: DSLAgreement,
                   resState: Float,
-                  lastUpdate: Date):
+                  lastUpdate: Date,
+                  related: List[WalletEntry]):
   Maybe[List[WalletEntry]] = {
 
     assert(lastUpdate.getTime < ev.occurredMillis)
 
     if (!ev.validate())
-      Failed(new AccountingException("Event not valid"))
+      return Failed(new AccountingException("Event not valid"))
 
     val resource = Policy.policy.findResource(ev.resource) match {
       case Some(x) => x
@@ -79,34 +80,60 @@ trait Accounting extends DSLUtils with Loggable {
       case ContinuousCostPolicy => resState.asInstanceOf[Float]
       case DiscreteCostPolicy => ev.value
       case OnOffCostPolicy =>
-        resState.asInstanceOf[OnOffPolicyResourceState] match {
+        OnOffPolicyResourceState(resState) match {
           case OnResourceState =>
             OnOffPolicyResourceState(ev.value) match {
-              case OnResourceState => throw new AccountingException("")
-              case OffResourceState => 1
+              case OnResourceState =>
+                return Failed(new AccountingException(("Resource state " +
+                  "transition error(was:%s, now:%s)").format(OnResourceState,
+                  OnResourceState)))
+              case OffResourceState => 0
             }
           case OffResourceState =>
             OnOffPolicyResourceState(ev.value) match {
-              case OnResourceState => 0
-              case OffResourceState => throw new AccountingException("")
+              case OnResourceState => 1
+              case OffResourceState =>
+                return Failed(new AccountingException(("Resource state " +
+                  "transition error(was:%s, now:%s)").format(OffResourceState,
+                  OffResourceState)))
             }
         }
     }
 
-    val chargeChunks = calcChangeChunks(agreement, amount,
-      resource, Timeslot(lastUpdate, new Date(ev.occurredMillis)))
+    // We don't do strict checking for all cases for OnOffPolicies as
+    // above, since this point won't be reached in case of error.
+    val isFinal = resource.costpolicy match {
+      case OnOffCostPolicy =>
+        OnOffPolicyResourceState(resState) match {
+          case OnResourceState => false
+          case OffResourceState => true
+        }
+      case _ => true
+    }
+
+    val ts = resource.costpolicy match {
+      case DiscreteCostPolicy => Timeslot(new Date(ev.occurredMillis),
+        new Date(ev.occurredMillis + 1))
+      case _ => Timeslot(lastUpdate, new Date(ev.occurredMillis))
+    }
+
+    val chargeChunks = calcChangeChunks(agreement, amount, resource, ts)
+
+    val timeReceived = System.currentTimeMillis
+
+    val rel = related.map{x => x.sourceEventIDs}.flatten ++ List(ev.id)
 
     val entries = chargeChunks.map {
       c =>
         WalletEntry(
           id = CryptoUtils.sha1(c.id),
-          occurredMillis = lastUpdate.getTime,
-          receivedMillis = System.currentTimeMillis(),
-          sourceEventIDs = List(ev.id),
+          occurredMillis = ev.occurredMillis,
+          receivedMillis = timeReceived,
+          sourceEventIDs = rel,
           value = c.cost,
           reason = c.reason,
           userId = ev.userId,
-          finalized = true //TODO: Fix this
+          finalized = isFinal
         )
     }
     Just(entries)
@@ -198,7 +225,7 @@ case class ChargeChunk(value: Float, algorithm: String,
   assert(resource != null)
 
   def cost(): Float =
-    //TODO: Apply the algorithm and policy, when we start parsing it
+    //TODO: Apply the algorithm, when we start parsing it
     resource.costpolicy match {
       case DiscreteCostPolicy =>
         value * price
@@ -209,10 +236,13 @@ case class ChargeChunk(value: Float, algorithm: String,
   def reason(): String =
     resource.costpolicy match {
       case DiscreteCostPolicy =>
-        "%f %s at %s @ %f/%s".format(value, resource.name, when.from, price,
+        "%f %s at %s @ %f/%s".format(value, resource.unit, when.from, price,
           resource.unit)
-      case _ =>
+      case ContinuousCostPolicy =>
         "%f %s of %s from %s to %s @ %f/%s".format(value, resource.unit,
+          resource.name, when.from, when.to, price, resource.unit)
+      case OnOffCostPolicy =>
+        "%f %s of %s from %s to %s @ %f/%s".format(when.hours, resource.unit,
           resource.name, when.from, when.to, price, resource.unit)
     }
 

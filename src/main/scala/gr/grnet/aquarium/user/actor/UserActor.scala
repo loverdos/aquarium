@@ -144,6 +144,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
    * Process the resource event as if nothing else matters. Just do it.
    */
   private[this] def justProcessTheResourceEvent(ev: ResourceEvent, logLabel: String): Unit = {
+    val start = System.currentTimeMillis
     logger.debug("Processing [%s] %s".format(logLabel, ev))
 
     // Initially, the user state (regarding resources) is empty.
@@ -198,7 +199,9 @@ class UserActor extends AquariumActor with Loggable with Accounting {
             _userState.maybeDSLAgreement match {
               case Just(agreement) ⇒
                 // TODO: the snapshot time should be per instanceId?
-                val walletEntriesM = chargeEvent(ev, agreement, ev.value, new Date(oldOwnedResources.snapshotTime))
+                // TODO: Related events
+                val walletEntriesM = chargeEvent(ev, agreement, ev.value,
+                  new Date(oldOwnedResources.snapshotTime), List())
                 walletEntriesM match {
                   case Just(walletEntries) ⇒
                     _storeWalletEntries(walletEntries)
@@ -236,6 +239,9 @@ class UserActor extends AquariumActor with Loggable with Accounting {
       case None ⇒ // Policy.policy.findResource(ev.resource)
         Failed(new UserDataSnapshotException("No resource %s found for user %s".format(ev.resource, this._userState.userId)))
     }
+
+    logger.debug("Finished %s time: %d ms".format(logLabel, ev, System.currentTimeMillis - start))
+
   }
 
   protected def receive: Receive = {
