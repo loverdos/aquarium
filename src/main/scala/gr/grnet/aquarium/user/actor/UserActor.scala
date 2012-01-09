@@ -307,6 +307,26 @@ class UserActor extends AquariumActor with Loggable with Accounting {
       }
   }
 
+  /**
+   * Tries to makes sure that the internal user state exists.
+   *
+   * May contact the [[gr.grnet.aquarium.store.UserStateStore]] for that.
+   *
+   */
+  private[this] def ensureUserState(): Unit = {
+    if(null eq this._userState) {
+      findUserState(this._userId) match {
+        case Just(userState) ⇒
+          DEBUG("Loaded user state %s from DB", userState)
+          this._userState = userState
+        case Failed(e, m) ⇒
+          ERROR("While loading user state from DB: [%s][%s] %s", e.getClass.getName, e.getMessage, m)
+        case NoVal ⇒
+          WARN("Request for unknown (to Aquarium) user")
+      }
+    }
+  }
+
   protected def receive: Receive = {
     case UserActorStop ⇒
       self.stop()
@@ -317,20 +337,14 @@ class UserActor extends AquariumActor with Loggable with Accounting {
 
     case m @ UserActorInitWithUserId(userId) ⇒
       this._userId = userId
-      findUserState(userId) match {
-        case Just(userState) ⇒
-          DEBUG("Loaded user state %s from DB", userState)
-          this._userState = userState
-        case Failed(e, m) ⇒
-          ERROR("While loading user state from DB: [%s][%s] %s", e.getClass.getName, e.getMessage, m)
-        case NoVal ⇒
-          WARN("Request for unknown (to Aquarium) user")
-      }
+      ensureUserState()
 
     case m @ ProcessResourceEvent(resourceEvent) ⇒
+      ensureUserState()
       processResourceEvent(resourceEvent, true)
 
     case m @ ProcessUserEvent(userEvent) ⇒
+      ensureUserState()
       processUserEvent(userEvent)
 
     case m @ UserRequestGetBalance(userId, timestamp) ⇒
