@@ -44,7 +44,7 @@ import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounti
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLSimpleResource, DSLComplexResource}
 import gr.grnet.aquarium.util.{TimeHelpers, Loggable}
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
-import gr.grnet.aquarium.user.{ActiveSuspendedSnapshot, CreditSnapshot, UserDataSnapshotException, UserState}
+import gr.grnet.aquarium.user._
 
 
 /**
@@ -55,8 +55,6 @@ import gr.grnet.aquarium.user.{ActiveSuspendedSnapshot, CreditSnapshot, UserData
 class UserActor extends AquariumActor with Loggable with Accounting {
   @volatile
   private[this] var _userId: String = _
-  @volatile
-  private[this] var _isInitialized: Boolean = false
   @volatile
   private[this] var _userState: UserState = _
   @volatile
@@ -243,20 +241,70 @@ class UserActor extends AquariumActor with Loggable with Accounting {
     DEBUG("Finished %s time: %d ms".format(logLabel, ev, System.currentTimeMillis - start))
   }
 
+  private[this] def processCreateUser(event: UserEvent): Unit = {
+    val userId = event.userId
+    DEBUG("Creating user from state %s", event)
+    val usersDB = _configurator.storeProvider.userStateStore
+    usersDB.findUserStateByUserId(userId) match {
+      case Just(userState) ⇒
+        WARN("User already created, state = %s".format(userState))
+      case failed @ Failed(e, m) ⇒
+        ERROR("[%s][%s] %s", e.getClass.getName, e.getMessage, m)
+      case NoVal ⇒
+        // OK. Create a default UserState and store it
+        val now = TimeHelpers.nowMillis
+        val agreementOpt = Policy.policy.findAgreement("default")
+        
+        if(agreementOpt.isEmpty) {
+          ERROR("No default agreement found. Cannot initialize user state")
+        } else {
+          this._userState = UserState(
+            userId,
+            ActiveSuspendedSnapshot(event.isStateActive, now),
+            CreditSnapshot(0, now),
+            AgreementSnapshot(agreementOpt.get, now),
+            RolesSnapshot(event.roles, now),
+            PaymentOrdersSnapshot(Nil, now),
+            OwnedGroupsSnapshot(Nil, now),
+            GroupMembershipsSnapshot(Nil, now),
+            OwnedResourcesSnapshot(Map(), now)
+          )
+
+          usersDB.storeUserState(this._userState)
+          DEBUG("Created and stored %s", this._userState)
+        }
+    }
+  }
+ 
+  private[this] def processModifyUser(event: UserEvent): Unit = {
+    val now = TimeHelpers.nowMillis
+    val newActive = ActiveSuspendedSnapshot(event.isStateActive, now)
+
+    DEBUG("New active status = %s".format(newActive))
+
+    this._userState = this._userState.copy( active = newActive )
+  }
   /**
    * Use the provided [[gr.grnet.aquarium.logic.events.UserEvent]] to change any user state.
    */
   private[this] def processUserEvent(event: UserEvent): Unit = {
     if(event.isCreateUser) {
-      DEBUG("Ignoring %s".format(event))
+      processCreateUser(event)
     } else if(event.isModifyUser) {
-      val now = TimeHelpers.nowMillis
-      val newActive = ActiveSuspendedSnapshot(event.isStateActive, now)
-
-      DEBUG("New active status = %s".format(newActive))
-
-      this._userState = this._userState.copy( active = newActive )
+      processModifyUser(event)
     }
+  }
+
+  /**
+   * Try to load from the DB the latest known info (snapshot data) for the given user.
+   */
+  private[this] def findUserState(userId: String): Maybe[UserState] = {
+    val usersDB = _configurator.storeProvider.userStateStore
+      usersDB.findUserStateByUserId(userId) match {
+        case userStateJ @ Just(userState) ⇒
+          userStateJ
+        case e ⇒ e
+      }
   }
 
   protected def receive: Receive = {
@@ -269,9 +317,15 @@ class UserActor extends AquariumActor with Loggable with Accounting {
 
     case m @ UserActorInitWithUserId(userId) ⇒
       this._userId = userId
-      this._isInitialized = true
-      // TODO: query DB etc to get internal state
-      INFO("Initial setup")
+      findUserState(userId) match {
+        case Just(userState) ⇒
+          DEBUG("Loaded user state %s from DB", userState)
+          this._userState = userState
+        case Failed(e, m) ⇒
+          ERROR("While loading user state from DB: [%s][%s] %s", e.getClass.getName, e.getMessage, m)
+        case NoVal ⇒
+          WARN("Request for unknown (to Aquarium) user")
+      }
 
     case m @ ProcessResourceEvent(resourceEvent) ⇒
       processResourceEvent(resourceEvent, true)
@@ -307,7 +361,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
           // Nope. No user state exists. Must reproduce one
           // FIXME: implement
           ERROR("FIXME: Should have computed the user state for userId = %s".format(userId))
-          self reply UserResponseGetBalance(userId, Maybe(userId.toDouble).getOr(10.5))
+          self reply UserResponseGetBalance(userId, 0)
         }
       }
 

@@ -41,6 +41,8 @@ import com.ckkloverdos.maybe.Maybe
 /**
  * A store for user state.
  *
+ * This is used to hold snapshots of [[gr.grnet.aquarium.user.UserState]]
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 

@@ -38,7 +38,7 @@ package gr.grnet.aquarium.logic.events
 import gr.grnet.aquarium.logic.accounting.Policy
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
-import gr.grnet.aquarium.logic.accounting.dsl.DSLComplexResource
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, DSLComplexResource}
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
