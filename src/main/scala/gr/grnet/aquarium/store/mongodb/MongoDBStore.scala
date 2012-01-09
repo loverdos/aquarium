@@ -63,10 +63,10 @@ class MongoDBStore(
   with WalletEntryStore with UserEventStore
   with Loggable {
 
-  private[store] lazy val rcevents: DBCollection = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
-  private[store] lazy val userstates: DBCollection = getCollection(MongoDBStore.USER_STATES_COLLECTION)
-  private[store] lazy val imevents: DBCollection = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
-  private[store] lazy val wallets: DBCollection = getCollection(MongoDBStore.IM_WALLETS_COLLECTION)
+  private[store] lazy val rcEvents      = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
+  private[store] lazy val userStates    = getCollection(MongoDBStore.USER_STATES_COLLECTION)
+  private[store] lazy val userEvents    = getCollection(MongoDBStore.USER_EVENTS_COLLECTION)
+  private[store] lazy val walletEntries = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
@@ -90,16 +90,16 @@ class MongoDBStore(
 
   //+ResourceEventStore
   def storeResourceEvent(event: ResourceEvent): Maybe[RecordID] =
-    MongoDBStore.storeAquariumEvent(event, rcevents)
+    MongoDBStore.storeAquariumEvent(event, rcEvents)
 
   def findResourceEventById(id: String): Maybe[ResourceEvent] =
-    MongoDBStore.findById(id, rcevents, MongoDBStore.dbObjectToResourceEvent)
+    MongoDBStore.findById(id, rcEvents, MongoDBStore.dbObjectToResourceEvent)
 
   def findResourceEventsByUserId(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
     val query = new BasicDBObject(JsonNames.userId, userId)
 
-    MongoDBStore.runQuery(query, rcevents)(MongoDBStore.dbObjectToResourceEvent)(sortWith)
+    MongoDBStore.runQuery(query, rcEvents)(MongoDBStore.dbObjectToResourceEvent)(sortWith)
   }
 
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
@@ -109,7 +109,7 @@ class MongoDBStore(
     
     val sort = new BasicDBObject(JsonNames.timestamp, 1)
 
-    val cursor = rcevents.find(query).sort(sort)
+    val cursor = rcEvents.find(query).sort(sort)
 
     try {
       val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
@@ -125,12 +125,12 @@ class MongoDBStore(
 
   //+UserStateStore
   def storeUserState(userState: UserState): Maybe[RecordID] =
-    MongoDBStore.storeUserState(userState, userstates)
+    MongoDBStore.storeUserState(userState, userStates)
 
   def findUserStateByUserId(userId: String): Maybe[UserState] = {
     Maybe {
       val query = new BasicDBObject(JsonNames.userId, userId)
-      val cursor = userstates find query
+      val cursor = userStates find query
 
       try {
         if(cursor.hasNext)
@@ -146,10 +146,10 @@ class MongoDBStore(
 
   //+WalletEntryStore
   def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] =
-    MongoDBStore.storeAquariumEvent(entry, wallets)
+    MongoDBStore.storeAquariumEvent(entry, walletEntries)
 
   def findWalletEntryById(id: String): Maybe[WalletEntry] =
-    MongoDBStore.findById[WalletEntry](id, wallets, MongoDBStore.dbObjectToWalletEntry)
+    MongoDBStore.findById[WalletEntry](id, walletEntries, MongoDBStore.dbObjectToWalletEntry)
 
   def findUserWalletEntries(userId: String) = {
     // TODO: optimize
@@ -163,13 +163,13 @@ class MongoDBStore(
     q.put(JsonNames.timestamp, new BasicDBObject("$lt", to.getTime))
     q.put(JsonNames.userId, userId)
 
-    MongoDBStore.runQuery[WalletEntry](q, wallets)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
+    MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
   }
 
   def findLatestUserWalletEntries(userId: String) = {
     Maybe {
       val orderBy = new BasicDBObject(JsonNames.occurredMillis, -1) // -1 is descending order
-      val cursor = wallets.find().sort(orderBy)
+      val cursor = walletEntries.find().sort(orderBy)
 
       try {
         val buffer = new scala.collection.mutable.ListBuffer[WalletEntry]
@@ -203,27 +203,50 @@ class MongoDBStore(
 
   //+UserEventStore
   def storeUserEvent(event: UserEvent): Maybe[RecordID] =
-    MongoDBStore.storeAny[UserEvent](event, imevents, JsonNames.userId,
+    MongoDBStore.storeAny[UserEvent](event, userEvents, JsonNames.userId,
       _.userId, MongoDBStore.jsonSupportToDBObject)
 
 
   def findUserEventById(id: String): Maybe[UserEvent] =
-    MongoDBStore.findById[UserEvent](id, wallets, MongoDBStore.dbObjectToUserEvent)
+    MongoDBStore.findById[UserEvent](id, userEvents, MongoDBStore.dbObjectToUserEvent)
 
   def findUserEventsByUserId(userId: String)
                             (sortWith: Option[(UserEvent, UserEvent) => Boolean]): List[UserEvent] = {
     val query = new BasicDBObject(JsonNames.userId, userId)
-    MongoDBStore.runQuery(query, rcevents)(MongoDBStore.dbObjectToUserEvent)(sortWith)
+    MongoDBStore.runQuery(query, userEvents)(MongoDBStore.dbObjectToUserEvent)(sortWith)
   }
   //-UserEventStore
 }
 
 object MongoDBStore {
+  /**
+   * Collection holding the [[gr.grnet.aquarium.logic.events.ResourceEvent]]s.
+   *
+   * Resource events are coming from all systems handling billable resources.
+   */
   final val RESOURCE_EVENTS_COLLECTION = "resevents"
-  //final val PROCESSED_RESOURCE_EVENTS_COLLECTION = "procresevents"
+
+  /**
+   * Collection holding the snapshots of [[gr.grnet.aquarium.user.UserState]].
+   *
+   * [[gr.grnet.aquarium.user.UserState]] is held internally within [[gr.grnet.aquarium.user.actor.UserActor]]s.
+   */
   final val USER_STATES_COLLECTION = "userstates"
-  final val IM_EVENTS_COLLECTION = "imevents"
-  final val IM_WALLETS_COLLECTION = "wallets"
+
+  /**
+   * Collection holding [[gr.grnet.aquarium.logic.events.UserEvent]]s.
+   *
+   * User events are coming from the IM module (external).
+   */
+  final val USER_EVENTS_COLLECTION = "userevents"
+
+
+  /**
+   * Collection holding [[gr.grnet.aquarium.logic.events.WalletEntry]].
+   *
+   * Wallet entries are generated internally in Aquarium.
+   */
+  final val WALLET_ENTRIES_COLLECTION = "wallets"
 
   /* TODO: Some of the following methods rely on JSON (de-)serialization).
   * A method based on proper object serialization would be much faster.
