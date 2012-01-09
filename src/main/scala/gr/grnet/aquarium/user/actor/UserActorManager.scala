@@ -38,7 +38,7 @@ package gr.grnet.aquarium.user.actor
 import gr.grnet.aquarium.util.Loggable
 import akka.actor.ActorRef
 import gr.grnet.aquarium.actor._
-import gr.grnet.aquarium.processor.actor.{ProcessResourceEvent, DispatcherMessage, UserRequestGetState, UserRequestGetBalance}
+import gr.grnet.aquarium.processor.actor._
 
 
 /**
@@ -97,5 +97,8 @@ class UserActorManager extends AquariumActor with Loggable {
 
     case m @ ProcessResourceEvent(resourceEvent) ⇒
       _forwardToUserActor(resourceEvent.userId, m)
+
+    case m @ ProcessUserEvent(userEvent) ⇒
+      _forwardToUserActor(userEvent.userId, m)
   }
 }

@@ -40,11 +40,11 @@ import gr.grnet.aquarium.Configurator
 import java.util.Date
 import gr.grnet.aquarium.processor.actor._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLSimpleResource, DSLComplexResource, DSLResource}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLSimpleResource, DSLComplexResource}
 import gr.grnet.aquarium.util.{TimeHelpers, Loggable}
-import gr.grnet.aquarium.user.{CreditSnapshot, UserDataSnapshotException, UserState}
+import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
+import gr.grnet.aquarium.user.{ActiveSuspendedSnapshot, CreditSnapshot, UserDataSnapshotException, UserState}
 
 
 /**
@@ -244,6 +244,22 @@ class UserActor extends AquariumActor with Loggable with Accounting {
 
   }
 
+  /**
+   * Use the provided [[gr.grnet.aquarium.logic.events.UserEvent]] to change any user state.
+   */
+  private[this] def processUserEvent(event: UserEvent): Unit = {
+    if(event.isCreateUser) {
+      debug("Ignoring %s".format(event))
+    } else if(event.isModifyUser) {
+      val now = TimeHelpers.nowMillis
+      val newActive = ActiveSuspendedSnapshot(event.isStateActive, now)
+
+      debug("New active status = %s".format(newActive))
+
+      this._userState = this._userState.copy( active = newActive )
+    }
+  }
+
   protected def receive: Receive = {
     case UserActorStop ⇒
       self.stop()
@@ -258,12 +274,11 @@ class UserActor extends AquariumActor with Loggable with Accounting {
       // TODO: query DB etc to get internal state
       logger.info("Setup my userId = %s".format(userId))
 
-//    case m @ ActorProviderConfigured(actorProvider) ⇒
-//      this._actorProvider = actorProvider
-//      logger.info("Configured %s with %s".format(this, m))
-
     case m @ ProcessResourceEvent(resourceEvent) ⇒
       processResourceEvent(resourceEvent, true)
+
+    case m @ ProcessUserEvent(userEvent) ⇒
+      processUserEvent(userEvent)
 
     case m @ UserRequestGetBalance(userId, timestamp) ⇒
       if(this._userId != userId) {
@@ -308,12 +323,12 @@ class UserActor extends AquariumActor with Loggable with Accounting {
       }
   }
 
-  private def debug(msg: String) =
-    logger.debug("UserActor[%s] %s".format(_userId, msg))
+  private[this] def debug(fmt: String, args: Any*) =
+    logger.debug("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
 
-  private def warn(msg: String) =
-    logger.warn("UserActor[%s] %s".format(_userId, msg))
+  private[this] def warn(fmt: String, args: Any*) =
+    logger.warn("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
 
-  private def err(msg: String) =
-    logger.error("UserActor[%s] %s".format(_userId, msg))
+  private[this] def err(fmt: String, args: Any*) =
+    logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
 }

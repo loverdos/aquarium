@@ -56,7 +56,7 @@ import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 
 case class UserState(
     userId: String,
-    active: Boolean,
+    active: ActiveSuspendedSnapshot,
     credits: CreditSnapshot,
     agreement: AgreementSnapshot,
     roles: RolesSnapshot,

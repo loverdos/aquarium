@@ -55,10 +55,13 @@ case class AgreementSnapshot(data: DSLAgreement, snapshotTime: Long) extends Use
 
 case class RolesSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
+// TODO: Check if needed
 case class PaymentOrdersSnapshot(data: List[AnyRef], snapshotTime: Long) extends UserDataSnapshot[List[AnyRef]]
 
+// TODO: Check if needed
 case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
+// TODO: Check if needed
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
 /**
@@ -81,3 +84,10 @@ case class OwnedResourcesSnapshot(data: Map[DSLResource, Map[String, Float]], sn
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 class UserDataSnapshotException(msg: String) extends Exception(msg)
+
+/**
+ * Holds the user active/suspended status.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class ActiveSuspendedSnapshot(data: Boolean, snapshotTime: Long) extends UserDataSnapshot[Boolean]
