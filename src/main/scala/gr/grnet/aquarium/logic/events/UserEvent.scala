@@ -10,7 +10,7 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Just}
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class UserEvent(
+case class  UserEvent(
     override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
     override val occurredMillis: Long, // When it occurred at client side (the sender)
     override val receivedMillis: Long, // When it was received by Aquarium
@@ -65,6 +65,14 @@ case class UserEvent(
   }
 
   def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
+
+  def isCreateUser = eventType == 1
+
+  def isModifyUser = eventType == 2
+
+  def isStateActive = state equalsIgnoreCase "ACTIVE"
+
+  def isStateSuspended =  state equalsIgnoreCase "SUSPENDED"
 }
 
 object UserEvent {
