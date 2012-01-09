@@ -24,7 +24,7 @@ case class WalletEntry(
     reason: String,
     userId: String,
     resource: String,
-    instanceid: String,
+    instanceId: String,
     finalized: Boolean)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
@@ -58,7 +58,7 @@ object WalletEntry {
     final val reason = "reason"
     final val userId = "userId"
     final val resource = "resource"
-    final val instanceid = "instanceid"
+    final val instanceId = "instanceId"
     final val finalized = "finalized"
   }
 }

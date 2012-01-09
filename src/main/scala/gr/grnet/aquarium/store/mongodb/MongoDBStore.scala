@@ -207,7 +207,7 @@ class MongoDBStore(
     val q = new BasicDBObject()
     q.put(WalletJsonNames.userId, userId)
     q.put(WalletJsonNames.resource, resource)
-    q.put(WalletJsonNames.instanceid, instanceid)
+    q.put(WalletJsonNames.instanceId, instanceid)
     finalized match {
       case Some(x) => q.put(WalletJsonNames.finalized, x)
       case None =>
