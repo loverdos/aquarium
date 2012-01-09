@@ -222,19 +222,19 @@ class UserActor extends AquariumActor with Loggable with Accounting {
                 }
                 
               case NoVal ⇒
-                Failed(new Exception("No agreement snapshot found for user %s".format(this._userState.userId)))
+                Failed(new UserDataSnapshotException("No agreement snapshot found for user %s".format(this._userState.userId)))
               case failed @ Failed(e, m) ⇒
                 failed
             }
           // 3.2 No, no luck, this is an error
           case NoVal ⇒
-            Failed(new Exception("No instanceId for resource %s of user %s".format(resource, this._userState.userId)))
+            Failed(new UserDataSnapshotException("No instanceId for resource %s of user %s".format(resource, this._userState.userId)))
           case failed @ Failed(e, m) ⇒
             failed
         }
       // No resource definition found, this is an error
       case None ⇒ // Policy.policy.findResource(ev.resource)
-        Failed(new Exception("No resource %s found for user %s".format(ev.resource, this._userState.userId)))
+        Failed(new UserDataSnapshotException("No resource %s found for user %s".format(ev.resource, this._userState.userId)))
     }
   }
 
