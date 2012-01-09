@@ -74,7 +74,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     val tenant = Array("TENTANT1", "TENANT2").apply(rnd.nextInt(2))
     val role = Array("ADMIN", "NORMAL").apply(rnd.nextInt(2))
 
-    UserEvent(sha1, ts.toLong, ts.toLong, id.toString, 1, 2, event, idp, tenant, Array(role))
+    UserEvent(sha1, ts.toLong, ts.toLong, id.toString, 1, 2, event, idp, tenant, List(role))
   }
 
   /**
@@ -100,7 +100,7 @@ trait RandomEventGenerator extends AkkaAMQP {
       i =>
         val sha1 = CryptoUtils.sha1(genRndAsciiString(35))
         val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
-        val user = UserEvent(sha1, ts, ts, i.toString, 1, 1, "ACTIVE", "LOCAL", "TENTANT1", Array("NORMAL"))
+        val user = UserEvent(sha1, ts, ts, i.toString, 1, 1, "ACTIVE", "LOCAL", "TENTANT1", List("NORMAL"))
         publisher ! Message(user.toBytes, "%s.%s".format(MessagingNames.IM_EVENT_KEY,"CREATED"))
     }
   }

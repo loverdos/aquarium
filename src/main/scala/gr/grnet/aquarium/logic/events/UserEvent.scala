@@ -20,7 +20,7 @@ case class  UserEvent(
     state: String,    //ACTIVE, SUSPENDED
     idp: String,
     tenant: String,
-    roles: Array[String])
+    roles: List[String])
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
   assert(eventType == 1 || eventType == 2)
