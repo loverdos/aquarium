@@ -277,10 +277,9 @@ class UserActor extends AquariumActor with Loggable with Accounting {
     }
   }
 
-  private[this] def findRelatedEntries(res: DSLResource,
-                                       instid: String): List[WalletEntry] = {
+  private[this] def findRelatedEntries(res: DSLResource, instid: String): List[WalletEntry] = {
     val walletDB = _configurator.storeProvider.walletEntryStore
-    return walletDB.findPreviousEntry(_userId, res.name, instid, Some(false))
+    walletDB.findPreviousEntry(_userId, res.name, instid, Some(false))
   }
 
 
