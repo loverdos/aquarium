@@ -21,6 +21,11 @@ aquariumpolicy:
       unit: MB/hr
       complex: false
       costpolicy: continuous
+    - resource:
+      name: bookpages
+      unit: pages
+      complex: false
+      costpolicy: discrete
 
   implicitvars:
     - price
@@ -33,6 +38,7 @@ aquariumpolicy:
       bandwidthdown: $price times $volume
       vmtime: $price times $volume
       diskspace: $price times $volume
+      bookpages: $price times $volume
       effective:
         from: 0
     - algorithm:
@@ -55,6 +61,7 @@ aquariumpolicy:
       bandwidthdown: 0.02
       vmtime: 0.1
       diskspace: 0.05
+      bookpages: 0.1
       effective:
         from: 0
     - pricelist: 

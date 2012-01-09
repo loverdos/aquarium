@@ -36,6 +36,7 @@ package gr.grnet.aquarium.util
  */
 
 import org.junit.Assert.fail
+import com.ckkloverdos.maybe.{NoVal, Just, Maybe, Failed}
 
 /**
  * Some common Scala-related asserts
@@ -68,5 +69,16 @@ trait TestMethods {
   def assertNotEmpty[A](a: Traversable[A]) = a.size match {
     case x if x <= 0 => fail()
     case _ =>
+  }
+  
+  def assertFailed[A <: Throwable, B <: Any](f: => Maybe[B])
+                                  (implicit m: ClassManifest[A]): Unit = {
+    f match {
+      case Failed(e,r) if (m.erasure.isAssignableFrom(e.getClass)) => return
+      case Failed(e,r) => fail("Expected exception of type " + m.erasure.getName +
+        " not thrown. Instead, " + e.getClass.getName + " was thrown")
+      case NoVal => fail("Operation not failed")
+      case Just(x) => fail("Operation not failed")
+    }
   }
 }

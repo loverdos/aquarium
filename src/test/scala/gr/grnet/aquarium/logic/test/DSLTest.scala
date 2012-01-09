@@ -82,7 +82,7 @@ class DSLTest extends DSLTestBase with TestMethods {
   @Test
   def testParseResources = {
     before
-    assertEquals(4, dsl.resources.size)
+    assertEquals(5, dsl.resources.size)
     assertNotNone(dsl.findResource("vmtime"))
     assertTrue(dsl.findResource("vmtime").get.isInstanceOf[DSLComplexResource])
     assertEquals("vmid", dsl.findResource("vmtime").get.asInstanceOf[DSLComplexResource].descriminatorField)
