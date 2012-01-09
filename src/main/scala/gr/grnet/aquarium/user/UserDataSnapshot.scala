@@ -76,35 +76,6 @@ case class OwnedResourcesSnapshot(data: Map[DSLResource, Map[String, Float]], sn
   extends UserDataSnapshot[Map[DSLResource, Map[String, Float]]]
 
 /**
- * Bandwidth is counted in MB (?)
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- */
-case class BandwidthUpSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
-
-/**
- * Bandwidth is counted in MB (?)
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- */
-case class BandwidthDownSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
-
-/**
- * Time is counted in seconds (?)
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- */
-case class VMTimeSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
-
-
-/**
- * Disk space is counted in MB (?)
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- */
-case class DiskSpaceSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
-
-/**
  * A generic exception thrown when errors occur in dealing with user data snapshots
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
