@@ -107,7 +107,7 @@ object OnOffPolicyResourceState {
       case b: Float if (b == 1) => OnResourceState
       case i: Int if (i == 0) => OffResourceState
       case j: Int if (j == 1) => OnResourceState
-      case _ => throw new DSLParseException("Invalid resource state %s".format(name))
+      case _ => throw new DSLParseException("Invalid OnOffPolicyResourceState %s".format(name))
     }
   }
 }
