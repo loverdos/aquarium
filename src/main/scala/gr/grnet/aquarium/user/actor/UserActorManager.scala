@@ -89,7 +89,7 @@ class UserActorManager extends AquariumActor with Loggable {
       this._actorProvider = actorProvicer
       logger.info("Configured %s with %s".format(this, m))
 
-    case m @ UserRequestGetBalance(userId, timestamp) ⇒
+    case m @ RequestUserBalance(userId, timestamp) ⇒
       _forwardToUserActor(userId, m)
 
     case m @ UserRequestGetState(userId, timestamp) ⇒

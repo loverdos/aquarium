@@ -62,7 +62,7 @@ class DispatcherActor extends AquariumActor with Loggable {
       this._actorProvider = actorProvider
       logger.info("Received actorProvider = %s".format(this._actorProvider))
 
-    case m @ UserRequestGetBalance(userId, timestamp) ⇒
+    case m @ RequestUserBalance(userId, timestamp) ⇒
       _forwardToUserManager(m)
 
     case m @ UserRequestGetState(userId, timestamp) ⇒

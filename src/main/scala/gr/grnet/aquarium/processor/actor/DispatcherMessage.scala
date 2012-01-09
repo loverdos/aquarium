@@ -50,6 +50,10 @@ sealed trait DispatcherMessage extends ActorMessage {
 }
 
 sealed trait DispatcherResponseMessage extends DispatcherMessage {
+  def error: Option[String]
+
+  override def isError = error.isDefined
+
   def responseBody: Any
   def responseBodyToJson: String = {
     responseBody match {
@@ -61,17 +65,34 @@ sealed trait DispatcherResponseMessage extends DispatcherMessage {
   }
 }
 
-case class UserRequestGetBalance(userId: String, timestamp: Long) extends DispatcherMessage
+case class RequestUserBalance(userId: String, timestamp: Long) extends DispatcherMessage
 case class BalanceValue(balance: Double) extends JsonSupport
+case class ResponseUserBalance(userId: String, balance: Double, error: Option[String]) extends DispatcherResponseMessage {
+  def responseBody = BalanceValue(balance)
+}
+
 case class UserResponseGetBalance(userId: String, balance: Double) extends DispatcherResponseMessage {
-  val responseBody = BalanceValue(balance)
+  def responseBody = BalanceValue(balance)
+  def error = None
 }
 
 case class UserRequestGetState(userId: String, timestampt: Long) extends DispatcherMessage
 case class UserResponseGetState(userId: String, state: UserState) extends DispatcherResponseMessage {
   def responseBody = state
+  val error = None
 }
 
+/**
+ * Dispatcher message that triggers the resource event processing pipeline.
+ *
+ * Note that the prefix `Process` means that no reply is created or needed.
+ */
 case class ProcessResourceEvent(rce: ResourceEvent) extends DispatcherMessage
+
+/**
+ * Dispatcher message that triggers the user event processing pipeline.
+ *
+ * Note that the prefix `Process` means that no reply is created or needed.
+ */
 case class ProcessUserEvent(ue: UserEvent) extends DispatcherMessage
 

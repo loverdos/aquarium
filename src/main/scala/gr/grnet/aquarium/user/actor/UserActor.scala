@@ -42,9 +42,9 @@ import gr.grnet.aquarium.processor.actor._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
 import gr.grnet.aquarium.util.{TimeHelpers, Loggable}
-import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
 import gr.grnet.aquarium.user._
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, DSLSimpleResource, DSLComplexResource}
+import gr.grnet.aquarium.logic.events.{AquariumEvent, UserEvent, WalletEntry, ResourceEvent}
 
 
 /**
@@ -333,31 +333,41 @@ class UserActor extends AquariumActor with Loggable with Accounting {
 
   protected def receive: Receive = {
     case UserActorStop ⇒
+      // TODO: Check if this is OK with the rest of the semantics
       self.stop()
 
     case m @ AquariumPropertiesLoaded(props) ⇒
       this._timestampTheshold = props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
-      logger.info("Setup my timestampTheshold = %s".format(this._timestampTheshold))
+      INFO("Setup my timestampTheshold = %s", this._timestampTheshold)
 
     case m @ UserActorInitWithUserId(userId) ⇒
       this._userId = userId
       ensureUserState()
 
     case m @ ProcessResourceEvent(resourceEvent) ⇒
-      ensureUserState()
-      processResourceEvent(resourceEvent, true)
+      if(resourceEvent.userId != this._userId) {
+        ERROR("Received %s but my userId = %s".format(m, this._userId))
+      } else {
+        ensureUserState()
+        processResourceEvent(resourceEvent, true)
+      }
 
     case m @ ProcessUserEvent(userEvent) ⇒
-      ensureUserState()
-      processUserEvent(userEvent)
+      if(userEvent.userId != this._userId) {
+        ERROR("Received %s but my userId = %s".format(m, this._userId))
+      } else {
+        ensureUserState()
+        processUserEvent(userEvent)
+      }
 
-    case m @ UserRequestGetBalance(userId, timestamp) ⇒
+    case m @ RequestUserBalance(userId, timestamp) ⇒
       if(this._userId != userId) {
         ERROR("Received %s but my userId = %s".format(m, this._userId))
         // TODO: throw an exception here
       } else {
         // This is the big party.
         // Get the user state, if it exists and make sure it is not stale.
+        ensureUserState()
 
         // Do we have a user state?
         if(_userState ne null) {
@@ -376,10 +386,10 @@ class UserActor extends AquariumActor with Loggable with Accounting {
             self reply UserResponseGetBalance(userId, credits.data)
           }
         } else {
-          // Nope. No user state exists. Must reproduce one
-          // FIXME: implement
-          ERROR("FIXME: Should have computed the user state for userId = %s".format(userId))
-          self reply UserResponseGetBalance(userId, 0)
+          // No user state exists. This is an error.
+          val errMsg = "Could not load user state for %s".format(m)
+          ERROR(errMsg)
+          self reply ResponseUserBalance(userId, 0, Some(errMsg))
         }
       }
 

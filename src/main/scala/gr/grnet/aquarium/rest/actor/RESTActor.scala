@@ -1,5 +1,3 @@
-package gr.grnet.aquarium.rest.actor
-
 /*
  * Copyright 2011 GRNET S.A. All rights reserved.
  *
@@ -35,16 +33,18 @@ package gr.grnet.aquarium.rest.actor
  * or implied, of GRNET S.A.
  */
 
-import cc.spray.can.HttpMethods.{GET, POST}
+package gr.grnet.aquarium.rest.actor
+
+import cc.spray.can.HttpMethods.GET
 import cc.spray.can._
 import gr.grnet.aquarium.util.Loggable
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json.{JsonAST, Printer}
 import gr.grnet.aquarium.Configurator
-import akka.actor.{ActorRef, Actor}
+import akka.actor.Actor
 import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
 import RESTPaths.{UserBalancePath, UserStatePath}
-import gr.grnet.aquarium.processor.actor.{DispatcherResponseMessage, UserRequestGetState, UserRequestGetBalance, DispatcherMessage}
+import gr.grnet.aquarium.processor.actor.{DispatcherResponseMessage, UserRequestGetState, RequestUserBalance, DispatcherMessage}
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -99,7 +99,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
       val millis = System.currentTimeMillis()
       uri match {
         case UserBalancePath(userId) ⇒
-          callDispatcher(UserRequestGetBalance(userId, millis), responder)
+          callDispatcher(RequestUserBalance(userId, millis), responder)
         case UserStatePath(userId) ⇒
           callDispatcher(UserRequestGetState(userId, millis), responder)
         case _ ⇒
@@ -116,9 +116,10 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
   }
 
 
+  private[this]
   def callDispatcher(message: DispatcherMessage, responder: RequestResponder): Unit = {
-    val masterConf = Configurator.MasterConfigurator
-    val actorProvider = masterConf.actorProvider
+    val configurator = Configurator.MasterConfigurator
+    val actorProvider = configurator.actorProvider
     val dispatcher = actorProvider.actorForRole(DispatcherRole)
     val futureResponse = dispatcher ask message
 
@@ -138,7 +139,11 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
                 logger.debug("Received response (JSON): %s".format(dispatcherResponse.toJson))
                 logger.debug("Received response:body %s".format(dispatcherResponse.responseBody))
                 logger.debug("Received response:body (JSON): %s".format(dispatcherResponse.responseBodyToJson))
-                responder.complete(HttpResponse(status = 200, body = dispatcherResponse.responseBodyToJson.getBytes("UTF-8"), headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
+                responder.complete(
+                  HttpResponse(
+                    status = 200,
+                    body = dispatcherResponse.responseBodyToJson.getBytes("UTF-8"),
+                    headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
 
               case dispatcherResponse: DispatcherResponseMessage ⇒
                 logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
