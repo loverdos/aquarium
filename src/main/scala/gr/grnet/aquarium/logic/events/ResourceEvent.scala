@@ -80,11 +80,49 @@ case class ResourceEvent(
       case Some(DSLSimpleResource(_, _, _)) ⇒
         "1" // TODO: put this constant somewhere centrally...
       case None => ""
-      case Some(x) => x.isComplex match {
-        case false => "1"
-        case true =>
-          details.getOrElse(x.asInstanceOf[DSLComplexResource].descriminatorField, "")
-      }
+    }
+  }
+
+  /**
+   * Return `true` iff this is an event regarding a resource with an
+   * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
+   */
+  def isOnOffEvent(policy: DSLPolicy): Boolean = {
+    policy.findResource(this.resource).map(_.costpolicy) match {
+      case Some(OnOffCostPolicy) ⇒ true
+      case _ ⇒ false
+    }
+  }
+
+  /**
+   * Return `true` iff this is an event regarding a resource with an
+   * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]] and a
+   * `value` of `"on"`.
+   */
+  def isOnEvent(policy: DSLPolicy): Boolean = {
+    policy.findResource(this.resource) match {
+      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
+        OnOffPolicyResourceState(this.value).isOn
+      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
+        OnOffPolicyResourceState(this.value).isOn
+      case _ ⇒
+        false
+    }
+  }
+
+  /**
+   * Return `true` iff this is an event regarding a resource with an
+   * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]] and a
+   * `value` of `"off"`.
+   */
+  def isOffEvent(policy: DSLPolicy): Boolean = {
+    policy.findResource(this.resource) match {
+      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
+        OnOffPolicyResourceState(this.value).isOff
+      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
+        OnOffPolicyResourceState(this.value).isOff
+      case _ ⇒
+        false
     }
   }
 
