@@ -96,7 +96,10 @@ object DiscreteCostPolicy extends DSLCostPolicy("discrete")
  * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]]
  * can be.
  */
-abstract class OnOffPolicyResourceState(state: String)
+abstract class OnOffPolicyResourceState(state: String) {
+  def isOn: Boolean = !isOff
+  def isOff: Boolean = !isOn
+}
 
 object OnOffPolicyResourceState {
   def apply(name: Any): OnOffPolicyResourceState = {
@@ -112,5 +115,9 @@ object OnOffPolicyResourceState {
   }
 }
 
-object OnResourceState  extends OnOffPolicyResourceState("on")
-object OffResourceState extends OnOffPolicyResourceState("off")
+object OnResourceState  extends OnOffPolicyResourceState("on") {
+  override def isOn = true
+}
+object OffResourceState extends OnOffPolicyResourceState("off") {
+  override def isOff = true
+}
