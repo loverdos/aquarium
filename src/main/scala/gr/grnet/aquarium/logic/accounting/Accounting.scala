@@ -65,7 +65,7 @@ trait Accounting extends DSLUtils with Loggable {
                   related: List[WalletEntry]):
   Maybe[List[WalletEntry]] = {
 
-    assert(lastUpdate.getTime < ev.occurredMillis)
+    assert(lastUpdate.getTime <= ev.occurredMillis)
 
     if (!ev.validate())
       return Failed(new AccountingException("Event not valid"))
