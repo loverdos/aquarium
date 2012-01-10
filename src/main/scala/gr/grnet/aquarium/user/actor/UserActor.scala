@@ -261,6 +261,37 @@ class UserActor extends AquariumActor with Loggable with Accounting {
    *
    * The implementations are as follows:
    *
+   * ============
+   * Algorithm W1
+   * ============
+   * - Input
+   *   - A non-"on/off" resource event
+   *
+   * - Output
+   *   - The respective wallet entries
+   *
+   * - Implementation
+   *   TODO: This is done in Accounting.chargeEvents
+   *
+   * ============
+   * Algorithm W2
+   * ============
+   * - Input
+   *   - An "off" resource event
+   *   - The corresponding "on" resource event
+   *
+   * - Output
+   *   - The respective wallet entries
+   *
+   * - Implementation
+   *   TODO: Trivial
+   *
+   * ===============
+   * Algorithm OnOff
+   * ===============
+   * - Input
+   *
+   * ===========
    * Algorithm F
    * ===========
    * Input:  A resource event (e).
