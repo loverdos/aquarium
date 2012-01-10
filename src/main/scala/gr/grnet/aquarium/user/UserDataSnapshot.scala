@@ -66,23 +66,64 @@ case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends U
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
 /**
- * Maintains the current state of resources owned by the user.
- * The encoding of the stored Map is as follows:
+ * Maintains the current state of a resource instance owned by the user.
+ * The encoding is as follows:
  *
- * key:   ResourceInstanceId(DSLResource.name, instance-id)
- * value: ResourceStateSnapshot(current-resource-value, last-update-timestamp)
+ * name: DSLResource.name
+ * instanceId: instance-id (in the resource's descriminatorField)
+ * data: current-resource-value
+ * snapshotTime: last-update-timestamp
  *
  * In order to have a uniform representation of the resource state for all
  * resource types (complex or simple) the following convention applies:
  *
- *  - If the resource is complex, the key is stored as ResourceInstanceId(DSLResource.name, instance-id)
- *  - If the resource is simple,  the key is stored as ResourceInstanceId(DSLResource.name, 1)
+ *  - If the resource is complex, the (name, instanceId) is (DSLResource.name, instance-id)
+ *  - If the resource is simple,  the (name, instanceId) is (DSLResource.name, "1")
  *
  */
-case class ResourceInstanceId(name: String, instanceId: String)
-case class ResourceStateSnapshot(value: Float, lastUpdate: Long)
-case class OwnedResourcesSnapshot(data: Map[ResourceInstanceId, ResourceStateSnapshot], snapshotTime: Long)
-  extends UserDataSnapshot[Map[ResourceInstanceId, ResourceStateSnapshot]]
+case class ResourceInstanceSnapshot(
+    name: String,
+    instanceId: String,
+    data: Float,
+    snapshotTime: Long)
+  extends UserDataSnapshot[Float] {
+
+  def value = data
+  
+  def isResource(name: String, instanceId: String) =
+    this.name == name &&
+    this.instanceId == instanceId
+}
+case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshotTime: Long)
+  extends UserDataSnapshot[List[ResourceInstanceSnapshot]] {
+
+  def findResourceSnapshot(name: String, instanceId: String): Option[ResourceInstanceSnapshot] = {
+    data find {
+      case ResourceInstanceSnapshot(name, instanceId, _, _) ⇒ true
+      case _ ⇒ false
+    }
+  }
+  
+  def addOrUpdateResourceSnapshot(name: String,
+                                  instanceId: String,
+                                  value: Float,
+                                  snapshotTime: Long): (OwnedResourcesSnapshot, Option[ResourceInstanceSnapshot], ResourceInstanceSnapshot) = {
+    val oldRCInstanceOpt = this.findResourceSnapshot(name, instanceId)
+    val newRCInstance = ResourceInstanceSnapshot(name, instanceId, value, snapshotTime)
+    val newData = oldRCInstanceOpt match {
+      case Some(currentRCInstance) ⇒
+        // Need to delete the old one and add the new one
+        newRCInstance :: (data.filterNot(_.isResource(name, instanceId)))
+      case None ⇒
+        // Resource not found, so this is the first time and we just add the new snapshot
+        newRCInstance :: data
+    }
+
+    val newOwnedResources = this.copy(data = newData, snapshotTime = snapshotTime)
+
+    (newOwnedResources, oldRCInstanceOpt, newRCInstance)
+  }
+}
 
 
 /**

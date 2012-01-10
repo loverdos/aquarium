@@ -379,24 +379,12 @@ class UserActor extends AquariumActor with Loggable with Accounting {
           // 3.1 Yes, time to get/update the current state
           case Just(instanceId) ⇒
             val oldOwnedResources = _userState.ownedResources
-            // Find or create the new resource instance map
-            val oldOwnedResourcesData = oldOwnedResources.data
-            val key = ResourceInstanceId(resource.name, instanceId)
-            val oldRCInstance = oldOwnedResourcesData.get(key) match {
-              case Some(resourceState) ⇒ resourceState
-              case None                ⇒ ResourceStateSnapshot(0, 0)
-            }
-            // Update the new value in the resource state
-            val newRCInstanceMap = oldRCInstance.copy(value = ev.value, lastUpdate = ev.occurredMillis)
-
-            val newOwnedResourcesData = oldOwnedResourcesData.updated(key, newRCInstanceMap)
 
             // A. First state diff: the modified resource value
             val StateChangeMillis = TimeHelpers.nowMillis
-            val newOwnedResources = oldOwnedResources.copy(
-              data = newOwnedResourcesData,
-              snapshotTime = StateChangeMillis
-            )
+            val (newOwnedResources, oldRCInstanceOpt, newRCInstance) = oldOwnedResources.
+              addOrUpdateResourceSnapshot(resource.name, instanceId, ev.value, ev.occurredMillis)
+            val previousRCUpdateTime = oldRCInstanceOpt.map(_.snapshotTime).getOrElse(newRCInstance.snapshotTime)
 
             // Calculate the wallet entries generated from this resource event
             _userState.maybeDSLAgreement match {
@@ -404,7 +392,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
                 // TODO: the snapshot time should be per instanceId?
                 // TODO: Related events
                 val walletEntriesM = chargeEvent(ev, agreement, ev.value,
-                  new Date(oldRCInstance.lastUpdate),
+                  new Date(previousRCUpdateTime),
                   findRelatedEntries(resource, ev.getInstanceId(policy)))
                 walletEntriesM match {
                   case Just(walletEntries) ⇒
@@ -473,7 +461,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
             PaymentOrdersSnapshot(Nil, now),
             OwnedGroupsSnapshot(Nil, now),
             GroupMembershipsSnapshot(Nil, now),
-            OwnedResourcesSnapshot(Map(), now)
+            OwnedResourcesSnapshot(List(), now)
           )
 
           usersDB.storeUserState(this._userState)
