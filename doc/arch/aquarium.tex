@@ -139,6 +139,7 @@ while it should reach an operating state very fast after a service restart.
 
 \section{Implementation}
 
+
 \subsection{The configuration DSL}
 
 The configuration requirements presented above were addressed by creating a new
@@ -268,25 +269,41 @@ of the amount of resource usage to be charged as follows:
         the function of resource usage through time and $p(t)$ is the function
         representing the pricelist at time $t$, 
         then the total cost up to a 
-        $c(t) = \sum_{i=0}^{t} {p(t) \times \int_0^{t}{f(t)dt}}$
+        $c(t) = \sum_{i=0}^{t} {p(t) \times \int_0^{t}{f(t)dt}}$. Most resources
+        in Aquarium are continuous, for example bandwidth and disk space.
 
     \item resources employing the \textsf{onoff} cost policy can be in two states:
         either switched on and actively used or switched off. Therefore, the unit
-        of resource usage is time and not
+        of resource usage is time and not the actual resource usage, while the
+        period of charging is calculated only when the resource is switched on.
+        Virtual machines are examples of resources with the \textsf{onoff} cost
+        policy.
 
-    \item and finally, resources using the \textsf{distinct} cost policy are charged
-        upon usage, without time playing 
+    \item resources using the \textsf{distinct} cost policy are charged
+        upon usage, without time playing a role in the charge. Such resources
+        are useful for one off charges, such as the allocation of
+        virtual machine or the migration of a virtual machine to a less busy
+        host.
 
 \end{itemize}
 
-Billing events are obtained by a connection to a message queue.  Upon arrival,
-a billing event is stored in an immutable log, and then forwarded to the user
-actor's mailbox; the calculation of the actual billing entries to be stored in
-the user's wallet is done within the context of an actor. The calculation
-process is in itself complicated. A significant source of complexity is
-the support for temporal overriding for pricelists and algorithms:
-within the timeframe of the billing
-algorithm must first decide the 
+Billing events are obtained through a connection to a message queue. Upon
+arrival, a billing event is stored in an immutable log, and then forwarded to
+the user actor's mailbox; the calculation of the actual billing entries to be
+stored in the user's wallet is done within the context of the user actor,
+serially for each incoming events. This permits the actor to have mutable state
+internally (as described in Section~\ref{sec:ustate}), without risking the
+calculation correctness. The calculation process involves steps such as
+validating the resource event, resolving the current state of resource affected
+by the incoming resource event, deciding the value applicable pricelist and
+algorithm, generating entries for the user's wallet and updating the current
+resource state for the user. A significant source of complexity in the process
+is the support for temporal overriding for pricelists and algorithms: within
+the timeframe between resource updates, several policies or algorithms may be
+active. The billing algorithm must therefore split the billing period to pieces
+according the applicability of each policy/algorithm and make sure that at 
+least a baseline policy is in effect in order to perform the calculation.
+Consequently, a resource event might lead to several entries to the user's wallet.
 
 The actual format of the event is presented in Figure~\ref{fig:resevt}.
 
@@ -316,7 +333,7 @@ flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 \end{figure}
 
 \subsection{User State}
-
+\label{sec:ustate}
 
 \section{Performance}
 
