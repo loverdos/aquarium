@@ -20,7 +20,7 @@
 
 \title{Aquarium: Billing for the Cloud in the Cloud}
 
-\authorinfo{Georgios Gousios \and Christos KK Loverdos}
+\authorinfo{Georgios Gousios \and Christos Loverdos}
 {GRNet SA}
 {\{gousiosg,loverdos\}@grnet.gr}
 
@@ -83,7 +83,7 @@ user interfaces and provide distinct functionality in the context of
 the GRnet IaaS, they all share a common notion of \emph{resources}, access
 and manipulation options to which they offer to users. 
 
-\subsection{Supported Users}
+\subsection{Sharing}
 
 The Okeanos IaaS will support the Greek higher education, an estimated
 population of 100.000 students and researchers. Each member will be granted
@@ -92,7 +92,10 @@ a limit to the resources that can be acquired from the platform, each user will
 have a limited amount of credits, renewable each month, which will be allowed
 to spend on any resource available through the infrastructure. Resources can
 also be shared; for example files on the Pithos file service or virtual machine
-images on the Archipelago storage can be 
+images on the Archipelago storage are potentially subject to concurrent usage from 
+multiple users. This means that charges for the use of a single resource
+may need to be distributed among several users. Also this may mean that in order
+for sharing to work correctly, users may need to transfer credits among them.
 
 
 \subsection{Configuration}
@@ -153,11 +156,11 @@ The DSL is in itself based on five top-level entities, namely:
 \begin{description}
 
     \item[Resources] specify the properties of resources that Aquarium knows
-        about. Apart from the expected ones (name, unit etc), 
-        a resource has two properties that affect billing: \textsf{costpolicy}
-        defines whether the billing operation is to be performed at the moment
-        a billing event has arrived, while the \textsf{complex} attribute defines
-        whether a resource can have many instances per user.
+        about. Apart from the expected ones (name, unit etc), a resource has
+        two properties that affect billing: \textsf{costpolicy} defines the
+        algorithm to be used to calculate the resource usage, while the
+        \textsf{complex} attribute defines whether a resource can have one or
+        many instances per user.
 
     \item[Pricelists] assign a price tag to each resource, within a timeframe.
     
@@ -180,7 +183,7 @@ The DSL is in itself based on five top-level entities, namely:
 
 
 \begin{figure}
-\lstset{language=ruby, basicstyle=\footnotesize,
+\lstset{language=c, basicstyle=\footnotesize,
 stringstyle=\ttfamily, 
 flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 
@@ -205,7 +208,7 @@ pricelists:
       repeat:
       - start: "00 02 * * Tue"
         end:   "00 02 * * Wed"
-      from: 1326041177 #Sun, 8 Jan 2012 18:46:27 EET
+      from: 1326041177        //Sun, 8 Jan 2012 18:46:27 EET
 algorithms:
   - algorithm:
     name: default
@@ -245,15 +248,46 @@ Aquarium {\sc dsl} to provide a scaling charge algorithm.
 
 \subsection{Billing}
 
-As common to most similar systems, billing in Aquarium is the application of
-a billing contract to an incoming billing event in order to produce an 
-entry for the user's wallet. However, in stark contrast to most other systems,
-which rely on database transactions in order to securely modify the user's
-balance, Aquarium performs account updates asynchronously and concurrently
-for all known users.
+Commonly to most similar systems, billing in Aquarium is the application of the
+provisions of a user's contract to an incoming billing event in order to
+produce an entry for the user's wallet. However, in stark contrast to most
+other systems, which rely on database transactions in order to securely modify
+the user's balance, Aquarium performs account updates asynchronously and
+concurrently for all users.
 
-Billing events are obtained by a connection to a reliable message queue.
-The billing event format depends on the 
+Per resource, the charging operation is affected by the cost policy and complexity
+parameters. Specifically, the 3 available cost policies affect the calculation 
+of the amount of resource usage to be charged as follows:
+
+\begin{itemize}
+    \item resources employing the \textsf{continuous} cost policy are charged for
+        the actual resource usage through time. When a resource event arrives,
+        the previous resource state between the previous charge operation and the
+        current event event timestamp is charged and the resource state is then
+        updated. More formally, for continuous resources, if $f(t)$ represents
+        the function of resource usage through time and $p(t)$ is the function
+        representing the pricelist at time $t$, 
+        then the total cost up to a 
+        $c(t) = \sum_{i=0}^{t} {p(t) \times \int_0^{t}{f(t)dt}}$
+
+    \item resources employing the \textsf{onoff} cost policy can be in two states:
+        either switched on and actively used or switched off. Therefore, the unit
+        of resource usage is time and not
+
+    \item and finally, resources using the \textsf{distinct} cost policy are charged
+        upon usage, without time playing 
+
+\end{itemize}
+
+Billing events are obtained by a connection to a message queue.  Upon arrival,
+a billing event is stored in an immutable log, and then forwarded to the user
+actor's mailbox; the calculation of the actual billing entries to be stored in
+the user's wallet is done within the context of an actor. The calculation
+process is in itself complicated. A significant source of complexity is
+the support for temporal overriding for pricelists and algorithms:
+within the timeframe of the billing
+algorithm must first decide the 
+
 The actual format of the event is presented in Figure~\ref{fig:resevt}.
 
 \begin{figure}
@@ -281,59 +315,8 @@ flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 
 \end{figure}
 
-\subsection{Implementation Experience}
+\subsection{User State}
 
-One of the topics of debate while designing Aquarium was the choice of
-programming platform to use. With all user facing systems in the Okeanos cloud
-being developed in Python and the initial Aquarium designers being beginner
-Scala users (but experts in Java), the choice certainly involved risk that
-management was initially reluctant to take. However, by breaking down the
-requirements and considering the various safeguards that the software would
-need to employ in order to satisfy them, it became clear that a
-typesafe language was a hard requirement. Of the platforms examined, the {\sc
-jvm} had the richest collection of ready made components; the Akka library was
-particularly enticing for its scalability and distribution possibilities it
-offered.
-
-The choice of Scala at the moment was a high risk/high gain bet for GRNet.
-However, the development team's experience has been generally positive.  Scala
-as a language was an enabling factor; case classes permitted the expression of
-data models, including the configuration {\sc dsl}, that could be easily be
-serialized or read back from wire formats while also promoting immutability
-through the use of the \texttt{copy()} constructor.  The very active use of
-immutability allowed us to write strict, yet simple and concise unit tests, as
-the number of cases to be examined was generally low. The
-\textsf{Maybe}\footnote{\textsf{Maybe} works like \textsf{Option}, but it has
-an extra possible state (\textsf{Failed}), which allows exceptions to be
-encapsulated in the return type of a function, and then retrieved and accounted
-for in a pattern matching operation with no side effects. More at
-\url{https://github.com/loverdos/Maybe}} monad, developed by the second author,
-enabled side-effect free development of data processing functions, even in cases
-where exceptions were the only way to go. Java interoperability was excellent,
-while thin Scala wrappers around existing Java libraries enabled higher
-productivity and use of Scala idioms in conjunction with Java code.
-
-Despite the above, the experience was not as smooth as initially expected. The
-most prominent problem we encountered was that of missing documentation. The
-Akka library documentation, extensive as is, only scratches the surface.
-Several other libraries we use, for example Spray for {\sc rest} handling, have
-non-existent documentation. The Java platform, and .Net that followed, has
-shown that thorough and precise documentation are key to adoption, and we
-expected a similar quality level. Related is the problem of shared community
-wisdom; as most developers know, a search for any programming problem will
-reveal several straightforward Java or scripting language sources. The
-situation with Scala is usually the opposite; the expressive power of the
-language makes it the current language of choice for treating esoteric
-functional programming concepts, while simple topics are often neglected. Scala
-has several libraries of algebraic datatypes but no {\sc yaml} parser. As Scala
-gains mainstream adoption, we hope that such problems will fade.
-
-From a software engineering point of view, the current state of the project was
-reached using about 6 person months of effort, 2 of which were devoted to
-requirements elicitation, prototype building and familiarizing with the
-language. The source code currently consists of 5.000 lines of executable
-statements (including about 1.000 lines of tests), divided in about 10
-packages. The system is built using both {\sc sbt} and Maven. 
 
 \section{Performance}
 
@@ -360,8 +343,73 @@ first created a configurable number of users and then produced billing events
 that 
 
 
-The measurements above were done on the first working version of the
-Aquarium deployment. They present 
+All measurements were done using the first working version of the
+Aquarium deployment, so no real optimisation effort did take place. 
+
+
+\section{Lessons Learned}
+
+One of the topics of debate while designing Aquarium was the choice of
+programming platform to use. With all user facing systems in the Okeanos cloud
+being developed in Python and the initial Aquarium designers being beginner
+Scala users (but experts in Java), the choice certainly involved risk that
+management was initially reluctant to take. However, by breaking down the
+requirements and considering the various safeguards that the software would
+need to employ in order to satisfy them, it became clear that a
+typesafe language was a hard requirement. Of the platforms examined, the {\sc
+jvm} had the richest collection of ready made components; the Akka library was
+particularly enticing for the scalability and distribution possibilities it
+offered.
+
+The choice of Scala at the moment it had been made was a high risk/high gain
+bet for GRNet. However, the development team's experience has been generally
+positive. Scala as a language was an enabling factor; case classes permitted
+the expression of data models, including the configuration {\sc dsl}, that
+could be easily be serialized or read back from wire formats while also
+promoting immutability through the use of the \texttt{copy()} constructor. The
+pervasive use of immutability allowed us to write strict, yet simple and
+concise unit tests, as the number of cases to be examined was generally low.
+The \textsf{Maybe}\footnote{\textsf{Maybe} works like \textsf{Option}, but it
+has an extra possible state (\textsf{Failed}), which allows exceptions to be
+encapsulated in the return type of a function, and then retrieved and accounted
+for in a pattern matching operation with no side effects. More at
+\url{https://github.com/loverdos/Maybe}} monad, enabled side-effect free
+development of data processing functions, even in cases where exceptions were
+the only way to go. Java interoperability was excellent, while thin Scala
+wrappers around existing Java libraries enabled higher productivity and use of
+Scala idioms in conjunction with Java code.
+
+The Akka library, which is the backbone of our system, is a prime example of 
+the simplicity that can be achieved by using carefully designed high-level
+components. Akka's custom supervision hierarchies allowed us to partition the
+system in self-healing sub-components, each of which can fail independently
+of the other. For example, if the queue reader component fails due to a queue
+failure, Aquarium will still be accessible and responsive for the {\sc rest}
+interface. Also, Akka allowed us to easily saturate the processing components
+of any system we tested Aquarium on, simply by tuning the number of threads (in
+{\sc i/o} bound parts) and actors (in {\sc cpu} bound parts) per dispatcher. 
+
+Despite the above, the experience was not as smooth as initially expected. The
+most prominent problem we encountered was that of lacking documentation. The
+Akka library documentation, extensive as is, only scratches the surface.
+Several other libraries we use, for example Spray for {\sc rest} handling, have
+non-existent documentation. The Java platform, and .Net that followed, has
+shown that thorough and precise documentation are key to adoption, and we
+expected a similar quality level. Related is the problem of shared community
+wisdom; as most developers know, a search for any programming problem will
+reveal several straightforward Java or scripting language sources. The
+situation with Scala is usually the opposite; the expressive power of the
+language makes it the current language of choice for treating esoteric
+functional programming concepts, while simple topics are often neglected. Scala
+has several libraries of algebraic datatypes but no {\sc yaml} parser. As Scala
+gains mainstream adoption, we hope that such problems will fade.
+
+From a software engineering point of view, the current state of the project was
+reached using about 6 person months of effort, 2 of which were devoted to
+requirements elicitation, prototype building and familiarizing with the
+language. The source code currently consists of 5.000 lines of executable
+statements (including about 1.000 lines of tests), divided in about 10
+packages. The system is built using both {\sc sbt} and Maven. 
 
 \section{Related Work}
 
