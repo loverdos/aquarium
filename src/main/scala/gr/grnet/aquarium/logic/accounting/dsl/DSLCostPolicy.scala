@@ -66,7 +66,7 @@ object DSLCostPolicy {
  * Example resources that might be adept to a continuous policy
  * are bandwidth and diskspace.
  */
-object ContinuousCostPolicy extends DSLCostPolicy("continuous")
+case object ContinuousCostPolicy extends DSLCostPolicy("continuous")
 
 /**
  * An onoff cost policy expects a resource to be in one of the two allowed
@@ -78,7 +78,7 @@ object ContinuousCostPolicy extends DSLCostPolicy("continuous")
  * Example resources that might be adept to onoff policies are VMs in a
  * cloud application and books in a book lending application.
  */
-object OnOffCostPolicy extends DSLCostPolicy("onoff")
+case object OnOffCostPolicy extends DSLCostPolicy("onoff")
 
 /**
  * An discrete cost policy indicates that a resource should be charged directly
@@ -89,7 +89,7 @@ object OnOffCostPolicy extends DSLCostPolicy("onoff")
  * actions (e.g. the fact that a user has created an account) or resources
  * that should be charged per volume once (e.g. the allocation of a volume)
  */
-object DiscreteCostPolicy extends DSLCostPolicy("discrete")
+case object DiscreteCostPolicy extends DSLCostPolicy("discrete")
 
 /**
  * Encapsulates the possible states that a resource with an
