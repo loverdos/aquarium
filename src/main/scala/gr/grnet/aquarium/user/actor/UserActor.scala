@@ -150,7 +150,8 @@ class UserActor extends AquariumActor with Loggable with Accounting {
     // and the update with new values.
 
     // 1. Find the resource definition
-    Policy.policy.findResource(ev.resource) match {
+    val policy = Policy.policy
+    policy.findResource(ev.resource) match {
       case Some(resource) ⇒
         // 2. Get the instance id and value for the resource
         val instanceIdM = resource match {
@@ -200,7 +201,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
                 // TODO: Related events
                 val walletEntriesM = chargeEvent(ev, agreement, ev.value,
                   new Date(oldOwnedResources.snapshotTime),
-                  findRelatedEntries(resource, ev.getInstanceId))
+                  findRelatedEntries(resource, ev.getInstanceId(policy)))
                 walletEntriesM match {
                   case Just(walletEntries) ⇒
                     _storeWalletEntries(walletEntries)

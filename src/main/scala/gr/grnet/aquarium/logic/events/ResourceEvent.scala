@@ -38,7 +38,7 @@ package gr.grnet.aquarium.logic.events
 import gr.grnet.aquarium.logic.accounting.Policy
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, DSLComplexResource}
+import gr.grnet.aquarium.logic.accounting.dsl.{OnOffCostPolicy, DSLPolicy, DSLResource, DSLComplexResource}
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -60,7 +60,7 @@ case class ResourceEvent(
 
   def validate() : Boolean = {
 
-    if (getInstanceId.isEmpty)
+    if (getInstanceId().isEmpty)
       return false
 
     true
@@ -71,8 +71,8 @@ case class ResourceEvent(
    * resource or the instance id field cannot be found, this method returns an
    * empty String.
    */
-  def getInstanceId: String = {
-    Policy.policy.findResource(this.resource) match {
+  def getInstanceId(policy: DSLPolicy = Policy.policy): String = {
+    policy.findResource(this.resource) match {
       case None => ""
       case Some(x) => x.isComplex match {
         case false => "1"
@@ -103,7 +103,7 @@ object ResourceEvent {
   def fromXml(xml: String): ResourceEvent = {
     fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
   }
-  
+
   object JsonNames {
     final val _id = "_id"
     final val id = "id"

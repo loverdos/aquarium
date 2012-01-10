@@ -70,7 +70,8 @@ trait Accounting extends DSLUtils with Loggable {
     if (!ev.validate())
       return Failed(new AccountingException("Event not valid"))
 
-    val resource = Policy.policy.findResource(ev.resource) match {
+    val policy = Policy.policy
+    val resource = policy.findResource(ev.resource) match {
       case Some(x) => x
       case None => return Failed(
         new AccountingException("No resource [%s]".format(ev.resource)))
@@ -134,7 +135,7 @@ trait Accounting extends DSLUtils with Loggable {
           reason = c.reason,
           userId = ev.userId,
           resource = ev.resource,
-          instanceId = ev.getInstanceId,
+          instanceId = ev.getInstanceId(policy),
           finalized = isFinal
         )
     }
