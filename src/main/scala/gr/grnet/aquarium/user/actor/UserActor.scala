@@ -170,7 +170,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
             // @see [[gr.grnet.aquarium.user.OwnedResourcesSnapshot]]
             Just("1")
         }
-        
+
         // 3. Did we get a valid instanceId?
         instanceIdM match {
           // 3.1 Yes, time to get/update the current state
@@ -240,7 +240,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
         Failed(new UserDataSnapshotException("No resource %s found for user %s".format(ev.resource, this._userId)))
     }
 
-    DEBUG("Finished %s time: %d ms".format(logLabel, ev, System.currentTimeMillis - start))
+    DEBUG("Finished %s time: %d ms".format(ev.id, System.currentTimeMillis - start))
   }
 
   private[this] def processCreateUser(event: UserEvent): Unit = {
