@@ -41,6 +41,7 @@ import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
 import scopt.OptionParser
 import gr.grnet.aquarium.messaging.{MessagingNames, AkkaAMQP}
 import java.lang.StringBuffer
+import gr.grnet.aquarium.logic.accounting.Policy
 
 /**
  *  Generates random resource events to use as input for testing and
@@ -53,7 +54,7 @@ trait RandomEventGenerator extends AkkaAMQP {
   val userIds = 1 to 100
   val clientIds = 1 to 4
   val vmIds = 1 to 4000
-  val resources = List("vmtime", "bndup", "bnddown", "dsksp")
+  val resources = Policy.policy.resources.map{r => r.name}
   val tsFrom = 1293840000000L //1/1/2011 0:00:00 GMT
   val tsTo = 1325376000000L   //1/1/2012 0:00:00 GMT
   val eventVersion = 1 to 4
