@@ -85,6 +85,9 @@ class UserActorManager extends AquariumActor with Loggable {
   }
 
   protected def receive = {
+    case m @ AquariumPropertiesLoaded(props) ⇒
+      logger.debug("Received and ignoring %s".format(m))
+
     case m @ ActorProviderConfigured(actorProvicer) ⇒
       this._actorProvider = actorProvicer
       logger.info("Configured %s with %s".format(this, m))
