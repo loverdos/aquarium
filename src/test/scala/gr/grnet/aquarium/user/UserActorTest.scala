@@ -3,6 +3,8 @@ package gr.grnet.aquarium.user
 import gr.grnet.aquarium.logic.test.DSLTest
 import gr.grnet.aquarium.logic.accounting.Policy
 import org.junit.Test
+import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
 
 /**
  * 
@@ -24,7 +26,8 @@ class UserActorTest extends DSLTest {
       PaymentOrdersSnapshot(Nil, now),
       OwnedGroupsSnapshot(Nil, now),
       GroupMembershipsSnapshot(Nil, now),
-      OwnedResourcesSnapshot(Map(("foo", "1") -> (0F, 0L)), now)
+      OwnedResourcesSnapshot(Map(ResourceInstanceId("foo", "1") ->
+        ResourceStateSnapshot(0F, 0L)), now)
     )
 
     println(state.toJson)

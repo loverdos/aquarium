@@ -39,6 +39,7 @@ package user
 import logic.accounting.dsl.{DSLResource, DSLAgreement}
 import collection.mutable
 import logic.events.WalletEntry
+import util.json.JsonSupport
 
 
 /**
@@ -65,18 +66,24 @@ case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends U
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
 /**
- * Maintains the current state of resources owned by the user. In order to have a
- * uniform representation of the resource state for all resource types
- * (complex or simple) the following convention applies:
+ * Maintains the current state of resources owned by the user.
+ * The encoding of the stored Map is as follows:
  *
- *  * If the resource is complex, then `data.get(AResource)` returns a Map of
- *  `("instance-id" -> current_resource_value)`, as expected.
- *  * If the resource is simple, then `data.get(AResource)` returns
- *   `("1" -> current_resource_value)`. This means that simple resources are
- *   always stored with key 1 as `instance-id`.
+ * key:   ResourceInstanceId(DSLResource.name, instance-id)
+ * value: ResourceStateSnapshot(current-resource-value, last-update-timestamp)
+ *
+ * In order to have a uniform representation of the resource state for all
+ * resource types (complex or simple) the following convention applies:
+ *
+ *  - If the resource is complex, the key is stored as ResourceInstanceId(DSLResource.name, instance-id)
+ *  - If the resource is simple,  the key is stored as ResourceInstanceId(DSLResource.name, 1)
+ *
  */
-case class OwnedResourcesSnapshot(data: Map[DSLResource, Map[String, Float]], snapshotTime: Long)
-  extends UserDataSnapshot[Map[DSLResource, Map[String, Float]]]
+case class ResourceInstanceId(name: String, instanceId: String)
+case class ResourceStateSnapshot(value: Float, lastUpdate: Long)
+case class OwnedResourcesSnapshot(data: Map[ResourceInstanceId, ResourceStateSnapshot], snapshotTime: Long)
+  extends UserDataSnapshot[Map[ResourceInstanceId, ResourceStateSnapshot]]
+
 
 /**
  * A generic exception thrown when errors occur in dealing with user data snapshots

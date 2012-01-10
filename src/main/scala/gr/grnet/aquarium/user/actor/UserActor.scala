@@ -381,14 +381,15 @@ class UserActor extends AquariumActor with Loggable with Accounting {
             val oldOwnedResources = _userState.ownedResources
             // Find or create the new resource instance map
             val oldOwnedResourcesData = oldOwnedResources.data
-            val oldRCInstanceMap = oldOwnedResourcesData.get(resource) match {
-              case Some(resourceMap) ⇒ resourceMap
-              case None              ⇒ Map[String, Float]()
+            val key = ResourceInstanceId(resource.name, instanceId)
+            val oldRCInstance = oldOwnedResourcesData.get(key) match {
+              case Some(resourceState) ⇒ resourceState
+              case None                ⇒ ResourceStateSnapshot(0, 0)
             }
-            // Update the new value in the resource instance map
-            val newRCInstanceMap: Map[String, Float] = oldRCInstanceMap.updated(instanceId, ev.value)
+            // Update the new value in the resource state
+            val newRCInstanceMap = oldRCInstance.copy(value = ev.value, lastUpdate = ev.occurredMillis)
 
-            val newOwnedResourcesData = oldOwnedResourcesData.updated(resource, newRCInstanceMap)
+            val newOwnedResourcesData = oldOwnedResourcesData.updated(key, newRCInstanceMap)
 
             // A. First state diff: the modified resource value
             val StateChangeMillis = TimeHelpers.nowMillis
@@ -403,7 +404,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
                 // TODO: the snapshot time should be per instanceId?
                 // TODO: Related events
                 val walletEntriesM = chargeEvent(ev, agreement, ev.value,
-                  new Date(oldOwnedResources.snapshotTime),
+                  new Date(oldRCInstance.lastUpdate),
                   findRelatedEntries(resource, ev.getInstanceId(policy)))
                 walletEntriesM match {
                   case Just(walletEntries) ⇒
