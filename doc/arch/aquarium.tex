@@ -41,9 +41,13 @@
 \section{Introduction}
 \section{Requirements}
 
+Aquarium was designed on a clean sheet to serve a particular purpose,
+namely the provision of billing services to an IaaS infrastructure,
+and also be extensible to new services. In the following sections,
+we briefly present the requirements that shaped Aquarium's design.
 
 \subsection{Application Environment}
-Aquarium is designed and developed as part of the Okeanos project at GRNet. The
+Aquarium developed as part of the Okeanos project at GRNet. The
 Okeanos project is building a full stack public IaaS system for Greek
 universities, and several services on top of it. Several components comprise
 the Okeanos infrastructure:
@@ -75,9 +79,20 @@ the Okeanos infrastructure:
 \end{description}
 
 While all the above systems (and several prospective ones) have different 
-user interfaces and provide different functionalities in the context of
+user interfaces and provide distinct functionality in the context of
 the GRnet IaaS, they all share a common notion of \emph{resources}, access
 and manipulation options to which they offer to users. 
+
+\subsection{Supported Users}
+
+The Okeanos IaaS will support the Greek higher education, an estimated
+population of 100.000 students and researchers. Each member will be granted
+access to a collection of resources using her institutional account. To enforce
+a limit to the resources that can be acquired from the platform, each user will
+have a limited amount of credits, renewable each month, which will be allowed
+to spend on any resource available through the infrastructure. Resources can
+also be shared; for example files on the Pithos file service or virtual machine
+images on the Archipelago storage can be 
 
 
 \subsection{Configuration}
@@ -94,7 +109,6 @@ must be provided to it externally. Moreover, to ensure high-availability,
 billing configuration should be updatable while Aquarium is running, or at
 least with minimal downtime, without affecting the operation of external
 systems.
-
 
 
 \subsection{Scaling}
@@ -267,6 +281,59 @@ flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 
 \end{figure}
 
+\subsection{Implementation Experience}
+
+One of the topics of debate while designing Aquarium was the choice of
+programming platform to use. With all user facing systems in the Okeanos cloud
+being developed in Python and the initial Aquarium designers being beginner
+Scala users (but experts in Java), the choice certainly involved risk that
+management was initially reluctant to take. However, by breaking down the
+requirements and considering the various safeguards that the software would
+need to employ in order to satisfy them, it became clear that a
+typesafe language was a hard requirement. Of the platforms examined, the {\sc
+jvm} had the richest collection of ready made components; the Akka library was
+particularly enticing for its scalability and distribution possibilities it
+offered.
+
+The choice of Scala at the moment was a high risk/high gain bet for GRNet.
+However, the development team's experience has been generally positive.  Scala
+as a language was an enabling factor; case classes permitted the expression of
+data models, including the configuration {\sc dsl}, that could be easily be
+serialized or read back from wire formats while also promoting immutability
+through the use of the \texttt{copy()} constructor.  The very active use of
+immutability allowed us to write strict, yet simple and concise unit tests, as
+the number of cases to be examined was generally low. The
+\textsf{Maybe}\footnote{\textsf{Maybe} works like \textsf{Option}, but it has
+an extra possible state (\textsf{Failed}), which allows exceptions to be
+encapsulated in the return type of a function, and then retrieved and accounted
+for in a pattern matching operation with no side effects. More at
+\url{https://github.com/loverdos/Maybe}} monad, developed by the second author,
+enabled side-effect free development of data processing functions, even in cases
+where exceptions were the only way to go. Java interoperability was excellent,
+while thin Scala wrappers around existing Java libraries enabled higher
+productivity and use of Scala idioms in conjunction with Java code.
+
+Despite the above, the experience was not as smooth as initially expected. The
+most prominent problem we encountered was that of missing documentation. The
+Akka library documentation, extensive as is, only scratches the surface.
+Several other libraries we use, for example Spray for {\sc rest} handling, have
+non-existent documentation. The Java platform, and .Net that followed, has
+shown that thorough and precise documentation are key to adoption, and we
+expected a similar quality level. Related is the problem of shared community
+wisdom; as most developers know, a search for any programming problem will
+reveal several straightforward Java or scripting language sources. The
+situation with Scala is usually the opposite; the expressive power of the
+language makes it the current language of choice for treating esoteric
+functional programming concepts, while simple topics are often neglected. Scala
+has several libraries of algebraic datatypes but no {\sc yaml} parser. As Scala
+gains mainstream adoption, we hope that such problems will fade.
+
+From a software engineering point of view, the current state of the project was
+reached using about 6 person months of effort, 2 of which were devoted to
+requirements elicitation, prototype building and familiarizing with the
+language. The source code currently consists of 5.000 lines of executable
+statements (including about 1.000 lines of tests), divided in about 10
+packages. The system is built using both {\sc sbt} and Maven. 
 
 \section{Performance}
 
@@ -292,15 +359,23 @@ benchmarks, we used a synthetic load generator that worked in two stages: it
 first created a configurable number of users and then produced billing events
 that 
 
+
+The measurements above were done on the first working version of the
+Aquarium deployment. They present 
+
 \section{Related Work}
 
 \section{Conclusions and Future Work}
-In this paper, we presented Aquarium, a high-performance, generic accounting 
-system, currently tuned for cloud applications.
+In this paper, we presented Aquarium, a high-performance, generic billing 
+system, currently tuned for cloud applications. We presented the requirements
+that underpinned its design, outlined the architectural decisions made
+and analysed its implementation and performance.
 
-Aquarium is currently under development, with a first operational version 
-being planned for early 2012. All subsystems are operational, and the system
-can already support 
+Scala has been an enabling factor for the implementation of Aquarium, both
+at the system prototyping phase and during actual development. 
+
+Aquarium is still under development, with a first stable version 
+being planned for early 2012. 
 
 Aquarium is available under an open source license at 
 \url{https://code.grnet.gr/projects/aquarium}.
