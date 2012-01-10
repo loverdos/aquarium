@@ -81,4 +81,12 @@ trait TestMethods {
       case Just(x) => fail("Operation not failed")
     }
   }
+
+  def assertNotThrows(f: => Unit): Unit = {
+    try {
+      f
+    } catch {
+      case e => fail("Exception %s was thrown".format(e))
+    }
+  }
 }
