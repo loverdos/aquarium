@@ -38,7 +38,7 @@ package gr.grnet.aquarium.logic.events
 import gr.grnet.aquarium.logic.accounting.Policy
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
-import gr.grnet.aquarium.logic.accounting.dsl.{OnOffCostPolicy, DSLPolicy, DSLResource, DSLComplexResource}
+import gr.grnet.aquarium.logic.accounting.dsl._
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -60,7 +60,7 @@ case class ResourceEvent(
 
   def validate() : Boolean = {
 
-    if (getInstanceId().isEmpty)
+    if (getInstanceId(Policy.policy).isEmpty)
       return false
 
     true
@@ -70,9 +70,15 @@ case class ResourceEvent(
    * Return the instance id affected by this resource event. If either the
    * resource or the instance id field cannot be found, this method returns an
    * empty String.
+   *
+   * If no policy is given, then a default policy is loaded.
    */
-  def getInstanceId(policy: DSLPolicy = Policy.policy): String = {
+  def getInstanceId(policy: DSLPolicy): String = {
     policy.findResource(this.resource) match {
+      case Some(DSLComplexResource(_, _, _, descriminatorField)) ⇒
+        details.getOrElse(descriminatorField, "")
+      case Some(DSLSimpleResource(_, _, _)) ⇒
+        "1" // TODO: put this constant somewhere centrally...
       case None => ""
       case Some(x) => x.isComplex match {
         case false => "1"
