@@ -51,7 +51,7 @@ sealed trait UserDataSnapshot[T] extends DataSnapshot[T]
 
 case class CreditSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
 
-case class AgreementSnapshot(data: DSLAgreement, snapshotTime: Long) extends UserDataSnapshot[DSLAgreement]
+case class AgreementSnapshot(data: String, snapshotTime: Long) extends UserDataSnapshot[String]
 
 case class RolesSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 

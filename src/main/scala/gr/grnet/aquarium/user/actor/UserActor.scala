@@ -264,7 +264,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
             userId,
             ActiveSuspendedSnapshot(event.isStateActive, now),
             CreditSnapshot(0, now),
-            AgreementSnapshot(agreementOpt.get, now),
+            AgreementSnapshot(agreementOpt.get.name, now),
             RolesSnapshot(event.roles, now),
             PaymentOrdersSnapshot(Nil, now),
             OwnedGroupsSnapshot(Nil, now),

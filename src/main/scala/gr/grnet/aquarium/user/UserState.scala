@@ -39,6 +39,7 @@ import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
 import net.liftweb.json.{parse => parseJson, JsonAST, Xml}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
+import gr.grnet.aquarium.logic.accounting.Policy
 
 
 /**
@@ -81,14 +82,12 @@ case class UserState(
   def maybeDSLAgreement: Maybe[DSLAgreement] = {
     agreement match {
       case snapshot @ AgreementSnapshot(data, _) ⇒
-        data match {
-          case dslAgreement @ DSLAgreement(_, _, _, _, _) ⇒
-            Just(dslAgreement)
-          case _ ⇒
-            Failed(new Exception("No agreement found in snapshot %s for user %s".format(snapshot, userId)))
+        Policy.policy.findAgreement(data) match {
+          case Some(agreement) ⇒ Just(agreement)
+          case None ⇒ Failed(new Exception("No agreement with name <%s> found".format(data)))
         }
       case _ ⇒
-        Failed(new Exception("No agreement snapshot found for user %s".format(userId)))
+       Failed(new Exception("No agreement snapshot found for user %s".format(userId)))
     }
   }
   
