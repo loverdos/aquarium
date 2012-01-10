@@ -76,10 +76,16 @@ object JsonHelpers {
     parse(json)
   }
 
-  final def anyToJson(any: Any): String = {
-    Printer.pretty(JsonAST.render(anyToJValue(any)))
+  final def anyToJson(any: Any, pretty: Boolean = true): String = {
+    val jValue = anyToJValue(any)
+    val jDoc = JsonAST.render(jValue)
+    if(pretty) {
+      Printer.pretty(jDoc)
+    } else {
+      Printer.compact(jDoc)
+    }
   }
-  
+
   final def jsonBytesToObject[A: Manifest](bytes: Array[Byte], encoding: String = "UTF-8"): A = {
     val json = new String(bytes, encoding)
     jsonToObject[A](json)
