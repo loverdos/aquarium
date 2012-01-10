@@ -79,6 +79,7 @@ class UserActorManager extends AquariumActor with Loggable {
       case None ⇒
         logger.debug("Not found user actor for request %s. Launching new actor".format(m))
         val userActor = _launchUserActor(userId)
+        userActorLRU.put(userId, userActor)
         logger.debug("Launched new user actor and forwarding request %s".format(m))
         userActor forward m
     }
