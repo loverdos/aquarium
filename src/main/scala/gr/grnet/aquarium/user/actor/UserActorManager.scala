@@ -89,8 +89,8 @@ class UserActorManager extends AquariumActor with Loggable {
     case m @ AquariumPropertiesLoaded(props) ⇒
       logger.debug("Received and ignoring %s".format(m))
 
-    case m @ ActorProviderConfigured(actorProvicer) ⇒
-      this._actorProvider = actorProvicer
+    case m @ ActorProviderConfigured(actorProvider) ⇒
+      this._actorProvider = actorProvider
       logger.info("Configured %s with %s".format(this, m))
 
     case m @ RequestUserBalance(userId, timestamp) ⇒
@@ -104,5 +104,10 @@ class UserActorManager extends AquariumActor with Loggable {
 
     case m @ ProcessUserEvent(userEvent) ⇒
       _forwardToUserActor(userEvent.userId, m)
+  }
+
+  override def postStop = {
+    logger.debug("Shutting down and stopping all user actors")
+    userActorLRU.shutdownAll()
   }
 }

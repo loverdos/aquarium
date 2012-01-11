@@ -36,6 +36,7 @@
 package gr.grnet.aquarium
 
 import util.Loggable
+import akka.actor.Actor
 
 /**
  * Main method for Aquarium
@@ -54,6 +55,7 @@ object Main extends Loggable {
       def run = {
         logger.info("Shutting down Aquarium")
         Configurator.MasterConfigurator.stopServices()
+        Actor.registry.shutdownAll()
       }
     }))
 

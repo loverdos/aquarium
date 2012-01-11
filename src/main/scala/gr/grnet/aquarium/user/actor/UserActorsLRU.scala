@@ -38,6 +38,7 @@ package gr.grnet.aquarium.user.actor
 import org.apache.solr.util.ConcurrentLRUCache
 import akka.actor.ActorRef
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
+import collection.JavaConversions._
 
 /**
  * This class holds an LRU cache for the user actors.
@@ -70,6 +71,13 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
     }
   }
 
+  def shutdownAll() = {
+    val accessed  = mapAsScalaMap(_cache.getLatestAccessedItems(_cache.size()))
+
+    //Send the poison pill and make sure that all futures have been returned
+    val futures = accessed.keys.map{x => _cache.get(x).stop()}
+  }
+
   def size: Int   = _cache.size()
   def clear: Unit = _cache.clear()
 
@@ -83,7 +91,7 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
     def evictedEntry(userId: String, userActor: ActorRef): Unit = {
       logger.debug("Parking UserActor for userId = %s".format(userId))
       // Check this is received after any currently servicing business logic message.
-      userActor ! UserActorStop
+      userActor.stop()
       // Hopefully no need to further track these actors as they will now cause their own death.
     }
   }
