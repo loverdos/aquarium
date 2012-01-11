@@ -49,4 +49,5 @@ import com.ckkloverdos.maybe.Maybe
 trait UserStateStore {
   def storeUserState(userState: UserState): Maybe[RecordID]
   def findUserStateByUserId(userId: String): Maybe[UserState]
+  def deleteUserState(userId: String): Unit
 }

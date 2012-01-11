@@ -143,6 +143,11 @@ class MongoDBStore(
       }
     }
   }
+
+  def deleteUserState(userId: String) = {
+    val query = new BasicDBObject(ResourceJsonNames.userId, userId)
+    userStates.findAndRemove(query)
+  }
   //-UserStateStore
 
   //+WalletEntryStore

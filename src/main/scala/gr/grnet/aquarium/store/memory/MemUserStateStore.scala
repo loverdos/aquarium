@@ -68,4 +68,9 @@ class MemUserStateStore extends UserStateStore with Configurable {
       case userStateJ ⇒ userStateJ
     }
   }
+
+  def deleteUserState(userId: String) {
+    if (userStateByUserId.containsKey(userId))
+      userStateByUserId.remove(userId)
+  }
 }
