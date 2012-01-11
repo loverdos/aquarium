@@ -77,6 +77,19 @@ trait Accounting extends DSLUtils with Loggable {
         new AccountingException("No resource [%s]".format(ev.resource)))
     }
 
+    /* This is a safeguard against the special case where the last
+     * resource state update, as marked by the lastUpdate parameter
+     * is equal to the time of the event occurrence. This means that
+     * this is the first time the resource state has been recorded.
+     * Charging in this case only makes sense for discrete resources.
+     */
+    if (lastUpdate.getTime == ev.occurredMillis) {
+      resource.costpolicy match {
+        case DiscreteCostPolicy => //Ok
+        case _ => return Some(List())
+      }
+    }
+
     val amount = resource.costpolicy match {
       case ContinuousCostPolicy => resState.asInstanceOf[Float]
       case DiscreteCostPolicy => ev.value

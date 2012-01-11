@@ -420,8 +420,6 @@ class UserActor extends AquariumActor with Loggable with Accounting {
             // Calculate the wallet entries generated from this resource event
             _userState.maybeDSLAgreement match {
               case Just(agreement) ⇒
-                // TODO: the snapshot time should be per instanceId?
-                // TODO: Related events
                 val walletEntriesM = chargeEvent(ev, agreement, ev.value,
                   new Date(previousRCUpdateTime),
                   findRelatedEntries(resource, ev.getInstanceId(policy)))
@@ -549,6 +547,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
         case Failed(e, m) ⇒
           ERROR("While loading user state from DB: [%s][%s] %s", e.getClass.getName, e.getMessage, m)
         case NoVal ⇒
+          //TODO: Rebuild actor state here.
           WARN("Request for unknown (to Aquarium) user")
       }
     }

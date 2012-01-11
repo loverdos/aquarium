@@ -87,7 +87,6 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
       case Just(x) => assertEquals(2, x.size)
       case _ => fail("No results returned")
     }
-    wallet.foreach(x => x.foreach(a => println(a.toJson)))
 
     //Complex resource event without details, should fail
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", 1, Map())
@@ -100,7 +99,6 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
       case Just(x) => assertEquals(2, x.size)
       case _ => fail("No results returned")
     }
-    wallet.foreach(x => x.foreach(a => println(a.toJson)))
 
     //Complex, onoff resource, with wrong states, should fail
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", 1, Map("vmid" -> "3"))
@@ -113,6 +111,15 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
       case Just(x) => assertEquals(1, x.size)
       case _ => fail("No results returned")
     }
-    wallet.foreach(x => x.foreach(a => println(a.toJson)))
+
+    //Simple, discrete resource, time of last update equal to current event's occurred time
+    evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bookpages", "1", 120, Map())
+    wallet = chargeEvent(evt, agr, 15, new Date(1325762772000L), List())
+    assertEquals(1, wallet.getOr(List(WalletEntry.zero, WalletEntry.zero)).size)
+
+    //Simple, continuous resource, time of last update equal to current event's occurred time
+    evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bandwidthup", "1", 123, Map())
+    wallet = chargeEvent(evt, agr, 15, new Date(1325762772000L), List())
+    assertEquals(0, wallet.getOr(List(WalletEntry.zero)).size)
   }
 }
