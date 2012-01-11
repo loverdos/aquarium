@@ -544,7 +544,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
         case Just(userState) ⇒
           DEBUG("Loaded user state %s from DB", userState)
           //TODO: May be out of sync with the event store, rebuild it here
-          rebuildState(this._userState.oldestSnapshotTime)
+          //rebuildState(this._userState.oldestSnapshotTime)
           this._userState = userState
         case Failed(e, m) ⇒
           ERROR("While loading user state from DB: [%s][%s] %s", e.getClass.getName, e.getMessage, m)
@@ -560,12 +560,12 @@ class UserActor extends AquariumActor with Loggable with Accounting {
    * Replay the event log for all events that affect the user state, starting
    * from the provided time instant.
    */
-  def rebuildState(from: Long) =  rebuildState(from, Integer.MAX_VALUE)
+  def rebuildState(from: Long): Unit = rebuildState(from, Integer.MAX_VALUE)
 
   /**
    * Replay the event log for all events that affect the user state.
    */
-  def rebuildState(from: Long, to: Long) = {
+  def rebuildState(from: Long, to: Long): Unit = {
     val start = System.currentTimeMillis()
     if (_userState == null)
       createBlankState
@@ -648,7 +648,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
       .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
       .foreach {
         e =>
-          val name = Policy.policy.findResource(name) match {
+          val name = Policy.policy.findResource(e.resource) match {
             case Some(x) => x.name
             case None => ""
           }
