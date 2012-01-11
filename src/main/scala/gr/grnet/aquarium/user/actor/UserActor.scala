@@ -40,11 +40,11 @@ import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.processor.actor._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
-import gr.grnet.aquarium.util.{TimeHelpers, Loggable}
 import gr.grnet.aquarium.user._
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DSLResource, DSLSimpleResource, DSLComplexResource}
 import java.util.Date
+import gr.grnet.aquarium.util.{DateUtils, TimeHelpers, Loggable}
 
 
 /**
@@ -52,7 +52,8 @@ import java.util.Date
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class UserActor extends AquariumActor with Loggable with Accounting {
+class UserActor extends AquariumActor
+  with Loggable with Accounting with DateUtils {
   @volatile
   private[this] var _userId: String = _
   @volatile
@@ -544,13 +545,13 @@ class UserActor extends AquariumActor with Loggable with Accounting {
         case Just(userState) ⇒
           DEBUG("Loaded user state %s from DB", userState)
           //TODO: May be out of sync with the event store, rebuild it here
-          //rebuildState(this._userState.oldestSnapshotTime)
           this._userState = userState
+          rebuildState(this._userState.oldestSnapshotTime)
         case Failed(e, m) ⇒
           ERROR("While loading user state from DB: [%s][%s] %s", e.getClass.getName, e.getMessage, m)
         case NoVal ⇒
           //TODO: Rebuild actor state here.
-          //rebuildState(0)
+          rebuildState(0)
           WARN("Request for unknown (to Aquarium) user")
       }
     }
@@ -560,7 +561,8 @@ class UserActor extends AquariumActor with Loggable with Accounting {
    * Replay the event log for all events that affect the user state, starting
    * from the provided time instant.
    */
-  def rebuildState(from: Long): Unit = rebuildState(from, Integer.MAX_VALUE)
+  def rebuildState(from: Long): Unit =
+    rebuildState(from, oneYearAhead(new Date(), new Date(Long.MaxValue)).getTime)
 
   /**
    * Replay the event log for all events that affect the user state.
@@ -625,15 +627,15 @@ class UserActor extends AquariumActor with Loggable with Accounting {
     events
       .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
       .foreach {
-      e =>
-        act = act.copy(
-          data = e.isStateActive, snapshotTime = e.occurredMillis)
-        // TODO: Implement the following
-        //_userState.agreement = _userState.agreement.copy(
-        //  data = e.newAgreement, e.occurredMillis)
+        e =>
+          act = act.copy(
+            data = e.isStateActive, snapshotTime = e.occurredMillis)
+          // TODO: Implement the following
+          //_userState.agreement = _userState.agreement.copy(
+          //  data = e.newAgreement, e.occurredMillis)
 
-        rol = rol.copy(data = e.roles,
-          snapshotTime = e.occurredMillis)
+          rol = rol.copy(data = e.roles,
+            snapshotTime = e.occurredMillis)
     }
     initState.copy(active = act, roles = rol)
   }
@@ -654,7 +656,6 @@ class UserActor extends AquariumActor with Loggable with Accounting {
           }
 
           val instanceId = e.getInstanceId(Policy.policy)
-
           res = res.addOrUpdateResourceSnapshot(name,
             instanceId, e.value, e.occurredMillis)._1
     }
@@ -754,6 +755,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
       } else {
         // FIXME: implement
         ERROR("FIXME: Should have properly computed the user state")
+        ensureUserState()
         self reply UserResponseGetState(userId, this._userState)
       }
   }

@@ -36,11 +36,7 @@
 package gr.grnet.aquarium
 package user
 
-import logic.accounting.dsl.{DSLResource, DSLAgreement}
-import collection.mutable
-import logic.events.WalletEntry
 import util.json.JsonSupport
-
 
 /**
  * Snapshot of data that are user-related.
@@ -95,14 +91,11 @@ case class ResourceInstanceSnapshot(
     this.instanceId == instanceId
 }
 case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshotTime: Long)
-  extends UserDataSnapshot[List[ResourceInstanceSnapshot]] {
+  extends UserDataSnapshot[List[ResourceInstanceSnapshot]] with JsonSupport {
 
-  def findResourceSnapshot(name: String, instanceId: String): Option[ResourceInstanceSnapshot] = {
-    data find {
-      case ResourceInstanceSnapshot(name, instanceId, _, _) ⇒ true
-      case _ ⇒ false
-    }
-  }
+  def findResourceSnapshot(name: String, instanceId: String): Option[ResourceInstanceSnapshot] =
+    data.find { x => name.equals(x.name) && instanceId.equals(x.instanceId) }
+
   
   def addOrUpdateResourceSnapshot(name: String,
                                   instanceId: String,
@@ -113,7 +106,8 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
     val newData = oldRCInstanceOpt match {
       case Some(currentRCInstance) ⇒
         // Need to delete the old one and add the new one
-        newRCInstance :: (data.filterNot(_.isResource(name, instanceId)))
+        val newValue = newRCInstance.data + currentRCInstance.data
+        newRCInstance.copy(data = newValue) :: (data.filterNot(_.isResource(name, instanceId)))
       case None ⇒
         // Resource not found, so this is the first time and we just add the new snapshot
         newRCInstance :: data
