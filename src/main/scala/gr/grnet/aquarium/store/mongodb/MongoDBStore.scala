@@ -106,9 +106,9 @@ class MongoDBStore(
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
     val query = new BasicDBObject()
     query.put(ResourceJsonNames.userId, userId)
-    query.put(ResourceJsonNames.timestamp, new BasicDBObject("$gte", timestamp))
+    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gte", timestamp))
     
-    val sort = new BasicDBObject(ResourceJsonNames.timestamp, 1)
+    val sort = new BasicDBObject(ResourceJsonNames.occurredMillis, 1)
 
     val cursor = rcEvents.find(query).sort(sort)
 
@@ -165,8 +165,8 @@ class MongoDBStore(
   def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
     val q = new BasicDBObject()
     // TODO: Is this the correct way for an AND query?
-    q.put(ResourceJsonNames.timestamp, new BasicDBObject("$gt", from.getTime))
-    q.put(ResourceJsonNames.timestamp, new BasicDBObject("$lt", to.getTime))
+    q.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
+    q.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$lt", to.getTime))
     q.put(ResourceJsonNames.userId, userId)
 
     MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))

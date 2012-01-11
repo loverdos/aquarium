@@ -152,7 +152,7 @@ object ResourceEvent {
     final val _id = "_id"
     final val id = "id"
     final val userId = "userId"
-    final val timestamp = "timestamp" // TODO: deprecate in favor of "occurredMillis"
+    //final val timestamp = "timestamp" // TODO: deprecate in favor of "occurredMillis"
     final val occurredMillis = "occurredMillis"
     final val receivedMillis = "receivedMillis"
     final val clientId = "clientId"
