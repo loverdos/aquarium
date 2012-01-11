@@ -37,15 +37,14 @@ package gr.grnet.aquarium.user.actor
 
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
-import java.util.Date
 import gr.grnet.aquarium.processor.actor._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
 import gr.grnet.aquarium.util.{TimeHelpers, Loggable}
 import gr.grnet.aquarium.user._
-import gr.grnet.aquarium.logic.events.{AquariumEvent, UserEvent, WalletEntry, ResourceEvent}
+import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DSLResource, DSLSimpleResource, DSLComplexResource}
-import gr.grnet.aquarium.store.RecordID
+import java.util.Date
 
 
 /**
@@ -544,14 +543,136 @@ class UserActor extends AquariumActor with Loggable with Accounting {
       findUserState(this._userId) match {
         case Just(userState) ⇒
           DEBUG("Loaded user state %s from DB", userState)
+          //TODO: May be out of sync with the event store, rebuild it here
+          rebuildState(this._userState.oldestSnapshotTime)
           this._userState = userState
         case Failed(e, m) ⇒
           ERROR("While loading user state from DB: [%s][%s] %s", e.getClass.getName, e.getMessage, m)
         case NoVal ⇒
           //TODO: Rebuild actor state here.
+          //rebuildState(0)
           WARN("Request for unknown (to Aquarium) user")
       }
     }
+  }
+
+  /**
+   * Replay the event log for all events that affect the user state, starting
+   * from the provided time instant.
+   */
+  def rebuildState(from: Long) =  rebuildState(from, Integer.MAX_VALUE)
+
+  /**
+   * Replay the event log for all events that affect the user state.
+   */
+  def rebuildState(from: Long, to: Long) = {
+    val start = System.currentTimeMillis()
+    if (_userState == null)
+      createBlankState
+
+    //Rebuild state from user events
+    val usersDB = _configurator.storeProvider.userEventStore
+    val userEvents = usersDB.findUserEventsByUserId(_userId)
+    val numUserEvents = userEvents.size
+    _userState = replayUserEvents(_userState, userEvents, from, to)
+      
+    //Rebuild state from resource events
+    val eventsDB = _configurator.storeProvider.resourceEventStore
+    val resourceEvents = eventsDB.findResourceEventsByUserIdAfterTimestamp(_userId, from)
+    val numResourceEvents = resourceEvents.size
+    _userState = replayResourceEvents(_userState, resourceEvents, from, to)
+
+    //Rebuild state from wallet entries
+    val wallet = _configurator.storeProvider.walletEntryStore
+    val walletEnties = wallet.findUserWalletEntriesFromTo(_userId, new Date(from), new Date(to))
+    val numWalletEntries = walletEnties.size
+    _userState = replayResourceEvents(_userState, resourceEvents, from, to)
+
+    INFO(("Rebuilt state from %d events (%d user events, " +
+      "%d resource events, %d wallet entries) in %d msec").format(
+      numUserEvents + numResourceEvents + numWalletEntries,
+      numUserEvents, numResourceEvents, numWalletEntries,
+      System.currentTimeMillis() - start))
+  }
+
+  /**
+   * Create an empty state for a user
+   */
+  def createBlankState = {
+    val now = 0
+    val agreement = Policy.policy.findAgreement("default")
+
+    this._userState = UserState(
+      _userId,
+      ActiveSuspendedSnapshot(false, now),
+      CreditSnapshot(0, now),
+      AgreementSnapshot(agreement.get.name, now),
+      RolesSnapshot(List(), now),
+      PaymentOrdersSnapshot(Nil, now),
+      OwnedGroupsSnapshot(Nil, now),
+      GroupMembershipsSnapshot(Nil, now),
+      OwnedResourcesSnapshot(List(), now)
+    )
+  }
+
+  /**
+   * Replay user events on the provided user state
+   */
+  def replayUserEvents(initState: UserState, events: List[UserEvent],
+                       from: Long, to: Long): UserState = {
+    var act = initState.active
+    var rol = initState.roles
+    events
+      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
+      .foreach {
+      e =>
+        act = act.copy(
+          data = e.isStateActive, snapshotTime = e.occurredMillis)
+        // TODO: Implement the following
+        //_userState.agreement = _userState.agreement.copy(
+        //  data = e.newAgreement, e.occurredMillis)
+
+        rol = rol.copy(data = e.roles,
+          snapshotTime = e.occurredMillis)
+    }
+    initState.copy(active = act, roles = rol)
+  }
+
+  /**
+   * Replay resource events on the provided user state
+   */
+  def replayResourceEvents(initState: UserState, events: List[ResourceEvent],
+                           from: Long, to: Long): UserState = {
+    var res = initState.ownedResources
+    events
+      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
+      .foreach {
+        e =>
+          val name = Policy.policy.findResource(name) match {
+            case Some(x) => x.name
+            case None => ""
+          }
+
+          val instanceId = e.getInstanceId(Policy.policy)
+
+          res = res.addOrUpdateResourceSnapshot(name,
+            instanceId, e.value, e.occurredMillis)._1
+    }
+    initState.copy(ownedResources = res)
+  }
+
+  /**
+   * Replay wallet entries on the provided user state
+   */
+  def replayWalletEntries(initState: UserState, events: List[WalletEntry],
+                          from: Long, to: Long): UserState = {
+    var cred = initState.credits
+    events
+      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
+      .foreach {
+        w => cred = cred.copy(data = w.value, snapshotTime = w.occurredMillis)
+    }
+    initState.copy(credits = cred)
   }
 
   /**

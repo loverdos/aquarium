@@ -231,10 +231,9 @@ class MongoDBStore(
   def findUserEventById(id: String): Maybe[UserEvent] =
     MongoDBStore.findById[UserEvent](id, userEvents, MongoDBStore.dbObjectToUserEvent)
 
-  def findUserEventsByUserId(userId: String)
-                            (sortWith: Option[(UserEvent, UserEvent) => Boolean]): List[UserEvent] = {
+  def findUserEventsByUserId(userId: String): List[UserEvent] = {
     val query = new BasicDBObject(ResourceJsonNames.userId, userId)
-    MongoDBStore.runQuery(query, userEvents)(MongoDBStore.dbObjectToUserEvent)(sortWith)
+    MongoDBStore.runQuery(query, userEvents)(MongoDBStore.dbObjectToUserEvent)(Some(_sortByTimestampAsc))
   }
   //-UserEventStore
 }

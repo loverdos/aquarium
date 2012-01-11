@@ -12,8 +12,9 @@ trait UserEventStore {
 
   def storeUserEvent(event: UserEvent): Maybe[RecordID]
 
+
   def findUserEventById(id: String): Maybe[UserEvent]
 
-  def findUserEventsByUserId(userId: String)
-                            (sortWith: Option[(UserEvent, UserEvent) => Boolean]): List[UserEvent]
+
+  def findUserEventsByUserId(userId: String): List[UserEvent]
 }
