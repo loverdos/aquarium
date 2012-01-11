@@ -45,6 +45,7 @@ import gr.grnet.aquarium.util.{TimeHelpers, Loggable}
 import gr.grnet.aquarium.user._
 import gr.grnet.aquarium.logic.events.{AquariumEvent, UserEvent, WalletEntry, ResourceEvent}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DSLResource, DSLSimpleResource, DSLComplexResource}
+import gr.grnet.aquarium.store.RecordID
 
 
 /**
@@ -493,7 +494,7 @@ class UserActor extends AquariumActor with Loggable with Accounting {
             OwnedResourcesSnapshot(List(), now)
           )
 
-          usersDB.storeUserState(this._userState)
+          saveUserState
           DEBUG("Created and stored %s", this._userState)
         }
     }
@@ -553,17 +554,27 @@ class UserActor extends AquariumActor with Loggable with Accounting {
     }
   }
 
-  protected def receive: Receive = {
-    case UserActorStop ⇒
-      // TODO: Check if this is OK with the rest of the semantics
-      self.stop()
+  /**
+   * Persist current user state
+   */
+  private[this] def saveUserState(): Unit = {
+    _configurator.storeProvider.userStateStore.deleteUserState(this._userId)
+    _configurator.storeProvider.userStateStore.storeUserState(this._userState) match {
+      case Just(record) => record
+      case NoVal => ERROR("Unknown error saving state")
+      case Failed(e, a) =>
+        ERROR("Saving state failed: %s error was: %s".format(a,e));
+    }
+  }
 
+  protected def receive: Receive = {
     case m @ AquariumPropertiesLoaded(props) ⇒
       this._timestampTheshold = props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
       INFO("Setup my timestampTheshold = %s", this._timestampTheshold)
 
     case m @ UserActorInitWithUserId(userId) ⇒
       this._userId = userId
+      DEBUG("Actor starting, loading state")
       ensureUserState()
 
     case m @ ProcessResourceEvent(resourceEvent) ⇒
@@ -624,6 +635,11 @@ class UserActor extends AquariumActor with Loggable with Accounting {
         ERROR("FIXME: Should have properly computed the user state")
         self reply UserResponseGetState(userId, this._userState)
       }
+  }
+
+  override def postStop {
+    DEBUG("Stopping, saving state")
+    saveUserState
   }
 
   private[this] def DEBUG(fmt: String, args: Any*) =
