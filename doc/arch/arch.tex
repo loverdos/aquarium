@@ -1,1 +1,54 @@
-Foo bar
+As most in similar systems, Aquarium's architectural design is driven by two 
+requirements: scaling and fault tolerance. As described in the requirements
+section above, the concurrency and responsiveness requirements are steep;
+
+Driven by our former experience with 3 tier systems, we designed the first
+Aquarium prototype around a traditional relational database backend, with an
+object relational mapping ({\sc orm}) based middle layer that run the business
+processes (billing, message processing etc) and a fully-fledged {\sc rest}
+frontend. While the simplicity of {\sc orm} systems provided a great start,
+it quickly became obvious that such a design was too rigid for an open 
+ended system. Complications arised from the fact that it was too difficult
+to describe versioned tree-based structures, such as the configuration {\sc dsl} 
+(see Section~\ref{sec:dsl}) and to make sure that resource events were
+described in an abstract way that would include all future system expansions.
+Moreover, the single query that places Aquarium in the system's critical 
+path (number of remaining credits) must be answered within a few (less than
+10) milliseconds for a large number of concurrent requests, which means that
+it must be somehow cached and automatically updated when new chargable 
+resources are invoked by the user.
+
+For the reasons outlined above, we chose to develop Aquarium around an event
+sourcing architecture. Event sourcing assumes that all changes to application
+state are stored as a sequence of events, in an immutable log. With such a 
+log at hand, a system can easily rebuild the current state by replaying the
+events in order, The event sourcing
+design pattern has some very interesting properties, which made it particularily
+suitable for basing Aquarium's architecture on it:
+
+\begin{itemize}
+
+    \item Multiple models can be used in order to process the events, 
+        concurrently. This means that Aquarium can provide a limited
+        data view to its {\sc rest api} and a more detailed one to a
+        helpdesk frontend.
+
+    \item It is possible to perform queries on past system states by stopping
+        the event replay at a certain point of interest. This would prove very
+        possible for a future debugging interface.
+
+    \item In a carefully implemented event sourcing system, application crashes 
+        are not destructive, as long as event replay is fast enough and no
+        state is inserted to the application without being recorded to the event
+        log first.
+
+    \item After event log replay, new events only cause updates in the system's
+        in-memory state, which can be done very fast.
+
+\end{itemize}
+
+\begin{figure}
+
+\caption{The Aquarium architecture} 
+\label{fig:arch}
+\end{figure}
