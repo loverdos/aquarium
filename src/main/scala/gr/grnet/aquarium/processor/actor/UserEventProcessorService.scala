@@ -17,7 +17,7 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
 
   override def forward(event: UserEvent) = {
     val dispatcher = _configurator.actorProvider.actorForRole(DispatcherRole)
-    dispatcher ! ProcessUserEvent(event)
+    //dispatcher ! ProcessUserEvent(event)
   }
 
   override def exists(event: UserEvent) =
@@ -33,8 +33,10 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
     }
   }
 
-  override def queueReaderThreads: Int = 4
+  override def queueReaderThreads: Int = 1
   override def persisterThreads: Int = numCPUs
+  protected def numQueueActors = 2 * queueReaderThreads
+  protected def numPersisterActors = 2 * persisterThreads
   override def name = "usrevtproc"
 
   lazy val persister = new PersisterManager

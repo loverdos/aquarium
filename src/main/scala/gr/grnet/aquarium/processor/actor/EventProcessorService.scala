@@ -96,6 +96,8 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   protected def queueReaderThreads: Int
   protected def persisterThreads: Int
+  protected def numQueueActors: Int
+  protected def numPersisterActors: Int
   protected def name: String
 
   protected def persisterManager: PersisterManager
@@ -168,9 +170,11 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
     def receive = {
       case Persist(event, sender, ackData) =>
         logger.debug("Persister-%s attempting store".format(self.getUuid()))
+        //val time = System.currentTimeMillis()
         if (exists(event))
           sender ! Duplicate(ackData)
         else if (persist(event)) {
+          //logger.debug("Persist time: %d ms".format(System.currentTimeMillis() - time))
           sender ! PersistOK(ackData)
         } else
           sender ! PersistFailed(ackData)
@@ -197,7 +201,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
         .setRejectionPolicy(new CallerRunsPolicy).build
 
     lazy val actors =
-      for (i <- 0 until 4 * numCPUs) yield {
+      for (i <- 0 until numQueueActors) yield {
         val actor = actorOf(new QueueReader)
         supervisor.link(actor)
         actor.start()
@@ -219,7 +223,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
         .setRejectionPolicy(new CallerRunsPolicy).build
 
     lazy val actors =
-      for (i <- 0 until 5 * numCPUs) yield {
+      for (i <- 0 until numPersisterActors) yield {
         val actor = actorOf(new Persister)
         supervisor.link(actor)
         actor.start()

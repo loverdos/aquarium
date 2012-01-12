@@ -4,6 +4,8 @@ import com.ckkloverdos.maybe.{Just, Failed, NoVal}
 import gr.grnet.aquarium.messaging.MessagingNames
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.actor.DispatcherRole
+import java.lang.ThreadLocal
+import gr.grnet.aquarium.store.{ResourceEventStore}
 
 
 /**
@@ -13,18 +15,28 @@ import gr.grnet.aquarium.actor.DispatcherRole
  */
 final class ResourceEventProcessorService extends EventProcessorService[ResourceEvent] {
 
+  lazy val store = new ThreadLocal[ResourceEventStore]
+  
   override def decode(data: Array[Byte]) = ResourceEvent.fromBytes(data)
 
   override def forward(event: ResourceEvent): Unit = {
     val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
-    businessLogicDispacther ! ProcessResourceEvent(event)
+    //businessLogicDispacther ! ProcessResourceEvent(event)
   }
 
   override def exists(event: ResourceEvent): Boolean =
-    _configurator.resourceEventStore.findResourceEventById(event.id).isJust
+    store.get match {
+      case null => store.set(_configurator.resourceEventStore); return exists(event)
+      case x => x.findResourceEventById(event.id).isJust
+    }
 
   override def persist(event: ResourceEvent): Boolean = {
-    _configurator.resourceEventStore.storeResourceEvent(event) match {
+    val st = store.get match {
+      case null => store.set(_configurator.resourceEventStore); return persist(event)
+      case x => x
+    }
+
+    st.storeResourceEvent(event) match {
       case Just(x) => true
       case x: Failed =>
         logger.error("Could not save event: %s. Reason:".format(event, x.toString))
@@ -33,8 +45,10 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
     }
   }
 
-  override def queueReaderThreads: Int = 4
-  override def persisterThreads: Int = numCPUs
+  override def queueReaderThreads: Int = 1
+  override def persisterThreads: Int = numCPUs + 4
+  override def numQueueActors: Int = 1 * queueReaderThreads
+  override def numPersisterActors: Int = 2 * persisterThreads
   override def name = "resevtproc"
 
   lazy val persister = new PersisterManager
