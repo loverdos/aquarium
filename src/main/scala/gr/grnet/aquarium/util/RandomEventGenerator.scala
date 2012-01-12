@@ -51,7 +51,7 @@ import gr.grnet.aquarium.logic.accounting.Policy
  */
 trait RandomEventGenerator extends AkkaAMQP {
 
-  val userIds = 1 to 100
+  val userIds = 1 to 1000
   val clientIds = 1 to 4
   val vmIds = 1 to 4000
   val resources = Policy.policy.resources.map{r => r.name}
@@ -94,10 +94,10 @@ trait RandomEventGenerator extends AkkaAMQP {
   /**
    * Generete and publish create events for test users
    */
-  def initUsers = {
+  def initUsers(num: Int) = {
     val publisher = producer(MessagingNames.IM_EXCHANGE)
 
-    userIds.foreach {
+    userIds.filter(_ < num).foreach {
       i =>
         val sha1 = CryptoUtils.sha1(genRndAsciiString(35))
         val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
@@ -186,7 +186,7 @@ object RandomEventGen extends RandomEventGenerator {
 
     println("Publishing %d msgs, hit Ctrl+c to stop".format(config.nummsg))
     if (config.r) genPublishResEvents(config.nummsg)
-    if (config.u) initUsers
+    if (config.u) initUsers(config.nummsg)
     if (config.i) genPublishUserEvents(config.nummsg)
   }
   
