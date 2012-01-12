@@ -13,12 +13,8 @@ import gr.grnet.aquarium.util.json.JsonHelpers
  */
 case class WalletEntry(
     override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    // When it occurred at client side (the sender).
-    // This denotes the `occurredMillis` attribute of the oldest resource event that is referenced
-    // by `sourceEventIDs`. The reason for this convention is pure from a query-oriented point of view.
-    // See how things are calculated in `UserActor`.
-    override val occurredMillis: Long,
-    override val receivedMillis: Long, // When it was received by Aquarium
+    override val occurredMillis: Long, // The time of oldest matching resource event
+    override val receivedMillis: Long, // The time the cost calculation was done
     sourceEventIDs: List[String],      // The events that triggered this WalletEntry
     value: Float,
     reason: String,

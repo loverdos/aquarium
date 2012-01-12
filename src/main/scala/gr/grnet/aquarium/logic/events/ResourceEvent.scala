@@ -156,6 +156,10 @@ object ResourceEvent {
     final val occurredMillis = "occurredMillis"
     final val receivedMillis = "receivedMillis"
     final val clientId = "clientId"
+    final val resource = "resource"
+    final val eventVersion = "eventVersion"
+    final val value = "value"
+    final val details = "details"
 
     // ResourceType: VMTime
     final val vmId = "vmId"
