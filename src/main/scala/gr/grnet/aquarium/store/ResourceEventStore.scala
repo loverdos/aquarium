@@ -57,4 +57,7 @@ trait ResourceEventStore {
    * The events are returned in ascending timestamp order.
    */
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent]
+  
+  def findResourceEventHistory(userId: String, resName: String,
+                               instid: Option[String], upTo: Long) : List[ResourceEvent]
 }

@@ -46,8 +46,10 @@ import gr.grnet.aquarium.logic.events.ResourceEvent.{JsonNames => ResourceJsonNa
 import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
 import java.util.Date
 import com.ckkloverdos.maybe.Maybe
-import com.mongodb._
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent, AquariumEvent}
+import com.mongodb._
+import gr.grnet.aquarium.logic.accounting.Policy
+import gr.grnet.aquarium.logic.accounting.dsl.DSLComplexResource
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -71,6 +73,7 @@ class MongoDBStore(
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
+    //logger.debug("Authenticating to mongo")
     if(!db.isAuthenticated && !db.authenticate(username, password.toCharArray)) {
       throw new StoreException("Could not authenticate user %s".format(username))
     }
@@ -106,7 +109,7 @@ class MongoDBStore(
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
     val query = new BasicDBObject()
     query.put(ResourceJsonNames.userId, userId)
-    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gte", timestamp))
+    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gt", timestamp))
     
     val sort = new BasicDBObject(ResourceJsonNames.occurredMillis, 1)
 
@@ -121,6 +124,38 @@ class MongoDBStore(
     } finally {
       cursor.close()
     }
+  }
+
+  def findResourceEventHistory(userId: String, resName: String,
+                               instid: Option[String], upTo: Long) : List[ResourceEvent] = {
+    val query = new BasicDBObject()
+    query.put(ResourceJsonNames.userId, userId)
+    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$lte", upTo))
+    query.put(ResourceJsonNames.resource, resName)
+
+    instid match {
+      case Some(id) =>
+        Policy.policy.findResource(resName) match {
+          case Some(y) => query.put(ResourceJsonNames.details,
+            new BasicDBObject(y.asInstanceOf[DSLComplexResource].descriminatorField, instid.get))
+          case None =>
+        }
+      case None =>
+    }
+
+    val sort = new BasicDBObject(ResourceJsonNames.occurredMillis, 1)
+    val cursor = rcEvents.find(query).sort(sort)
+
+    try {
+      val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
+      while(cursor.hasNext) {
+        buffer += MongoDBStore.dbObjectToResourceEvent(cursor.next())
+      }
+      buffer.toList
+    } finally {
+      cursor.close()
+    }
+
   }
   //-ResourceEventStore
 
