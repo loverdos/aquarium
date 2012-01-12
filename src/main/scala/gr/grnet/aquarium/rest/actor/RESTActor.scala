@@ -135,10 +135,10 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
           case Some(Right(actualResponse)) ⇒
             actualResponse match {
               case dispatcherResponse: DispatcherResponseMessage if(!dispatcherResponse.isError) ⇒
-                logger.debug("Received response: %s".format(dispatcherResponse))
-                logger.debug("Received response (JSON): %s".format(dispatcherResponse.toJson))
-                logger.debug("Received response:body %s".format(dispatcherResponse.responseBody))
-                logger.debug("Received response:body (JSON): %s".format(dispatcherResponse.responseBodyToJson))
+                //logger.debug("Received response: %s".format(dispatcherResponse))
+                //logger.debug("Received response (JSON): %s".format(dispatcherResponse.toJson))
+                //logger.debug("Received response:body %s".format(dispatcherResponse.responseBody))
+                //logger.debug("Received response:body (JSON): %s".format(dispatcherResponse.responseBodyToJson))
                 responder.complete(
                   HttpResponse(
                     status = 200,
