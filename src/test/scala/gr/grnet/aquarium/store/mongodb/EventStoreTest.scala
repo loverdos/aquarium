@@ -113,9 +113,9 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
       MasterConfigurator.get(Keys.persistence_db)
     ).getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
 
-    val res = col.find
-    while (res.hasNext)
-      col.remove(res.next)
+    //val res = col.find
+    //while (res.hasNext)
+    //  col.remove(res.next)
   }
 
   private def getMongo = MasterConfigurator.resourceEventStore.asInstanceOf[MongoDBStore]
