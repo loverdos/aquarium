@@ -18,13 +18,13 @@ path (number of remaining credits) must be answered within a few (less than
 it must be somehow cached and automatically updated when new chargable 
 resources are invoked by the user.
 
-For the reasons outlined above, we chose to develop Aquarium around an event
-sourcing architecture. Event sourcing assumes that all changes to application
-state are stored as a sequence of events, in an immutable log. With such a 
-log at hand, a system can easily rebuild the current state by replaying the
-events in order, The event sourcing
-design pattern has some very interesting properties, which made it particularily
-suitable for basing Aquarium's architecture on it:
+For the reasons outlined above, we chose to base Aquarium on event sourcing. 
+Event sourcing assumes that all changes to application
+state are stored as a sequence of events, in an immutable log. With such a log
+at hand, a system can easily rebuild the current state by replaying the events
+in order. The event sourcing design pattern has some very interesting
+properties, which made it particularily suitable for basing Aquarium's
+architecture on it:
 
 \begin{itemize}
 
@@ -52,3 +52,23 @@ suitable for basing Aquarium's architecture on it:
 \caption{The Aquarium architecture} 
 \label{fig:arch}
 \end{figure}
+
+With event sourcing as the basis for Aquarium, we then proceeded to design the
+system's runtime data model. What we wanted to model was the current state of
+resource usage for each user, along with the user's wallet. One possibility we
+wanted to explore on that front was copy on write updates; even for trivial
+updates, the system would have to copy the affected data graphs to new
+versions, instead of modifying the system in place. For that, we briefly
+explored the use of software transactional memory, but found it restrictive for
+our pursposes. What we chose instead was to contain each user's runtime state
+in an actor. Using this design, shared state was eliminated; the use of the
+actor model guarantee, that only one thread can execute within the context of
+an actor renders the protection (with copy on write or other mechanism) of the
+actor's state superflous. The actor model also fitted the event sourcing basis
+very well, since each message in the log could pass through various processing
+stages and reach the appropriate actor immutably.
+
+An overview of the Aquarium architecture is presented in 
+Figure~\ref{fig:arch}. The system receives input mainly from two sources:
+a queue for resource events and 
+
