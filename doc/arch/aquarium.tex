@@ -207,10 +207,15 @@ The set of algorithmic steps by which a resource event leads to state changes of
 
 \end{description}
 
+\subsection{External Events}
+Aquarium is the recipient of several types of events from external systems. More specifically, systems that manage the lifetime and operation of chargeable resources are responsible to send Aquarium events that describe notable resource state changes. As an example, when a user consumes disk space, Pithos, which is the service responsible for user storage, will send a resource event for the ``diskspace'' resource and the amount of bytes used.
+
+Another type of events are the user-related events, from the perspective if the Identity Management service. For example, Aquarium needs to know when a user is first created an and when the user is activated or suspended. Also, several types of users (e.g. Lab Administrators or Professors in the academic setting where Aquarium is initially targeted for) may be assigned more privileged credit plans that periodically give them more credits.
+
 
 \subsection{The configuration DSL}
 \label{sec:dsl}
-The configuration requirements of Aquarium  were addressed by creating a new
+We addressed the configuration requirements of Aquarium by creating a new
 domain specific language ({\sc dsl}), based on the YAML format.  The DSL
 enables administrators to specify chargeable resources, charging policies and
 price lists and combine them arbitrarily into agreements applicable to specific
