@@ -212,6 +212,34 @@ Aquarium is the recipient of several types of events from external systems. More
 
 Another type of events are the user-related events, from the perspective if the Identity Management service. For example, Aquarium needs to know when a user is first created an and when the user is activated or suspended. Also, several types of users (e.g. Lab Administrators or Professors in the academic setting where Aquarium is initially targeted for) may be assigned more privileged credit plans that periodically give them more credits.
 
+For the exchange of events we adopt the ubiquitous JSON format. This is chosen for the ease of manipulation from both Scala, used in Aquarium, and Python, used for the rest of the communicating systems. Our base entity, \texttt{AquariumEvent} and the \texttt{ResourceEvent} corresponding to a resource event are shown in Figure~\ref{fig:aqevent}.
+
+\begin{figure}
+\lstset{language=c, basicstyle=\footnotesize,
+stringstyle=\ttfamily, 
+flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
+
+\begin{lstlisting}
+abstract class AquariumEvent(
+  val id: String,
+  val occurredMillis: Long,
+  val receivedMillis: Long)
+  
+case class ResourceEvent(
+    override val id: String,
+    override val occurredMillis: Long, 
+    override val receivedMillis: Long, 
+    userId: String,
+    clientId: String,               
+    resource: String,
+    eventVersion: String,
+    value: Float,
+    details: ResourceEvent.Details)
+  extends AquariumEvent(id, occurredMillis, receivedMillis)
+\end{lstlisting}
+\caption{Events in Aquarium.}
+\label{fig:aqevent}
+\end{figure}
 
 \subsection{The configuration DSL}
 \label{sec:dsl}
