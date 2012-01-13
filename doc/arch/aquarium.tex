@@ -207,12 +207,10 @@ The set of algorithmic steps by which a resource event leads to state changes of
 
 \end{description}
 
-\subsection{External Events}
-Aquarium is the recipient of several types of events from external systems. More specifically, systems that manage the lifetime and operation of chargeable resources are responsible to send Aquarium events that describe notable resource state changes. As an example, when a user consumes disk space, Pithos, which is the service responsible for user storage, will send a resource event for the ``diskspace'' resource and the amount of bytes used.
+\subsection{Representation of events}
+Aquarium is the recipient of several types of events from external systems. More specifically, systems that manage the lifetime and operation of chargeable resources are responsible to send Aquarium events that describe notable resource state changes. As an example, when a user consumes disk space, Pithos, which is the service responsible for user storage, will send a resource event for the \textsf{diskspace} resource and the amount of bytes used.
 
-Another type of events are the user-related events, from the perspective if the Identity Management service. For example, Aquarium needs to know when a user is first created an and when the user is activated or suspended. Also, several types of users (e.g. Lab Administrators or Professors in the academic setting where Aquarium is initially targeted for) may be assigned more privileged credit plans that periodically give them more credits.
-
-For the exchange of events we adopt the ubiquitous JSON format. This is chosen for the ease of manipulation from both Scala, used in Aquarium, and Python, used for the rest of the communicating systems. Our base entity, \texttt{AquariumEvent} and the \texttt{ResourceEvent} corresponding to a resource event are shown in Figure~\ref{fig:aqevent}.
+Another type of events are the user-related events, from the perspective if the Identity Management service. For example, Aquarium needs to know when a user is first created and when the user is activated or suspended. Also, several types of users (e.g. Lab Administrators or Professors in the academic setting where Aquarium is initially targeted for) may be assigned more privileged credit plans that periodically give them more credits.
 
 \begin{figure}
 \lstset{language=c, basicstyle=\footnotesize,
@@ -232,14 +230,38 @@ case class ResourceEvent(
     userId: String,
     clientId: String,               
     resource: String,
-    eventVersion: String,
-    value: Float,
-    details: ResourceEvent.Details)
+    value: Double,
+    details: Map[String, String])
   extends AquariumEvent(id, occurredMillis, receivedMillis)
 \end{lstlisting}
-\caption{Events in Aquarium.}
+\caption{Representation of events in Scala.}
 \label{fig:aqevent}
 \end{figure}
+
+For the exchange of events we adopt the ubiquitous JSON format. This is chosen for the ease of manipulation from both Scala, used in Aquarium, and Python, used for the rest of the communicating systems. Our base entity, \texttt{AquariumEvent} and the \texttt{ResourceEvent} corresponding to a resource event, as described previously, are shown in Figure~\ref{fig:aqevent}. The given attributes are:
+
+\begin{description}
+\item[id] is the event \textsf{ID} at the client side, that is the sender of the event. Aquarium requires that \textsf{IDs}
+
+\item[occurredMillis] gives us the time of when the even occurred, using the Unix time convention.
+
+\item[receivedMillis] gives us the time of when the event was received in the Aquarium processing pipeline, also using the Unix time convention.
+
+\item[userId] is the unique identifier of the user this event relates to. Use identifiers are managed by the Identity Management system, Astakos.
+
+\item[clientId] is a unique, across all systems, identifier for the external system generating the event.
+
+\item[resource] is the resource name.
+
+\item[value] is the resource's changed value.
+
+\item[details] is a resource-specific collection of  attributes and their values.
+\end{description}
+
+Of particular interest is the \textsf{details} map. Several resource types can use this map in order to pass resource-specific attributes to Aquarium, which in turn can be hooked into the charging algorithm. Furthermore, we use this extension mechanism with the resource instance \textsf{ID}, which is uniformly communicated via this map. Each resource type is free to choose the domain-specific description of the instance \textsf{ID}. Just to provide an example, a resource named \textsf{Virtual Machine} can have a multitude of instances. i.e. a user of the cloud infrastructure can possible own more than one virtual machines. Each virtual machine is identified by the \textsf{vmId} attribute.
+
+Also, for the timing of events we assume all systems that send event to Aquarium have synchronized clocks. We actually require this, so that Aquarium is not concerned with time book keeping.
+
 
 \subsection{The configuration DSL}
 \label{sec:dsl}
@@ -258,7 +280,7 @@ From the previously specified term, the following five are used in the DSL:
 \begin{enumerate}
 \item Resources
 \item Charging algorithms
-\item Pricelists
+\item Price lists
 \item Credit plans
 \item Agreements
 \end{enumerate}
