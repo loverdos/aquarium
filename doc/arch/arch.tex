@@ -100,11 +100,12 @@ implementing the architecture as described, which allowed us to focus on
 implementing the business logic, leaving the details of actor registries,
 dispatchers and message passing to Akka's runtime. Akka also provided
 actor-based components for communicating with the message queue and, through a
-third party component (Spray)\footnote{\url{http://github.com/spray}} for handling {\sc rest} requests.  We chose the
-{\sc amqp} protocol and its Rabbit{\sc mq} implementation for implementing the
-request queue, specifically because recent versions include support for
-active/active cluster configurations. The persistence layer is currently
-implemented by Mongo{\sc db}, for its replication and sharding support.
-However, this is not a hard requirement, as Aquarium features an abstraction
-layer for all database queries (currently 10 methods), which can then be
-implemented by any persistence system, relational or not.
+third party component (Spray)\footnote{\url{http://github.com/spray}} for
+handling {\sc rest} requests.  We chose the {\sc amqp} protocol and its
+Rabbit{\sc mq} implementation for implementing the request queue, specifically
+because recent versions include support for active/active cluster
+configurations. The persistence layer is currently implemented by Mongo{\sc
+db}, for its replication and sharding support.  However, this is not a hard
+requirement, as Aquarium features an abstraction layer for all database queries
+(currently 10 methods), which can then be implemented by any persistence
+system, relational or not.
