@@ -1,4 +1,4 @@
-As most in similar systems, Aquarium's architectural design is driven by two 
+\paragraph{Architectural decisions} As most in similar systems, Aquarium's architectural design is driven by two 
 requirements: scaling and fault tolerance. As described in the requirements
 section above, the concurrency and responsiveness requirements are steep;
 
@@ -23,7 +23,7 @@ Event sourcing assumes that all changes to application
 state are stored as a sequence of events, in an immutable log. With such a log
 at hand, a system can easily rebuild the current state by replaying the events
 in order. The event sourcing design pattern has some very interesting
-properties, which made it particularily suitable for basing Aquarium's
+properties, which made it particularity suitable for basing Aquarium's
 architecture on it:
 
 \begin{itemize}
@@ -48,8 +48,10 @@ architecture on it:
 \end{itemize}
 
 \begin{figure}
-
-\caption{The Aquarium architecture} 
+    \begin{center}
+    \includegraphics[scale=1.5]{arch.pdf}
+    \end{center}
+\caption{Functional components in Aquarium's architecture} 
 \label{fig:arch}
 \end{figure}
 
@@ -68,7 +70,41 @@ actor's state superflous. The actor model also fitted the event sourcing basis
 very well, since each message in the log could pass through various processing
 stages and reach the appropriate actor immutably.
 
-An overview of the Aquarium architecture is presented in 
-Figure~\ref{fig:arch}. The system receives input mainly from two sources:
-a queue for resource events and 
+\paragraph{Components} An overview of the Aquarium architecture is presented in
+Figure~\ref{fig:arch}.  The system is modeled as a collection of logically and
+functionally isolated components, which communicate by message passing. Withing
+each component, a number of actors take care of concurrently processing
+incoming messages through a load balancer component which is the gateway to
+requests targeted to the component. Each component is also monitored by its own
+supervisor; should an actor fail, the supervisor will automatically restart it.
+The architecture allows certain application paths to fail individually while
+the system is still responsive, while also enabling future distribution of
+multiple components on clusters of machines.
 
+The system receives input mainly from two sources: a queue for resource and
+user events and a {\sc rest api} for billing state queries. The queue component
+reads messages from a configurable number of queues and persists them in the
+application's immutable log store. Both input components then forward incoming
+messages to a network of dispatcher handlers which do not do any processing by
+themselves, but know where the user actors lay. As described earlier, actual
+processing of billing events is done within the user actors. Finally, a
+separate network of actors take care of scheduling periodic tasks, such as
+refiling of user credits; it does so by issuing events in the appropriate
+queue.
+
+\paragraph{Implementation}
+
+Aquarium is being developed as a standalone service, based on the Akka library
+for handling actor related functionality. Akka has all basic components for
+implementing the architecture as described, which allowed us to focus on
+implementing the business logic, leaving the details of actor registries,
+dispatchers and message passing to Akka's runtime. Akka also provided
+actor-based components for communicating with the message queue and, through a
+third party component (Spray)\footnote{\url{http://github.com/spray}} for handling {\sc rest} requests.  We chose the
+{\sc amqp} protocol and its Rabbit{\sc mq} implementation for implementing the
+request queue, specifically because recent versions include support for
+active/active cluster configurations. The persistence layer is currently
+implemented by Mongo{\sc db}, for its replication and sharding support.
+However, this is not a hard requirement, as Aquarium features an abstraction
+layer for all database queries (currently 10 methods), which can then be
+implemented by any persistence system, relational or not.
