@@ -11,8 +11,9 @@
 \newcommand{\cL}{{\cal L}}
 \newcommand{\TODO}{{\sl TODO \marginpar{\sl TODO}}}
 \newcommand{\DTime}{\ensuremath{T}\xspace} % Time dimension
+\newcommand{\DeltaDTime}{\ensuremath{\Delta{T}}\xspace}
 \newcommand{\DUnitR}{\ensuremath{U_{R}}\xspace} % Unit of measure for resource R
-\newcommand{\DeltaDUnitR}{\ensuremath{\Delta\DUnitR}}
+\newcommand{\DeltaDUnitR}{\ensuremath{\Delta U_{R}}\xspace}
 
 \begin{document}
 \conferenceinfo{ScalaDays '12}{London, UK.}
@@ -394,8 +395,27 @@ Aquarium {\sc dsl} to provide a scaling charge algorithm.
 \subsection{Charging basics}
 The previously mentioned DSL gives us a declarative way of describing the charging algorithms and the other related concepts. The computational engine of Aquarium then transforms these declarations to computing steps for the charging process.
 
-Charging, based on a resource event, is inherently multidimensional. Time (\DTime) is always one dimension to consider: there are resources whose charging is based on the passing of time. Also, rather obviously, the unit of measure (\DUnitR) for a resource $R$ is yet another dimension to take into account. These dimensions usually enter the formulas of the charging algorithms, although it is not necessary that all of them do. But there is one more aspect to consider, which clearly adds up to the multidimensionality of the problem. More specifically, \DUnitR can be taken into account either as whole value or as a difference \DeltaDUnitR. An avid reader may be already wondering about time. Shouldn't it be treated in the same footing, at least for reasons of conceptual uniformity?
+Charging, based on a resource event, is inherently multidimensional. Time (\DTime) is always one dimension to consider: there are resources whose charging is based on the passing of time. Also, rather obviously, the unit of measure (\DUnitR) for a resource ($R$) is yet another dimension to take into account. These dimensions usually enter the formulas of the charging algorithms, although it is not necessary that all of them do. But there is one more aspect to consider, which clearly adds up to the multidimensionality of the problem. More specifically, \DUnitR can be taken into account either as whole value or as a difference \DeltaDUnitR. An avid reader may be already wondering about time. Shouldn't it be treated in the same footing, at least for reasons of conceptual uniformity? Shouldn't we treat both \DTime and \DeltaDTime? In reality, we \textit{always} work with time differences. Usually, \DeltaDTime means the time difference between two resource events for the same resource instance. In such a setting, \DTime would mean the time difference from some well-known and predefined point in time. This is generally a possibility, for example by considering the beginning of a billing period as the beginning of time as far as a particular charging calculation is concerned. So all combinations of either full values or differences can be considered, as given in Table~\ref{tab:dt}.
 
+\begin{table}[htdp]
+\label{tab:dt}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+&Time & Resource unit of measure \\
+\hline
+Absolute value & \DTime & \DUnitR \\
+Difference & \DeltaDTime  & \DeltaDUnitR \\
+\hline
+\end{tabular}
+\end{center}
+\label{default}
+\caption{Considering time and resource unit of measure as absolute values or differences
+}
+\end{table}%
+
+
+Now, we can take this reasoning a bit further, by 
 
 Per resource, the charging operation is affected by the cost policy and complexity
 parameters. Specifically, the 3 available cost policies affect the calculation 
