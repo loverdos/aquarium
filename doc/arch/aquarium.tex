@@ -479,8 +479,17 @@ Consequently, a resource event might lead to several entries to the user's walle
 \label{sec:ustate}
 
 \section{Performance}
-To evaluate the performance of Aquarium with respect to the requirements
-set, 
+
+To evaluate the performance of Aquarium, we formulated an experiment that
+evaluated two important properties: the time required to perform the charging
+operation for a resource event and the overall time required to process a
+resource event, end to end. To conduct the experiment, Aquarium was configured,
+using the policy {\sc dsl} to handle billing events for 5 types of resources,
+using 3 overloaded pricelists, 2 overloaded algorithms, all of which were
+combined to 5 different agreements. Aquarium's data store was pre-filled in
+with 1.000.000 resource events, evenly distributed among 1.000 users. To drive
+the benchmark, we used a synthetic load generator that produced random
+billing events, at a configurable rate per minute. 
 
 To run the benchmark, we deployed Aquarium on a virtualized 4 core 2{\sc gh}z
 class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux server, on the Okeanos
@@ -491,27 +500,49 @@ the queue and database server respectively, both of which where run in another
 versions at the time of benchmarking (2.7.1 for Rabbit{\sc mq} and 2.6 for
 Mongo{\sc db}). The two virtual machines did not share a physical host and
 communicated over Okeanos's switched network fabric at an effective rate of 800
-Mbits/sec, as reported by the \texttt{iperf} utility.  No particular
-optimization was performed on either back-end system.  
-
-To simulate a realistic deployment, Aquarium was configured, using the policy
-{\sc dsl} to handle billing events for 5 types of resources, using 3 overloaded
-pricelists, 2 overloaded algorithms, all of which were combined to 5 different
-agreements. To drive the benchmark, we used a synthetic load generator that
-produced billing events, at a configurable rate per minute.  
-
+Mbits/sec, as reported by the \texttt{iperf} utility.  We paid particular
+attention to have Mongo{\sc db} load the full working data set in memory, by
+repeatedly querying all stored records. No further optimization was performed
+on either back-end system.
 
 \begin{figure}[t]
     \begin{center}
-        \includegraphics[scale=0.6]{perf.pdf}
+        \includegraphics[scale=0.63]{perf.pdf}
     \end{center}
-    \caption{Billing performance at 100 active users for a configurable number of
-    messages per second.}
+
+    \caption{Average time for peforming a billing operation and end for end to
+    end message processing for 100 active users and a varying number of
+    messages per minute.}
+    
     \label{fig:perf}
 \end{figure}
 
-All measurements were done using the first working version of the
-Aquarium deployment, so no real optimisation effort did take place. 
+All measurements were done using the first working version of the Aquarium
+deployment, so no real optimisation effort has taken place. This shows in the
+current performance measurements, as Aquarium was not able to handle more that
+about 500 billing operations per second. One factor that contributed to this
+result was the way resource state recalculations was done; in the current
+version, the system needs to re-read parts of the event and billing state from
+the database every time a new resource event appears. This contributes to more
+than 50\% of the time required to produce a charging event, and can be
+completely eliminated when proper billing snapshots are implemented. In other
+measurements, we also observed that the rate of garbage creation was extremely
+high, more that 250 {\sc mb/sec}. Upon further investigation, we attributed it
+to the way policy timeslot applicability is calculated. Despite the high
+allocation rate, the {\sc jvm}'s garbage collector never went through a
+full collection cycle; when we forced one after the benchmark run was over, 
+we observed that the actual heap memory usage was only 80{\sc mb}, which
+amounts to less than 1 {\sc mb} user.
+
+Even so, by extrapolating on the results and hardware configuration, an average
+12-core box could handle more 1.500 messages per minute from about 300 active
+users, at 5 events per minute. Given that activity from users is expected to
+arrive in bursts, a more realistic expectation might be to receive 1 message
+per user per 5 minutes on average; in that case, and provided that the resource
+query cost is negligible as it is being served from an in memory cache, the
+system could handle around 4.500 concurrent users. While such back of the
+envelop calculations do not account for traffic spikes, they do provide an
+rough estimation of the optimisation effort that must be put in place. 
 
 
 \section{Lessons Learned}
