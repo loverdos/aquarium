@@ -36,15 +36,41 @@
     software. Aquarium is a new software we have built whose main function is to associate cloud resources usage with charging policies.
 \end{abstract}
 
-\category{D.3.3}{Programming Languages}{Language Constructs and Features}[Control structures]
+\category{D.2.11}{Software Architectures}{Domain-specific architectures}
 
 \terms
-    Object-Oriented Programming, Philosophy
+    Algorithms, Performance
 
 \keywords
-    OOP, Ontology, Programming Philosophy
+    Billing, Cloud Computing, Scala, Akka
 
 \section{Introduction}
+
+Public cloud infrastructures have emerged as an alternative to building and
+maintaining expensive proprietary data centers. At no upfront investment cost,
+companies, especially startups, and individual users rent computing power from
+service providers, using the pay-as-you-go charging model and enjoying high
+scalability should the requirement arise~\cite{Lourid10}. The use of public cloud
+infrastructures is particularly attractive for various forms of research
+activities, where budget is usually tight and availability of computing power
+can make or break an experiment. An important part of all public clouds is
+resource management and customer billing~\cite{Armbr10}. Unfortunately, even
+though all proprietary platforms do feature mechanisms for billing customers
+for resource usage, there is currently a lack of open solutions.
+
+In this paper we present Aquarium, an open source resource billing software,
+designed for handling the production  requirements of {\sc grnet}'s public
+Infrastructure as a Service (IaaS) platform. Aquarium utilizes a custom Domain
+Specific Language for configuring the supported resources, the pricelists and
+the billing algorithms. It receives input from an event queue and presents
+billing results through a {\sc rest api}. It has been developed with Scala,
+using the Akka library to handle concurrency and actor-based resource
+processing. In the following sections, we present the requirements that have driven
+Aquarium's design, the software architecture and implementation of important
+computational algorithms and a preliminary evaluation of Aquarium's
+performance. We also present an account of our experience in introducing Scala
+in our company.
+
 \section{Requirements}
 
 Aquarium was designed on a clean sheet to serve a particular purpose,
@@ -103,6 +129,17 @@ multiple users. This means that charges for the use of a single resource
 may need to be distributed among several users. Also this may mean that in order
 for sharing to work correctly, users may need to transfer credits among them.
 
+\subsection{Resource Limiting}
+
+The Okeanos IaaS will be free service for all users. As such, it is prone to
+abuse, either by misappropriating resources or by utilizing resources for
+purposes not related to research. A billing system can help with controlling
+resource usage if it permits its users to use resources up to a periodically
+renewable limit. In order facilitate the development of other infrastructure
+system, this limit can be expressed into currency (real or provisional). To
+support this scheme, Aquarium will need to update a user's balance almost
+immediately after the user has claimed the required resources, and inform other
+systems in case the user's credits are exhausted. 
 
 \subsection{Configuration}
 
