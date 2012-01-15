@@ -479,29 +479,36 @@ Consequently, a resource event might lead to several entries to the user's walle
 \label{sec:ustate}
 
 \section{Performance}
+To evaluate the performance of Aquarium with respect to the requirements
+set, 
 
-To evaluate the performance and scalability of Aquarium, we performed two
-experiments: The first one is a micro-benchmark that measures the time required
-for the basic processing operation performed by Aquarium, which is billing for
-increasing number of messages. The second one demonstrates Aquarium's
-scalability on a single node with respect to the number of users.  In both
-cases, Aquarium was run on a MacBookPro featuring a quad core 2.33{\sc g}hz
-Intel i7 processor and 8{\sc gb} of {\sc ram}. We selected Rabbit{\sc mq} and
-Mongo{\sc db} as the queue and database servers, both of which were run on a
-virtualised 4 core with 4{\sc gb} {\sc ram} Debian Linux server. Both systems
-were run using current versions at the time of benchmarking (2.7.1 for
-Rabbit{\sc mq} and 2.6 for Mongo{\sc db}).  The two systems were connected with
-a full duplex 100Mbps connection.  No particular optimization was performed on
-either back-end system, nor to the {\sc jvm} that run Aquarium. 
+To run the benchmark, we deployed Aquarium on a virtualized 4 core 2{\sc gh}z
+class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux server, on the Okeanos
+cloud infrastructure. The virtual machine running Aquarium was configured with
+a 4{\sc gb} maximum heap size. We selected Rabbit{\sc mq} and Mongo{\sc db} as
+the queue and database server respectively, both of which where run in another
+4-core, 4{\sc gb ram} virtual machine. Both systems were run using current
+versions at the time of benchmarking (2.7.1 for Rabbit{\sc mq} and 2.6 for
+Mongo{\sc db}). The two virtual machines did not share a physical host and
+communicated over Okeanos's switched network fabric at an effective rate of 800
+Mbits/sec, as reported by the \texttt{iperf} utility.  No particular
+optimization was performed on either back-end system.  
 
 To simulate a realistic deployment, Aquarium was configured, using the policy
-{\sc dsl} to handle billing events for 4 types of resources, using 3 overloaded
-pricelists, 2 overloaded algorithms, all of which were combined to 10 different
-agreements, which were randomly (uniformly) assigned to users. To drive the
-benchmarks, we used a synthetic load generator that worked in two stages: it
-first created a configurable number of users and then produced billing events
-that 
+{\sc dsl} to handle billing events for 5 types of resources, using 3 overloaded
+pricelists, 2 overloaded algorithms, all of which were combined to 5 different
+agreements. To drive the benchmark, we used a synthetic load generator that
+produced billing events, at a configurable rate per minute.  
 
+
+\begin{figure}[t]
+    \begin{center}
+        \includegraphics[scale=0.6]{perf.pdf}
+    \end{center}
+    \caption{Billing performance at 100 active users for a configurable number of
+    messages per second.}
+    \label{fig:perf}
+\end{figure}
 
 All measurements were done using the first working version of the
 Aquarium deployment, so no real optimisation effort did take place. 
