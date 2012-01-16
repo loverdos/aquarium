@@ -92,8 +92,33 @@ case class ResourceInstanceSnapshot(
     this.name == name &&
     this.instanceId == instanceId
 }
+
+/**
+ * A map from (resourceName, resourceInstanceId) to (value, snapshotTime).
+ * This representation is convenient for computations and updating, while the
+ * [[gr.grnet.aquarium.user.OwnedResourcesSnapshot]] representation is convenient for JSON serialization.
+ */
+class OwnedResourcesMap(map: Map[(String, String), (Float, Long)]) {
+  def toResourcesSnapshot(snapshotTime: Long): OwnedResourcesSnapshot =
+    OwnedResourcesSnapshot(
+      map map {
+        case ((name, instanceId), (value, snapshotTime)) ⇒
+          ResourceInstanceSnapshot(name, instanceId, value, snapshotTime
+      )} toList,
+      snapshotTime
+    )
+}
+
 case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshotTime: Long)
   extends UserDataSnapshot[List[ResourceInstanceSnapshot]] with JsonSupport {
+
+  def toResourcesMap: OwnedResourcesMap = {
+    val tuples = for {
+      rc <- data
+    } yield ((rc.name, rc.instanceId), (rc.value, rc.snapshotTime))
+
+    new OwnedResourcesMap(Map(tuples.toSeq: _*))
+  }
 
   def findResourceSnapshot(name: String, instanceId: String): Option[ResourceInstanceSnapshot] =
     data.find { x => name == x.name && instanceId == x.instanceId }

@@ -484,6 +484,7 @@ class UserActor extends AquariumActor
         } else {
           this._userState = UserState(
             userId,
+            0,
             ActiveSuspendedSnapshot(event.isStateActive, now),
             CreditSnapshot(0, now),
             AgreementSnapshot(agreementOpt.get.name, now),
@@ -611,6 +612,7 @@ class UserActor extends AquariumActor
 
     this._userState = UserState(
       _userId,
+      0,
       ActiveSuspendedSnapshot(false, now),
       CreditSnapshot(0, now),
       AgreementSnapshot(agreement.get.name, now),

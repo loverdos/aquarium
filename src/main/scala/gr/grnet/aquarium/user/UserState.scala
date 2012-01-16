@@ -57,6 +57,12 @@ import gr.grnet.aquarium.logic.accounting.Policy
 
 case class UserState(
     userId: String,
+
+    /**
+     * When the user was created in the system (not Aquarium). We use this as a basis for billing periods. Set to
+     * zero if unknown.
+     */
+    startDateMillis: Long,
     active: ActiveSuspendedSnapshot,
     credits: CreditSnapshot,
     agreement: AgreementSnapshot,
@@ -90,6 +96,8 @@ case class UserState(
        Failed(new Exception("No agreement snapshot found for user %s".format(userId)))
     }
   }
+
+  def resourcesMap = ownedResources.toResourcesMap
   
   def safeCredits = credits match {
     case c @ CreditSnapshot(date, millis) ⇒ c
@@ -113,5 +121,10 @@ object UserState {
 
   def fromXml(xml: String): UserState = {
     fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
+  }
+
+  object JsonNames {
+    final val _id = "_id"
+    final val userId = "userId"
   }
 }

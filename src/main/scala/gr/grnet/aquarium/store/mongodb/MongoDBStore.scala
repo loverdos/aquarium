@@ -38,11 +38,13 @@ package gr.grnet.aquarium.store.mongodb
 import gr.grnet.aquarium.util.Loggable
 import com.mongodb.util.JSON
 import gr.grnet.aquarium.user.UserState
+import gr.grnet.aquarium.user.UserState.{JsonNames => UserStateJsonNames}
 import gr.grnet.aquarium.util.displayableObjectInfo
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.logic.events.ResourceEvent.{JsonNames => ResourceJsonNames}
+import gr.grnet.aquarium.logic.events.UserEvent.{JsonNames => UserEventJsonNames}
 import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
 import java.util.Date
 import com.ckkloverdos.maybe.Maybe
@@ -155,7 +157,17 @@ class MongoDBStore(
     } finally {
       cursor.close()
     }
+  }
 
+  def findResourceEventsForPeriod(userId: String, startTime: Long, stopTime: Long): List[ResourceEvent] = {
+    val query = new BasicDBObject()
+    query.put(ResourceJsonNames.userId, userId)
+    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gte", startTime))
+    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$lte", stopTime))
+
+    val orderBy = new BasicDBObject(ResourceJsonNames.occurredMillis, 1)
+
+    MongoDBStore.runQuery[ResourceEvent](query, rcEvents, orderBy)(MongoDBStore.dbObjectToResourceEvent)(None)
   }
   //-ResourceEventStore
 
@@ -165,7 +177,7 @@ class MongoDBStore(
 
   def findUserStateByUserId(userId: String): Maybe[UserState] = {
     Maybe {
-      val query = new BasicDBObject(ResourceJsonNames.userId, userId)
+      val query = new BasicDBObject(UserStateJsonNames.userId, userId)
       val cursor = userStates find query
 
       try {
@@ -180,7 +192,7 @@ class MongoDBStore(
   }
 
   def deleteUserState(userId: String) = {
-    val query = new BasicDBObject(ResourceJsonNames.userId, userId)
+    val query = new BasicDBObject(UserStateJsonNames.userId, userId)
     userStates.findAndRemove(query)
   }
   //-UserStateStore
@@ -267,7 +279,7 @@ class MongoDBStore(
 
   //+UserEventStore
   def storeUserEvent(event: UserEvent): Maybe[RecordID] =
-    MongoDBStore.storeAny[UserEvent](event, userEvents, ResourceJsonNames.userId,
+    MongoDBStore.storeAny[UserEvent](event, userEvents, UserEventJsonNames.userId,
       _.userId, MongoDBStore.jsonSupportToDBObject)
 
 
@@ -275,7 +287,7 @@ class MongoDBStore(
     MongoDBStore.findById[UserEvent](id, userEvents, MongoDBStore.dbObjectToUserEvent)
 
   def findUserEventsByUserId(userId: String): List[UserEvent] = {
-    val query = new BasicDBObject(ResourceJsonNames.userId, userId)
+    val query = new BasicDBObject(UserEventJsonNames.userId, userId)
     MongoDBStore.runQuery(query, userEvents)(MongoDBStore.dbObjectToUserEvent)(Some(_sortByTimestampAsc))
   }
   //-UserEventStore

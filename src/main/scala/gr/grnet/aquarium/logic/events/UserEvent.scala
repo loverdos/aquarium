@@ -85,4 +85,9 @@ object UserEvent {
   def fromBytes(bytes: Array[Byte]): UserEvent = {
     JsonHelpers.jsonBytesToObject[UserEvent](bytes)
   }
+
+  object JsonNames {
+    final val _id = "_id"
+    final val userId = "userId"
+  }
 }
