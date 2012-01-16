@@ -21,7 +21,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
 
   override def forward(event: ResourceEvent): Unit = {
     val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
-    //businessLogicDispacther ! ProcessResourceEvent(event)
+    businessLogicDispacther ! ProcessResourceEvent(event)
   }
 
   override def exists(event: ResourceEvent): Boolean =

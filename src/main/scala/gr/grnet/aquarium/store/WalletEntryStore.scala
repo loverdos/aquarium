@@ -31,4 +31,6 @@ trait WalletEntryStore {
    */
   def findPreviousEntry(userId: String, resource: String,
                         instanceId: String, finalized: Option[Boolean]): List[WalletEntry]
+
+  def findWalletEntriesAfter(userId: String, from: Date): List[WalletEntry]
 }

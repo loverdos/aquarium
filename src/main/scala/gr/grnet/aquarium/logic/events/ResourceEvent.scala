@@ -165,4 +165,6 @@ object ResourceEvent {
     final val vmId = "vmId"
     final val action = "action" // "on", "off"
   }
+
+  def emtpy = ResourceEvent("", 0, 0, "", "1", "", "", 0, Map())
 }

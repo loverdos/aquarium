@@ -37,6 +37,8 @@ package gr.grnet.aquarium
 package user
 
 import util.json.JsonSupport
+import logic.accounting.Policy
+import logic.accounting.dsl.{DiscreteCostPolicy, ContinuousCostPolicy, OnOffCostPolicy}
 
 /**
  * Snapshot of data that are user-related.
@@ -106,7 +108,12 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
     val newData = oldRCInstanceOpt match {
       case Some(currentRCInstance) ⇒
         // Need to delete the old one and add the new one
-        val newValue = newRCInstance.data + currentRCInstance.data
+        val newValue = Policy.policy.findResource(name).get.costpolicy match {
+          case OnOffCostPolicy => newRCInstance.data
+          case ContinuousCostPolicy => newRCInstance.data + currentRCInstance.data
+          case DiscreteCostPolicy => newRCInstance.data
+        }
+
         newRCInstance.copy(data = newValue) :: (data.filterNot(_.isResource(name, instanceId)))
       case None ⇒
         // Resource not found, so this is the first time and we just add the new snapshot

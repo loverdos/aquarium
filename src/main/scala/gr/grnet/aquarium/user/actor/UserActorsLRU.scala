@@ -75,7 +75,7 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
     val accessed  = mapAsScalaMap(_cache.getLatestAccessedItems(_cache.size()))
 
     //Send the poison pill and make sure that all futures have been returned
-    val futures = accessed.keys.map{x => _cache.get(x).stop()}
+    val futures = accessed.keysIterator.map{x => _cache.get(x).stop()}
   }
 
   def size: Int   = _cache.size()

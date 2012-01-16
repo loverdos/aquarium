@@ -25,7 +25,7 @@ case class WalletEntry(
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
   assert(occurredMillis > 0)
-  assert(value > 0F)
+  assert(value >= 0F)
   assert(!userId.isEmpty)
 
   def validate = true

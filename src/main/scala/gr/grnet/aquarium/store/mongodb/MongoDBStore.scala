@@ -120,7 +120,7 @@ class MongoDBStore(
       while(cursor.hasNext) {
         buffer += MongoDBStore.dbObjectToResourceEvent(cursor.next())
       }
-      buffer.toList
+      buffer.toList.sortWith(_sortByTimestampAsc)
     } finally {
       cursor.close()
     }
@@ -130,7 +130,7 @@ class MongoDBStore(
                                instid: Option[String], upTo: Long) : List[ResourceEvent] = {
     val query = new BasicDBObject()
     query.put(ResourceJsonNames.userId, userId)
-    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$lte", upTo))
+    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$lt", upTo))
     query.put(ResourceJsonNames.resource, resName)
 
     instid match {
@@ -151,7 +151,7 @@ class MongoDBStore(
       while(cursor.hasNext) {
         buffer += MongoDBStore.dbObjectToResourceEvent(cursor.next())
       }
-      buffer.toList
+      buffer.toList.sortWith(_sortByTimestampAsc)
     } finally {
       cursor.close()
     }
@@ -202,6 +202,14 @@ class MongoDBStore(
     // TODO: Is this the correct way for an AND query?
     q.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
     q.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$lt", to.getTime))
+    q.put(ResourceJsonNames.userId, userId)
+
+    MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
+  }
+
+  def findWalletEntriesAfter(userId: String, from: Date) : List[WalletEntry] = {
+    val q = new BasicDBObject()
+    q.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
     q.put(ResourceJsonNames.userId, userId)
 
     MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
