@@ -96,7 +96,7 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   extends UserDataSnapshot[List[ResourceInstanceSnapshot]] with JsonSupport {
 
   def findResourceSnapshot(name: String, instanceId: String): Option[ResourceInstanceSnapshot] =
-    data.find { x => name.equals(x.name) && instanceId.equals(x.instanceId) }
+    data.find { x => name == x.name && instanceId == x.instanceId }
 
   
   def addOrUpdateResourceSnapshot(name: String,
