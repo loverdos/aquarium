@@ -15,7 +15,7 @@ described in an abstract way that would include all future system expansions.
 Moreover, the single query that places Aquarium in the system's critical 
 path (number of remaining credits) must be answered within a few (less than
 10) milliseconds for a large number of concurrent requests, which means that
-it must be somehow cached and automatically updated when new chargable 
+it must be somehow cached and automatically updated when new chargeable 
 resources are invoked by the user.
 
 For the reasons outlined above, we chose to base Aquarium on event sourcing. 
@@ -82,7 +82,7 @@ the system is still responsive, while also enabling future distribution of
 multiple components on clusters of machines.
 
 The system receives input mainly from two sources: a queue for resource and
-user events and a {\sc rest api} for billing state queries. The queue component
+user events and a {\sc rest api} for credits and resource state queries. The queue component
 reads messages from a configurable number of queues and persists them in the
 application's immutable log store. Both input components then forward incoming
 messages to a network of dispatcher handlers which do not do any processing by
