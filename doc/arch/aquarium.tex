@@ -35,8 +35,15 @@
 
 \maketitle
 \begin{abstract}
-This paper describes the architecture of a new cloud infrastructure   software that we have built, called Aquarium. The main function of Aquarium is to associate state changes of cloud resources with respective charges, based on configurable, user-specific and versioned charging policies. The design of Aquarium is characterized by pervasive data immutability, actor message passing and service orientation.
-%leading to better reasoning, massive concurrency with race-free state changes and loose coupling of its components.
+
+An important part of all public IaaS offerings is resource management and
+customer billing. In this paper, we present the design and implementation of
+Aquarium, an extensible billing service software. Aquarium associates state
+changes in cloud resources with respective charges, based on configurable,
+user-specific and versioned charging policy. The implementation of Aquarium is
+characterized by pervasive data immutability, actor message passing and service
+orientation.  
+
 \end{abstract}
 
 \category{D.2.11}{Software Architectures}{Domain-specific architectures}
@@ -532,20 +539,20 @@ on either back-end system.
 
 All measurements were done using the first working version of the Aquarium
 deployment, so no real optimisation effort has taken place. This shows in the
-current performance measurements, as Aquarium was not able to handle more that
+current performance measurements, as Aquarium was not able to handle more than
 about 500 billing operations per second. One factor that contributed to this
 result was the way resource state recalculations was done; in the current
 version, the system needs to re-read parts of the event and billing state from
-the database every time a new resource event appears. This contributes to more
+the datastore every time a new resource event appears. This contributes to more
 than 50\% of the time required to produce a charging event, and can be
 completely eliminated when proper billing snapshots are implemented. In other
 measurements, we also observed that the rate of garbage creation was extremely
-high, more that 250 {\sc mb/sec}. Upon further investigation, we attributed it
+high, more that 250 {\sc mb}/sec. Upon further investigation, we attributed it
 to the way policy timeslot applicability is calculated. Despite the high
 allocation rate, the {\sc jvm}'s garbage collector never went through a
 full collection cycle; when we forced one after the benchmark run was over, 
 we observed that the actual heap memory usage was only 80{\sc mb}, which
-amounts to less than 1 {\sc mb} user.
+amounts to less than 1 {\sc mb} per user.
 
 Even so, by extrapolating on the results and hardware configuration, an average
 12-core box could handle more 1.500 messages per minute from about 300 active
@@ -602,7 +609,7 @@ of any system we tested Aquarium on, simply by tuning the number of threads (in
 
 Despite the above, the experience was not as smooth as initially expected. The
 most prominent problem we encountered was that of lacking documentation. The
-Akka library documentation, extensive as is, only scratches the surface.
+Akka library documentation, even as extensive as is, only scratches the surface.
 Several other libraries we use, for example Spray for {\sc rest} handling, have
 non-existent documentation. The Java platform, and .Net that followed, has
 shown that thorough and precise documentation are key to adoption, and we
@@ -651,10 +658,10 @@ On the cloud computing front, vendors such as VMWare, Microsoft and {\sc ibm}
 provide full stack solutions, which also include resource accounting. Usually,
 such systems are connected with existing enterprise resource planning systems
 \"Ubersmith has developed an engine dedicated to resource accounting; much like
-Aquarium, it is tracks resource usage and applies accounting policies to it.
+Aquarium, it tracks resource usage and applies accounting policies to it.
 On the open source front, neither the Cloustack nor the Openstack projects,
 have yet incorporated billing into their services. To the best of our
-knowledge, Aquarium is the first freely available system to offer configurable
+knowledge, Aquarium is the first open source system to offer configurable
 accounting services for IaaS deployments.
 
 \section{Conclusions and Future Work}
