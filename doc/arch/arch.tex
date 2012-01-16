@@ -1,6 +1,6 @@
-\paragraph{Architectural decisions} As most in similar systems, Aquarium's architectural design is driven by two 
-requirements: scaling and fault tolerance. As described in the requirements
-section above, the concurrency and responsiveness requirements are steep;
+\paragraph{Architectural decisions} As in most similar systems, Aquarium's
+architectural design is driven by two requirements: scaling and fault
+tolerance.
 
 Driven by our former experience with 3 tier systems, we designed the first
 Aquarium prototype around a traditional relational database backend, with an
@@ -8,7 +8,7 @@ object relational mapping ({\sc orm}) based middle layer that run the business
 processes (billing, message processing etc) and a fully-fledged {\sc rest}
 frontend. While the simplicity of {\sc orm} systems provided a great start,
 it quickly became obvious that such a design was too rigid for an open 
-ended system. Complications arised from the fact that it was too difficult
+ended system. Complications arose from the fact that it was too difficult
 to describe versioned tree-based structures, such as the configuration {\sc dsl} 
 (see Section~\ref{sec:dsl}) and to make sure that resource events were
 described in an abstract way that would include all future system expansions.
@@ -64,11 +64,11 @@ versions, instead of modifying the system in place. For that, we briefly
 explored the use of software transactional memory, but found it restrictive for
 our pursposes. What we chose instead was to contain each user's runtime state
 in an actor. Using this design, shared state was eliminated; the use of the
-actor model guarantee, that only one thread can execute within the context of
-an actor renders the protection (with copy on write or other mechanism) of the
-actor's state superflous. The actor model also fitted the event sourcing basis
-very well, since each message in the log could pass through various processing
-stages and reach the appropriate actor immutably.
+actor model guarantees that only one thread can execute within the context of
+an actor and concequently renders the protection (with copy on write or other
+mechanism) of the actor's state superflous. The actor model also fitted the
+event sourcing basis very well, since each message in the log could pass
+through various processing stages and reach the appropriate actor immutably.
 
 \paragraph{Components} An overview of the Aquarium architecture is presented in
 Figure~\ref{fig:arch}.  The system is modeled as a collection of logically and
@@ -89,7 +89,7 @@ messages to a network of dispatcher handlers which do not do any processing by
 themselves, but know where the user actors lay. As described earlier, actual
 processing of billing events is done within the user actors. Finally, a
 separate network of actors take care of scheduling periodic tasks, such as
-refiling of user credits; it does so by issuing events in the appropriate
+refiling of user credits; it does so by issuing events to the appropriate
 queue.
 
 \paragraph{Implementation}

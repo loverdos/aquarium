@@ -62,87 +62,81 @@ though all proprietary platforms do feature mechanisms for billing customers
 for resource usage, there is currently a lack of open solutions.
 
 In this paper we present Aquarium, an open source resource billing software,
-designed for handling the production  requirements of {\sc grnet}'s public
+designed to handle the production  requirements of {\sc grnet}'s public
 Infrastructure as a Service (IaaS) platform. Aquarium utilizes a custom Domain
-Specific Language for configuring the supported resources, the pricelists and
-the billing algorithms. It receives input from an event queue and presents
-billing results through a {\sc rest api}. It has been developed with Scala,
-using the Akka library to handle concurrency and actor-based resource
-processing. In the following sections, we present the requirements that have driven
-Aquarium's design, the software architecture and implementation of important
-computational algorithms and a preliminary evaluation of Aquarium's
-performance. We also present an account of our experience in introducing Scala
-in {\sc grnet}.
+Specific Language ({\sc dsl}) for configuring the supported resources, the
+pricelists and the billing algorithms. It receives input from an event queue
+and presents billing results through a {\sc rest api}. It has been developed
+in Scala, using the Akka library to handle concurrency and actor-based
+event processing. In the following sections, we present the requirements
+that have driven Aquarium's design, the software architecture and
+implementation of important computational algorithms along with a preliminary
+evaluation of Aquarium's performance. We also present an account of our
+experience in introducing Scala to {\sc grnet}.
 
 \section{Requirements}
 
-Aquarium was designed on a clean sheet to serve a particular purpose,
-namely the provision of billing services to an IaaS infrastructure,
-and also be extensible to new services. In the following sections,
-we briefly present the requirements that shaped Aquarium's design.
+Aquarium was designed on a clean sheet to serve a particular purpose, namely
+the provision of billing services to an IaaS infrastructure, and also be
+extensible to new services. In the following sections, we briefly present the
+requirements that shaped Aquarium's design.
 
-\subsection{Application Environment}
-Aquarium developed as part of the Okeanos project at GRNet. The
-Okeanos project is building a full stack public IaaS system for Greek
-universities, and several services on top of it. Several components comprise
-the Okeanos infrastructure:
+\subsection{Application Environment} The Okeanos project at {\sc grnet} is
+building a full stack public IaaS system for Greek universities, and several
+services on top of it. The Okeanos infrastructure is comprised by several
+components:
 
 \begin{description}
 
     \item[Synnefo] is an IaaS management console. Users can create and start
-        VMs, monitor their usage, create private internal networks among VMs
-        and connect to them over the web. The service backend is based on
-        Google's Ganneti for VM host management and hundrends of physical
-        VM container nodes.
+        Virtual Machines ({\sc vm})s, monitor their usage, create private
+        internal networks among {\sc vm}s and connect to them over the web. The
+        service backend is based on Google's Ganneti for {\sc vm} host
+        management and features hundrends of physical VM container nodes.
 
-    \item[Archipelago] is a storage service, based on the Rados
-        distributed object store. It is currently under development, and the
-        plan is to act as the single point of storage for VM images, shared
-        volumes and user files, providing clonable snapshots and distributed
-        fault tolerance.
+    \item[Archipelago] is a storage service, based on the Rados distributed
+        object store. It is currently under development, and the plan is to act
+        as the single point of storage for {\sc vm} images, shared volumes and
+        user files, providing clonable snapshots and distributed fault
+        tolerance.
     
     \item[Pithos] is a user oriented file storage service. Currently it its
         second incarnation, it supports content deduplication, sharing of files
         and folders and a multitude of clients.
 
     \item[Astakos] is an identity consolidation system that also acts as the
-        entry point to the entire infrastructure. Users can login using 
-        identities from multiple systems, such as the Shibboleth (SAML) 
-        federation enabled across all Greek universities or their Twitter 
+        entry point to the entire infrastructure. Users can login using
+        identities from multiple systems, such as the Shibboleth ({\sc saml})
+        federation enabled across all Greek universities or their OAuth 
         accounts.
 
 \end{description}
 
-While all the above systems (and several prospective ones) have different 
-user interfaces and provide distinct functionality in the context of
-the GRnet IaaS, they all share a common notion of \emph{resources}, access
-and manipulation options to which they offer to users. 
+While the above systems (and several prospective ones) have different user
+interfaces and provide distinct functionality in the context of the {\sc grnet}
+IaaS,they all share a common notion of \emph{resources}, access and
+manipulation options with they provide to users. 
 
-\subsection{Sharing}
+\subsection{Sharing and Resource Limiting}
 
 The Okeanos IaaS will support the Greek higher education, an estimated
-population of 100.000 students and researchers. Each member will be granted
-access to a collection of resources using her institutional account. To enforce
-a limit to the resources that can be acquired from the platform, each user will
-have a limited amount of credits, renewable each month, which will be allowed
-to spend on any resource available through the infrastructure. Resources can
-also be shared; for example files on the Pithos file service or virtual machine
-images on the Archipelago storage are potentially subject to concurrent usage from 
-multiple users. This means that charges for the use of a single resource
-may need to be distributed among several users. Also this may mean that in order
+population of 100.000 students and researchers. Being a free service, it is
+prone to abuse, either by misappropriating resources or by utilizing resources
+for purposes not related to research. A billing system can help with
+controlling resource usage if it permits users to use resources up to a
+periodically renewable limit. In order facilitate the development of other
+infrastructure systems, this limit can be expressed into currency (real or
+provisional). In the Okeanos service, each member will be granted access to a
+collection of resources using her institutional account. To enforce a limit to
+the resources that can be acquired from the platform, each user will have a
+limited amount of credits, renewable each month, which will be allowed to spend
+on any resource available through the infrastructure. Resources can also be
+shared; for example files on the Pithos file service or virtual machine images
+on the Archipelago storage are potentially subject to concurrent usage from
+multiple users. This means that charges for the use of a single resource may
+need to be distributed among several users. Also this may mean that in order
 for sharing to work correctly, users may need to transfer credits among them.
 
-\subsection{Resource Limiting}
-
-The Okeanos IaaS will be free service for all users. As such, it is prone to
-abuse, either by misappropriating resources or by utilizing resources for
-purposes not related to research. A billing system can help with controlling
-resource usage if it permits its users to use resources up to a periodically
-renewable limit. In order facilitate the development of other infrastructure
-system, this limit can be expressed into currency (real or provisional). To
-support this scheme, Aquarium will need to update a user's balance almost
-immediately after the user has claimed the required resources, and inform other
-systems in case the user's credits are exhausted. 
 
 \subsection{Configuration}
 
@@ -153,11 +147,10 @@ ad-hoc requests for large scale computational resources may require special
 pricing policies. In order for a billing system to be able to successfully
 adapt to changing requirements, it must be able to accommodate such changes
 without requiring changes to the application itself. This means that all
-information required for Aquarium in order to perform a billing operation,
-must be provided to it externally. Moreover, to ensure high-availability,
-billing configuration should be updatable while Aquarium is running, or at
-least with minimal downtime, without affecting the operation of external
-systems.
+information required for Aquarium in order to perform a billing operation, must
+be provided to it externally. Moreover, to ensure high-availability, billing
+configuration should be updatable while Aquarium is running, or at least with
+minimal downtime, without affecting the operation of external systems.
 
 
 \subsection{Scaling}
@@ -167,16 +160,16 @@ per user basis for all resources exposed by other systems. As such, it is in
 the critical path of user requests that modify resource state; all supported
 applications must query Aquarium in order to ensure that the user has enough
 credits to create a new resource. This means that for a large number of users
-(given previous GRNet systems usage by the Greek research community, we
+(given previous {\sc grnet} systems usage by the Greek research community, we
 estimate a concurrency level of 30.000 users), Aquarium must update and
-maintain in a queryable form their credit status, 
-with soft realtime guarantees. 
+maintain in a queryable form their credit status, with soft realtime
+guarantees. 
 
 Being on the critical path also means that Aquarium must be highly resilient,
-too. If Aquarium fails, all supported systems will also fail. Even if Aquarium
+too. If Aquarium fails, all supported systems will also fail. Even if it
 fails for a short period of time, it must not loose any billing events, as this
-will allow users to use resources without paying for them. Moreover, in case of
-failure, Aquarium must not corrupt any billing data under any circumstances,
+will allow users to use resources without being charged. Moreover, in case of
+failure, Aquarium must not corrupt any billing data under any circumstance,
 while it should reach an operating state very fast after a service restart.
 
 \section{Domain Modeling}
@@ -186,16 +179,16 @@ We have already mentioned several entities in our description so far. Let us be 
 
 \begin{description}
 \item[Credits]
-The analog of money. Credits are the `universal money' within Aquarium.
+The analog of currency. Credits are the `universal currency' within Aquarium.
 
 \item[Resource]
-A billable/chargeable entity. We generally consume credits when using a resource. Examples of resources are the \textsf{download bandwidth} and, respectively,  the \textsf{upload bandwidth}, the \textsf{disk space} occupied by a user's files and the \textsf{VM time}\footnote{\textsf{VM time} refers to the use of a Virtual Machine (VM) in the cloud and is associated with when the VM is operating.} to name a few. Generally speaking, the ``resource'' term specifies the type. A resource may have several properties attached, i.e. it name, unit of measure, a description of how its usage translates to credit consumption and whether it can have more than one instances.
+    A billable/chargeable entity. Credits are generally consumed when using a resource. Examples of resources are the \textsf{download bandwidth} and, respectively,  the \textsf{upload bandwidth}, the \textsf{disk space} occupied by a user's files and the \textsf{VM time}\footnote{\textsf{VM time} refers to the use of a {\sc vm} in the cloud and is associated with when the {\sc vm} is operating.} to name a few. Generally speaking, the ``resource'' term specifies the type. A resource may have several properties attached, i.e. a name, unit of measurement, a description of how its usage translates to credit consumption and whether it can have more than one instances.
 
 \item[Resource instance]
-A user may have several instances of a resource type. For example, regarding a \textsf{Virtual Machine} resource, it is obvious that a user may have more than one VM. They are distinguished by their unique resource instance identifier. We call resources that can have more than one instance ``complex'' resources.
+    A user may be associated with several instances of a resource type. For example, regarding a \textsf{Virtual Machine} resource, it is obvious that a user may have more than one {\sc vm}. They are distinguished by their unique resource instance identifier. We call resources that can have more than one instance ``complex'' resources.
 
 \item[Resource event]
-An event that is generated by a system, which is responsible for the resource.
+An event that is generated by an external system, which is responsible for the resource.
 The resource event describes a state change for the resource. In particular, a resource event records the time when that state change occurred and the changed value.
 
 \item[Cost policy]
@@ -219,7 +212,7 @@ A charging algorithm can be as simple as a direct multiplication of the
         
 
 \item[Resource instance state]
-A value which is associated with a resource instance. Usually a floating point number, as in the \MB{10.5} designation regarding a possible ``total current downloading bandwidth''. In the previous example, the value is an accumulating amount.
+    A value which is associated with a resource instance. Usually a floating point number, as in the 10.5{\sc mb} designation regarding a possible ``total current downloading bandwidth''. In the previous example, the value is an accumulating amount.
 
 \item[User]
 An owner of resources and credits. Users are defined externally of Aquarium.
@@ -231,10 +224,10 @@ A datatabase, in the general sense, where resource events are stored.
 A, usually, periodic statement of how many credits the user has consumed. It may contain detailed analysis that relates consumed credits to resources.
   
 \item[Billing period]
-A time period at the end of which we issue a user bill.
+A time period at the end of which a user bill is issued.
 A billing period is made of a starting date and a duration that is a multiple of a week.
-A usual billing period starts on a particular month date (eg. 3rd) and lasts for a month.
-Each resource type designates what happens to its accumulated value (if any) at the beginning of the billing period. Usually, at the beginning of the billing period, the accumulating amounts of resources are reset to some predefined value, usually zero. For example, for a monthly billing period, the total uploading bandwidth is reset to zero every month.
+A usual billing period starts on a particular month date and lasts for a month.
+Each resource type designates what happens to its accumulated value (if any) at the beginning of the billing period. Usually, at the beginning of the billing period, the accumulating amounts of resources are reset to some predefined value, usually zero. For example, at the end of a monthly billing period, the total uploading bandwidth is reset to zero.
    
 \item[User state]
 The user state is made of the following distinct parts:
@@ -252,7 +245,7 @@ The set of algorithmic steps by which a resource event leads to state changes of
 \subsection{Representation of events}
 Aquarium is the recipient of several types of events from external systems. More specifically, systems that manage the lifetime and operation of chargeable resources are responsible to send events that describe notable resource state changes. As an example, when a user consumes disk space during a file upload, Pithos, which is the service responsible for user storage, will send a resource event for the \textsf{diskspace} resource along with the amount of bytes consumed.
 
-Another type of events are the user-related events, from the perspective if the Identity Management service. For example, Aquarium needs to know when a user is first created and when the user is activated or suspended. Also, several types of users (e.g. Lab Administrators or Professors in the academic setting where Aquarium is initially targeted at) may be assigned more privileged credit plans that periodically give them more credits.
+Another type of events are the user-related events, from the perspective of the Identity Management service. For example, Aquarium needs to know when a user is first created and when the user is activated or suspended. Also, several types of users (e.g. Lab Administrators or Professors in the academic setting where Aquarium is initially targeted at) may be assigned more privileged credit plans that periodically give them more credits.
 
 \begin{figure}
 \lstset{language=c, basicstyle=\footnotesize,
@@ -304,16 +297,17 @@ flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 \label{fig:resevt}
 \end{figure}
 
-For the exchange of events we adopt the ubiquitous JSON format. This is chosen for the ease of manipulation from both Scala, used in Aquarium, and Python, used for the rest of the communicating systems. Our base entity, \texttt{AquariumEvent} and the \texttt{ResourceEvent} corresponding to a resource event, as described previously, are shown in Figure~\ref{fig:aqevent}, while Figure~\ref{fig:resevt} presents a JSON-formatted \texttt{ResourceEvent} value. The given attributes are:
+For the exchange of events we adopt the ubiquitous {\sc json} format. This is chosen for the ease of manipulation from both Scala, used in Aquarium, and Python, used for the rest of the communicating systems. Our base entity, \texttt{AquariumEvent} and the \texttt{ResourceEvent} corresponding to a resource event, as described previously, are shown in Figure~\ref{fig:aqevent}, while Figure~\ref{fig:resevt} presents a JSON-formatted \texttt{ResourceEvent} value. The given attributes are:
 
 \begin{description}
-\item[id] is the event \textsf{ID} at the client side, that is the sender of the event. 
 
-\item[occurredMillis] gives us the Unix time of when the even occurred. It is the responsibility of the system generating the event to provide a correct value for this attribute.
+\item[id] is a unique identification of the event at the client side
+
+\item[occurredMillis] gives us the Unix time of when the event occurred. It is the responsibility of the system generating the event to provide a correct value for this attribute.
 
 \item[receivedMillis] gives us the Unix time of when the event was received in the Aquarium processing pipeline.
 
-\item[userId] is the unique identifier of the user this event relates to. User identifiers are managed by an external the Identity Management system.
+\item[userId] is the unique identifier of the user this event relates to. User identifiers are managed by an external Identity Management system.
 
 \item[clientId] is a unique, across all systems, identifier for the external system generating the event.
 
@@ -330,33 +324,22 @@ Of particular interest is the \textsf{details} map. Several resource types can u
 \item The relevant state change for the resource instance. In this case, a virtual machine can be started (\textsf{on} state) or stopped (\textsf{off} state).
 \end{itemize}
 
-In our example of Figure~\ref{fig:resevt}, we use the \textsf{vmId} and \textsf{action} extensions to specify that the virtual machine instance with identifier \textsf{3300} was started, that is it transitioned to \textsf{on} state. We should generally note that each resource type is free to choose the domain-specific attribute name for the instance \textsf{ID}. 
+In our example of Figure~\ref{fig:resevt}, we use the \textsf{vmId} and \textsf{action} extensions to specify that the virtual machine instance with identifier \textsf{3300} was started, i.e. it transitioned to \textsf{on} state. We should generally note that each resource type is free to choose the domain-specific attribute name for the instance \textsf{ID}. 
 
 Finally, for the timing of events we assume all systems that send events to Aquarium have synchronized clocks. We actually \textit{require} this, so that Aquarium is not concerned with time book keeping.
 
 
 \subsection{The configuration DSL}
 \label{sec:dsl}
-We addressed the configuration requirements of Aquarium by creating a new
-domain specific language ({\sc dsl}), based on the YAML format.  The DSL
-enables administrators to specify chargeable resources, charging policies and
-price lists and combine them arbitrarily into agreements applicable to specific
-users, user groups or the whole system. 
-The DSL supports inheritance for policies, price lists and agreements and composition in the case of agreements.
-It also facilitates the
-definition of generic, repeatable debiting rules, which are then used by the
-system to refill the user's account with credits on a periodic base.
 
-From the previously specified term, the following five are used in the DSL:
-
-\begin{enumerate}
-\item Resources
-\item Charging algorithms
-\item Price lists
-\item Credit plans
-\item Agreements
-\end{enumerate}
-
+We addressed the configuration requirements of Aquarium by creating a new {\sc
+dsl}, based on the {\sc yaml} format.  The {\sc dsl} enables administrators to
+specify chargeable resources, charging policies and price lists and combine
+them arbitrarily into agreements applicable to specific users, user groups or
+the whole system. The {\sc dsl} supports inheritance for policies, price lists
+and agreements and composition in the case of agreements.  It also facilitates
+the definition of generic, repeatable debiting rules, which are then used by
+the system to refill the user's account with credits on a periodic base.
 
 \begin{figure}
 \lstset{language=c, basicstyle=\footnotesize,
@@ -590,7 +573,7 @@ particularly enticing for the scalability and distribution possibilities it
 offered.
 
 The choice of Scala at the moment it had been made was a high risk/high gain
-bet for GRNet. However, the development team's experience has been generally
+bet for {sc grnet}. However, the development team's experience has been generally
 positive. Scala as a language was an enabling factor; case classes permitted
 the expression of data models, including the configuration {\sc dsl}, that
 could be easily be serialized or read back from wire formats while also
