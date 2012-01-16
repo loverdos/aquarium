@@ -14,8 +14,8 @@
 \newcommand{\DeltaDTime}{\ensuremath{\Delta{T}}\xspace}
 \newcommand{\DUnitR}{\ensuremath{U_{R}}\xspace} % Unit of measure for resource R
 \newcommand{\DeltaDUnitR}{\ensuremath{\Delta U_{R}}\xspace}
-\newcommand{\MB}[1]{\ensuremath{#1\,MB}}
-\newcommand{\GB}[1]{\ensuremath{#1\,GB}}
+\newcommand{\MB}[1]{\ensuremath{#1\,\mbox{\sc MB}}}
+\newcommand{\GB}[1]{\ensuremath{#1\,\mbox{\sc GB}}}
 \newcommand{\secs}[1]{\ensuremath{#1\,sec}}
 
 \begin{document}
@@ -212,7 +212,7 @@ A charging algorithm can be as simple as a direct multiplication of the
         
 
 \item[Resource instance state]
-    A value which is associated with a resource instance. Usually a floating point number, as in the 10.5{\sc mb} designation regarding a possible ``total current downloading bandwidth''. In the previous example, the value is an accumulating amount.
+A value which is associated with a resource instance and is usually a floating point number representing an accumulating amount.
 
 \item[User]
 An owner of resources and credits. Users are defined externally of Aquarium.
@@ -297,7 +297,7 @@ flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 \label{fig:resevt}
 \end{figure}
 
-For the exchange of events we adopt the ubiquitous {\sc json} format. This is chosen for the ease of manipulation from both Scala, used in Aquarium, and Python, used for the rest of the communicating systems. Our base entity, \texttt{AquariumEvent} and the \texttt{ResourceEvent} corresponding to a resource event, as described previously, are shown in Figure~\ref{fig:aqevent}, while Figure~\ref{fig:resevt} presents a JSON-formatted \texttt{ResourceEvent} value. The given attributes are:
+For the exchange of events we adopt the ubiquitous {\sc json} format. This is chosen for the ease of manipulation from both Scala, used in Aquarium, and Python, used for the rest of the communicating systems. Our base entity, \texttt{AquariumEvent} and the \texttt{ResourceEvent} corresponding to a resource event are shown in Figure~\ref{fig:aqevent}, while Figure~\ref{fig:resevt} presents a JSON-formatted \texttt{ResourceEvent} value. The given attributes are:
 
 \begin{description}
 
@@ -450,7 +450,7 @@ In this case, an event (let us assume the one at $t_1$) records a change of band
 \label{eq:bandwidth}
 \Delta U_R \cdot  [ \frac{C}{U_R} ]
 \end{equation}
-A concrete example is $\Delta U_R = \MB{10}$ and in this case the bandwidth charging unit $[ \frac{C}{U_R} ]$ is ``$credits$ per $MB$'', since $U_R$ is measured in $MB$.
+A concrete example is $\Delta U_R = \MB{10}$ and in this case the bandwidth charging unit $[ \frac{C}{U_R} ]$ is ``$credits$ per {\sc MB}'', since $U_R$ is measured in {\sc MB}.
 
 \paragraph{\textsf{diskspace}}
 The charging calculation for the disk space usage takes into account the disk space $U_R^0$ occupied at $t_0$ together with the time passed, $\Delta T$:
@@ -458,7 +458,7 @@ The charging calculation for the disk space usage takes into account the disk sp
 \label{eq:diskspace}
 U_R^{0} \cdot \Delta T \cdot [ \frac{C}{U_R \cdot T} ]
 \end{equation}
-That is, when we receive a new state change for disk space, we actually calculate for how long we occupied the total disk space without counting the new state change. If we had \GB{1} at $t_0 = \secs{1}$ and we gained another \GB{3.14} at $t_1 = \secs{3.5}$ then we are charged for the \GB{1} we occupied for $3.5 - 1 = 2.5$ seconds. The disk space charging unit $[ \frac{C}{U_R \cdot T} ]$ is ``$credits$ per $GB$ per $sec$'', assuming $U_R$ (disk space) is measured in $GB$ and time in $sec$.
+That is, when we receive a new state change for disk space, we actually calculate for how long we occupied the total disk space without counting the new state change. If we had \GB{1} at $t_0 = \secs{1}$ and we gained another \GB{3.14} at $t_1 = \secs{3.5}$ then we are charged for the \GB{1} we occupied for $3.5 - 1 = 2.5$ seconds. The disk space charging unit $[ \frac{C}{U_R \cdot T} ]$ is ``$credits$ per {\sc GB} per $sec$'', assuming $U_R$ (disk space) is measured in {\sc GB} and time in $sec$.
 
 
 \paragraph{\textsf{vmtime}}
@@ -489,7 +489,7 @@ of the amount of resource usage to be charged as follows:
 
 External systems communicate resource state changes and user state changes by means of respective events. Aquarium, upon reception of these events, records them to an append-only immutable log and then forwards them to the appropriate user's actor mailbox. All computations that are triggered by an event are handled by the respective user actor. The only data mutation that takes place is the actor's state. Since each actor handles only its user's events and since there is only one actor for a user, the user state mutation is guaranteed to be race-free and events for different users are handled asynchronously and concurrently.
 
-Scheduled tasks compute total charges, the updated resource state and a total credit amount for each billing period. This computation is recorded to a persistent store, in an append-only fashion, for future reference and as a cached value. This cached value can be handy in computations or in case of system crashes. In the latter, we wish to avoid recompilation based on the whole history of events.
+Scheduled tasks compute total charges, the updated resource state and a total credit amount for each billing period. This computation is recorded to a persistent store, in an append-only fashion, for future reference and as a cached value. This cached value can be handy in computations or in case of system crashes. In the latter, we wish to avoid recomputation based on the whole history of events.
 
 \section{Performance}
 
