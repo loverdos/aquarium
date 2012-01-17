@@ -190,7 +190,7 @@ trait Accounting extends DSLUtils with Loggable {
   def calcChargeChunksContinuous(algChunked: Map[Timeslot, DSLAlgorithm],
                                  priChunked: Map[Timeslot, DSLPriceList],
                                  volume: Float, res: DSLResource): List[ChargeChunk] = {
-    algChunked.keySet.map {
+    algChunked.keysIterator.map {
       x =>
         ChargeChunk(volume,
           algChunked.get(x).get.algorithms.getOrElse(res, ""),
