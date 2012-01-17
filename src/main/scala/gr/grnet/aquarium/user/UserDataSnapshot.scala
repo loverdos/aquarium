@@ -113,9 +113,7 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   extends UserDataSnapshot[List[ResourceInstanceSnapshot]] with JsonSupport {
 
   def toResourcesMap: OwnedResourcesMap = {
-    val tuples = for {
-      rc <- data
-    } yield ((rc.name, rc.instanceId), (rc.value, rc.snapshotTime))
+    val tuples = for(rc <- data) yield ((rc.name, rc.instanceId), (rc.value, rc.snapshotTime))
 
     new OwnedResourcesMap(Map(tuples.toSeq: _*))
   }
