@@ -294,6 +294,10 @@ class MongoDBStore(
 }
 
 object MongoDBStore {
+  object JsonNames {
+    final val _id = "_id"
+  }
+
   /**
    * Collection holding the [[gr.grnet.aquarium.logic.events.ResourceEvent]]s.
    *
@@ -397,25 +401,26 @@ object MongoDBStore {
                   collection: DBCollection,
                   idName: String,
                   idValueProvider: (A) => String,
-                  serializer: (A) => DBObject) : Maybe[RecordID] = Maybe {
-    // Store
-    val dbObj = serializer apply any
-    val writeResult = collection insert dbObj
-    writeResult.getLastError().throwOnError()
+                  serializer: (A) => DBObject) : Maybe[RecordID] = {
+    import com.ckkloverdos.maybe.effect
 
-    // Get back to retrieve unique id
-    val cursor = collection.find(new BasicDBObject(idName, idValueProvider(any)))
+    Maybe {
+      val dbObj = serializer apply any
+      val writeResult = collection insert dbObj
+      writeResult.getLastError().throwOnError()
 
-    try {
-      // TODO: better way to get _id?
-      if(cursor.hasNext)
-        RecordID(cursor.next().get(ResourceJsonNames._id).toString)
-      else
-        throw new StoreException("Could not store %s to %s".format(any, collection))
-    } finally {
-      cursor.close()
+      // Get back to retrieve unique id
+      val cursor = collection.find(new BasicDBObject(idName, idValueProvider(any)))
+      cursor
+    } flatMap { cursor ⇒
+      effect {
+        if(cursor.hasNext)
+          RecordID(cursor.next().get(JsonNames._id).toString)
+        else
+          throw new StoreException("Could not store %s to %s".format(any, collection))
+      } {} { cursor.close() }
     }
- }
+  }
 
   def jsonSupportToDBObject(any: JsonSupport): DBObject = {
     JSON.parse(any.toJson) match {
