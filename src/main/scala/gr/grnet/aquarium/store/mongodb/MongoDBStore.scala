@@ -64,8 +64,10 @@ class MongoDBStore(
     val database: String,
     val username: String,
     val password: String)
-  extends ResourceEventStore with UserStateStore
-  with WalletEntryStore with UserEventStore
+  extends ResourceEventStore
+  with UserStateStore
+  with WalletEntryStore
+  with UserEventStore
   with Loggable {
 
   private[store] lazy val rcEvents      = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
@@ -212,24 +214,24 @@ class MongoDBStore(
   def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
     val q = new BasicDBObject()
     // TODO: Is this the correct way for an AND query?
-    q.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
-    q.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$lt", to.getTime))
-    q.put(ResourceJsonNames.userId, userId)
+    q.put(WalletJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
+    q.put(WalletJsonNames.occurredMillis, new BasicDBObject("$lt", to.getTime))
+    q.put(WalletJsonNames.userId, userId)
 
     MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
   }
 
   def findWalletEntriesAfter(userId: String, from: Date) : List[WalletEntry] = {
     val q = new BasicDBObject()
-    q.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
-    q.put(ResourceJsonNames.userId, userId)
+    q.put(WalletJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
+    q.put(WalletJsonNames.userId, userId)
 
     MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
   }
 
   def findLatestUserWalletEntries(userId: String) = {
     Maybe {
-      val orderBy = new BasicDBObject(ResourceJsonNames.occurredMillis, -1) // -1 is descending order
+      val orderBy = new BasicDBObject(WalletJsonNames.occurredMillis, -1) // -1 is descending order
       val cursor = walletEntries.find().sort(orderBy)
 
       try {
