@@ -70,10 +70,10 @@ class MongoDBStore(
   with UserEventStore
   with Loggable {
 
-  private[store] lazy val rcEvents      = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
-  private[store] lazy val userStates    = getCollection(MongoDBStore.USER_STATES_COLLECTION)
-  private[store] lazy val userEvents    = getCollection(MongoDBStore.USER_EVENTS_COLLECTION)
-  private[store] lazy val walletEntries = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
+  private[store] lazy val resourceEvents = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
+  private[store] lazy val userStates     = getCollection(MongoDBStore.USER_STATES_COLLECTION)
+  private[store] lazy val userEvents     = getCollection(MongoDBStore.USER_EVENTS_COLLECTION)
+  private[store] lazy val walletEntries  = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
@@ -98,16 +98,16 @@ class MongoDBStore(
 
   //+ResourceEventStore
   def storeResourceEvent(event: ResourceEvent): Maybe[RecordID] =
-    MongoDBStore.storeAquariumEvent(event, rcEvents)
+    MongoDBStore.storeAquariumEvent(event, resourceEvents)
 
   def findResourceEventById(id: String): Maybe[ResourceEvent] =
-    MongoDBStore.findById(id, rcEvents, MongoDBStore.dbObjectToResourceEvent)
+    MongoDBStore.findById(id, resourceEvents, MongoDBStore.dbObjectToResourceEvent)
 
   def findResourceEventsByUserId(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
     val query = new BasicDBObject(ResourceJsonNames.userId, userId)
 
-    MongoDBStore.runQuery(query, rcEvents)(MongoDBStore.dbObjectToResourceEvent)(sortWith)
+    MongoDBStore.runQuery(query, resourceEvents)(MongoDBStore.dbObjectToResourceEvent)(sortWith)
   }
 
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
@@ -117,7 +117,7 @@ class MongoDBStore(
     
     val sort = new BasicDBObject(ResourceJsonNames.occurredMillis, 1)
 
-    val cursor = rcEvents.find(query).sort(sort)
+    val cursor = resourceEvents.find(query).sort(sort)
 
     try {
       val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
@@ -148,7 +148,7 @@ class MongoDBStore(
     }
 
     val sort = new BasicDBObject(ResourceJsonNames.occurredMillis, 1)
-    val cursor = rcEvents.find(query).sort(sort)
+    val cursor = resourceEvents.find(query).sort(sort)
 
     try {
       val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
@@ -161,15 +161,15 @@ class MongoDBStore(
     }
   }
 
-  def findResourceEventsForPeriod(userId: String, startTime: Long, stopTime: Long): List[ResourceEvent] = {
+  def findResourceEventsForReceivedPeriod(userId: String, startTimeMillis: Long, stopTimeMillis: Long): List[ResourceEvent] = {
     val query = new BasicDBObject()
     query.put(ResourceJsonNames.userId, userId)
-    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$gte", startTime))
-    query.put(ResourceJsonNames.occurredMillis, new BasicDBObject("$lte", stopTime))
+    query.put(ResourceJsonNames.receivedMillis, new BasicDBObject("$gte", startTimeMillis))
+    query.put(ResourceJsonNames.receivedMillis, new BasicDBObject("$lte", stopTimeMillis))
 
-    val orderBy = new BasicDBObject(ResourceJsonNames.occurredMillis, 1)
+    val orderBy = new BasicDBObject(ResourceJsonNames.receivedMillis, 1)
 
-    MongoDBStore.runQuery[ResourceEvent](query, rcEvents, orderBy)(MongoDBStore.dbObjectToResourceEvent)(None)
+    MongoDBStore.runQuery[ResourceEvent](query, resourceEvents, orderBy)(MongoDBStore.dbObjectToResourceEvent)(None)
   }
   //-ResourceEventStore
 

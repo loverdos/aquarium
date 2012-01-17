@@ -61,5 +61,5 @@ trait ResourceEventStore {
   def findResourceEventHistory(userId: String, resName: String,
                                instid: Option[String], upTo: Long) : List[ResourceEvent]
 
-  def findResourceEventsForPeriod(userId: String, startTime: Long, stopTime: Long): List[ResourceEvent]
+  def findResourceEventsForReceivedPeriod(userId: String, startTimeMillis: Long, stopTimeMillis: Long): List[ResourceEvent]
 }
