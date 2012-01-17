@@ -14,6 +14,7 @@ class UserActorTest {
     val now = System.currentTimeMillis()
     val state = UserState(
       "1",
+      0,
       ActiveSuspendedSnapshot(true, now),
       CreditSnapshot(0, now),
       AgreementSnapshot("default", now),
