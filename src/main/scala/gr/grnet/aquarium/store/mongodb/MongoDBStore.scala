@@ -47,9 +47,9 @@ import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
 import java.util.Date
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent, AquariumEvent}
-import com.mongodb._
 import gr.grnet.aquarium.logic.accounting.Policy
-import gr.grnet.aquarium.logic.accounting.dsl.DSLComplexResource
+import com.mongodb._
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLPolicy, DSLComplexResource}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -64,12 +64,14 @@ class MongoDBStore(
     val password: String)
   extends ResourceEventStore with UserStateStore
   with WalletEntryStore with UserEventStore
+  with PolicyStore
   with Loggable {
 
   private[store] lazy val rcEvents      = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
   private[store] lazy val userStates    = getCollection(MongoDBStore.USER_STATES_COLLECTION)
   private[store] lazy val userEvents    = getCollection(MongoDBStore.USER_EVENTS_COLLECTION)
   private[store] lazy val walletEntries = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
+  private[store] lazy val policies      = getCollection(MongoDBStore.POLICIES_COLLECTION)
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
@@ -279,6 +281,34 @@ class MongoDBStore(
     MongoDBStore.runQuery(query, userEvents)(MongoDBStore.dbObjectToUserEvent)(Some(_sortByTimestampAsc))
   }
   //-UserEventStore
+
+  //+PolicyStore
+  def loadPolicies(): List[DSLPolicy] = {
+    //val query = new BasicDBObject()
+    List()
+  }
+
+  def storePolicy(policy: DSLPolicy): Maybe[RecordID] = Maybe {
+
+    val dbObj = MongoDBStore.jsonSupportToDBObject(policy)
+    val writeResult = policies.insert(dbObj)
+    writeResult.getLastError.throwOnError
+
+    val query = new BasicDBObject()
+    query.put(DSLPolicy.JsonNames.valid, policy.valid)
+
+    val cursor = policies.find(query)
+
+    try {
+      if(cursor.hasNext)
+        RecordID(cursor.next().get(DSLPolicy.JsonNames._id).toString)
+      else
+        throw new StoreException("Could not store %s to %s".format(policy, policies))
+    } finally {
+      cursor.close()
+    }
+  }
+  //-PolicyStore
 }
 
 object MongoDBStore {
@@ -303,13 +333,17 @@ object MongoDBStore {
    */
   final val USER_EVENTS_COLLECTION = "userevents"
 
-
   /**
    * Collection holding [[gr.grnet.aquarium.logic.events.WalletEntry]].
    *
    * Wallet entries are generated internally in Aquarium.
    */
   final val WALLET_ENTRIES_COLLECTION = "wallets"
+
+  /**
+   * Collection holding [[gr.grnet.aquarium.logic.accounting.dsl.DSLPolicy]].
+   */
+  final val POLICIES_COLLECTION = "policies"
 
   /* TODO: Some of the following methods rely on JSON (de-)serialization).
   * A method based on proper object serialization would be much faster.

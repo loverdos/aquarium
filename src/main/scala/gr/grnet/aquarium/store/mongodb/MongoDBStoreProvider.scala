@@ -77,4 +77,5 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   def resourceEventStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
   def walletEntryStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
   def userEventStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
+  def policyStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
 }
