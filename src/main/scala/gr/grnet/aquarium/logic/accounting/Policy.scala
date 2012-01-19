@@ -35,11 +35,12 @@
 
 package gr.grnet.aquarium.logic.accounting
 
+import dsl.{Timeslot, DSLPolicy, DSL}
 import gr.grnet.aquarium.Configurator._
-import dsl.DSL
 import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.util.Loggable
 import java.io.{InputStream, FileInputStream, File}
+import java.util.Date
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -47,6 +48,16 @@ import java.io.{InputStream, FileInputStream, File}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 object Policy extends DSL with Loggable {
+  
+  private var policies = {
+    //1. Load policies from db
+    Map[Timeslot, DSLPolicy]()
+
+    //2. Check whether policy file has been updated
+
+    //3. Reload policy
+  }
+  
   lazy val policy = {
 
     // Look for user configured policy first
@@ -54,6 +65,59 @@ object Policy extends DSL with Loggable {
       case Just(x) => x
       case _ => logger.info("Cannot find a user configured policy")
         "policy.yaml"
+    }
+
+    val pol = new File(userConf)
+    val stream = pol.exists() match {
+      case true =>
+        logger.info("Using policy file %s".format(userConf))
+        new FileInputStream(pol)
+      case false =>
+        logger.warn(("Cannot find policy file %s, " +
+          "looking for default policy").format(userConf))
+        getClass.getClassLoader.getResourceAsStream("policy.yaml") match {
+          case x: InputStream =>
+            logger.warn("Using default policy, this is problably bad")
+            x
+          case null =>
+            logger.error("No valid policy file found, Aquarium will fail")
+            null
+        }
+    }
+
+    parse(stream)
+  }
+
+  def policy(at: Date): DSLPolicy = {
+    policies.find {
+      a => a._1.from.before(at) &&
+           a._1.to.after(at)
+    } match {
+      case Some(x) => x._2
+      case None =>
+        throw new AccountingException("No valid policy for date: %s".format(at))
+    }
+  }
+
+  def policies(from: Date, to: Date): List[DSLPolicy] = {
+    policies.filter {
+      a => a._1.from.before(from) &&
+           a._1.to.after(to)
+    }.values.toList
+  }
+  
+  def policies(t: Timeslot): List[DSLPolicy] = policies(t.from, t.to)
+
+  def reloadFile() = synchronized {
+
+  }
+
+  private def loadPolicy(): DSLPolicy = {
+    // Look for user configured policy first
+    val userConf = MasterConfigurator.props.get(Keys.aquarium_policy) match {
+      case Just(x) => x
+      case _ => logger.info("Cannot find a user configured policy")
+      "policy.yaml"
     }
 
     val pol = new File(userConf)
