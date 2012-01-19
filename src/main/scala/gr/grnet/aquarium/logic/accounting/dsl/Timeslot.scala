@@ -37,13 +37,15 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import java.util.Date
 import scala.collection.mutable
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
  * A representation of a timeslot with a start and end date.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
+case class Timeslot(from: Date, to: Date)
+  extends Ordered[Timeslot] with JsonSupport {
 
   /* Preconditions to ensure correct object creations */
   assert(from != null)

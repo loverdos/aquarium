@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import gr.grnet.aquarium.util.json.JsonSupport
+
 /**
  * An agreement associates algorithms with priceslists within and
  * effectivity period.
@@ -48,4 +50,4 @@ case class DSLAgreement (
   algorithm : DSLAlgorithm,
   pricelist : DSLPriceList,
   creditplan: DSLCreditPlan
-)
+) extends JsonSupport
