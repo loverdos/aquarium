@@ -79,6 +79,7 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   val repo9 = "tools-snapshots" at "http://scala-tools.org/repo-snapshots"
   val repoA = "tools-releases" at "http://scala-tools.org/repo-releases"
   val repoB = "sonatype-snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
+  val repoC = "jboss scala-tools" at "https://repository.jboss.org/nexus/content/repositories/scala-tools-releases"
 
   val lib_slf4j = "org.slf4j" % "slf4j-api" % "1.6.1" withSources()
 
@@ -99,12 +100,16 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
 
   val lib_maybe = "com.ckkloverdos" %% "maybe" % "0.3.0" withSources()
   val lib_converter = "com.ckkloverdos" %% "converter" % "0.3.0" withSources()
+  val lib_sysprop = "com.ckkloverdos" %% "sysprop" % "0.1.0" withSources()
   val lib_streamresource = "com.ckkloverdos" %% "streamresource" % "0.2.0" withSources()
 
   val lib_lucene_core = "org.apache.lucene" % "lucene-core" % "3.5.0" withSources()
   val lib_solr_core = "org.apache.solr" % "solr-core" % "3.5.0" withSources()
 
   val lib_scopt = "com.github.scopt" %% "scopt" % "1.1.2" withSources()
+
+  val lib_joda = "joda-time" % "joda-time" % "2.0" withSources()
+  val lib_joda_conv = "org.joda" % "joda-convert" % "1.1" withSources()
 
   val lib_test = "com.novocode" % "junit-interface" % "0.7" % "test->default"
 }

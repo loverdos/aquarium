@@ -126,6 +126,12 @@
     </repository>
 
     <repository>
+      <name>JBoss Scala-Tools</name>
+      <id>jboss-scala-tools</id>
+      <url>https://repository.jboss.org/nexus/content/repositories/scala-tools-releases</url>
+    </repository>
+
+    <repository>
       <name>jcrontab</name>
       <id>jcrontab</id>
       <url>http://kenai.com/projects/crontab-parser/sources/maven-repo/content/</url>
