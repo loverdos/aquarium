@@ -64,7 +64,7 @@ case class  UserEvent(
     true
   }
 
-  def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
+  def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
   def isCreateUser = eventType == 1
 

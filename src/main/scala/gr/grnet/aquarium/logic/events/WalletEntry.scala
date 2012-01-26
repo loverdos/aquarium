@@ -16,7 +16,7 @@ case class WalletEntry(
     override val occurredMillis: Long, // The time of oldest matching resource event
     override val receivedMillis: Long, // The time the cost calculation was done
     sourceEventIDs: List[String],      // The events that triggered this WalletEntry
-    value: Float,
+    value: Double,
     reason: String,
     userId: String,
     resource: String,
@@ -34,7 +34,7 @@ case class WalletEntry(
     sourceEventIDs contains rceId
   }
 
-  def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
+  def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 }
 
 object WalletEntry {

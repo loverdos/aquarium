@@ -49,3 +49,7 @@ case class DSLAgreement (
   pricelist : DSLPriceList,
   creditplan: DSLCreditPlan
 )
+
+object DSLAgreement {
+  final val DefaultAgreementName = "default"
+}

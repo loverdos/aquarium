@@ -62,4 +62,13 @@ trait ResourceEventStore {
                                instid: Option[String], upTo: Long) : List[ResourceEvent]
 
   def findResourceEventsForReceivedPeriod(userId: String, startTimeMillis: Long, stopTimeMillis: Long): List[ResourceEvent]
+  
+  def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[Long]
+
+  /**
+   * FIXME: implement
+   */
+  def findAllRelevantResourceEventsForBillingPeriod(userId: String, startMillis: Long,
+                                                    stopMillis: Long): List[ResourceEvent] =
+    findResourceEventsForReceivedPeriod(userId, startMillis, stopMillis)
 }

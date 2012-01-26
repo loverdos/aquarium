@@ -167,10 +167,19 @@ class MongoDBStore(
     query.put(ResourceJsonNames.receivedMillis, new BasicDBObject("$gte", startTimeMillis))
     query.put(ResourceJsonNames.receivedMillis, new BasicDBObject("$lte", stopTimeMillis))
 
-    val orderBy = new BasicDBObject(ResourceJsonNames.receivedMillis, 1)
+    // Sort them by increasing order for occurred time
+    val orderBy = new BasicDBObject(ResourceJsonNames.occurredMillis, 1)
 
     MongoDBStore.runQuery[ResourceEvent](query, resourceEvents, orderBy)(MongoDBStore.dbObjectToResourceEvent)(None)
   }
+  
+  def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[Long] = {
+    Maybe {
+      // FIXME: Implement
+      0L
+    }
+  }
+
   //-ResourceEventStore
 
   //+UserStateStore

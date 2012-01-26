@@ -436,5 +436,16 @@ object Configurator {
      * the balance is triggered.
      */
     final val user_state_timestamp_threshold = "user.state.timestamp.threshold"
+
+    /**
+     * The time unit is the lowest billable time period.
+     * For example, with a time unit of ten seconds, if a VM is started up and shut down in nine
+     * seconds, then the user will be billed for ten seconds.
+     *
+     * This is an overall constant. We use it as a property in order to prepare ourselves for
+     * multi-cloud setup, where the same Aquarium instance is used to bill several distinct cloud
+     * infrastructures.
+     */
+    final val time_unit_in_millis = "time.unit.in.seconds"
   }
 }

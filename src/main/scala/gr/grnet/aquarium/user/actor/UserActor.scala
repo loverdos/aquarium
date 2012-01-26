@@ -38,13 +38,14 @@ package gr.grnet.aquarium.user.actor
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.processor.actor._
-import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
+import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
 import gr.grnet.aquarium.user._
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DSLResource, DSLSimpleResource, DSLComplexResource}
 import java.util.Date
-import gr.grnet.aquarium.util.{DateUtils, TimeHelpers, Loggable}
+import gr.grnet.aquarium.util.{DateUtils, Loggable}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResource, DSLComplexResource}
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 
 /**
@@ -77,24 +78,12 @@ class UserActor extends AquariumActor
       case NoVal ⇒
         // OK. Create a default UserState and store it
         val now = TimeHelpers.nowMillis
-        val agreementOpt = Policy.policy.findAgreement("default")
-        
+        val agreementOpt = Policy.policy.findAgreement(DSLAgreement.DefaultAgreementName)
+
         if(agreementOpt.isEmpty) {
           ERROR("No default agreement found. Cannot initialize user state")
         } else {
-          this._userState = UserState(
-            userId,
-            0,
-            ActiveSuspendedSnapshot(event.isStateActive, now),
-            CreditSnapshot(0, now),
-            AgreementSnapshot(agreementOpt.get.name, now),
-            RolesSnapshot(event.roles, now),
-            PaymentOrdersSnapshot(Nil, now),
-            OwnedGroupsSnapshot(Nil, now),
-            GroupMembershipsSnapshot(Nil, now),
-            OwnedResourcesSnapshot(List(), now)
-          )
-
+          this._userState = UserStateComputations.createFirstUserState(userId, DSLAgreement.DefaultAgreementName)
           saveUserState
           DEBUG("Created and stored %s", this._userState)
         }
@@ -159,7 +148,7 @@ class UserActor extends AquariumActor
     val userEvents = usersDB.findUserEventsByUserId(_userId)
     val numUserEvents = userEvents.size
     _userState = replayUserEvents(_userState, userEvents, from, to)
-      
+
     //Rebuild state from resource events
     val eventsDB = _configurator.storeProvider.resourceEventStore
     val resourceEvents = eventsDB.findResourceEventsByUserIdAfterTimestamp(_userId, from)
@@ -183,21 +172,7 @@ class UserActor extends AquariumActor
    * Create an empty state for a user
    */
   def createBlankState = {
-    val now = System.currentTimeMillis()
-    val agreement = Policy.policy.findAgreement("default")
-
-    this._userState = UserState(
-      _userId,
-      0,
-      ActiveSuspendedSnapshot(false, now),
-      CreditSnapshot(0, now),
-      AgreementSnapshot(agreement.get.name, now),
-      RolesSnapshot(List(), now),
-      PaymentOrdersSnapshot(Nil, now),
-      OwnedGroupsSnapshot(Nil, now),
-      GroupMembershipsSnapshot(Nil, now),
-      OwnedResourcesSnapshot(List(), now)
-    )
+    this._userState = UserStateComputations.createFirstUserState(this._userId, DSLAgreement.DefaultAgreementName)
   }
 
   /**
@@ -298,7 +273,7 @@ class UserActor extends AquariumActor
           case false => None
         }
 
-        var curValue = 0F
+        var curValue: Double = 0.0
         var lastUpdate = _userState.ownedResources.findResourceSnapshot(ev.resource, ev.getInstanceId(policy)) match {
           case Some(x) => x.snapshotTime
           case None => Long.MaxValue //To trigger recalculation

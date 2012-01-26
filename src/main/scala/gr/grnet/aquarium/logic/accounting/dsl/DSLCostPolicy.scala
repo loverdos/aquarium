@@ -106,8 +106,8 @@ object OnOffPolicyResourceState {
     name match {
       case x: String if (x.equalsIgnoreCase("on"))  => OnResourceState
       case y: String if (y.equalsIgnoreCase("off")) => OffResourceState
-      case a: Float if (a == 0) => OffResourceState
-      case b: Float if (b == 1) => OnResourceState
+      case a: Double if (a == 0) => OffResourceState
+      case b: Double if (b == 1) => OnResourceState
       case i: Int if (i == 0) => OffResourceState
       case j: Int if (j == 1) => OnResourceState
       case _ => throw new DSLParseException("Invalid OnOffPolicyResourceState %s".format(name))
@@ -115,7 +115,7 @@ object OnOffPolicyResourceState {
   }
 }
 
-object OnResourceState  extends OnOffPolicyResourceState("on") {
+object OnResourceState extends OnOffPolicyResourceState("on") {
   override def isOn = true
 }
 object OffResourceState extends OnOffPolicyResourceState("off") {

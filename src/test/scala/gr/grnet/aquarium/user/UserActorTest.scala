@@ -15,6 +15,10 @@ class UserActorTest {
     val state = UserState(
       "1",
       0,
+      0L,
+      false,
+      null,
+      0L,
       ActiveSuspendedSnapshot(true, now),
       CreditSnapshot(0, now),
       AgreementSnapshot("default", now),

@@ -43,6 +43,6 @@ package gr.grnet.aquarium.logic.accounting.dsl
 case class DSLPriceList (
   name: String,
   override  val overrides: Option[DSLPriceList],
-  prices: Map[DSLResource,  Float],
+  prices: Map[DSLResource,  Double],
   override  val effective: DSLTimeFrame
 ) extends DSLTimeBoundedItem[DSLPriceList](overrides, effective)

@@ -60,7 +60,7 @@ trait Accounting extends DSLUtils with Loggable {
    */
   def chargeEvent(ev: ResourceEvent,
                   agreement: DSLAgreement,
-                  resState: Float,
+                  resState: Double,
                   lastUpdate: Date,
                   related: List[WalletEntry]):
   Maybe[List[WalletEntry]] = {
@@ -91,7 +91,7 @@ trait Accounting extends DSLUtils with Loggable {
     }
 
     val amount = resource.costpolicy match {
-      case ContinuousCostPolicy => resState.asInstanceOf[Float]
+      case ContinuousCostPolicy => resState
       case DiscreteCostPolicy => ev.value
       case OnOffCostPolicy =>
         OnOffPolicyResourceState(resState) match {
@@ -155,7 +155,7 @@ trait Accounting extends DSLUtils with Loggable {
     Just(entries)
   }
 
-  def calcChangeChunks(agr: DSLAgreement, volume: Float,
+  def calcChangeChunks(agr: DSLAgreement, volume: Double,
                        res: DSLResource, t: Timeslot): List[ChargeChunk] = {
 
     val alg = resolveEffectiveAlgorithmsForTimeslot(t, agr)
@@ -175,26 +175,26 @@ trait Accounting extends DSLUtils with Loggable {
   private[logic]
   def calcChargeChunksDiscrete(algChunked: Map[Timeslot, DSLAlgorithm],
                                priChunked: Map[Timeslot, DSLPriceList],
-                               volume: Float, res: DSLResource): List[ChargeChunk] = {
+                               volume: Double, res: DSLResource): List[ChargeChunk] = {
     assert(algChunked.size == 1)
     assert(priChunked.size == 1)
     assert(algChunked.keySet.head.compare(priChunked.keySet.head) == 0)
 
     List(ChargeChunk(volume,
       algChunked.valuesIterator.next.algorithms.getOrElse(res, ""),
-      priChunked.valuesIterator.next.prices.getOrElse(res, 0F),
+      priChunked.valuesIterator.next.prices.getOrElse(res, 0),
       algChunked.keySet.head, res))
   }
 
   private[logic]
   def calcChargeChunksContinuous(algChunked: Map[Timeslot, DSLAlgorithm],
                                  priChunked: Map[Timeslot, DSLPriceList],
-                                 volume: Float, res: DSLResource): List[ChargeChunk] = {
+                                 volume: Double, res: DSLResource): List[ChargeChunk] = {
     algChunked.keysIterator.map {
       x =>
         ChargeChunk(volume,
           algChunked.get(x).get.algorithms.getOrElse(res, ""),
-          priChunked.get(x).get.prices.getOrElse(res, 0F), x, res)
+          priChunked.get(x).get.prices.getOrElse(res, 0), x, res)
     }.toList
   }
 
@@ -233,14 +233,14 @@ trait Accounting extends DSLUtils with Loggable {
   }
 }
 
-case class ChargeChunk(value: Float, algorithm: String,
-                       price: Float, when: Timeslot,
+case class ChargeChunk(value: Double, algorithm: String,
+                       price: Double, when: Timeslot,
                        resource: DSLResource) {
   assert(value > 0)
   assert(!algorithm.isEmpty)
   assert(resource != null)
 
-  def cost(): Float =
+  def cost(): Double =
     //TODO: Apply the algorithm, when we start parsing it
     resource.costpolicy match {
       case DiscreteCostPolicy =>

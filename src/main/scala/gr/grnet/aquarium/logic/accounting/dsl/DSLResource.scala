@@ -89,3 +89,6 @@ case class DSLSimpleResource (
   override def isComplex = false
 }
 
+object DSLResource {
+  final val SimpleResourceInstanceId = "1"
+}

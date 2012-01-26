@@ -61,12 +61,9 @@ abstract class AquariumEvent(
     toJson.getBytes("UTF-8")
   }
 
-  def setRcvMillis(receivedMillis: Long): AquariumEvent
-
-  def toMap: Map[String,  Any] =
-    (Map[String, Any]() /: this.getClass.getDeclaredFields) {
-      (a, f) =>
-        f.setAccessible(true)
-        a + (f.getName -> f.get(this))
-      }
+  /**
+   * Return a new instance with all state the same as this one except for `receivedMillis`, which
+   * acquires the new value.
+   */
+  def copyWithReceivedMillis(receivedMillis: Long): AquariumEvent
 }

@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.util
 
-import com.ckkloverdos.sys.SysProp._
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
 import com.ckkloverdos.sys.SysProp
 

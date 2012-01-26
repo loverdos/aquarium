@@ -82,9 +82,9 @@ case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) exte
 case class ResourceInstanceSnapshot(
     name: String,
     instanceId: String,
-    data: Float,
+    data: Double,
     snapshotTime: Long)
-  extends UserDataSnapshot[Float] {
+  extends UserDataSnapshot[Double] {
 
   def value = data
   
@@ -98,7 +98,7 @@ case class ResourceInstanceSnapshot(
  * This representation is convenient for computations and updating, while the
  * [[gr.grnet.aquarium.user.OwnedResourcesSnapshot]] representation is convenient for JSON serialization.
  */
-class OwnedResourcesMap(map: Map[(String, String), (Float, Long)]) {
+class OwnedResourcesMap(map: Map[(String, String), (Double, Long)]) {
   def toResourcesSnapshot(snapshotTime: Long): OwnedResourcesSnapshot =
     OwnedResourcesSnapshot(
       map map {
@@ -124,7 +124,7 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   
   def addOrUpdateResourceSnapshot(name: String,
                                   instanceId: String,
-                                  value: Float,
+                                  value: Double,
                                   snapshotTime: Long): (OwnedResourcesSnapshot, Option[ResourceInstanceSnapshot], ResourceInstanceSnapshot) = {
     val oldRCInstanceOpt = this.findResourceSnapshot(name, instanceId)
     val newRCInstance = ResourceInstanceSnapshot(name, instanceId, value, snapshotTime)

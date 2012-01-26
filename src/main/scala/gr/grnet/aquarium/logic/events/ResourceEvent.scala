@@ -54,7 +54,7 @@ case class ResourceEvent(
     clientId: String,                  // The unique client identifier (usually some hash)
     resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
     eventVersion: String,
-    value: Float,
+    value: Double,
     details: ResourceEvent.Details)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
@@ -71,15 +71,17 @@ case class ResourceEvent(
    * resource or the instance id field cannot be found, this method returns an
    * empty String.
    *
-   * If no policy is given, then a default policy is loaded.
    */
   def getInstanceId(policy: DSLPolicy): String = {
     policy.findResource(this.resource) match {
       case Some(DSLComplexResource(_, _, _, descriminatorField)) ⇒
         details.getOrElse(descriminatorField, "")
+
       case Some(DSLSimpleResource(_, _, _)) ⇒
-        "1" // TODO: put this constant somewhere centrally...
-      case None => ""
+        DSLResource.SimpleResourceInstanceId
+
+      case None ⇒
+        ""
     }
   }
 
@@ -126,7 +128,7 @@ case class ResourceEvent(
     }
   }
 
-  def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
+  def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 }
 
 object ResourceEvent {
@@ -165,6 +167,4 @@ object ResourceEvent {
     final val vmId = "vmId"
     final val action = "action" // "on", "off"
   }
-
-  def emtpy = ResourceEvent("", 0, 0, "", "1", "", "", 0, Map())
 }

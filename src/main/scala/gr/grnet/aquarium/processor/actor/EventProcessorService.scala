@@ -128,7 +128,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
             persisterManager.lb ! Persist(event, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
           }
         } else {
-          val eventWithReceivedMillis = event.setRcvMillis(System.currentTimeMillis()).asInstanceOf[E]
+          val eventWithReceivedMillis = event.copyWithReceivedMillis(System.currentTimeMillis()).asInstanceOf[E]
           persisterManager.lb ! Persist(eventWithReceivedMillis, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
         }
 
