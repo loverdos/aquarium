@@ -37,9 +37,9 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import scala.collection.JavaConversions._
 import com.kenai.crontabparser.impl.CronTabParserBridge
-import java.io.{InputStreamReader, InputStream}
 import gr.grnet.aquarium.util.yaml._
 import java.util.Date
+import java.io.{ByteArrayInputStream, InputStreamReader, InputStream}
 
 /**
  * A parser for the Aquarium accounting DSL.
@@ -49,8 +49,9 @@ import java.util.Date
 trait DSL {
 
   /**
-   * Parse an InputStream containing an Aquarium DSL algorithm.
+   * Parse an InputStream containing an Aquarium DSL.
    */
+  @throws(classOf[DSLParseException])
   def parse(input: InputStream) : DSLPolicy = {
 
     val document = YAMLHelpers.loadYAML(new InputStreamReader(input))
@@ -76,6 +77,12 @@ trait DSL {
 
     DSLPolicy(policies, pricelists, resources, creditplans, agreements)
   }
+
+  /**
+   * Parse an InputStream containing an Aquarium DSL.
+   */
+  @throws(classOf[DSLParseException])
+  def parse(yaml: String): DSLPolicy = parse(new ByteArrayInputStream(yaml.getBytes))
 
   /** Parse resource declarations */
   private def parseResources(resources: YAMLListNode): List[DSLResource] = {
