@@ -83,7 +83,7 @@ class UserActor extends AquariumActor
         if(agreementOpt.isEmpty) {
           ERROR("No default agreement found. Cannot initialize user state")
         } else {
-          this._userState = UserStateComputations.createFirstUserState(userId, DSLAgreement.DefaultAgreementName)
+          this._userState = DefaultUserStateComputations.createFirstUserState(userId, DSLAgreement.DefaultAgreementName)
           saveUserState
           DEBUG("Created and stored %s", this._userState)
         }
@@ -172,7 +172,7 @@ class UserActor extends AquariumActor
    * Create an empty state for a user
    */
   def createBlankState = {
-    this._userState = UserStateComputations.createFirstUserState(this._userId, DSLAgreement.DefaultAgreementName)
+    this._userState = DefaultUserStateComputations.createFirstUserState(this._userId, DSLAgreement.DefaultAgreementName)
   }
 
   /**
@@ -213,7 +213,7 @@ class UserActor extends AquariumActor
             case None => ""
           }
 
-          val instanceId = e.getInstanceId(Policy.policy)
+          val instanceId = e.instanceId
           res = res.addOrUpdateResourceSnapshot(name,
             instanceId, e.value, e.occurredMillis)._1
     }
@@ -258,7 +258,7 @@ class UserActor extends AquariumActor
     val walletEntries = resourceEvents.map {
       ev =>
         // TODO: Check that agreement exists
-        val agr = policy.findAgreement(_userState.agreement.data).get
+        val agreement = policy.findAgreement(_userState.agreement.data).get
 
         val resource = policy.findResource(ev.resource) match {
           case Some(x) => x
@@ -268,36 +268,39 @@ class UserActor extends AquariumActor
             throw new AccountingException(errMsg) // FIXME: to throw or not to throw?
         }
 
+        // get resource instance id *only* for complex resource
+        // otherwise we could have used `resource.findInstanceId(ev.details)`
         val instid = resource.isComplex match {
           case true => ev.details.get(resource.asInstanceOf[DSLComplexResource].descriminatorField)
           case false => None
         }
 
-        var curValue: Double = 0.0
-        var lastUpdate = _userState.ownedResources.findResourceSnapshot(ev.resource, ev.getInstanceId(policy)) match {
+        var currentValue: Double = 0.0
+        var currentSnapshotTime = _userState.ownedResources.findResourceSnapshot(ev.resource, ev.instanceId) match {
           case Some(x) => x.snapshotTime
           case None => Long.MaxValue //To trigger recalculation
         }
 
-        if (lastUpdate > ev.occurredMillis) {
+        if (currentSnapshotTime > ev.occurredMillis) {
           //Event is older that current state. Rebuild state up to event timestamp
           val resHistory =
-            ResourceEvent("", 0, 0, _userId, "1", ev.resource, ev.eventVersion, 0, ev.details) ::
+            ResourceEvent("", 0, 0, _userId, "1", ev.resource, ev.instanceId, ev.eventVersion, 0, ev.details) ::
             eventsDB.findResourceEventHistory(_userId, ev.resource, instid, ev.occurredMillis)
           INFO("%d older entries for resource %s, user %s up to %d".format(resHistory.size, ev.resource, _userId, ev.occurredMillis));
           var res = OwnedResourcesSnapshot(List(), 0)
           resHistory.foreach {
             e =>
-              res = res.addOrUpdateResourceSnapshot(e.resource, e.getInstanceId(policy), e.value, e.occurredMillis)._1
+              // update resources state
+              res = res.addOrUpdateResourceSnapshot(e.resource, e.instanceId, e.value, e.occurredMillis)._1
           }
-          lastUpdate = res.findResourceSnapshot(ev.resource, ev.getInstanceId(policy)).get.snapshotTime
-          curValue = res.findResourceSnapshot(ev.resource, ev.getInstanceId(policy)).get.data
+          currentSnapshotTime = res.findResourceSnapshot(ev.resource, ev.instanceId).get.snapshotTime
+          currentValue = res.findResourceSnapshot(ev.resource, ev.instanceId).get.data
         } else {
-          curValue = _userState.ownedResources.findResourceSnapshot(ev.resource, ev.getInstanceId(policy)).get.data
+          currentValue = _userState.ownedResources.findResourceSnapshot(ev.resource, ev.instanceId).get.data
         }
 
-        val entries = chargeEvent(ev, agr, curValue, new Date(lastUpdate),
-          findRelatedEntries(resource, ev.getInstanceId(policy)))
+        val entries = chargeEvent(ev, agreement, currentValue, new Date(currentSnapshotTime),
+          findRelatedEntries(resource, ev.instanceId))
         INFO("PERF: CHARGE %s %d".format(ev.id, System.currentTimeMillis))
         entries match {
           case Just(x) => x

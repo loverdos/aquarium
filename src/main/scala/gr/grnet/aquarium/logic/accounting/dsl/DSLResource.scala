@@ -48,9 +48,11 @@ sealed abstract class DSLResource (
   val unit: String,
 
   /** Algorithm used to calculate costs */
-  val costpolicy: DSLCostPolicy
+  val costPolicy: DSLCostPolicy
 ) {
   def isComplex: Boolean
+  
+  def findInstanceId(details: Map[String, String]): Option[String]
 }
 
 /**
@@ -65,12 +67,15 @@ case class DSLComplexResource (
   override val unit: String,
 
   /**Algorithm used to calculate costs */
-  override val costpolicy: DSLCostPolicy,
+  override val costPolicy: DSLCostPolicy,
 
   /**Name of field used to describe a unique instance of the resource*/
   descriminatorField: String
-) extends DSLResource(name, unit, costpolicy) {
-  override def isComplex = true
+) extends DSLResource(name, unit, costPolicy) {
+  def isComplex = true
+
+  def findInstanceId(details: Map[String, String]) =
+    details.get(descriminatorField)
 }
 
 /**
@@ -84,11 +89,15 @@ case class DSLSimpleResource (
   override val unit: String,
 
   /**Algorithm used to calculate costs */
-  override val costpolicy: DSLCostPolicy
-) extends DSLResource(name, unit, costpolicy) {
-  override def isComplex = false
+  override val costPolicy: DSLCostPolicy
+) extends DSLResource(name, unit, costPolicy) {
+  def isComplex = false
+
+  def findInstanceId(details: Map[String, String]) =
+    DSLResource.SomeSimpleResourceInstanceId
 }
 
 object DSLResource {
   final val SimpleResourceInstanceId = "1"
+  final val SomeSimpleResourceInstanceId = Some(SimpleResourceInstanceId)
 }

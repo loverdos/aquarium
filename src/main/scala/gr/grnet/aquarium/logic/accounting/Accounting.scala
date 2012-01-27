@@ -38,9 +38,9 @@ package gr.grnet.aquarium.logic.accounting
 import dsl._
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 import collection.immutable.SortedMap
-import com.ckkloverdos.maybe.{Maybe, Failed, Just}
 import java.util.Date
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
+import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -49,32 +49,106 @@ import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
  */
 trait Accounting extends DSLUtils with Loggable {
 
+  def chargeEvent( oldResourceEvent: ResourceEvent,
+                   newResourceEvent: ResourceEvent,
+                   dslAgreement: DSLAgreement,
+                   lastSnapshotDate: Date,
+                   related: Traversable[WalletEntry]): Maybe[Traversable[WalletEntry]] = {
+    Maybe {
+      val dslPolicy: DSLPolicy = Policy.policy // TODO: query based on time
+      val resourceEvent = newResourceEvent
+      dslPolicy.findResource(resourceEvent.resource) match {
+        case None ⇒
+          throw new AccountingException("No resource [%s]".format(resourceEvent.resource))
+        case Some(dslResource) ⇒
+
+          val costPolicy = dslResource.costPolicy
+          val isDiscrete = costPolicy.isDiscrete
+          val oldValue = oldResourceEvent.value
+          val newValue = newResourceEvent.value
+
+          /* This is a safeguard against the special case where the last
+          * resource state update, as marked by the lastUpdate parameter
+          * is equal to the time of the event occurrence. This means that
+          * this is the first time the resource state has been recorded.
+          * Charging in this case only makes sense for discrete resources.
+          */
+          if (lastSnapshotDate.getTime == resourceEvent.occurredMillis && !isDiscrete) {
+            Just(List())
+          } else {
+            val creditCalculationValueM = dslResource.costPolicy.getCreditCalculationValue(oldValue, newValue).forNoVal(Just(0.0))
+            for {
+              amount <- creditCalculationValueM
+            } yield {
+              // We don't do strict checking for all cases for OnOffPolicies as
+              // above, since this point won't be reached in case of error.
+              val isFinal = dslResource.costPolicy match {
+                case OnOffCostPolicy =>
+                  OnOffPolicyResourceState(oldValue) match {
+                    case OnResourceState => false
+                    case OffResourceState => true
+                  }
+                case _ => true
+              }
+
+              val timeslot = dslResource.costPolicy match {
+                case DiscreteCostPolicy => Timeslot(new Date(resourceEvent.occurredMillis),
+                  new Date(resourceEvent.occurredMillis + 1))
+                case _ => Timeslot(lastSnapshotDate, new Date(resourceEvent.occurredMillis))
+              }
+
+              val chargeChunks = calcChangeChunks(dslAgreement, amount, dslResource, timeslot)
+
+              val timeReceived = System.currentTimeMillis
+
+              val rel = related.map{x => x.sourceEventIDs}.flatten ++ Traversable(resourceEvent.id)
+
+              val entries = chargeChunks.map {
+                chargedChunk ⇒
+                  WalletEntry(
+                    id = CryptoUtils.sha1(chargedChunk.id),
+                    occurredMillis = resourceEvent.occurredMillis,
+                    receivedMillis = timeReceived,
+                    sourceEventIDs = rel.toList,
+                    value = chargedChunk.cost,
+                    reason = chargedChunk.reason,
+                    userId = resourceEvent.userId,
+                    resource = resourceEvent.resource,
+                    instanceId = resourceEvent.instanceId,
+                    finalized = isFinal
+                  )
+              } // entries
+
+              entries
+            } // yield
+          } // else
+      }
+    }.flatten1
+  }
   /**
    * Creates a list of wallet entries by applying the agreement provisions on
    * the resource state.
    *
-   * @param ev The resource event to create charges for
+   * @param resourceEvent The resource event to create charges for
    * @param agreement The agreement applicable to the user mentioned in the event
-   * @param resState The current state of the resource
-   * @param lastUpdate The last time the resource state was updated
+   * @param currentValue The current state of the resource
+   * @param currentSnapshotDate The last time the resource state was updated
    */
-  def chargeEvent(ev: ResourceEvent,
+  def chargeEvent(resourceEvent: ResourceEvent,
                   agreement: DSLAgreement,
-                  resState: Double,
-                  lastUpdate: Date,
-                  related: List[WalletEntry]):
-  Maybe[List[WalletEntry]] = {
+                  currentValue: Double,
+                  currentSnapshotDate: Date,
+                  related: List[WalletEntry]): Maybe[List[WalletEntry]] = {
 
-    assert(lastUpdate.getTime <= ev.occurredMillis)
+    assert(currentSnapshotDate.getTime <= resourceEvent.occurredMillis)
 
-    if (!ev.validate())
+    if (!resourceEvent.validate())
       return Failed(new AccountingException("Event not valid"))
 
     val policy = Policy.policy
-    val resource = policy.findResource(ev.resource) match {
+    val dslResource = policy.findResource(resourceEvent.resource) match {
       case Some(x) => x
-      case None => return Failed(
-        new AccountingException("No resource [%s]".format(ev.resource)))
+      case None => return Failed(new AccountingException("No resource [%s]".format(resourceEvent.resource)))
     }
 
     /* This is a safeguard against the special case where the last
@@ -83,72 +157,58 @@ trait Accounting extends DSLUtils with Loggable {
      * this is the first time the resource state has been recorded.
      * Charging in this case only makes sense for discrete resources.
      */
-    if (lastUpdate.getTime == ev.occurredMillis) {
-      resource.costpolicy match {
+    if (currentSnapshotDate.getTime == resourceEvent.occurredMillis) {
+      dslResource.costPolicy match {
         case DiscreteCostPolicy => //Ok
         case _ => return Some(List())
       }
     }
 
-    val amount = resource.costpolicy match {
-      case ContinuousCostPolicy => resState
-      case DiscreteCostPolicy => ev.value
-      case OnOffCostPolicy =>
-        OnOffPolicyResourceState(resState) match {
-          case OnResourceState =>
-            OnOffPolicyResourceState(ev.value) match {
-              case OnResourceState =>
-                return Failed(new AccountingException(("Resource state " +
-                  "transition error(was:%s, now:%s)").format(OnResourceState,
-                  OnResourceState)))
-              case OffResourceState => 0
-            }
-          case OffResourceState =>
-            OnOffPolicyResourceState(ev.value) match {
-              case OnResourceState => 1
-              case OffResourceState =>
-                return Failed(new AccountingException(("Resource state " +
-                  "transition error(was:%s, now:%s)").format(OffResourceState,
-                  OffResourceState)))
-            }
-        }
+    val creditCalculationValueM = dslResource.costPolicy.getCreditCalculationValue(currentValue, resourceEvent.value)
+    val amount = creditCalculationValueM match {
+      case failed @ Failed(_, _) ⇒
+        return failed
+      case Just(amount) ⇒
+        amount
+      case NoVal ⇒
+        0.0
     }
 
     // We don't do strict checking for all cases for OnOffPolicies as
     // above, since this point won't be reached in case of error.
-    val isFinal = resource.costpolicy match {
+    val isFinal = dslResource.costPolicy match {
       case OnOffCostPolicy =>
-        OnOffPolicyResourceState(resState) match {
+        OnOffPolicyResourceState(currentValue) match {
           case OnResourceState => false
           case OffResourceState => true
         }
       case _ => true
     }
 
-    val ts = resource.costpolicy match {
-      case DiscreteCostPolicy => Timeslot(new Date(ev.occurredMillis),
-        new Date(ev.occurredMillis + 1))
-      case _ => Timeslot(lastUpdate, new Date(ev.occurredMillis))
+    val timeslot = dslResource.costPolicy match {
+      case DiscreteCostPolicy => Timeslot(new Date(resourceEvent.occurredMillis),
+        new Date(resourceEvent.occurredMillis + 1))
+      case _ => Timeslot(currentSnapshotDate, new Date(resourceEvent.occurredMillis))
     }
 
-    val chargeChunks = calcChangeChunks(agreement, amount, resource, ts)
+    val chargeChunks = calcChangeChunks(agreement, amount, dslResource, timeslot)
 
     val timeReceived = System.currentTimeMillis
 
-    val rel = related.map{x => x.sourceEventIDs}.flatten ++ List(ev.id)
+    val rel = related.map{x => x.sourceEventIDs}.flatten ++ List(resourceEvent.id)
 
     val entries = chargeChunks.map {
       c =>
         WalletEntry(
           id = CryptoUtils.sha1(c.id),
-          occurredMillis = ev.occurredMillis,
+          occurredMillis = resourceEvent.occurredMillis,
           receivedMillis = timeReceived,
           sourceEventIDs = rel,
           value = c.cost,
           reason = c.reason,
-          userId = ev.userId,
-          resource = ev.resource,
-          instanceId = ev.getInstanceId(policy),
+          userId = resourceEvent.userId,
+          resource = resourceEvent.resource,
+          instanceId = resourceEvent.instanceId,
           finalized = isFinal
         )
     }
@@ -166,7 +226,7 @@ trait Accounting extends DSLUtils with Loggable {
 
     assert(algChunked.size == priChunked.size)
 
-    res.costpolicy match {
+    res.costPolicy match {
       case DiscreteCostPolicy => calcChargeChunksDiscrete(algChunked, priChunked, volume, res)
       case _ => calcChargeChunksContinuous(algChunked, priChunked, volume, res)
     }
@@ -242,7 +302,7 @@ case class ChargeChunk(value: Double, algorithm: String,
 
   def cost(): Double =
     //TODO: Apply the algorithm, when we start parsing it
-    resource.costpolicy match {
+    resource.costPolicy match {
       case DiscreteCostPolicy =>
         value * price
       case _ =>
@@ -250,7 +310,7 @@ case class ChargeChunk(value: Double, algorithm: String,
     }
 
   def reason(): String =
-    resource.costpolicy match {
+    resource.costPolicy match {
       case DiscreteCostPolicy =>
         "%f %s at %s @ %f/%s".format(value, resource.unit, when.from, price,
           resource.unit)

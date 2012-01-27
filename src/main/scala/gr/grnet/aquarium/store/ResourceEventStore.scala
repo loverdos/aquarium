@@ -66,9 +66,15 @@ trait ResourceEventStore {
   def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[Long]
 
   /**
+   * Finds all relevant resource events for the billing period.
+   * The relevant events are those:
+   * a) whose `occurredMillis` is within the given billing period and
+   * b) whose `receivedMillis` is within the given billing period.
+   *
    * FIXME: implement
    */
-  def findAllRelevantResourceEventsForBillingPeriod(userId: String, startMillis: Long,
+  def findAllRelevantResourceEventsForBillingPeriod(userId: String,
+                                                    startMillis: Long,
                                                     stopMillis: Long): List[ResourceEvent] =
     findResourceEventsForReceivedPeriod(userId, startMillis, stopMillis)
 }

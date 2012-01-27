@@ -35,10 +35,14 @@
 
 package gr.grnet.aquarium.user
 
+import scala.collection.mutable
+
 import gr.grnet.aquarium.store.ResourceEventStore
-import java.util.Date
 import gr.grnet.aquarium.util.date.DateCalculator
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
+import gr.grnet.aquarium.logic.accounting.Accounting
+import gr.grnet.aquarium.logic.events.ResourceEvent
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DSLAgreement}
 
 sealed abstract class CalculationType(_name: String) {
   def name = _name
@@ -55,7 +59,7 @@ case object PeriodicCalculation extends CalculationType("periodic")
 case object AdhocCalculation extends CalculationType("adhoc")
 
 trait UserPolicyFinder {
-  def findUserPolicyAt(userId: String, whenMillis: Long)
+  def findUserPolicyAt(userId: String, whenMillis: Long): DSLPolicy
 }
 
 trait FullStateFinder {
@@ -64,15 +68,18 @@ trait FullStateFinder {
 
 trait UserStateCache {
   def findUserStateAtEndOfPeriod(userId: String, year: Int, month: Int): Maybe[UserState]
-  
-  def findLatestUserStateForBillingPeriod(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[UserState]
+
+  /**
+   * Find the most up-to-date user state for the particular billing period.
+   */
+  def findLatestUserStateForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[UserState]
 }
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object UserStateComputations {
+class UserStateComputations {
   def createFirstUserState(userId: String, agreementName: String) = {
     val now = 0L
     UserState(
@@ -100,7 +107,8 @@ object UserStateComputations {
    */
   def computeUserStateAtStartOfBillingPeriod(billingYear: Int,
                                              billingMonth: Int,
-                                             knownUserState: UserState): UserState = {
+                                             knownUserState: UserState,
+                                             accounting: Accounting): UserState = {
 
     val billingDate = new DateCalculator(billingYear, billingMonth, 1)
     val billingDateMillis = billingDate.toMillis
@@ -137,7 +145,9 @@ object UserStateComputations {
                                 timeUnitInMillis: Long,
                                 rcEventStore: ResourceEventStore,
                                 currentUserState: UserState,
-                                otherStuff: Traversable[Any]): Maybe[UserState] = Maybe {
+                                otherStuff: Traversable[Any],
+                                defaultPolicy: DSLPolicy, // Policy.policy
+                                accounting: Accounting): Maybe[UserState] = Maybe {
 
     val billingMonthStartDate = new DateCalculator(yearOfBillingMonth, billingMonth, 1)
     val prevBillingMonthStartDate = billingMonthStartDate.previousMonth
@@ -146,7 +156,10 @@ object UserStateComputations {
 
     // Check if this value is already cached and valid, otherwise compute the value
     // TODO : cache it in case of new computation
-    val cachedStartUserStateM = userStateCache.findLatestUserStateForBillingPeriod(userId, yearOfPrevBillingMonth, prevBillingMonth)
+    val cachedStartUserStateM = userStateCache.findLatestUserStateForBillingMonth(
+      userId,
+      yearOfPrevBillingMonth,
+      prevBillingMonth)
 
     val (previousStartUserState, newStartUserState) = cachedStartUserStateM match {
       case Just(cachedStartUserState) ⇒
@@ -163,17 +176,26 @@ object UserStateComputations {
           prevBillingMonth)
         
         val recomputedStartUserState = if(prevHowmanyOutOfSyncRCEvents == 0) {
-          // This is good, can return the cached value
+          // This is good, there were no "out of sync" resource events, so we can use the cached value
           cachedStartUserState
         } else {
-          // "Out of sync" resource events means re-computation
-          computeUserStateAtStartOfBillingPeriod(yearOfPrevBillingMonth, prevBillingMonth, cachedStartUserState)
+          // Oops, there are "out of sync" resource event. Must compute (potentially recursively)
+          computeUserStateAtStartOfBillingPeriod(
+            yearOfPrevBillingMonth,
+            prevBillingMonth,
+            cachedStartUserState,
+            accounting)
         }
 
         (cachedStartUserState, recomputedStartUserState)
       case NoVal ⇒
-        // We do not even have a cached value, so perform re-computation
-        val recomputedStartUserState = computeUserStateAtStartOfBillingPeriod(yearOfPrevBillingMonth, prevBillingMonth, currentUserState)
+        // We do not even have a cached value, so computate one!
+        val recomputedStartUserState = computeUserStateAtStartOfBillingPeriod(
+          yearOfPrevBillingMonth,
+          prevBillingMonth,
+          currentUserState,
+          accounting)
+
         (recomputedStartUserState, recomputedStartUserState)
       case Failed(e, m) ⇒
         throw new Exception(m, e)
@@ -185,12 +207,13 @@ object UserStateComputations {
     val billingStopMillis = billingMonthStartDate.endOfThisMonth.toMillis
     val allBillingPeriodRelevantRCEvents = rcEventStore.findAllRelevantResourceEventsForBillingPeriod(userId, billingStartMillis, billingStopMillis)
 
-    type ResourceType = String
-    type ResourceInstanceType = String
-    val prevRCEventMap: scala.collection.mutable.Map[(ResourceType, ResourceInstanceType), Double] = scala.collection.mutable.Map()
+    type FullResourceType = ResourceEvent.FullResourceType
+    val previousRCEventsMap = mutable.Map[FullResourceType, ResourceEvent]()
+    val impliedRCEventsMap  = mutable.Map[FullResourceType, ResourceEvent]() // those which do not exists but are
+    // implied in order to do billing calculations (e.g. the "off" vmtime resource event)
     var workingUserState = newStartUserState
 
-    for(currentRCEvent <- allBillingPeriodRelevantRCEvents) {
+    for(nextRCEvent <- allBillingPeriodRelevantRCEvents) {
       // We need to do these kinds of calculations:
       // 1. Credit state calculations
       // 2. Resource state calculations
@@ -205,7 +228,29 @@ object UserStateComputations {
       //   - need the previous absolute value
       //   - need the time difference of this event to the previous one
       //   - use both the above (previous absolute value, time difference) for the credit computation
+      //
+      // BUT ALL THE ABOVE SHOULD NOT BE CONSIDERED HERE; RATHER THEY ARE POLYMORPHIC BEHAVIOURS
 
+      // We need:
+      // A. The previous event
+      def findPreviousRCEventOf(rcEvent: ResourceEvent): Option[ResourceEvent] = {
+        previousRCEventsMap.get(rcEvent.fullResourceInfo)
+      }
+      def updatePreviousRCEventWith(rcEvent: ResourceEvent): Unit = {
+        previousRCEventsMap(rcEvent.fullResourceInfo) = rcEvent
+      }
+      
+      val prevRCEvent = findPreviousRCEventOf(nextRCEvent) match {
+        case Some(prevRCEvent) ⇒
+          prevRCEvent
+        case None ⇒
+          // Must query the DB?????
+      }
+
+
+      // B. The current event: [✓][✔][✗][✘]☒ OK
+
+//      accounting.chargeEvent()
     }
 
 
@@ -229,9 +274,12 @@ object UserStateComputations {
                                timeUnitInMillis: Long,
                                rcEventStore: ResourceEventStore,
                                currentUserState: UserState,
-                               otherStuff: Traversable[Any]): Maybe[UserState] = Maybe {
+                               otherStuff: Traversable[Any],
+                               accounting: Accounting): Maybe[UserState] = Maybe {
   
 
      null.asInstanceOf[UserState]
    }
 }
+
+object DefaultUserStateComputations extends UserStateComputations

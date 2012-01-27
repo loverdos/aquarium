@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.logic.events
 
-import gr.grnet.aquarium.logic.accounting.Policy
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.logic.accounting.dsl._
@@ -53,44 +52,30 @@ case class ResourceEvent(
     userId: String,                    // The user for which this resource is relevant
     clientId: String,                  // The unique client identifier (usually some hash)
     resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
+    instanceId: String,                // String representation of the resource instance id
     eventVersion: String,
     value: Double,
     details: ResourceEvent.Details)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
   def validate() : Boolean = {
-
-    if (getInstanceId(Policy.policy).isEmpty)
-      return false
-
-    true
+    !safeResource.isEmpty
   }
 
-  /**
-   * Return the instance id affected by this resource event. If either the
-   * resource or the instance id field cannot be found, this method returns an
-   * empty String.
-   *
-   */
-  def getInstanceId(policy: DSLPolicy): String = {
-    policy.findResource(this.resource) match {
-      case Some(DSLComplexResource(_, _, _, descriminatorField)) ⇒
-        details.getOrElse(descriminatorField, "")
+  def safeResource   = if(resource eq null)   "" else resource
+  def safeInstanceId = if(instanceId eq null) "" else instanceId
 
-      case Some(DSLSimpleResource(_, _, _)) ⇒
-        DSLResource.SimpleResourceInstanceId
+  def hasResource   = !safeResource.isEmpty
+  def hasInstanceId = !safeInstanceId.isEmpty
 
-      case None ⇒
-        ""
-    }
-  }
+  def fullResourceInfo = (safeResource, safeInstanceId)
 
   /**
    * Return `true` iff this is an event regarding a resource with an
    * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
    */
   def isOnOffEvent(policy: DSLPolicy): Boolean = {
-    policy.findResource(this.resource).map(_.costpolicy) match {
+    policy.findResource(this.resource).map(_.costPolicy) match {
       case Some(OnOffCostPolicy) ⇒ true
       case _ ⇒ false
     }
@@ -133,6 +118,10 @@ case class ResourceEvent(
 
 object ResourceEvent {
   type Details = Map[String, String]
+
+  type ResourceType = String
+  type ResourceIdType = String
+  type FullResourceType = (ResourceType, ResourceIdType)
   
   def fromJson(json: String): ResourceEvent = {
     JsonHelpers.jsonToObject[ResourceEvent](json)
@@ -159,6 +148,7 @@ object ResourceEvent {
     final val receivedMillis = "receivedMillis"
     final val clientId = "clientId"
     final val resource = "resource"
+    final val resourceId = "resourceId"
     final val eventVersion = "eventVersion"
     final val value = "value"
     final val details = "details"
