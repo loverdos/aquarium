@@ -35,12 +35,18 @@
 
 package gr.grnet.aquarium.util
 
+import java.util.{Map => JMap,
+                  List => JList,
+                  HashMap => JHashMap,
+                  ArrayList => JArrayList}
+
 /**
- * Utilities for Maps
+ * Utility functions for Collections, including recursive conversion to Java
+ * for Maps and Lists
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait MapUtils {
+trait CollectionUtils {
 
   /**Merge input maps on a field by field basis. In case of duplicate keys
    *  values from the first map are prefered.
@@ -62,4 +68,41 @@ trait MapUtils {
           kv._1 -> f(a(kv._1), kv._2)
         else kv)
     }
+
+
+  /**
+   * Recursively convert a Scala[String, Any] map to a Java equivalent.
+   * It will also convert values that are Scala Maps or Lists or Seqs
+   * to Java equivalents.
+   */
+  def mapToJavaMap(map: Map[String, Any]): JMap[String, Object] = {
+    val result = new JHashMap[String, Object]
+
+    map.foreach(kv => result.put(kv._1, transformValue(kv._2)))
+    result
+  }
+
+  /**
+   * Recursively convert a Scala List[Any] map to a Java equivalent
+   * List[Object]. If the list's items are of type List[_]
+   * and/or Map[String, Any] those will also be converted to
+   * Java equivalents.
+   */
+  def listToJavaList(seq: List[Any]): JList[Object] = {
+    val list = new JArrayList[Object]
+    seq.foreach(a => list.add(transformValue(a)))
+    list
+  }
+
+  private def transformValue(v: Any) = {
+    val v2  = v match {
+      case l: List[_]     => listToJavaList(l)
+      case s: Seq[_]      => listToJavaList(s.toList)
+      case i: Iterator[_] => listToJavaList(i.toList)
+      case m: Map[String, Any] => mapToJavaMap(m)
+      case _              => v
+    }
+
+    v2.asInstanceOf[Object]
+  }
 }

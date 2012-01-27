@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import gr.grnet.aquarium.util.json.JsonSupport
+
 /**
  * A credit plan specifies a periodic transfer of credits to the creditor's
  * account.
@@ -42,9 +44,9 @@ package gr.grnet.aquarium.logic.accounting.dsl
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class DSLCreditPlan (
-  name: String,
-  override  val overrides: Option[DSLCreditPlan],
+  override val name: String,
+  override val overrides: Option[DSLCreditPlan],
   credits: Float,
   at: List[DSLTimeSpec],
-  override  val effective: DSLTimeFrame
-) extends DSLTimeBoundedItem[DSLCreditPlan](overrides, effective)
+  override val effective: DSLTimeFrame
+) extends DSLTimeBoundedItem[DSLCreditPlan](name, overrides, effective)

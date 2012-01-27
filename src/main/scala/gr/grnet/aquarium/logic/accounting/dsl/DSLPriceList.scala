@@ -41,8 +41,24 @@ package gr.grnet.aquarium.logic.accounting.dsl
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class DSLPriceList (
-  name: String,
-  override  val overrides: Option[DSLPriceList],
+  override val name: String,
+  override val overrides: Option[DSLPriceList],
   prices: Map[DSLResource,  Float],
-  override  val effective: DSLTimeFrame
-) extends DSLTimeBoundedItem[DSLPriceList](overrides, effective)
+  override val effective: DSLTimeFrame
+) extends DSLTimeBoundedItem[DSLPriceList](name, overrides, effective) {
+  
+  override def toMap(): Map[String, Any] = {
+    val data = new scala.collection.mutable.HashMap[String, Any]()
+
+    data ++= super.toMap
+
+    prices.keys.foreach{x => data += (x.name -> prices.get(x))}
+
+    data.toMap
+  }
+}
+
+object DSLPriceList {
+  /**An empty pricelist */
+  val emptyPriceList = DSLPriceList("", None, Map(), DSLTimeFrame.emptyTimeFrame)
+}

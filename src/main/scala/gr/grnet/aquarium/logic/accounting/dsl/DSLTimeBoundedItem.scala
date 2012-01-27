@@ -41,5 +41,21 @@ package gr.grnet.aquarium.logic.accounting.dsl
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-abstract class DSLTimeBoundedItem[T <: DSLTimeBoundedItem[T]](val overrides: Option[T],
+abstract class DSLTimeBoundedItem[T <: DSLTimeBoundedItem[T]](val name: String,
+                                                              val overrides: Option[T],
                                                               val effective: DSLTimeFrame)
+extends DSLItem {
+
+  override def toMap(): Map[String, Any] = {
+    val data = new scala.collection.mutable.HashMap[String, Any]()
+    data +=  ("name" -> name)
+    overrides match {
+      case Some(x) => data +=  ("overrides" -> x.name)
+      case _ =>
+    }
+
+    data += ("effective" -> effective.toMap())
+
+    data.toMap
+  }
+}

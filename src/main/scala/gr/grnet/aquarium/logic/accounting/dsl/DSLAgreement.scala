@@ -50,4 +50,4 @@ case class DSLAgreement (
   algorithm : DSLAlgorithm,
   pricelist : DSLPriceList,
   creditplan: DSLCreditPlan
-) extends JsonSupport
+) extends DSLItem

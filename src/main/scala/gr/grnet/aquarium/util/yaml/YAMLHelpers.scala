@@ -36,19 +36,25 @@
 package gr.grnet.aquarium.util.yaml
 
 import org.yaml.snakeyaml.Yaml
-import java.io.{StringReader, InputStreamReader, Reader, InputStream}
+import java.io.Reader
+import gr.grnet.aquarium.util.CollectionUtils
 
 /**
  * Utility methods for parsing YAML and conveniently returning `YAMLNode`s.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-object YAMLHelpers {
+object YAMLHelpers extends CollectionUtils {
   def loadYAML(r: Reader, closeReader: Boolean = true): YAMLNode = {
     val yaml = new Yaml()
     val loaded = yaml.load(r)
     if(closeReader) r.close()
 
     YAMLNode(loaded)
+  }
+
+  def dumpYAML(yamlMap: Map[String, Any]): String = {
+    val yaml = new Yaml()
+    yaml.dump(mapToJavaMap(yamlMap))
   }
 }

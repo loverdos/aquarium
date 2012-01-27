@@ -290,9 +290,9 @@ class MongoDBStore(
 
   def storePolicy(policy: DSLPolicy): Maybe[RecordID] = Maybe {
 
-    val dbObj = MongoDBStore.jsonSupportToDBObject(policy)
-    val writeResult = policies.insert(dbObj)
-    writeResult.getLastError.throwOnError
+    //val dbObj = policy.toYAML
+    //val writeResult = policies.insert(dbObj)
+    //writeResult.getLastError.throwOnError
 
     val query = new BasicDBObject()
     query.put(DSLPolicy.JsonNames.valid, policy.valid)

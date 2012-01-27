@@ -35,13 +35,16 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+
 /**
  * A cost policy indicates how charging for a resource will be done
  * wrt the various states a resource can be.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-abstract class DSLCostPolicy(name: String)
+abstract class DSLCostPolicy(n: String) extends DSLItem {
+  def name = n
+}
 
 object DSLCostPolicy {
   def apply(name: String): DSLCostPolicy  = {
@@ -64,7 +67,7 @@ object DSLCostPolicy {
  * between resource usage changes.
  *
  * Example resources that might be adept to a continuous policy
- * are bandwidth and diskspace.
+ * are diskspace.
  */
 case object ContinuousCostPolicy extends DSLCostPolicy("continuous")
 
@@ -115,7 +118,7 @@ object OnOffPolicyResourceState {
   }
 }
 
-object OnResourceState  extends OnOffPolicyResourceState("on") {
+object OnResourceState extends OnOffPolicyResourceState("on") {
   override def isOn = true
 }
 object OffResourceState extends OnOffPolicyResourceState("off") {

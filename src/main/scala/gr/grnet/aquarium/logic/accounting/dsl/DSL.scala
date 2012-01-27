@@ -67,6 +67,10 @@ trait DSL {
   /**An empty agreement*/
   val emptyAgreement = DSLAgreement("", None, emptyAlgorithm, emptyPriceList, emptyCreditPlan)
 
+  /**An empty policy*/
+  val emptyPolicy = DSLPolicy(List(emptyAlgorithm), List(emptyPriceList),
+    List(emptyResource), List(emptyCreditPlan), List(emptyAgreement))
+
   /**
    * Parse an InputStream containing an Aquarium DSL algorithm.
    */
@@ -466,19 +470,19 @@ trait DSL {
     if (tmr.isEmpty)
       return List()
 
-    List(DSLTimeFrameRepeat(
-      findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.start),
-      findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.end)
-    )) ++ parseTimeFrameRepeat(tmr.tail)
-  }
-
-  /** Parse a resource frame entry (start, end tags) */
-  private def findInMap(repeat: YAMLMapNode,
-                        tag: String) : List[DSLTimeSpec] = {
-    repeat / tag match {
-      case x: YAMLStringNode => parseCronString(x.string)
-      case YAMLEmptyNode => throw new DSLParseException("No %s field for repeat entry %s".format(tag, repeat))
+    /** Parse a resource frame entry (start, end tags) */
+    def findInMap(repeat: YAMLMapNode,
+                  tag: String) : (String, List[DSLTimeSpec]) = {
+      repeat / tag match {
+        case x: YAMLStringNode => (x.string, parseCronString(x.string))
+        case YAMLEmptyNode => throw new DSLParseException("No %s field for repeat entry %s".format(tag, repeat))
+      }
     }
+
+    val start = findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.start)
+    val end = findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.end)
+
+    DSLTimeFrameRepeat(start._2, end._2, start._1,end._1) :: parseTimeFrameRepeat(tmr.tail)
   }
 
   /** 

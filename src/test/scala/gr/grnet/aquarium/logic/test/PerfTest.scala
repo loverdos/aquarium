@@ -60,10 +60,16 @@ class PerfTest extends DSLUtils with DSL {
     var to = new Date(2048576095000L) //Fri, 01 Dec 2034 08:54:55 GMT
     val today = new Date()
 
-    val repeat1 = DSLTimeFrameRepeat(parseCronString("00 12 * * *"),
-      parseCronString("00 14 * * *"))
-    val repeat2 = DSLTimeFrameRepeat(parseCronString("00 18 * * 5"),
-      parseCronString("00 20 * * 5"))
+    val repeat1 = DSLTimeFrameRepeat(
+      parseCronString("00 12 * * *"),
+      parseCronString("00 14 * * *"),
+      "00 12 * * *",
+      "00 14 * * *")
+    val repeat2 = DSLTimeFrameRepeat(
+      parseCronString("00 18 * * 5"),
+      parseCronString("00 20 * * 5"),
+      "00 18 * * 5",
+      "00 20 * * 5")
 
     val min = oneYearBack(today, new Date(0)).getTime
     val max = oneYearAhead(today, new Date(Int.MaxValue * 1000L)).getTime

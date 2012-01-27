@@ -32,7 +32,6 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
-
 package gr.grnet.aquarium.logic.accounting.dsl
 
 /**
@@ -42,8 +41,13 @@ package gr.grnet.aquarium.logic.accounting.dsl
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class DSLAlgorithm (
-  name: String,
+  override val name: String,
   override val overrides: Option[DSLAlgorithm],
   algorithms: Map[DSLResource, String],
   override  val effective: DSLTimeFrame
-) extends DSLTimeBoundedItem[DSLAlgorithm](overrides, effective)
+) extends DSLTimeBoundedItem[DSLAlgorithm](name, overrides, effective)
+
+object DSLAlgorithm {
+  val emptyAlgorithm = DSLAlgorithm("", None, Map(), DSLTimeFrame.emptyTimeFrame)
+}
+

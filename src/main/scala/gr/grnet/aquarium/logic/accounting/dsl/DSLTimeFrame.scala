@@ -46,10 +46,27 @@ case class DSLTimeFrame (
   from: Date,
   to: Option[Date],
   repeat: List[DSLTimeFrameRepeat]
-) {
+) extends DSLItem {
 
   to match {
     case Some(x) => assert(x.after(from))
     case None =>
   }
+
+  override def toMap(): Map[String, Any] = {
+    val data = new scala.collection.mutable.HashMap[String, Any]()
+    data += ("from" -> from.getTime)
+    to match {
+      case Some(x) => data += ("to" -> x.getTime)
+      case _ =>
+    }
+
+    data += ("repeat" -> repeat.map{r => r.toMap})
+
+    data.toMap
+  }
+}
+
+object DSLTimeFrame{
+  val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
 }

@@ -45,7 +45,7 @@ import gr.grnet.aquarium.util.json.JsonSupport
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class Timeslot(from: Date, to: Date)
-  extends Ordered[Timeslot] with JsonSupport {
+  extends DSLItem with Ordered[Timeslot] {
 
   /* Preconditions to ensure correct object creations */
   assert(from != null)

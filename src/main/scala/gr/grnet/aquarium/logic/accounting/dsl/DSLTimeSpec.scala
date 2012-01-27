@@ -59,7 +59,7 @@ case class DSLTimeSpec(
   dom: Int,
   mon: Int,
   dow: Int
-){
+) extends DSLItem {
   //Preconditions to force correct values on object creation
   assert(0 <= min && 60 > min)
   assert(0 <= hour && 24 > hour)

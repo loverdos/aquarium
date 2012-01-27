@@ -35,6 +35,9 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import gr.grnet.aquarium.util.yaml.{YAMLNode}
+
+
 /**
  * Represents a chargable resource.
  *
@@ -49,7 +52,7 @@ sealed abstract class DSLResource (
 
   /** Algorithm used to calculate costs */
   val costpolicy: DSLCostPolicy
-) {
+) extends DSLItem {
   def isComplex: Boolean
 }
 

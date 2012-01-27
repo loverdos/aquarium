@@ -36,15 +36,13 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import java.util.Date
-import gr.grnet.aquarium.util.json.JsonSupport
-
 
 /**
  * Root object for the Aquarium policy configuration tree.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class DSLPolicy(
+case class DSLPolicy (
   algorithms: List[DSLAlgorithm],
   pricelists: List[DSLPriceList],
   resources: List[DSLResource],
@@ -52,7 +50,7 @@ case class DSLPolicy(
   agreements: List[DSLAgreement],
   version: Int = 1,
   valid: Timeslot = Timeslot(new Date(0), new Date(1))
-) extends JsonSupport {
+) extends DSLItem {
 
   /**Find a resource by name */
   def findResource(name: String): Option[DSLResource] = {
