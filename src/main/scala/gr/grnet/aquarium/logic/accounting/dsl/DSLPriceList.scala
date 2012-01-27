@@ -47,15 +47,8 @@ case class DSLPriceList (
   override val effective: DSLTimeFrame
 ) extends DSLTimeBoundedItem[DSLPriceList](name, overrides, effective) {
   
-  override def toMap(): Map[String, Any] = {
-    val data = new scala.collection.mutable.HashMap[String, Any]()
-
-    data ++= super.toMap
-
-    prices.keys.foreach{x => data += (x.name -> prices.get(x))}
-
-    data.toMap
-  }
+  override def toMap(): Map[String, Any] =
+    super.toMap ++ prices.map{x => (x._1.name -> x._2)}
 }
 
 object DSLPriceList {

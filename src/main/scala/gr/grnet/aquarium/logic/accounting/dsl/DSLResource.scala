@@ -35,9 +35,6 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import gr.grnet.aquarium.util.yaml.{YAMLNode}
-
-
 /**
  * Represents a chargable resource.
  *
@@ -54,6 +51,11 @@ sealed abstract class DSLResource (
   val costpolicy: DSLCostPolicy
 ) extends DSLItem {
   def isComplex: Boolean
+  
+  override def toMap(): Map[String, Any] =
+    Map(Vocabulary.name -> name) ++
+      Map(Vocabulary.unit -> unit) ++
+        Map(Vocabulary.costpolicy -> costpolicy.name)
 }
 
 /**
@@ -74,6 +76,9 @@ case class DSLComplexResource (
   descriminatorField: String
 ) extends DSLResource(name, unit, costpolicy) {
   override def isComplex = true
+
+  override def toMap(): Map[String, Any] =
+    super.toMap ++ Map(Vocabulary.descriminatorfield -> descriminatorField)
 }
 
 /**

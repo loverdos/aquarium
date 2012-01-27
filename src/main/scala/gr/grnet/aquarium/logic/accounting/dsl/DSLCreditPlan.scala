@@ -50,18 +50,10 @@ case class DSLCreditPlan (
   override val effective: DSLTimeFrame
 ) extends DSLTimeBoundedItem[DSLCreditPlan](name, overrides, effective) {
 
-  override def toMap(): Map[String, Any] = {
-    val data = new scala.collection.mutable.HashMap[String, Any]()
-
-    data ++= super.toMap
-    data += (Vocabulary.credits -> credits)
-    data += (Vocabulary.at -> atCron)
-
-    data.toMap
-  }
+  override def toMap(): Map[String, Any] =
+    super.toMap ++ Map(Vocabulary.credits -> credits) ++ Map(Vocabulary.at -> atCron)
 }
 
 object DSLCreditPlan {
-  val emptyCreditPlan = DSLCreditPlan("", None, 0,
-    List(DSLTimeSpec.emtpyTimeSpec), "", DSLTimeFrame.emptyTimeFrame)
+  val emptyCreditPlan = DSLCreditPlan("", None, 0, List(), "", DSLTimeFrame.emptyTimeFrame)
 }

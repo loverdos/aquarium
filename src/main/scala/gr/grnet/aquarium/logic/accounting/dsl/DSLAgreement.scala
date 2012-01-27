@@ -50,7 +50,21 @@ case class DSLAgreement (
   algorithm : DSLAlgorithm,
   pricelist : DSLPriceList,
   creditplan: DSLCreditPlan
-) extends DSLItem
+) extends DSLItem {
+
+  override def toMap(): Map[String, Any] = {
+    val parent = overrides match {
+      case Some(x) => Map(Vocabulary.overrides -> x.name)
+      case _ => Map()
+    }
+
+    parent                                        ++
+    Map(Vocabulary.name -> name)                  ++
+    Map(Vocabulary.algorithm  -> algorithm.name)  ++
+    Map(Vocabulary.pricelist  -> pricelist.name)  ++
+    Map(Vocabulary.creditplan -> creditplan.name)
+  }
+}
 
 object DSLAgreement {
   val emptyAgreement = DSLAgreement("", None, DSLAlgorithm.emptyAlgorithm,

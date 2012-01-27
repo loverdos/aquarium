@@ -76,6 +76,13 @@ case class DSLPolicy (
   def findAgreement(name: String): Option[DSLAgreement] = {
     agreements.find(a => a.name.equals(name))
   }
+
+  override def toMap() =
+    Map(Vocabulary.algorithms  -> algorithms.map{a => a.toYAML})  ++
+    Map(Vocabulary.pricelists  -> pricelists.map{p => p.toYAML})  ++
+    Map(Vocabulary.resources   -> resources.map{r => r.toYAML})   ++
+    Map(Vocabulary.creditplans -> creditplans.map{c => c.toYAML}) ++
+    Map(Vocabulary.agreements  -> agreements.map{a => a.toYAML})
 }
 
 object DSLPolicy {
