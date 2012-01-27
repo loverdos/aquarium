@@ -66,8 +66,8 @@ case class DSLTimeFrameRepeat (
   override def toMap(): Map[String, Any] = {
     val data = new scala.collection.mutable.HashMap[String, Any]()
     
-    data += ("start" -> startCron)
-    data += ("end" -> endCron)
+    data += (Vocabulary.start -> startCron)
+    data += (Vocabulary.end -> endCron)
 
     data.toMap
   }

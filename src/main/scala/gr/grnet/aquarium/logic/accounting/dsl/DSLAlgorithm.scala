@@ -45,7 +45,9 @@ case class DSLAlgorithm (
   override val overrides: Option[DSLAlgorithm],
   algorithms: Map[DSLResource, String],
   override  val effective: DSLTimeFrame
-) extends DSLTimeBoundedItem[DSLAlgorithm](name, overrides, effective)
+) extends DSLTimeBoundedItem[DSLAlgorithm](name, overrides, effective) {
+
+}
 
 object DSLAlgorithm {
   val emptyAlgorithm = DSLAlgorithm("", None, Map(), DSLTimeFrame.emptyTimeFrame)

@@ -55,13 +55,13 @@ case class DSLTimeFrame (
 
   override def toMap(): Map[String, Any] = {
     val data = new scala.collection.mutable.HashMap[String, Any]()
-    data += ("from" -> from.getTime)
+    data += (Vocabulary.from -> from.getTime)
     to match {
-      case Some(x) => data += ("to" -> x.getTime)
+      case Some(x) => data += (Vocabulary.to -> x.getTime)
       case _ =>
     }
 
-    data += ("repeat" -> repeat.map{r => r.toMap})
+    data += (Vocabulary.repeat -> repeat.map{r => r.toMap})
 
     data.toMap
   }

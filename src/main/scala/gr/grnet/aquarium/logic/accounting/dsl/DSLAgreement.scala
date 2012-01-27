@@ -51,3 +51,8 @@ case class DSLAgreement (
   pricelist : DSLPriceList,
   creditplan: DSLCreditPlan
 ) extends DSLItem
+
+object DSLAgreement {
+  val emptyAgreement = DSLAgreement("", None, DSLAlgorithm.emptyAlgorithm,
+    DSLPriceList.emptyPriceList, DSLCreditPlan.emptyCreditPlan)
+}
