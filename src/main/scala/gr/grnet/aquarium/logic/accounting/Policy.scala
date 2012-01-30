@@ -37,10 +37,10 @@ package gr.grnet.aquarium.logic.accounting
 
 import dsl.{Timeslot, DSLPolicy, DSL}
 import gr.grnet.aquarium.Configurator._
-import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.util.Loggable
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
+import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -50,12 +50,9 @@ import java.util.Date
 object Policy extends DSL with Loggable {
   
   private var policies = {
-    //1. Load policies from db
+
     Map[Timeslot, DSLPolicy]()
 
-    //2. Check whether policy file has been updated
-
-    //3. Reload policy
   }
   
   lazy val policy = {
@@ -99,6 +96,13 @@ object Policy extends DSL with Loggable {
     }
   }
 
+  /**
+   * Return the active policy for the provided userId at the provided timestamp
+   */
+  def policy(userId: String, timestamp: Date): Maybe[DSLPolicy] = {
+    NoVal
+  }
+  
   def policies(from: Date, to: Date): List[DSLPolicy] = {
     policies.filter {
       a => a._1.from.before(from) &&
@@ -108,11 +112,7 @@ object Policy extends DSL with Loggable {
   
   def policies(t: Timeslot): List[DSLPolicy] = policies(t.from, t.to)
 
-  def reloadFile() = synchronized {
-
-  }
-
-  private def loadPolicy(): DSLPolicy = {
+  def reloadPolicyFile(): DSLPolicy = synchronized {
     // Look for user configured policy first
     val userConf = MasterConfigurator.props.get(Keys.aquarium_policy) match {
       case Just(x) => x
@@ -137,7 +137,19 @@ object Policy extends DSL with Loggable {
             null
         }
     }
-
     parse(stream)
+  }
+
+  private def loadPolicies(): Map[Timeslot, DSLPolicy] = {
+    //1. Load policies from db
+    val store = MasterConfigurator.policyEventStore
+
+
+
+    //2. Check whether policy file has been updated
+
+    //3. Reload policy
+
+    Map[Timeslot, DSLPolicy]()
   }
 }

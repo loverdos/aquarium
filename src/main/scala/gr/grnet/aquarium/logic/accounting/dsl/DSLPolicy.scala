@@ -47,9 +47,7 @@ case class DSLPolicy (
   pricelists: List[DSLPriceList],
   resources: List[DSLResource],
   creditplans: List[DSLCreditPlan],
-  agreements: List[DSLAgreement],
-  version: Int = 1,
-  valid: Timeslot = Timeslot(new Date(0), new Date(1))
+  agreements: List[DSLAgreement]
 ) extends DSLItem {
 
   /**Find a resource by name */
