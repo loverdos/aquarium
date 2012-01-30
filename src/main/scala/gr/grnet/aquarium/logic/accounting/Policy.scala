@@ -85,7 +85,7 @@ object Policy extends DSL with Loggable {
     parse(stream)
   }
 
-  def policy(at: Date): DSLPolicy = {
+  def policy(at: Date): Maybe[DSLPolicy] = Maybe {
     policies.find {
       a => a._1.from.before(at) &&
            a._1.to.after(at)

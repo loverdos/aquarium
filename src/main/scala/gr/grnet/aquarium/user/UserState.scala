@@ -91,7 +91,7 @@ case class UserState(
 
     active: ActiveSuspendedSnapshot,
     credits: CreditSnapshot,
-    agreement: AgreementSnapshot,
+    agreements: AgreementSnapshot,
     roles: RolesSnapshot,
     paymentOrders: PaymentOrdersSnapshot,
     ownedGroups: OwnedGroupsSnapshot,
@@ -102,7 +102,7 @@ case class UserState(
   private[this] def _allSnapshots: List[Long] = {
     List(
       active.snapshotTime,
-      credits.snapshotTime, agreement.snapshotTime, roles.snapshotTime,
+      credits.snapshotTime, agreements.snapshotTime, roles.snapshotTime,
       paymentOrders.snapshotTime, ownedGroups.snapshotTime, groupMemberships.snapshotTime,
       ownedResources.snapshotTime)
   }
@@ -111,13 +111,10 @@ case class UserState(
 
   def newestSnapshotTime: Long  = _allSnapshots max
 
-  def maybeDSLAgreement: Maybe[DSLAgreement] = {
-    agreement match {
+  def maybeDSLAgreement(at: Long): Maybe[DSLAgreement] = {
+    agreements match {
       case snapshot @ AgreementSnapshot(data, _) ⇒
-        Policy.policy.findAgreement(data) match {
-          case Some(agreement) ⇒ Just(agreement)
-          case None ⇒ Failed(new Exception("No agreement with name <%s> found".format(data)))
-        }
+        snapshot.getAgreement(at)
       case _ ⇒
        Failed(new Exception("No agreement snapshot found for user %s".format(userId)))
     }

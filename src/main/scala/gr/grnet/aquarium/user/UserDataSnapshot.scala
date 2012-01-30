@@ -38,6 +38,9 @@ package user
 
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.Policy
+import java.util.Date
+import logic.accounting.dsl.DSLAgreement
+import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
 
 /**
  * Snapshot of data that are user-related.
@@ -49,8 +52,6 @@ sealed trait UserDataSnapshot[T] extends DataSnapshot[T]
 
 case class CreditSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
 
-case class AgreementSnapshot(data: String, snapshotTime: Long) extends UserDataSnapshot[String]
-
 case class RolesSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
 // TODO: Check if needed
@@ -61,6 +62,54 @@ case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends U
 
 // TODO: Check if needed
 case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
+
+/**
+ * Represents an agreement valid for a specific amount of time. By convention,
+ * if an agreement is currently valid, then the validTo field is equal to -1.
+ */
+case class Agreement(agreement: String, validFrom: Long, validTo: Long) {
+  if (validTo != -1) assert(validTo > validFrom)
+  assert(!agreement.isEmpty)
+
+  Policy.policy(new Date(validFrom)) match {
+    case Just(x) => x.findAgreement(agreement) match {
+      case None => assert(false)
+      case _ =>
+    }
+    case _ => assert(false)
+  }
+}
+
+/**
+ * All user agreements. The provided list of agreements cannot have time gaps. This
+ * is checked at object creation type.
+ */
+case class AgreementSnapshot(data: List[Agreement], snapshotTime: Long)
+  extends UserDataSnapshot[List[Agreement]] {
+
+  ensureNoGaps(data.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
+
+  def ensureNoGaps(agreements: List[Agreement]): Unit = agreements match {
+    case h :: t => assert(h.validTo - t.head.validFrom == 1); ensureNoGaps(t)
+    case h :: Nil => assert(h.validTo == -1)
+  }
+
+  /**
+   * Get the user agreement at the specified timestamp
+   */
+  def getAgreement(at: Long): Maybe[DSLAgreement] =
+    data.find{ x => x.validFrom < at && x.validTo > at} match {
+      case Some(x) => Policy.policy(new Date(at)) match {
+        case Just(y) =>  y.findAgreement(x.agreement) match {
+          case Some(z) => Just(z)
+          case None => NoVal
+        }
+        case NoVal => NoVal
+        case failed @ Failed(x, y) => failed
+      }
+      case None => NoVal
+    }
+}
 
 /**
  * Maintains the current state of a resource instance owned by the user.
