@@ -37,10 +37,10 @@ package gr.grnet.aquarium.logic.accounting
 
 import dsl.{Timeslot, DSLPolicy, DSL}
 import gr.grnet.aquarium.Configurator._
-import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.util.Loggable
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
+import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -96,6 +96,13 @@ object Policy extends DSL with Loggable {
     }
   }
 
+  /**
+   * Return the active policy for the provided userId at the provided timestamp
+   */
+  def policy(userId: String, timestamp: Date): Maybe[DSLPolicy] = {
+    NoVal
+  }
+  
   def policies(from: Date, to: Date): List[DSLPolicy] = {
     policies.filter {
       a => a._1.from.before(from) &&
