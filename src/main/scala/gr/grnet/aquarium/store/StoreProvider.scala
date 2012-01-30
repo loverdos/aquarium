@@ -45,4 +45,5 @@ trait StoreProvider {
   def resourceEventStore: ResourceEventStore
   def walletEntryStore: WalletEntryStore
   def userEventStore: UserEventStore
+  def policyStore: PolicyStore
 }

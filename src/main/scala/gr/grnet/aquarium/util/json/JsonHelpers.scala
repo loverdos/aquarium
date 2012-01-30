@@ -39,6 +39,7 @@ import net.liftweb.json.ext.JodaTimeSerializers
 import gr.grnet.aquarium.logic.events.AquariumEvent
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json._
+import gr.grnet.aquarium.logic.accounting.dsl._
 
 /**
  * Provides conversion methods from and to JSON.

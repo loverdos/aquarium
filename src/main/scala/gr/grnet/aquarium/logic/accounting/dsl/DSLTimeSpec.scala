@@ -59,11 +59,11 @@ case class DSLTimeSpec(
   dom: Int,
   mon: Int,
   dow: Int
-){
+) extends DSLItem {
   //Preconditions to force correct values on object creation
   assert(0 <= min && 60 > min)
   assert(0 <= hour && 24 > hour)
-  assert(-1 <= dom && 31 > dom && dom != 0, "")
+  assert(-1 <= dom && 31 > dom && dom != 0)
   assert(-1 <= mon && 12 > mon && mon != 0)
   assert(-1 <= dow && 7 > dow)
 
@@ -94,4 +94,8 @@ case class DSLTimeSpec(
     case 11 => Calendar.NOVEMBER
     case 12 => Calendar.DECEMBER
   }
+}
+
+object DSLTimeSpec {
+  val emtpyTimeSpec = DSLTimeSpec(0, 0, 0, 0, 0)
 }

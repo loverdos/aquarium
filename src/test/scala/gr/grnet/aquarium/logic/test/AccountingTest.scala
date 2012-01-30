@@ -90,7 +90,7 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
     //Complex resource event without details, should fail
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", "1", 1, Map())
-    assertFailed[AccountingException, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List()))
+    assertFailed[Exception, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List()))
 
     //Complex, onoff resource
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", "1", 1, Map("vmid" -> "3"))
@@ -102,7 +102,7 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
     //Complex, onoff resource, with wrong states, should fail
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", "1", 1, Map("vmid" -> "3"))
-    assertFailed[AccountingException, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List()))
+    assertFailed[Exception, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List()))
 
     //Simple, discrete resource
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bookpages", "1", "1", 120, Map())

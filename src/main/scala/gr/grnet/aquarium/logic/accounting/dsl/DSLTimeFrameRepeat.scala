@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import gr.grnet.aquarium.util.yaml.YAMLHelpers
+
 /**
  * 
  *
@@ -42,8 +44,10 @@ package gr.grnet.aquarium.logic.accounting.dsl
  */
 case class DSLTimeFrameRepeat (
   start: List[DSLTimeSpec],
-  end: List[DSLTimeSpec]
-) {
+  end: List[DSLTimeSpec],
+  startCron: String,
+  endCron: String
+) extends DSLItem {
   assert(start.size == end.size)
 
   //Ensure that fields that have repeating entries, do so in both patterns
@@ -58,4 +62,17 @@ case class DSLTimeFrameRepeat (
       assert((x._1.dow == -1 && x._2.dow == -1) ||
         (x._1.dow != -1 && x._2.dow != -1))
   }
+
+  override def toMap(): Map[String, Any] = {
+    val data = new scala.collection.mutable.HashMap[String, Any]()
+    
+    data += (Vocabulary.start -> startCron)
+    data += (Vocabulary.end -> endCron)
+
+    data.toMap
+  }
+}
+
+object DSLTimeFrameRepeat {
+  val emptyTimeFramRepeat = DSLTimeFrameRepeat(List(), List(), "", "")
 }

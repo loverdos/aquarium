@@ -49,10 +49,16 @@ sealed abstract class DSLResource (
 
   /** Algorithm used to calculate costs */
   val costPolicy: DSLCostPolicy
-) {
+) extends DSLItem {
   def isComplex: Boolean
-  
+
   def findInstanceId(details: Map[String, String]): Option[String]
+
+  override def toMap(): Map[String, Any] =
+    Map(Vocabulary.name -> name) ++
+    Map(Vocabulary.unit -> unit) ++
+    Map(Vocabulary.costpolicy -> costPolicy.name) ++
+    Map(Vocabulary.complex -> isComplex)
 }
 
 /**
@@ -72,10 +78,14 @@ case class DSLComplexResource (
   /**Name of field used to describe a unique instance of the resource*/
   descriminatorField: String
 ) extends DSLResource(name, unit, costPolicy) {
-  def isComplex = true
+  override def isComplex = true
+
+  override def toMap(): Map[String, Any] =
+    super.toMap ++ Map(Vocabulary.descriminatorfield -> descriminatorField)
 
   def findInstanceId(details: Map[String, String]) =
     details.get(descriminatorField)
+
 }
 
 /**

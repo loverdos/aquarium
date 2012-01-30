@@ -36,15 +36,24 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 /**
- * A credit plan specifies a periodic transfer of credits to the creditor's
+ * A credit plan specifies a periodic transfer of credits to an
  * account.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class DSLCreditPlan (
-  name: String,
+  override val name: String,
   override  val overrides: Option[DSLCreditPlan],
   credits: Double,
   at: List[DSLTimeSpec],
-  override  val effective: DSLTimeFrame
-) extends DSLTimeBoundedItem[DSLCreditPlan](overrides, effective)
+  atCron: String,
+  override val effective: DSLTimeFrame
+) extends DSLTimeBoundedItem[DSLCreditPlan](name, overrides, effective) {
+
+  override def toMap(): Map[String, Any] =
+    super.toMap ++ Map(Vocabulary.credits -> credits) ++ Map(Vocabulary.at -> atCron)
+}
+
+object DSLCreditPlan {
+  val emptyCreditPlan = DSLCreditPlan("", None, 0, List(), "", DSLTimeFrame.emptyTimeFrame)
+}

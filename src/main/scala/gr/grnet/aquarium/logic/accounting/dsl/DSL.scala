@@ -37,9 +37,9 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import scala.collection.JavaConversions._
 import com.kenai.crontabparser.impl.CronTabParserBridge
-import java.io.{InputStreamReader, InputStream}
 import gr.grnet.aquarium.util.yaml._
 import java.util.Date
+import java.io.{ByteArrayInputStream, InputStreamReader, InputStream}
 
 /**
  * A parser for the Aquarium accounting DSL.
@@ -48,28 +48,10 @@ import java.util.Date
  */
 trait DSL {
 
-  /**An empty time frame*/
-  val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
-
-  /**An empty resource*/
-  val emptyResource = DSLSimpleResource("", "", OnOffCostPolicy)
-
-  /**An empty algorithm */
-  val emptyAlgorithm = DSLAlgorithm("", None, Map(), emptyTimeFrame)
-
-  /**An empty pricelist */
-  val emptyPriceList = DSLPriceList("", None, Map(), emptyTimeFrame)
-
-  /**An empty creditplan */
-  val emptyCreditPlan = DSLCreditPlan("", None, 0,
-    List(DSLTimeSpec(0, 0, -1, -1, -1)), emptyTimeFrame)
-
-  /**An empty agreement*/
-  val emptyAgreement = DSLAgreement("", None, emptyAlgorithm, emptyPriceList, emptyCreditPlan)
-
   /**
-   * Parse an InputStream containing an Aquarium DSL algorithm.
+   * Parse an InputStream containing an Aquarium DSL.
    */
+  @throws(classOf[DSLParseException])
   def parse(input: InputStream) : DSLPolicy = {
 
     val document = YAMLHelpers.loadYAML(new InputStreamReader(input))
@@ -95,6 +77,12 @@ trait DSL {
 
     DSLPolicy(policies, pricelists, resources, creditplans, agreements)
   }
+
+  /**
+   * Parse an InputStream containing an Aquarium DSL.
+   */
+  @throws(classOf[DSLParseException])
+  def parse(yaml: String): DSLPolicy = parse(new ByteArrayInputStream(yaml.getBytes))
 
   /** Parse resource declarations */
   private def parseResources(resources: YAMLListNode): List[DSLResource] = {
@@ -157,7 +145,7 @@ trait DSL {
           case Some(x) => x
           case None => throw new DSLParseException("Cannot find super algorithm %s".format(superName))
         }
-      case YAMLEmptyNode => emptyAlgorithm
+      case YAMLEmptyNode => DSLAlgorithm.emptyAlgorithm
       case _ => throw new DSLParseException("Super algorithm name %s not a string".format())
     }
 
@@ -187,7 +175,7 @@ trait DSL {
         val algo = algorithm / r.name match {
           case x: YAMLStringNode => x.string
           case y: YAMLIntNode => y.int.toString
-          case YAMLEmptyNode => algoTmpl.equals(emptyAlgorithm) match {
+          case YAMLEmptyNode => algoTmpl.equals(DSLAlgorithm.emptyAlgorithm) match {
             case false => algoTmpl.algorithms.getOrElse(r,
               throw new DSLParseException(("Superalgo does not specify an algorithm for resource:%s").format(r.name)))
             case true => throw new DSLParseException(("Cannot find calculation algorithm for resource %s in either " +
@@ -199,7 +187,7 @@ trait DSL {
 
     val timeframe = algorithm / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
-      case YAMLEmptyNode => algoTmpl.equals(emptyAlgorithm) match {
+      case YAMLEmptyNode => algoTmpl.equals(DSLAlgorithm.emptyAlgorithm) match {
         case false => algoTmpl.effective
         case true => throw new DSLParseException(("Cannot find effectivity period for algorithm %s ").format(name))
       }
@@ -224,7 +212,7 @@ trait DSL {
           case Some(x) => x
           case None => throw new DSLParseException("Cannot find super pricelist %s".format(superName))
         }
-      case YAMLEmptyNode => emptyPriceList
+      case YAMLEmptyNode => DSLPriceList.emptyPriceList
       case _ => throw new DSLParseException("Super pricelist name %s not a string".format())
     }
 
@@ -257,7 +245,7 @@ trait DSL {
           case y: YAMLIntNode => y.int.toDouble
           case z: YAMLDoubleNode => z.double.toDouble
           case a: YAMLStringNode => a.string.toDouble
-          case YAMLEmptyNode => tmpl.equals(emptyAlgorithm) match {
+          case YAMLEmptyNode => tmpl.equals(DSLAlgorithm.emptyAlgorithm) match {
             case false => tmpl.prices.getOrElse(r,
               throw new DSLParseException(("Superpricelist does not specify a price for resource:%s").format(r.name)))
             case true => throw new DSLParseException(("Cannot find price for resource %s in either pricelist %s or " +
@@ -269,7 +257,7 @@ trait DSL {
 
     val timeframe = pl / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
-      case YAMLEmptyNode => tmpl.equals(emptyAlgorithm) match {
+      case YAMLEmptyNode => tmpl.equals(DSLAlgorithm.emptyAlgorithm) match {
         case false => tmpl.effective
         case true => throw new DSLParseException(("Cannot find effectivity period for pricelist %s").format(name))
       }
@@ -291,7 +279,7 @@ trait DSL {
           case Some(x) => x
           case None => throw new DSLParseException("Cannot find super credit plan %s".format(superName))
         }
-      case YAMLEmptyNode => emptyCreditPlan
+      case YAMLEmptyNode => DSLCreditPlan.emptyCreditPlan
       case _ => throw new DSLParseException("Super credit plan name %s not a string".format())
     }
 
@@ -320,6 +308,8 @@ trait DSL {
         "Credit plan does not define repetition specifier")
     }
 
+    val atCron = (plan / Vocabulary.at).asInstanceOf[YAMLStringNode]
+
     val credits = plan / Vocabulary.credits match {
       case x: YAMLIntNode => x.int.toDouble
       case y: YAMLDoubleNode => y.double.toDouble
@@ -329,14 +319,14 @@ trait DSL {
 
     val timeframe = plan / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
-      case YAMLEmptyNode => tmpl.equals(emptyCreditPlan) match {
+      case YAMLEmptyNode => tmpl.equals(DSLCreditPlan.emptyCreditPlan) match {
         case false => tmpl.effective
         case true => throw new DSLParseException(
           ("Cannot find effectivity period for creditplan %s").format(name))
       }
     }
 
-    DSLCreditPlan(name, overr, credits, at, timeframe)
+    DSLCreditPlan(name, overr, credits, at, atCron.string, timeframe)
   }
 
   /** Parse top level agreements */
@@ -358,7 +348,7 @@ trait DSL {
            case Some(x) => x
            case None => throw new DSLParseException("Cannot find super agreement %s".format(superName))
          }
-       case YAMLEmptyNode => emptyAgreement
+       case YAMLEmptyNode => DSLAgreement.emptyAgreement
        case _ => throw new DSLParseException("Super agreement name %s not a string".format(superName))
      }
 
@@ -386,13 +376,13 @@ trait DSL {
         case Some(y) => y
         case None => throw new DSLParseException(("Cannot find algorithm named %s").format(x))
       }
-      case y: YAMLMapNode => tmpl.equals(emptyAgreement) match {
+      case y: YAMLMapNode =>/* tmpl.equals(DSLAgreement.emptyAgreement) match {
         case true => throw new DSLParseException(("Incomplete algorithm definition for agreement %s").format(name))
-        case false =>
+        case false =>*/
           y.map += ("name" -> YAMLStringNode("/","%s-algorithm".format(name)))
           constructAlgorithm(y, tmpl.algorithm, resources)
-      }
-      case YAMLEmptyNode => tmpl.equals(emptyAgreement) match {
+      //}
+      case YAMLEmptyNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
         case true => throw new DSLParseException(("No algorithm for agreement %s").format(name))
         case false => tmpl.algorithm
       }
@@ -403,13 +393,10 @@ trait DSL {
         case Some(y) => y
         case None => throw new DSLParseException(("Cannot find pricelist named %s").format(x))
       }
-      case y: YAMLMapNode => tmpl.equals(emptyAgreement) match {
-        case true => throw new DSLParseException(("Incomplete pricelist definition for agreement %s").format(name))
-        case false =>
+      case y: YAMLMapNode =>
           y.map += ("name" -> YAMLStringNode("/","%s-pricelist".format(name)))
           constructPriceList(y, tmpl.pricelist, resources)
-      }
-      case YAMLEmptyNode => tmpl.equals(emptyAgreement) match {
+      case YAMLEmptyNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
         case true => throw new DSLParseException(("No algorithm for agreement %s").format(name))
         case false => tmpl.pricelist
       }
@@ -420,21 +407,18 @@ trait DSL {
         case Some(y) => y
         case None => throw new DSLParseException(("Cannot find crediplan named %s").format(x))
       }
-      case y: YAMLMapNode => tmpl.equals(emptyAgreement) match {
-        case true => throw new DSLParseException(("Incomplete creditplan definition for agreement %s").format(name))
-        case false =>
-          y.map += ("name" -> YAMLStringNode("/","%s-pricelist".format(name)))
+      case y: YAMLMapNode =>
+          y.map += ("name" -> YAMLStringNode("/","%s-creditplan".format(name)))
           constructCreditPlan(y, tmpl.creditplan)
-      }
-      case YAMLEmptyNode => tmpl.equals(emptyAgreement) match {
+      case YAMLEmptyNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
         case true => throw new DSLParseException(("No creditplan for agreement %s").format(name))
         case false => tmpl.creditplan
       }
     }
 
-    val overrides = tmpl.equals(emptyAgreement) match {
-      case true => Some(tmpl)
-      case false => None
+    val overrides = tmpl.equals(DSLAgreement.emptyAgreement) match {
+      case false => Some(tmpl)
+      case true => None
     }
 
     DSLAgreement(name, overrides, algorithm, pricelist, creditplan)
@@ -466,19 +450,19 @@ trait DSL {
     if (tmr.isEmpty)
       return List()
 
-    List(DSLTimeFrameRepeat(
-      findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.start),
-      findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.end)
-    )) ++ parseTimeFrameRepeat(tmr.tail)
-  }
-
-  /** Parse a resource frame entry (start, end tags) */
-  private def findInMap(repeat: YAMLMapNode,
-                        tag: String) : List[DSLTimeSpec] = {
-    repeat / tag match {
-      case x: YAMLStringNode => parseCronString(x.string)
-      case YAMLEmptyNode => throw new DSLParseException("No %s field for repeat entry %s".format(tag, repeat))
+    /** Parse a resource frame entry (start, end tags) */
+    def findInMap(repeat: YAMLMapNode,
+                  tag: String) : (String, List[DSLTimeSpec]) = {
+      repeat / tag match {
+        case x: YAMLStringNode => (x.string, parseCronString(x.string))
+        case YAMLEmptyNode => throw new DSLParseException("No %s field for repeat entry %s".format(tag, repeat))
+      }
     }
+
+    val start = findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.start)
+    val end = findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.end)
+
+    DSLTimeFrameRepeat(start._2, end._2, start._1,end._1) :: parseTimeFrameRepeat(tmr.tail)
   }
 
   /** 

@@ -37,7 +37,6 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
 
-
 /**
  * A cost policy indicates how charging for a resource will be done
  * wrt the various states a resource can be.
@@ -45,7 +44,9 @@ import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
  * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-abstract class DSLCostPolicy(val name: String) {
+
+abstract class DSLCostPolicy(val name: String) extends DSLItem {
+
   def isOnOff: Boolean = isNamed(DSLCostPolicyNames.onoff)
 
   def isContinuous: Boolean = isNamed(DSLCostPolicyNames.continuous)

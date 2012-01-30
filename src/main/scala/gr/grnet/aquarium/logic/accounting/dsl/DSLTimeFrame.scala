@@ -46,10 +46,31 @@ case class DSLTimeFrame (
   from: Date,
   to: Option[Date],
   repeat: List[DSLTimeFrameRepeat]
-) {
+) extends DSLItem {
 
   to match {
     case Some(x) => assert(x.after(from))
     case None =>
   }
+
+  override def toMap(): Map[String, Any] = {
+    val toTS = to match {
+      case Some(x) => Map(Vocabulary.to -> x.getTime)
+      case _ => Map()
+    }
+
+    val repeatMap = if (repeat.size > 0) {
+      Map(Vocabulary.repeat -> repeat.map{r => r.toMap})
+    } else{
+      Map()
+    }
+
+    toTS ++
+    Map(Vocabulary.from -> from.getTime) ++
+    repeatMap
+  }
+}
+
+object DSLTimeFrame{
+  val emptyTimeFrame = DSLTimeFrame(new Date(0), None, List())
 }

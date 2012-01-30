@@ -117,7 +117,17 @@ class DSLTest extends DSLTestBase with TestMethods {
   }
 
   @Test
-  def testSerialization = {
+  def testToYAML: Unit = {
     before
+
+    assertNotThrows(this.dsl.findAlgorithm("freedisk").get.toYAML)
+    assertNotThrows(this.dsl.findPriceList("everyTue2").get.toYAML)
+    assertNotThrows(this.dsl.findCreditPlan("every10days").get.toYAML)
+
+    val parsed = parse(this.dsl.toYAML)
+    assertEquals(this.dsl.findAlgorithm("freedisk").get, parsed.findAlgorithm("freedisk").get)
+    assertEquals(this.dsl.findPriceList("everyTue2").get, parsed.findPriceList("everyTue2").get)
+    assertEquals(this.dsl.findCreditPlan("every10days").get, parsed.findCreditPlan("every10days").get)
+    //assertEquals(this.dsl.findAgreement("scaledbandwidth").get, parsed.findAgreement("scaledbandwidth").get)
   }
 }

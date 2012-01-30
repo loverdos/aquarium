@@ -35,18 +35,22 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import java.util.Date
+
 /**
  * Root object for the Aquarium policy configuration tree.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class DSLPolicy(
+case class DSLPolicy (
   algorithms: List[DSLAlgorithm],
   pricelists: List[DSLPriceList],
   resources: List[DSLResource],
   creditplans: List[DSLCreditPlan],
-  agreements: List[DSLAgreement]
-) {
+  agreements: List[DSLAgreement],
+  version: Int = 1,
+  valid: Timeslot = Timeslot(new Date(0), new Date(1))
+) extends DSLItem {
 
   /**Find a resource by name */
   def findResource(name: String): Option[DSLResource] = {
@@ -71,5 +75,21 @@ case class DSLPolicy(
   /**Find an agreement by name */
   def findAgreement(name: String): Option[DSLAgreement] = {
     agreements.find(a => a.name.equals(name))
+  }
+
+  override def toMap() = {
+    val policy = Map(Vocabulary.resources   -> resources.map{r => r.toMap})   ++
+    Map(Vocabulary.algorithms  -> algorithms.map{a => a.toMap})  ++
+    Map(Vocabulary.pricelists  -> pricelists.map{p => p.toMap})  ++
+    Map(Vocabulary.creditplans -> creditplans.map{c => c.toMap}) ++
+    Map(Vocabulary.agreements  -> agreements.map{a => a.toMap})
+    Map(Vocabulary.aquariumpolicy -> policy)
+  }
+}
+
+object DSLPolicy {
+  object JsonNames {
+    val valid = "valid"
+    val _id = "_id"
   }
 }
