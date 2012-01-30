@@ -40,7 +40,7 @@ import gr.grnet.aquarium.Configurator._
 import gr.grnet.aquarium.util.Loggable
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
-import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
+import com.ckkloverdos.maybe.{Maybe, Just}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -49,41 +49,9 @@ import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
  */
 object Policy extends DSL with Loggable {
   
-  private var policies = {
-
-    Map[Timeslot, DSLPolicy]()
-
-  }
+  private var policies = {reloadPolicies}
   
-  lazy val policy = {
-
-    // Look for user configured policy first
-    val userConf = MasterConfigurator.props.get(Keys.aquarium_policy) match {
-      case Just(x) => x
-      case _ => logger.info("Cannot find a user configured policy")
-        "policy.yaml"
-    }
-
-    val pol = new File(userConf)
-    val stream = pol.exists() match {
-      case true =>
-        logger.info("Using policy file %s".format(userConf))
-        new FileInputStream(pol)
-      case false =>
-        logger.warn(("Cannot find policy file %s, " +
-          "looking for default policy").format(userConf))
-        getClass.getClassLoader.getResourceAsStream("policy.yaml") match {
-          case x: InputStream =>
-            logger.warn("Using default policy, this is problably bad")
-            x
-          case null =>
-            logger.error("No valid policy file found, Aquarium will fail")
-            null
-        }
-    }
-
-    parse(stream)
-  }
+  lazy val policy = loadPolicyFromFile(policyFile)
 
   def policy(at: Date): Maybe[DSLPolicy] = Maybe {
     policies.find {
@@ -96,13 +64,6 @@ object Policy extends DSL with Loggable {
     }
   }
 
-  /**
-   * Return the active policy for the provided userId at the provided timestamp
-   */
-  def policy(userId: String, timestamp: Date): Maybe[DSLPolicy] = {
-    NoVal
-  }
-  
   def policies(from: Date, to: Date): List[DSLPolicy] = {
     policies.filter {
       a => a._1.from.before(from) &&
@@ -112,25 +73,18 @@ object Policy extends DSL with Loggable {
   
   def policies(t: Timeslot): List[DSLPolicy] = policies(t.from, t.to)
 
-  def reloadPolicyFile(): DSLPolicy = synchronized {
-    // Look for user configured policy first
-    val userConf = MasterConfigurator.props.get(Keys.aquarium_policy) match {
-      case Just(x) => x
-      case _ => logger.info("Cannot find a user configured policy")
-      "policy.yaml"
-    }
+  def loadPolicyFromFile(pol: File): DSLPolicy = {
 
-    val pol = new File(userConf)
     val stream = pol.exists() match {
       case true =>
-        logger.info("Using policy file %s".format(userConf))
+        logger.info("Using policy file %s".format(pol.getAbsolutePath))
         new FileInputStream(pol)
       case false =>
-        logger.warn(("Cannot find policy file %s, " +
-          "looking for default policy").format(userConf))
+        logger.warn(("Cannot find user configured policy file %s, " +
+          "looking for default policy").format(pol.getAbsolutePath))
         getClass.getClassLoader.getResourceAsStream("policy.yaml") match {
           case x: InputStream =>
-            logger.warn("Using default policy, this is problably bad")
+            logger.warn("Using default policy, this is problably not what you want")
             x
           case null =>
             logger.error("No valid policy file found, Aquarium will fail")
@@ -140,16 +94,38 @@ object Policy extends DSL with Loggable {
     parse(stream)
   }
 
-  private def loadPolicies(): Map[Timeslot, DSLPolicy] = {
+  private def policyFile: File =
+    MasterConfigurator.props.get(Keys.aquarium_policy) match {
+      case Just(x) => new File(x)
+      case _ => new File("/etc/aquarium/policy.yaml")
+    }
+
+  private def reloadPolicies(): Map[Timeslot, DSLPolicy] = synchronized {
     //1. Load policies from db
-    val store = MasterConfigurator.policyEventStore
-
-
+    val policies = MasterConfigurator.policyEventStore.loadPolicies(0)
 
     //2. Check whether policy file has been updated
+    val latestPolicyChange = policies.last.validFrom
+    val policyf = policyFile
+    var updated = false
 
-    //3. Reload policy
+    if (policyf.exists) {
+      if (policyf.lastModified > latestPolicyChange) {
+        updated = true
+      } else {
+        logger.info("Policy not changed since last check")
+      }
+    } else {
+      logger.warn("User specified policy file %s does not exist, " +
+        "using stored policy information".format(policyf.getAbsolutePath))
+    }
 
-    Map[Timeslot, DSLPolicy]()
+    if (updated) {
+      //read from db etc
+    }
+
+    policies.foldLeft(Map[Timeslot, DSLPolicy]())(
+      (acc, p) =>
+        acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML)))
   }
 }
