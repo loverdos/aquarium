@@ -29,7 +29,7 @@ class UserActorTest {
       OwnedResourcesSnapshot(ResourceInstanceSnapshot("foo", "1", 0.1F, 1) :: Nil, now)
     )
 
-    val json = state.toJson
-    println(json)
+    //val json = state.toJson
+    //println(json)
   }
 }
