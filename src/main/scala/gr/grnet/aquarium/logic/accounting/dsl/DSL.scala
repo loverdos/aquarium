@@ -376,12 +376,12 @@ trait DSL {
         case Some(y) => y
         case None => throw new DSLParseException(("Cannot find algorithm named %s").format(x))
       }
-      case y: YAMLMapNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
+      case y: YAMLMapNode =>/* tmpl.equals(DSLAgreement.emptyAgreement) match {
         case true => throw new DSLParseException(("Incomplete algorithm definition for agreement %s").format(name))
-        case false =>
+        case false =>*/
           y.map += ("name" -> YAMLStringNode("/","%s-algorithm".format(name)))
           constructAlgorithm(y, tmpl.algorithm, resources)
-      }
+      //}
       case YAMLEmptyNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
         case true => throw new DSLParseException(("No algorithm for agreement %s").format(name))
         case false => tmpl.algorithm
@@ -393,12 +393,9 @@ trait DSL {
         case Some(y) => y
         case None => throw new DSLParseException(("Cannot find pricelist named %s").format(x))
       }
-      case y: YAMLMapNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
-        case true => throw new DSLParseException(("Incomplete pricelist definition for agreement %s").format(name))
-        case false =>
+      case y: YAMLMapNode =>
           y.map += ("name" -> YAMLStringNode("/","%s-pricelist".format(name)))
           constructPriceList(y, tmpl.pricelist, resources)
-      }
       case YAMLEmptyNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
         case true => throw new DSLParseException(("No algorithm for agreement %s").format(name))
         case false => tmpl.pricelist
@@ -410,12 +407,9 @@ trait DSL {
         case Some(y) => y
         case None => throw new DSLParseException(("Cannot find crediplan named %s").format(x))
       }
-      case y: YAMLMapNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
-        case true => throw new DSLParseException(("Incomplete creditplan definition for agreement %s").format(name))
-        case false =>
-          y.map += ("name" -> YAMLStringNode("/","%s-pricelist".format(name)))
+      case y: YAMLMapNode =>
+          y.map += ("name" -> YAMLStringNode("/","%s-creditplan".format(name)))
           constructCreditPlan(y, tmpl.creditplan)
-      }
       case YAMLEmptyNode => tmpl.equals(DSLAgreement.emptyAgreement) match {
         case true => throw new DSLParseException(("No creditplan for agreement %s").format(name))
         case false => tmpl.creditplan
@@ -423,8 +417,8 @@ trait DSL {
     }
 
     val overrides = tmpl.equals(DSLAgreement.emptyAgreement) match {
-      case true => Some(tmpl)
-      case false => None
+      case false => Some(tmpl)
+      case true => None
     }
 
     DSLAgreement(name, overrides, algorithm, pricelist, creditplan)

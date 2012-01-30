@@ -39,7 +39,6 @@ import org.junit.Assert._
 import org.junit.{Test}
 import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.util.TestMethods
-import java.util.Date
 
 class DSLTest extends DSLTestBase with TestMethods {
 
@@ -119,13 +118,16 @@ class DSLTest extends DSLTestBase with TestMethods {
 
   @Test
   def testToYAML: Unit = {
-    val repeat1 = DSLTimeFrameRepeat(parseCronString("00 12 * * *"), parseCronString("00 14 * * *"),
-      "00 12 * * *", "00 14 * * *")
-    val repeat2 = DSLTimeFrameRepeat(parseCronString("00 13 * * *"), parseCronString("00 15 * * *"),
-      "00 13 * * *", "00 15 * * *")
-    val frame = DSLTimeFrame(new Date(0), Some(new Date(12345)), List(repeat1, repeat2))
+    before
 
-    frame.toYAML
+    assertNotThrows(this.dsl.findAlgorithm("freedisk").get.toYAML)
+    assertNotThrows(this.dsl.findPriceList("everyTue2").get.toYAML)
+    assertNotThrows(this.dsl.findCreditPlan("every10days").get.toYAML)
 
+    val parsed = parse(this.dsl.toYAML)
+    assertEquals(this.dsl.findAlgorithm("freedisk").get, parsed.findAlgorithm("freedisk").get)
+    assertEquals(this.dsl.findPriceList("everyTue2").get, parsed.findPriceList("everyTue2").get)
+    assertEquals(this.dsl.findCreditPlan("every10days").get, parsed.findCreditPlan("every10days").get)
+    //assertEquals(this.dsl.findAgreement("scaledbandwidth").get, parsed.findAgreement("scaledbandwidth").get)
   }
 }

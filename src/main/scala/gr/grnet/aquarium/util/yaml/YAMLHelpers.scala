@@ -55,6 +55,7 @@ object YAMLHelpers extends CollectionUtils {
 
   def dumpYAML(yamlMap: Map[String, Any]): String = {
     val yaml = new Yaml()
-    yaml.dump(mapToJavaMap(yamlMap))
+    val jmap = mapToJavaMap(yamlMap)
+    yaml.dump(jmap)
   }
 }

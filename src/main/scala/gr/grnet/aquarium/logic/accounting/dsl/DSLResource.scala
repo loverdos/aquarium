@@ -54,8 +54,9 @@ sealed abstract class DSLResource (
   
   override def toMap(): Map[String, Any] =
     Map(Vocabulary.name -> name) ++
-      Map(Vocabulary.unit -> unit) ++
-        Map(Vocabulary.costpolicy -> costpolicy.name)
+    Map(Vocabulary.unit -> unit) ++
+    Map(Vocabulary.costpolicy -> costpolicy.name) ++
+    Map(Vocabulary.complex -> isComplex)
 }
 
 /**

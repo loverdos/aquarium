@@ -60,9 +60,9 @@ case class DSLAgreement (
 
     parent                                        ++
     Map(Vocabulary.name -> name)                  ++
-    Map(Vocabulary.algorithm  -> algorithm.name)  ++
-    Map(Vocabulary.pricelist  -> pricelist.name)  ++
-    Map(Vocabulary.creditplan -> creditplan.name)
+    Map(Vocabulary.algorithm  -> algorithm.toMap)  ++
+    Map(Vocabulary.pricelist  -> pricelist.toMap)  ++
+    Map(Vocabulary.creditplan -> creditplan.toMap)
   }
 }
 

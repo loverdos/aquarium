@@ -77,12 +77,14 @@ case class DSLPolicy (
     agreements.find(a => a.name.equals(name))
   }
 
-  override def toMap() =
-    Map(Vocabulary.algorithms  -> algorithms.map{a => a.toYAML})  ++
-    Map(Vocabulary.pricelists  -> pricelists.map{p => p.toYAML})  ++
-    Map(Vocabulary.resources   -> resources.map{r => r.toYAML})   ++
-    Map(Vocabulary.creditplans -> creditplans.map{c => c.toYAML}) ++
-    Map(Vocabulary.agreements  -> agreements.map{a => a.toYAML})
+  override def toMap() = {
+    val policy = Map(Vocabulary.resources   -> resources.map{r => r.toMap})   ++
+    Map(Vocabulary.algorithms  -> algorithms.map{a => a.toMap})  ++
+    Map(Vocabulary.pricelists  -> pricelists.map{p => p.toMap})  ++
+    Map(Vocabulary.creditplans -> creditplans.map{c => c.toMap}) ++
+    Map(Vocabulary.agreements  -> agreements.map{a => a.toMap})
+    Map(Vocabulary.aquariumpolicy -> policy)
+  }
 }
 
 object DSLPolicy {
