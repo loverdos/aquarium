@@ -38,6 +38,7 @@ package user
 
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.Policy
+import com.ckkloverdos.maybe.{Maybe, Just}
 
 /**
  * Snapshot of data that are user-related.
@@ -125,26 +126,30 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   def addOrUpdateResourceSnapshot(name: String,
                                   instanceId: String,
                                   newEventValue: Double,
-                                  snapshotTime: Long): (OwnedResourcesSnapshot, Option[ResourceInstanceSnapshot], ResourceInstanceSnapshot) = {
+                                  snapshotTime: Long): (Maybe[OwnedResourcesSnapshot], Option[ResourceInstanceSnapshot], ResourceInstanceSnapshot) = {
 
     val newRCInstance = ResourceInstanceSnapshot(name, instanceId, newEventValue, snapshotTime)
     val oldRCInstanceOpt = this.findResourceSnapshot(name, instanceId)
-    val newData = oldRCInstanceOpt match {
+    val newDataM = oldRCInstanceOpt match {
       case Some(oldRCInstance) ⇒
         // Need to delete the old one and add the new one
         // FIXME: Get rid of this Policy.policy
         val costPolicy = Policy.policy.findResource(name).get.costPolicy
-        val newValue = costPolicy.computeNewResourceInstanceValue(oldRCInstance.value, newRCInstance.value/* =newEventValue */)
+        val newValueM = costPolicy.computeNewResourceInstanceValue(Just(oldRCInstance.value), newRCInstance.value/* =newEventValue */)
+        newValueM.map { newValue ⇒
+          newRCInstance.copy(data = newValue) :: (data.filterNot(_.isSameResource(name, instanceId)))
+        }
 
-        newRCInstance.copy(data = newValue) :: (data.filterNot(_.isSameResource(name, instanceId)))
       case None ⇒
         // Resource not found, so this is the first time and we just add the new snapshot
-        newRCInstance :: data
+        Just(newRCInstance :: data)
     }
 
-    val newOwnedResources = this.copy(data = newData, snapshotTime = snapshotTime)
+    val newOwnedResourcesM = newDataM.map { newData ⇒
+      this.copy(data = newData, snapshotTime = snapshotTime)
+    }
 
-    (newOwnedResources, oldRCInstanceOpt, newRCInstance)
+    (newOwnedResourcesM, oldRCInstanceOpt, newRCInstance)
   }
 }
 

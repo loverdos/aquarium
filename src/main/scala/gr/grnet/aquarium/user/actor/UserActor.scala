@@ -38,7 +38,6 @@ package gr.grnet.aquarium.user.actor
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.processor.actor._
-import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
 import gr.grnet.aquarium.user._
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
@@ -46,6 +45,7 @@ import java.util.Date
 import gr.grnet.aquarium.util.{DateUtils, Loggable}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResource, DSLComplexResource}
 import gr.grnet.aquarium.util.date.TimeHelpers
+import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
 
 
 /**
@@ -153,7 +153,7 @@ class UserActor extends AquariumActor
     val eventsDB = _configurator.storeProvider.resourceEventStore
     val resourceEvents = eventsDB.findResourceEventsByUserIdAfterTimestamp(_userId, from)
     val numResourceEvents = resourceEvents.size
-    _userState = replayResourceEvents(_userState, resourceEvents, from, to)
+//    _userState = replayResourceEvents(_userState, resourceEvents, from, to)
 
     //Rebuild state from wallet entries
     val wallet = _configurator.storeProvider.walletEntryStore
@@ -198,31 +198,6 @@ class UserActor extends AquariumActor
     initState.copy(active = act, roles = rol)
   }
 
-  /**
-   * Replay resource events on the provided user state
-   */
-  def replayResourceEvents(initState: UserState, events: List[ResourceEvent],
-                           from: Long, to: Long): UserState = {
-    var res = initState.ownedResources
-    events
-      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
-      .foreach {
-        e =>
-          val name = Policy.policy.findResource(e.resource) match {
-            case Some(x) => x.name
-            case None => ""
-          }
-
-          val instanceId = e.instanceId
-          res = res.addOrUpdateResourceSnapshot(name,
-            instanceId, e.value, e.occurredMillis)._1
-    }
-    if (!events.isEmpty) {
-      val snapTime = events.map{e => e.occurredMillis}.max
-      res = res.copy(snapshotTime = snapTime)
-    }
-    initState.copy(ownedResources = res)
-  }
 
   /**
    * Replay wallet entries on the provided user state
@@ -242,77 +217,6 @@ class UserActor extends AquariumActor
       cred = cred.copy(snapshotTime = snapTime)
     }
     initState.copy(credits = cred)
-  }
-
-  /**
-   * Update wallet entries for all unprocessed events
-   */
-  def calcWalletEntries(): Unit = {
-    ensureUserState
-
-    if (_userState.ownedResources.snapshotTime < _userState.credits.snapshotTime) return
-    val eventsDB = _configurator.storeProvider.resourceEventStore
-    val resourceEvents = eventsDB.findResourceEventsByUserIdAfterTimestamp(_userId, _userState.credits.snapshotTime)
-    val policy = Policy.policy
-
-    val walletEntries = resourceEvents.map {
-      ev =>
-        // TODO: Check that agreement exists
-        val agreement = policy.findAgreement(_userState.agreement.data).get
-
-        val resource = policy.findResource(ev.resource) match {
-          case Some(x) => x
-          case None =>
-            val errMsg = "Cannot find resource: %s".format(ev.resource)
-            ERROR(errMsg)
-            throw new AccountingException(errMsg) // FIXME: to throw or not to throw?
-        }
-
-        // get resource instance id *only* for complex resource
-        // otherwise we could have used `resource.findInstanceId(ev.details)`
-        val instid = resource.isComplex match {
-          case true => ev.details.get(resource.asInstanceOf[DSLComplexResource].descriminatorField)
-          case false => None
-        }
-
-        var currentValue: Double = 0.0
-        var currentSnapshotTime = _userState.ownedResources.findResourceSnapshot(ev.resource, ev.instanceId) match {
-          case Some(x) => x.snapshotTime
-          case None => Long.MaxValue //To trigger recalculation
-        }
-
-        if (currentSnapshotTime > ev.occurredMillis) {
-          //Event is older that current state. Rebuild state up to event timestamp
-          val resHistory =
-            ResourceEvent("", 0, 0, _userId, "1", ev.resource, ev.instanceId, ev.eventVersion, 0, ev.details) ::
-            eventsDB.findResourceEventHistory(_userId, ev.resource, instid, ev.occurredMillis)
-          INFO("%d older entries for resource %s, user %s up to %d".format(resHistory.size, ev.resource, _userId, ev.occurredMillis));
-          var res = OwnedResourcesSnapshot(List(), 0)
-          resHistory.foreach {
-            e =>
-              // update resources state
-              res = res.addOrUpdateResourceSnapshot(e.resource, e.instanceId, e.value, e.occurredMillis)._1
-          }
-          currentSnapshotTime = res.findResourceSnapshot(ev.resource, ev.instanceId).get.snapshotTime
-          currentValue = res.findResourceSnapshot(ev.resource, ev.instanceId).get.data
-        } else {
-          currentValue = _userState.ownedResources.findResourceSnapshot(ev.resource, ev.instanceId).get.data
-        }
-
-        val entries = chargeEvent(ev, agreement, currentValue, new Date(currentSnapshotTime),
-          findRelatedEntries(resource, ev.instanceId))
-        INFO("PERF: CHARGE %s %d".format(ev.id, System.currentTimeMillis))
-        entries match {
-          case Just(x) => x
-          case Failed(e, r) => List()
-          case NoVal => List()
-        }
-    }.flatten
-
-    val walletDB = _configurator.storeProvider.walletEntryStore
-    walletEntries.foreach(w => walletDB.storeWalletEntry(w))
-
-    ensureUserState
   }
 
   /**
@@ -343,7 +247,7 @@ class UserActor extends AquariumActor
         ERROR("Received %s but my userId = %s".format(m, this._userId))
       } else {
         //ensureUserState()
-        calcWalletEntries()
+//        calcWalletEntries()
         //processResourceEvent(resourceEvent, true)
       }
 
@@ -357,7 +261,9 @@ class UserActor extends AquariumActor
 
     case m @ RequestUserBalance(userId, timestamp) ⇒
       if (System.currentTimeMillis() - _userState.newestSnapshotTime > 60 * 1000)
-        calcWalletEntries()
+      {
+//        calcWalletEntries()
+      }
       self reply UserResponseGetBalance(userId, _userState.credits.data)
 
     case m @ UserRequestGetState(userId, timestamp) ⇒

@@ -49,7 +49,7 @@ import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
  */
 trait Accounting extends DSLUtils with Loggable {
 
-  def chargeEvent( oldResourceEvent: ResourceEvent,
+  def chargeEvent2( oldResourceEventM: Maybe[ResourceEvent],
                    newResourceEvent: ResourceEvent,
                    dslAgreement: DSLAgreement,
                    lastSnapshotDate: Date,
@@ -64,7 +64,7 @@ trait Accounting extends DSLUtils with Loggable {
 
           val costPolicy = dslResource.costPolicy
           val isDiscrete = costPolicy.isDiscrete
-          val oldValue = oldResourceEvent.value
+          val oldValueM = oldResourceEventM.map(_.value)
           val newValue = newResourceEvent.value
 
           /* This is a safeguard against the special case where the last
@@ -76,7 +76,7 @@ trait Accounting extends DSLUtils with Loggable {
           if (lastSnapshotDate.getTime == resourceEvent.occurredMillis && !isDiscrete) {
             Just(List())
           } else {
-            val creditCalculationValueM = dslResource.costPolicy.getCreditCalculationValue(oldValue, newValue).forNoVal(Just(0.0))
+            val creditCalculationValueM = dslResource.costPolicy.getCreditCalculationValue(oldValueM, newValue).forNoVal(Just(0.0))
             for {
               amount <- creditCalculationValueM
             } yield {
@@ -84,7 +84,7 @@ trait Accounting extends DSLUtils with Loggable {
               // above, since this point won't be reached in case of error.
               val isFinal = dslResource.costPolicy match {
                 case OnOffCostPolicy =>
-                  OnOffPolicyResourceState(oldValue) match {
+                  OnOffPolicyResourceState(oldValueM) match {
                     case OnResourceState => false
                     case OffResourceState => true
                   }
@@ -164,7 +164,7 @@ trait Accounting extends DSLUtils with Loggable {
       }
     }
 
-    val creditCalculationValueM = dslResource.costPolicy.getCreditCalculationValue(currentValue, resourceEvent.value)
+    val creditCalculationValueM = dslResource.costPolicy.getCreditCalculationValue(Just(currentValue), resourceEvent.value)
     val amount = creditCalculationValueM match {
       case failed @ Failed(_, _) ⇒
         return failed
