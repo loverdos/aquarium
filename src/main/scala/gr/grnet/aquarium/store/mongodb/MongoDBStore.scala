@@ -48,10 +48,10 @@ import gr.grnet.aquarium.logic.events.UserEvent.{JsonNames => UserEventJsonNames
 import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
 import java.util.Date
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent, AquariumEvent}
 import gr.grnet.aquarium.logic.accounting.Policy
-import com.mongodb._
 import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLPolicy, DSLComplexResource}
+import gr.grnet.aquarium.logic.events._
+import com.mongodb._
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -306,31 +306,13 @@ class MongoDBStore(
   //-UserEventStore
 
   //+PolicyStore
-  def loadPolicies(): List[DSLPolicy] = {
-    //val query = new BasicDBObject()
-    List()
+  def loadPolicies(after: Long): List[PolicyEntry] = {
+    val query = new BasicDBObject(PolicyEntry.JsonNames.validFrom,
+      new BasicDBObject("$gt", after))
+    MongoDBStore.runQuery(query, policies)(MongoDBStore.dbObjectToPolicyEvent)(Some(_sortByTimestampAsc))
   }
 
-  def storePolicy(policy: DSLPolicy): Maybe[RecordID] = Maybe {
-
-    //val dbObj = policy.toYAML
-    //val writeResult = policies.insert(dbObj)
-    //writeResult.getLastError.throwOnError
-
-    val query = new BasicDBObject()
-    query.put(DSLPolicy.JsonNames.valid, policy.valid)
-
-    val cursor = policies.find(query)
-
-    try {
-      if(cursor.hasNext)
-        RecordID(cursor.next().get(DSLPolicy.JsonNames._id).toString)
-      else
-        throw new StoreException("Could not store %s to %s".format(policy, policies))
-    } finally {
-      cursor.close()
-    }
-  }
+  def storePolicy(policy: PolicyEntry): Maybe[RecordID] = MongoDBStore.storeAquariumEvent(policy, policies)
   //-PolicyStore
 }
 
@@ -389,6 +371,10 @@ object MongoDBStore {
 
   def dbObjectToUserEvent(dbObj: DBObject): UserEvent = {
     UserEvent.fromJson(JSON.serialize(dbObj))
+  }
+
+  def dbObjectToPolicyEvent(dbObj: DBObject): PolicyEntry = {
+    PolicyEntry.fromJson(JSON.serialize(dbObj))
   }
 
   def findById[A >: Null <: AquariumEvent](id: String, collection: DBCollection, deserializer: (DBObject) => A) : Maybe[A] = Maybe {

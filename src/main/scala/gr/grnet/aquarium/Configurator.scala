@@ -132,10 +132,20 @@ class Configurator(val props: Props) extends Loggable {
     // If there is a specific `IMStore` implementation specified in the
     // properties, then this implementation overrides the event store given by
     // `IMProvider`.
-    props.get(Keys.wallet_entry_store_class) map { className ⇒
-      val instance = newInstance[WalletEntryStore](className)
-      logger.info("Overriding WalletEntryStore provisioning. Implementation given by: %s".format(instance.getClass))
-      instance
+    props.get(Keys.wallet_entry_store_class) map {
+      className ⇒
+        val instance = newInstance[WalletEntryStore](className)
+        logger.info("Overriding WalletEntryStore provisioning. Implementation given by: %s".format(instance.getClass))
+        instance
+    }
+  }
+
+  private[this] lazy val _policyStoreM: Maybe[PolicyStore] = {
+    props.get(Keys.policy_store_class) map {
+      className ⇒
+        val instance = newInstance[PolicyStore](className)
+        logger.info("Overriding PolicyStore provisioning. Implementation given by: %s".format(instance.getClass))
+        instance
     }
   }
 
@@ -195,6 +205,13 @@ class Configurator(val props: Props) extends Loggable {
     _userEventStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.userEventStore
+    }
+  }
+
+  def policyEventStore = {
+    _policyStoreM match {
+      case Just(es) ⇒ es
+      case _        ⇒ storeProvider.policyStore
     }
   }
 
@@ -332,6 +349,12 @@ object Configurator {
      * The class that implements the wallet entries store
      */
     final val wallet_entry_store_class = "wallet.entry.store.class"
+
+    /**
+     * The class that implements the wallet entries store
+     */
+    final val policy_store_class = "policy.store.class"
+
 
     /** The lower mark for the UserActors' LRU, managed by UserActorManager.
      *
