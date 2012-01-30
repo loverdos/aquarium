@@ -78,14 +78,15 @@ abstract class DSLCostPolicy(val name: String) extends DSLItem {
   def needsDiffValueForCreditCalculation: Boolean = !needsAbsValueForCreditCalculation
 
   /**
-   * Given the old value and a value from a resource event, compute the new one.
+   * Given the old amount of a resource instance (see [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]) and the
+   * value arriving in a new resource event, compute the new instance amount.
    */
-  def computeNewResourceInstanceValue(oldValueM: Maybe[Double], newEventValue: Double): Maybe[Double]
+  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
 
   /**
    * Get the value that will be used in credit calculation in Accounting.chargeEvents
    */
-  def getCreditCalculationValue(oldValueM: Maybe[Double], newEventValue: Double): Maybe[Double]
+  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
 
   /**
    * An event's value by itself should carry enough info to characterize it billable or not.
@@ -134,8 +135,8 @@ case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.contin
 
   override def resourceEventValueIsDiff = true
 
-  def computeNewResourceInstanceValue(oldValueM: Maybe[Double], newEventValue: Double) = {
-    oldValueM match {
+  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
+    oldAmountM match {
       case Just(oldValue) ⇒
         Just(oldValue + newEventValue)
       case NoVal ⇒
@@ -145,8 +146,8 @@ case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.contin
     }
   }
 
-  def getCreditCalculationValue(oldValueM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
-    oldValueM
+  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
+    oldAmountM
   }
 }
 
@@ -167,11 +168,11 @@ case object OnOffCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.onoff) {
 
   override def resourceEventValueIsAbs = true
 
-  def computeNewResourceInstanceValue(oldValueM: Maybe[Double], newEventValue: Double) = {
+  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
     Just(newEventValue)
   }
   
-  def getCreditCalculationValue(oldValueM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
+  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
     import OnOffCostPolicyValues.{ON, OFF}
 
     def exception(rs: OnOffPolicyResourceState) =
@@ -179,7 +180,7 @@ case object OnOffCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.onoff) {
     def failed(rs: OnOffPolicyResourceState) =
       Failed(exception(rs))
     
-    oldValueM match {
+    oldAmountM match {
       case Just(oldValue) ⇒
         (oldValue, newEventValue) match {
           case (ON, ON) ⇒
@@ -228,11 +229,11 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
 
   override def resourceEventValueIsDiff = true
 
-  def computeNewResourceInstanceValue(oldValueM: Maybe[Double], newEventValue: Double) = {
+  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
     Just(newEventValue)
   }
   
-  def getCreditCalculationValue(oldValueM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
+  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
     Just(newEventValue)
   }
 }

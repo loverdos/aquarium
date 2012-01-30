@@ -76,7 +76,7 @@ trait Accounting extends DSLUtils with Loggable {
           if (lastSnapshotDate.getTime == resourceEvent.occurredMillis && !isDiscrete) {
             Just(List())
           } else {
-            val creditCalculationValueM = dslResource.costPolicy.getCreditCalculationValue(oldValueM, newValue).forNoVal(Just(0.0))
+            val creditCalculationValueM = dslResource.costPolicy.getValueForCreditCalculation(oldValueM, newValue).forNoVal(Just(0.0))
             for {
               amount <- creditCalculationValueM
             } yield {
@@ -164,7 +164,7 @@ trait Accounting extends DSLUtils with Loggable {
       }
     }
 
-    val creditCalculationValueM = dslResource.costPolicy.getCreditCalculationValue(Just(currentValue), resourceEvent.value)
+    val creditCalculationValueM = dslResource.costPolicy.getValueForCreditCalculation(Just(currentValue), resourceEvent.value)
     val amount = creditCalculationValueM match {
       case failed @ Failed(_, _) ⇒
         return failed

@@ -38,11 +38,11 @@ package gr.grnet.aquarium.user
 import scala.collection.mutable
 
 import gr.grnet.aquarium.store.ResourceEventStore
-import gr.grnet.aquarium.util.date.DateCalculator
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLCostPolicy, DSLPolicy, DSLAgreement}
+import gr.grnet.aquarium.util.date.{TimeHelpers, DateCalculator}
 
 sealed abstract class CalculationType(_name: String) {
   def name = _name
@@ -129,6 +129,39 @@ class UserStateComputations {
     }
   }
 
+  /**
+   * Find the previous resource event, if needed by the event's cost policy,
+   * in order to use it for any credit calculations.
+   */
+  def findPreviousRCEventOf(previousRCEventsMap: mutable.Map[ResourceEvent.FullResourceType, ResourceEvent],
+                            rcEvent: ResourceEvent,
+                            costPolicy: DSLCostPolicy): Maybe[ResourceEvent] = {
+
+    if(costPolicy.needsPreviousEventForCreditCalculation) {
+      // Get a previous resource only if this is needed by the policy
+      previousRCEventsMap.get(rcEvent.fullResourceInfo) match {
+        case Some(previousRCEvent) ⇒
+          Just(previousRCEvent)
+        case None ⇒
+          queryForPreviousRCEvent(rcEvent)
+      }
+    } else {
+      // No need for previous event. Will return NoVal
+      NoVal
+    }
+  }
+
+  /**
+   * FIXME: implement
+   */
+  def queryForPreviousRCEvent(rcEvent: ResourceEvent): Maybe[ResourceEvent] = {
+    NoVal
+  }
+
+  def updatePreviousRCEventWith(previousRCEventsMap: mutable.Map[ResourceEvent.FullResourceType, ResourceEvent],
+                                newRCEvent: ResourceEvent): Unit = {
+    previousRCEventsMap(newRCEvent.fullResourceInfo) = newRCEvent
+  }
 
   /**
    * Do a full month billing.
@@ -213,7 +246,7 @@ class UserStateComputations {
     // implied in order to do billing calculations (e.g. the "off" vmtime resource event)
     var workingUserState = newStartUserState
 
-    for(newResourceEvent <- allBillingPeriodRelevantRCEvents) {
+    for(newRCEvent <- allBillingPeriodRelevantRCEvents) {
       // We need to do these kinds of calculations:
       // 1. Credit state calculations
       // 2. Resource state calculations
@@ -234,45 +267,43 @@ class UserStateComputations {
       // We need:
       // A. The previous event
 
-      /**
-       * FIXME: implement
-       */
-      def queryForPreviousRCEvent(rcEvent: ResourceEvent): Maybe[ResourceEvent] = {
-        NoVal
+
+      // The DSLCostPolicy for the resource does not change, so it is safe to use the default DSLPolicy to obtain it.
+      val costPolicyM = newRCEvent.findCostPolicy(defaultPolicy)
+      costPolicyM match {
+        case Just(costPolicy) ⇒
+          val previousRCEventM = findPreviousRCEventOf(previousRCEventsMap, newRCEvent, costPolicy)
+          val previousRCEventValueM = previousRCEventM.map(_.value)
+          val previousRCInstanceAmount = workingUserState.ownedResources.
+
+          // 1. Update resource state
+          val newRCInstanceAmountM = costPolicy.computeNewResourceInstanceAmount(previousRCEventValueM, newRCEvent.value)
+          newRCInstanceAmountM match {
+            case Just(newRCInstanceAmount) ⇒
+              workingUserState.ownedResources.addOrUpdateResourceSnapshot(
+                newRCEvent.resource,
+                newRCEvent.instanceId,
+                newRCInstanceAmount,
+                TimeHelpers.nowMillis)
+            case NoVal ⇒
+              () // ERROR
+            case failed @ Failed(_, _) ⇒
+              () // ERROR
+          }
+
+          // 2. Update credit state
+
+          // 3. Calc wallet entries
+
+        case NoVal ⇒
+          () // ERROR
+        case failed @ Failed(_, _) ⇒
+          () // ERROR
       }
 
-      def findPreviousRCEventOf(rcEvent: ResourceEvent): Maybe[ResourceEvent] = {
-        rcEvent.findCostPolicy(defaultPolicy) match {
-          case Just(costPolicy) ⇒
-            if(costPolicy.needsPreviousEventForCreditCalculation) {
-              // Get a previous resource only if this is needed by the policy
-              previousRCEventsMap.get(rcEvent.fullResourceInfo) match {
-                case Some(previousRCEvent) ⇒
-                  Just(previousRCEvent)
-                case None ⇒
-                  queryForPreviousRCEvent(rcEvent)
-              }
-            } else {
-              // No need for previous event. Will return NoVal
-              NoVal
-            }
 
-          case NoVal ⇒
-            NoVal
-          case failed@ Failed(_, _) ⇒
-            failed
-        }
-        
-      }
-
-      def updatePreviousRCEventWith(rcEventM: Maybe[ResourceEvent]): Unit = {
-        for(rcEvent <- rcEventM) {
-          previousRCEventsMap(rcEvent.fullResourceInfo) = rcEvent
-        }
-      }
-      
-      val oldResourceEventM = findPreviousRCEventOf(newResourceEvent)
-    }
+      updatePreviousRCEventWith(previousRCEventsMap, newRCEvent)
+    } // for(newResourceEvent <- allBillingPeriodRelevantRCEvents)
 
 
     null

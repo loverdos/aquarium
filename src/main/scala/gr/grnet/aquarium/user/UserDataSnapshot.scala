@@ -86,7 +86,15 @@ case class ResourceInstanceSnapshot(
     snapshotTime: Long)
   extends UserDataSnapshot[Double] {
 
-  def value = data
+  /**
+   * This is the amount kept for the resource instance.
+   *
+   * The general rule is that an amount saved in a [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]  represents a
+   * total value, while a value appearing in a [[gr.grnet.aquarium.logic.events.ResourceEvent]] represents a
+   * difference. How these two values are combined to form the new amount is dictated by the underlying
+   * [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
+   */
+  def instanceAmount = data
   
   def isSameResource(name: String, instanceId: String) = {
     this.name == name &&
@@ -114,7 +122,7 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   extends UserDataSnapshot[List[ResourceInstanceSnapshot]] with JsonSupport {
 
   def toResourcesMap: OwnedResourcesMap = {
-    val tuples = for(rc <- data) yield ((rc.name, rc.instanceId), (rc.value, rc.snapshotTime))
+    val tuples = for(rc <- data) yield ((rc.name, rc.instanceId), (rc.instanceAmount, rc.snapshotTime))
 
     new OwnedResourcesMap(Map(tuples.toSeq: _*))
   }
@@ -122,35 +130,27 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   def findResourceSnapshot(name: String, instanceId: String): Option[ResourceInstanceSnapshot] =
     data.find { x => name == x.name && instanceId == x.instanceId }
 
-  
-  def addOrUpdateResourceSnapshot(name: String,
-                                  instanceId: String,
-                                  newEventValue: Double,
-                                  snapshotTime: Long): (Maybe[OwnedResourcesSnapshot], Option[ResourceInstanceSnapshot], ResourceInstanceSnapshot) = {
+  def addOrUpdateResourceSnapshot(name: String,       // resource name
+                                  instanceId: String, // resource instance id
+                                  newRCInstanceAmount: Double,
+                                  snapshotTime: Long): (OwnedResourcesSnapshot, Option[ResourceInstanceSnapshot], ResourceInstanceSnapshot) = {
 
-    val newRCInstance = ResourceInstanceSnapshot(name, instanceId, newEventValue, snapshotTime)
+    val newRCInstance = ResourceInstanceSnapshot(name, instanceId, newRCInstanceAmount, snapshotTime)
     val oldRCInstanceOpt = this.findResourceSnapshot(name, instanceId)
-    val newDataM = oldRCInstanceOpt match {
-      case Some(oldRCInstance) ⇒
-        // Need to delete the old one and add the new one
-        // FIXME: Get rid of this Policy.policy
-        val costPolicy = Policy.policy.findResource(name).get.costPolicy
-        val newValueM = costPolicy.computeNewResourceInstanceValue(Just(oldRCInstance.value), newRCInstance.value/* =newEventValue */)
-        newValueM.map { newValue ⇒
-          newRCInstance.copy(data = newValue) :: (data.filterNot(_.isSameResource(name, instanceId)))
-        }
 
+    val newData = oldRCInstanceOpt match {
+      case Some(oldRCInstance) ⇒
+        // Resource instance found, so delete the old one and add the new one
+        newRCInstance :: (data.filterNot(_.isSameResource(name, instanceId)))
       case None ⇒
         // Resource not found, so this is the first time and we just add the new snapshot
-        Just(newRCInstance :: data)
+        newRCInstance :: data
     }
 
-    val newOwnedResourcesM = newDataM.map { newData ⇒
-      this.copy(data = newData, snapshotTime = snapshotTime)
-    }
+    val newOwnedResources = this.copy(data = newData, snapshotTime = snapshotTime)
 
-    (newOwnedResourcesM, oldRCInstanceOpt, newRCInstance)
-  }
+    (newOwnedResources, oldRCInstanceOpt, newRCInstance)
+ }
 }
 
 
