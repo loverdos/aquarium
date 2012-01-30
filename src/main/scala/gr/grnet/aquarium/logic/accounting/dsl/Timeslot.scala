@@ -182,5 +182,5 @@ case class Timeslot(from: Date, to: Date)
   /**
    * Converts the timeslot to the amount of hours it represents
    */
-  def hours: Float = ((to.getTime - from.getTime)/1000)/60F/60F
+  def hours: Double = (to.getTime - from.getTime).toDouble / 1000.0 / 60.0 / 60.0
 }

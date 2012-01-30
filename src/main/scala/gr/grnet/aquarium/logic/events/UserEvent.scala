@@ -64,7 +64,7 @@ case class  UserEvent(
     true
   }
 
-  def setRcvMillis(millis: Long) = copy(receivedMillis = millis)
+  def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
   def isCreateUser = eventType == 1
 
@@ -84,5 +84,10 @@ object UserEvent {
 
   def fromBytes(bytes: Array[Byte]): UserEvent = {
     JsonHelpers.jsonBytesToObject[UserEvent](bytes)
+  }
+
+  object JsonNames {
+    final val _id = "_id"
+    final val userId = "userId"
   }
 }

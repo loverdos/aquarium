@@ -130,7 +130,7 @@ trait RandomEventGenerator extends AkkaAMQP {
       ts, ts,
       rnd.nextInt(userIds.max).toString,
       rnd.nextInt(clientIds.max).toString,
-      res, 1.toString, value, extra)
+      res, "1", 1.toString, value, extra)
   }
 
   def genRndAsciiString(size: Int): String = {

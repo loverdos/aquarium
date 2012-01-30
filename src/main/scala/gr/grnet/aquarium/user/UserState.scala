@@ -57,6 +57,38 @@ import gr.grnet.aquarium.logic.accounting.Policy
 
 case class UserState(
     userId: String,
+
+    /**
+     * When the user was created in the system (not Aquarium). We use this as a basis for billing periods. Set to
+     * zero if unknown.
+     */
+    startDateMillis: Long,
+
+    /**
+     * Each time the user state is updated, this must be increased.
+     * The counter is used when accessing user state from the cache (user state store)
+     * in order to get the latest value for a particular billing period.
+     */
+    stateChangeCounter: Long,
+
+    /**
+     * True iff this user state refers to a full billing period, that is a full billing month.
+     */
+    isFullBillingPeriod: Boolean,
+
+    /**
+     * The full billing period for which this user state refers to.
+     * This is set when the user state refers to a full billing period (= month)
+     * and is used to cache the user state for subsequent queries.
+     */
+    fullBillingPeriod: BillingPeriod,
+
+    /**
+     * Counts the number of resource events used to produce this user state for
+     * the billing period recorded by `billingPeriodSnapshot`
+     */
+    resourceEventsCounter: Long,
+
     active: ActiveSuspendedSnapshot,
     credits: CreditSnapshot,
     agreement: AgreementSnapshot,
@@ -90,6 +122,8 @@ case class UserState(
        Failed(new Exception("No agreement snapshot found for user %s".format(userId)))
     }
   }
+
+  def resourcesMap = ownedResources.toResourcesMap
   
   def safeCredits = credits match {
     case c @ CreditSnapshot(date, millis) ⇒ c
@@ -114,4 +148,11 @@ object UserState {
   def fromXml(xml: String): UserState = {
     fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
   }
+
+  object JsonNames {
+    final val _id = "_id"
+    final val userId = "userId"
+  }
 }
+
+case class BillingPeriod(startMillis: Long, stopMillis: Long)

@@ -242,9 +242,9 @@ trait DSL {
     val prices = resources.map {
       r =>
         val price = pl / r.name match {
-          case y: YAMLIntNode => y.int.toFloat
-          case z: YAMLDoubleNode => z.double.toFloat
-          case a: YAMLStringNode => a.string.toFloat
+          case y: YAMLIntNode => y.int.toDouble
+          case z: YAMLDoubleNode => z.double.toDouble
+          case a: YAMLStringNode => a.string.toDouble
           case YAMLEmptyNode => tmpl.equals(DSLAlgorithm.emptyAlgorithm) match {
             case false => tmpl.prices.getOrElse(r,
               throw new DSLParseException(("Superpricelist does not specify a price for resource:%s").format(r.name)))
@@ -253,7 +253,7 @@ trait DSL {
           }
         }
         Map(r -> price)
-    }.foldLeft(Map[DSLResource, Float]())((x, y) => x ++ y)
+    }.foldLeft(Map[DSLResource, Double]())((x, y) => x ++ y)
 
     val timeframe = pl / Vocabulary.effective match {
       case x: YAMLMapNode => parseTimeFrame(x)
@@ -311,8 +311,8 @@ trait DSL {
     val atCron = (plan / Vocabulary.at).asInstanceOf[YAMLStringNode]
 
     val credits = plan / Vocabulary.credits match {
-      case x: YAMLIntNode => x.int.toFloat
-      case y: YAMLDoubleNode => y.double.toFloat
+      case x: YAMLIntNode => x.int.toDouble
+      case y: YAMLDoubleNode => y.double.toDouble
       case YAMLEmptyNode => throw new DSLParseException(
         "Credit plan does not have a name")
     }

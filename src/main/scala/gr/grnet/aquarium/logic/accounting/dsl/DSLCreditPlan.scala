@@ -43,8 +43,8 @@ package gr.grnet.aquarium.logic.accounting.dsl
  */
 case class DSLCreditPlan (
   override val name: String,
-  override val overrides: Option[DSLCreditPlan],
-  credits: Float,
+  override  val overrides: Option[DSLCreditPlan],
+  credits: Double,
   at: List[DSLTimeSpec],
   atCron: String,
   override val effective: DSLTimeFrame

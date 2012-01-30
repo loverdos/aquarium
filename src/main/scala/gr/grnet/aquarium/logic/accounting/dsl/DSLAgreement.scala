@@ -35,8 +35,6 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import gr.grnet.aquarium.util.json.JsonSupport
-
 /**
  * An agreement associates algorithms with priceslists within and
  * effectivity period.
@@ -69,4 +67,6 @@ case class DSLAgreement (
 object DSLAgreement {
   val emptyAgreement = DSLAgreement("", None, DSLAlgorithm.emptyAlgorithm,
     DSLPriceList.emptyPriceList, DSLCreditPlan.emptyCreditPlan)
+
+  final val DefaultAgreementName = "default"
 }

@@ -36,9 +36,8 @@
 package gr.grnet.aquarium
 package user
 
-import util.json.JsonSupport
-import logic.accounting.Policy
-import logic.accounting.dsl.{DiscreteCostPolicy, ContinuousCostPolicy, OnOffCostPolicy}
+import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.logic.accounting.Policy
 
 /**
  * Snapshot of data that are user-related.
@@ -82,18 +81,42 @@ case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) exte
 case class ResourceInstanceSnapshot(
     name: String,
     instanceId: String,
-    data: Float,
+    data: Double,
     snapshotTime: Long)
-  extends UserDataSnapshot[Float] {
+  extends UserDataSnapshot[Double] {
 
   def value = data
   
-  def isResource(name: String, instanceId: String) =
+  def isSameResource(name: String, instanceId: String) = {
     this.name == name &&
     this.instanceId == instanceId
+  }
 }
+
+/**
+ * A map from (resourceName, resourceInstanceId) to (value, snapshotTime).
+ * This representation is convenient for computations and updating, while the
+ * [[gr.grnet.aquarium.user.OwnedResourcesSnapshot]] representation is convenient for JSON serialization.
+ */
+class OwnedResourcesMap(map: Map[(String, String), (Double, Long)]) {
+  def toResourcesSnapshot(snapshotTime: Long): OwnedResourcesSnapshot =
+    OwnedResourcesSnapshot(
+      map map {
+        case ((name, instanceId), (value, snapshotTime)) ⇒
+          ResourceInstanceSnapshot(name, instanceId, value, snapshotTime
+      )} toList,
+      snapshotTime
+    )
+}
+
 case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshotTime: Long)
   extends UserDataSnapshot[List[ResourceInstanceSnapshot]] with JsonSupport {
+
+  def toResourcesMap: OwnedResourcesMap = {
+    val tuples = for(rc <- data) yield ((rc.name, rc.instanceId), (rc.value, rc.snapshotTime))
+
+    new OwnedResourcesMap(Map(tuples.toSeq: _*))
+  }
 
   def findResourceSnapshot(name: String, instanceId: String): Option[ResourceInstanceSnapshot] =
     data.find { x => name == x.name && instanceId == x.instanceId }
@@ -101,20 +124,19 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   
   def addOrUpdateResourceSnapshot(name: String,
                                   instanceId: String,
-                                  value: Float,
+                                  newEventValue: Double,
                                   snapshotTime: Long): (OwnedResourcesSnapshot, Option[ResourceInstanceSnapshot], ResourceInstanceSnapshot) = {
-    val oldRCInstanceOpt = this.findResourceSnapshot(name, instanceId)
-    val newRCInstance = ResourceInstanceSnapshot(name, instanceId, value, snapshotTime)
-    val newData = oldRCInstanceOpt match {
-      case Some(currentRCInstance) ⇒
-        // Need to delete the old one and add the new one
-        val newValue = Policy.policy.findResource(name).get.costpolicy match {
-          case OnOffCostPolicy => newRCInstance.data
-          case ContinuousCostPolicy => newRCInstance.data + currentRCInstance.data
-          case DiscreteCostPolicy => newRCInstance.data
-        }
 
-        newRCInstance.copy(data = newValue) :: (data.filterNot(_.isResource(name, instanceId)))
+    val newRCInstance = ResourceInstanceSnapshot(name, instanceId, newEventValue, snapshotTime)
+    val oldRCInstanceOpt = this.findResourceSnapshot(name, instanceId)
+    val newData = oldRCInstanceOpt match {
+      case Some(oldRCInstance) ⇒
+        // Need to delete the old one and add the new one
+        // FIXME: Get rid of this Policy.policy
+        val costPolicy = Policy.policy.findResource(name).get.costPolicy
+        val newValue = costPolicy.computeNewResourceInstanceValue(oldRCInstance.value, newRCInstance.value/* =newEventValue */)
+
+        newRCInstance.copy(data = newValue) :: (data.filterNot(_.isSameResource(name, instanceId)))
       case None ⇒
         // Resource not found, so this is the first time and we just add the new snapshot
         newRCInstance :: data
