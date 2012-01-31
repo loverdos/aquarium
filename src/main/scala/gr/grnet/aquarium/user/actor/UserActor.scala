@@ -258,7 +258,7 @@ class UserActor extends AquariumActor
     val walletEntries = resourceEvents.map {
       ev =>
         // TODO: Check that agreement exists
-        val agreement = policy.findAgreement(_userState.agreement.data).get
+        val agreement = policy.findAgreement(_userState.agreements.data.head.agreement).get
 
         val resource = policy.findResource(ev.resource) match {
           case Some(x) => x

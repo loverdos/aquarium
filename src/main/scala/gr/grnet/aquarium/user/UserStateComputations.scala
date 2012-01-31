@@ -91,7 +91,7 @@ class UserStateComputations {
       0L,
       ActiveSuspendedSnapshot(false, now),
       CreditSnapshot(0, now),
-      AgreementSnapshot(agreementName, now),
+      AgreementSnapshot(Agreement(agreementName, now, now) :: Nil, now),
       RolesSnapshot(List(), now),
       PaymentOrdersSnapshot(Nil, now),
       OwnedGroupsSnapshot(Nil, now),
@@ -113,20 +113,20 @@ class UserStateComputations {
     val billingDate = new DateCalculator(billingYear, billingMonth, 1)
     val billingDateMillis = billingDate.toMillis
 
-    if(billingDateMillis < knownUserState.startDateMillis) {
-      val userId = knownUserState.userId
-      val agreementName = knownUserState.agreement match {
-        case null      ⇒ "default"
-        case agreement ⇒ agreement.data
-      }
-      createFirstUserState(userId, agreementName)
-    } else {
+//    if(billingDateMillis < knownUserState.startDateMillis) {
+//      val userId = knownUserState.userId
+//      val agreementName = knownUserState.agreement match {
+//        case null      ⇒ "default"
+//        case agreement ⇒ agreement.data
+//      }
+//      createFirstUserState(userId, agreementName)
+//    } else {
       // We really need to compute the user state here
 
       // get all events that
       // FIXME: Implement
       knownUserState
-    }
+//    }
   }
 
 
