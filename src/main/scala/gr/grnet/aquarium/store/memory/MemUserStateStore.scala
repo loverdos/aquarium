@@ -62,7 +62,9 @@ class MemUserStateStore extends UserStateStore
 
   private[this] val userStateByUserId = new ConcurrentHashMap[String, Just[UserState]]()
   private val policyById: ConcurrentMap[String, PolicyEntry] = new ConcurrentHashMap[String, PolicyEntry]()
-  
+  private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
+
+
   def configure(props: Props) = {
   }
 
@@ -85,19 +87,47 @@ class MemUserStateStore extends UserStateStore
       userStateByUserId.remove(userId)
   }
 
-  def storeWalletEntry(entry: WalletEntry) = null
+  //- WalletEntryStore
+  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] = {
+    walletEntriesById.put(entry.id, entry)
+    Just(RecordID(entry.id))
+  }
 
-  def findWalletEntryById(id: String) = null
+  def findWalletEntryById(id: String): Maybe[WalletEntry] = {
+    Maybe(walletEntriesById.apply(id))
+  }
 
-  def findUserWalletEntries(userId: String) = null
+  def findUserWalletEntries(userId: String): List[WalletEntry] = {
+    walletEntriesById.valuesIterator.filter(_.userId == userId).toList
+  }
 
-  def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date) = null
+  def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date): List[WalletEntry] = {
+    walletEntriesById.valuesIterator.filter { we ⇒
+      val receivedDate = we.receivedDate
 
-  def findLatestUserWalletEntries(userId: String) = null
+      we.userId == userId &&
+      ( (from before receivedDate) || (from == receivedDate) ) &&
+      ( (to   after  receivedDate) || (to   == receivedDate) )
+      true
+    }.toList
+  }
 
-  def findPreviousEntry(userId: String, resource: String, instanceId: String, finalized: Option[Boolean]) = null
+  def findLatestUserWalletEntries(userId: String): Maybe[List[WalletEntry]] = NoVal
 
-  def findWalletEntriesAfter(userId: String, from: Date) = null
+  def findPreviousEntry(userId: String,
+                        resource: String,
+                        instanceId: String,
+                        finalized: Option[Boolean]): List[WalletEntry] = Nil
+
+  def findWalletEntriesAfter(userId: String, from: Date): List[WalletEntry] = {
+    walletEntriesById.valuesIterator.filter { we ⇒
+      val occurredDate = we.occurredDate
+      
+      we.userId == userId &&
+            ( (from before occurredDate) || (from == occurredDate) )
+    }.toList
+  }
+  //- WalletEntryStore
 
   def storeResourceEvent(event: ResourceEvent) = null
 

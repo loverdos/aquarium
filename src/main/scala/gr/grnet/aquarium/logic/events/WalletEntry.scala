@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.logic.events
 
 import gr.grnet.aquarium.util.json.JsonHelpers
+import java.util.Date
 
 /**
  * A WalletEntry is a derived entity. Its data represent money/credits and are calculated based on
@@ -70,6 +71,9 @@ case class WalletEntry(
   }
 
   def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+
+  def occurredDate = new Date(occurredMillis)
+  def receivedDate = new Date(receivedMillis)
 }
 
 object WalletEntry {
