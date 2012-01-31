@@ -216,6 +216,13 @@ class Configurator(val props: Props) extends Loggable {
   }
 
   def storeProvider = _storeProvider
+  
+  def withStoreProviderClass[C <: StoreProvider](spc: Class[C]): Configurator = {
+    val map = this.props.map
+    val newMap = map.updated(Keys.store_provider_class, spc.getName)
+    val newProps = new Props(newMap)
+    new Configurator(newProps)
+  }
 }
 
 object Configurator {
