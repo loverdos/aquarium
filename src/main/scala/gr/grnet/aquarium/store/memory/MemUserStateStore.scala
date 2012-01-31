@@ -45,6 +45,7 @@ import java.util.Date
 import collection.mutable.ConcurrentMap
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, PolicyEntry}
 import java.util.concurrent.ConcurrentHashMap
+import gr.grnet.aquarium.util.date.DateCalculator
 
 /**
  * An implementation of various stores that persists data in memory
@@ -62,6 +63,7 @@ class MemUserStateStore extends UserStateStore
   private val policyById: ConcurrentMap[String, PolicyEntry] = new ConcurrentHashMap[String, PolicyEntry]()
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
   private val userEventById: ConcurrentMap[String, UserEvent] = new ConcurrentHashMap[String, UserEvent]()
+  private[this] val resourceEventsById: ConcurrentMap[String, ResourceEvent] = new ConcurrentHashMap[String, ResourceEvent]()
 
   def configure(props: Props) = {
   }
@@ -120,26 +122,77 @@ class MemUserStateStore extends UserStateStore
   def findWalletEntriesAfter(userId: String, from: Date): List[WalletEntry] = {
     walletEntriesById.valuesIterator.filter { we ⇒
       val occurredDate = we.occurredDate
-      
+
       we.userId == userId &&
             ( (from before occurredDate) || (from == occurredDate) )
     }.toList
   }
   //- WalletEntryStore
 
-  def storeResourceEvent(event: ResourceEvent) = null
+  //+ ResourceEventStore
+  def storeResourceEvent(event: ResourceEvent) = {
+    resourceEventsById(event.id) = event
+    Just(RecordID(event.id))
+  }
 
-  def findResourceEventById(id: String) = null
+  def findResourceEventById(id: String) = {
+    Maybe(resourceEventsById(id))
+  }
 
-  def findResourceEventsByUserId(userId: String)(sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]) = null
+  def findResourceEventsByUserId(userId: String)
+                                (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
+    val byUserId = resourceEventsById.valuesIterator.filter(_.userId == userId).toArray
+    val sorted = sortWith match {
+      case Some(sorter) ⇒
+        byUserId.sortWith(sorter)
+      case None ⇒
+        byUserId
+    }
 
-  def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long) = null
+    sorted.toList
+  }
 
-  def findResourceEventHistory(userId: String, resName: String, instid: Option[String], upTo: Long) = null
+  def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
+    resourceEventsById.valuesIterator.filter { ev ⇒
+      ev.userId == userId &&
+      (ev.occurredMillis > timestamp)
+    }.toList
+  }
 
-  def findResourceEventsForReceivedPeriod(userId: String, startTimeMillis: Long, stopTimeMillis: Long) = null
+  def findResourceEventHistory(userId: String,
+                               resName: String,
+                               instid: Option[String],
+                               upTo: Long): List[ResourceEvent] = {
+    Nil
+  }
 
-  def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int) = null
+  def findResourceEventsForReceivedPeriod(userId: String,
+                                          startTimeMillis: Long,
+                                          stopTimeMillis: Long): List[ResourceEvent] = {
+    resourceEventsById.valuesIterator.filter { ev ⇒
+      ev.userId == userId &&
+      ev.receivedMillis >= startTimeMillis &&
+      ev.receivedMillis <= stopTimeMillis
+    }.toList
+  }
+
+  def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[Long] = Maybe {
+    val billingMonthDate = new DateCalculator(yearOfBillingMonth, billingMonth)
+    val billingDateStart = billingMonthDate
+    val billingDateEnd = billingDateStart.endOfThisMonth
+    resourceEventsById.valuesIterator.filter { case ev ⇒
+      // out of sync events are those that were received in the billing month but occurred in previous months
+      val receivedMillis = ev.receivedMillis
+      val occurredMillis = ev.occurredMillis
+
+      billingDateStart.afterEqMillis(receivedMillis) && // the events that...
+      billingDateEnd.beforeEqMillis (receivedMillis) && // ...were received withing the billing month
+      (                                                 //
+        billingDateStart.afterMillis(occurredMillis)    // but occurred before the billing period
+        )
+    }.size.toLong
+  }
+  //- ResourceEventStore
 
   def storeUserEvent(event: UserEvent) = {userEventById += (event.id -> event); Just(RecordID(event.id))}
 

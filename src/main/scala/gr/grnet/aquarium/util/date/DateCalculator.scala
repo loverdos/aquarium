@@ -20,6 +20,9 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
   def this(year: Int, monthOfYear: Int, dayOfMonth: Int) =
     this(new MutableDateTime(year, monthOfYear, dayOfMonth, 0, 0, 0, 0))
 
+  def this(year: Int, monthOfYear: Int) =
+    this(year, monthOfYear, 1)
+
   def nextMonths(n: Int): this.type = {
     dateTime.addMonths(n)
 
@@ -155,6 +158,22 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
 
   def toDate: Date = {
     dateTime.toDate
+  }
+  
+  def beforeMillis(millis: Long): Boolean = {
+    toMillis < millis
+  }
+
+  def afterMillis(millis: Long): Boolean = {
+    toMillis > millis
+  }
+
+  def beforeEqMillis(millis: Long): Boolean = {
+    toMillis <= millis
+  }
+
+  def afterEqMillis(millis: Long): Boolean = {
+    toMillis >= millis
   }
 
   override def toString = {
