@@ -38,8 +38,11 @@ package gr.grnet.aquarium.store.memory
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.Configurable
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.store.{RecordID, UserStateStore}
 import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
+import gr.grnet.aquarium.store._
+import java.util.Date
+import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, PolicyEntry}
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A user store backed by main memory.
@@ -47,10 +50,16 @@ import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
  * The IDs returned are the original user IDs.
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-class MemUserStateStore extends UserStateStore with Configurable {
-  private[this] val userStateByUserId = new java.util.concurrent.ConcurrentHashMap[String, Just[UserState]]()
+class MemUserStateStore extends UserStateStore
+  with Configurable with PolicyStore
+  with ResourceEventStore with UserEventStore
+  with WalletEntryStore {
+
+  private[this] val userStateByUserId = new ConcurrentHashMap[String, Just[UserState]]()
+  private val policyById = new ConcurrentHashMap[String, PolicyEntry]()
   
   def configure(props: Props) = {
   }
@@ -73,4 +82,44 @@ class MemUserStateStore extends UserStateStore with Configurable {
     if (userStateByUserId.containsKey(userId))
       userStateByUserId.remove(userId)
   }
+
+  def storeWalletEntry(entry: WalletEntry) = null
+
+  def findWalletEntryById(id: String) = null
+
+  def findUserWalletEntries(userId: String) = null
+
+  def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date) = null
+
+  def findLatestUserWalletEntries(userId: String) = null
+
+  def findPreviousEntry(userId: String, resource: String, instanceId: String, finalized: Option[Boolean]) = null
+
+  def findWalletEntriesAfter(userId: String, from: Date) = null
+
+  def storeResourceEvent(event: ResourceEvent) = null
+
+  def findResourceEventById(id: String) = null
+
+  def findResourceEventsByUserId(userId: String)(sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]) = null
+
+  def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long) = null
+
+  def findResourceEventHistory(userId: String, resName: String, instid: Option[String], upTo: Long) = null
+
+  def findResourceEventsForReceivedPeriod(userId: String, startTimeMillis: Long, stopTimeMillis: Long) = null
+
+  def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int) = null
+
+  def storeUserEvent(event: UserEvent) = null
+
+  def findUserEventById(id: String) = null
+
+  def findUserEventsByUserId(userId: String) = null
+
+  def loadPolicies(after: Long) = null
+
+  def storePolicy(policy: PolicyEntry) = null
+
+  def updatePolicy(policy: PolicyEntry) = null
 }
