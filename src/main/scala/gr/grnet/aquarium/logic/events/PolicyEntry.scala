@@ -33,31 +33,52 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.logic.events
 
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.logic.events.PolicyEntry
+import net.liftweb.json.{Extraction, parse => parseJson}
+import gr.grnet.aquarium.util.json.JsonHelpers
 
 /**
- * A store for serialized policy entries.
+ * Store entry for serialized policy data.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait PolicyStore {
+case class PolicyEntry(
+  override val id: String,           //SHA-1 of the provided policyYaml string
+  override val occurredMillis: Long, //Time this event was stored
+  override val receivedMillis: Long, //Does not make sense for local events -> not used
+  policyYAML: String,                //The serialized policy
+  validFrom: Long,                   //The timestamp since when the policy is valid
+  validTo: Long                      //The timestamp until when the policy is valid
+)
+extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
-  /**
-   * Load all accounting policies valid after the specified time instance.
-   * The results are returned sorted by PolicyEntry.validFrom
-   */
-  def loadPolicies(after: Long): List[PolicyEntry]
+  assert (validTo > validFrom)
 
-  /**
-   * Store an accounting policy.
-   */
-  def storePolicy(policy: PolicyEntry): Maybe[RecordID]
+  def validate = true
 
-  /**
-   * Updates the policy record whose id
-   */
-  def updatePolicy(policy: PolicyEntry)
+  def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+}
+
+object PolicyEntry {
+
+  def fromJson(json: String): PolicyEntry = {
+    implicit val formats = JsonHelpers.DefaultJsonFormats
+    val jsonAST = parseJson(json)
+    Extraction.extract[PolicyEntry](jsonAST)
+  }
+
+  def fromBytes(bytes: Array[Byte]): PolicyEntry = {
+    JsonHelpers.jsonBytesToObject[PolicyEntry](bytes)
+  }
+
+  object JsonNames {
+    final val _id = "_id"
+    final val id = "id"
+    final val occurredMillis = "occurredMillis"
+    final val receivedMillis = "receivedMillis"
+    final val policyYAML = "policyYAML"
+    final val validFrom = "validFrom"
+    final val validTo = "validTo"
+  }
 }
