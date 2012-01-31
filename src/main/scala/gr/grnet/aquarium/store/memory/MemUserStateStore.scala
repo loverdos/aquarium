@@ -40,7 +40,9 @@ import gr.grnet.aquarium.Configurable
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
 import gr.grnet.aquarium.store._
+import scala.collection.JavaConversions._
 import java.util.Date
+import collection.mutable.ConcurrentMap
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, PolicyEntry}
 import java.util.concurrent.ConcurrentHashMap
 
@@ -59,7 +61,7 @@ class MemUserStateStore extends UserStateStore
   with WalletEntryStore {
 
   private[this] val userStateByUserId = new ConcurrentHashMap[String, Just[UserState]]()
-  private val policyById = new ConcurrentHashMap[String, PolicyEntry]()
+  private val policyById: ConcurrentMap[String, PolicyEntry] = new ConcurrentHashMap[String, PolicyEntry]()
   
   def configure(props: Props) = {
   }
@@ -117,9 +119,11 @@ class MemUserStateStore extends UserStateStore
 
   def findUserEventsByUserId(userId: String) = null
 
-  def loadPolicies(after: Long) = null
+  def loadPolicies(after: Long) = policyById.values.foldLeft(List[PolicyEntry]()){
+    (acc, v) => if(v.validFrom > after) v :: acc else acc
+  }
 
-  def storePolicy(policy: PolicyEntry) = null
+  def storePolicy(policy: PolicyEntry) = {policyById += (policy.id -> policy); Just(RecordID(policy.id))}
 
-  def updatePolicy(policy: PolicyEntry) = null
+  def updatePolicy(policy: PolicyEntry) = storePolicy(policy)
 }

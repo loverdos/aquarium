@@ -59,5 +59,5 @@ trait PolicyStore {
   /**
    * Updates the policy record whose id
    */
-  def updatePolicy(policy: PolicyEntry)
+  def updatePolicy(policy: PolicyEntry): Unit
 }

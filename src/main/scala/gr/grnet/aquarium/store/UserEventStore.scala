@@ -1,10 +1,10 @@
 package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.logic.events.{ResourceEvent, UserEvent}
+import gr.grnet.aquarium.logic.events.{UserEvent}
 
 /**
- * * An abstraction for Aquarium user event stores.
+ *
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
