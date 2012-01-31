@@ -120,11 +120,31 @@ case class UserState(
     }
   }
 
+  def findResourceInstanceSnapshot(resource: String, instanceId: String): Maybe[ResourceInstanceSnapshot] = {
+    ownedResources.findResourceInstanceSnapshot(resource, instanceId)
+  }
+
+  def getResourceInstanceAmount(resource: String, instanceId: String, defaultValue: Double): Double = {
+    ownedResources.getResourceInstanceAmount(resource, instanceId, defaultValue)
+  }
+
+  def copyForResourcesSnapshotUpdate(resource: String,   // resource name
+                                     instanceId: String, // resource instance id
+                                     newAmount: Double,
+                                     snapshotTime: Long): UserState = {
+
+    val (newResources, _, _) = ownedResources.computeResourcesSnapshotUpdate(resource, instanceId, newAmount, snapshotTime)
+
+    this.copy(
+      ownedResources = newResources,
+      stateChangeCounter = this.stateChangeCounter + 1)
+  }
+
   def resourcesMap = ownedResources.toResourcesMap
   
   def safeCredits = credits match {
-    case c @ CreditSnapshot(date, millis) ⇒ c
-    case _ ⇒ CreditSnapshot(0, 0)
+    case c @ CreditSnapshot(_, _) ⇒ c
+    case _ ⇒ CreditSnapshot(0.0, 0)
   }
 }
 

@@ -90,8 +90,9 @@ case class AgreementSnapshot(data: List[Agreement], snapshotTime: Long)
   ensureNoGaps(data.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
 
   def ensureNoGaps(agreements: List[Agreement]): Unit = agreements match {
-    case h :: t => assert(h.validTo - t.head.validFrom == 1); ensureNoGaps(t)
+    case ha :: (t @ (hb :: tail)) => assert(ha.validTo - hb.validFrom == 1); ensureNoGaps(t)
     case h :: Nil => assert(h.validTo == -1)
+    case Nil => ()
   }
 
   /**
@@ -127,11 +128,17 @@ case class AgreementSnapshot(data: List[Agreement], snapshotTime: Long)
  *  - If the resource is simple,  the (name, instanceId) is (DSLResource.name, "1")
  *
  */
-case class ResourceInstanceSnapshot(
-    name: String,
-    instanceId: String,
-    data: Double,
-    snapshotTime: Long)
+case class ResourceInstanceSnapshot(/**
+                                     * Same as `resource` of [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+                                     */
+                                    resource: String,
+
+                                    /**
+                                     * Same as `instanceId` of [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+                                     */
+                                    instanceId: String,
+                                    data: Double, // FIXME: data is a missleading name here
+                                    snapshotTime: Long)
   extends UserDataSnapshot[Double] {
 
   /**
@@ -144,8 +151,8 @@ case class ResourceInstanceSnapshot(
    */
   def instanceAmount = data
   
-  def isSameResource(name: String, instanceId: String) = {
-    this.name == name &&
+  def isSameResourceInstance(resource: String, instanceId: String) = {
+    this.resource == resource &&
     this.instanceId == instanceId
   }
 }
@@ -155,10 +162,10 @@ case class ResourceInstanceSnapshot(
  * This representation is convenient for computations and updating, while the
  * [[gr.grnet.aquarium.user.OwnedResourcesSnapshot]] representation is convenient for JSON serialization.
  */
-class OwnedResourcesMap(map: Map[(String, String), (Double, Long)]) {
+class OwnedResourcesMap(resourcesMap: Map[(String, String), (Double, Long)]) {
   def toResourcesSnapshot(snapshotTime: Long): OwnedResourcesSnapshot =
     OwnedResourcesSnapshot(
-      map map {
+      resourcesMap map {
         case ((name, instanceId), (value, snapshotTime)) ⇒
           ResourceInstanceSnapshot(name, instanceId, value, snapshotTime
       )} toList,
@@ -170,34 +177,49 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   extends UserDataSnapshot[List[ResourceInstanceSnapshot]] with JsonSupport {
 
   def toResourcesMap: OwnedResourcesMap = {
-    val tuples = for(rc <- data) yield ((rc.name, rc.instanceId), (rc.instanceAmount, rc.snapshotTime))
+    val tuples = for(rc <- data) yield ((rc.resource, rc.instanceId), (rc.instanceAmount, rc.snapshotTime))
 
     new OwnedResourcesMap(Map(tuples.toSeq: _*))
   }
 
-  def findResourceSnapshot(name: String, instanceId: String): Option[ResourceInstanceSnapshot] =
-    data.find { x => name == x.name && instanceId == x.instanceId }
+  def resourceInstanceSnapshots = data
 
-  def addOrUpdateResourceSnapshot(name: String,       // resource name
-                                  instanceId: String, // resource instance id
-                                  newRCInstanceAmount: Double,
-                                  snapshotTime: Long): (OwnedResourcesSnapshot, Option[ResourceInstanceSnapshot], ResourceInstanceSnapshot) = {
+  def resourceInstanceSnapshotsExcept(resource: String, instanceId: String) = {
+    // Unfortunately, we have to use a List for data, since JSON serialization is not as flexible
+    // (at least out of the box). Thus, the update is O(L), where L is the length of the data List.
+    resourceInstanceSnapshots.filterNot(_.isSameResourceInstance(resource, instanceId))
+  }
 
-    val newRCInstance = ResourceInstanceSnapshot(name, instanceId, newRCInstanceAmount, snapshotTime)
-    val oldRCInstanceOpt = this.findResourceSnapshot(name, instanceId)
+  def findResourceInstanceSnapshot(resource: String, instanceId: String): Option[ResourceInstanceSnapshot] = {
+    data.find(x => resource == x.resource && instanceId == x.instanceId)
+  }
 
-    val newData = oldRCInstanceOpt match {
-      case Some(oldRCInstance) ⇒
+  def getResourceInstanceAmount(resource: String, instanceId: String, defaultValue: Double): Double = {
+    findResourceInstanceSnapshot(resource, instanceId).map(_.instanceAmount).getOrElse(defaultValue)
+  }
+
+  def computeResourcesSnapshotUpdate(resource: String,   // resource name
+                                     instanceId: String, // resource instance id
+                                     newAmount: Double,
+                                     snapshotTime: Long): (OwnedResourcesSnapshot,
+                                                          Option[ResourceInstanceSnapshot],
+                                                          ResourceInstanceSnapshot) = {
+
+    val newResourceInstance = ResourceInstanceSnapshot(resource, instanceId, newAmount, snapshotTime)
+    val oldResourceInstanceOpt = this.findResourceInstanceSnapshot(resource, instanceId)
+
+    val newResourceInstances = oldResourceInstanceOpt match {
+      case Some(oldResourceInstance) ⇒
         // Resource instance found, so delete the old one and add the new one
-        newRCInstance :: (data.filterNot(_.isSameResource(name, instanceId)))
+        newResourceInstance :: resourceInstanceSnapshotsExcept(resource, instanceId)
       case None ⇒
         // Resource not found, so this is the first time and we just add the new snapshot
-        newRCInstance :: data
+        newResourceInstance :: resourceInstanceSnapshots
     }
 
-    val newOwnedResources = this.copy(data = newData, snapshotTime = snapshotTime)
+    val newOwnedResources = OwnedResourcesSnapshot(newResourceInstances, snapshotTime)
 
-    (newOwnedResources, oldRCInstanceOpt, newRCInstance)
+    (newOwnedResources, oldResourceInstanceOpt, newResourceInstance)
  }
 }
 

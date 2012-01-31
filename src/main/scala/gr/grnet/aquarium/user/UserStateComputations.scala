@@ -100,6 +100,28 @@ class UserStateComputations {
     )
   }
 
+  def createFirstUserState(userId: String, agreementName: String, policy: DSLPolicy) = {
+    val resources = policy.resources
+
+      val now = 0L
+      UserState(
+        userId,
+        now,
+        0L,
+        false,
+        null,
+        0L,
+        ActiveSuspendedSnapshot(false, now),
+        CreditSnapshot(0, now),
+        AgreementSnapshot(Agreement(agreementName, now, now) :: Nil, now),
+        RolesSnapshot(List(), now),
+        PaymentOrdersSnapshot(Nil, now),
+        OwnedGroupsSnapshot(Nil, now),
+        GroupMembershipsSnapshot(Nil, now),
+        OwnedResourcesSnapshot(List(), now)
+      )
+    }
+
   /**
    * Get the user state as computed up to (and not including) the start of the new billing period.
    *
@@ -133,9 +155,9 @@ class UserStateComputations {
    * Find the previous resource event, if needed by the event's cost policy,
    * in order to use it for any credit calculations.
    */
-  def findPreviousRCEventOf(previousRCEventsMap: mutable.Map[ResourceEvent.FullResourceType, ResourceEvent],
-                            rcEvent: ResourceEvent,
-                            costPolicy: DSLCostPolicy): Maybe[ResourceEvent] = {
+  def findPreviousRCEventOf(rcEvent: ResourceEvent,
+                            costPolicy: DSLCostPolicy,
+                            previousRCEventsMap: mutable.Map[ResourceEvent.FullResourceType, ResourceEvent]): Maybe[ResourceEvent] = {
 
     if(costPolicy.needsPreviousEventForCreditCalculation) {
       // Get a previous resource only if this is needed by the policy
@@ -237,16 +259,22 @@ class UserStateComputations {
     // OK. Now that we have a user state to start with (= start of billing period reference point),
     // let us deal with the events themselves.
     val billingStartMillis = billingMonthStartDate.toMillis
-    val billingStopMillis = billingMonthStartDate.endOfThisMonth.toMillis
+    val billingStopMillis  = billingMonthStartDate.endOfThisMonth.toMillis
     val allBillingPeriodRelevantRCEvents = rcEventStore.findAllRelevantResourceEventsForBillingPeriod(userId, billingStartMillis, billingStopMillis)
 
     type FullResourceType = ResourceEvent.FullResourceType
     val previousRCEventsMap = mutable.Map[FullResourceType, ResourceEvent]()
     val impliedRCEventsMap  = mutable.Map[FullResourceType, ResourceEvent]() // those which do not exists but are
     // implied in order to do billing calculations (e.g. the "off" vmtime resource event)
-    var workingUserState = newStartUserState
+
+    // Our temporary state holder.
+    var _workingUserState = newStartUserState
+    val nowMillis = TimeHelpers.nowMillis
 
     for(newRCEvent <- allBillingPeriodRelevantRCEvents) {
+      val resource = newRCEvent.resource
+      val instanceId = newRCEvent.instanceId
+
       // We need to do these kinds of calculations:
       // 1. Credit state calculations
       // 2. Resource state calculations
@@ -264,36 +292,42 @@ class UserStateComputations {
       //
       // BUT ALL THE ABOVE SHOULD NOT BE CONSIDERED HERE; RATHER THEY ARE POLYMORPHIC BEHAVIOURS
 
-      // We need:
-      // A. The previous event
-
+      // What we need to do is:
+      // A. Update user state with new resource instance amount
+      // B. Update user state with new credit
+      // C. Update ??? state with wallet entries
 
       // The DSLCostPolicy for the resource does not change, so it is safe to use the default DSLPolicy to obtain it.
       val costPolicyM = newRCEvent.findCostPolicy(defaultPolicy)
       costPolicyM match {
         case Just(costPolicy) ⇒
-          val previousRCEventM = findPreviousRCEventOf(previousRCEventsMap, newRCEvent, costPolicy)
-          val previousRCEventValueM = previousRCEventM.map(_.value)
-//          val previousRCInstanceAmount = workingUserState.ownedResources.
+          ///////////////////////////////////////
+          // A. Update user state with new resource instance amount
+          // TODO: Check if we are at beginning of billing period, so as to use
+          //       costPolicy.computeResourceInstanceAmountForNewBillingPeriod
+          val DefaultResourceInstanceAmount = costPolicy.getResourceInstanceInitialAmount
 
-          // 1. Update resource state
-          val newRCInstanceAmountM = costPolicy.computeNewResourceInstanceAmount(previousRCEventValueM, newRCEvent.value)
-          newRCInstanceAmountM match {
-            case Just(newRCInstanceAmount) ⇒
-              workingUserState.ownedResources.addOrUpdateResourceSnapshot(
-                newRCEvent.resource,
-                newRCEvent.instanceId,
-                newRCInstanceAmount,
-                TimeHelpers.nowMillis)
-            case NoVal ⇒
-              () // ERROR
-            case failed @ Failed(_, _) ⇒
-              () // ERROR
-          }
+          val previousAmount = currentUserState.getResourceInstanceAmount(resource, instanceId, DefaultResourceInstanceAmount)
+          val newAmount = costPolicy.computeNewResourceInstanceAmount(previousAmount, newRCEvent.value)
 
-          // 2. Update credit state
+          _workingUserState = _workingUserState.copyForResourcesSnapshotUpdate(resource, instanceId, newAmount, nowMillis)
+          // A. Update user state with new resource instance amount
+          ///////////////////////////////////////
 
-          // 3. Calc wallet entries
+
+          ///////////////////////////////////////
+          // B. Update user state with new credit
+          val previousRCEventM = findPreviousRCEventOf(newRCEvent, costPolicy, previousRCEventsMap)
+          _workingUserState.findResourceInstanceSnapshot(resource, instanceId)
+          // B. Update user state with new credit
+          ///////////////////////////////////////
+
+
+          ///////////////////////////////////////
+          // C. Update ??? state with wallet entries
+
+          // C. Update ??? state with wallet entries
+          ///////////////////////////////////////
 
         case NoVal ⇒
           () // ERROR

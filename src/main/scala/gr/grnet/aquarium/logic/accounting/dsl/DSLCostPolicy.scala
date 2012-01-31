@@ -83,10 +83,21 @@ abstract class DSLCostPolicy(val name: String) extends DSLItem {
    */
   def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
 
+  def computeNewResourceInstanceAmount(oldAmount: Double, newEventValue: Double): Double
+
+  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double
+
+  /**
+   * Th every initial amount.
+   */
+  def getResourceInstanceInitialAmount: Double
+
   /**
    * Get the value that will be used in credit calculation in Accounting.chargeEvents
    */
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
+
+  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double
 
   /**
    * An event's value by itself should carry enough info to characterize it billable or not.
@@ -137,8 +148,8 @@ case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.contin
 
   def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
     oldAmountM match {
-      case Just(oldValue) ⇒
-        Just(oldValue + newEventValue)
+      case Just(oldAmount) ⇒
+        Just(oldAmount + newEventValue)
       case NoVal ⇒
         Failed(new Exception("NoVal for oldValue instead of Just"))
       case Failed(e, m) ⇒
@@ -146,9 +157,26 @@ case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.contin
     }
   }
 
+  def computeNewResourceInstanceAmount(oldAmount: Double, newEventValue: Double): Double = {
+    oldAmount + newEventValue
+  }
+
+  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double = {
+    oldAmount
+  }
+
+  def getResourceInstanceInitialAmount: Double = {
+    0.0
+  }
+
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
     oldAmountM
   }
+
+  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
+    oldAmount
+  }
+
 }
 
 /**
@@ -171,32 +199,49 @@ case object OnOffCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.onoff) {
   def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
     Just(newEventValue)
   }
+
+  def computeNewResourceInstanceAmount(oldAmount: Double, newEventValue: Double): Double = {
+    newEventValue
+  }
+  
+  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double = {
+    import OnOffCostPolicyValues.{ON, OFF}
+    oldAmount match {
+      case ON  ⇒ /* implicit off at the end of the billing period */ OFF
+      case OFF ⇒ OFF
+    }
+  }
+
+  def getResourceInstanceInitialAmount: Double = {
+    0.0
+  }
   
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
-    import OnOffCostPolicyValues.{ON, OFF}
-
-    def exception(rs: OnOffPolicyResourceState) =
-      new Exception("Resource state transition error (%s -> %s)".format(rs, rs))
-    def failed(rs: OnOffPolicyResourceState) =
-      Failed(exception(rs))
-    
     oldAmountM match {
-      case Just(oldValue) ⇒
-        (oldValue, newEventValue) match {
-          case (ON, ON) ⇒
-            failed(OnResourceState)
-          case (ON, OFF) ⇒
-            Just(OFF)
-          case (OFF, ON) ⇒
-            Just(ON)
-          case (OFF, OFF) ⇒
-            failed(OffResourceState)
-        }
-
+      case Just(oldAmount) ⇒
+        Maybe(getValueForCreditCalculation(oldAmount, newEventValue))
       case NoVal ⇒
         Failed(new Exception("NoVal for oldValue instead of Just"))
       case Failed(e, m) ⇒
         Failed(new Exception("Failed for oldValue instead of Just", e), m)
+    }
+  }
+
+  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
+    import OnOffCostPolicyValues.{ON, OFF}
+
+    def exception(rs: OnOffPolicyResourceState) =
+      new Exception("Resource state transition error (%s -> %s)".format(rs, rs))
+
+    (oldAmount, newEventValue) match {
+      case (ON, ON) ⇒
+        throw exception(OnResourceState)
+      case (ON, OFF) ⇒
+        OFF
+      case (OFF, ON) ⇒
+        ON
+      case (OFF, OFF) ⇒
+        throw exception(OffResourceState)
     }
   }
 
@@ -230,11 +275,27 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
   override def resourceEventValueIsDiff = true
 
   def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
-    Just(newEventValue)
+    oldAmountM.map(_ + newEventValue)
+  }
+
+  def computeNewResourceInstanceAmount(oldAmount: Double, newEventValue: Double): Double = {
+    oldAmount + newEventValue
+  }
+
+  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double  = {
+    0.0 // ?? def getResourceInstanceInitialAmount
+  }
+
+  def getResourceInstanceInitialAmount: Double = {
+    0.0
   }
   
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
     Just(newEventValue)
+  }
+
+  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
+    newEventValue
   }
 }
 

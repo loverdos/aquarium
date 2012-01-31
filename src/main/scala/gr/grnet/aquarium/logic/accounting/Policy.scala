@@ -70,7 +70,7 @@ object Policy extends DSL with Loggable {
     policies.filter {
       a => a._1.from.before(from) &&
            a._1.to.after(to)
-    }.values.toList
+    }.valuesIterator.toList
   }
   
   def policies(t: Timeslot): List[DSLPolicy] = policies(t.from, t.to)
