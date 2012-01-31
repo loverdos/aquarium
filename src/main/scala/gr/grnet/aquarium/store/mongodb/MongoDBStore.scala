@@ -313,6 +313,14 @@ class MongoDBStore(
   }
 
   def storePolicy(policy: PolicyEntry): Maybe[RecordID] = MongoDBStore.storeAquariumEvent(policy, policies)
+
+
+  def updatePolicy(policy: PolicyEntry) = {
+    //Find the entry
+    val query = new BasicDBObject(PolicyEntry.JsonNames.id, policy.id)
+    val policyObject = MongoDBStore.jsonSupportToDBObject(policy)
+    policies.update(query, policyObject, true, false)
+  }
   //-PolicyStore
 }
 

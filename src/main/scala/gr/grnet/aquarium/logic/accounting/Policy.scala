@@ -37,10 +37,12 @@ package gr.grnet.aquarium.logic.accounting
 
 import dsl.{Timeslot, DSLPolicy, DSL}
 import gr.grnet.aquarium.Configurator._
-import gr.grnet.aquarium.util.Loggable
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
 import com.ckkloverdos.maybe.{Maybe, Just}
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.logic.events.PolicyEntry
+import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -105,12 +107,13 @@ object Policy extends DSL with Loggable {
     val policies = MasterConfigurator.policyEventStore.loadPolicies(0)
 
     //2. Check whether policy file has been updated
-    val latestPolicyChange = policies.last.validFrom
+    val latestPolicyChange = if (policies.isEmpty) 0 else policies.last.validFrom
     val policyf = policyFile
     var updated = false
 
     if (policyf.exists) {
       if (policyf.lastModified > latestPolicyChange) {
+        logger.info("Policy changed since last check, reloading")
         updated = true
       } else {
         logger.info("Policy not changed since last check")
@@ -120,12 +123,24 @@ object Policy extends DSL with Loggable {
         "using stored policy information".format(policyf.getAbsolutePath))
     }
 
-    if (updated) {
-      //read from db etc
+    val toAdd = updated match {
+      case true =>
+        val ts = TimeHelpers.nowMillis
+        val toUpdate = policies.last.copy(validTo = ts)
+        val parsedNew = loadPolicyFromFile(policyf)
+        val yaml = parsedNew.toYAML
+        val newPolicy = PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, -1)
+
+        MasterConfigurator.policyEventStore.updatePolicy(toUpdate)
+        MasterConfigurator.policyEventStore.storePolicy(newPolicy)
+
+        List(toUpdate, newPolicy)
+      case false => List()
     }
 
-    policies.foldLeft(Map[Timeslot, DSLPolicy]())(
+    policies.init.++(toAdd).foldLeft(Map[Timeslot, DSLPolicy]()){
       (acc, p) =>
-        acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML)))
+        acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML))
+    }
   }
 }
