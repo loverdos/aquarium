@@ -47,9 +47,7 @@ import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, Po
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * A user store backed by main memory.
- *
- * The IDs returned are the original user IDs.
+ * An implementation of various stores that persists data in memory
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
@@ -63,7 +61,7 @@ class MemUserStateStore extends UserStateStore
   private[this] val userStateByUserId = new ConcurrentHashMap[String, Just[UserState]]()
   private val policyById: ConcurrentMap[String, PolicyEntry] = new ConcurrentHashMap[String, PolicyEntry]()
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
-
+  private val userEventById: ConcurrentMap[String, UserEvent] = new ConcurrentHashMap[String, UserEvent]()
 
   def configure(props: Props) = {
   }
@@ -143,11 +141,11 @@ class MemUserStateStore extends UserStateStore
 
   def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int) = null
 
-  def storeUserEvent(event: UserEvent) = null
+  def storeUserEvent(event: UserEvent) = {userEventById += (event.id -> event); Just(RecordID(event.id))}
 
-  def findUserEventById(id: String) = null
+  def findUserEventById(id: String) = Maybe{userEventById.getOrElse(id, null)}
 
-  def findUserEventsByUserId(userId: String) = null
+  def findUserEventsByUserId(userId: String) = userEventById.values.filter{v => v.userId == userId}.toList
 
   def loadPolicies(after: Long) = policyById.values.foldLeft(List[PolicyEntry]()){
     (acc, v) => if(v.validFrom > after) v :: acc else acc
