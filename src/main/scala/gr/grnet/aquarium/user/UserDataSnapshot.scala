@@ -90,8 +90,11 @@ case class AgreementSnapshot(data: List[Agreement], snapshotTime: Long)
   ensureNoGaps(data.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
 
   def ensureNoGaps(agreements: List[Agreement]): Unit = agreements match {
-    case ha :: (t @ (hb :: tail)) => assert(ha.validTo - hb.validFrom == 1); ensureNoGaps(t)
-    case h :: Nil => assert(h.validTo == -1)
+    case ha :: (t @ (hb :: tail)) =>
+      assert(ha.validTo - hb.validFrom == 1);
+      ensureNoGaps(t)
+    case h :: Nil =>
+      assert(h.validTo == -1)
     case Nil => ()
   }
 

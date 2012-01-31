@@ -39,7 +39,7 @@ import gr.grnet.aquarium.user.UserState
 import com.ckkloverdos.maybe.Maybe
 
 /**
- * A store for user state.
+ * A store for user state snapshots.
  *
  * This is used to hold snapshots of [[gr.grnet.aquarium.user.UserState]]
  *
@@ -47,7 +47,19 @@ import com.ckkloverdos.maybe.Maybe
  */
 
 trait UserStateStore {
+
+  /**
+   * Store a user state
+   */
   def storeUserState(userState: UserState): Maybe[RecordID]
+
+  /**
+   * Find a state by user ID
+   */
   def findUserStateByUserId(userId: String): Maybe[UserState]
+
+  /**
+   * Delete a state for a user
+   */
   def deleteUserState(userId: String): Unit
 }
