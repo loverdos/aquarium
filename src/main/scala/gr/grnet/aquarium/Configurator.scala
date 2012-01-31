@@ -234,7 +234,7 @@ object Configurator {
   /**
    * The venerable /etc resource context
    */
-  val SlashEtcResourceContext = new FileStreamResourceContext("/etc")
+  val SlashEtcResourceContext = new FileStreamResourceContext("/etc/aquarium")
 
   /**
    * Class loader resource context.
