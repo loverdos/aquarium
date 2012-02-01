@@ -54,7 +54,7 @@ import gr.grnet.aquarium.util.date.DateCalculator
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-class MemUserStateStore extends UserStateStore
+class MemStore extends UserStateStore
   with Configurable with PolicyStore
   with ResourceEventStore with UserEventStore
   with WalletEntryStore {
