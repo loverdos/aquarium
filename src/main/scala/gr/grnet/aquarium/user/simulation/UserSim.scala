@@ -38,6 +38,7 @@ import java.util.Date
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.store.{RecordID, ResourceEventStore}
+import math.Ordering
 
 /**
  * A simulator for a user.
@@ -47,6 +48,8 @@ import gr.grnet.aquarium.store.{RecordID, ResourceEventStore}
 
 case class UserSim(userId: String, startDate: Date, resourceEventStore: ResourceEventStore) { userSelf ⇒
   private[this] var _serviceClients = List[ClientServiceSim]()
+  private[this] var _resourceEvents = List[ResourceEvent]()
+
   private[this] val myResourcesGen: () => List[ClientServiceSim#ResourceSim] = () => {
     for {
       serviceClient   <- _serviceClients
@@ -66,6 +69,7 @@ case class UserSim(userId: String, startDate: Date, resourceEventStore: Resource
   
   private[simulation]
   def _addResourceEvent(resourceEvent: ResourceEvent): Maybe[RecordID] = {
+    _resourceEvents = resourceEvent :: _resourceEvents
     resourceEventStore.storeResourceEvent(resourceEvent)
   }
 
@@ -75,5 +79,35 @@ case class UserSim(userId: String, startDate: Date, resourceEventStore: Resource
 
   def myResources: List[ClientServiceSim#ResourceSim] = {
     myResourcesGen.apply()
+  }
+
+  def myResourceEvents: List[ResourceEvent] = {
+    _resourceEvents
+  }
+
+  def myResourceEventsByReceivedDate: List[ResourceEvent] = {
+    _resourceEvents.sorted(new Ordering[ResourceEvent] {
+      def compare(x: ResourceEvent, y: ResourceEvent) = {
+        if(x.receivedMillis < y.receivedMillis)
+          -1
+        else if(x.receivedMillis == y.receivedMillis)
+          0
+        else
+          1
+      }
+    })
+  }
+
+  def myResourceEventsByOccurredDate: List[ResourceEvent] = {
+    _resourceEvents.sorted(new Ordering[ResourceEvent] {
+      def compare(x: ResourceEvent, y: ResourceEvent) = {
+        if(x.occurredMillis < y.occurredMillis)
+          -1
+        else if(x.occurredMillis == y.occurredMillis)
+          0
+        else
+          1
+      }
+    })
   }
 }

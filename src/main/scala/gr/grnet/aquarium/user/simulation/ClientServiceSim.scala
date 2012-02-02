@@ -168,6 +168,53 @@ case class ClientServiceSim(clientId: String) {
 
   case class DiskspaceSim(override val owner: UserSim,
                           override val instanceId: String = "") extends ResourceSim("diskspace", owner, instanceId) {
+
+    def consumeMB(occurredDate: Date, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+      val time = occurredDate.getTime
+      val event = ResourceEvent(
+        id,
+        time,
+        time,
+        owner.userId,
+        clientId,
+        resource,
+        instanceId,
+        "1.0",
+        megaBytes,
+        Map()
+      )
+
+      owner._addResourceEvent(event)
+    }
+    
+    def freeMB(occurredDate: Date, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+      consumeMB(occurredDate, -megaBytes, id)
+    }
+
+    def consumeMB_OutOfSync(occurredDate: Date, outOfSyncHours: Int, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+      val occurredDateCalc = new DateCalculator(occurredDate)
+      val occurredTime = occurredDateCalc.toMillis
+      val receivedTime = occurredDateCalc.plusHours(outOfSyncHours).toMillis
+
+      val event = ResourceEvent(
+        id,
+        occurredTime,
+        receivedTime,
+        owner.userId,
+        clientId,
+        resource,
+        instanceId,
+        "1.0",
+        megaBytes,
+        Map()
+      )
+
+      owner._addResourceEvent(event)
+    }
+
+    def freeMB_OutOfSync(occurredDate: Date, outOfSyncHours: Int, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+      consumeMB_OutOfSync(occurredDate, outOfSyncHours, -megaBytes, id)
+    }
   }
 
   private[simulation]
