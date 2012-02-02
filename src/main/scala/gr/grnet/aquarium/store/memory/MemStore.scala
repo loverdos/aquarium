@@ -57,7 +57,8 @@ import gr.grnet.aquarium.util.date.DateCalculator
 class MemStore extends UserStateStore
   with Configurable with PolicyStore
   with ResourceEventStore with UserEventStore
-  with WalletEntryStore {
+  with WalletEntryStore
+  with StoreProvider {
 
   private[this] val userStateByUserId = new ConcurrentHashMap[String, Just[UserState]]()
   private val policyById: ConcurrentMap[String, PolicyEntry] = new ConcurrentHashMap[String, PolicyEntry]()
@@ -67,6 +68,19 @@ class MemStore extends UserStateStore
 
   def configure(props: Props) = {
   }
+
+  //+ StoreProvider
+  def userStateStore = this
+
+  def resourceEventStore = this
+
+  def walletEntryStore = this
+
+  def userEventStore = this
+
+  def policyStore = this
+  //- StoreProvider
+
 
   def storeUserState(userState: UserState): Maybe[RecordID] = {
     val userId = userState.userId
