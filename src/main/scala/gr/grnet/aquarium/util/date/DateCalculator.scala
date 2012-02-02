@@ -23,62 +23,78 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
   def this(year: Int, monthOfYear: Int) =
     this(year, monthOfYear, 1)
 
-  def nextMonths(n: Int): this.type = {
+  def plusMonths(n: Int): this.type = {
     dateTime.addMonths(n)
 
     this
   }
 
-  def previousMonths(n: Int): this.type = {
+  def minusMonths(n: Int): this.type = {
     dateTime.addMonths(-n)
 
     this
   }
 
   def nextMonth: this.type = {
-    nextMonths(1)
+    plusMonths(1)
   }
 
   def previousMonth: this.type = {
-    previousMonths(1)
+    minusMonths(1)
   }
 
-  def nextDays(n: Int): this.type = {
+  def plusDays(n: Int): this.type = {
     dateTime.addDays(n)
     this
   }
 
-  def previousDays(n: Int): this.type = {
+  def minusDays(n: Int): this.type = {
     dateTime.addDays(n)
     this
   }
   
   def nextDay: this.type = {
-    nextDays(1)
+    plusDays(1)
   }
   
   def previousDay: this.type = {
-    previousDays(1)
+    minusDays(1)
   }
 
-  def nextMillis(n: Long): this.type = {
+  def plusSeconds(n: Int): this.type = {
+    dateTime.addSeconds(n)
+    this
+  }
+
+  def minusSeconds(n: Int): this.type = {
+    plusSeconds(-n)
+  }
+
+  def plusHours(n: Int): this.type = {
+    dateTime.addHours(n)
+    this
+  }
+
+  def minusHours(n: Int): this.type = {
+    plusHours(-n)
+  }
+
+
+  def plusMillis(n: Long): this.type = {
     dateTime.add(n)
+    this
+  }
 
-   this
- }
-
- def previousMillis(n: Long): this.type = {
-   dateTime.add(-n)
-
-   this
+ def minusMillis(n: Long): this.type = {
+   plusMillis(-n)
  }
 
  def nextMilli: this.type = {
-   nextMillis(1L)
+   plusMillis(1L)
  }
 
  def previousMilli: this.type = {
-   previousMillis(1L)
+   minusMillis(1L)
  }
 
   def year: Int = {
