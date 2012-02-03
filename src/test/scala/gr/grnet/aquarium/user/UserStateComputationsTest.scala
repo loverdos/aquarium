@@ -5,7 +5,7 @@ import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.util.date.DateCalculator
 import simulation.{ClientServiceSim, UserSim}
-import gr.grnet.aquarium.logic.accounting.Policy
+import gr.grnet.aquarium.logic.accounting.dsl.{ContinuousCostPolicy, OnOffCostPolicy, DSLComplexResource, DSLSimpleResource, DSLResourcesMap}
 
 
 /**
@@ -19,7 +19,12 @@ class UserStateComputationsTest {
     val START_MONTH = 1
     val START_DAY = 15
 
-    val policy = Policy.policy
+    val resourcesMap = new DSLResourcesMap(
+      DSLComplexResource("vmtime", "Hr", OnOffCostPolicy, "vmid") ::
+      DSLComplexResource("diskspace", "MB/Hr", ContinuousCostPolicy, "diskid") ::
+      Nil
+    )
+
     val mc = Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
     val storeProvider = mc.storeProvider
 //    println("!! storeProvider = %s".format(storeProvider))
@@ -59,7 +64,7 @@ class UserStateComputationsTest {
       val when = new DateCalculator(event.receivedMillis)
       val resource  = event.resource
       val instanceId = event.instanceId
-      val value = event.beautifyValue(policy)
+      val value = event.beautifyValue(resourcesMap)
       println("%s [%s, %s] %s".format(when, resource, instanceId, value))
     }
   }

@@ -39,7 +39,7 @@ import com.ckkloverdos.maybe.Maybe
 
 /**
  * Enumerates known resources by name.
- * 
+ *
  * This is related to [[gr.grnet.aquarium.logic.accounting.dsl.DSLResource]] but currently does not directly appear
  * in the rest of the DSL.
  *
@@ -47,6 +47,8 @@ import com.ckkloverdos.maybe.Maybe
  */
 
 class DSLResourcesMap(map: Map[String, DSLResource]) {
+  def this(list: List[DSLResource]) = this(Map(list.map(r ⇒ (r.name, r)): _*))
+
   def names = map.keySet
 
   def findResource(name: String): Option[DSLResource] = map.get(name)

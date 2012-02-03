@@ -89,6 +89,23 @@ case class ResourceEvent(
   }
 
   /**
+   * Returns a beautiful string representation of the value.
+   *
+   * @param resourcesMap The resources map to be asked for resources.
+   * @return A beautiful string representation of the value.
+   */
+  def beautifyValue(resourcesMap: DSLResourcesMap): String = {
+    resourcesMap.findResource(this.resource) match {
+      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
+        OnOffPolicyResourceState(this.value).state.toUpperCase
+      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
+        OnOffPolicyResourceState(this.value).state.toUpperCase
+      case _ ⇒
+        value.toString
+    }
+  }
+
+  /**
    * Return `true` iff this is an event regarding a resource with an
    * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
    */

@@ -85,7 +85,7 @@ case class DSLPolicy (
   }
 
   def resourcesMap: DSLResourcesMap =
-    new DSLResourcesMap(Map(resources.map(r => (r.name, r)).toSeq: _*))
+    new DSLResourcesMap(resources)
 }
 
 object DSLPolicy {
