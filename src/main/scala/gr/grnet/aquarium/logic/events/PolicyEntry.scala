@@ -53,7 +53,7 @@ case class PolicyEntry(
 )
 extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
-  assert (validTo > validFrom)
+  assert(if(validTo != -1) validTo > validFrom else validFrom > 0)
 
   def validate = true
 

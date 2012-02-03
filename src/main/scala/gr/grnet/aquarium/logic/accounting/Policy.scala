@@ -39,11 +39,11 @@ import dsl.{Timeslot, DSLPolicy, DSL}
 import gr.grnet.aquarium.Configurator._
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
-import com.ckkloverdos.maybe.{Maybe, Just}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.logic.events.PolicyEntry
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 import java.util.concurrent.atomic.AtomicReference
+import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -130,11 +130,22 @@ object Policy extends DSL with Loggable {
   /**
    * Search for and open a stream to a policy.
    */
-  private def policyFile: File =
+  private def _policyFile: File =
     MasterConfigurator.props.get(Keys.aquarium_policy) match {
       case Just(x) => new File(x)
       case _ => new File("/etc/aquarium/policy.yaml")
     }
+
+  private def policyFile = {
+    val policyConfResourceM = BasicResourceContext.getResource(PolicyConfName)
+    policyConfResourceM match {
+      case Just(policyResource) ⇒
+        val path = policyResource.url.getPath
+        new File(path) // assume it is resolved in the filesystem as it should (!)
+      case _ ⇒
+        new File("/etc/aquarium/policy.yaml") // FIXME remove this since it should have been picked up by the context
+    }
+  }
 
   /**
    * Check whether the policy definition file (in whichever path) is
@@ -165,18 +176,24 @@ object Policy extends DSL with Loggable {
     val toAdd = updated match {
       case true =>
         val ts = TimeHelpers.nowMillis
-        val toUpdate = policies.last.copy(validTo = ts)
         val parsedNew = loadPolicyFromFile(policyf)
         val yaml = parsedNew.toYAML
         val newPolicy = PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, -1)
 
-        MasterConfigurator.policyEventStore.updatePolicy(toUpdate)
-        MasterConfigurator.policyEventStore.storePolicy(newPolicy)
+        if(!policies.isEmpty) {
+          val toUpdate = policies.last.copy(validTo = ts)
+          MasterConfigurator.policyEventStore.updatePolicy(toUpdate)
+          MasterConfigurator.policyEventStore.storePolicy(newPolicy)
+          List(toUpdate, newPolicy)
+        } else {
+          MasterConfigurator.policyEventStore.storePolicy(newPolicy)
+          List(newPolicy)
+        }
 
-        List(toUpdate, newPolicy)
       case false => List()
     }
 
+    // FIXME: policies may be empty
     policies.init.++(toAdd).foldLeft(Map[Timeslot, DSLPolicy]()){
       (acc, p) =>
         acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML))
