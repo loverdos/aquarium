@@ -83,6 +83,9 @@ case class DSLPolicy (
     Map(Vocabulary.agreements  -> agreements.map{a => a.toMap})
     Map(Vocabulary.aquariumpolicy -> policy)
   }
+
+  def resourcesMap: DSLResourcesMap =
+    new DSLResourcesMap(Map(resources.map(r => (r.name, r)).toSeq: _*))
 }
 
 object DSLPolicy {
