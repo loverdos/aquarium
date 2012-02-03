@@ -53,5 +53,7 @@ class DSLResourcesMap(map: Map[String, DSLResource]) {
 
   def findResource(name: String): Option[DSLResource] = map.get(name)
   
-  def getResource(name: String): Maybe[DSLResource] = Maybe(map(name))
+  def getResourceM(name: String): Maybe[DSLResource] = Maybe(map(name))
+
+  def toResourcesList: List[DSLResource] = map.valuesIterator.toList
 }

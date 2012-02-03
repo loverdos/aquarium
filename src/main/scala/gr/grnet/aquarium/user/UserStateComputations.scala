@@ -41,8 +41,9 @@ import gr.grnet.aquarium.store.ResourceEventStore
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.events.ResourceEvent
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLCostPolicy, DSLPolicy, DSLAgreement}
 import gr.grnet.aquarium.util.date.{TimeHelpers, DateCalculator}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLCostPolicy, DSLPolicy, DSLAgreement}
+import gr.grnet.aquarium.util.Loggable
 
 sealed abstract class CalculationType(_name: String) {
   def name = _name
@@ -76,11 +77,27 @@ trait UserStateCache {
 }
 
 /**
+ * Use this to keep track of implicit OFFs at the end of the billing period.
+ *
+ * The use case is this: A VM may have been started (ON state) before the end of the billing period
+ * and ended (OFF state) after the beginning of the next billing period. In order to bill this, we must assume
+ * an implicit OFF even right at the end of the billing period and an implicit ON event with the beginning of the
+ * next billing period.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ *
+ * @param onEvents The `ON` events that need to be implicitly terminated.
+ */
+case class ImplicitOffEvents(onEvents: List[ResourceEvent])
+
+case class EndOfBillingState(userState: UserState, implicitOffs: ImplicitOffEvents)
+
+/**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class UserStateComputations {
-  def createFirstUserState(userId: String, agreementName: String) = {
+class UserStateComputations extends Loggable {
+  def createFirstUserState(userId: String, agreementName: String = "default") = {
     val now = 0L
     UserState(
       userId,
@@ -91,7 +108,7 @@ class UserStateComputations {
       0L,
       ActiveSuspendedSnapshot(false, now),
       CreditSnapshot(0, now),
-      AgreementSnapshot(Agreement(agreementName, now, now) :: Nil, now),
+      AgreementSnapshot(Agreement(agreementName, now, -1) :: Nil, now),
       RolesSnapshot(List(), now),
       PaymentOrdersSnapshot(Nil, now),
       OwnedGroupsSnapshot(Nil, now),
@@ -100,9 +117,7 @@ class UserStateComputations {
     )
   }
 
-  def createFirstUserState(userId: String, agreementName: String, policy: DSLPolicy) = {
-    val resources = policy.resources
-
+  def createFirstUserState(userId: String, agreementName: String, resourcesMap: DSLResourcesMap) = {
       val now = 0L
       UserState(
         userId,
@@ -113,7 +128,7 @@ class UserStateComputations {
         0L,
         ActiveSuspendedSnapshot(false, now),
         CreditSnapshot(0, now),
-        AgreementSnapshot(Agreement(agreementName, now, now) :: Nil, now),
+        AgreementSnapshot(Agreement(agreementName, now, - 1) :: Nil, now),
         RolesSnapshot(List(), now),
         PaymentOrdersSnapshot(Nil, now),
         OwnedGroupsSnapshot(Nil, now),
@@ -130,7 +145,7 @@ class UserStateComputations {
   def computeUserStateAtStartOfBillingPeriod(billingYear: Int,
                                              billingMonth: Int,
                                              knownUserState: UserState,
-                                             accounting: Accounting): UserState = {
+                                             accounting: Accounting): Maybe[EndOfBillingState] = {
 
     val billingDate = new DateCalculator(billingYear, billingMonth, 1)
     val billingDateMillis = billingDate.toMillis
@@ -147,7 +162,8 @@ class UserStateComputations {
 
       // get all events that
       // FIXME: Implement
-      knownUserState
+    Just(EndOfBillingState(knownUserState, ImplicitOffEvents(Nil)))
+
 //    }
   }
 
@@ -197,14 +213,19 @@ class UserStateComputations {
                                 policyFinder: UserPolicyFinder,
                                 fullStateFinder: FullStateFinder,
                                 userStateCache: UserStateCache,
-                                timeUnitInMillis: Long,
                                 rcEventStore: ResourceEventStore,
                                 currentUserState: UserState,
                                 otherStuff: Traversable[Any],
                                 defaultPolicy: DSLPolicy, // Policy.policy
-                                accounting: Accounting): Maybe[UserState] = Maybe {
+                                defaultResourcesMap: DSLResourcesMap,
+                                accounting: Accounting): Maybe[EndOfBillingState] = Maybe {
 
     val billingMonthStartDate = new DateCalculator(yearOfBillingMonth, billingMonth, 1)
+    val billingMonthStopDate = billingMonthStartDate.endOfThisMonth
+    logger.debug("billingMonthStartDate = %s".format(billingMonthStartDate))
+    logger.debug("billingMonthStartDate == billingMonthStopDate = %s".format(billingMonthStartDate == billingMonthStopDate))
+    logger.debug("billingMonthStopDate  = %s".format(billingMonthStopDate))
+
     val prevBillingMonthStartDate = billingMonthStartDate.previousMonth
     val yearOfPrevBillingMonth = prevBillingMonthStartDate.year
     val prevBillingMonth = prevBillingMonthStartDate.monthOfYear
@@ -219,6 +240,7 @@ class UserStateComputations {
     val (previousStartUserState, newStartUserState) = cachedStartUserStateM match {
       case Just(cachedStartUserState) ⇒
         // So, we do have a cached user state but must check if this is still valid
+        logger.debug("Found cachedStartUserState = %s".format(cachedStartUserState))
 
         // Check how many resource events were used to produce this user state
         val cachedHowmanyRCEvents = cachedStartUserState.resourceEventsCounter
@@ -229,38 +251,51 @@ class UserStateComputations {
           userId,
           yearOfPrevBillingMonth,
           prevBillingMonth)
+        logger.debug("prevHowmanyOutOfSyncRCEvents = %s".format(prevHowmanyOutOfSyncRCEvents))
         
         val recomputedStartUserState = if(prevHowmanyOutOfSyncRCEvents == 0) {
+        logger.debug("Not necessary to recompute start user state, using cachedStartUserState")
           // This is good, there were no "out of sync" resource events, so we can use the cached value
           cachedStartUserState
         } else {
           // Oops, there are "out of sync" resource event. Must compute (potentially recursively)
-          computeUserStateAtStartOfBillingPeriod(
+          logger.debug("Recompute start user state...")
+          val computedUserStateAtStartOfBillingPeriod = computeUserStateAtStartOfBillingPeriod(
             yearOfPrevBillingMonth,
             prevBillingMonth,
             cachedStartUserState,
             accounting)
+          logger.debug("computedUserStateAtStartOfiingPeriodllB = %s".format(computedUserStateAtStartOfBillingPeriod))
+          val recomputedStartUserState = computedUserStateAtStartOfBillingPeriod.asInstanceOf[Just[EndOfBillingState]].get.userState // FIXME
+          logger.debug("recomputedStartUserState = %s".format(recomputedStartUserState))
+          recomputedStartUserState
         }
 
         (cachedStartUserState, recomputedStartUserState)
       case NoVal ⇒
-        // We do not even have a cached value, so computate one!
-        val recomputedStartUserState = computeUserStateAtStartOfBillingPeriod(
+        // We do not even have a cached value, so compute one!
+        logger.debug("Do not have a  cachedStartUserState, computing one...")
+        val computedUserStateAtStartOfBillingPeriod = computeUserStateAtStartOfBillingPeriod(
           yearOfPrevBillingMonth,
           prevBillingMonth,
           currentUserState,
           accounting)
+        logger.debug("computedUserStateAtStartOfBillingPeriod = %s".format(computedUserStateAtStartOfBillingPeriod))
+        val recomputedStartUserState = computedUserStateAtStartOfBillingPeriod.asInstanceOf[Just[EndOfBillingState]].get.userState // FIXME
+        logger.debug("recomputedStartUserState = %s".format(recomputedStartUserState))
 
         (recomputedStartUserState, recomputedStartUserState)
       case Failed(e, m) ⇒
+        logger.error(m, e)
         throw new Exception(m, e)
     }
 
     // OK. Now that we have a user state to start with (= start of billing period reference point),
     // let us deal with the events themselves.
     val billingStartMillis = billingMonthStartDate.toMillis
-    val billingStopMillis  = billingMonthStartDate.endOfThisMonth.toMillis
+    val billingStopMillis  = billingMonthStopDate.toMillis
     val allBillingPeriodRelevantRCEvents = rcEventStore.findAllRelevantResourceEventsForBillingPeriod(userId, billingStartMillis, billingStopMillis)
+    logger.debug("allBillingPeriodRelevantRCEvents = %s".format(allBillingPeriodRelevantRCEvents))
 
     type FullResourceType = ResourceEvent.FullResourceType
     val previousRCEventsMap = mutable.Map[FullResourceType, ResourceEvent]()
@@ -271,9 +306,9 @@ class UserStateComputations {
     var _workingUserState = newStartUserState
     val nowMillis = TimeHelpers.nowMillis
 
-    for(newRCEvent <- allBillingPeriodRelevantRCEvents) {
-      val resource = newRCEvent.resource
-      val instanceId = newRCEvent.instanceId
+    for(currentResourceEvent <- allBillingPeriodRelevantRCEvents) {
+      val resource = currentResourceEvent.resource
+      val instanceId = currentResourceEvent.instanceId
 
       // We need to do these kinds of calculations:
       // 1. Credit state calculations
@@ -298,9 +333,9 @@ class UserStateComputations {
       // C. Update ??? state with wallet entries
 
       // The DSLCostPolicy for the resource does not change, so it is safe to use the default DSLPolicy to obtain it.
-      val costPolicyM = newRCEvent.findCostPolicy(defaultPolicy)
-      costPolicyM match {
-        case Just(costPolicy) ⇒
+      val costPolicyOpt = currentResourceEvent.findCostPolicy(defaultResourcesMap)
+      costPolicyOpt match {
+        case Some(costPolicy) ⇒
           ///////////////////////////////////////
           // A. Update user state with new resource instance amount
           // TODO: Check if we are at beginning of billing period, so as to use
@@ -308,7 +343,7 @@ class UserStateComputations {
           val DefaultResourceInstanceAmount = costPolicy.getResourceInstanceInitialAmount
 
           val previousAmount = currentUserState.getResourceInstanceAmount(resource, instanceId, DefaultResourceInstanceAmount)
-          val newAmount = costPolicy.computeNewResourceInstanceAmount(previousAmount, newRCEvent.value)
+          val newAmount = costPolicy.computeNewResourceInstanceAmount(previousAmount, currentResourceEvent.value)
 
           _workingUserState = _workingUserState.copyForResourcesSnapshotUpdate(resource, instanceId, newAmount, nowMillis)
           // A. Update user state with new resource instance amount
@@ -317,7 +352,7 @@ class UserStateComputations {
 
           ///////////////////////////////////////
           // B. Update user state with new credit
-          val previousRCEventM = findPreviousRCEventOf(newRCEvent, costPolicy, previousRCEventsMap)
+          val previousRCEventM = findPreviousRCEventOf(currentResourceEvent, costPolicy, previousRCEventsMap)
           _workingUserState.findResourceInstanceSnapshot(resource, instanceId)
           // B. Update user state with new credit
           ///////////////////////////////////////
@@ -329,14 +364,12 @@ class UserStateComputations {
           // C. Update ??? state with wallet entries
           ///////////////////////////////////////
 
-        case NoVal ⇒
-          () // ERROR
-        case failed @ Failed(_, _) ⇒
+        case None ⇒
           () // ERROR
       }
 
 
-      updatePreviousRCEventWith(previousRCEventsMap, newRCEvent)
+      updatePreviousRCEventWith(previousRCEventsMap, currentResourceEvent)
     } // for(newResourceEvent <- allBillingPeriodRelevantRCEvents)
 
 
@@ -357,7 +390,6 @@ class UserStateComputations {
                                policyFinder: UserPolicyFinder,
                                fullStateFinder: FullStateFinder,
                                userStateFinder: UserStateCache,
-                               timeUnitInMillis: Long,
                                rcEventStore: ResourceEventStore,
                                currentUserState: UserState,
                                otherStuff: Traversable[Any],

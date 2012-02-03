@@ -38,7 +38,7 @@ package gr.grnet.aquarium.logic.events
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.logic.accounting.dsl._
-import com.ckkloverdos.maybe.Maybe
+import com.ckkloverdos.maybe.{MaybeOption, Maybe}
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -160,8 +160,22 @@ case class ResourceEvent(
    * Should the need arises to change the cost policy for a resource, this is a good enough
    * reason to consider creating another type of resource.
    */
-  def findCostPolicy(defaultPolicy: DSLPolicy): Maybe[DSLCostPolicy] = {
+  def findCostPolicyM(defaultPolicy: DSLPolicy): Maybe[DSLCostPolicy] = {
     defaultPolicy.findResource(this.safeResource).map(_.costPolicy): Maybe[DSLCostPolicy]
+  }
+
+  /**
+   * Find the cost policy of the resource named in this resource event.
+   *
+   * We do not expect cost policies for resources to change, because they are supposed
+   * to be one of their constant characteristics. That is why do not issue a time-dependent
+   * query here for the event's current policy.
+   *
+   * Should the need arises to change the cost policy for a resource, this is a good enough
+   * reason to consider creating another type of resource.
+   */
+  def findCostPolicy(resourcesMap: DSLResourcesMap): Option[DSLCostPolicy] = {
+    resourcesMap.findResource(this.safeResource).map(_.costPolicy)
   }
 }
 

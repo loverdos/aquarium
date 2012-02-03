@@ -5,7 +5,10 @@ import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.util.date.DateCalculator
 import simulation.{ClientServiceSim, UserSim}
-import gr.grnet.aquarium.logic.accounting.dsl.{ContinuousCostPolicy, OnOffCostPolicy, DSLComplexResource, DSLSimpleResource, DSLResourcesMap}
+import gr.grnet.aquarium.logic.accounting.dsl._
+import java.util.Date
+import gr.grnet.aquarium.logic.accounting.Accounting
+import com.ckkloverdos.maybe.NoVal
 
 
 /**
@@ -19,14 +22,52 @@ class UserStateComputationsTest {
     val START_MONTH = 1
     val START_DAY = 15
 
-    val resourcesMap = new DSLResourcesMap(
-      DSLComplexResource("vmtime", "Hr", OnOffCostPolicy, "vmid") ::
-      DSLComplexResource("diskspace", "MB/Hr", ContinuousCostPolicy, "diskid") ::
-      Nil
+    val START_OF_YEAR_DATECALC = new DateCalculator(START_YEAR, 1, 1)
+
+    // TODO: integrate this with the rest of the simulation stuff
+    // TODO: since, right now, the resource strings have to be given twice
+    val VMTIME_RESOURCE    = DSLComplexResource("vmtime",    "Hr",    OnOffCostPolicy,      "")
+    val DISKSPACE_RESOURCE = DSLComplexResource("diskspace", "MB/Hr", ContinuousCostPolicy, "")
+
+    val DEFAULT_RESOURCES_MAP = new DSLResourcesMap(VMTIME_RESOURCE :: DISKSPACE_RESOURCE :: Nil)
+
+    val FOR_EVER = DSLTimeFrame(new Date(0), None, Nil)
+    val THE_PRICES_MAP: Map[DSLResource, Double] = Map(VMTIME_RESOURCE -> 1.0, DISKSPACE_RESOURCE -> 1.0)
+
+    val THE_PRICE_LIST  = DSLPriceList("default", None, THE_PRICES_MAP, FOR_EVER)
+    val THE_CREDIT_PLAN = DSLCreditPlan("default", None, 100, Nil, "", FOR_EVER)
+    val THE_ALGORITHM   = DSLAlgorithm("default", None, Map(), FOR_EVER)
+    val THE_AGREEMENT   = DSLAgreement("default", None, THE_ALGORITHM, THE_PRICE_LIST, THE_CREDIT_PLAN)
+
+    val THE_RESOURCES = DEFAULT_RESOURCES_MAP.toResourcesList
+
+    val DEFAULT_POLICY = DSLPolicy(
+      Nil,
+      THE_PRICE_LIST :: Nil,
+      THE_RESOURCES,
+      THE_CREDIT_PLAN :: Nil,
+      THE_AGREEMENT :: Nil
     )
+
+    val computer = new UserStateComputations
+
+    val userPolicyFinder = new UserPolicyFinder {
+      def findUserPolicyAt(userId: String, whenMillis: Long) = DEFAULT_POLICY
+    }
+
+    val fullStateFinder = new FullStateFinder {
+      def findFullState(userId: String, whenMillis: Long) = null
+    }
+
+    val userStateCache = new UserStateCache {
+      def findUserStateAtEndOfPeriod(userId: String, year: Int, month: Int) = NoVal
+
+      def findLatestUserStateForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int) = NoVal
+    }
 
     val mc = Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
     val storeProvider = mc.storeProvider
+    val resourceEventStore = storeProvider.resourceEventStore
 //    println("!! storeProvider = %s".format(storeProvider))
 
     // A new user is created on January 15th, 2012
@@ -50,7 +91,7 @@ class UserStateComputationsTest {
     // Within January, create one VM ON-OFF ...
     val onOff1_M = vm.newONOFF(vmStartDate, 9)
 
-    val diskConsumptionDateCalc = USER_START_DATECALC.plusDays(2).plusHours(3)
+    val diskConsumptionDateCalc = USER_START_DATECALC.plusHours(3)
     val diskConsumptionDate1 = diskConsumptionDateCalc.toDate
     val diskConsumptionDate2 = diskConsumptionDateCalc.plusDays(1).plusHours(1).toDate
 
@@ -58,14 +99,33 @@ class UserStateComputationsTest {
     val consume1_M = disk.consumeMB(diskConsumptionDate1, 99)
     val consume2_M = disk.consumeMB(diskConsumptionDate2, 23)
 
+    println("=============================")
     for {
       event <- christos.myResourceEventsByReceivedDate
     } {
       val when = new DateCalculator(event.receivedMillis)
       val resource  = event.resource
       val instanceId = event.instanceId
-      val value = event.beautifyValue(resourcesMap)
+      val value = event.beautifyValue(DEFAULT_RESOURCES_MAP)
       println("%s [%s, %s] %s".format(when, resource, instanceId, value))
     }
+    println("=============================")
+
+    val billing = computer.computeFullMonthlyBilling(
+      START_YEAR,
+      START_MONTH,
+      christos.userId,
+      userPolicyFinder,
+      fullStateFinder,
+      userStateCache,
+      resourceEventStore,
+      computer.createFirstUserState(christos.userId),
+      Nil,
+      DEFAULT_POLICY,
+      DEFAULT_RESOURCES_MAP,
+      new Accounting{}
+    )
+    
+    println("!! billing = %s".format(billing))
   }
 }

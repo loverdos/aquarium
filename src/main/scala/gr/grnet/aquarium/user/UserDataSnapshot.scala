@@ -71,13 +71,13 @@ case class Agreement(agreement: String, validFrom: Long, validTo: Long) {
   if (validTo != -1) assert(validTo > validFrom)
   assert(!agreement.isEmpty)
 
-  Policy.policy(new Date(validFrom)) match {
-    case Just(x) => x.findAgreement(agreement) match {
-      case None => assert(false)
-      case _ =>
-    }
-    case _ => assert(false)
-  }
+//  Policy.policy(new Date(validFrom)) match {
+//    case Just(x) => x.findAgreement(agreement) match {
+//      case None => assert(false)
+//      case _ =>
+//    }
+//    case _ => assert(false)
+//  }
 }
 
 /**
