@@ -230,6 +230,8 @@ object Configurator {
 
   val MasterConfName = "aquarium.properties"
 
+  val PolicyConfName = "policy.yaml"
+
   /**
    * Current directory resource context.
    * Normally this should be the application installation directory.
@@ -256,21 +258,22 @@ object Configurator {
    */
   val ConfBaseFolderSysProp = SysProp("aquarium.conf.base.folder")
 
+  val BasicResourceContext = new CompositeStreamResourceContext(
+    NoVal,
+    SlashEtcResourceContext,
+    AppBaseResourceContext,
+    ClasspathBaseResourceContext)
+
   /**
    * The resource context used in the application.
    */
   lazy val MasterResourceContext = {
-    val rc0 = ClasspathBaseResourceContext
-    val rc1 = AppBaseResourceContext
-    val rc2 = SlashEtcResourceContext
-    val basicContext = new CompositeStreamResourceContext(NoVal, rc2, rc1, rc0)
-    
     ConfBaseFolderSysProp.value match {
       case Just(value) ⇒
         // We have a system override for the configuration location
-        new CompositeStreamResourceContext(Just(basicContext), new FileStreamResourceContext(value))
+        new CompositeStreamResourceContext(Just(BasicResourceContext), new FileStreamResourceContext(value))
       case NoVal ⇒
-        basicContext
+        BasicResourceContext
       case Failed(e, m) ⇒
         throw new RuntimeException(m , e)
     }
