@@ -2,6 +2,7 @@ package gr.grnet.aquarium.util.date
 
 import org.joda.time.{MutableDateTime, DateMidnight}
 import java.util.{Date, Calendar}
+import java.text.DateFormat
 
 
 /**
@@ -192,7 +193,11 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
     toMillis >= millis
   }
 
+  def format(fmt: String) = {
+    dateTime.formatted(fmt)
+  }
+
   override def toString = {
-    dateTime.toString
+    dateTime.toString("yyyy-MM-dd HH:mm:ss.SSS")
   }
 }
