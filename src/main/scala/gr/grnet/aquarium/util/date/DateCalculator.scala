@@ -2,13 +2,11 @@ package gr.grnet.aquarium.util.date
 
 import org.joda.time.{MutableDateTime, DateMidnight}
 import java.util.{Date, Calendar}
-import java.text.DateFormat
+import org.joda.time.format.ISODateTimeFormat
 
 
 /**
- * Date calculator.
- *
- * Utility class for date manipulations. Not that this is mutable.
+ * Mutable date calculator.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -204,6 +202,10 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
 
   def format(fmt: String) = {
     dateTime.formatted(fmt)
+  }
+
+  def toISOString: String = {
+    ISODateTimeFormat.dateTime().print(dateTime);
   }
 
   override def toString = {
