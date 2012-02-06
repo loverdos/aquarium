@@ -208,7 +208,7 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
-  def policyEventStore = {
+  def policyStore = {
     _policyStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.policyStore

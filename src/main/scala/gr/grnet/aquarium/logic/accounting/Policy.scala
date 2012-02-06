@@ -43,7 +43,7 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.logic.events.PolicyEntry
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 import java.util.concurrent.atomic.AtomicReference
-import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
+import com.ckkloverdos.maybe.{Maybe, Just}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -130,13 +130,7 @@ object Policy extends DSL with Loggable {
   /**
    * Search for and open a stream to a policy.
    */
-  private def _policyFile: File =
-    MasterConfigurator.props.get(Keys.aquarium_policy) match {
-      case Just(x) => new File(x)
-      case _ => new File("/etc/aquarium/policy.yaml")
-    }
-
-  private def policyFile = {
+   private def policyFile = {
     val policyConfResourceM = BasicResourceContext.getResource(PolicyConfName)
     policyConfResourceM match {
       case Just(policyResource) ⇒
@@ -154,7 +148,7 @@ object Policy extends DSL with Loggable {
    */
   private def reloadPolicies: Map[Timeslot, DSLPolicy] = {
     //1. Load policies from db
-    val policies = MasterConfigurator.policyEventStore.loadPolicies(0)
+    val policies = MasterConfigurator.policyStore.loadPolicies(0)
 
     //2. Check whether policy file has been updated
     val latestPolicyChange = if (policies.isEmpty) 0 else policies.last.validFrom
@@ -182,11 +176,11 @@ object Policy extends DSL with Loggable {
 
         if(!policies.isEmpty) {
           val toUpdate = policies.last.copy(validTo = ts)
-          MasterConfigurator.policyEventStore.updatePolicy(toUpdate)
-          MasterConfigurator.policyEventStore.storePolicy(newPolicy)
+          MasterConfigurator.policyStore.updatePolicy(toUpdate)
+          MasterConfigurator.policyStore.storePolicy(newPolicy)
           List(toUpdate, newPolicy)
         } else {
-          MasterConfigurator.policyEventStore.storePolicy(newPolicy)
+          MasterConfigurator.policyStore.storePolicy(newPolicy)
           List(newPolicy)
         }
 
