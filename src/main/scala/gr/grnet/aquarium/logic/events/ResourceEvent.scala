@@ -126,31 +126,10 @@ case class ResourceEvent(
       )
     }
   }
-  /**
-   * Returns a beautiful string representation of the value.
-   *
-   * @param policy The policy to be asked for resources.
-   * @return A beautiful string representation of the value.
-   */
-  def beautifyValue(policy: DSLPolicy): String = {
-    policy.findResource(this.resource) match {
-      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
-        OnOffPolicyResourceState(this.value).state.toUpperCase
-      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
-        OnOffPolicyResourceState(this.value).state.toUpperCase
-      case _ ⇒
-        value.toString
-    }
-  }
 
-  /**
-   * Returns a beautiful string representation of the value.
-   *
-   * @param resourcesMap The resources map to be asked for resources.
-   * @return A beautiful string representation of the value.
-   */
-  def beautifyValue(resourcesMap: DSLResourcesMap): String = {
-    resourcesMap.findResource(this.resource) match {
+  private[this]
+  def beatifyValue(resourceProvider: (String) ⇒ Option[DSLResource]): String = {
+    resourceProvider(this.resource) match {
       case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
         OnOffPolicyResourceState(this.value).state.toUpperCase
       case Some(rc @ DSLComplexResource(_, _, _, _)) ⇒
@@ -162,6 +141,26 @@ case class ResourceEvent(
       case _ ⇒
         value.toString
     }
+  }
+
+  /**
+   * Returns a beautiful string representation of the value.
+   *
+   * @param policy The policy to be asked for resources.
+   * @return A beautiful string representation of the value.
+   */
+  def beautifyValue(policy: DSLPolicy): String = {
+    beatifyValue(policy.findResource)
+  }
+
+  /**
+   * Returns a beautiful string representation of the value.
+   *
+   * @param resourcesMap The resources map to be asked for resources.
+   * @return A beautiful string representation of the value.
+   */
+  def beautifyValue(resourcesMap: DSLResourcesMap): String = {
+    beatifyValue(resourcesMap.findResource)
   }
 
   /**
