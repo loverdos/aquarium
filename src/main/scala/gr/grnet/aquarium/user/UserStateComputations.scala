@@ -318,7 +318,10 @@ class UserStateComputations extends Loggable {
       val resource = currentResourceEvent.resource
       val instanceId = currentResourceEvent.instanceId
 
-      logger.debug("Processing %s".format(currentResourceEvent))
+      logger.debug("Processing %s".format(currentResourceEvent.toDebugString(defaultResourcesMap, true)))
+      // ResourCe events Debug
+      // =     =         =
+      def RCD(fmt: String, args: Any*) = logger.debug("  => " + fmt.format(args:_*))
 
       // We need to do these kinds of calculations:
       // 1. Credit state calculations
@@ -346,14 +349,18 @@ class UserStateComputations extends Loggable {
       val costPolicyOpt = currentResourceEvent.findCostPolicy(defaultResourcesMap)
       costPolicyOpt match {
         case Some(costPolicy) ⇒
+          RCD("Found costPolicy = %s".format(costPolicy))
           ///////////////////////////////////////
           // A. Update user state with new resource instance amount
           // TODO: Check if we are at beginning of billing period, so as to use
           //       costPolicy.computeResourceInstanceAmountForNewBillingPeriod
           val DefaultResourceInstanceAmount = costPolicy.getResourceInstanceInitialAmount
+          RCD("DefaultResourceInstanceAmount = %s".format(DefaultResourceInstanceAmount))
 
           val previousAmount = currentUserState.getResourceInstanceAmount(resource, instanceId, DefaultResourceInstanceAmount)
+          RCD("previousAmount = %s".format(previousAmount))
           val newAmount = costPolicy.computeNewResourceInstanceAmount(previousAmount, currentResourceEvent.value)
+          RCD("newAmount = %s".format(newAmount))
 
           _workingUserState = _workingUserState.copyForResourcesSnapshotUpdate(resource, instanceId, newAmount, nowMillis)
           // A. Update user state with new resource instance amount

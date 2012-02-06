@@ -40,6 +40,7 @@ import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.logic.accounting.dsl._
 import com.ckkloverdos.maybe.{MaybeOption, Maybe}
 import java.util.Date
+import gr.grnet.aquarium.util.date.DateCalculator
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -98,6 +99,33 @@ case class ResourceEvent(
     isReceivedWithinDates(fromDate, toDate)
   }
 
+  def toDebugString(resourcesMap: DSLResourcesMap, useOnlyInstanceId: Boolean): String = {
+    val instanceInfo = if(useOnlyInstanceId) instanceId else "%s::%s".format(resource, instanceId)
+    val bvalue = beautifyValue(resourcesMap)
+    val occurredFormatted = new DateCalculator(occurredMillis).toString
+    if(occurredMillis == receivedMillis) {
+      "EVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
+        id,
+        occurredFormatted,
+        instanceInfo,
+        bvalue,
+        details,
+        userId,
+        clientId
+      )
+    } else {
+      "EVENT(%s, [%s], [%s], %s, %s, %s, %s, %s)".format(
+        id,
+        occurredFormatted,
+        new DateCalculator(receivedMillis),
+        instanceInfo,
+        bvalue,
+        details,
+        userId,
+        clientId
+      )
+    }
+  }
   /**
    * Returns a beautiful string representation of the value.
    *
@@ -125,8 +153,12 @@ case class ResourceEvent(
     resourcesMap.findResource(this.resource) match {
       case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
         OnOffPolicyResourceState(this.value).state.toUpperCase
+      case Some(rc @ DSLComplexResource(_, _, _, _)) ⇒
+        "%s [%s]".format(value, rc.unit)
       case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
         OnOffPolicyResourceState(this.value).state.toUpperCase
+      case Some(rc @ DSLSimpleResource(_, _, _)) ⇒
+        "%s [%s]".format(value, rc.unit)
       case _ ⇒
         value.toString
     }
