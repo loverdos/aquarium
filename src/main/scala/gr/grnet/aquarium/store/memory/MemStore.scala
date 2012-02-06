@@ -216,7 +216,7 @@ class MemStore extends UserStateStore
 
   def loadPolicies(after: Long) = policyById.valuesIterator.foldLeft(List[PolicyEntry]()){
     (acc, v) => if(v.validFrom > after) v :: acc else acc
-  }
+  }.sortWith((a,b) => a.validFrom < b.validFrom)
 
   def storePolicy(policy: PolicyEntry) = {policyById += (policy.id -> policy); Just(RecordID(policy.id))}
 
