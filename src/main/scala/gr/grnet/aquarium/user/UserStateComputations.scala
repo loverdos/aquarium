@@ -221,9 +221,8 @@ class UserStateComputations extends Loggable {
                                 accounting: Accounting): Maybe[EndOfBillingState] = Maybe {
 
     val billingMonthStartDate = new DateCalculator(yearOfBillingMonth, billingMonth, 1)
-    val billingMonthStopDate = billingMonthStartDate.endOfThisMonth
+    val billingMonthStopDate = billingMonthStartDate.copy.endOfThisMonth
     logger.debug("billingMonthStartDate = %s".format(billingMonthStartDate))
-    logger.debug("billingMonthStartDate == billingMonthStopDate = %s".format(billingMonthStartDate == billingMonthStopDate))
     logger.debug("billingMonthStopDate  = %s".format(billingMonthStopDate))
 
     val prevBillingMonthStartDate = billingMonthStartDate.previousMonth

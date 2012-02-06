@@ -8,12 +8,12 @@ import java.text.DateFormat
 /**
  * Date calculator.
  *
- * Utility class for date manipulations.
+ * Utility class for date manipulations. Not that this is mutable.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class DateCalculator private(private[this] var dateTime: MutableDateTime) {
+class DateCalculator private(private[this] var dateTime: MutableDateTime) extends Cloneable {
   def this(millis: Long)  = this(new MutableDateTime(millis))
   def this(date: Date)    = this(new MutableDateTime(date))
   def this(cal: Calendar) = this(new MutableDateTime(cal))
@@ -23,6 +23,11 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
 
   def this(year: Int, monthOfYear: Int) =
     this(year, monthOfYear, 1)
+
+
+  override def clone(): DateCalculator = new DateCalculator(this.dateTime)
+
+  def copy: DateCalculator = clone()
 
   def plusMonths(n: Int): this.type = {
     dateTime.addMonths(n)
