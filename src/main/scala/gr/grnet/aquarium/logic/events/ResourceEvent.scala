@@ -39,6 +39,7 @@ import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.logic.accounting.dsl._
 import com.ckkloverdos.maybe.{MaybeOption, Maybe}
+import java.util.Date
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -70,6 +71,32 @@ case class ResourceEvent(
   def hasInstanceId = !safeInstanceId.isEmpty
 
   def fullResourceInfo = (safeResource, safeInstanceId)
+
+  def isOccurredWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+    fromMillis <= occurredMillis && occurredMillis <= toMillis
+  }
+
+  def isOccurredWithinDates(fromDate: Date, toDate: Date): Boolean = {
+    fromDate.getTime <= occurredMillis && occurredMillis <= toDate.getTime
+  }
+
+  def isReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+    fromMillis <= receivedMillis && receivedMillis <= toMillis
+  }
+  
+  def isReceivedWithinDates(fromDate: Date, toDate: Date): Boolean = {
+    fromDate.getTime <= receivedMillis && receivedMillis <= toDate.getTime
+  }
+
+  def isOccurredOrReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+    isOccurredWithinMillis(fromMillis, toMillis) ||
+    isReceivedWithinMillis(fromMillis, toMillis)
+  }
+
+  def isOccurredOrReceivedWithinDates(fromDate: Date, toDate: Date): Boolean = {
+    isOccurredWithinDates(fromDate, toDate) ||
+    isReceivedWithinDates(fromDate, toDate)
+  }
 
   /**
    * Returns a beautiful string representation of the value.
