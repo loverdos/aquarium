@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 GRNET S.A. All rights reserved.
+ * Copyright 2012 GRNET S.A. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or
  * without modification, are permitted provided that the following
@@ -33,22 +33,42 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.logic.test
+
+import org.junit.Test
+import org.junit.Assert._
+import gr.grnet.aquarium.{StoreConfigurator}
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 /**
- * Test-related property names.
+ * Tests for the Policy resolution algorithms
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
-object PropertyNames {
-  // Test enabling/disabling
-  val TestEnableRabbitMQ = "test.enable.rabbitmq"
-  val TestEnableStore    = "test.enable.store"
-  val TestEnablePerf     = "test.enable.perf"
-  val TestEnableSpray    = "test.enable.spray"
-  val TestEnableAll      = "test.enable.all"
+class PolicyTest extends DSLTestBase with StoreConfigurator {
 
-  // Define which store implementation to use. Overrides
-  // values in aquarium.properties.
-  val TestStore          = "test.store"
+  @Test
+  def testLoadStore: Unit = {
+    before
+
+    val policies = configurator.policyStore
+    policies.storePolicy(this.dsl.toPolicyEntry)
+
+    val copy1 = this.dsl.copy(algorithms = List())
+    policies.storePolicy(copy1.toPolicyEntry)
+
+    val copy2 = this.dsl.copy(pricelists = List())
+    policies.storePolicy(copy2.toPolicyEntry)
+
+    var pol = policies.loadPolicies(TimeHelpers.nowMillis)
+    assert(pol.isEmpty)
+
+    pol = policies.loadPolicies(0)
+    assertEquals(3, pol.size)
+    assertEquals(pol.head.policyYAML, this.dsl.toYAML)
+    assertEquals(pol.tail.head.policyYAML, copy1.toYAML)
+    assertEquals(pol.tail.tail.head.policyYAML, copy2.toYAML)
+  }
+
+  def testReloadPolicies
 }
