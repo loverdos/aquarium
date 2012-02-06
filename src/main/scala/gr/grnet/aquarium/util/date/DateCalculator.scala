@@ -83,6 +83,14 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
     goPlusHours(-n)
   }
 
+  def goPlusMinutes(n: Int): this.type = {
+    dateTime.addMinutes(n)
+    this
+  }
+
+  def goMinusMinutes(n: Int): this.type = {
+    goPlusMinutes(-n)
+  }
 
   def goPlusMillis(n: Long): this.type = {
     dateTime.add(n)
