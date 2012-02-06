@@ -48,7 +48,7 @@ import gr.grnet.aquarium.store.RecordID
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class ClientServiceSim(clientId: String) {
+case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
   private[this] val UserProto      = UserSim("", new Date(0), new MemStore().resourceEventStore)
   private[this] val VMTimeProto    = VMTimeSim(UserProto, "")
   private[this] val DiskspaceProto = DiskspaceSim(UserProto, "")
@@ -60,9 +60,11 @@ case class ClientServiceSim(clientId: String) {
   }
 
   case class VMTimeSim(override val owner: UserSim,
-                       override val instanceId: String = "") extends ResourceSim("vmtime", owner, instanceId) {
+                       override val instanceId: String = "")
+  extends ResourceSim("vmtime", owner, instanceId) {
 
-    def newON(occurredDate: Date, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+    def newON(occurredDate: Date): Maybe[RecordID] = {
+      val id = uidGen.nextUID()
       val time = occurredDate.getTime
       val occurredTime = time
       val receivedTime = time
@@ -81,7 +83,8 @@ case class ClientServiceSim(clientId: String) {
       owner._addResourceEvent(event)
     }
 
-    def newON_OutOfSync(occuredDate: Date, outOfSyncHours: Int, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+    def newON_OutOfSync(occuredDate: Date, outOfSyncHours: Int): Maybe[RecordID] = {
+      val id = uidGen.nextUID()
       val occurredDateCalc = new DateCalculator(occuredDate)
       val occurredTime = occurredDateCalc.toMillis
       val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
@@ -101,7 +104,8 @@ case class ClientServiceSim(clientId: String) {
       owner._addResourceEvent(event)
     }
 
-    def newOFF(occurredDate: Date, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+    def newOFF(occurredDate: Date): Maybe[RecordID] = {
+      val id = uidGen.nextUID()
       val time = occurredDate.getTime
       val occurredTime = time
       val receivedTime = time
@@ -120,7 +124,8 @@ case class ClientServiceSim(clientId: String) {
       owner._addResourceEvent(event)
     }
 
-    def newOFF_OutOfSync(occuredDate: Date, outOfSyncHours: Int, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+    def newOFF_OutOfSync(occuredDate: Date, outOfSyncHours: Int): Maybe[RecordID] = {
+      val id = uidGen.nextUID()
       val occurredDateCalc = new DateCalculator(occuredDate)
       val occurredTime = occurredDateCalc.toMillis
       val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
@@ -140,13 +145,10 @@ case class ClientServiceSim(clientId: String) {
       owner._addResourceEvent(event)
     }
 
-    def newONOFF(occurredDateForON: Date,
-                 totalVMTimeInHours: Int,
-                 idON: String = IDGen.nextUID(),
-                 idOFF: String = IDGen.nextUID()): (Maybe[RecordID], Maybe[RecordID]) = {
-      val onID = newON(occurredDateForON, idON)
+    def newONOFF(occurredDateForON: Date, totalVMTimeInHours: Int): (Maybe[RecordID], Maybe[RecordID]) = {
+      val onID = newON(occurredDateForON)
       val offDate = new DateCalculator(occurredDateForON).goPlusHours(totalVMTimeInHours).toDate
-      val offID = newOFF(offDate, idOFF)
+      val offID = newOFF(offDate)
 
       (onID, offID)
     }
@@ -154,22 +156,22 @@ case class ClientServiceSim(clientId: String) {
     def newONOFF_OutOfSync(occurredDateForON: Date,
                            totalVMTimeInHours: Int,
                            outOfSyncONHours: Int,
-                           outOfSyncOFFHours: Int,
-                           idON: String = IDGen.nextUID(),
-                           idOFF: String = IDGen.nextUID()): (Maybe[RecordID], Maybe[RecordID]) = {
-      val onID = newON_OutOfSync(occurredDateForON, outOfSyncONHours, idON)
+                           outOfSyncOFFHours: Int): (Maybe[RecordID], Maybe[RecordID]) = {
+      val onID = newON_OutOfSync(occurredDateForON, outOfSyncONHours)
       val occurredDateCalcForOFF = new DateCalculator(occurredDateForON).goPlusHours(totalVMTimeInHours)
       val occurredDateForOFF = occurredDateCalcForOFF.toDate
-      val offID = newOFF_OutOfSync(occurredDateForOFF, outOfSyncOFFHours, idOFF)
+      val offID = newOFF_OutOfSync(occurredDateForOFF, outOfSyncOFFHours)
 
       (onID, offID)
     }
   }
 
   case class DiskspaceSim(override val owner: UserSim,
-                          override val instanceId: String = "") extends ResourceSim("diskspace", owner, instanceId) {
+                          override val instanceId: String = "")
+    extends ResourceSim("diskspace", owner, instanceId) {
 
-    def consumeMB(occurredDate: Date, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+    def consumeMB(occurredDate: Date, megaBytes: Double): Maybe[RecordID] = {
+      val id = uidGen.nextUID()
       val time = occurredDate.getTime
       val event = ResourceEvent(
         id,
@@ -187,11 +189,12 @@ case class ClientServiceSim(clientId: String) {
       owner._addResourceEvent(event)
     }
     
-    def freeMB(occurredDate: Date, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
-      consumeMB(occurredDate, -megaBytes, id)
+    def freeMB(occurredDate: Date, megaBytes: Double): Maybe[RecordID] = {
+      consumeMB(occurredDate, -megaBytes)
     }
 
-    def consumeMB_OutOfSync(occurredDate: Date, outOfSyncHours: Int, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
+    def consumeMB_OutOfSync(occurredDate: Date, outOfSyncHours: Int, megaBytes: Double): Maybe[RecordID] = {
+      val id = uidGen.nextUID()
       val occurredDateCalc = new DateCalculator(occurredDate)
       val occurredTime = occurredDateCalc.toMillis
       val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
@@ -212,8 +215,8 @@ case class ClientServiceSim(clientId: String) {
       owner._addResourceEvent(event)
     }
 
-    def freeMB_OutOfSync(occurredDate: Date, outOfSyncHours: Int, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
-      consumeMB_OutOfSync(occurredDate, outOfSyncHours, -megaBytes, id)
+    def freeMB_OutOfSync(occurredDate: Date, outOfSyncHours: Int, megaBytes: Double): Maybe[RecordID] = {
+      consumeMB_OutOfSync(occurredDate, outOfSyncHours, -megaBytes)
     }
   }
 
@@ -233,12 +236,12 @@ case class ClientServiceSim(clientId: String) {
     "%s/%s/%s".format(clientId, resource, instanceId)
   }
 
-  def newVMTime(owner: UserSim, _instanceId: String = IDGen.nextUID()): VMTimeSim = {
+  def newVMTime(owner: UserSim, _instanceId: String): VMTimeSim = {
     owner._addServiceClient(this)
     _addVMTime(VMTimeSim(owner, this.qualifyResource(VMTimeProto.resource, _instanceId)))
   }
 
-  def newDiskspace(owner: UserSim, _instanceId: String = IDGen.nextUID()): DiskspaceSim = {
+  def newDiskspace(owner: UserSim, _instanceId: String): DiskspaceSim = {
     owner._addServiceClient(this)
     _addDiskspace(DiskspaceSim(owner, this.qualifyResource(DiskspaceProto.resource, _instanceId)))
   }

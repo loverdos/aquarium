@@ -4,11 +4,11 @@ import org.junit.Test
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.util.date.DateCalculator
-import simulation.{ClientServiceSim, UserSim}
 import gr.grnet.aquarium.logic.accounting.dsl._
 import java.util.Date
 import gr.grnet.aquarium.logic.accounting.Accounting
 import com.ckkloverdos.maybe.NoVal
+import simulation.{ConcurrentVMLocalUIDGenerator, ClientServiceSim, UserSim}
 
 
 /**
@@ -75,8 +75,9 @@ class UserStateComputationsTest {
     val christos  = UserSim("Christos", USER_START_DATECALC.toDate, storeProvider.resourceEventStore)
 
     // There are two client services, synnefo and pithos.
-    val synnefo = ClientServiceSim("synnefo")
-    val pithos  = ClientServiceSim("pithos")
+    val uidGenerator = new ConcurrentVMLocalUIDGenerator
+    val synnefo = ClientServiceSim("synnefo")(uidGenerator)
+    val pithos  = ClientServiceSim("pithos")(uidGenerator)
 
     // By convention
     // - synnefo is for VMTime and

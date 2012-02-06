@@ -32,16 +32,23 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
+
 package gr.grnet.aquarium.user.simulation
 
-import java.rmi.server.UID
+import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Unique ID generator.
+ * A [[gr.grnet.aquarium.user.simulation.UIDGenerator]] providing values by incrementing an
+ * [[java.util.concurrent.atomic.AtomicLong]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object IDGen {
-  def nextUID() = new UID().toString
+class ConcurrentVMLocalUIDGenerator extends UIDGenerator {
+  private[this] val counter = new AtomicLong()
+
+  def nextUID() = {
+    val next = counter.getAndIncrement
+    next.toString
+  }
 }
