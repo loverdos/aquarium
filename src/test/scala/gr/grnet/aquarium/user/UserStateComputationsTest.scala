@@ -70,7 +70,7 @@ class UserStateComputationsTest {
     val resourceEventStore = storeProvider.resourceEventStore
 //    println("!! storeProvider = %s".format(storeProvider))
 
-    // A new user is created on January 15th, 2012
+    // A new user is created on 2012-01-15 00:00:00.000
     val USER_START_DATECALC = new DateCalculator(START_YEAR, START_MONTH, START_DAY)
     val christos  = UserSim("Christos", USER_START_DATECALC.toDate, storeProvider.resourceEventStore)
 
@@ -85,19 +85,33 @@ class UserStateComputationsTest {
     val disk = pithos.newDiskspace(christos, "DISK.1")
 
     // Let's create our dates of interest
-    val vmStartDateCalc = USER_START_DATECALC.goPlusDays(1).goPlusHours(1)
+    val vmStartDateCalc = USER_START_DATECALC.copy.goPlusDays(1).goPlusHours(1)
+    // 2012-01-16 01:00:00.000
     val vmStartDate = vmStartDateCalc.toDate
 
     // Within January, create one VM ON-OFF ...
     val onOff1_M = vm.newONOFF(vmStartDate, 9)
 
-    val diskConsumptionDateCalc = USER_START_DATECALC.goPlusHours(3)
+    val diskConsumptionDateCalc = USER_START_DATECALC.copy.goPlusHours(3)
+    // 2012-01-16 04:00:00.000
     val diskConsumptionDate1 = diskConsumptionDateCalc.toDate
-    val diskConsumptionDate2 = diskConsumptionDateCalc.goPlusDays(1).goPlusHours(1).toDate
+    // 2012-01-17 05:00:00.000
+    val diskConsumptionDate2 = diskConsumptionDateCalc.copy.goPlusDays(1).goPlusHours(1).toDate
 
     // ... and two diskspace changes
     val consume1_M = disk.consumeMB(diskConsumptionDate1, 99)
     val consume2_M = disk.consumeMB(diskConsumptionDate2, 23)
+
+    // ... and one "future" event
+    // 2012-02-07 07:07:07.007
+    disk.consumeMB(
+      START_OF_YEAR_DATECALC.copy.
+        goNextMonth.goPlusDays(6).
+        goPlusHours(7).
+        goPlusMinutes(7).
+        goPlusSeconds(7).
+        goPlusMillis(7).toDate,
+      777)
 
     println("=============================")
     for {

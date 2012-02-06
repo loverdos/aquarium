@@ -199,12 +199,28 @@ class MemStore extends UserStateStore
       val receivedMillis = ev.receivedMillis
       val occurredMillis = ev.occurredMillis
 
-      billingDateStart.isAfterEqMillis(receivedMillis) && // the events that...
-      billingDateEnd.isBeforeEqMillis (receivedMillis) && // ...were received withing the billing month
-      (                                                 //
-        billingDateStart.isAfterMillis(occurredMillis)    // but occurred before the billing period
-        )
+      // the events that were received withing the billing month
+      ev.isReceivedWithinMillis(billingDateStart.toMillis, billingDateEnd.toMillis) &&
+      // but occurred before the billing period
+      billingDateStart.isAfterMillis(occurredMillis)
     }.size.toLong
+  }
+
+  /**
+   * Finds all relevant resource events for the billing period.
+   * The relevant events are those:
+   * a) whose `occurredMillis` is within the given billing period or
+   * b) whose `receivedMillis` is within the given billing period.
+   *
+   * Order them by `occurredMillis`
+   * FIXME: implement
+   */
+  override def findAllRelevantResourceEventsForBillingPeriod(userId: String,
+                                                             startMillis: Long,
+                                                             stopMillis: Long): List[ResourceEvent] = {
+    resourceEventsById.valuesIterator.filter { case ev ⇒
+      ev.isOccurredOrReceivedWithinMillis(startMillis, stopMillis)
+    }.toList.sortWith { case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis }
   }
   //- ResourceEventStore
 

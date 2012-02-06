@@ -282,7 +282,7 @@ class UserStateComputations extends Loggable {
         (cachedStartUserState, recomputedStartUserState)
       case NoVal ⇒
         // We do not even have a cached value, so compute one!
-        logger.debug("Do not have a  cachedStartUserState, computing one...")
+        logger.debug("Do not have a cachedStartUserState, computing one...")
         val computedUserStateAtStartOfBillingPeriod = computeUserStateAtStartOfBillingPeriod(
           yearOfPrevBillingMonth,
           prevBillingMonth,
@@ -294,7 +294,7 @@ class UserStateComputations extends Loggable {
 
         (recomputedStartUserState, recomputedStartUserState)
       case Failed(e, m) ⇒
-        logger.error(m, e)
+        logger.error("[Could not find latest user state for billing month %s-%s] %s".format(yearOfPrevBillingMonth, prevBillingMonth, m), e)
         throw new Exception(m, e)
     }
 
@@ -303,7 +303,7 @@ class UserStateComputations extends Loggable {
     val billingStartMillis = billingMonthStartDate.toMillis
     val billingStopMillis  = billingMonthStopDate.toMillis
     val allBillingPeriodRelevantRCEvents = rcEventStore.findAllRelevantResourceEventsForBillingPeriod(userId, billingStartMillis, billingStopMillis)
-    logger.debug("allBillingPeriodRelevantRCEvents = %s".format(allBillingPeriodRelevantRCEvents))
+    logger.debug("allBillingPeriodRelevantRCEvents [%s] = %s".format(allBillingPeriodRelevantRCEvents.size, allBillingPeriodRelevantRCEvents))
 
     type FullResourceType = ResourceEvent.FullResourceType
     val previousRCEventsMap = mutable.Map[FullResourceType, ResourceEvent]()
@@ -317,6 +317,8 @@ class UserStateComputations extends Loggable {
     for(currentResourceEvent <- allBillingPeriodRelevantRCEvents) {
       val resource = currentResourceEvent.resource
       val instanceId = currentResourceEvent.instanceId
+
+      logger.debug("Processing %s".format(currentResourceEvent))
 
       // We need to do these kinds of calculations:
       // 1. Credit state calculations

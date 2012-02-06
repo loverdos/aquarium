@@ -71,6 +71,7 @@ trait ResourceEventStore {
    * a) whose `occurredMillis` is within the given billing period and
    * b) whose `receivedMillis` is within the given billing period.
    *
+   * Order them by `occurredMillis`
    * FIXME: implement
    */
   def findAllRelevantResourceEventsForBillingPeriod(userId: String,
