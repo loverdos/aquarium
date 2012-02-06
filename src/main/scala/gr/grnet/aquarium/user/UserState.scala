@@ -61,6 +61,7 @@ case class UserState(
     /**
      * When the user was created in the system (not Aquarium). We use this as a basis for billing periods. Set to
      * zero if unknown.
+     * 
      */
     startDateMillis: Long,
 
@@ -74,14 +75,18 @@ case class UserState(
     /**
      * True iff this user state refers to a full billing period, that is a full billing month.
      */
-    isFullBillingPeriod: Boolean,
+    isFullBillingMonthState: Boolean,
 
     /**
      * The full billing period for which this user state refers to.
      * This is set when the user state refers to a full billing period (= month)
      * and is used to cache the user state for subsequent queries.
      */
-    fullBillingPeriod: BillingPeriod,
+    theFullBillingMonth: BillingMonth,
+
+    /**
+     *
+     */
 
     /**
      * Counts the number of resource events used to produce this user state for
@@ -93,9 +98,6 @@ case class UserState(
     credits: CreditSnapshot,
     agreements: AgreementSnapshot,
     roles: RolesSnapshot,
-    paymentOrders: PaymentOrdersSnapshot,
-    ownedGroups: OwnedGroupsSnapshot,
-    groupMemberships: GroupMembershipsSnapshot,
     ownedResources: OwnedResourcesSnapshot
 ) extends JsonSupport {
 
@@ -103,7 +105,6 @@ case class UserState(
     List(
       active.snapshotTime,
       credits.snapshotTime, agreements.snapshotTime, roles.snapshotTime,
-      paymentOrders.snapshotTime, ownedGroups.snapshotTime, groupMemberships.snapshotTime,
       ownedResources.snapshotTime)
   }
 
@@ -172,4 +173,4 @@ object UserState {
   }
 }
 
-case class BillingPeriod(startMillis: Long, stopMillis: Long)
+case class BillingMonth(yearOfBillingMonth: Int, billingMonth: Int)

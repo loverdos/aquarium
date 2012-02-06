@@ -39,6 +39,8 @@ import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.logic.accounting.dsl._
 import com.ckkloverdos.maybe.{MaybeOption, Maybe}
+import java.util.Date
+import gr.grnet.aquarium.util.date.DateCalculator
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -71,6 +73,76 @@ case class ResourceEvent(
 
   def fullResourceInfo = (safeResource, safeInstanceId)
 
+  def isOccurredWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+    fromMillis <= occurredMillis && occurredMillis <= toMillis
+  }
+
+  def isOccurredWithinDates(fromDate: Date, toDate: Date): Boolean = {
+    fromDate.getTime <= occurredMillis && occurredMillis <= toDate.getTime
+  }
+
+  def isReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+    fromMillis <= receivedMillis && receivedMillis <= toMillis
+  }
+  
+  def isReceivedWithinDates(fromDate: Date, toDate: Date): Boolean = {
+    fromDate.getTime <= receivedMillis && receivedMillis <= toDate.getTime
+  }
+
+  def isOccurredOrReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+    isOccurredWithinMillis(fromMillis, toMillis) ||
+    isReceivedWithinMillis(fromMillis, toMillis)
+  }
+
+  def isOccurredOrReceivedWithinDates(fromDate: Date, toDate: Date): Boolean = {
+    isOccurredWithinDates(fromDate, toDate) ||
+    isReceivedWithinDates(fromDate, toDate)
+  }
+
+  def toDebugString(resourcesMap: DSLResourcesMap, useOnlyInstanceId: Boolean): String = {
+    val instanceInfo = if(useOnlyInstanceId) instanceId else "%s::%s".format(resource, instanceId)
+    val bvalue = beautifyValue(resourcesMap)
+    val occurredFormatted = new DateCalculator(occurredMillis).toString
+    if(occurredMillis == receivedMillis) {
+      "EVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
+        id,
+        occurredFormatted,
+        bvalue,
+        instanceInfo,
+        details,
+        userId,
+        clientId
+      )
+    } else {
+      "EVENT(%s, [%s], [%s], %s, %s, %s, %s, %s)".format(
+        id,
+        occurredFormatted,
+        new DateCalculator(receivedMillis),
+        bvalue,
+        instanceInfo,
+        details,
+        userId,
+        clientId
+      )
+    }
+  }
+
+  private[this]
+  def beatifyValue(resourceProvider: (String) ⇒ Option[DSLResource]): String = {
+    resourceProvider(this.resource) match {
+      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
+        OnOffPolicyResourceState(this.value).state.toUpperCase
+      case Some(rc @ DSLComplexResource(_, _, _, _)) ⇒
+        "%s [%s]".format(value, rc.unit)
+      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
+        OnOffPolicyResourceState(this.value).state.toUpperCase
+      case Some(rc @ DSLSimpleResource(_, _, _)) ⇒
+        "%s [%s]".format(value, rc.unit)
+      case _ ⇒
+        value.toString
+    }
+  }
+
   /**
    * Returns a beautiful string representation of the value.
    *
@@ -78,14 +150,7 @@ case class ResourceEvent(
    * @return A beautiful string representation of the value.
    */
   def beautifyValue(policy: DSLPolicy): String = {
-    policy.findResource(this.resource) match {
-      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
-        OnOffPolicyResourceState(this.value).state.toUpperCase
-      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
-        OnOffPolicyResourceState(this.value).state.toUpperCase
-      case _ ⇒
-        value.toString
-    }
+    beatifyValue(policy.findResource)
   }
 
   /**
@@ -95,14 +160,7 @@ case class ResourceEvent(
    * @return A beautiful string representation of the value.
    */
   def beautifyValue(resourcesMap: DSLResourcesMap): String = {
-    resourcesMap.findResource(this.resource) match {
-      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
-        OnOffPolicyResourceState(this.value).state.toUpperCase
-      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
-        OnOffPolicyResourceState(this.value).state.toUpperCase
-      case _ ⇒
-        value.toString
-    }
+    beatifyValue(resourcesMap.findResource)
   }
 
   /**

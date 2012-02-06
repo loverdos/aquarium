@@ -193,18 +193,34 @@ class MemStore extends UserStateStore
   def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[Long] = Maybe {
     val billingMonthDate = new DateCalculator(yearOfBillingMonth, billingMonth)
     val billingDateStart = billingMonthDate
-    val billingDateEnd = billingDateStart.endOfThisMonth
+    val billingDateEnd = billingDateStart.copy.goEndOfThisMonth
     resourceEventsById.valuesIterator.filter { case ev ⇒
       // out of sync events are those that were received in the billing month but occurred in previous months
       val receivedMillis = ev.receivedMillis
       val occurredMillis = ev.occurredMillis
 
-      billingDateStart.afterEqMillis(receivedMillis) && // the events that...
-      billingDateEnd.beforeEqMillis (receivedMillis) && // ...were received withing the billing month
-      (                                                 //
-        billingDateStart.afterMillis(occurredMillis)    // but occurred before the billing period
-        )
+      // the events that were received withing the billing month
+      ev.isReceivedWithinMillis(billingDateStart.toMillis, billingDateEnd.toMillis) &&
+      // but occurred before the billing period
+      billingDateStart.isAfterMillis(occurredMillis)
     }.size.toLong
+  }
+
+  /**
+   * Finds all relevant resource events for the billing period.
+   * The relevant events are those:
+   * a) whose `occurredMillis` is within the given billing period or
+   * b) whose `receivedMillis` is within the given billing period.
+   *
+   * Order them by `occurredMillis`
+   * FIXME: implement
+   */
+  override def findAllRelevantResourceEventsForBillingPeriod(userId: String,
+                                                             startMillis: Long,
+                                                             stopMillis: Long): List[ResourceEvent] = {
+    resourceEventsById.valuesIterator.filter { case ev ⇒
+      ev.isOccurredOrReceivedWithinMillis(startMillis, stopMillis)
+    }.toList.sortWith { case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis }
   }
   //- ResourceEventStore
 

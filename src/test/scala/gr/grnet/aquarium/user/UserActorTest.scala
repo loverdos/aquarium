@@ -23,9 +23,6 @@ class UserActorTest {
       CreditSnapshot(0, now),
       AgreementSnapshot(Agreement("default", now, now) :: Nil, now),
       RolesSnapshot(Nil, now),
-      PaymentOrdersSnapshot(Nil, now),
-      OwnedGroupsSnapshot(Nil, now),
-      GroupMembershipsSnapshot(Nil, now),
       OwnedResourcesSnapshot(ResourceInstanceSnapshot("foo", "1", 0.1F, 1) :: Nil, now)
     )
 

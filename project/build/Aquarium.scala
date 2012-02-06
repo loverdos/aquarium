@@ -96,6 +96,7 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   val repoA = "tools-releases" at "http://scala-tools.org/repo-releases"
   val repoB = "sonatype-snapshots" at "http://oss.sonatype.org/content/repositories/snapshots"
   val repoC = "jboss scala-tools" at "https://repository.jboss.org/nexus/content/repositories/scala-tools-releases"
+  val repoD = "spray" at "http://repo.spray.cc/"
 
   val lib_slf4j = "org.slf4j" % "slf4j-api" % "1.6.1" withSources()
 
@@ -115,7 +116,7 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
 
 
 //  val lib_javaxrs = "javax.ws.rs" % "jsr311-api" % "1.1.1" withSources()
-  val lib_spray_can = "cc.spray.can" % "spray-can" % "0.9.2-SNAPSHOT" withSources()
+  val lib_spray_can = "cc.spray" % "spray-can" % "0.9.2" withSources()
 
   val lib_maybe = "com.ckkloverdos" %% "maybe" % Versions.maybe withSources()
   val lib_converter = "com.ckkloverdos" %% "converter" % "0.3.0" withSources()

@@ -2,18 +2,16 @@ package gr.grnet.aquarium.util.date
 
 import org.joda.time.{MutableDateTime, DateMidnight}
 import java.util.{Date, Calendar}
-import java.text.DateFormat
+import org.joda.time.format.ISODateTimeFormat
 
 
 /**
- * Date calculator.
- *
- * Utility class for date manipulations.
+ * Mutable date calculator.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class DateCalculator private(private[this] var dateTime: MutableDateTime) {
+class DateCalculator private(private[this] var dateTime: MutableDateTime) extends Cloneable {
   def this(millis: Long)  = this(new MutableDateTime(millis))
   def this(date: Date)    = this(new MutableDateTime(date))
   def this(cal: Calendar) = this(new MutableDateTime(cal))
@@ -24,113 +22,126 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
   def this(year: Int, monthOfYear: Int) =
     this(year, monthOfYear, 1)
 
+
+  override def clone(): DateCalculator = new DateCalculator(this.dateTime)
+
+  def copy: DateCalculator = clone()
+
   def plusMonths(n: Int): this.type = {
     dateTime.addMonths(n)
 
     this
   }
 
-  def minusMonths(n: Int): this.type = {
+  def goMinusMonths(n: Int): this.type = {
     dateTime.addMonths(-n)
 
     this
   }
 
-  def nextMonth: this.type = {
+  def goNextMonth: this.type = {
     plusMonths(1)
   }
 
-  def previousMonth: this.type = {
-    minusMonths(1)
+  def goPreviousMonth: this.type = {
+    goMinusMonths(1)
   }
 
-  def plusDays(n: Int): this.type = {
+  def goPlusDays(n: Int): this.type = {
     dateTime.addDays(n)
     this
   }
 
-  def minusDays(n: Int): this.type = {
+  def goMinusDays(n: Int): this.type = {
     dateTime.addDays(n)
     this
   }
   
-  def nextDay: this.type = {
-    plusDays(1)
+  def goNextDay: this.type = {
+    goPlusDays(1)
   }
   
-  def previousDay: this.type = {
-    minusDays(1)
+  def goPreviousDay: this.type = {
+    goMinusDays(1)
   }
 
-  def plusSeconds(n: Int): this.type = {
+  def goPlusSeconds(n: Int): this.type = {
     dateTime.addSeconds(n)
     this
   }
 
-  def minusSeconds(n: Int): this.type = {
-    plusSeconds(-n)
+  def goMinusSeconds(n: Int): this.type = {
+    goPlusSeconds(-n)
   }
 
-  def plusHours(n: Int): this.type = {
+  def goPlusHours(n: Int): this.type = {
     dateTime.addHours(n)
     this
   }
 
-  def minusHours(n: Int): this.type = {
-    plusHours(-n)
+  def goMinusHours(n: Int): this.type = {
+    goPlusHours(-n)
   }
 
+  def goPlusMinutes(n: Int): this.type = {
+    dateTime.addMinutes(n)
+    this
+  }
 
-  def plusMillis(n: Long): this.type = {
+  def goMinusMinutes(n: Int): this.type = {
+    goPlusMinutes(-n)
+  }
+
+  def goPlusMillis(n: Long): this.type = {
     dateTime.add(n)
     this
   }
 
- def minusMillis(n: Long): this.type = {
-   plusMillis(-n)
+ def goMinusMillis(n: Long): this.type = {
+   goPlusMillis(-n)
  }
 
- def nextMilli: this.type = {
-   plusMillis(1L)
+ def goNextMilli: this.type = {
+   goPlusMillis(1L)
  }
 
- def previousMilli: this.type = {
-   minusMillis(1L)
+ def goPreviousMilli: this.type = {
+   goMinusMillis(1L)
  }
 
-  def year: Int = {
+  def getYear: Int = {
     dateTime.getYear
   }
 
   /**
    * Months range from 1 to 12.
    */
-  def monthOfYear: Int = {
+  def getMonthOfYear: Int = {
     dateTime.getMonthOfYear
   }
 
   /**
    * Month days start from 1
    */
-  def dayOfMonth: Int = {
+  def getDayOfMonth: Int = {
     dateTime.getDayOfMonth
   }
 
   /**
    * Year days start from 1
    */
-  def dayOfYear: Int = {
+  def getDayOfYear: Int = {
     dateTime.getDayOfYear
   }
 
   /**
    * Week days start from 1, which is Sunday
    */
-  def dayOfWeek: Int = {
+  def getDayOfWeek: Int = {
     dateTime.getDayOfWeek
   }
 
-  def midnight: this.type = {
+  def goMidnight: this.type = {
     this.dateTime = new DateMidnight(dateTime).toMutableDateTime
     this
   }
@@ -139,10 +150,10 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
    * At the first millisecond of this month. This month is the month indicated by the
    * state of the [[gr.grnet.aquarium.util.date.DateCalculator]] and not the real-life month.
    */
-  def startOfThisMonth: this.type = {
-    midnight
-    while(dayOfMonth > 1) {
-      previousDay
+  def goStartOfThisMonth: this.type = {
+    goMidnight
+    while(getDayOfMonth > 1) {
+      goPreviousDay
     }
     this
   }
@@ -150,15 +161,15 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
   /**
    * At the first millisecond of the next month.
    */
-  def startOfNextMonth: this.type = {
-    nextMonth.startOfThisMonth
+  def goStartOfNextMonth: this.type = {
+    goNextMonth.goStartOfThisMonth
   }
 
   /**
    * At the last millisecond of the month
    */
-  def endOfThisMonth: this.type = {
-    startOfNextMonth.previousMilli
+  def goEndOfThisMonth: this.type = {
+    goStartOfNextMonth.goPreviousMilli
   }
   
   def isSameYearAndMonthAs(other: Long): Boolean = {
@@ -166,10 +177,14 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
   }
 
   def isSameYearAndMonthAs(otherDate: DateCalculator): Boolean = {
-    this.year == otherDate.year && this.monthOfYear == otherDate.monthOfYear
+    this.getYear == otherDate.getYear && this.getMonthOfYear == otherDate.getMonthOfYear
   }
   
   def toMillis: Long = {
+    dateTime.getMillis
+  }
+
+  def getMillis: Long = {
     dateTime.getMillis
   }
 
@@ -177,24 +192,28 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) {
     dateTime.toDate
   }
   
-  def beforeMillis(millis: Long): Boolean = {
+  def isBeforeMillis(millis: Long): Boolean = {
     toMillis < millis
   }
 
-  def afterMillis(millis: Long): Boolean = {
+  def isAfterMillis(millis: Long): Boolean = {
     toMillis > millis
   }
 
-  def beforeEqMillis(millis: Long): Boolean = {
+  def isBeforeEqMillis(millis: Long): Boolean = {
     toMillis <= millis
   }
 
-  def afterEqMillis(millis: Long): Boolean = {
+  def isAfterEqMillis(millis: Long): Boolean = {
     toMillis >= millis
   }
 
   def format(fmt: String) = {
     dateTime.formatted(fmt)
+  }
+
+  def toISOString: String = {
+    ISODateTimeFormat.dateTime().print(dateTime);
   }
 
   override def toString = {

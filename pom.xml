@@ -142,6 +142,12 @@
       <id>typesafe</id>
       <url>http://repo.typesafe.com/typesafe/releases/</url>
     </repository>
+
+    <repository>
+      <name>Spray</name>
+      <id>spray</id>
+      <url>http://repo.spray.cc/</url>
+    </repository>
   </repositories>
 
   <pluginRepositories>
@@ -301,7 +307,7 @@
     <!--</dependency>-->
 
     <dependency>
-      <groupId>gr.grnet.spray</groupId>
+      <groupId>cc.spray</groupId>
       <artifactId>spray-can</artifactId>
       <version>0.9.2</version>
     </dependency>

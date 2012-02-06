@@ -40,10 +40,10 @@ import scala.collection.mutable
 import gr.grnet.aquarium.store.ResourceEventStore
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.Accounting
-import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.util.date.{TimeHelpers, DateCalculator}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLCostPolicy, DSLPolicy, DSLAgreement}
 import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 
 sealed abstract class CalculationType(_name: String) {
   def name = _name
@@ -73,7 +73,7 @@ trait UserStateCache {
   /**
    * Find the most up-to-date user state for the particular billing period.
    */
-  def findLatestUserStateForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[UserState]
+  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[UserState]
 }
 
 /**
@@ -90,7 +90,15 @@ trait UserStateCache {
  */
 case class ImplicitOffEvents(onEvents: List[ResourceEvent])
 
-case class EndOfBillingState(userState: UserState, implicitOffs: ImplicitOffEvents)
+case class OutOfSyncWalletEntries(entries: List[WalletEntry])
+
+/**
+ * Full user state at the end of a billing month.
+ *
+ * @param userState
+ * @param implicitOffs
+ */
+case class EndOfBillingState(userState: UserState, implicitOffs: ImplicitOffEvents, outOfSyncWalletEntries: OutOfSyncWalletEntries)
 
 /**
  *
@@ -110,9 +118,6 @@ class UserStateComputations extends Loggable {
       CreditSnapshot(0, now),
       AgreementSnapshot(Agreement(agreementName, now, -1) :: Nil, now),
       RolesSnapshot(List(), now),
-      PaymentOrdersSnapshot(Nil, now),
-      OwnedGroupsSnapshot(Nil, now),
-      GroupMembershipsSnapshot(Nil, now),
       OwnedResourcesSnapshot(List(), now)
     )
   }
@@ -130,9 +135,6 @@ class UserStateComputations extends Loggable {
         CreditSnapshot(0, now),
         AgreementSnapshot(Agreement(agreementName, now, - 1) :: Nil, now),
         RolesSnapshot(List(), now),
-        PaymentOrdersSnapshot(Nil, now),
-        OwnedGroupsSnapshot(Nil, now),
-        GroupMembershipsSnapshot(Nil, now),
         OwnedResourcesSnapshot(List(), now)
       )
     }
@@ -142,7 +144,7 @@ class UserStateComputations extends Loggable {
    *
    * Always compute, taking into account any "out of sync" resource events
    */
-  def computeUserStateAtStartOfBillingPeriod(billingYear: Int,
+  def computeUserStateAtEndOfBillingPeriod(billingYear: Int,
                                              billingMonth: Int,
                                              knownUserState: UserState,
                                              accounting: Accounting): Maybe[EndOfBillingState] = {
@@ -162,9 +164,23 @@ class UserStateComputations extends Loggable {
 
       // get all events that
       // FIXME: Implement
-    Just(EndOfBillingState(knownUserState, ImplicitOffEvents(Nil)))
+    Just(EndOfBillingState(knownUserState, ImplicitOffEvents(Nil), OutOfSyncWalletEntries(Nil)))
 
 //    }
+  }
+  
+  def findBillingStateAtEndOfBillingPeriod(yearOfBillingMonth: Int,
+                                           billingMonth: Int,
+                                           userId: String,
+                                           userStateCache: UserStateCache,
+                                           accounting: Accounting): Maybe[EndOfBillingState] = {
+    userStateCache.findLatestUserStateForEndOfBillingMonth(userId, yearOfBillingMonth, billingMonth) match {
+      case Just(userState) ⇒
+      case NoVal ⇒
+      case failed @ Failed(e, m) ⇒
+    }
+
+    Just(EndOfBillingState(createFirstUserState(userId), ImplicitOffEvents(Nil), OutOfSyncWalletEntries(Nil)))
   }
 
   /**
@@ -196,7 +212,8 @@ class UserStateComputations extends Loggable {
     NoVal
   }
 
-  def updatePreviousRCEventWith(previousRCEventsMap: mutable.Map[ResourceEvent.FullResourceType, ResourceEvent],
+  type FullResourceType = ResourceEvent.FullResourceType
+  def updatePreviousRCEventWith(previousRCEventsMap: mutable.Map[FullResourceType, ResourceEvent],
                                 newRCEvent: ResourceEvent): Unit = {
     previousRCEventsMap(newRCEvent.fullResourceInfo) = newRCEvent
   }
@@ -221,18 +238,18 @@ class UserStateComputations extends Loggable {
                                 accounting: Accounting): Maybe[EndOfBillingState] = Maybe {
 
     val billingMonthStartDate = new DateCalculator(yearOfBillingMonth, billingMonth, 1)
-    val billingMonthStopDate = billingMonthStartDate.endOfThisMonth
+    val billingMonthStopDate = billingMonthStartDate.copy.goEndOfThisMonth
+
     logger.debug("billingMonthStartDate = %s".format(billingMonthStartDate))
-    logger.debug("billingMonthStartDate == billingMonthStopDate = %s".format(billingMonthStartDate == billingMonthStopDate))
     logger.debug("billingMonthStopDate  = %s".format(billingMonthStopDate))
 
-    val prevBillingMonthStartDate = billingMonthStartDate.previousMonth
-    val yearOfPrevBillingMonth = prevBillingMonthStartDate.year
-    val prevBillingMonth = prevBillingMonthStartDate.monthOfYear
+    val prevBillingMonthStartDate = billingMonthStartDate.copy.goPreviousMonth
+    val yearOfPrevBillingMonth = prevBillingMonthStartDate.getYear
+    val prevBillingMonth = prevBillingMonthStartDate.getMonthOfYear
 
     // Check if this value is already cached and valid, otherwise compute the value
     // TODO : cache it in case of new computation
-    val cachedStartUserStateM = userStateCache.findLatestUserStateForBillingMonth(
+    val cachedStartUserStateM = userStateCache.findLatestUserStateForEndOfBillingMonth(
       userId,
       yearOfPrevBillingMonth,
       prevBillingMonth)
@@ -260,7 +277,7 @@ class UserStateComputations extends Loggable {
         } else {
           // Oops, there are "out of sync" resource event. Must compute (potentially recursively)
           logger.debug("Recompute start user state...")
-          val computedUserStateAtStartOfBillingPeriod = computeUserStateAtStartOfBillingPeriod(
+          val computedUserStateAtStartOfBillingPeriod = computeUserStateAtEndOfBillingPeriod(
             yearOfPrevBillingMonth,
             prevBillingMonth,
             cachedStartUserState,
@@ -274,8 +291,8 @@ class UserStateComputations extends Loggable {
         (cachedStartUserState, recomputedStartUserState)
       case NoVal ⇒
         // We do not even have a cached value, so compute one!
-        logger.debug("Do not have a  cachedStartUserState, computing one...")
-        val computedUserStateAtStartOfBillingPeriod = computeUserStateAtStartOfBillingPeriod(
+        logger.debug("Do not have a cachedStartUserState, computing one...")
+        val computedUserStateAtStartOfBillingPeriod = computeUserStateAtEndOfBillingPeriod(
           yearOfPrevBillingMonth,
           prevBillingMonth,
           currentUserState,
@@ -286,7 +303,7 @@ class UserStateComputations extends Loggable {
 
         (recomputedStartUserState, recomputedStartUserState)
       case Failed(e, m) ⇒
-        logger.error(m, e)
+        logger.error("[Could not find latest user state for billing month %s-%s] %s".format(yearOfPrevBillingMonth, prevBillingMonth, m), e)
         throw new Exception(m, e)
     }
 
@@ -295,20 +312,38 @@ class UserStateComputations extends Loggable {
     val billingStartMillis = billingMonthStartDate.toMillis
     val billingStopMillis  = billingMonthStopDate.toMillis
     val allBillingPeriodRelevantRCEvents = rcEventStore.findAllRelevantResourceEventsForBillingPeriod(userId, billingStartMillis, billingStopMillis)
-    logger.debug("allBillingPeriodRelevantRCEvents = %s".format(allBillingPeriodRelevantRCEvents))
+    logger.debug("allBillingPeriodRelevantRCEvents [%s] = %s".format(allBillingPeriodRelevantRCEvents.size, allBillingPeriodRelevantRCEvents))
 
     type FullResourceType = ResourceEvent.FullResourceType
+    // For each type and instance of resource, we keep the previously met resource event.
     val previousRCEventsMap = mutable.Map[FullResourceType, ResourceEvent]()
+    // Since we may already have some implicit events from the beginning of the billing period, we put
+    // them to the map.
+    // TODO:
     val impliedRCEventsMap  = mutable.Map[FullResourceType, ResourceEvent]() // those which do not exists but are
     // implied in order to do billing calculations (e.g. the "off" vmtime resource event)
 
     // Our temporary state holder.
     var _workingUserState = newStartUserState
     val nowMillis = TimeHelpers.nowMillis
+    var _counter = 0
 
     for(currentResourceEvent <- allBillingPeriodRelevantRCEvents) {
+      _counter = _counter + 1
       val resource = currentResourceEvent.resource
       val instanceId = currentResourceEvent.instanceId
+
+      logger.debug("%02d. Processing %s".format(_counter, currentResourceEvent.toDebugString(defaultResourcesMap, true)))
+      // ResourCe events Debug
+      // =     =         =
+      def RCD(fmt: String, args: Any*) = logger.debug(" ⇒ " + fmt.format(args:_*))
+      
+      RCD("previousRCEventsMap: ")
+      for {
+        (k, v) <- previousRCEventsMap
+      } {
+        RCD(" %s ⇒ %s".format(k, v.toDebugString(defaultResourcesMap, true)))
+      }
 
       // We need to do these kinds of calculations:
       // 1. Credit state calculations
@@ -336,33 +371,48 @@ class UserStateComputations extends Loggable {
       val costPolicyOpt = currentResourceEvent.findCostPolicy(defaultResourcesMap)
       costPolicyOpt match {
         case Some(costPolicy) ⇒
-          ///////////////////////////////////////
-          // A. Update user state with new resource instance amount
-          // TODO: Check if we are at beginning of billing period, so as to use
-          //       costPolicy.computeResourceInstanceAmountForNewBillingPeriod
-          val DefaultResourceInstanceAmount = costPolicy.getResourceInstanceInitialAmount
+          RCD("Found costPolicy = %s".format(costPolicy))
+          
+          // If this is an event for which no action is required, then OK, proceed with the next one
+          // Basically, we do nothing for ON events but we treat everything polymorphically here
+          costPolicy.isBillableEventBasedOnValue(currentResourceEvent.value) match {
+            case true ⇒
+              ///////////////////////////////////////
+              // A. Update user state with new resource instance amount
+              // TODO: Check if we are at beginning of billing period, so as to use
+              //       costPolicy.computeResourceInstanceAmountForNewBillingPeriod
+              val DefaultResourceInstanceAmount = costPolicy.getResourceInstanceInitialAmount
+              RCD("DefaultResourceInstanceAmount = %s".format(DefaultResourceInstanceAmount))
 
-          val previousAmount = currentUserState.getResourceInstanceAmount(resource, instanceId, DefaultResourceInstanceAmount)
-          val newAmount = costPolicy.computeNewResourceInstanceAmount(previousAmount, currentResourceEvent.value)
+              val previousAmount = currentUserState.getResourceInstanceAmount(resource, instanceId, DefaultResourceInstanceAmount)
+              RCD("previousAmount = %s".format(previousAmount))
+              val newAmount = costPolicy.computeNewResourceInstanceAmount(previousAmount, currentResourceEvent.value)
+              RCD("newAmount = %s".format(newAmount))
 
-          _workingUserState = _workingUserState.copyForResourcesSnapshotUpdate(resource, instanceId, newAmount, nowMillis)
-          // A. Update user state with new resource instance amount
-          ///////////////////////////////////////
-
-
-          ///////////////////////////////////////
-          // B. Update user state with new credit
-          val previousRCEventM = findPreviousRCEventOf(currentResourceEvent, costPolicy, previousRCEventsMap)
-          _workingUserState.findResourceInstanceSnapshot(resource, instanceId)
-          // B. Update user state with new credit
-          ///////////////////////////////////////
+              _workingUserState = _workingUserState.copyForResourcesSnapshotUpdate(resource, instanceId, newAmount, nowMillis)
+              // A. Update user state with new resource instance amount
+              ///////////////////////////////////////
 
 
-          ///////////////////////////////////////
-          // C. Update ??? state with wallet entries
+              ///////////////////////////////////////
+              // B. Update user state with new credit
+              val previousRCEventM = findPreviousRCEventOf(currentResourceEvent, costPolicy, previousRCEventsMap)
+              _workingUserState.findResourceInstanceSnapshot(resource, instanceId)
+              // B. Update user state with new credit
+              ///////////////////////////////////////
 
-          // C. Update ??? state with wallet entries
-          ///////////////////////////////////////
+
+              ///////////////////////////////////////
+              // C. Update ??? state with wallet entries
+
+              // C. Update ??? state with wallet entries
+              ///////////////////////////////////////
+
+            case false ⇒ // costPolicy.isBillableEventBasedOnValue(currentResourceEvent.value)
+              RCD("Ignoring not billabe (%s) %s".format(
+                currentResourceEvent.beautifyValue(defaultResourcesMap),
+                currentResourceEvent.toDebugString(defaultResourcesMap, true)))
+          }
 
         case None ⇒
           () // ERROR
