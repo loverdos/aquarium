@@ -54,15 +54,6 @@ case class CreditSnapshot(data: Double, snapshotTime: Long) extends UserDataSnap
 
 case class RolesSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
 
-// TODO: Check if needed
-case class PaymentOrdersSnapshot(data: List[AnyRef], snapshotTime: Long) extends UserDataSnapshot[List[AnyRef]]
-
-// TODO: Check if needed
-case class OwnedGroupsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
-
-// TODO: Check if needed
-case class GroupMembershipsSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
-
 /**
  * Represents an agreement valid for a specific amount of time. By convention,
  * if an agreement is currently valid, then the validTo field is equal to -1.

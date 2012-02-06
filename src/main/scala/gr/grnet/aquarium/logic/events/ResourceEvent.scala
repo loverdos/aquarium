@@ -107,8 +107,8 @@ case class ResourceEvent(
       "EVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
         id,
         occurredFormatted,
-        instanceInfo,
         bvalue,
+        instanceInfo,
         details,
         userId,
         clientId
@@ -118,8 +118,8 @@ case class ResourceEvent(
         id,
         occurredFormatted,
         new DateCalculator(receivedMillis),
-        instanceInfo,
         bvalue,
+        instanceInfo,
         details,
         userId,
         clientId

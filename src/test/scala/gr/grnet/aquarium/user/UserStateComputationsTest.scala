@@ -62,7 +62,7 @@ class UserStateComputationsTest {
     val userStateCache = new UserStateCache {
       def findUserStateAtEndOfPeriod(userId: String, year: Int, month: Int) = NoVal
 
-      def findLatestUserStateForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int) = NoVal
+      def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int) = NoVal
     }
 
     val mc = Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])

@@ -104,8 +104,10 @@ abstract class DSLCostPolicy(val name: String) extends DSLItem {
    *
    * Typically all events are billable by default and indeed this is the default implementation
    * provided here.
+   *
+   * The only exception to the rule is ON events for [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
    */
-  def isBillableEventBasedOnValue(newEventValue: Double): Boolean = true
+  def isBillableEventBasedOnValue(eventValue: Double): Boolean = true
 }
 
 object DSLCostPolicyNames {
@@ -245,8 +247,9 @@ case object OnOffCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.onoff) {
     }
   }
 
-  override def isBillableEventBasedOnValue(newEventValue: Double) = {
-    OnOffCostPolicyValues.isOFF(newEventValue)
+  override def isBillableEventBasedOnValue(eventValue: Double) = {
+    // ON events do not contribute, only OFF ones.
+    OnOffCostPolicyValues.isOFF(eventValue)
   }
 }
 
