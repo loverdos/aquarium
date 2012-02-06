@@ -84,7 +84,7 @@ case class ClientServiceSim(clientId: String) {
     def newON_OutOfSync(occuredDate: Date, outOfSyncHours: Int, id: String = IDGen.nextUID()): Maybe[RecordID] = {
       val occurredDateCalc = new DateCalculator(occuredDate)
       val occurredTime = occurredDateCalc.toMillis
-      val receivedTime = occurredDateCalc.plusHours(outOfSyncHours).toMillis
+      val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
 
       val event = ResourceEvent(
         id,
@@ -123,7 +123,7 @@ case class ClientServiceSim(clientId: String) {
     def newOFF_OutOfSync(occuredDate: Date, outOfSyncHours: Int, id: String = IDGen.nextUID()): Maybe[RecordID] = {
       val occurredDateCalc = new DateCalculator(occuredDate)
       val occurredTime = occurredDateCalc.toMillis
-      val receivedTime = occurredDateCalc.plusHours(outOfSyncHours).toMillis
+      val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
 
       val event = ResourceEvent(
         id,
@@ -145,7 +145,7 @@ case class ClientServiceSim(clientId: String) {
                  idON: String = IDGen.nextUID(),
                  idOFF: String = IDGen.nextUID()): (Maybe[RecordID], Maybe[RecordID]) = {
       val onID = newON(occurredDateForON, idON)
-      val offDate = new DateCalculator(occurredDateForON).plusHours(totalVMTimeInHours).toDate
+      val offDate = new DateCalculator(occurredDateForON).goPlusHours(totalVMTimeInHours).toDate
       val offID = newOFF(offDate, idOFF)
 
       (onID, offID)
@@ -158,7 +158,7 @@ case class ClientServiceSim(clientId: String) {
                            idON: String = IDGen.nextUID(),
                            idOFF: String = IDGen.nextUID()): (Maybe[RecordID], Maybe[RecordID]) = {
       val onID = newON_OutOfSync(occurredDateForON, outOfSyncONHours, idON)
-      val occurredDateCalcForOFF = new DateCalculator(occurredDateForON).plusHours(totalVMTimeInHours)
+      val occurredDateCalcForOFF = new DateCalculator(occurredDateForON).goPlusHours(totalVMTimeInHours)
       val occurredDateForOFF = occurredDateCalcForOFF.toDate
       val offID = newOFF_OutOfSync(occurredDateForOFF, outOfSyncOFFHours, idOFF)
 
@@ -194,7 +194,7 @@ case class ClientServiceSim(clientId: String) {
     def consumeMB_OutOfSync(occurredDate: Date, outOfSyncHours: Int, megaBytes: Double, id: String = IDGen.nextUID()): Maybe[RecordID] = {
       val occurredDateCalc = new DateCalculator(occurredDate)
       val occurredTime = occurredDateCalc.toMillis
-      val receivedTime = occurredDateCalc.plusHours(outOfSyncHours).toMillis
+      val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
 
       val event = ResourceEvent(
         id,

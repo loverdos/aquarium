@@ -193,16 +193,16 @@ class MemStore extends UserStateStore
   def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[Long] = Maybe {
     val billingMonthDate = new DateCalculator(yearOfBillingMonth, billingMonth)
     val billingDateStart = billingMonthDate
-    val billingDateEnd = billingDateStart.endOfThisMonth
+    val billingDateEnd = billingDateStart.goEndOfThisMonth
     resourceEventsById.valuesIterator.filter { case ev ⇒
       // out of sync events are those that were received in the billing month but occurred in previous months
       val receivedMillis = ev.receivedMillis
       val occurredMillis = ev.occurredMillis
 
-      billingDateStart.afterEqMillis(receivedMillis) && // the events that...
-      billingDateEnd.beforeEqMillis (receivedMillis) && // ...were received withing the billing month
+      billingDateStart.isAfterEqMillis(receivedMillis) && // the events that...
+      billingDateEnd.isBeforeEqMillis (receivedMillis) && // ...were received withing the billing month
       (                                                 //
-        billingDateStart.afterMillis(occurredMillis)    // but occurred before the billing period
+        billingDateStart.isAfterMillis(occurredMillis)    // but occurred before the billing period
         )
     }.size.toLong
   }

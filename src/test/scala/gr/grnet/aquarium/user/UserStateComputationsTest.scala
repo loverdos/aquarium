@@ -85,15 +85,15 @@ class UserStateComputationsTest {
     val disk = pithos.newDiskspace(christos, "DISK.1")
 
     // Let's create our dates of interest
-    val vmStartDateCalc = USER_START_DATECALC.plusDays(1).plusHours(1)
+    val vmStartDateCalc = USER_START_DATECALC.goPlusDays(1).goPlusHours(1)
     val vmStartDate = vmStartDateCalc.toDate
 
     // Within January, create one VM ON-OFF ...
     val onOff1_M = vm.newONOFF(vmStartDate, 9)
 
-    val diskConsumptionDateCalc = USER_START_DATECALC.plusHours(3)
+    val diskConsumptionDateCalc = USER_START_DATECALC.goPlusHours(3)
     val diskConsumptionDate1 = diskConsumptionDateCalc.toDate
-    val diskConsumptionDate2 = diskConsumptionDateCalc.plusDays(1).plusHours(1).toDate
+    val diskConsumptionDate2 = diskConsumptionDateCalc.goPlusDays(1).goPlusHours(1).toDate
 
     // ... and two diskspace changes
     val consume1_M = disk.consumeMB(diskConsumptionDate1, 99)

@@ -40,10 +40,10 @@ import scala.collection.mutable
 import gr.grnet.aquarium.store.ResourceEventStore
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.Accounting
-import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.util.date.{TimeHelpers, DateCalculator}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLCostPolicy, DSLPolicy, DSLAgreement}
 import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 
 sealed abstract class CalculationType(_name: String) {
   def name = _name
@@ -90,7 +90,15 @@ trait UserStateCache {
  */
 case class ImplicitOffEvents(onEvents: List[ResourceEvent])
 
-case class EndOfBillingState(userState: UserState, implicitOffs: ImplicitOffEvents)
+case class OutOfSyncWalletEntries(entries: List[WalletEntry])
+
+/**
+ * Full user state at the end of a billing month.
+ *
+ * @param userState
+ * @param implicitOffs
+ */
+case class EndOfBillingState(userState: UserState, implicitOffs: ImplicitOffEvents, outOfSyncWalletEntries: OutOfSyncWalletEntries)
 
 /**
  *
@@ -162,7 +170,7 @@ class UserStateComputations extends Loggable {
 
       // get all events that
       // FIXME: Implement
-    Just(EndOfBillingState(knownUserState, ImplicitOffEvents(Nil)))
+    Just(EndOfBillingState(knownUserState, ImplicitOffEvents(Nil), OutOfSyncWalletEntries(Nil)))
 
 //    }
   }
@@ -221,13 +229,14 @@ class UserStateComputations extends Loggable {
                                 accounting: Accounting): Maybe[EndOfBillingState] = Maybe {
 
     val billingMonthStartDate = new DateCalculator(yearOfBillingMonth, billingMonth, 1)
-    val billingMonthStopDate = billingMonthStartDate.copy.endOfThisMonth
+    val billingMonthStopDate = billingMonthStartDate.copy.goEndOfThisMonth
+
     logger.debug("billingMonthStartDate = %s".format(billingMonthStartDate))
     logger.debug("billingMonthStopDate  = %s".format(billingMonthStopDate))
 
-    val prevBillingMonthStartDate = billingMonthStartDate.previousMonth
-    val yearOfPrevBillingMonth = prevBillingMonthStartDate.year
-    val prevBillingMonth = prevBillingMonthStartDate.monthOfYear
+    val prevBillingMonthStartDate = billingMonthStartDate.copy.goPreviousMonth
+    val yearOfPrevBillingMonth = prevBillingMonthStartDate.getYear
+    val prevBillingMonth = prevBillingMonthStartDate.getMonthOfYear
 
     // Check if this value is already cached and valid, otherwise compute the value
     // TODO : cache it in case of new computation
