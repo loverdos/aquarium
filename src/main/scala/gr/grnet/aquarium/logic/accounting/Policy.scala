@@ -171,8 +171,8 @@ object Policy extends DSL with Loggable {
       case true =>
         val ts = TimeHelpers.nowMillis
         val parsedNew = loadPolicyFromFile(policyf)
-        val yaml = parsedNew.toYAML
-        val newPolicy = PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, -1)
+        val newPolicy = parsedNew.toPolicyEntry.copy(occurredMillis = ts,
+          receivedMillis = ts, validFrom = ts)
 
         if(!policies.isEmpty) {
           val toUpdate = policies.last.copy(validTo = ts)
