@@ -43,6 +43,7 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
 import com.ckkloverdos.maybe.{Maybe, Just}
+import gr.grnet.aquarium.Configurator
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -52,10 +53,13 @@ import com.ckkloverdos.maybe.{Maybe, Just}
 object Policy extends DSL with Loggable {
 
   /* Pointer to the latest policy */
-  private lazy val policies = new AtomicReference[Map[Timeslot, DSLPolicy]](reloadPolicies)
+  private[logic] lazy val policies = {new AtomicReference[Map[Timeslot, DSLPolicy]](reloadPolicies)}
 
   /* Pointer to the latest policy */
-  private val currentPolicy = new AtomicReference[DSLPolicy](policies.get.last._2)
+  private lazy val currentPolicy = {new AtomicReference[DSLPolicy](latestPolicy)}
+
+  /* Configurator to use for loading information about the policy store */
+  private var config: Configurator = _
 
   /**
    * Get the latest defined policy.
@@ -122,14 +126,36 @@ object Policy extends DSL with Loggable {
   def updatePolicies = synchronized {
     //XXX: The following update should happen as one transaction
     val tmpPol = reloadPolicies
-    currentPolicy.set(tmpPol.last._2)
+    currentPolicy.set(latestPolicy)
     policies.set(tmpPol)
   }
 
   /**
-   * Search for and open a stream to a policy.
+   * Find the latest policy in the list of policies.
    */
-   private def policyFile = {
+  private def latestPolicy =
+    policies.get.foldLeft((Timeslot(new Date(1), new Date(2)) -> DSLPolicy.emptyPolicy)) {
+      (acc, p) =>
+        if (acc._2 == DSLPolicy.emptyPolicy)
+          p
+        else if (p._1.after(acc._1))
+          p
+        else
+          acc
+    }._2
+
+  /**
+   * Set the configurator to use for loading policy stores. Should only
+   * used for unit testing.
+   */
+  private[logic] def withConfigurator(config: Configurator): Unit =
+    this.config = config
+
+  /**
+   * Search default locations for a policy file and provide an
+   * arbitrary default if this cannot be found.
+   */
+   private[logic] def policyFile = {
     BasicResourceContext.getResource(PolicyConfName) match {
       case Just(policyResource) ⇒
         val path = policyResource.url.getPath
@@ -144,9 +170,16 @@ object Policy extends DSL with Loggable {
    * newer than the latest stored policy, reload and set it as current.
    * This method has side-effects to this object's state.
    */
-  private def reloadPolicies: Map[Timeslot, DSLPolicy] = {
+  private[logic] def reloadPolicies: Map[Timeslot, DSLPolicy] =
+    if (config == null)
+      reloadPolicies(MasterConfigurator)
+    else
+      reloadPolicies(config)
+
+  private def reloadPolicies(config: Configurator):
+  Map[Timeslot, DSLPolicy] = {
     //1. Load policies from db
-    val pol = MasterConfigurator.policyStore.loadPolicies(0)
+    val pol = config.policyStore.loadPolicies(0)
 
     //2. Check whether policy file has been updated
     val latestPolicyChange = if (pol.isEmpty) 0 else pol.last.validFrom
@@ -174,11 +207,11 @@ object Policy extends DSL with Loggable {
 
         if(!pol.isEmpty) {
           val toUpdate = pol.last.copy(validTo = ts)
-          MasterConfigurator.policyStore.updatePolicy(toUpdate)
-          MasterConfigurator.policyStore.storePolicy(newPolicy)
+          config.policyStore.updatePolicy(toUpdate)
+          config.policyStore.storePolicy(newPolicy)
           List(toUpdate, newPolicy)
         } else {
-          MasterConfigurator.policyStore.storePolicy(newPolicy)
+          config.policyStore.storePolicy(newPolicy)
           List(newPolicy)
         }
 

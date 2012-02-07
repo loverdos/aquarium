@@ -49,6 +49,22 @@ import gr.grnet.aquarium.logic.accounting.Policy
 class PolicyTest extends DSLTestBase with StoreConfigurator {
 
   @Test
+  def testReloadPolicies: Unit = {
+    Policy.withConfigurator(configurator)
+
+    val pol = Policy.policies.get
+
+    val f = Policy.policyFile
+    assertTrue(f.exists)
+
+    f.setLastModified(System.currentTimeMillis)
+
+    val polNew = Policy.reloadPolicies
+
+    assertEquals(pol.keys.size + 1, polNew.keys.size)
+  }
+
+  @Test
   def testLoadStore: Unit = {
     before
 
@@ -69,11 +85,5 @@ class PolicyTest extends DSLTestBase with StoreConfigurator {
     assertEquals(pol.head.policyYAML, this.dsl.toYAML)
     assertEquals(pol.tail.head.policyYAML, copy1.toYAML)
     assertEquals(pol.tail.tail.head.policyYAML, copy2.toYAML)
-  }
-
-  @Test
-  def testReloadPolicies: Unit = {
-    val pol = Policy.policy
-    assertNotNull(pol)
   }
 }

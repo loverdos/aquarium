@@ -98,6 +98,9 @@ case class DSLPolicy (
 }
 
 object DSLPolicy {
+
+  val emptyPolicy = DSLPolicy(List(), List(), List(), List(), List())
+
   object JsonNames {
     val valid = "valid"
     val _id = "_id"
