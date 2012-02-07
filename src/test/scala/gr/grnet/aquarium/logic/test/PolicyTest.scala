@@ -39,6 +39,7 @@ import org.junit.Test
 import org.junit.Assert._
 import gr.grnet.aquarium.{StoreConfigurator}
 import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.logic.accounting.Policy
 
 /**
  * Tests for the Policy resolution algorithms
@@ -70,5 +71,9 @@ class PolicyTest extends DSLTestBase with StoreConfigurator {
     assertEquals(pol.tail.tail.head.policyYAML, copy2.toYAML)
   }
 
-  def testReloadPolicies
+  @Test
+  def testReloadPolicies: Unit = {
+    val pol = Policy.policy
+    assertNotNull(pol)
+  }
 }
