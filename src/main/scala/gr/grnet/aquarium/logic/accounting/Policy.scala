@@ -42,8 +42,8 @@ import java.util.Date
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
-import com.ckkloverdos.maybe.{Maybe, Just}
 import gr.grnet.aquarium.Configurator
+import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -188,39 +188,39 @@ object Policy extends DSL with Loggable {
 
     if (policyf.exists) {
       if (policyf.lastModified > latestPolicyChange) {
-        logger.info("Policy changed since last check, reloading")
+        logger.info("Policy file updated since last check, reloading")
         updated = true
       } else {
-        logger.info("Policy not changed since last check")
+        logger.info("Policy file not changed since last check")
       }
     } else {
       logger.warn("User specified policy file %s does not exist, " +
         "using stored policy information".format(policyf.getAbsolutePath))
     }
 
-    val toAdd = updated match {
-      case true =>
-        val ts = TimeHelpers.nowMillis
-        val parsedNew = loadPolicyFromFile(policyf)
-        val newPolicy = parsedNew.toPolicyEntry.copy(occurredMillis = ts,
-          receivedMillis = ts, validFrom = ts)
+    if (updated) {
+      val ts = TimeHelpers.nowMillis
+      val parsedNew = loadPolicyFromFile(policyf)
+      val newPolicy = parsedNew.toPolicyEntry.copy(occurredMillis = ts,
+        receivedMillis = ts, validFrom = ts)
 
-        if(!pol.isEmpty) {
-          val toUpdate = pol.last.copy(validTo = ts)
-          config.policyStore.updatePolicy(toUpdate)
-          config.policyStore.storePolicy(newPolicy)
-          List(toUpdate, newPolicy)
-        } else {
-          config.policyStore.storePolicy(newPolicy)
-          List(newPolicy)
-        }
-
-      case false => List()
+      config.policyStore.findPolicy(newPolicy.id) match {
+        case Just(x) =>
+          logger.warn("Policy file contents not modified")
+        case NoVal =>
+          if (!pol.isEmpty) {
+            val toUpdate = pol.last.copy(validTo = ts - 1)
+            config.policyStore.updatePolicy(toUpdate)
+            config.policyStore.storePolicy(newPolicy)
+          } else {
+            config.policyStore.storePolicy(newPolicy)
+          }
+        case Failed(e, expl) =>
+          throw e
+      }
     }
 
-    val toAppend = if(pol.isEmpty) List() else pol.init
-
-    toAppend.++(toAdd).foldLeft(Map[Timeslot, DSLPolicy]()){
+    config.policyStore.loadPolicies(0).foldLeft(Map[Timeslot, DSLPolicy]()){
       (acc, p) =>
         acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML))
     }
