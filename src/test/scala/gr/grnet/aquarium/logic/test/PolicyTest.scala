@@ -40,6 +40,7 @@ import org.junit.Assert._
 import gr.grnet.aquarium.{StoreConfigurator}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.logic.accounting.Policy
+import java.io.File
 
 /**
  * Tests for the Policy resolution algorithms
@@ -50,18 +51,41 @@ class PolicyTest extends DSLTestBase with StoreConfigurator {
 
   @Test
   def testReloadPolicies: Unit = {
-    Policy.withConfigurator(configurator)
+    
+    def copyModifyFile(from: String, to: String) = {
+      val extra = "    - agreement:\n      overrides: default\n      name: foobar"
+      val out = new java.io.BufferedWriter(new java.io.FileWriter(to) );
+      io.Source.fromFile(from).getLines.map(x => x + "\n").foreach(s => out.write(s,0,s.length));
+      out.write(extra)
+      out.close()
+    }
 
+    //Initial policy file, read from class path
+    Policy.withConfigurator(configurator)
     val pol = Policy.policies.get
 
     val f = Policy.policyFile
     assertTrue(f.exists)
 
+    //Touch the file to trigger reloading with non changed state
+    Thread.sleep(200)
     f.setLastModified(System.currentTimeMillis)
+    var polNew = Policy.reloadPolicies
 
-    val polNew = Policy.reloadPolicies
+    assertEquals(pol.keys.size, polNew.keys.size)
+    assertEquals(pol.keys.head, polNew.keys.head)
 
+    //Copy the file and add a new element -> new policy
+    val fileCopy = new File(f.getParent, "policy.yaml.old")
+    f.renameTo(fileCopy)
+    copyModifyFile(fileCopy.getAbsolutePath,
+      (new File(fileCopy.getParent, "policy.yaml")).getAbsolutePath)
+
+    polNew = Policy.reloadPolicies
     assertEquals(pol.keys.size + 1, polNew.keys.size)
+    val policyEffectivities = Policy.policies.get.keySet.toList.sortWith((x,y) => if (y.from after x.from) true else false)
+    testSuccessiveTimeslots(policyEffectivities)
+    testNoGaps(policyEffectivities)
   }
 
   @Test
