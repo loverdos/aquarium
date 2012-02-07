@@ -64,12 +64,11 @@ class DSLTestBase extends DSL {
     testSuccessiveTimeslots(result.tail)
   }
 
-  @tailrec
-  final def testNoGaps(result: List[Timeslot]): Unit = {
-    if (result.isEmpty) return
-    if (result.tail.isEmpty) return
-    if (result.head.to.getTime != result.tail.head.from.getTime + 1)
-      fail("Timeslots not successive: %s %s".format(result.head, result.tail.head))
-    testNoGaps(result.tail)
-  }
+  final def testNoGaps(result: List[Timeslot]): Unit =
+    result.reduce {
+      (a,b) =>
+        if(a.to.getTime - b.from.getTime > 1)
+          fail("Timeslots leave gaps: %s %s".format(a.to.getTime, b.from.getTime))
+        a
+    }
 }

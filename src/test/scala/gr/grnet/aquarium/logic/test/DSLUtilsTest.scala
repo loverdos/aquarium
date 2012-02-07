@@ -224,13 +224,8 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
       ineffectiveTimeslots(repeat, from, Some(to)) sortWith sorter
 
     testSuccessiveTimeslots(continuum)
+    testNoGaps(continuum)
 
-    continuum.reduce {
-      (a,b) =>
-        if(a.to.getTime - b.from.getTime > 1)
-          fail("Effectivity timeslots leave gaps: %s %s".format(a, b))
-        a
-    }
     return
   }
 
