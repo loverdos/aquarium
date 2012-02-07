@@ -59,6 +59,10 @@ case class Timeslot(from: Date, to: Date)
 
   def endsAfter(t: Timeslot) : Boolean = this.to.after(t.to)
 
+  def after(t: Timeslot): Boolean = if (this.from.after(t.to)) true else false
+
+  def before(t: Timeslot): Boolean = if (this.to.before(t.from)) true else false
+
   /**
    * Check whether this time slot fully contains the provided one.
    */
