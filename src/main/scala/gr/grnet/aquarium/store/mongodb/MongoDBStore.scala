@@ -321,6 +321,10 @@ class MongoDBStore(
     val policyObject = MongoDBStore.jsonSupportToDBObject(policy)
     policies.update(query, policyObject, true, false)
   }
+  
+  def findPolicy(id: String) =
+    MongoDBStore.findById[PolicyEntry](id, policies, MongoDBStore.dbObjectToPolicyEvent)
+
   //-PolicyStore
 }
 

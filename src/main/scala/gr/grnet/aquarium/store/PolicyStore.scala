@@ -61,4 +61,9 @@ trait PolicyStore {
    * of the provided policy entry.
    */
   def updatePolicy(policy: PolicyEntry): Unit
+
+  /**
+   * Find a policy by its unique id
+   */
+  def findPolicy(id: String): Maybe[PolicyEntry]
 }
