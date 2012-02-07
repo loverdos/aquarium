@@ -37,7 +37,6 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import java.util.Date
 import scala.collection.mutable
-import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
  * A representation of a timeslot with a start and end date.

@@ -40,8 +40,7 @@ import gr.grnet.aquarium.Configurator._
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.logic.events.PolicyEntry
-import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
+import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
 import com.ckkloverdos.maybe.{Maybe, Just}
 
@@ -69,7 +68,7 @@ object Policy extends DSL with Loggable {
   def policy(at: Date): Maybe[DSLPolicy] = Maybe {
     policies.get.find {
       a => (a._1.from.before(at) && a._1.to.after(at)) ||
-           (a._1.from.before(at) && a._1.to == -1)
+           (a._1.from.before(at) && a._1.to == Long.MaxValue)
     } match {
       case Some(x) => x._2
       case None =>
@@ -131,13 +130,12 @@ object Policy extends DSL with Loggable {
    * Search for and open a stream to a policy.
    */
    private def policyFile = {
-    val policyConfResourceM = BasicResourceContext.getResource(PolicyConfName)
-    policyConfResourceM match {
+    BasicResourceContext.getResource(PolicyConfName) match {
       case Just(policyResource) ⇒
         val path = policyResource.url.getPath
-        new File(path) // assume it is resolved in the filesystem as it should (!)
+        new File(path)
       case _ ⇒
-        new File("/etc/aquarium/policy.yaml") // FIXME remove this since it should have been picked up by the context
+        new File("policy.yaml")
     }
   }
 
@@ -148,10 +146,10 @@ object Policy extends DSL with Loggable {
    */
   private def reloadPolicies: Map[Timeslot, DSLPolicy] = {
     //1. Load policies from db
-    val policies = MasterConfigurator.policyStore.loadPolicies(0)
+    val pol = MasterConfigurator.policyStore.loadPolicies(0)
 
     //2. Check whether policy file has been updated
-    val latestPolicyChange = if (policies.isEmpty) 0 else policies.last.validFrom
+    val latestPolicyChange = if (pol.isEmpty) 0 else pol.last.validFrom
     val policyf = policyFile
     var updated = false
 
@@ -174,8 +172,8 @@ object Policy extends DSL with Loggable {
         val newPolicy = parsedNew.toPolicyEntry.copy(occurredMillis = ts,
           receivedMillis = ts, validFrom = ts)
 
-        if(!policies.isEmpty) {
-          val toUpdate = policies.last.copy(validTo = ts)
+        if(!pol.isEmpty) {
+          val toUpdate = pol.last.copy(validTo = ts)
           MasterConfigurator.policyStore.updatePolicy(toUpdate)
           MasterConfigurator.policyStore.storePolicy(newPolicy)
           List(toUpdate, newPolicy)
@@ -187,8 +185,9 @@ object Policy extends DSL with Loggable {
       case false => List()
     }
 
-    // FIXME: policies may be empty
-    policies.init.++(toAdd).foldLeft(Map[Timeslot, DSLPolicy]()){
+    val toAppend = if(pol.isEmpty) List() else pol.init
+
+    toAppend.++(toAdd).foldLeft(Map[Timeslot, DSLPolicy]()){
       (acc, p) =>
         acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML))
     }

@@ -93,7 +93,7 @@ case class DSLPolicy (
   def toPolicyEntry: PolicyEntry = {
     val yaml = toYAML
     val ts = TimeHelpers.nowMillis
-    PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, -1)
+    PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, Long.MaxValue)
   }
 }
 

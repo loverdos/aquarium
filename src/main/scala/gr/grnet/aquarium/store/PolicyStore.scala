@@ -57,7 +57,8 @@ trait PolicyStore {
   def storePolicy(policy: PolicyEntry): Maybe[RecordID]
 
   /**
-   * Updates the policy record whose id
+   * Updates the policy record whose id is equal to the id
+   * of the provided policy entry.
    */
   def updatePolicy(policy: PolicyEntry): Unit
 }
