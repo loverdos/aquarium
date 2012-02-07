@@ -47,11 +47,11 @@ import gr.grnet.aquarium.logic.events.ResourceEvent.{JsonNames => ResourceJsonNa
 import gr.grnet.aquarium.logic.events.UserEvent.{JsonNames => UserEventJsonNames}
 import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
 import java.util.Date
-import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.logic.accounting.Policy
 import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLPolicy, DSLComplexResource}
 import gr.grnet.aquarium.logic.events._
 import com.mongodb._
+import com.ckkloverdos.maybe.{NoVal, Maybe}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -175,7 +175,7 @@ class MongoDBStore(
     MongoDBStore.runQuery[ResourceEvent](query, resourceEvents, orderBy)(MongoDBStore.dbObjectToResourceEvent)(None)
   }
   
-  def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[Long] = {
+  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Maybe[Long] = {
     Maybe {
       // FIXME: Implement
       0L
@@ -184,9 +184,10 @@ class MongoDBStore(
 
   //-ResourceEventStore
 
-  //+UserStateStore
-  def storeUserState(userState: UserState): Maybe[RecordID] =
+  //+ UserStateStore
+  def storeUserState(userState: UserState): Maybe[RecordID] = {
     MongoDBStore.storeUserState(userState, userStates)
+  }
 
   def findUserStateByUserId(userId: String): Maybe[UserState] = {
     Maybe {
@@ -204,11 +205,17 @@ class MongoDBStore(
     }
   }
 
+  def findLatestUserStateForEndOfBillingMonth(userId: String,
+                                              yearOfBillingMonth: Int,
+                                              billingMonth: Int): Maybe[UserState] = {
+    NoVal // FIXME: implement
+  }
+
   def deleteUserState(userId: String) = {
     val query = new BasicDBObject(UserStateJsonNames.userId, userId)
     userStates.findAndRemove(query)
   }
-  //-UserStateStore
+  //- UserStateStore
 
   //+WalletEntryStore
   def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] =

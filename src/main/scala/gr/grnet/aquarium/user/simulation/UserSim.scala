@@ -46,7 +46,7 @@ import math.Ordering
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class UserSim(userId: String, startDate: Date, resourceEventStore: ResourceEventStore) { userSelf ⇒
+case class UserSim(userId: String, userCreationDate: Date, resourceEventStore: ResourceEventStore) { userSelf ⇒
   private[this] var _serviceClients = List[ClientServiceSim]()
   private[this] var _resourceEvents = List[ResourceEvent]()
 

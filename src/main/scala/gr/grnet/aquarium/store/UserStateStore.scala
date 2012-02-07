@@ -59,6 +59,11 @@ trait UserStateStore {
   def findUserStateByUserId(userId: String): Maybe[UserState]
 
   /**
+   * Find the most up-to-date user state for the particular billing period.
+   */
+  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[UserState]
+
+  /**
    * Delete a state for a user
    */
   def deleteUserState(userId: String): Unit

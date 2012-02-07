@@ -74,19 +74,25 @@ case class ResourceEvent(
   def fullResourceInfo = (safeResource, safeInstanceId)
 
   def isOccurredWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+    require(fromMillis <= toMillis, "fromMillis <= toMillis")
     fromMillis <= occurredMillis && occurredMillis <= toMillis
   }
 
   def isOccurredWithinDates(fromDate: Date, toDate: Date): Boolean = {
-    fromDate.getTime <= occurredMillis && occurredMillis <= toDate.getTime
+    isOccurredWithinMillis(fromDate.getTime, toDate.getTime)
   }
 
   def isReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+    require(fromMillis <= toMillis, "fromMillis <= toMillis")
     fromMillis <= receivedMillis && receivedMillis <= toMillis
   }
   
   def isReceivedWithinDates(fromDate: Date, toDate: Date): Boolean = {
-    fromDate.getTime <= receivedMillis && receivedMillis <= toDate.getTime
+    isReceivedWithinMillis(fromDate.getTime, toDate.getTime)
+  }
+
+  def isReceivedWithinDateCalcs(fromDate: DateCalculator, toDate: DateCalculator): Boolean = {
+    isReceivedWithinMillis(fromDate.getMillis, toDate.getMillis)
   }
 
   def isOccurredOrReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
@@ -97,6 +103,19 @@ case class ResourceEvent(
   def isOccurredOrReceivedWithinDates(fromDate: Date, toDate: Date): Boolean = {
     isOccurredWithinDates(fromDate, toDate) ||
     isReceivedWithinDates(fromDate, toDate)
+  }
+  
+  def isOutOfSyncForBillingMonth(yearOfBillingMonth: Int, billingMonth: Int) = {
+    val billingStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
+    val billingStartMillis = billingStartDateCalc.toMillis
+    val billingStopMillis  = billingStartDateCalc.goEndOfThisMonth.toMillis
+
+    isOutOfSyncForBillingPeriod(billingStartMillis, billingStopMillis)
+  }
+  
+  def isOutOfSyncForBillingPeriod(billingStartMillis: Long, billingStopMillis: Long): Boolean = {
+    isReceivedWithinMillis(billingStartMillis, billingStopMillis) &&
+    (occurredMillis < billingStartMillis || occurredMillis > billingStopMillis)
   }
 
   def toDebugString(resourcesMap: DSLResourcesMap, useOnlyInstanceId: Boolean): String = {

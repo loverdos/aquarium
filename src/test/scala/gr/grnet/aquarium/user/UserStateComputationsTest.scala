@@ -51,23 +51,11 @@ class UserStateComputationsTest {
 
     val computer = new UserStateComputations
 
-    val userPolicyFinder = new UserPolicyFinder {
-      def findUserPolicyAt(userId: String, whenMillis: Long) = DEFAULT_POLICY
-    }
-
-    val fullStateFinder = new FullStateFinder {
-      def findFullState(userId: String, whenMillis: Long) = null
-    }
-
-    val userStateCache = new UserStateCache {
-      def findUserStateAtEndOfPeriod(userId: String, year: Int, month: Int) = NoVal
-
-      def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int) = NoVal
-    }
-
     val mc = Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
     val storeProvider = mc.storeProvider
+    val userStateStore = storeProvider.userStateStore
     val resourceEventStore = storeProvider.resourceEventStore
+    val policyStore = storeProvider.policyStore
 //    println("!! storeProvider = %s".format(storeProvider))
 
     // A new user is created on 2012-01-15 00:00:00.000
@@ -126,21 +114,25 @@ class UserStateComputationsTest {
     }
     println("=============================")
 
-    val billing = computer.computeFullMonthlyBilling(
+    val userStateM = computer.doFullMonthlyBilling(
+      christos.userId,
       START_YEAR,
       START_MONTH,
-      christos.userId,
-      userPolicyFinder,
-      fullStateFinder,
-      userStateCache,
+      userStateStore,
       resourceEventStore,
+      policyStore,
+      christos.userCreationDate.getTime,
       computer.createFirstUserState(christos.userId),
-      Nil,
+      computer.createFirstUserState(christos.userId),
       DEFAULT_POLICY,
       DEFAULT_RESOURCES_MAP,
       new Accounting{}
     )
     
-    println("!! billing = %s".format(billing))
+    println("!! userStateM = %s".format(userStateM))
+    userStateM.forFailed { failed ⇒
+      failed.exception.printStackTrace()
+      NoVal
+    }
   }
 }
