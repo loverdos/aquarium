@@ -98,7 +98,7 @@ class UserActor extends AquariumActor
 
   private[this] def processModifyUser(event: UserEvent): Unit = {
     val now = TimeHelpers.nowMillis
-    val newActive = ActiveSuspendedSnapshot(event.isStateActive, now)
+    val newActive = ActiveStateSnapshot(event.isStateActive, now)
 
     DEBUG("New active status = %s".format(newActive))
 
@@ -180,22 +180,23 @@ class UserActor extends AquariumActor
    */
   def replayUserEvents(initState: UserState, events: List[UserEvent],
                        from: Long, to: Long): UserState = {
-    var act = initState.active
-    var rol = initState.roles
-    events
-      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
-      .foreach {
-        e =>
-          act = act.copy(
-            data = e.isStateActive, snapshotTime = e.occurredMillis)
-          // TODO: Implement the following
-          //_userState.agreement = _userState.agreement.copy(
-          //  data = e.newAgreement, e.occurredMillis)
-
-          rol = rol.copy(data = e.roles,
-            snapshotTime = e.occurredMillis)
-    }
-    initState.copy(active = act, roles = rol)
+//    var act = initState.active
+//    var rol = initState.roles
+//    events
+//      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
+//      .foreach {
+//        e =>
+//          act = act.copy(
+//            data = e.isStateActive, snapshotTime = e.occurredMillis)
+//          // TODO: Implement the following
+//          //_userState.agreement = _userState.agreement.copy(
+//          //  data = e.newAgreement, e.occurredMillis)
+//
+//          rol = rol.copy(data = e.roles,
+//            snapshotTime = e.occurredMillis)
+//    }
+//    initState.copy(active = act, roles = rol)
+    initState
   }
 
 
@@ -204,19 +205,20 @@ class UserActor extends AquariumActor
    */
   def replayWalletEntries(initState: UserState, events: List[WalletEntry],
                           from: Long, to: Long): UserState = {
-    var cred = initState.credits
-    events
-      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
-      .foreach {
-        w =>
-          val newVal = cred.data + w.value
-          cred = cred.copy(data = newVal)
-    }
-    if (!events.isEmpty) {
-      val snapTime = events.map{e => e.occurredMillis}.max
-      cred = cred.copy(snapshotTime = snapTime)
-    }
-    initState.copy(credits = cred)
+//    var cred = initState.credits
+//    events
+//      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
+//      .foreach {
+//        w =>
+//          val newVal = cred.creditAmount + w.value
+//          cred = cred.copy(data = newVal)
+//    }
+//    if (!events.isEmpty) {
+//      val snapTime = events.map{e => e.occurredMillis}.max
+//      cred = cred.copy(snapshotTime = snapTime)
+//    }
+//    initState.copy(credits = cred)
+    initState
   }
 
   /**
@@ -264,7 +266,7 @@ class UserActor extends AquariumActor
       {
 //        calcWalletEntries()
       }
-      self reply UserResponseGetBalance(userId, _userState.credits.data)
+      self reply UserResponseGetBalance(userId, _userState.credits.creditAmount)
 
     case m @ UserRequestGetState(userId, timestamp) ⇒
       if(this._userId != userId) {

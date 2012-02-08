@@ -109,12 +109,17 @@ case class UserState(
     outOfSyncWalletEntries: List[WalletEntry],
 
     /**
+     * The latest resource events per resource instance
+     */
+    latestResourceEvents: LatestResourceEventsSnapshot,
+
+    /**
      * Counts the number of resource events used to produce this user state for
      * the billing period recorded by `billingPeriodSnapshot`
      */
     resourceEventsCounter: Long,
 
-    active: ActiveSuspendedSnapshot,
+    active: ActiveStateSnapshot,
     credits: CreditSnapshot,
     agreements: AgreementSnapshot,
     roles: RolesSnapshot,

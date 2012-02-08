@@ -36,11 +36,11 @@
 package gr.grnet.aquarium
 package user
 
-import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.Policy
 import java.util.Date
 import logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
+import logic.events.ResourceEvent
 
 /**
  * Snapshot of data that are user-related.
@@ -48,11 +48,9 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-sealed trait UserDataSnapshot[T] extends DataSnapshot[T]
+case class CreditSnapshot(creditAmount: Double, snapshotTime: Long) extends DataSnapshot
 
-case class CreditSnapshot(data: Double, snapshotTime: Long) extends UserDataSnapshot[Double]
-
-case class RolesSnapshot(data: List[String], snapshotTime: Long) extends UserDataSnapshot[List[String]]
+case class RolesSnapshot(roles: List[String], snapshotTime: Long) extends DataSnapshot
 
 /**
  * Represents an agreement valid for a specific amount of time. By convention,
@@ -75,10 +73,9 @@ case class Agreement(agreement: String, validFrom: Long, validTo: Long) {
  * All user agreements. The provided list of agreements cannot have time gaps. This
  * is checked at object creation type.
  */
-case class AgreementSnapshot(data: List[Agreement], snapshotTime: Long)
-  extends UserDataSnapshot[List[Agreement]] {
+case class AgreementSnapshot(agreements: List[Agreement], snapshotTime: Long) extends DataSnapshot {
 
-  ensureNoGaps(data.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
+  ensureNoGaps(agreements.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
 
   def ensureNoGaps(agreements: List[Agreement]): Unit = agreements match {
     case ha :: (t @ (hb :: tail)) =>
@@ -93,7 +90,7 @@ case class AgreementSnapshot(data: List[Agreement], snapshotTime: Long)
    * Get the user agreement at the specified timestamp
    */
   def getAgreement(at: Long): Maybe[DSLAgreement] =
-    data.find{ x => x.validFrom < at && x.validTo > at} match {
+    agreements.find{ x => x.validFrom < at && x.validTo > at} match {
       case Some(x) => Policy.policy(new Date(at)) match {
         case Just(y) =>  y.findAgreement(x.agreement) match {
           case Some(z) => Just(z)
@@ -121,30 +118,22 @@ case class AgreementSnapshot(data: List[Agreement], snapshotTime: Long)
  *  - If the resource is complex, the (name, instanceId) is (DSLResource.name, instance-id)
  *  - If the resource is simple,  the (name, instanceId) is (DSLResource.name, "1")
  *
+ * @param resource        Same as `resource` of [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+ * @param instanceId      Same as `instanceId` of [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+ * @param instanceAmount  This is the amount kept for the resource instance.
+*                         The general rule is that an amount saved in a [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]
+ *                        represents a total value, while a value appearing in a [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+ *                        represents a difference. How these two values are combined to form the new amount is dictated
+ *                        by the underlying [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
+ * @param snapshotTime
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ResourceInstanceSnapshot(/**
-                                     * Same as `resource` of [[gr.grnet.aquarium.logic.events.ResourceEvent]]
-                                     */
-                                    resource: String,
-
-                                    /**
-                                     * Same as `instanceId` of [[gr.grnet.aquarium.logic.events.ResourceEvent]]
-                                     */
+case class ResourceInstanceSnapshot(resource: String,
                                     instanceId: String,
-                                    data: Double, // FIXME: data is a missleading name here
-                                    snapshotTime: Long)
-  extends UserDataSnapshot[Double] {
+                                    instanceAmount: Double,
+                                    snapshotTime: Long) extends DataSnapshot {
 
-  /**
-   * This is the amount kept for the resource instance.
-   *
-   * The general rule is that an amount saved in a [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]  represents a
-   * total value, while a value appearing in a [[gr.grnet.aquarium.logic.events.ResourceEvent]] represents a
-   * difference. How these two values are combined to form the new amount is dictated by the underlying
-   * [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
-   */
-  def instanceAmount = data
-  
   def isSameResourceInstance(resource: String, instanceId: String) = {
     this.resource == resource &&
     this.instanceId == instanceId
@@ -155,6 +144,8 @@ case class ResourceInstanceSnapshot(/**
  * A map from (resourceName, resourceInstanceId) to (value, snapshotTime).
  * This representation is convenient for computations and updating, while the
  * [[gr.grnet.aquarium.user.OwnedResourcesSnapshot]] representation is convenient for JSON serialization.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 class OwnedResourcesMap(resourcesMap: Map[(String, String), (Double, Long)]) {
   def toResourcesSnapshot(snapshotTime: Long): OwnedResourcesSnapshot =
@@ -167,16 +158,21 @@ class OwnedResourcesMap(resourcesMap: Map[(String, String), (Double, Long)]) {
     )
 }
 
-case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshotTime: Long)
-  extends UserDataSnapshot[List[ResourceInstanceSnapshot]] with JsonSupport {
+/**
+ *
+ * @param resourceInstanceSnapshots
+ * @param snapshotTime
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class OwnedResourcesSnapshot(resourceInstanceSnapshots: List[ResourceInstanceSnapshot], snapshotTime: Long)
+  extends DataSnapshot {
 
   def toResourcesMap: OwnedResourcesMap = {
-    val tuples = for(rc <- data) yield ((rc.resource, rc.instanceId), (rc.instanceAmount, rc.snapshotTime))
+    val tuples = for(rc <- resourceInstanceSnapshots) yield ((rc.resource, rc.instanceId), (rc.instanceAmount, rc.snapshotTime))
 
     new OwnedResourcesMap(Map(tuples.toSeq: _*))
   }
-
-  def resourceInstanceSnapshots = data
 
   def resourceInstanceSnapshotsExcept(resource: String, instanceId: String) = {
     // Unfortunately, we have to use a List for data, since JSON serialization is not as flexible
@@ -185,7 +181,7 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
   }
 
   def findResourceInstanceSnapshot(resource: String, instanceId: String): Option[ResourceInstanceSnapshot] = {
-    data.find(x => resource == x.resource && instanceId == x.instanceId)
+    resourceInstanceSnapshots.find(x => resource == x.resource && instanceId == x.instanceId)
   }
 
   def getResourceInstanceAmount(resource: String, instanceId: String, defaultValue: Double): Double = {
@@ -223,11 +219,22 @@ case class OwnedResourcesSnapshot(data: List[ResourceInstanceSnapshot], snapshot
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class UserDataSnapshotException(msg: String) extends Exception(msg)
+class DataSnapshotException(msg: String) extends Exception(msg)
 
 /**
  * Holds the user active/suspended status.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ActiveSuspendedSnapshot(data: Boolean, snapshotTime: Long) extends UserDataSnapshot[Boolean]
+case class ActiveStateSnapshot(isActive: Boolean, snapshotTime: Long) extends DataSnapshot
+
+/**
+ * Keeps the latest resource event per resource instance
+ *
+ * @param resourceEventsMap
+ * @param snapshotTime
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class LatestResourceEventsSnapshot(resourceEventsMap: ResourceEvent.FullResourceTypeMap,
+                                        snapshotTime: Long) extends DataSnapshot
