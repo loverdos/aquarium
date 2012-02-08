@@ -130,37 +130,48 @@ class UserStateComputations extends Loggable {
         accounting)
     }
 
-    val billingMonthStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
-    val billingMonthStartMillis = billingMonthStartDateCalc.toMillis
-    val billingMonthStopMillis  = billingMonthStartDateCalc.goEndOfThisMonth.toMillis
+    D("+findUserStateAtEndOfBillingMonth()")
 
-    if(billingMonthStartMillis > userCreationMillis) {
+    val billingMonthStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
+    val userCreationDateCalc = new DateCalculator(userCreationMillis)
+    val billingMonthStartMillis = billingMonthStartDateCalc.toMillis
+    val billingMonthStopMillis  = billingMonthStartDateCalc.copy.goEndOfThisMonth.toMillis
+
+    if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
-      D("User did not exists before %s. Returning %s", new DateCalculator(userCreationMillis), zeroUserState)
+      D("User did not exist before %s. Returning %s", userCreationDateCalc, zeroUserState)
+      D("-findUserStateAtEndOfBillingMonth()")
       Just(zeroUserState)
     } else {
       resourceEventStore.countOutOfSyncEventsForBillingPeriod(userId, billingMonthStartMillis, billingMonthStopMillis) match {
         case Just(outOfSyncEventCount) ⇒
           // Have out of sync, so must recompute
           D("Found %s out of sync events, will have to (re)compute user state", outOfSyncEventCount)
-          doCompute
+          val retval = doCompute
+          D("-findUserStateAtEndOfBillingMonth()")
+          retval
         case NoVal ⇒
           // No out of sync events, ask DB cache
           userStateStore.findLatestUserStateForEndOfBillingMonth(userId, yearOfBillingMonth, billingMonth) match {
             case just @ Just(userState) ⇒
               // Found from cache
               D("Found from cache: %s", userState)
+              D("-findUserStateAtEndOfBillingMonth()")
               just
             case NoVal ⇒
               // otherwise compute
               D("No user state found from cache, will have to (re)compute")
-              doCompute
+              val retval = doCompute
+              D("-findUserStateAtEndOfBillingMonth()")
+              retval
             case failed @ Failed(_, _) ⇒
               W("Failure while quering cache for user state: %s", failed)
+              D("-findUserStateAtEndOfBillingMonth()")
               failed
           }
         case failed @ Failed(_, _) ⇒
           W("Failure while querying for out of sync events: %s", failed)
+          D("-findUserStateAtEndOfBillingMonth()")
           failed
       }
     }
@@ -178,10 +189,29 @@ class UserStateComputations extends Loggable {
                            defaultPolicy: DSLPolicy,
                            defaultResourcesMap: DSLResourcesMap,
                            accounting: Accounting): Maybe[UserState] = Maybe {
+    def D(fmt: String, args: Any*) = {
+      logger.debug("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
+    }
+
+    def E(fmt: String, args: Any*) = {
+      logger.error("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
+    }
+
+    def W(fmt: String, args: Any*) = {
+      logger.error("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
+    }
+
+    D("+doFullMonthlyBilling()")
+
+    val billingMonthStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
+    val previousBillingMonthCalc = billingMonthStartDateCalc.copy.goPreviousMonth
+    val previousBillingMonth = previousBillingMonthCalc.getMonthOfYear
+    val yearOfPreviousBillingMonth = previousBillingMonthCalc.getYear
+
     val previousBillingMonthUserStateM = findUserStateAtEndOfBillingMonth(
       userId,
-      yearOfBillingMonth,
-      billingMonth,
+      yearOfPreviousBillingMonth,
+      previousBillingMonth,
       userStateStore,
       resourceEventStore,
       policyStore,
@@ -201,7 +231,7 @@ class UserStateComputations extends Loggable {
       case Just(startingUserState) ⇒
         // This is the real deal
 
-        val billingMonthStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
+
         val billingMonthEndDateCalc   = billingMonthStartDateCalc.copy.goEndOfThisMonth
         val billingMonthStartMillis = billingMonthStartDateCalc.toMillis
         val billingMonthEndMillis  = billingMonthEndDateCalc.toMillis
@@ -215,6 +245,7 @@ class UserStateComputations extends Loggable {
           billingMonthEndMillis)
     }
 
+    D("-doFullMonthlyBilling()")
     null
   }
 
