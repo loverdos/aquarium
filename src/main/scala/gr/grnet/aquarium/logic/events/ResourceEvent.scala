@@ -285,7 +285,6 @@ object ResourceEvent {
     final val _id = "_id"
     final val id = "id"
     final val userId = "userId"
-    //final val timestamp = "timestamp" // TODO: deprecate in favor of "occurredMillis"
     final val occurredMillis = "occurredMillis"
     final val receivedMillis = "receivedMillis"
     final val clientId = "clientId"
@@ -294,9 +293,5 @@ object ResourceEvent {
     final val eventVersion = "eventVersion"
     final val value = "value"
     final val details = "details"
-
-    // ResourceType: VMTime
-    final val vmId = "vmId"
-    final val action = "action" // "on", "off"
   }
 }
