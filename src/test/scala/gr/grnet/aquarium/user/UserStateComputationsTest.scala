@@ -18,11 +18,10 @@ import simulation.{ConcurrentVMLocalUIDGenerator, ClientServiceSim, UserSim}
 class UserStateComputationsTest {
   @Test
   def testOne: Unit = {
-    val START_YEAR = 2012
-    val START_MONTH = 1
-    val START_DAY = 15
-
-    val START_OF_YEAR_DATECALC = new DateCalculator(START_YEAR, 1, 1)
+    val StartOfBillingYearDateCalc = new DateCalculator(2012, 1, 1)
+//    println("StartOfBillingYearDateCalc = %s".format(StartOfBillingYearDateCalc))
+    val UserCreationDateCalc = StartOfBillingYearDateCalc.copy.goMinusMonths(2)
+//    println("UserCreationDateCalc = %s".format(UserCreationDateCalc))
 
     // TODO: integrate this with the rest of the simulation stuff
     // TODO: since, right now, the resource strings have to be given twice
@@ -51,28 +50,14 @@ class UserStateComputationsTest {
 
     val computer = new UserStateComputations
 
-    val userPolicyFinder = new UserPolicyFinder {
-      def findUserPolicyAt(userId: String, whenMillis: Long) = DEFAULT_POLICY
-    }
-
-    val fullStateFinder = new FullStateFinder {
-      def findFullState(userId: String, whenMillis: Long) = null
-    }
-
-    val userStateCache = new UserStateCache {
-      def findUserStateAtEndOfPeriod(userId: String, year: Int, month: Int) = NoVal
-
-      def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int) = NoVal
-    }
-
     val mc = Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
     val storeProvider = mc.storeProvider
+    val userStateStore = storeProvider.userStateStore
     val resourceEventStore = storeProvider.resourceEventStore
-//    println("!! storeProvider = %s".format(storeProvider))
+    val policyStore = storeProvider.policyStore
 
     // A new user is created on 2012-01-15 00:00:00.000
-    val USER_START_DATECALC = new DateCalculator(START_YEAR, START_MONTH, START_DAY)
-    val christos  = UserSim("Christos", USER_START_DATECALC.toDate, storeProvider.resourceEventStore)
+    val christos  = UserSim("Christos", UserCreationDateCalc.toDate, storeProvider.resourceEventStore)
 
     // There are two client services, synnefo and pithos.
     val uidGenerator = new ConcurrentVMLocalUIDGenerator
@@ -86,14 +71,15 @@ class UserStateComputationsTest {
     val disk = pithos.newDiskspace(christos, "DISK.1")
 
     // Let's create our dates of interest
-    val vmStartDateCalc = USER_START_DATECALC.copy.goPlusDays(1).goPlusHours(1)
+    val vmStartDateCalc = StartOfBillingYearDateCalc.copy.goPlusDays(1).goPlusHours(1)
+//    println("vmStartDateCalc = %s".format(vmStartDateCalc))
     // 2012-01-16 01:00:00.000
     val vmStartDate = vmStartDateCalc.toDate
 
     // Within January, create one VM ON-OFF ...
     val onOff1_M = vm.newONOFF(vmStartDate, 9)
 
-    val diskConsumptionDateCalc = USER_START_DATECALC.copy.goPlusHours(3)
+    val diskConsumptionDateCalc = StartOfBillingYearDateCalc.copy.goPlusHours(3)
     // 2012-01-16 04:00:00.000
     val diskConsumptionDate1 = diskConsumptionDateCalc.toDate
     // 2012-01-17 05:00:00.000
@@ -106,7 +92,7 @@ class UserStateComputationsTest {
     // ... and one "future" event
     // 2012-02-07 07:07:07.007
     disk.consumeMB(
-      START_OF_YEAR_DATECALC.copy.
+      StartOfBillingYearDateCalc.copy.
         goNextMonth.goPlusDays(6).
         goPlusHours(7).
         goPlusMinutes(7).
@@ -126,21 +112,25 @@ class UserStateComputationsTest {
     }
     println("=============================")
 
-    val billing = computer.computeFullMonthlyBilling(
-      START_YEAR,
-      START_MONTH,
+    val userStateM = computer.doFullMonthlyBilling(
       christos.userId,
-      userPolicyFinder,
-      fullStateFinder,
-      userStateCache,
+      StartOfBillingYearDateCalc.getYear,
+      StartOfBillingYearDateCalc.getMonthOfYear,
+      userStateStore,
       resourceEventStore,
+      policyStore,
+      christos.userCreationDate.getTime,
       computer.createFirstUserState(christos.userId),
-      Nil,
+      computer.createFirstUserState(christos.userId),
       DEFAULT_POLICY,
       DEFAULT_RESOURCES_MAP,
       new Accounting{}
     )
     
-    println("!! billing = %s".format(billing))
+    println("!! userStateM = %s".format(userStateM))
+    userStateM.forFailed { failed ⇒
+      failed.exception.printStackTrace()
+      NoVal
+    }
   }
 }

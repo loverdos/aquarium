@@ -82,6 +82,7 @@ class MemStore extends UserStateStore
   //- StoreProvider
 
 
+  //+ UserStateStore
   def storeUserState(userState: UserState): Maybe[RecordID] = {
     val userId = userState.userId
     val userStateJ = Just(userState)
@@ -96,10 +97,17 @@ class MemStore extends UserStateStore
     }
   }
 
+  def findLatestUserStateForEndOfBillingMonth(userId: String,
+                                              yearOfBillingMonth: Int,
+                                              billingMonth: Int): Maybe[UserState] = {
+    NoVal // FIXME: implement
+  }
+
   def deleteUserState(userId: String) {
     if (userStateByUserId.containsKey(userId))
       userStateByUserId.remove(userId)
   }
+  //- UserStateStore
 
   //- WalletEntryStore
   def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] = {
@@ -190,19 +198,11 @@ class MemStore extends UserStateStore
     }.toList
   }
 
-  def countOutOfSyncEventsForBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[Long] = Maybe {
-    val billingMonthDate = new DateCalculator(yearOfBillingMonth, billingMonth)
-    val billingDateStart = billingMonthDate
-    val billingDateEnd = billingDateStart.copy.goEndOfThisMonth
+  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Maybe[Long] = Maybe {
     resourceEventsById.valuesIterator.filter { case ev ⇒
-      // out of sync events are those that were received in the billing month but occurred in previous months
-      val receivedMillis = ev.receivedMillis
-      val occurredMillis = ev.occurredMillis
-
-      // the events that were received withing the billing month
-      ev.isReceivedWithinMillis(billingDateStart.toMillis, billingDateEnd.toMillis) &&
-      // but occurred before the billing period
-      billingDateStart.isAfterMillis(occurredMillis)
+      // out of sync events are those that were received in the billing month but occurred in previous (or next?)
+      // months
+      ev.isOutOfSyncForBillingPeriod(startMillis, stopMillis)
     }.size.toLong
   }
 

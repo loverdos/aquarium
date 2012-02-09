@@ -36,10 +36,12 @@
 package gr.grnet.aquarium.user
 
 import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
-import net.liftweb.json.{parse => parseJson, JsonAST, Xml}
+import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
-import com.ckkloverdos.maybe.{Failed, Just, Maybe}
-import gr.grnet.aquarium.logic.accounting.Policy
+import com.ckkloverdos.maybe.{Failed, Maybe}
+import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
+import java.util.Date
+import gr.grnet.aquarium.util.date.DateCalculator
 
 
 /**
@@ -63,7 +65,7 @@ case class UserState(
      * zero if unknown.
      * 
      */
-    startDateMillis: Long,
+    userCreationMillis: Long,
 
     /**
      * Each time the user state is updated, this must be increased.
@@ -85,8 +87,31 @@ case class UserState(
     theFullBillingMonth: BillingMonth,
 
     /**
+     * If this is a state for a full billing month, then keep here the implicit OFF
+     * resource events.
      *
+     * The use case is this: A VM may have been started (ON state) before the end of the billing period
+     * and ended (OFF state) after the beginning of the next billing period. In order to bill this, we must assume
+     * an implicit OFF even right at the end of the billing period and an implicit ON event with the beginning of the
+     * next billing period.
      */
+    implicitOFFEvents: List[ResourceEvent],
+
+    /**
+     * So far computed wallet entries for the current billing month.
+     */
+    billingMonthWalletEntries: List[WalletEntry],
+
+    /**
+     * Wallet entries that were computed for out of sync events.
+     * (for the current billing month ??)
+     */
+    outOfSyncWalletEntries: List[WalletEntry],
+
+    /**
+     * The latest resource events per resource instance
+     */
+    latestResourceEvents: LatestResourceEventsSnapshot,
 
     /**
      * Counts the number of resource events used to produce this user state for
@@ -94,7 +119,7 @@ case class UserState(
      */
     resourceEventsCounter: Long,
 
-    active: ActiveSuspendedSnapshot,
+    active: ActiveStateSnapshot,
     credits: CreditSnapshot,
     agreements: AgreementSnapshot,
     roles: RolesSnapshot,
@@ -111,6 +136,10 @@ case class UserState(
   def oldestSnapshotTime: Long = _allSnapshots min
 
   def newestSnapshotTime: Long  = _allSnapshots max
+
+//  def userCreationDate = new Date(userCreationMillis)
+//
+//  def userCreationFormatedDate = new DateCalculator(userCreationMillis).toString
 
   def maybeDSLAgreement(at: Long): Maybe[DSLAgreement] = {
     agreements match {

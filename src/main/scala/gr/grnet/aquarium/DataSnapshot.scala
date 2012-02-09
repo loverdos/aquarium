@@ -38,16 +38,13 @@ package gr.grnet.aquarium
 /**
  * Timely snapshots of data.
  *
+ * We are interested only on the time aspect here, the data part is left open to the implementors.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait DataSnapshot[T] {
+trait DataSnapshot {
   /**
-   * The unix time (millis) when the data was actually calculated.
+   * The unix time (millis) when the data was actually calculated/obtained.
    */
-  val snapshotTime: Long
-
-  /**
-   * The actual data/payload.
-   */
-  val data: T
+  def snapshotTime: Long
 }
