@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 GRNET S.A. All rights reserved.
+ * Copyright 2012 GRNET S.A. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or
  * without modification, are permitted provided that the following
@@ -33,30 +33,11 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.dsl
-
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.util
+package gr.grnet.aquarium.user
 
 /**
- * Enumerates known resources by name.
- *
- * This is related to [[gr.grnet.aquarium.logic.accounting.dsl.DSLResource]] but currently does not directly appear
- * in the rest of the DSL.
+ * Default implementation for [[gr.grnet.aquarium.user.UserStateComputations]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-class DSLResourcesMap(map: Map[String, DSLResource]) {
-  def this(list: List[DSLResource]) = this(Map(list.map(r ⇒ (r.name, r)): _*))
-
-  def names = map.keySet
-
-  def findResourceOoooooooooooold(name: String): Option[DSLResource] = map.get(name)
-  
-  def findResourceM(name: String): Maybe[DSLResource] = {
-    util.findFromMapAsMaybe(map, name)
-  }
-
-  def toResourcesList: List[DSLResource] = map.valuesIterator.toList
-}
+object DefaultUserStateComputations extends UserStateComputations

@@ -41,9 +41,9 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.util.date.DateCalculator
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLCostPolicy, DSLPolicy}
-import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, ResourceEventStore}
+import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 
 /**
  *
@@ -58,7 +58,8 @@ class UserStateComputations extends Loggable {
       0L,
       false,
       null,
-      Nil, Nil, Nil,
+      ImplicitOFFResourceEventsSnapshot(Map(), now),
+      Nil, Nil,
       LatestResourceEventsSnapshot(Map(), now),
       0L,
       ActiveStateSnapshot(false, now),
@@ -77,7 +78,8 @@ class UserStateComputations extends Loggable {
         0L,
         false,
         null,
-        Nil, Nil,Nil,
+        ImplicitOFFResourceEventsSnapshot(Map(), now),
+        Nil, Nil,
         LatestResourceEventsSnapshot(Map(), now),
         0L,
         ActiveStateSnapshot(false, now),
@@ -99,22 +101,18 @@ class UserStateComputations extends Loggable {
                                        zeroUserState: UserState, 
                                        defaultPolicy: DSLPolicy,
                                        defaultResourcesMap: DSLResourcesMap,
-                                       accounting: Accounting): Maybe[UserState] = {
+                                       accounting: Accounting,
+                                       contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = {
 
-    def D(fmt: String, args: Any*) = {
-      logger.debug("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
-    }
-
-    def E(fmt: String, args: Any*) = {
-      logger.error("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
-    }
-
-    def W(fmt: String, args: Any*) = {
-      logger.error("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
-    }
+    val clog = ContextualLogger.fromOther(
+      contextualLogger,
+      logger,
+      "findUserStateAtEndOfBillingMonth(%s-%02d)", yearOfBillingMonth, billingMonth)
+//    val clog = new ContextualLogger(logger, "findUserStateAtEndOfBillingMonth(%s-%02d)", yearOfBillingMonth, billingMonth)
+    clog.begin()
 
     def doCompute: Maybe[UserState] = {
-      D("Computing full month billing")
+      clog.debug("Computing full month billing")
       doFullMonthlyBilling(
         userId,
         yearOfBillingMonth,
@@ -127,10 +125,9 @@ class UserStateComputations extends Loggable {
         zeroUserState,
         defaultPolicy,
         defaultResourcesMap,
-        accounting)
+        accounting,
+        Just(clog))
     }
-
-    D("+findUserStateAtEndOfBillingMonth()")
 
     val billingMonthStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
     val userCreationDateCalc = new DateCalculator(userCreationMillis)
@@ -139,40 +136,32 @@ class UserStateComputations extends Loggable {
 
     if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
-      D("User did not exist before %s. Returning %s", userCreationDateCalc, zeroUserState)
-      D("-findUserStateAtEndOfBillingMonth()")
-      Just(zeroUserState)
+      clog.debug("User did not exist before %s. Returning %s", userCreationDateCalc, zeroUserState)
+      clog.endWith(Just(zeroUserState))
     } else {
       resourceEventStore.countOutOfSyncEventsForBillingPeriod(userId, billingMonthStartMillis, billingMonthStopMillis) match {
         case Just(outOfSyncEventCount) ⇒
           // Have out of sync, so must recompute
-          D("Found %s out of sync events, will have to (re)compute user state", outOfSyncEventCount)
-          val retval = doCompute
-          D("-findUserStateAtEndOfBillingMonth()")
-          retval
+          clog.debug("Found %s out of sync events, will have to (re)compute user state", outOfSyncEventCount)
+          clog.endWith(doCompute)
         case NoVal ⇒
           // No out of sync events, ask DB cache
           userStateStore.findLatestUserStateForEndOfBillingMonth(userId, yearOfBillingMonth, billingMonth) match {
             case just @ Just(userState) ⇒
               // Found from cache
-              D("Found from cache: %s", userState)
-              D("-findUserStateAtEndOfBillingMonth()")
-              just
+              clog.debug("Found from cache: %s", userState)
+              clog.endWith(just)
             case NoVal ⇒
               // otherwise compute
-              D("No user state found from cache, will have to (re)compute")
-              val retval = doCompute
-              D("-findUserStateAtEndOfBillingMonth()")
-              retval
+              clog.debug("No user state found from cache, will have to (re)compute")
+              clog.endWith(doCompute)
             case failed @ Failed(_, _) ⇒
-              W("Failure while quering cache for user state: %s", failed)
-              D("-findUserStateAtEndOfBillingMonth()")
-              failed
+              clog.warn("Failure while quering cache for user state: %s", failed)
+              clog.endWith(failed)
           }
         case failed @ Failed(_, _) ⇒
-          W("Failure while querying for out of sync events: %s", failed)
-          D("-findUserStateAtEndOfBillingMonth()")
-          failed
+          clog.warn("Failure while querying for out of sync events: %s", failed)
+          clog.endWith(failed)
       }
     }
   }
@@ -188,25 +177,21 @@ class UserStateComputations extends Loggable {
                            zeroUserState: UserState,
                            defaultPolicy: DSLPolicy,
                            defaultResourcesMap: DSLResourcesMap,
-                           accounting: Accounting): Maybe[UserState] = Maybe {
-    def D(fmt: String, args: Any*) = {
-      logger.debug("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
-    }
+                           accounting: Accounting,
+                           contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = Maybe {
 
-    def E(fmt: String, args: Any*) = {
-      logger.error("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
-    }
-
-    def W(fmt: String, args: Any*) = {
-      logger.error("[%s, %s-%02d] %s".format(userId, yearOfBillingMonth, billingMonth, fmt.format(args:_*)))
-    }
-
-    D("+doFullMonthlyBilling()")
 
     val billingMonthStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
+    val billingMonthEndDateCalc   = billingMonthStartDateCalc.copy.goEndOfThisMonth
     val previousBillingMonthCalc = billingMonthStartDateCalc.copy.goPreviousMonth
     val previousBillingMonth = previousBillingMonthCalc.getMonthOfYear
     val yearOfPreviousBillingMonth = previousBillingMonthCalc.getYear
+
+    val clog = ContextualLogger.fromOther(
+      contextualLogger,
+      logger,
+      "doFullMonthlyBilling(%s-%02d)", yearOfBillingMonth, billingMonth)
+    clog.begin()
 
     val previousBillingMonthUserStateM = findUserStateAtEndOfBillingMonth(
       userId,
@@ -220,70 +205,130 @@ class UserStateComputations extends Loggable {
       zeroUserState,
       defaultPolicy,
       defaultResourcesMap,
-      accounting
+      accounting,
+      Just(clog)
     )
     
     previousBillingMonthUserStateM match {
       case NoVal ⇒
-        NoVal // not really...
-      case failed @ Failed(_, _) ⇒
-        failed
+        null // not really... (must throw an exception here probably...)
+      case failed @ Failed(e, _) ⇒
+        throw e
       case Just(startingUserState) ⇒
         // This is the real deal
 
+        // This is a collection of all the latest resource events.
+        // We want these in order to correlate incoming resource events with their previous (in `occurredMillis` time)
+        // ones.
+        // Will be updated on processing the next resource event.
+        val previousResourceEvents = startingUserState.latestResourceEvents.toMutableWorker
+        clog.debug("previousResourceEvents = %s", previousResourceEvents)
 
-        val billingMonthEndDateCalc   = billingMonthStartDateCalc.copy.goEndOfThisMonth
         val billingMonthStartMillis = billingMonthStartDateCalc.toMillis
         val billingMonthEndMillis  = billingMonthEndDateCalc.toMillis
 
-        // Keep the working (current) user state. This will get updated as we proceed billing within the month
+        // Keep the working (current) user state. This will get updated as we proceed with billing for the month
+        // specified in the parameters.
         var _workingUserState = startingUserState
 
+        // Prepare the implicit OFF resource events
+        val theImplicitOFFs = _workingUserState.implicitOFFs.toMutableWorker
+        clog.debug("theImplicitOFFs = %s", theImplicitOFFs)
+
+        /**
+         * Finds the previous resource event by checking two possible sources: a) The implicit OFF resource events and
+         * b) the explicit previous resource events. If the event is found, it is removed from the respective source.
+         *
+         * If the event is not found, then this must be for a new resource instance.
+         * (and probably then some `zero` resource event must be implied as the previous one)
+         * 
+         * @param resource
+         * @param instanceId
+         * @return
+         */
+        def findAndRemovePreviousResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+          // implicit OFFs are checked first
+          theImplicitOFFs.findAndRemoveResourceEvent(resource, instanceId) match {
+            case just @ Just(_) ⇒
+              just
+            case NoVal ⇒
+              // explicit previous are checked second
+              previousResourceEvents.findAndRemoveResourceEvent(resource, instanceId) match {
+                case just @ Just(_) ⇒
+                  just
+                case noValOrFailed ⇒
+                  noValOrFailed
+              }
+            case failed ⇒
+              failed
+          }
+        }
+
+        def rcDebugInfo(rcEvent: ResourceEvent) = {
+          rcEvent.toDebugString(defaultResourcesMap, false)
+        }
+
+        // Find the actual resource events from DB
         val allResourceEventsForMonth = resourceEventStore.findAllRelevantResourceEventsForBillingPeriod(
           userId,
           billingMonthStartMillis,
           billingMonthEndMillis)
+        var _eventCounter = 0
+
+        clog.debug("resourceEventStore = %s".format(resourceEventStore))
+        clog.debug("Found %s resource events, starting processing...", allResourceEventsForMonth.size)
+        
+        for {
+          currentResourceEvent <- allResourceEventsForMonth
+        } {
+          _eventCounter = _eventCounter + 1
+
+          clog.indent()
+          clog.debug("Processing [%03d] %s", _eventCounter, rcDebugInfo(currentResourceEvent))
+          clog.indent()
+
+          clog.debug("%s previousResourceEvents = %s", previousResourceEvents.size, previousResourceEvents)
+          if(previousResourceEvents.size > 0) {
+            clog.indent()
+            previousResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
+            clog.unindent()
+          }
+          clog.debug("%s theImplicitOFFs = %s", theImplicitOFFs.size, theImplicitOFFs)
+          if(theImplicitOFFs.size > 0) {
+            clog.indent()
+            theImplicitOFFs.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
+            clog.unindent()
+          }
+
+          // Ignore the event if it is not billable (but still record it in the "previous" stuff.
+          // But to make this decision, we need the cost policy.
+          val costPolicyM = currentResourceEvent.findCostPolicyM(defaultResourcesMap)
+          costPolicyM match {
+            case Just(costPolicy) ⇒
+              val isBillable = costPolicy.isBillableEventBasedOnValue(currentResourceEvent.value)
+              isBillable match {
+                case false ⇒
+                  clog.debug("Ignoring not billable %s", rcDebugInfo(currentResourceEvent))
+                case true ⇒
+                  ()
+              }
+
+              // We finished processing with this event, now let's make it the latest of its kind
+              previousResourceEvents.updateResourceEvent(currentResourceEvent)
+            case NoVal ⇒
+              // Now, this is a matter of politics: what do we do if no policy was found?
+              clog.error("No cost policy for %s", rcDebugInfo(currentResourceEvent))
+            case failed @ Failed(e, m) ⇒
+              clog.error("Error obtaining cost policy for %s", rcDebugInfo(currentResourceEvent))
+              clog.error(e, m)
+          }
+
+          clog.unindent()
+          clog.unindent()
+        }
+        
+
+        clog.endWith(_workingUserState)
     }
-
-    D("-doFullMonthlyBilling()")
-    null
-  }
-
-
-  /**
-   * Find the previous resource event, if needed by the event's cost policy,
-   * in order to use it for any credit calculations.
-   */
-  def findPreviousRCEventOf(rcEvent: ResourceEvent,
-                            costPolicy: DSLCostPolicy,
-                            previousRCEventsMap: mutable.Map[ResourceEvent.FullResourceType, ResourceEvent]): Maybe[ResourceEvent] = {
-
-    if(costPolicy.needsPreviousEventForCreditCalculation) {
-      // Get a previous resource only if this is needed by the policy
-      previousRCEventsMap.get(rcEvent.fullResourceInfo) match {
-        case Some(previousRCEvent) ⇒
-          Just(previousRCEvent)
-        case None ⇒
-          queryForPreviousRCEvent(rcEvent)
-      }
-    } else {
-      // No need for previous event. Will return NoVal
-      NoVal
-    }
-  }
-
-  /**
-   * FIXME: implement
-   */
-  def queryForPreviousRCEvent(rcEvent: ResourceEvent): Maybe[ResourceEvent] = {
-    NoVal
-  }
-
-  type FullResourceType = ResourceEvent.FullResourceType
-  def updatePreviousRCEventWith(previousRCEventsMap: mutable.Map[FullResourceType, ResourceEvent],
-                                newRCEvent: ResourceEvent): Unit = {
-    previousRCEventsMap(newRCEvent.fullResourceInfo) = newRCEvent
   }
 }
-
-object DefaultUserStateComputations extends UserStateComputations

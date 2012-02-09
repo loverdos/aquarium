@@ -299,11 +299,15 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
   }
 
   def format(fmt: String) = {
-    dateTime.formatted(fmt)
+    dateTime.toString(fmt)
   }
 
   def toISOString: String = {
     ISODateTimeFormat.dateTime().print(dateTime);
+  }
+  
+  def toYYYYMMDD: String = {
+    format("yyyy-MM-dd")
   }
 
   override def toString = {

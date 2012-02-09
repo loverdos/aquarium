@@ -36,11 +36,14 @@
 package gr.grnet.aquarium
 package user
 
+import gr.grnet.aquarium.util.{findFromMapAsMaybe, findAndRemoveFromMap}
 import gr.grnet.aquarium.logic.accounting.Policy
 import java.util.Date
 import logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
 import logic.events.ResourceEvent
+import logic.events.ResourceEvent.FullResourceTypeMap
+import logic.events.ResourceEvent.FullMutableResourceTypeMap
 
 /**
  * Snapshot of data that are user-related.
@@ -229,12 +232,106 @@ class DataSnapshotException(msg: String) extends Exception(msg)
 case class ActiveStateSnapshot(isActive: Boolean, snapshotTime: Long) extends DataSnapshot
 
 /**
- * Keeps the latest resource event per resource instance
+ * Keeps the latest resource event per resource instance.
  *
  * @param resourceEventsMap
  * @param snapshotTime
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class LatestResourceEventsSnapshot(resourceEventsMap: ResourceEvent.FullResourceTypeMap,
-                                        snapshotTime: Long) extends DataSnapshot
+case class LatestResourceEventsSnapshot(resourceEventsMap: FullResourceTypeMap,
+                                        snapshotTime: Long) extends DataSnapshot {
+
+  /**
+   * The gateway to playing with mutable state.
+   *
+   * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsWorker]].
+   */
+  def toMutableWorker =
+    LatestResourceEventsWorker(scala.collection.mutable.Map(resourceEventsMap.toSeq: _*))
+}
+
+/**
+ * This is the mutable cousin of [[gr.grnet.aquarium.user.LatestResourceEventsSnapshot]].
+ *
+ * @param resourceEventsMap
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceTypeMap) {
+
+  /**
+   * The gateway to immutable state.
+   *
+   * @param snapshotTime The relevant snapshot time.
+   * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsSnapshot]].
+   */
+  def toImmutableSnapshot(snapshotTime: Long) =
+    LatestResourceEventsSnapshot(resourceEventsMap.toMap, snapshotTime)
+
+  def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
+    resourceEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
+  }
+  
+  def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+    findFromMapAsMaybe(resourceEventsMap, (resource, instanceId))
+  }
+
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+    findAndRemoveFromMap(resourceEventsMap, (resource, instanceId))
+  }
+
+  def size = resourceEventsMap.size
+
+  def foreach[U](f: ResourceEvent => U): Unit = {
+    resourceEventsMap.valuesIterator.foreach(f)
+  }
+}
+
+/**
+ * Keeps the implicit OFF events when a billing period ends.
+ * This is normally recorded in the [[gr.grnet.aquarium.user.UserState]].
+ *
+ * @param implicitOFFEventsMap
+ * @param snapshotTime
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class ImplicitOFFResourceEventsSnapshot(implicitOFFEventsMap: FullResourceTypeMap,
+                                             snapshotTime: Long) extends DataSnapshot {
+  /**
+   * The gateway to playing with mutable state.
+   *
+   * @return A fresh instance of [[gr.grnet.aquarium.user.ImplicitOFFResourceEventsWorker]].
+   */
+  def toMutableWorker = {
+    ImplicitOFFResourceEventsWorker(scala.collection.mutable.Map(implicitOFFEventsMap.toSeq: _*))
+  }
+
+  def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+    findFromMapAsMaybe(implicitOFFEventsMap, (resource, instanceId))
+  }
+}
+
+/**
+ * This is the mutable cousin of [[gr.grnet.aquarium.user.ImplicitOFFResourceEventsSnapshot]].
+ *
+ * @param implicitOFFEventsMap
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case class ImplicitOFFResourceEventsWorker(implicitOFFEventsMap: FullMutableResourceTypeMap) {
+
+  def toImmutableSnapshot(snapshotTime: Long) =
+    ImplicitOFFResourceEventsSnapshot(implicitOFFEventsMap.toMap, snapshotTime)
+
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+    findAndRemoveFromMap(implicitOFFEventsMap, (resource, instanceId))
+  }
+
+  def size = implicitOFFEventsMap.size
+
+  def foreach[U](f: ResourceEvent => U): Unit = {
+    implicitOFFEventsMap.valuesIterator.foreach(f)
+  }
+}

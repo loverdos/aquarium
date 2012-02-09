@@ -179,7 +179,7 @@ case class ResourceEvent(
    * @return A beautiful string representation of the value.
    */
   def beautifyValue(resourcesMap: DSLResourcesMap): String = {
-    beatifyValue(resourcesMap.findResource)
+    beatifyValue(resourcesMap.findResourceOoooooooooooold)
   }
 
   /**
@@ -251,8 +251,12 @@ case class ResourceEvent(
    * Should the need arises to change the cost policy for a resource, this is a good enough
    * reason to consider creating another type of resource.
    */
-  def findCostPolicy(resourcesMap: DSLResourcesMap): Option[DSLCostPolicy] = {
-    resourcesMap.findResource(this.safeResource).map(_.costPolicy)
+  def findCostPolicyM(resourcesMap: DSLResourcesMap): Maybe[DSLCostPolicy] = {
+    for {
+      rc <- resourcesMap.findResourceM(this.safeResource)
+    } yield {
+      rc.costPolicy
+    }
   }
 }
 
@@ -263,7 +267,8 @@ object ResourceEvent {
   type ResourceIdType = String
   type FullResourceType = (ResourceType, ResourceIdType)
   type FullResourceTypeMap = Map[FullResourceType, ResourceEvent]
-  
+  type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]
+
   def fromJson(json: String): ResourceEvent = {
     JsonHelpers.jsonToObject[ResourceEvent](json)
   }
@@ -284,7 +289,6 @@ object ResourceEvent {
     final val _id = "_id"
     final val id = "id"
     final val userId = "userId"
-    //final val timestamp = "timestamp" // TODO: deprecate in favor of "occurredMillis"
     final val occurredMillis = "occurredMillis"
     final val receivedMillis = "receivedMillis"
     final val clientId = "clientId"
@@ -293,9 +297,5 @@ object ResourceEvent {
     final val eventVersion = "eventVersion"
     final val value = "value"
     final val details = "details"
-
-    // ResourceType: VMTime
-    final val vmId = "vmId"
-    final val action = "action" // "on", "off"
   }
 }
