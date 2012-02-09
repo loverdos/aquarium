@@ -179,7 +179,7 @@ case class ResourceEvent(
    * @return A beautiful string representation of the value.
    */
   def beautifyValue(resourcesMap: DSLResourcesMap): String = {
-    beatifyValue(resourcesMap.findResource)
+    beatifyValue(resourcesMap.findResourceOoooooooooooold)
   }
 
   /**
@@ -251,8 +251,12 @@ case class ResourceEvent(
    * Should the need arises to change the cost policy for a resource, this is a good enough
    * reason to consider creating another type of resource.
    */
-  def findCostPolicy(resourcesMap: DSLResourcesMap): Option[DSLCostPolicy] = {
-    resourcesMap.findResource(this.safeResource).map(_.costPolicy)
+  def findCostPolicyM(resourcesMap: DSLResourcesMap): Maybe[DSLCostPolicy] = {
+    for {
+      rc <- resourcesMap.findResourceM(this.safeResource)
+    } yield {
+      rc.costPolicy
+    }
   }
 }
 

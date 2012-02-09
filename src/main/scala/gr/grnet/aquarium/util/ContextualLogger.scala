@@ -56,7 +56,7 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
       case n ⇒
         val buffer = new java.lang.StringBuilder(n + msg.size)
         var _i = 0
-        while(_i < n) {
+        while(_i < (n * 2)) {
           buffer.append(' ')
           _i = _i + 1
         }

@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import com.ckkloverdos.maybe.Maybe
+import gr.grnet.aquarium.util
 
 /**
  * Enumerates known resources by name.
@@ -51,9 +52,11 @@ class DSLResourcesMap(map: Map[String, DSLResource]) {
 
   def names = map.keySet
 
-  def findResource(name: String): Option[DSLResource] = map.get(name)
+  def findResourceOoooooooooooold(name: String): Option[DSLResource] = map.get(name)
   
-  def getResourceM(name: String): Maybe[DSLResource] = Maybe(map(name))
+  def findResourceM(name: String): Maybe[DSLResource] = {
+    util.findFromMapAsMaybe(map, name)
+  }
 
   def toResourcesList: List[DSLResource] = map.valuesIterator.toList
 }

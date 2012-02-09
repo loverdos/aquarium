@@ -269,8 +269,8 @@ case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceType
   def toImmutableSnapshot(snapshotTime: Long) =
     LatestResourceEventsSnapshot(resourceEventsMap.toMap, snapshotTime)
 
-  def updateResourceEvent(resource: String, instanceId: String, resourceEvent: ResourceEvent): Unit = {
-    resourceEventsMap((resource, instanceId)) = resourceEvent
+  def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
+    resourceEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
   }
   
   def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
@@ -279,6 +279,12 @@ case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceType
 
   def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
     findAndRemoveFromMap(resourceEventsMap, (resource, instanceId))
+  }
+
+  def size = resourceEventsMap.size
+
+  def foreach[U](f: ResourceEvent => U): Unit = {
+    resourceEventsMap.valuesIterator.foreach(f)
   }
 }
 
@@ -321,5 +327,11 @@ case class ImplicitOFFResourceEventsWorker(implicitOFFEventsMap: FullMutableReso
 
   def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
     findAndRemoveFromMap(implicitOFFEventsMap, (resource, instanceId))
+  }
+
+  def size = implicitOFFEventsMap.size
+
+  def foreach[U](f: ResourceEvent => U): Unit = {
+    implicitOFFEventsMap.valuesIterator.foreach(f)
   }
 }

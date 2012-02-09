@@ -224,14 +224,13 @@ class MemStore extends UserStateStore
    * b) whose `receivedMillis` is within the given billing period.
    *
    * Order them by `occurredMillis`
-   * FIXME: implement
    */
   override def findAllRelevantResourceEventsForBillingPeriod(userId: String,
                                                              startMillis: Long,
                                                              stopMillis: Long): List[ResourceEvent] = {
     resourceEventsById.valuesIterator.filter { case ev ⇒
       ev.isOccurredOrReceivedWithinMillis(startMillis, stopMillis)
-    }.toList.sortWith { case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis }
+    }.toList sortWith { case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis }
   }
   //- ResourceEventStore
 
