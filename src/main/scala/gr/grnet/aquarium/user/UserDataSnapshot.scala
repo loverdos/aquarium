@@ -41,6 +41,8 @@ import java.util.Date
 import logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
 import logic.events.ResourceEvent
+import logic.events.ResourceEvent.FullResourceTypeMap
+import logic.events.ResourceEvent.FullMutableResourceTypeMap
 
 /**
  * Snapshot of data that are user-related.
@@ -229,12 +231,45 @@ class DataSnapshotException(msg: String) extends Exception(msg)
 case class ActiveStateSnapshot(isActive: Boolean, snapshotTime: Long) extends DataSnapshot
 
 /**
- * Keeps the latest resource event per resource instance
+ * Keeps the latest resource event per resource instance.
  *
  * @param resourceEventsMap
  * @param snapshotTime
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class LatestResourceEventsSnapshot(resourceEventsMap: ResourceEvent.FullResourceTypeMap,
-                                        snapshotTime: Long) extends DataSnapshot
+case class LatestResourceEventsSnapshot(resourceEventsMap: FullResourceTypeMap,
+                                        snapshotTime: Long) extends DataSnapshot {
+
+  /**
+   * The gateway to playing with mutable state.
+   *
+   * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsWorker]].
+   */
+  def toMutableWorker =
+    LatestResourceEventsWorker(scala.collection.mutable.Map(resourceEventsMap.toSeq: _*))
+}
+
+/**
+ * This is the mutable cousin of [[gr.grnet.aquarium.user.LatestResourceEventsSnapshot]].
+ *
+ * @param resourceEventsMap
+ */
+case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceTypeMap) {
+
+  /**
+   * The gateway to immutable state.
+   *
+   * @param snapshotTime The relevant snapshot time.
+   * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsSnapshot]].
+   */
+  def toImmutableSnapshot(snapshotTime: Long) = LatestResourceEventsSnapshot(resourceEventsMap.toMap, snapshotTime)
+
+  def updateResourceEvent(resource: String, instanceId: String, resourceEvent: ResourceEvent): Unit = {
+    resourceEventsMap((resource, instanceId)) = resourceEvent
+  }
+  
+  def findResourceEvent(resource: String, instanceId: String): Option[ResourceEvent] = {
+    resourceEventsMap.get((resource, instanceId))
+  }
+}

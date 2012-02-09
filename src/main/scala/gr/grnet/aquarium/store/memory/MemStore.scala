@@ -45,7 +45,6 @@ import java.util.Date
 import collection.mutable.ConcurrentMap
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, PolicyEntry}
 import java.util.concurrent.ConcurrentHashMap
-import gr.grnet.aquarium.util.date.DateCalculator
 
 /**
  * An implementation of various stores that persists data in memory
@@ -67,6 +66,18 @@ class MemStore extends UserStateStore
   private[this] val resourceEventsById: ConcurrentMap[String, ResourceEvent] = new ConcurrentHashMap[String, ResourceEvent]()
 
   def configure(props: Props) = {
+  }
+
+  override def toString = {
+    val map = Map(
+      "UserState"     -> userStateByUserId.size,
+      "ResourceEvent" -> resourceEventsById.size,
+      "UserEvent"     -> userEventById.size,
+      "PolicyEntry"   -> policyById.size,
+      "WalletEntry"   -> walletEntriesById.size
+    )
+
+    "MemStore(%s)" format map
   }
 
   //+ StoreProvider
