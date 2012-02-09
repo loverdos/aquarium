@@ -94,7 +94,23 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
   def warn(fmt: String, args: Any*): Unit = {
     if(logger.isWarnEnabled) {
       val msg = ctx + " " + nestMsg(fmt, args:_*)
-      logger.debug(msg)
+      logger.warn(msg)
+    }
+  }
+
+  @inline
+  def error(fmt: String, args: Any*): Unit = {
+    if(logger.isErrorEnabled) {
+      val msg = ctx + " " + nestMsg(fmt, args:_*)
+      logger.error(msg)
+    }
+  }
+
+  @inline
+  def error(t: Throwable, fmt: String, args: Any*): Unit = {
+    if(logger.isErrorEnabled) {
+      val msg = ctx + " " + nestMsg(fmt, args:_*)
+      logger.error(msg, t)
     }
   }
 
