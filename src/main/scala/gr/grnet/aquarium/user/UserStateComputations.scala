@@ -58,7 +58,8 @@ class UserStateComputations extends Loggable {
       0L,
       false,
       null,
-      Nil, Nil, Nil,
+      ImplicitOFFResourceEventsSnapshot(Map(), now),
+      Nil, Nil,
       LatestResourceEventsSnapshot(Map(), now),
       0L,
       ActiveStateSnapshot(false, now),
@@ -77,7 +78,8 @@ class UserStateComputations extends Loggable {
         0L,
         false,
         null,
-        Nil, Nil,Nil,
+        ImplicitOFFResourceEventsSnapshot(Map(), now),
+        Nil, Nil,
         LatestResourceEventsSnapshot(Map(), now),
         0L,
         ActiveStateSnapshot(false, now),
@@ -188,7 +190,7 @@ class UserStateComputations extends Loggable {
     val clog = ContextualLogger.fromOther(
       contextualLogger,
       logger,
-      "doFullMonthlyBilling(%s, %s)", billingMonthStartDateCalc.toYYYYMMDD, billingMonthEndDateCalc.toYYYYMMDD)
+      "doFullMonthlyBilling(%s-%02d)", yearOfBillingMonth, billingMonth)
     clog.begin()
 
     val previousBillingMonthUserStateM = findUserStateAtEndOfBillingMonth(
@@ -209,9 +211,9 @@ class UserStateComputations extends Loggable {
     
     previousBillingMonthUserStateM match {
       case NoVal ⇒
-        NoVal // not really... (must throw an exception here probably...)
-      case failed @ Failed(_, _) ⇒
-        failed
+        null // not really... (must throw an exception here probably...)
+      case failed @ Failed(e, _) ⇒
+        throw e
       case Just(startingUserState) ⇒
         // This is the real deal
 
@@ -228,17 +230,46 @@ class UserStateComputations extends Loggable {
         // Keep the working (current) user state. This will get updated as we proceed billing within the month
         var _workingUserState = startingUserState
 
+        // Prepare the implicit OFF resource events
+        val theImplicitOFFs = _workingUserState.implicitOFFs.toMutableWorker
+        clog.debug("theImplicitOFFs = %s", theImplicitOFFs)
+
+        /**
+         * Finds the previous resource events from two possible sources: a) The implicit OFF resource events and b) the
+         * explicit previous resource events. If the event is found, it is removed from the repsective source.
+         *
+         * If the event is not found, then this must be for a new resource instance.
+         * 
+         * @param resource
+         * @param instanceId
+         * @return
+         */
+        def findAndRemovePreviousResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+          // implicit OFFs are checked first
+          theImplicitOFFs.findAndRemoveResourceEvent(resource, instanceId) match {
+            case just @ Just(_) ⇒
+              just
+            case _ ⇒
+             previousResourceEvents.findAndRemoveResourceEvent(resource, instanceId) match {
+               case just @ Just(_) ⇒
+                 just
+               case x ⇒
+                 x
+             }
+          }
+        }
+
+        // Find the actual resource events from DB
         val allResourceEventsForMonth = resourceEventStore.findAllRelevantResourceEventsForBillingPeriod(
           userId,
           billingMonthStartMillis,
           billingMonthEndMillis)
 
         clog.debug("resourceEventStore = %s".format(resourceEventStore))
-        clog.debug("Found %s resource events", allResourceEventsForMonth.size)
-    }
+        clog.debug("Found %s resource events, starting computing sequence...", allResourceEventsForMonth.size)
 
-    clog.end()
-    null
+        clog.endWith(_workingUserState)
+    }
   }
 
 

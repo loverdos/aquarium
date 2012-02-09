@@ -95,7 +95,7 @@ case class UserState(
      * an implicit OFF even right at the end of the billing period and an implicit ON event with the beginning of the
      * next billing period.
      */
-    implicitOFFEvents: List[ResourceEvent],
+    implicitOFFs: ImplicitOFFResourceEventsSnapshot,
 
     /**
      * So far computed wallet entries for the current billing month.
