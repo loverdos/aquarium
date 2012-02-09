@@ -101,6 +101,7 @@ package object util {
    *           [[com.ckkloverdos.maybe.NoVal]] if nothing was found and a
    *           [[com.ckkloverdos.maybe.Failed]] if some error happened.
    */
+  @inline
   def findFromMapAsMaybe[A, B <: AnyRef](map: scala.collection.Map[A, B], key: A): Maybe[B] = Maybe {
     map.get(key) match {
       case Some(value) ⇒
@@ -109,7 +110,8 @@ package object util {
         null.asInstanceOf[B]
     }
   }
-  
+
+  @inline
   def findAndRemoveFromMap[A, B <: AnyRef](map: scala.collection.mutable.Map[A, B], key: A): Maybe[B] = Maybe {
     map.get(key) match {
       case Some(value) ⇒
