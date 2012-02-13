@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # For debugging
-#clear
-#set -x
+clear
+# set -x
 
 # Check if there are pending changes
 status=`git status --porcelain|grep -v "??"`
@@ -11,8 +11,9 @@ if [ ! -z "$status" ]; then
     echo 
     echo $status
     echo
-    echo "Commit them first"
-    exit 1
+    echo "Stashing them"
+    git stash save
+    touch stashed
 fi
 
 # Get latest tag
@@ -28,10 +29,25 @@ mkdir -p $DIR/conf
 mkdir -p $DIR/logs
 
 echo "Checking out $tag"
-git checkout  $tag
+git checkout $tag >/dev/null || exit 1
 
-git checkout master
-tar zcvf aquarium-$tag.tar.gz $DIR
+echo "Building $tag"
+mvn clean install 1>/dev/null || exit 1
+
+echo "Gathering dependencies"
+mvn dependency:copy-dependencies > /dev/null || exit 1
+cp target/dependency/*.jar $DIR/lib
+
+tar zcvf aquarium-$tag.tar.gz $DIR > /dev/null || exit 1
+
+echo "Cleaning up"
 rm -Rf $DIR
+
+# Revert working dir
+git checkout master
+if [ -f stashed ]; then
+    git stash pop >/dev/null
+    rm stashed
+fi
 
 # vim: set sta sts=4 shiftwidth=4 sw=4 et ai :
