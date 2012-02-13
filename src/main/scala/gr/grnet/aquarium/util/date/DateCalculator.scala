@@ -110,7 +110,7 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
     getMillis > other
 }
 
-  def plusMonths(n: Int): this.type = {
+  def goPlusMonths(n: Int): this.type = {
     dateTime.addMonths(n)
 
     this
@@ -123,7 +123,7 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
   }
 
   def goNextMonth: this.type = {
-    plusMonths(1)
+    goPlusMonths(1)
   }
 
   def goPreviousMonth: this.type = {
