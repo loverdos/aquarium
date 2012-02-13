@@ -55,7 +55,7 @@ abstract class DSLCostPolicy(val name: String) extends DSLItem {
   
   def isNamed(aName: String): Boolean = aName == name
   
-  def needsPreviousEventForCreditCalculation: Boolean
+  def needsPreviousEventForCreditAndAmountCalculation: Boolean
 
   /**
    * True if the resource event has an absolute value.
@@ -83,12 +83,23 @@ abstract class DSLCostPolicy(val name: String) extends DSLItem {
    */
   def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
 
-  def computeNewResourceInstanceAmount(oldAmount: Double, newEventValue: Double): Double
+  /**
+   * Given the old amount of a resource instance (see [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]) and the
+   * value arriving in a new resource event, compute the new instance amount.
+   *
+   * Note that the `oldAmount` does not make sense for all types of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]],
+   * in which case it is ignored.
+   *
+   * @param oldAmount the old accumulating amount
+   * @param newEventValue the value contained in a newly arrived [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+   * @return
+   */
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double
 
   def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double
 
   /**
-   * Th every initial amount.
+   * The initial amount.
    */
   def getResourceInstanceInitialAmount: Double
 
@@ -108,6 +119,8 @@ abstract class DSLCostPolicy(val name: String) extends DSLItem {
    * The only exception to the rule is ON events for [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
    */
   def isBillableEventBasedOnValue(eventValue: Double): Boolean = true
+  
+  def accumulatesAmount: Boolean = false
 }
 
 object DSLCostPolicyNames {
@@ -142,7 +155,7 @@ object DSLCostPolicy {
  * is diskspace.
  */
 case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.continuous) {
-  def needsPreviousEventForCreditCalculation: Boolean = true
+  def needsPreviousEventForCreditAndAmountCalculation: Boolean = true
 
   override def needsAbsValueForCreditCalculation = true
 
@@ -159,7 +172,7 @@ case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.contin
     }
   }
 
-  def computeNewResourceInstanceAmount(oldAmount: Double, newEventValue: Double): Double = {
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
     oldAmount + newEventValue
   }
 
@@ -192,7 +205,7 @@ case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.contin
  * cloud application and books in a book lending application.
  */
 case object OnOffCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.onoff) {
-  def needsPreviousEventForCreditCalculation: Boolean = true
+  def needsPreviousEventForCreditAndAmountCalculation: Boolean = true
 
   override def needsAbsValueForCreditCalculation = true
 
@@ -202,7 +215,13 @@ case object OnOffCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.onoff) {
     Just(newEventValue)
   }
 
-  def computeNewResourceInstanceAmount(oldAmount: Double, newEventValue: Double): Double = {
+  /**
+   *
+   * @param oldAmount is ignored
+   * @param newEventValue
+   * @return
+   */
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
     newEventValue
   }
   
@@ -271,7 +290,7 @@ object OnOffCostPolicyValues {
  * that should be charged per volume once (e.g. the allocation of a volume)
  */
 case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete) {
-  def needsPreviousEventForCreditCalculation: Boolean = false
+  def needsPreviousEventForCreditAndAmountCalculation: Boolean = false
 
   override def needsDiffValueForCreditCalculation = true
 
@@ -281,7 +300,7 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
     oldAmountM.map(_ + newEventValue)
   }
 
-  def computeNewResourceInstanceAmount(oldAmount: Double, newEventValue: Double): Double = {
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
     oldAmount + newEventValue
   }
 

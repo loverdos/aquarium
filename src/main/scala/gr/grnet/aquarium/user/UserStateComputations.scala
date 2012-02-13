@@ -282,42 +282,102 @@ class UserStateComputations extends Loggable {
           currentResourceEvent <- allResourceEventsForMonth
         } {
           _eventCounter = _eventCounter + 1
+          val theResource = currentResourceEvent.resource
+          val theInstanceId = currentResourceEvent.instanceId
+          val theValue = currentResourceEvent.value
 
           clog.indent()
-          clog.debug("Processing [%03d] %s", _eventCounter, rcDebugInfo(currentResourceEvent))
+          clog.debug("Processing %s", rcDebugInfo(currentResourceEvent))
           clog.indent()
 
-          clog.debug("%s previousResourceEvents = %s", previousResourceEvents.size, previousResourceEvents)
+          clog.debug("%s previousResourceEvents", previousResourceEvents.size)
           if(previousResourceEvents.size > 0) {
             clog.indent()
             previousResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
             clog.unindent()
           }
-          clog.debug("%s theImplicitOFFs = %s", theImplicitOFFs.size, theImplicitOFFs)
+          clog.debug("%s theImplicitOFFs", theImplicitOFFs.size)
           if(theImplicitOFFs.size > 0) {
             clog.indent()
             theImplicitOFFs.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
             clog.unindent()
           }
 
-          // Ignore the event if it is not billable (but still record it in the "previous" stuff.
+          // Ignore the event if it is not billable (but still record it in the "previous" stuff).
           // But to make this decision, we need the cost policy.
           val costPolicyM = currentResourceEvent.findCostPolicyM(defaultResourcesMap)
           costPolicyM match {
+            // We have a cost policy
             case Just(costPolicy) ⇒
+              clog.debug("Cost policy: %s", costPolicy)
               val isBillable = costPolicy.isBillableEventBasedOnValue(currentResourceEvent.value)
               isBillable match {
+                // The resource event is not billable
                 case false ⇒
                   clog.debug("Ignoring not billable %s", rcDebugInfo(currentResourceEvent))
+
+                // The resource event is billable
                 case true ⇒
+                  costPolicy.needsPreviousEventForCreditAndAmountCalculation match {
+                    // We need the previous event to calculate credit & amount
+                    case true  ⇒
+                      val previousResourceEventM = findAndRemovePreviousResourceEvent(theResource, theInstanceId)
+
+                      previousResourceEventM match {
+                        // Found previous event
+                        case Just(previousResourceEvent) ⇒
+                          clog.debug("Previous  : %s", previousResourceEvent)
+
+                          // A. Compute new resource instance accumulating amount
+                          //    But first ask for the current one
+                          val newAmount = costPolicy.accumulatesAmount match {
+                            // The amount for this resource is accumulating
+                            case true  ⇒
+                              val defaultInstanceAmount = costPolicy.getResourceInstanceInitialAmount
+                              val currentAmount = _workingUserState.getResourceInstanceAmount(
+                                theResource,
+                                theInstanceId,
+                                defaultInstanceAmount)
+
+                              val newAmount = costPolicy.computeNewAccumulatingAmount(currentAmount, theValue)
+                              newAmount
+
+                            // The amount for this resource is not accumulating
+                            case false ⇒
+                              val newAmount = costPolicy.computeNewAccumulatingAmount(-1.0, theValue)
+                              newAmount
+                          }
+
+                          // C. Compute new wallet entries
+//                          accounting.chargeEvent2()
+                          // B. Compute new credit amount
+
+                        // Did not find previous event.
+                        case NoVal ⇒
+                        // So it must be the first ever, in which case we assume a previous value of zero
+
+                        // Could not find previous event
+                        case failed@Failed(_, _) ⇒
+                          clog.error(failed)
+                      }
+
+                    // We do not need the previous event to calculate credit & amount
+                    case false ⇒
+                      clog.debug("No need for previous event")
+                  }
+                  
                   ()
               }
 
-              // We finished processing with this event, now let's make it the latest of its kind
+              // After processing, all event, billable or not update the previous state
               previousResourceEvents.updateResourceEvent(currentResourceEvent)
+
+            // We do not have a cost policy
             case NoVal ⇒
               // Now, this is a matter of politics: what do we do if no policy was found?
               clog.error("No cost policy for %s", rcDebugInfo(currentResourceEvent))
+
+            // Could not retrieve cost policy
             case failed @ Failed(e, m) ⇒
               clog.error("Error obtaining cost policy for %s", rcDebugInfo(currentResourceEvent))
               clog.error(e, m)
