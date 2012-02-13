@@ -15,9 +15,9 @@ fail() {
 }
 
 cleanup() {
-    git checkout master 2>&1 >>$LOG
+    git checkout master 2>>$LOG 1>>$LOG
     if [ -f stashed ]; then
-        git stash pop 
+        git stash pop 2>>$LOG 1>>$LOG
         rm stashed
     fi
 }
@@ -37,7 +37,7 @@ fi
 # Get latest tag
 tag=`git tag |tail -n 1`
 
-DIR="aquarium-$tag"
+DIR="$tag"
 
 # Creating dist dirs
 mkdir -p $DIR
@@ -47,7 +47,7 @@ mkdir -p $DIR/conf
 mkdir -p $DIR/logs
 
 echo "Checking out $tag"
-git checkout $tag 2>&1 1>>$LOG || fail "producing checkout"
+git checkout $tag 2>>$LOG 1>>$LOG || fail "checking out"
 
 echo "Building $tag"
 mvn clean install -DskipTests=true >>build.log || fail "building project"
@@ -57,11 +57,12 @@ mvn dependency:copy-dependencies >> build.log ||  fail "collecting dependencies"
 cp target/dependency/*.jar $DIR/lib
 
 echo "Creating archive"
-tar zcvf aquarium-$tag.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
+tar zcvf $tag.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
 
 echo "Cleaning up"
 rm -Rf $DIR
 cleanup
 rm $LOG
 
+echo "File $tag.tar.gz created succesfully"
 # vim: set sta sts=4 shiftwidth=4 sw=4 et ai :
