@@ -45,7 +45,9 @@ import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class DSLCostPolicy(val name: String) extends DSLItem {
+abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) extends DSLItem {
+
+  def varNames = vars.map(_.name)
 
   def isOnOff: Boolean = isNamed(DSLCostPolicyNames.onoff)
 
@@ -154,7 +156,10 @@ object DSLCostPolicy {
  * Example resource that might be adept to a continuous policy
  * is diskspace.
  */
-case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.continuous) {
+case object ContinuousCostPolicy
+  extends DSLCostPolicy(DSLCostPolicyNames.continuous,
+                        Set(DSLPreviousVar, DSLCurrentVar, DSLTimeDeltaVar)) {
+
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = true
 
   override def needsAbsValueForCreditCalculation = true
@@ -204,7 +209,10 @@ case object ContinuousCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.contin
  * Example resources that might be adept to onoff policies are VMs in a
  * cloud application and books in a book lending application.
  */
-case object OnOffCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.onoff) {
+case object OnOffCostPolicy
+  extends DSLCostPolicy(DSLCostPolicyNames.onoff,
+                        Set(DSLTimeDeltaVar)) {
+
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = true
 
   override def needsAbsValueForCreditCalculation = true
@@ -289,7 +297,9 @@ object OnOffCostPolicyValues {
  * actions (e.g. the fact that a user has created an account) or resources
  * that should be charged per volume once (e.g. the allocation of a volume)
  */
-case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete) {
+case object DiscreteCostPolicy
+  extends DSLCostPolicy(DSLCostPolicyNames.discrete,
+                        Set(DSLPreviousVar, DSLCurrentVar)) {
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = false
 
   override def needsDiffValueForCreditCalculation = true
