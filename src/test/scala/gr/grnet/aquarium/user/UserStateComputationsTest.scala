@@ -27,8 +27,9 @@ class UserStateComputationsTest {
     // TODO: since, right now, the resource strings have to be given twice
     val VMTIME_RESOURCE    = DSLComplexResource("vmtime",    "Hr",    OnOffCostPolicy,      "")
     val DISKSPACE_RESOURCE = DSLComplexResource("diskspace", "MB/Hr", ContinuousCostPolicy, "")
+    val BANDWIDTH_RESOURCE = DSLComplexResource("bandwidth", "MB/Hr", DiscreteCostPolicy,   "")
 
-    val DEFAULT_RESOURCES_MAP = new DSLResourcesMap(VMTIME_RESOURCE :: DISKSPACE_RESOURCE :: Nil)
+    val DEFAULT_RESOURCES_MAP = new DSLResourcesMap(VMTIME_RESOURCE :: DISKSPACE_RESOURCE :: BANDWIDTH_RESOURCE :: Nil)
 
     val FOR_EVER = DSLTimeFrame(new Date(0), None, Nil)
     val THE_PRICES_MAP: Map[DSLResource, Double] = Map(VMTIME_RESOURCE -> 1.0, DISKSPACE_RESOURCE -> 1.0)
@@ -65,10 +66,11 @@ class UserStateComputationsTest {
     val pithos  = ClientServiceSim("pithos")(uidGenerator)
 
     // By convention
-    // - synnefo is for VMTime and
+    // - synnefo is for VMTime and Bandwidth
     // - pithos is for Diskspace
-    val vm   = synnefo.newVMTime(christos, "VM.1")
-    val disk = pithos.newDiskspace(christos, "DISK.1")
+    val vm        = synnefo.newVMTime   (christos, "VM.1")
+    val bandwidth = synnefo.newBandwidth(christos, "3G.1")
+    val disk      = pithos .newDiskspace(christos, "DISK.1")
 
     // Let's create our dates of interest
     val vmStartDateCalc = StartOfBillingYearDateCalc.copy.goPlusDays(1).goPlusHours(1)
@@ -83,11 +85,16 @@ class UserStateComputationsTest {
     // 2012-01-16 04:00:00.000
     val diskConsumptionDate1 = diskConsumptionDateCalc.toDate
     // 2012-01-17 05:00:00.000
-    val diskConsumptionDate2 = diskConsumptionDateCalc.copy.goPlusDays(1).goPlusHours(1).toDate
+    val diskConsumptionDateCalc2 = diskConsumptionDateCalc.copy.goPlusDays(1).goPlusHours(1)
+    val diskConsumptionDate2 = diskConsumptionDateCalc2.toDate
 
     // ... and two diskspace changes
     val consume1_M = disk.consumeMB(diskConsumptionDate1, 99)
     val consume2_M = disk.consumeMB(diskConsumptionDate2, 23)
+
+    // 100MB 3G bandwidth
+    val bwDateCalc = diskConsumptionDateCalc2.copy.goPlusDays(1)
+    bandwidth.useBandwidth(bwDateCalc.toDate, 100.0)
 
     // ... and one "future" event
     // 2012-02-07 07:07:07.007
@@ -100,17 +107,15 @@ class UserStateComputationsTest {
         goPlusMillis(7).toDate,
       777)
 
-    println("=============================")
+    println("")
+    println("============================= Events by OccurredMillis =============================")
     for {
-      event <- christos.myResourceEventsByReceivedDate
+      event <- christos.myResourceEventsByOccurredDate
     } {
-      val when = new DateCalculator(event.receivedMillis)
-      val resource  = event.resource
-      val instanceId = event.instanceId
-      val value = event.beautifyValue(DEFAULT_RESOURCES_MAP)
-      println("%s [%s, %s] %s".format(when, resource, instanceId, value))
+      println(event.toDebugString(DEFAULT_RESOURCES_MAP, false))
     }
-    println("=============================")
+    println("============================= Events by OccurredMillis =============================")
+    println("")
 
     val userStateM = computer.doFullMonthlyBilling(
       christos.userId,
