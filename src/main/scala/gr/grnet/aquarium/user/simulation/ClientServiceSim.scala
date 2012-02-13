@@ -52,6 +52,7 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
   private[this] val UserProto      = UserSim("", new Date(0), new MemStore().resourceEventStore)
   private[this] val VMTimeProto    = VMTimeSim(UserProto, "")
   private[this] val DiskspaceProto = DiskspaceSim(UserProto, "")
+  private[this] val BandwidthProto = BandwidthSim(UserProto, "")
 
   private[this] var _resources = List[ResourceSim]()
 
@@ -166,9 +167,31 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
     }
   }
 
+  case class BandwidthSim(override val owner: UserSim,
+                          override val instanceId: String = "") extends ResourceSim("bandwidth", owner, instanceId) {
+
+    def useBandwidth(occurredDate: Date, megaBytes: Double): Maybe[RecordID] = {
+      val id = uidGen.nextUID()
+      val time = occurredDate.getTime
+      val event = ResourceEvent(
+        id,
+        time,
+        time,
+        owner.userId,
+        clientId,
+        resource,
+        instanceId,
+        "1.0",
+        megaBytes,
+        Map()
+      )
+
+      owner._addResourceEvent(event)
+    }
+  }
+
   case class DiskspaceSim(override val owner: UserSim,
-                          override val instanceId: String = "")
-    extends ResourceSim("diskspace", owner, instanceId) {
+                          override val instanceId: String = "") extends ResourceSim("diskspace", owner, instanceId) {
 
     def consumeMB(occurredDate: Date, megaBytes: Double): Maybe[RecordID] = {
       val id = uidGen.nextUID()
@@ -232,6 +255,12 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
     diskspace
   }
 
+  private[simulation]
+  def _addBandwidth(bandwidth: BandwidthSim): BandwidthSim = {
+    _resources = bandwidth :: _resources
+    bandwidth
+  }
+
   def qualifyResource(resource: String, instanceId: String) = {
     "%s/%s/%s".format(clientId, resource, instanceId)
   }
@@ -244,6 +273,11 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
   def newDiskspace(owner: UserSim, _instanceId: String): DiskspaceSim = {
     owner._addServiceClient(this)
     _addDiskspace(DiskspaceSim(owner, this.qualifyResource(DiskspaceProto.resource, _instanceId)))
+  }
+
+  def newBandwidth(owner: UserSim, _instanceId: String): BandwidthSim = {
+    owner._addServiceClient(this)
+    _addBandwidth(BandwidthSim(owner, this.qualifyResource(BandwidthProto.resource, _instanceId)))
   }
 
   def myResources: List[ResourceSim] = _resources
