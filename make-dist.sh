@@ -56,11 +56,16 @@ echo "Collecting dependencies"
 mvn dependency:copy-dependencies >> build.log ||  fail "collecting dependencies"
 cp target/dependency/*.jar $DIR/lib
 
+echo "Copying Aquarium classes"
+cp target/$tag.jar $DIR/lib
+
+echo ""
+
 echo "Creating archive"
 tar zcvf $tag.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
 
 echo "Cleaning up"
-rm -Rf $DIR
+#rm -Rf $DIR
 cleanup
 rm $LOG
 
