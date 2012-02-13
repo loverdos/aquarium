@@ -49,6 +49,28 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
 
   def varNames = vars.map(_.name)
 
+  /**
+   * Generate a map where the key is a [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]]
+   * and the value the respective value. This map will be used to do the actual credit charge calculation
+   * by the respective algorithm.
+   *
+   * Values are obtained from a corresponding context, which is provided by the parameters. We assume that this context
+   * has been validated before the call to `makeValueMap` is made.
+   *
+   * @param totalCredits   the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLTotalCreditsVar]]
+   * @param totalAmount    the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLTotalAmountVar]]
+   * @param timeDelta      the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLTimeDeltaVar]]
+   * @param previousValue  the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLPreviousVar]]
+   * @param currentValue   the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLCurrentVar]]
+   *
+   * @return a map from [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]]s to respective values.
+   */
+  def makeValueMap(totalCredits: Double,
+                   totalAmount: Double,
+                   timeDelta: Double,
+                   previousValue: Double,
+                   currentValue: Double): Map[DSLCostPolicyVar, Double]
+
   def isOnOff: Boolean = isNamed(DSLCostPolicyNames.onoff)
 
   def isContinuous: Boolean = isNamed(DSLCostPolicyNames.continuous)
@@ -159,6 +181,15 @@ object DSLCostPolicy {
 case object ContinuousCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.continuous,
                         Set(DSLPreviousVar, DSLCurrentVar, DSLTimeDeltaVar)) {
+  def makeValueMap(totalCredits: Double,
+                   totalAmount: Double,
+                   timeDelta: Double,
+                   previousValue: Double,
+                   currentValue: Double): Map[DSLCostPolicyVar, Double] = {
+    Map(DSLPreviousVar -> previousValue,
+        DSLCurrentVar -> currentValue,
+        DSLTimeDeltaVar -> timeDelta)
+  }
 
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = true
 
@@ -212,6 +243,14 @@ case object ContinuousCostPolicy
 case object OnOffCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.onoff,
                         Set(DSLTimeDeltaVar)) {
+
+  def makeValueMap(totalCredits: Double,
+                   totalAmount: Double,
+                   timeDelta: Double,
+                   previousValue: Double,
+                   currentValue: Double): Map[DSLCostPolicyVar, Double] = {
+    Map(DSLTimeDeltaVar -> timeDelta)
+  }
 
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = true
 
@@ -300,6 +339,16 @@ object OnOffCostPolicyValues {
 case object DiscreteCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.discrete,
                         Set(DSLPreviousVar, DSLCurrentVar)) {
+
+  def makeValueMap(totalCredits: Double,
+                   totalAmount: Double,
+                   timeDelta: Double,
+                   previousValue: Double,
+                   currentValue: Double): Map[DSLCostPolicyVar, Double] = {
+    Map(DSLPreviousVar -> previousValue,
+        DSLCurrentVar -> currentValue)
+  }
+
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = false
 
   override def needsDiffValueForCreditCalculation = true

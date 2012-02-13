@@ -310,6 +310,10 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
     format("yyyy-MM-dd")
   }
 
+  def toYYYYMMDDHHMMSS: String = {
+    format("yyyy-MM-dd HH:mm:ss")
+  }
+
   override def toString = {
     dateTime.toString("yyyy-MM-dd HH:mm:ss.SSS")
   }

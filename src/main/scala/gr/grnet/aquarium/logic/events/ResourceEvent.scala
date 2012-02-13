@@ -121,7 +121,7 @@ case class ResourceEvent(
   def toDebugString(resourcesMap: DSLResourcesMap, useOnlyInstanceId: Boolean): String = {
     val instanceInfo = if(useOnlyInstanceId) instanceId else "%s::%s".format(resource, instanceId)
     val bvalue = beautifyValue(resourcesMap)
-    val occurredFormatted = new DateCalculator(occurredMillis).toString
+    val occurredFormatted = new DateCalculator(occurredMillis).toYYYYMMDDHHMMSS
     if(occurredMillis == receivedMillis) {
       "EVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
         id,
