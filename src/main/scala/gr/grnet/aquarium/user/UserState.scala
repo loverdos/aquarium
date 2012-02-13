@@ -39,9 +39,7 @@ import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
-import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
-import java.util.Date
-import gr.grnet.aquarium.util.date.DateCalculator
+import gr.grnet.aquarium.logic.events.WalletEntry
 
 
 /**

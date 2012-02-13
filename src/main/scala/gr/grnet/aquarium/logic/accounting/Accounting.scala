@@ -41,13 +41,76 @@ import collection.immutable.SortedMap
 import java.util.Date
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
+import gr.grnet.aquarium.store.PolicyStore
 
 /**
  * Methods for converting accounting events to wallet entries.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 trait Accounting extends DSLUtils with Loggable {
+
+  def computeWalletEntries(userId: String,
+                           costPolicy: DSLCostPolicy,
+                           previousResourceEventM: Maybe[ResourceEvent],
+                           previousAccumulatingAmount: Double,
+                           currentResourceEvent: ResourceEvent,
+                           resourcesMap: DSLResourcesMap,
+                           policyStore: PolicyStore): Maybe[Traversable[WalletEntry]] = Maybe {
+    val resource   = currentResourceEvent.resource
+    val instanceId = currentResourceEvent.instanceId
+    val currentValue = currentResourceEvent.value
+
+    // Validations
+    // 1. Validate cost policy
+    val actualCostPolicyM = currentResourceEvent.findCostPolicyM(resourcesMap)
+    val currentResourceEventDebugStr = currentResourceEvent.toDebugString(resourcesMap, false)
+    actualCostPolicyM match {
+      case Just(actualCostPolicy) ⇒
+        if(costPolicy != actualCostPolicy) {
+          throw new Exception("Actual cost policy %s is not the same as provided %s for event %s".
+            format(actualCostPolicy, costPolicy, currentResourceEventDebugStr))
+        }
+      case _ ⇒
+        throw new Exception("Could not verify cost policy %s for event %s".
+          format(costPolicy, currentResourceEventDebugStr))
+    }
+    // 2. Validate previous resource event
+    previousResourceEventM match {
+      case Just(previousResourceEvent) ⇒
+        if(!costPolicy.needsPreviousEventForCreditAndAmountCalculation) {
+          throw new Exception("Provided previous event but cost policy %s does not need one".format(costPolicy))
+        }
+        // 3. resource and instanceId
+        val previousResource = previousResourceEvent.resource
+        val previousInstanceId = previousResourceEvent.instanceId
+        (resource == previousResource, instanceId == previousInstanceId) match {
+          case (true, true)  ⇒
+
+          case (true, false) ⇒
+            throw new Exception("Resource instance IDs do not match (%s vs %s) for current and previous event".
+              format(instanceId, previousInstanceId))
+
+          case (false, true) ⇒
+            throw new Exception("Resource types do not match (%s vs %s) for current and previous event".
+              format(resource, previousResource))
+
+          case (false, false) ⇒
+            throw new Exception("Resource types and instance IDs do not match (%s vs %s) for current and previous event".
+              format((resource, instanceId), (previousResource, previousInstanceId)))
+        }
+      case NoVal ⇒
+        if(costPolicy.needsPreviousEventForCreditAndAmountCalculation) {
+          throw new Exception("Did not provid previous event but cost policy %s needa one".format(costPolicy))
+        }
+      case failed @ Failed(e, m) ⇒
+        throw new Exception("Error obtaining previous event".format(m), e)
+    }
+
+    //
+    Nil
+  }
 
   def chargeEvent2( oldResourceEventM: Maybe[ResourceEvent],
                    newResourceEvent: ResourceEvent,
