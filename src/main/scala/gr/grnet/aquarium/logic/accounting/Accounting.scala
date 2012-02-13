@@ -51,21 +51,25 @@ import gr.grnet.aquarium.store.PolicyStore
  */
 trait Accounting extends DSLUtils with Loggable {
 
-  def computeWalletEntries(userId: String,
-                           costPolicy: DSLCostPolicy,
-                           previousResourceEventM: Maybe[ResourceEvent],
-                           previousAccumulatingAmount: Double,
-                           currentResourceEvent: ResourceEvent,
-                           resourcesMap: DSLResourcesMap,
-                           policyStore: PolicyStore): Maybe[Traversable[WalletEntry]] = Maybe {
+  def computeWalletEntriesForAgreement(userId: String,
+                                       totalCredits: Double,
+                                       costPolicy: DSLCostPolicy,
+                                       previousResourceEventM: Maybe[ResourceEvent],
+                                       previousAccumulatingAmountM: Maybe[Double],
+                                       currentResourceEvent: ResourceEvent,
+                                       defaultResourcesMap: DSLResourcesMap,
+                                       agreement: DSLAgreement): Maybe[Traversable[WalletEntry]] = Maybe {
     val resource   = currentResourceEvent.resource
     val instanceId = currentResourceEvent.instanceId
     val currentValue = currentResourceEvent.value
+    val currentOccurredMillis = currentResourceEvent.occurredMillis
 
+    /////////////////////////////////////////////////////////////////////
     // Validations
+    /////////////////////////////////////////////////////////////////////
     // 1. Validate cost policy
-    val actualCostPolicyM = currentResourceEvent.findCostPolicyM(resourcesMap)
-    val currentResourceEventDebugStr = currentResourceEvent.toDebugString(resourcesMap, false)
+    val actualCostPolicyM = currentResourceEvent.findCostPolicyM(defaultResourcesMap)
+    val currentResourceEventDebugStr = currentResourceEvent.toDebugString(defaultResourcesMap, false)
     actualCostPolicyM match {
       case Just(actualCostPolicy) ⇒
         if(costPolicy != actualCostPolicy) {
@@ -76,12 +80,14 @@ trait Accounting extends DSLUtils with Loggable {
         throw new Exception("Could not verify cost policy %s for event %s".
           format(costPolicy, currentResourceEventDebugStr))
     }
+
     // 2. Validate previous resource event
     previousResourceEventM match {
       case Just(previousResourceEvent) ⇒
         if(!costPolicy.needsPreviousEventForCreditAndAmountCalculation) {
           throw new Exception("Provided previous event but cost policy %s does not need one".format(costPolicy))
         }
+
         // 3. resource and instanceId
         val previousResource = previousResourceEvent.resource
         val previousInstanceId = previousResourceEvent.instanceId
@@ -100,15 +106,35 @@ trait Accounting extends DSLUtils with Loggable {
             throw new Exception("Resource types and instance IDs do not match (%s vs %s) for current and previous event".
               format((resource, instanceId), (previousResource, previousInstanceId)))
         }
+
       case NoVal ⇒
         if(costPolicy.needsPreviousEventForCreditAndAmountCalculation) {
           throw new Exception("Did not provid previous event but cost policy %s needa one".format(costPolicy))
         }
+
       case failed @ Failed(e, m) ⇒
         throw new Exception("Error obtaining previous event".format(m), e)
     }
 
-    //
+    // 4. Make sure this is billable.
+    // It is the caller's responsibility to provide us with billable events
+    costPolicy.isBillableEventBasedOnValue(currentValue) match {
+      case true  ⇒
+      case false ⇒
+        throw new Exception("Event not billable %s".format(currentResourceEventDebugStr))
+    }
+    /////////////////////////////////////////////////////////////////////
+
+    // Construct a proper value map
+    val valueMap = costPolicy.makeValueMap(
+      totalCredits,
+      previousAccumulatingAmountM.getOr(0.0),
+      currentOccurredMillis - previousResourceEventM.map(_.occurredMillis).getOr(currentOccurredMillis),
+      previousResourceEventM.map(_.value).getOr(0.0),
+      currentValue)
+    // Now, we need to find the proper agreement(s) and feed the data to them.
+
+
     Nil
   }
 

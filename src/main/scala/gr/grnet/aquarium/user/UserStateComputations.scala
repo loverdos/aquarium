@@ -287,17 +287,18 @@ class UserStateComputations extends Loggable {
           val theValue = currentResourceEvent.value
 
           clog.indent()
-          clog.debug("Processing %s", rcDebugInfo(currentResourceEvent))
+          clog.debug("Processing %s", currentResourceEvent)
+          clog.debug("Friendlier %s", rcDebugInfo(currentResourceEvent))
           clog.indent()
 
-          clog.debug("%s previousResourceEvents", previousResourceEvents.size)
           if(previousResourceEvents.size > 0) {
+            clog.debug("%s previousResourceEvents", previousResourceEvents.size)
             clog.indent()
             previousResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
             clog.unindent()
           }
-          clog.debug("%s theImplicitOFFs", theImplicitOFFs.size)
           if(theImplicitOFFs.size > 0) {
+            clog.debug("%s theImplicitOFFs", theImplicitOFFs.size)
             clog.indent()
             theImplicitOFFs.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
             clog.unindent()
@@ -314,7 +315,7 @@ class UserStateComputations extends Loggable {
               isBillable match {
                 // The resource event is not billable
                 case false ⇒
-                  clog.debug("Ignoring not billable %s", rcDebugInfo(currentResourceEvent))
+                  clog.debug("Ignoring not billable event (%s)", currentResourceEvent.beautifyValue(defaultResourcesMap))
 
                 // The resource event is billable
                 case true ⇒
@@ -326,31 +327,40 @@ class UserStateComputations extends Loggable {
                       previousResourceEventM match {
                         // Found previous event
                         case Just(previousResourceEvent) ⇒
-                          clog.debug("Previous  : %s", previousResourceEvent)
+                          clog.debug("Previous %s", rcDebugInfo(previousResourceEvent))
 
                           // A. Compute new resource instance accumulating amount
                           //    But first ask for the current one
-                          val newAmount = costPolicy.accumulatesAmount match {
+                          val (previousAmountM, newAmount) = costPolicy.accumulatesAmount match {
                             // The amount for this resource is accumulating
                             case true  ⇒
                               val defaultInstanceAmount = costPolicy.getResourceInstanceInitialAmount
-                              val currentAmount = _workingUserState.getResourceInstanceAmount(
+                              val previousAmount = _workingUserState.getResourceInstanceAmount(
                                 theResource,
                                 theInstanceId,
                                 defaultInstanceAmount)
 
-                              val newAmount = costPolicy.computeNewAccumulatingAmount(currentAmount, theValue)
-                              newAmount
+                              val newAmount = costPolicy.computeNewAccumulatingAmount(previousAmount, theValue)
+                              (Just(previousAmount), newAmount)
 
                             // The amount for this resource is not accumulating
                             case false ⇒
                               val newAmount = costPolicy.computeNewAccumulatingAmount(-1.0, theValue)
-                              newAmount
+                              (NoVal, newAmount)
                           }
 
                           // C. Compute new wallet entries
-//                          accounting.chargeEvent2()
-                          // B. Compute new credit amount
+                          val walletEntriesM = accounting.computeWalletEntriesForAgreement(
+                            userId,
+                            _workingUserState.credits.creditAmount,
+                            costPolicy,
+                            previousResourceEventM,
+                            previousAmountM,
+                            currentResourceEvent,
+                            defaultResourcesMap,
+                            defaultPolicy.agreements.head)
+
+                        // B. Compute new credit amount
 
                         // Did not find previous event.
                         case NoVal ⇒

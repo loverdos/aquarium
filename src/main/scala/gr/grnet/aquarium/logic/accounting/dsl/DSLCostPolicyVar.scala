@@ -79,7 +79,7 @@ case object DSLTimeDeltaVar extends DSLCostPolicyVar("timeDelta")
 case object DSLPreviousVar extends DSLCostPolicyVar("previousValue")
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the `value` of the next
+ * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the `value` of the current
  * [[gr.grnet.aquarium.logic.events.ResourceEvent]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
