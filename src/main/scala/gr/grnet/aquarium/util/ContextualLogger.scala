@@ -141,7 +141,6 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     this
   }
 
-  @inline
   def debug(fmt: String, args: Any*): Unit = {
     if(logger.isDebugEnabled) {
       val msg = ctx + " " + nestMsg(fmt, args:_*)
@@ -149,7 +148,6 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     }
   }
 
-  @inline
   def warn(fmt: String, args: Any*): Unit = {
     if(logger.isWarnEnabled) {
       val msg = ctx + " " + nestMsg(fmt, args:_*)
@@ -157,7 +155,6 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     }
   }
 
-  @inline
   def error(fmt: String, args: Any*): Unit = {
     if(logger.isErrorEnabled) {
       val msg = ctx + " " + nestMsg(fmt, args:_*)
@@ -165,7 +162,6 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     }
   }
 
-  @inline
   def error(t: Throwable, fmt: String, args: Any*): Unit = {
     if(logger.isErrorEnabled) {
       val msg = ctx + " " + nestMsg(fmt, args:_*)
@@ -173,24 +169,20 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     }
   }
   
-  @inline
   def error(failed: Failed): Unit = {
     this.error(failed.exception, "%s", failed.explanation)
   }
 
-  @inline
   def begin(): Unit = {
     debug("BEGIN")
     indent()
   }
 
-  @inline
   def end(): Unit = {
     unindent()
     debug("END")
   }
 
-  @inline
   def endWith[A](f: A): A = {
     val retval = f
     end()
