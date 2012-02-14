@@ -73,7 +73,7 @@ class MemStore extends UserStateStore
       "UserState"     -> userStateByUserId.size,
       "ResourceEvent" -> resourceEventsById.size,
       "UserEvent"     -> userEventById.size,
-      "PolicyEntry"   -> policyById.size,
+      "PolicyEntry"   -> policies.size,
       "WalletEntry"   -> walletEntriesById.size
     )
 
