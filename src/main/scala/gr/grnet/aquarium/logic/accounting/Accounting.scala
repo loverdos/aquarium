@@ -41,13 +41,118 @@ import collection.immutable.SortedMap
 import java.util.Date
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
+import gr.grnet.aquarium.store.PolicyStore
 
 /**
  * Methods for converting accounting events to wallet entries.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 trait Accounting extends DSLUtils with Loggable {
+
+  def computeWalletEntriesForAgreement(userId: String,
+                                       totalCredits: Double,
+                                       costPolicy: DSLCostPolicy,
+                                       previousResourceEventM: Maybe[ResourceEvent],
+                                       previousAccumulatingAmountM: Maybe[Double],
+                                       currentResourceEvent: ResourceEvent,
+                                       defaultResourcesMap: DSLResourcesMap,
+                                       agreement: DSLAgreement): Maybe[Traversable[WalletEntry]] = Maybe {
+    val resource   = currentResourceEvent.resource
+    val instanceId = currentResourceEvent.instanceId
+    val currentValue = currentResourceEvent.value
+    val currentOccurredMillis = currentResourceEvent.occurredMillis
+    val currentResourceEventDebugStr = currentResourceEvent.toDebugString(defaultResourcesMap, false)
+    
+
+    def validateCostPolicy(toCheck: DSLCostPolicy, whatEvent: String) {
+      if(costPolicy != toCheck) {
+        throw new Exception("Actual cost policy %s is not the same as provided %s for %s event %s".
+          format(costPolicy, toCheck, whatEvent, currentResourceEventDebugStr))
+      }
+    }
+    def validateCostPolicyM(toCheckM: Maybe[DSLCostPolicy], whatEvent: String): Unit = {
+      toCheckM match {
+        case Just(toCheck) ⇒
+          validateCostPolicy(toCheck, whatEvent)
+
+        case _ ⇒
+          throw new Exception("Could not verify cost policy %s for %s event %s".
+            format(costPolicy, whatEvent, currentResourceEventDebugStr))
+      }
+    }
+
+    /////////////////////////////////////////////////////////////////////
+    // Validations
+    /////////////////////////////////////////////////////////////////////
+    // 1. Validate cost policy for current event
+    val currentEventCostPolicyM = currentResourceEvent.findCostPolicyM(defaultResourcesMap)
+    validateCostPolicyM(currentEventCostPolicyM, "current")
+
+    // 2. Validate previous resource event
+    previousResourceEventM match {
+      // We have a previous event
+      case Just(previousResourceEvent) ⇒
+        if(!costPolicy.needsPreviousEventForCreditAndAmountCalculation) {
+          throw new Exception("Provided previous event but cost policy %s does not need one".format(costPolicy))
+        }
+
+        // 3. Validate resource and instanceId for previous resource event
+        val previousResource = previousResourceEvent.resource
+        val previousInstanceId = previousResourceEvent.instanceId
+        (resource == previousResource, instanceId == previousInstanceId) match {
+          case (true, true)  ⇒
+
+          case (true, false) ⇒
+            throw new Exception("Resource instance IDs do not match (%s vs %s) for current and previous event".
+              format(instanceId, previousInstanceId))
+
+          case (false, true) ⇒
+            throw new Exception("Resource types do not match (%s vs %s) for current and previous event".
+              format(resource, previousResource))
+
+          case (false, false) ⇒
+            throw new Exception("Resource types and instance IDs do not match (%s vs %s) for current and previous event".
+              format((resource, instanceId), (previousResource, previousInstanceId)))
+        }
+
+        // 4. Validate cost policy for previous resource event
+        val previousEventCostPolicyM = previousResourceEvent.findCostPolicyM(defaultResourcesMap)
+        validateCostPolicyM(previousEventCostPolicyM, "previous")
+
+      // We do not have a previous event
+      case NoVal ⇒
+        if(costPolicy.needsPreviousEventForCreditAndAmountCalculation) {
+          throw new Exception("Did not provide previous event but cost policy %s needs one".format(costPolicy))
+        }
+
+      // We cannot obtain a previous resource event
+      case failed @ Failed(e, m) ⇒
+        throw new Exception("Error obtaining previous event".format(m), e)
+    }
+
+    // 5. Make the current event is billable.
+    //    It is the caller's responsibility to provide us with billable events
+    costPolicy.isBillableEventBasedOnValue(currentValue) match {
+      case true  ⇒
+      case false ⇒
+        throw new Exception("Not billable event %s".format(currentResourceEventDebugStr))
+    }
+    /////////////////////////////////////////////////////////////////////
+
+    // Construct a proper value map
+    val valueMap = costPolicy.makeValueMap(
+      totalCredits,
+      previousAccumulatingAmountM.getOr(0.0),
+      currentOccurredMillis - previousResourceEventM.map(_.occurredMillis).getOr(currentOccurredMillis),
+      previousResourceEventM.map(_.value).getOr(0.0),
+      currentValue,
+      1.0 /*UNITPRICE*/)
+    // Now, we need to find the proper agreement(s) and feed the data to them.
+
+    Nil
+  }
 
   def chargeEvent2( oldResourceEventM: Maybe[ResourceEvent],
                    newResourceEvent: ResourceEvent,
@@ -129,26 +234,26 @@ trait Accounting extends DSLUtils with Loggable {
    * Creates a list of wallet entries by applying the agreement provisions on
    * the resource state.
    *
-   * @param resourceEvent The resource event to create charges for
+   * @param currentResourceEvent The resource event to create charges for
    * @param agreement The agreement applicable to the user mentioned in the event
-   * @param currentValue The current state of the resource
-   * @param currentSnapshotDate The last time the resource state was updated
+   * @param previousAmount The current state of the resource
+   * @param previousOccurred The last time the resource state was updated
    */
-  def chargeEvent(resourceEvent: ResourceEvent,
-                  agreement: DSLAgreement,
-                  currentValue: Double,
-                  currentSnapshotDate: Date,
+  def chargeEvent(currentResourceEvent: ResourceEvent,
+                  agreements: List[String],
+                  previousAmount: Double,
+                  previousOccurred: Date,
                   related: List[WalletEntry]): Maybe[List[WalletEntry]] = {
 
-    assert(currentSnapshotDate.getTime <= resourceEvent.occurredMillis)
+    assert(previousOccurred.getTime <= currentResourceEvent.occurredMillis)
 
-    if (!resourceEvent.validate())
+    if (!currentResourceEvent.validate())
       return Failed(new AccountingException("Event not valid"))
 
     val policy = Policy.policy
-    val dslResource = policy.findResource(resourceEvent.resource) match {
+    val dslResource = policy.findResource(currentResourceEvent.resource) match {
       case Some(x) => x
-      case None => return Failed(new AccountingException("No resource [%s]".format(resourceEvent.resource)))
+      case None => return Failed(new AccountingException("No resource [%s]".format(currentResourceEvent.resource)))
     }
 
     /* This is a safeguard against the special case where the last
@@ -157,14 +262,14 @@ trait Accounting extends DSLUtils with Loggable {
      * this is the first time the resource state has been recorded.
      * Charging in this case only makes sense for discrete resources.
      */
-    if (currentSnapshotDate.getTime == resourceEvent.occurredMillis) {
+    if (previousOccurred.getTime == currentResourceEvent.occurredMillis) {
       dslResource.costPolicy match {
         case DiscreteCostPolicy => //Ok
         case _ => return Some(List())
       }
     }
 
-    val creditCalculationValueM = dslResource.costPolicy.getValueForCreditCalculation(Just(currentValue), resourceEvent.value)
+    val creditCalculationValueM = dslResource.costPolicy.getValueForCreditCalculation(Just(previousAmount), currentResourceEvent.value)
     val amount = creditCalculationValueM match {
       case failed @ Failed(_, _) ⇒
         return failed
@@ -178,7 +283,7 @@ trait Accounting extends DSLUtils with Loggable {
     // above, since this point won't be reached in case of error.
     val isFinal = dslResource.costPolicy match {
       case OnOffCostPolicy =>
-        OnOffPolicyResourceState(currentValue) match {
+        OnOffPolicyResourceState(previousAmount) match {
           case OnResourceState => false
           case OffResourceState => true
         }
@@ -186,29 +291,29 @@ trait Accounting extends DSLUtils with Loggable {
     }
 
     val timeslot = dslResource.costPolicy match {
-      case DiscreteCostPolicy => Timeslot(new Date(resourceEvent.occurredMillis),
-        new Date(resourceEvent.occurredMillis + 1))
-      case _ => Timeslot(currentSnapshotDate, new Date(resourceEvent.occurredMillis))
+      case DiscreteCostPolicy => Timeslot(new Date(currentResourceEvent.occurredMillis),
+        new Date(currentResourceEvent.occurredMillis + 1))
+      case _ => Timeslot(previousOccurred, new Date(currentResourceEvent.occurredMillis))
     }
 
     val chargeChunks = calcChangeChunks(agreement, amount, dslResource, timeslot)
 
     val timeReceived = System.currentTimeMillis
 
-    val rel = related.map{x => x.sourceEventIDs}.flatten ++ List(resourceEvent.id)
+    val rel = related.map{x => x.sourceEventIDs}.flatten ++ List(currentResourceEvent.id)
 
     val entries = chargeChunks.map {
       c =>
         WalletEntry(
           id = CryptoUtils.sha1(c.id),
-          occurredMillis = resourceEvent.occurredMillis,
+          occurredMillis = currentResourceEvent.occurredMillis,
           receivedMillis = timeReceived,
           sourceEventIDs = rel,
           value = c.cost,
           reason = c.reason,
-          userId = resourceEvent.userId,
-          resource = resourceEvent.resource,
-          instanceId = resourceEvent.instanceId,
+          userId = currentResourceEvent.userId,
+          resource = currentResourceEvent.resource,
+          instanceId = currentResourceEvent.instanceId,
           finalized = isFinal
         )
     }
