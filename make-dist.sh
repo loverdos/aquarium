@@ -59,7 +59,8 @@ cp target/dependency/*.jar $DIR/lib
 echo "Copying Aquarium classes"
 cp target/$tag.jar $DIR/lib
 
-echo ""
+echo "Copying scripts and config files"
+cp aquarium.sh $DIR/bin
 
 echo "Creating archive"
 tar zcvf $tag.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"

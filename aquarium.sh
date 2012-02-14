@@ -2,7 +2,7 @@
 #
 # Aquarium init script 
 
-set -x
+#set -x
 
 # resolve links - $0 may be a softlink
 PRG="$0"
@@ -31,22 +31,25 @@ LOG=$AQUARIUM_HOME/logs/aquarium.log
 # Check the application status
 check_status() {
 
-    if [ ! -f $PID ]; then
+    if [ -f $PID ]; then
         aqrunning=`ps -ef|grep java|grep aquarium`
-        if [ ! -z $aqrunning ]; then
+        if [ -z "$aqrunning" ]; then
+            return 0
             echo "Aquarium running, but no pid file found"
         else
-            return 0 
+            return 1
         fi 
+    else
+       return 0
     fi
     
-    return `cat $PID`
+    return 1
 }
 
 # Starts the application
 start() {
-    pid=check_status 
-    if [ $pid -ne 0 ] ; then
+    check_status
+    if [ $? -ne 0 ] ; then
         echo "Aquarium is running"
         exit 1
     fi
@@ -66,22 +69,23 @@ start() {
 
 # Stops the application
 stop() {
-    pid=check_status 
-    if [ $pid -eq 0 ] ; then
+    check_status
+    if [ $? -eq 0 ] ; then
         echo "Aquarium is not running"
         exit 1
     fi
 
     # Kills the application process
-    echo -n "Stopping application: "
+    echo -n "Stopping Aquarium: "
     kill `cat $PID`
+    rm $PID
     echo "OK"
 }
 
 # Show the application status
 status() {
-    pid=check_status
-    if [ $pid -ne 0 ] ; then
+    check_status
+    if [ $? -ne 0 ] ; then
         echo "Aquarium is running (pid=$pid)"
     else
         echo "Aquarium is stopped"
