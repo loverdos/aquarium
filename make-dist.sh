@@ -54,19 +54,19 @@ mvn clean install -DskipTests=true >>build.log || fail "building project"
 
 echo "Collecting dependencies"
 mvn dependency:copy-dependencies >> build.log ||  fail "collecting dependencies"
-cp target/dependency/*.jar $DIR/lib
+cp target/dependency/*.jar $DIR/lib || fail "copying dependencies"
 
 echo "Copying Aquarium classes"
-cp target/$tag.jar $DIR/lib
+cp target/$tag.jar $DIR/lib || fail "copying $tag.jar"
 
 echo "Copying scripts and config files"
-cp aquarium.sh $DIR/bin
+cp aquarium.sh $DIR/bin || fail "copying aquarium.sh"
 
 echo "Creating archive"
 tar zcvf $tag.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
 
 echo "Cleaning up"
-#rm -Rf $DIR
+rm -Rf $DIR
 cleanup
 rm $LOG
 
