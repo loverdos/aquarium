@@ -44,6 +44,7 @@ import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
 import gr.grnet.aquarium.Configurator
 import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
+import collection.immutable.{TreeMap, SortedMap}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -53,7 +54,9 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
 object Policy extends DSL with Loggable {
 
   /* Pointer to the latest policy */
-  private[logic] lazy val policies = {new AtomicReference[Map[Timeslot, DSLPolicy]](reloadPolicies)}
+  private[logic] lazy val policies = {
+    new AtomicReference[SortedMap[Timeslot, DSLPolicy]](reloadPolicies)
+  }
 
   /* Pointer to the latest policy */
   private lazy val currentPolicy = {new AtomicReference[DSLPolicy](latestPolicy)}
@@ -69,7 +72,7 @@ object Policy extends DSL with Loggable {
   /**
    * Get the policy that is valid at the specified time instance.
    */
-  def policy(at: Date): Maybe[DSLPolicy] = Maybe {
+  def policy(at: Date): DSLPolicy = {
     policies.get.find {
       a => (a._1.from.before(at) && a._1.to.after(at)) ||
            (a._1.from.before(at) && a._1.to == Long.MaxValue)
@@ -81,20 +84,21 @@ object Policy extends DSL with Loggable {
   }
 
   /**
-   * Get the policies that are valid between the specified time instances
+   * Get the policies that are valid between the specified time instances,
+   * in a map whose keys are sorted by time.
    */
-  def policies(from: Date, to: Date): List[DSLPolicy] = {
+  def policies(from: Date, to: Date): SortedMap[Timeslot, DSLPolicy] = {
     policies.get.filter {
       a => a._1.from.before(from) &&
            a._1.to.after(to)
-    }.valuesIterator.toList
+    }
   }
 
   /**
    * Get the policies that are valid throughout the specified
    * [[gr.grnet.aquarium.logic.accounting.dsl.Timeslot]]
    */
-  def policies(t: Timeslot): List[DSLPolicy] = policies(t.from, t.to)
+  def policies(t: Timeslot): SortedMap[Timeslot, DSLPolicy] = policies(t.from, t.to)
 
   /**
    * Load and parse a policy from file.
@@ -170,14 +174,14 @@ object Policy extends DSL with Loggable {
    * newer than the latest stored policy, reload and set it as current.
    * This method has side-effects to this object's state.
    */
-  private[logic] def reloadPolicies: Map[Timeslot, DSLPolicy] =
+  private[logic] def reloadPolicies: SortedMap[Timeslot, DSLPolicy] =
     if (config == null)
       reloadPolicies(MasterConfigurator)
     else
       reloadPolicies(config)
 
   private def reloadPolicies(config: Configurator):
-  Map[Timeslot, DSLPolicy] = {
+  SortedMap[Timeslot, DSLPolicy] = {
     //1. Load policies from db
     val pol = config.policyStore.loadPolicies(0)
 
@@ -220,7 +224,7 @@ object Policy extends DSL with Loggable {
       }
     }
 
-    config.policyStore.loadPolicies(0).foldLeft(Map[Timeslot, DSLPolicy]()){
+    config.policyStore.loadPolicies(0).foldLeft(new TreeMap[Timeslot, DSLPolicy]()){
       (acc, p) =>
         acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML))
     }
