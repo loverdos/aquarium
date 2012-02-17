@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import java.util.Date
 import gr.grnet.aquarium.logic.events.PolicyEntry
 import gr.grnet.aquarium.util.CryptoUtils
 import gr.grnet.aquarium.util.date.TimeHelpers

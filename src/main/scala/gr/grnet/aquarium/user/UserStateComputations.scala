@@ -350,7 +350,7 @@ class UserStateComputations extends Loggable {
                           }
 
                           // C. Compute new wallet entries
-                          val walletEntriesM = accounting.computeWalletEntriesForAgreement(
+                          /*val walletEntriesM = accounting.computeWalletEntriesForAgreement(
                             userId,
                             _workingUserState.credits.creditAmount,
                             costPolicy,
@@ -358,7 +358,7 @@ class UserStateComputations extends Loggable {
                             previousAmountM,
                             currentResourceEvent,
                             defaultResourcesMap,
-                            defaultPolicy.agreements.head)
+                            defaultPolicy.agreements.head)*/
 
                         // B. Compute new credit amount
 

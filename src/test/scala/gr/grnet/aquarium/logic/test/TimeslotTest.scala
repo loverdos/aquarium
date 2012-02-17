@@ -123,6 +123,7 @@ class TimeslotTest extends TestMethods {
     list = list ++ List(Timeslot(new Date(19), new Date(22)))
     aligned = t.align(list)
     assertEquals(3, aligned.size)
+    assertEquals(Timeslot(new Date(7), new Date(8)), aligned.head)
     assertEquals(Timeslot(new Date(19), new Date(20)), aligned.last)
 
   }
