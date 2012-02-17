@@ -108,4 +108,22 @@ class TimeslotTest extends TestMethods {
     assertEquals(1, result.size)
     assertEquals(t, result.head)
   }
+
+  @Test
+  def testAlign = {
+    val t = Timeslot(new Date(7), new Date(20))
+    var list = List(Timeslot(new Date(1), new Date(3)),
+      Timeslot(new Date(6), new Date(8)),
+      Timeslot(new Date(11), new Date(15)))
+
+    var aligned = t.align(list)
+    assertEquals(2, aligned.size)
+    assertEquals(Timeslot(new Date(7), new Date(8)), aligned.head)
+
+    list = list ++ List(Timeslot(new Date(19), new Date(22)))
+    aligned = t.align(list)
+    assertEquals(3, aligned.size)
+    assertEquals(Timeslot(new Date(19), new Date(20)), aligned.last)
+
+  }
 }

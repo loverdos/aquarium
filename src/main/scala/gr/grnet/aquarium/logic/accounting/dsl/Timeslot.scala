@@ -37,13 +37,14 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import java.util.Date
 import scala.collection.mutable
+import annotation.tailrec
 
 /**
  * A representation of a timeslot with a start and end date.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class Timeslot(from: Date, to: Date)
+final case class Timeslot(from: Date, to: Date)
   extends DSLItem with Ordered[Timeslot] {
 
   /* Preconditions to ensure correct object creations */
@@ -116,7 +117,7 @@ case class Timeslot(from: Date, to: Date)
       List(this)
 
   /**
-   * Find and return the timeslots whithin which this Timeslot overrides
+   * Find and return the timeslots within which this Timeslot overrides
    * with the provided list of timeslots. For example if:
    * 
    *  - `this == Timeslot(7,20)`
@@ -133,7 +134,7 @@ case class Timeslot(from: Date, to: Date)
         if (t.contains(this)) result += this
         else if (this.contains(t)) result += t
         else if (t.overlaps(this) && t.startsBefore(this)) result += this.slice(t.to).head
-        else if (t.overlaps(this) && t.startsAfter(this)) result += this.slice(t.from).tail.head
+        else if (t.overlaps(this) && t.startsAfter(this)) result += this.slice(t.from).last
     }
     result.toList
   }
@@ -171,6 +172,29 @@ case class Timeslot(from: Date, to: Date)
     val end = if (last.endsBefore(this)) List(Timeslot(last.to, this.to)) else List()
 
     start ++ build(List(), overlaps) ++ end
+  }
+
+  /**
+   * Align a list of consecutive timeslots to the boundaries
+   * defined by this timeslot. Elements that do not overlap
+   * with this timeslot are rejected, while elements not
+   * contained in the timeslot are trimmed to this timeslot's
+   * start and end time.
+   */
+  def align(l: List[Timeslot]): List[Timeslot] = {
+    if (l.isEmpty) return List()
+
+    val result =
+      if (!this.overlaps(l.head)) List()
+      else if (this.contains(l.head)) List(l.head)
+      else if (l.head.startsBefore(this)) List(Timeslot(this.from, l.head.to))
+      else if (l.head.endsAfter(this)) List(Timeslot(l.head.from, this.to))
+      else List(this)
+
+    if (!result.isEmpty)
+      result.head :: align(l.tail)
+    else
+      align(l.tail)
   }
 
   /**
