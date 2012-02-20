@@ -47,10 +47,10 @@ import annotation.tailrec
 final case class Timeslot(from: Date, to: Date)
   extends DSLItem with Ordered[Timeslot] {
 
-  /* Preconditions to ensure correct object creations */
-  assert(from != null)
-  assert(to != null)
-  assert(from.before(to))
+  /* Preconditions to ensure correct object creation */
+  assert(from != null, "From cannot be null")
+  assert(to != null, "From cannot be null")
+  assert(from.before(to), "Timeslot to is before from")
 
   def startsBefore(t: Timeslot) : Boolean = this.from.before(t.from)
 
@@ -211,5 +211,5 @@ final case class Timeslot(from: Date, to: Date)
    */
   def hours: Double = (to.getTime - from.getTime).toDouble / 1000.0 / 60.0 / 60.0
 
-  override def toString() = "from: %l, to: %l".format(from.getTime, to.getTime)
+  override def toString() = "from: %d, to: %d".format(from.getTime, to.getTime)
 }

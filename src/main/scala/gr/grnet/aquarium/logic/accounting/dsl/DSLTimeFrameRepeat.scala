@@ -35,10 +35,8 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import gr.grnet.aquarium.util.yaml.YAMLHelpers
-
 /**
- * 
+ * Encapsulates a repeating item
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
@@ -48,9 +46,12 @@ case class DSLTimeFrameRepeat (
   startCron: String,
   endCron: String
 ) extends DSLItem {
-  assert(start.size == end.size)
 
-  //Ensure that fields that have repeating entries, do so in both patterns
+  assert(start.size == end.size,
+    ("start (%s) and end (%s) cron-like specs do not expand to equal" +
+      " number of repetition definitions").format(startCron, endCron))
+
+  //Ensures that fields that have repeating entries, do so in both patterns
   start.zip(end).foreach {
     x =>
       assert((x._1.dom == -1 && x._2.dom == -1) ||
@@ -64,12 +65,9 @@ case class DSLTimeFrameRepeat (
   }
 
   override def toMap(): Map[String, Any] = {
-    val data = new scala.collection.mutable.HashMap[String, Any]()
-    
-    data += (Vocabulary.start -> startCron)
-    data += (Vocabulary.end -> endCron)
-
-    data.toMap
+    Map[String,  Any]() ++
+    Map(Vocabulary.start -> startCron) ++
+    Map(Vocabulary.end -> endCron)
   }
 }
 
