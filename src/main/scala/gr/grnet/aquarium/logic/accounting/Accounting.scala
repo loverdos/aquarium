@@ -41,7 +41,6 @@ import collection.immutable.SortedMap
 import java.util.Date
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
-import gr.grnet.aquarium.store.PolicyStore
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -129,7 +128,7 @@ trait Accounting extends DSLUtils with Loggable {
   }
 
   /**
-   * Creates a list of wallet entries by examining the on the resource state.
+   * Create a list of wallet entries by charging for a resource event.
    *
    * @param currentResourceEvent The resource event to create charges for
    * @param agreements The user's agreement names, indexed by their
@@ -144,7 +143,7 @@ trait Accounting extends DSLUtils with Loggable {
                   related: List[WalletEntry]): Maybe[List[WalletEntry]] = {
 
     assert(previousOccurred.getTime <= currentResourceEvent.occurredMillis)
-    val occuredDate = new Date(currentResourceEvent.occurredMillis)
+    val occurredDate = new Date(currentResourceEvent.occurredMillis)
 
     /* The following makes sure that agreements exist between the start
      * and end days of the processed event. As agreement updates are
@@ -154,17 +153,17 @@ trait Accounting extends DSLUtils with Loggable {
      */
     assert(
       agreements.keys.exists {
-        p => p.includes(occuredDate)
+        p => p.includes(occurredDate)
       } && agreements.keys.exists {
         p => p.includes(previousOccurred)
       }
     )
 
-    val t = Timeslot(previousOccurred, occuredDate)
+    val t = Timeslot(previousOccurred, occurredDate)
 
     // Align policy and agreement validity timeslots to the event's boundaries
     val policyTimeslots = t.align(
-      Policy.policies(previousOccurred, occuredDate).keys.toList)
+      Policy.policies(previousOccurred, occurredDate).keys.toList)
     val agreementTimeslots = t.align(agreements.keys.toList)
 
     /*
@@ -175,7 +174,7 @@ trait Accounting extends DSLUtils with Loggable {
 
     val walletEntries = aligned.map {
       x =>
-        // Retrieve agreement from policy valid at time of event
+        // Retrieve agreement from the policy valid at time of event
         val agreementName = agreements.find(y => y._1.contains(x)) match {
           case Some(x) => x
           case None => return Failed(new AccountingException(("Cannot find" +
@@ -186,11 +185,12 @@ trait Accounting extends DSLUtils with Loggable {
         val entries = chargeEvent(
           currentResourceEvent,
           Policy.policy(x.from).findAgreement(agreementName._2).getOrElse(
-            return Failed(new AccountingException("Cannot get agreement for "))
+            return Failed(new AccountingException("Cannot get agreement for %s".format()))
           ),
           previousAmount,
           previousOccurred,
-          related
+          related,
+          Some(x)
         ) match {
           case Just(x) => x
           case Failed(f, e) => return Failed(f,e)
@@ -206,26 +206,36 @@ trait Accounting extends DSLUtils with Loggable {
    * Creates a list of wallet entries by applying the agreement provisions on
    * the resource state.
    *
-   * @param currentResourceEvent The resource event to create charges for
+   * @param event The resource event to create charges for
    * @param agr The agreement implementation to use
    * @param previousAmount The current state of the resource
-   * @param previousOccurred
-   * @param related
-   * @return
+   * @param previousOccurred The timestamp of the previous event
+   * @param related Related wallet entries (TODO: should remove)
+   * @param chargeFor The duration for which the charge should be done.
+   *                  Should fall between the previous and current
+   *                  resource event boundaries
+   * @return A list of wallet entries, one for each
    */
-  def chargeEvent(currentResourceEvent: ResourceEvent,
+  def chargeEvent(event: ResourceEvent,
                   agr: DSLAgreement,
                   previousAmount: Double,
                   previousOccurred: Date,
-                  related: List[WalletEntry]): Maybe[List[WalletEntry]] = {
+                  related: List[WalletEntry],
+                  chargeFor: Option[Timeslot]): Maybe[List[WalletEntry]] = {
 
-    if (!currentResourceEvent.validate())
+    // If chargeFor is not null, make sure it falls within
+    // event time boundaries
+    chargeFor.map{x => assert(true,
+      Timeslot(previousOccurred, new Date(event.occurredMillis)))}
+
+    if (!event.validate())
       return Failed(new AccountingException("Event not valid"))
 
     val policy = Policy.policy
-    val dslResource = policy.findResource(currentResourceEvent.resource) match {
+    val dslResource = policy.findResource(event.resource) match {
       case Some(x) => x
-      case None => return Failed(new AccountingException("No resource [%s]".format(currentResourceEvent.resource)))
+      case None => return Failed(
+        new AccountingException("No resource [%s]".format(event.resource)))
     }
 
     /* This is a safeguard against the special case where the last
@@ -234,14 +244,14 @@ trait Accounting extends DSLUtils with Loggable {
      * this is the first time the resource state has been recorded.
      * Charging in this case only makes sense for discrete resources.
      */
-    if (previousOccurred.getTime == currentResourceEvent.occurredMillis) {
+    if (previousOccurred.getTime == event.occurredMillis) {
       dslResource.costPolicy match {
         case DiscreteCostPolicy => //Ok
         case _ => return Some(List())
       }
     }
 
-    val creditCalculationValueM = dslResource.costPolicy.getValueForCreditCalculation(Just(previousAmount), currentResourceEvent.value)
+    val creditCalculationValueM = dslResource.costPolicy.getValueForCreditCalculation(Just(previousAmount), event.value)
     val amount = creditCalculationValueM match {
       case failed @ Failed(_, _) ⇒
         return failed
@@ -262,36 +272,58 @@ trait Accounting extends DSLUtils with Loggable {
       case _ => true
     }
 
+    /*
+     * Get the timeslot for which this event will be charged. In case we
+     * have a discrete resource, we do not really care for the time duration
+     * of an event. To process all events in a uniform way, we create an
+     * artificial timeslot lasting the minimum amount of time. In all other
+     * cases, we first check whether a desired charge period passed as
+     * an argument.
+     */
     val timeslot = dslResource.costPolicy match {
-      case DiscreteCostPolicy => Timeslot(new Date(currentResourceEvent.occurredMillis),
-        new Date(currentResourceEvent.occurredMillis + 1))
-      case _ => Timeslot(previousOccurred, new Date(currentResourceEvent.occurredMillis))
+      case DiscreteCostPolicy => Timeslot(new Date(event.occurredMillis - 1),
+        new Date(event.occurredMillis))
+      case _ => chargeFor match {
+        case Some(x) => x
+        case None => Timeslot(previousOccurred, new Date(event.occurredMillis))
+      }
     }
 
+    /*
+     * The following splits the chargable timeslot into smaller timeslots to
+     * comply with different applicability periods for algorithms and
+     * pricelists defined by the provided agreement.
+     */
     val chargeChunks = calcChangeChunks(agr, amount, dslResource, timeslot)
 
     val timeReceived = System.currentTimeMillis
 
-    val rel = related.map{x => x.sourceEventIDs}.flatten ++ List(currentResourceEvent.id)
+    val rel = related.map{x => x.sourceEventIDs}.flatten ++ List(event.id)
 
+    /*
+     * Convert charge chunks to wallet entries.
+     */
     val entries = chargeChunks.map {
       c =>
         WalletEntry(
           id = CryptoUtils.sha1(c.id),
-          occurredMillis = currentResourceEvent.occurredMillis,
+          occurredMillis = event.occurredMillis,
           receivedMillis = timeReceived,
           sourceEventIDs = rel,
           value = c.cost,
           reason = c.reason,
-          userId = currentResourceEvent.userId,
-          resource = currentResourceEvent.resource,
-          instanceId = currentResourceEvent.instanceId,
+          userId = event.userId,
+          resource = event.resource,
+          instanceId = event.instanceId,
           finalized = isFinal
         )
     }
     Just(entries)
   }
 
+  /**
+   * Create a
+   */
   def calcChangeChunks(agr: DSLAgreement, volume: Double,
                        res: DSLResource, t: Timeslot): List[ChargeChunk] = {
 
@@ -309,10 +341,14 @@ trait Accounting extends DSLUtils with Loggable {
     }
   }
 
+  /**
+   * Get a list of charge chunks for discrete resources.
+   */
   private[logic]
   def calcChargeChunksDiscrete(algChunked: Map[Timeslot, DSLAlgorithm],
                                priChunked: Map[Timeslot, DSLPriceList],
                                volume: Double, res: DSLResource): List[ChargeChunk] = {
+    // In case of descrete resources, we only a expect a
     assert(algChunked.size == 1)
     assert(priChunked.size == 1)
     assert(algChunked.keySet.head.compare(priChunked.keySet.head) == 0)
@@ -323,6 +359,9 @@ trait Accounting extends DSLUtils with Loggable {
       algChunked.keySet.head, res))
   }
 
+  /**
+   * Get a list of charge chunks for continuous resources.
+   */
   private[logic]
   def calcChargeChunksContinuous(algChunked: Map[Timeslot, DSLAlgorithm],
                                  priChunked: Map[Timeslot, DSLPriceList],
