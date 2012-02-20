@@ -83,9 +83,18 @@ trait DSLUtils extends DateUtils {
       case _ => tbi.get
     }
 
+    // The following check that the policy is applicable within
+    // the timeframe of the requested resolution
+    assert(timeslot.to.before(policy.effective.to.getOrElse(maxdate)),
+      "Policy effectivity ends before expansion timeslot")
+    assert(timeslot.from.after(policy.effective.from),
+      "Policy effectivity starts after expansion timeslot")
+
     val eff = allEffectiveTimeslots(policy.effective,
-      oneYearBack(timeslot.from, policy.effective.from),
-      oneYearAhead (timeslot.to, policy.effective.to.getOrElse(maxdate)))
+      Timeslot(oneYearBack(timeslot.from, policy.effective.from),
+      oneYearAhead (timeslot.to, policy.effective.to.getOrElse(maxdate))))
+
+    logger.debug("effective timeslots: %d".format(eff.size))
 
     immutable.SortedMap[Timeslot, T]() ++
       timeslot.overlappingTimeslots(eff).flatMap {
@@ -154,32 +163,30 @@ trait DSLUtils extends DateUtils {
    * Get a list of all timeslots within which a timeframe
    * is effective, whithin the provided time bounds.
    */
-  def allEffectiveTimeslots(spec: DSLTimeFrame, from: Date, to: Date):
+  def allEffectiveTimeslots(spec: DSLTimeFrame, t: Timeslot):
   List[Timeslot] = {
 
     //A timeframe with no repetition defined
     if (spec.repeat.isEmpty) {
-      val fromDate = if (spec.from.before(from)) from else spec.from
-      val toDate = if (spec.to.getOrElse(to).after(to)) to else spec.to.getOrElse(to)
+      val fromDate = if (spec.from.before(t.from)) t.from else spec.from
+      val toDate = if (spec.to.getOrElse(t.to).after(t.to)) t.to else spec.to.getOrElse(t.to)
       return List(Timeslot(fromDate, toDate))
     }
 
     val l = spec.repeat.flatMap {
-      r => effectiveTimeslots(r, from, Some(to))
+      r => effectiveTimeslots(r, t.from, Some(t.to))
     } sortWith sorter
     mergeOverlaps(l)
   }
 
   /**
-   * Get a list of all time periods within which a time frame is active.
+   * Get a list of all timeslots within which a time frame is active.
    * If the to date is None, the expansion takes place within a timeframe
    * between `from .. from` + 1 year. The result is returned sorted by
    * timeframe start date.
    */
   def effectiveTimeslots(spec: DSLTimeFrameRepeat, from: Date, to: Option[Date]):
     List[Timeslot] = {
-
-    assert(spec.start.size == spec.end.size)
 
     val endDate = to match {
       case None => //One year from now

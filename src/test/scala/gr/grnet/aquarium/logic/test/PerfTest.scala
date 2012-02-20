@@ -36,10 +36,10 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit.Test
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLTimeFrame, DSLTimeFrameRepeat, DSL, DSLUtils}
 import java.util.{Date}
 import org.junit.Assume._
 import gr.grnet.aquarium.LogicTestsAssumptions
+import gr.grnet.aquarium.logic.accounting.dsl._
 
 /**
  * Performance tests for various critical path functions.
@@ -82,7 +82,7 @@ class PerfTest extends DSLUtils with DSL {
         while (rndEnd.before(rndStart)) rndEnd = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
         val tf = DSLTimeFrame(rndStart, Some(rndEnd), List(repeat1, repeat2))
 
-        numResolved += allEffectiveTimeslots(tf, new Date(min), new Date(max)).size
+        numResolved += allEffectiveTimeslots(tf, Timeslot(new Date(min), new Date(max))).size
     }
 
     var total = System.currentTimeMillis() - start
