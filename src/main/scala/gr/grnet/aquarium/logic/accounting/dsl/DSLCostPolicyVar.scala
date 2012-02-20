@@ -45,7 +45,18 @@ package gr.grnet.aquarium.logic.accounting.dsl
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-sealed abstract class DSLCostPolicyVar(val name: String)
+sealed abstract class DSLCostPolicyVar(val name: String) {
+  def isDirectlyRelatedToPreviousEvent: Boolean = false
+  def isDirectlyRelatedToCurrentEvent: Boolean = false
+}
+
+/**
+ * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the name of the cost
+ * policy for which a cost computation applies.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case object DSLCostPolicyNameVar extends DSLCostPolicyVar("costPolicyName")
 
 /**
  * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the total credits.
@@ -55,20 +66,33 @@ sealed abstract class DSLCostPolicyVar(val name: String)
 case object DSLTotalCreditsVar extends DSLCostPolicyVar("totalCredits")
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the total (accumulating) amount.
+ * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the old total (accumulating)
+ * amount, that is the resource amount before taking into account a new resource event.
  * For example, in the case of `diskspace`, this is the total diskspace used by a user.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLTotalAmountVar extends DSLCostPolicyVar("totalAmount")
+case object DSLOldTotalAmountVar extends DSLCostPolicyVar("oldTotalAmount")
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the time delta between two
- * consecutive resource events of the same type (same `resource` and `instanceId`).
+ * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the new total (accumulating)
+ * amount, that is the resource amount after taking into account a new resource event.
+ * For example, in the case of `diskspace`, this is the total diskspace used by a user.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLTimeDeltaVar extends DSLCostPolicyVar("timeDelta")
+case object DSLNewTotalAmountVar extends DSLCostPolicyVar("newTotalAmount")
+
+/**
+ * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the time delta between two
+ * consecutive resource events of the same type (same `resource` and `instanceId`). Time is measured in milliseconds.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+case object DSLTimeDeltaVar extends DSLCostPolicyVar("timeDelta") {
+  override def isDirectlyRelatedToPreviousEvent = true
+  override def isDirectlyRelatedToCurrentEvent = true
+}
 
 /**
  * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the `value` of the previous
@@ -76,7 +100,9 @@ case object DSLTimeDeltaVar extends DSLCostPolicyVar("timeDelta")
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLPreviousVar extends DSLCostPolicyVar("previousValue")
+case object DSLPreviousValueVar extends DSLCostPolicyVar("previousValue") {
+  override def isDirectlyRelatedToPreviousEvent = true
+}
 
 /**
  * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the `value` of the current
@@ -84,4 +110,13 @@ case object DSLPreviousVar extends DSLCostPolicyVar("previousValue")
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLCurrentVar extends DSLCostPolicyVar("currentValue")
+case object DSLCurrentValueVar extends DSLCostPolicyVar("currentValue") {
+  override def isDirectlyRelatedToCurrentEvent = true
+}
+
+/**
+ * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the unit price as
+ * given in a [[gr.grnet.aquarium.logic.accounting.dsl.DSLPriceList]].
+ *
+ */
+case object DSLUnitPriceVar extends DSLCostPolicyVar("unitPrice")

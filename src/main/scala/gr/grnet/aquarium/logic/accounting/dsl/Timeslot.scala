@@ -183,4 +183,6 @@ case class Timeslot(from: Date, to: Date)
    * Converts the timeslot to the amount of hours it represents
    */
   def hours: Double = (to.getTime - from.getTime).toDouble / 1000.0 / 60.0 / 60.0
+
+  def deltaMillis = to.getTime - from.getTime
 }

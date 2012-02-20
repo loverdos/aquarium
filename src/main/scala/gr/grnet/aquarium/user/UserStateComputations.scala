@@ -38,12 +38,12 @@ package gr.grnet.aquarium.user
 import scala.collection.mutable
 
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.util.date.DateCalculator
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLCostPolicy, DSLPolicy}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, ResourceEventStore}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
+import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
 
 /**
  *
@@ -64,7 +64,7 @@ class UserStateComputations extends Loggable {
       0L,
       ActiveStateSnapshot(false, now),
       CreditSnapshot(0, now),
-      AgreementSnapshot(Agreement(agreementName, now, -1) :: Nil, now),
+      AgreementSnapshot(Agreement(agreementName, now) :: Nil, now),
       RolesSnapshot(List(), now),
       OwnedResourcesSnapshot(List(), now)
     )
@@ -84,7 +84,7 @@ class UserStateComputations extends Loggable {
         0L,
         ActiveStateSnapshot(false, now),
         CreditSnapshot(0, now),
-        AgreementSnapshot(Agreement(agreementName, now, - 1) :: Nil, now),
+        AgreementSnapshot(Agreement(agreementName, now) :: Nil, now),
         RolesSnapshot(List(), now),
         OwnedResourcesSnapshot(List(), now)
       )
@@ -221,7 +221,7 @@ class UserStateComputations extends Loggable {
         // We want these in order to correlate incoming resource events with their previous (in `occurredMillis` time)
         // ones.
         // Will be updated on processing the next resource event.
-        val previousResourceEvents = startingUserState.latestResourceEvents.toMutableWorker
+        val previousResourceEvents = startingUserState.latestResourceEventsSnapshot.toMutableWorker
         clog.debug("previousResourceEvents = %s", previousResourceEvents)
 
         val billingMonthStartMillis = billingMonthStartDateCalc.toMillis
@@ -232,7 +232,7 @@ class UserStateComputations extends Loggable {
         var _workingUserState = startingUserState
 
         // Prepare the implicit OFF resource events
-        val theImplicitOFFs = _workingUserState.implicitOFFs.toMutableWorker
+        val theImplicitOFFs = _workingUserState.implicitOFFsSnapshot.toMutableWorker
         clog.debug("theImplicitOFFs = %s", theImplicitOFFs)
 
         /**
@@ -305,89 +305,60 @@ class UserStateComputations extends Loggable {
           }
 
           // Ignore the event if it is not billable (but still record it in the "previous" stuff).
-          // But to make this decision, we need the cost policy.
-          val costPolicyM = currentResourceEvent.findCostPolicyM(defaultResourcesMap)
-          costPolicyM match {
-            // We have a cost policy
-            case Just(costPolicy) ⇒
+          // But to make this decision, first we need the resource definiton (and its cost policy).
+          val resourceDefM = defaultResourcesMap.findResourceM(currentResourceEvent.safeResource)
+          resourceDefM match {
+            // We have a resource (and thus a cost policy)
+            case Just(resourceDef) ⇒
+              val costPolicy = resourceDef.costPolicy
               clog.debug("Cost policy: %s", costPolicy)
               val isBillable = costPolicy.isBillableEventBasedOnValue(currentResourceEvent.value)
               isBillable match {
                 // The resource event is not billable
                 case false ⇒
-                  clog.debug("Ignoring not billable event (%s)", currentResourceEvent.beautifyValue(defaultResourcesMap))
+                  clog.debug("Ignoring not billable event %s", rcDebugInfo(currentResourceEvent))
 
                 // The resource event is billable
                 case true ⇒
-                  costPolicy.needsPreviousEventForCreditAndAmountCalculation match {
-                    // We need the previous event to calculate credit & amount
-                    case true  ⇒
-                      val previousResourceEventM = findAndRemovePreviousResourceEvent(theResource, theInstanceId)
+                  // Find the previous event.
+                  // This is (potentially) needed to calculate new credit amount and new resource instance amount
+                  val previousResourceEventM = findAndRemovePreviousResourceEvent(theResource, theInstanceId)
+                  clog.debug("PreviousM %s", previousResourceEventM.map(rcDebugInfo(_)))
+                  val defaultInitialAmount = costPolicy.getResourceInstanceInitialAmount
+                  val oldAmount = _workingUserState.getResourceInstanceAmount(theResource, theInstanceId, defaultInitialAmount)
+                  val oldCredits = _workingUserState.creditsSnapshot.creditAmount
 
-                      previousResourceEventM match {
-                        // Found previous event
-                        case Just(previousResourceEvent) ⇒
-                          clog.debug("Previous %s", rcDebugInfo(previousResourceEvent))
+                  // A. Compute new resource instance accumulating amount
+                  val newAmount = costPolicy.computeNewAccumulatingAmount(oldAmount, theValue)
 
-                          // A. Compute new resource instance accumulating amount
-                          //    But first ask for the current one
-                          val (previousAmountM, newAmount) = costPolicy.accumulatesAmount match {
-                            // The amount for this resource is accumulating
-                            case true  ⇒
-                              val defaultInstanceAmount = costPolicy.getResourceInstanceInitialAmount
-                              val previousAmount = _workingUserState.getResourceInstanceAmount(
-                                theResource,
-                                theInstanceId,
-                                defaultInstanceAmount)
+                  // B. Compute new wallet entries
+                  val alltimeAgreements = _workingUserState.agreementsSnapshot.agreements
+//                  val chargeChunksM = accounting.computeChargeChunks(
+//                    previousResourceEventM,
+//                    currentResourceEvent,
+//                    oldCredits,
+//                    oldAmount,
+//                    newAmount,
+//                    resourceDef,
+//                    defaultResourcesMap,
+//                    alltimeAgreements)
 
-                              val newAmount = costPolicy.computeNewAccumulatingAmount(previousAmount, theValue)
-                              (Just(previousAmount), newAmount)
+                  // C. Compute new credit amount (based on the wallet entries)
+                  // Maybe this can be consolidated inthe previous step (B)
 
-                            // The amount for this resource is not accumulating
-                            case false ⇒
-                              val newAmount = costPolicy.computeNewAccumulatingAmount(-1.0, theValue)
-                              (NoVal, newAmount)
-                          }
 
-                          // C. Compute new wallet entries
-                          val walletEntriesM = accounting.computeWalletEntriesForAgreement(
-                            userId,
-                            _workingUserState.credits.creditAmount,
-                            costPolicy,
-                            previousResourceEventM,
-                            previousAmountM,
-                            currentResourceEvent,
-                            defaultResourcesMap,
-                            defaultPolicy.agreements.head)
-
-                        // B. Compute new credit amount
-
-                        // Did not find previous event.
-                        case NoVal ⇒
-                        // So it must be the first ever, in which case we assume a previous value of zero
-
-                        // Could not find previous event
-                        case failed@Failed(_, _) ⇒
-                          clog.error(failed)
-                      }
-
-                    // We do not need the previous event to calculate credit & amount
-                    case false ⇒
-                      clog.debug("No need for previous event")
-                  }
-                  
                   ()
               }
 
               // After processing, all event, billable or not update the previous state
               previousResourceEvents.updateResourceEvent(currentResourceEvent)
 
-            // We do not have a cost policy
+            // We do not have a resource (and no cost policy)
             case NoVal ⇒
               // Now, this is a matter of politics: what do we do if no policy was found?
               clog.error("No cost policy for %s", rcDebugInfo(currentResourceEvent))
 
-            // Could not retrieve cost policy
+            // Could not retrieve resource (unlikely to happen)
             case failed @ Failed(e, m) ⇒
               clog.error("Error obtaining cost policy for %s", rcDebugInfo(currentResourceEvent))
               clog.error(e, m)

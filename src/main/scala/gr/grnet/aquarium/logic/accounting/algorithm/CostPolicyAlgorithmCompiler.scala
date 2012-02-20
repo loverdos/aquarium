@@ -32,33 +32,27 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
-package gr.grnet.aquarium.logic.accounting.dsl
 
-import com.ckkloverdos.maybe.Maybe
+package gr.grnet.aquarium.logic.accounting.algorithm
 
-import gr.grnet.aquarium.util.findFromMapAsMaybe
+import com.ckkloverdos.maybe.{Just, Maybe}
+
 
 /**
- * An algorithm represents the way of calculating costs given a price
- * and a resource usage volume.
+ * Compiles the textual representation of a cost policy charging algorithm to an executable form.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class DSLAlgorithm (
-  override val name: String,
-  override val overrides: Option[DSLAlgorithm],
-  algorithms: Map[DSLResource, String],
-  override  val effective: DSLTimeFrame
-) extends DSLTimeBoundedItem[DSLAlgorithm](name, overrides, effective) {
 
-  override def toMap() =
-    super.toMap ++ algorithms.map(x => (x._1.name, x._2))
-  
-  def findDefinitionForResource(resourceDef: DSLResource): Maybe[String] = {
-    findFromMapAsMaybe(algorithms, resourceDef)
+class CostPolicyAlgorithmCompiler {
+  /**
+   * Compiles the textual representation of a cost policy charging algorithm to an executable form.
+   *
+   * @param definition the textual representation of the algorithm
+   * @return the executable form of the algorithm
+   */
+  def compile(definition: String): Maybe[ExecutableCostPolicyAlgorithm] = {
+    // TODO: Implement the compiler
+    Just(SimpleExecutableCostPolicyAlgorithm)
   }
-}
-
-object DSLAlgorithm {
-  val emptyAlgorithm = DSLAlgorithm("", None, Map(), DSLTimeFrame.emptyTimeFrame)
 }

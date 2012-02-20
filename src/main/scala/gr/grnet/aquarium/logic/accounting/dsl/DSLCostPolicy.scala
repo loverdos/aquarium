@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
+import gr.grnet.aquarium.logic.events.ResourceEvent
 
 /**
  * A cost policy indicates how charging for a resource will be done
@@ -58,28 +59,37 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * has been validated before the call to `makeValueMap` is made.
    *
    * @param totalCredits   the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLTotalCreditsVar]]
-   * @param totalAmount    the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLTotalAmountVar]]
+   * @param oldTotalAmount the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLOldTotalAmountVar]]
+   * @param newTotalAmount the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLNewTotalAmountVar]]
    * @param timeDelta      the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLTimeDeltaVar]]
-   * @param previousValue  the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLPreviousVar]]
-   * @param currentValue   the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLCurrentVar]]
+   * @param previousValue  the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLPreviousValueVar]]
+   * @param currentValue   the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLCurrentValueVar]]
+   * @param unitPrice      the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLUnitPriceVar]]
    *
    * @return a map from [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]]s to respective values.
    */
-  def makeValueMap(totalCredits: Double,
-                   totalAmount: Double,
+  def makeValueMap(costPolicyName: String,
+                   totalCredits: Double,
+                   oldTotalAmount: Double,
+                   newTotalAmount: Double,
                    timeDelta: Double,
                    previousValue: Double,
-                   currentValue: Double): Map[DSLCostPolicyVar, Double]
+                   currentValue: Double,
+                   unitPrice: Double): Map[DSLCostPolicyVar, Any]
 
   def isOnOff: Boolean = isNamed(DSLCostPolicyNames.onoff)
 
   def isContinuous: Boolean = isNamed(DSLCostPolicyNames.continuous)
 
   def isDiscrete: Boolean = isNamed(DSLCostPolicyNames.discrete)
-  
+
   def isNamed(aName: String): Boolean = aName == name
-  
-  def needsPreviousEventForCreditAndAmountCalculation: Boolean
+
+  def needsPreviousEventForCreditAndAmountCalculation: Boolean = {
+    // If we need any variable that is related to the previous event
+    // then we do need a previous event
+    vars.exists(_.isDirectlyRelatedToPreviousEvent)
+  }
 
   /**
    * True if the resource event has an absolute value.
@@ -143,8 +153,35 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * The only exception to the rule is ON events for [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
    */
   def isBillableEventBasedOnValue(eventValue: Double): Boolean = true
+
+  /**
+   * This is called when we have the very first event for a particular resource instance, and we want to know
+   * if it is billable or not.
+   *
+   * @param eventValue
+   * @return
+   */
+  def isBillableFirstEventBasedOnValue(eventValue: Double): Boolean
   
   def accumulatesAmount: Boolean = false
+
+  /**
+   * This models in a generic way the fact that On events of the OnOff cost policy must be implicitly terminated
+   * at the end of the billing period.
+   *
+   */
+  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double): Boolean
+
+  /**
+   * Must be called only when
+   * [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]].`needsImplicitCompanionAtEndOfBillingPeriod(resourceEvent.value)`
+   * returns `true`
+   *
+   * Otherwise the result is undefined.
+   *
+   * @param resourceEvent
+   */
+  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent): ResourceEvent
 }
 
 object DSLCostPolicyNames {
@@ -180,18 +217,22 @@ object DSLCostPolicy {
  */
 case object ContinuousCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.continuous,
-                        Set(DSLPreviousVar, DSLCurrentVar, DSLTimeDeltaVar)) {
-  def makeValueMap(totalCredits: Double,
-                   totalAmount: Double,
+                        Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLOldTotalAmountVar, DSLTimeDeltaVar)) {
+
+  def makeValueMap(costPolicyName: String,
+                   totalCredits: Double,
+                   oldTotalAmount: Double,
+                   newTotalAmount: Double,
                    timeDelta: Double,
                    previousValue: Double,
-                   currentValue: Double): Map[DSLCostPolicyVar, Double] = {
-    Map(DSLPreviousVar -> previousValue,
-        DSLCurrentVar -> currentValue,
-        DSLTimeDeltaVar -> timeDelta)
-  }
+                   currentValue: Double,
+                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
 
-  def needsPreviousEventForCreditAndAmountCalculation: Boolean = true
+    Map(DSLCostPolicyNameVar -> costPolicyName,
+        DSLUnitPriceVar      -> unitPrice,
+        DSLOldTotalAmountVar -> oldTotalAmount,
+        DSLTimeDeltaVar      -> timeDelta)
+  }
 
   override def needsAbsValueForCreditCalculation = true
 
@@ -228,6 +269,15 @@ case object ContinuousCostPolicy
     oldAmount
   }
 
+  def isBillableFirstEventBasedOnValue(eventValue: Double) = {
+    false
+  }
+
+  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = {
+    false
+  }
+
+  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
 }
 
 /**
@@ -242,17 +292,21 @@ case object ContinuousCostPolicy
  */
 case object OnOffCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.onoff,
-                        Set(DSLTimeDeltaVar)) {
+                        Set(DSLUnitPriceVar, DSLTimeDeltaVar)) {
 
-  def makeValueMap(totalCredits: Double,
-                   totalAmount: Double,
+  def makeValueMap(costPolicyName: String,
+                   totalCredits: Double,
+                   oldTotalAmount: Double,
+                   newTotalAmount: Double,
                    timeDelta: Double,
                    previousValue: Double,
-                   currentValue: Double): Map[DSLCostPolicyVar, Double] = {
-    Map(DSLTimeDeltaVar -> timeDelta)
-  }
+                   currentValue: Double,
+                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
 
-  def needsPreviousEventForCreditAndAmountCalculation: Boolean = true
+    Map(DSLCostPolicyNameVar -> costPolicyName,
+        DSLUnitPriceVar -> unitPrice,
+        DSLTimeDeltaVar -> timeDelta)
+  }
 
   override def needsAbsValueForCreditCalculation = true
 
@@ -317,6 +371,18 @@ case object OnOffCostPolicy
     // ON events do not contribute, only OFF ones.
     OnOffCostPolicyValues.isOFF(eventValue)
   }
+
+  def isBillableFirstEventBasedOnValue(eventValue: Double) = {
+    false
+  }
+
+  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = {
+    // If we have ON events with no OFF companions at the end of the billing period,
+    // then we must generate implicit OFF events.
+    OnOffCostPolicyValues.isON(eventValue)
+  }
+
+  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
 }
 
 object OnOffCostPolicyValues {
@@ -336,20 +402,22 @@ object OnOffCostPolicyValues {
  * actions (e.g. the fact that a user has created an account) or resources
  * that should be charged per volume once (e.g. the allocation of a volume)
  */
-case object DiscreteCostPolicy
-  extends DSLCostPolicy(DSLCostPolicyNames.discrete,
-                        Set(DSLPreviousVar, DSLCurrentVar)) {
+case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete,
+                                                     Set(DSLCostPolicyNameVar, DSLCurrentValueVar)) {
 
-  def makeValueMap(totalCredits: Double,
-                   totalAmount: Double,
+  def makeValueMap(costPolicyName: String,
+                   totalCredits: Double,
+                   oldTotalAmount: Double,
+                   newTotalAmount: Double,
                    timeDelta: Double,
                    previousValue: Double,
-                   currentValue: Double): Map[DSLCostPolicyVar, Double] = {
-    Map(DSLPreviousVar -> previousValue,
-        DSLCurrentVar -> currentValue)
-  }
+                   currentValue: Double,
+                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
 
-  def needsPreviousEventForCreditAndAmountCalculation: Boolean = false
+    Map(DSLCostPolicyNameVar -> costPolicyName,
+        DSLUnitPriceVar      -> unitPrice,
+        DSLCurrentValueVar   -> currentValue)
+  }
 
   override def needsDiffValueForCreditCalculation = true
 
@@ -378,6 +446,16 @@ case object DiscreteCostPolicy
   def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
     newEventValue
   }
+
+  def isBillableFirstEventBasedOnValue(eventValue: Double) = {
+    false // nope, we definitely need a  previous one.
+  }
+
+  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = {
+    false
+  }
+
+  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
 }
 
 /**

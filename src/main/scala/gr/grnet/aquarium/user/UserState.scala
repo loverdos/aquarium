@@ -93,7 +93,7 @@ case class UserState(
      * an implicit OFF even right at the end of the billing period and an implicit ON event with the beginning of the
      * next billing period.
      */
-    implicitOFFs: ImplicitOFFResourceEventsSnapshot,
+    implicitOFFsSnapshot: ImplicitOFFResourceEventsSnapshot,
 
     /**
      * So far computed wallet entries for the current billing month.
@@ -109,7 +109,7 @@ case class UserState(
     /**
      * The latest resource events per resource instance
      */
-    latestResourceEvents: LatestResourceEventsSnapshot,
+    latestResourceEventsSnapshot: LatestResourceEventsSnapshot,
 
     /**
      * Counts the number of resource events used to produce this user state for
@@ -117,18 +117,18 @@ case class UserState(
      */
     resourceEventsCounter: Long,
 
-    active: ActiveStateSnapshot,
-    credits: CreditSnapshot,
-    agreements: AgreementSnapshot,
-    roles: RolesSnapshot,
-    ownedResources: OwnedResourcesSnapshot
+    activeStateSnapshot: ActiveStateSnapshot,
+    creditsSnapshot: CreditSnapshot,
+    agreementsSnapshot: AgreementSnapshot,
+    rolesSnapshot: RolesSnapshot,
+    ownedResourcesSnapshot: OwnedResourcesSnapshot
 ) extends JsonSupport {
 
   private[this] def _allSnapshots: List[Long] = {
     List(
-      active.snapshotTime,
-      credits.snapshotTime, agreements.snapshotTime, roles.snapshotTime,
-      ownedResources.snapshotTime)
+      activeStateSnapshot.snapshotTime,
+      creditsSnapshot.snapshotTime, agreementsSnapshot.snapshotTime, rolesSnapshot.snapshotTime,
+      ownedResourcesSnapshot.snapshotTime)
   }
 
   def oldestSnapshotTime: Long = _allSnapshots min
@@ -140,7 +140,7 @@ case class UserState(
 //  def userCreationFormatedDate = new DateCalculator(userCreationMillis).toString
 
   def maybeDSLAgreement(at: Long): Maybe[DSLAgreement] = {
-    agreements match {
+    agreementsSnapshot match {
       case snapshot @ AgreementSnapshot(data, _) ⇒
         snapshot.getAgreement(at)
       case _ ⇒
@@ -149,11 +149,11 @@ case class UserState(
   }
 
   def findResourceInstanceSnapshot(resource: String, instanceId: String): Maybe[ResourceInstanceSnapshot] = {
-    ownedResources.findResourceInstanceSnapshot(resource, instanceId)
+    ownedResourcesSnapshot.findResourceInstanceSnapshot(resource, instanceId)
   }
 
   def getResourceInstanceAmount(resource: String, instanceId: String, defaultValue: Double): Double = {
-    ownedResources.getResourceInstanceAmount(resource, instanceId, defaultValue)
+    ownedResourcesSnapshot.getResourceInstanceAmount(resource, instanceId, defaultValue)
   }
 
   def copyForResourcesSnapshotUpdate(resource: String,   // resource name
@@ -161,16 +161,16 @@ case class UserState(
                                      newAmount: Double,
                                      snapshotTime: Long): UserState = {
 
-    val (newResources, _, _) = ownedResources.computeResourcesSnapshotUpdate(resource, instanceId, newAmount, snapshotTime)
+    val (newResources, _, _) = ownedResourcesSnapshot.computeResourcesSnapshotUpdate(resource, instanceId, newAmount, snapshotTime)
 
     this.copy(
-      ownedResources = newResources,
+      ownedResourcesSnapshot = newResources,
       stateChangeCounter = this.stateChangeCounter + 1)
   }
 
-  def resourcesMap = ownedResources.toResourcesMap
+  def resourcesMap = ownedResourcesSnapshot.toResourcesMap
   
-  def safeCredits = credits match {
+  def safeCredits = creditsSnapshot match {
     case c @ CreditSnapshot(_, _) ⇒ c
     case _ ⇒ CreditSnapshot(0.0, 0)
   }

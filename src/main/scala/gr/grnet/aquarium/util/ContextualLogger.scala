@@ -196,14 +196,15 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object ContextualLogger {
-  final val MaxCtxLength = 45
+  final val MaxCtxLength = 40
+  final val ELLIPSIS = "…" // U+2026
   
   def fixCtx(ctx: String): String = {
     val ctxLen = ctx.length()
     if(ctxLen == MaxCtxLength) {
       ctx
     } else if(ctxLen > MaxCtxLength) {
-      ctx.substring(0, MaxCtxLength)
+      ELLIPSIS + ctx.substring(ctxLen - MaxCtxLength + 1, ctxLen)
     } else {
       val buffer = new java.lang.StringBuilder(MaxCtxLength)
       val prefixLen = MaxCtxLength - ctxLen

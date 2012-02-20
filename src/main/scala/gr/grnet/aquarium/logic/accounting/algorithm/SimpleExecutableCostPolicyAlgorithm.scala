@@ -32,33 +32,45 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
-package gr.grnet.aquarium.logic.accounting.dsl
+
+package gr.grnet.aquarium.logic.accounting.algorithm
+
 
 import com.ckkloverdos.maybe.Maybe
-
-import gr.grnet.aquarium.util.findFromMapAsMaybe
+import gr.grnet.aquarium.logic.accounting.dsl._
 
 /**
- * An algorithm represents the way of calculating costs given a price
- * and a resource usage volume.
+ * An executable charging algorithm with some simple implementation.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class DSLAlgorithm (
-  override val name: String,
-  override val overrides: Option[DSLAlgorithm],
-  algorithms: Map[DSLResource, String],
-  override  val effective: DSLTimeFrame
-) extends DSLTimeBoundedItem[DSLAlgorithm](name, overrides, effective) {
+object SimpleExecutableCostPolicyAlgorithm extends ExecutableCostPolicyAlgorithm {
 
-  override def toMap() =
-    super.toMap ++ algorithms.map(x => (x._1.name, x._2))
-  
-  def findDefinitionForResource(resourceDef: DSLResource): Maybe[String] = {
-    findFromMapAsMaybe(algorithms, resourceDef)
+  @inline private[this]
+  def hrs(millis: Double) = millis / 1000 / 60 / 60
+
+  def apply(vars: Map[DSLCostPolicyVar, Any]): Maybe[Double] = Maybe {
+    vars.apply(DSLCostPolicyNameVar) match {
+      case DSLCostPolicyNames.continuous ⇒
+        val unitPrice = vars.get(DSLUnitPriceVar).get.asInstanceOf[Double]
+        val oldTotalAmount = vars.get(DSLOldTotalAmountVar).get.asInstanceOf[Double]
+        val timeDelta = vars.get(DSLTimeDeltaVar).get.asInstanceOf[Double]
+
+        hrs(timeDelta) * oldTotalAmount * unitPrice
+
+      case DSLCostPolicyNames.discrete ⇒
+        val unitPrice = vars.get(DSLUnitPriceVar).get.asInstanceOf[Double]
+        val currentValue = vars.get(DSLCurrentValueVar).get.asInstanceOf[Double]
+
+        currentValue * unitPrice
+
+      case DSLCostPolicyNames.onoff ⇒
+        val unitPrice = vars.get(DSLUnitPriceVar).get.asInstanceOf[Double]
+        val timeDelta = vars.get(DSLTimeDeltaVar).get.asInstanceOf[Double]
+
+        hrs(timeDelta) * unitPrice
+      case name ⇒
+        throw new Exception("Unknown cost policy %s".format(name))
+    }
   }
-}
-
-object DSLAlgorithm {
-  val emptyAlgorithm = DSLAlgorithm("", None, Map(), DSLTimeFrame.emptyTimeFrame)
 }

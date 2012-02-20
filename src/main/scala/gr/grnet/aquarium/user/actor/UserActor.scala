@@ -102,7 +102,7 @@ class UserActor extends AquariumActor
 
     DEBUG("New active status = %s".format(newActive))
 
-    this._userState = this._userState.copy( active = newActive )
+    this._userState = this._userState.copy( activeStateSnapshot = newActive )
   }
   /**
    * Use the provided [[gr.grnet.aquarium.logic.events.UserEvent]] to change any user state.
@@ -266,7 +266,7 @@ class UserActor extends AquariumActor
       {
 //        calcWalletEntries()
       }
-      self reply UserResponseGetBalance(userId, _userState.credits.creditAmount)
+      self reply UserResponseGetBalance(userId, _userState.creditsSnapshot.creditAmount)
 
     case m @ UserRequestGetState(userId, timestamp) ⇒
       if(this._userId != userId) {

@@ -73,6 +73,12 @@ case class ResourceEvent(
 
   def fullResourceInfo = (safeResource, safeInstanceId)
 
+  def occurredDate = new Date(occurredMillis)
+
+  def occurredDeltaFrom(that: ResourceEvent): Long = {
+    this.occurredMillis - that.occurredMillis
+  }
+
   def isOccurredWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
     require(fromMillis <= toMillis, "fromMillis <= toMillis")
     fromMillis <= occurredMillis && occurredMillis <= toMillis
@@ -118,7 +124,7 @@ case class ResourceEvent(
     (occurredMillis < billingStartMillis || occurredMillis > billingStopMillis)
   }
 
-  def toDebugString(resourcesMap: DSLResourcesMap, useOnlyInstanceId: Boolean): String = {
+  def toDebugString(resourcesMap: DSLResourcesMap, useOnlyInstanceId: Boolean = false): String = {
     val instanceInfo = if(useOnlyInstanceId) instanceId else "%s::%s".format(resource, instanceId)
     val bvalue = beautifyValue(resourcesMap)
     val occurredFormatted = new DateCalculator(occurredMillis).toYYYYMMDDHHMMSS

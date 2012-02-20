@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.maybe.{Just, NoVal, Maybe}
+import com.ckkloverdos.maybe.{MaybeOption, Just, NoVal, Maybe}
 
 
 /**
@@ -89,8 +89,8 @@ package object util {
   }
 
   /**
-   * This basically turns an [[scala.Option]] into a [[com.ckkloverdos.maybe.Maybe]] when asking a [[scala.collection.Map]]
-   * for a key.
+   * This basically turns an [[scala.Option]] into a [[com.ckkloverdos.maybe.Maybe]] when asking a
+   * [[scala.collection.Map]] for a key.
    *
    * @param map The input map.
    * @param key The key we are interested in.

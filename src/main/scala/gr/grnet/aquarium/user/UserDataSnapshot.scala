@@ -39,11 +39,12 @@ package user
 import gr.grnet.aquarium.util.{findFromMapAsMaybe, findAndRemoveFromMap}
 import gr.grnet.aquarium.logic.accounting.Policy
 import java.util.Date
-import logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
 import logic.events.ResourceEvent
 import logic.events.ResourceEvent.FullResourceTypeMap
 import logic.events.ResourceEvent.FullMutableResourceTypeMap
+import logic.accounting.dsl.{Timeslot, DSLAgreement}
+import collection.immutable.{TreeMap, SortedMap}
 
 /**
  * Snapshot of data that are user-related.
@@ -57,11 +58,11 @@ case class RolesSnapshot(roles: List[String], snapshotTime: Long) extends DataSn
 
 /**
  * Represents an agreement valid for a specific amount of time. By convention,
- * if an agreement is currently valid, then the validTo field is equal to -1.
+ * if an agreement is currently valid, then the validTo field is equal to `Long.MaxValue`.
  */
-case class Agreement(agreement: String, validFrom: Long, validTo: Long) {
-  if (validTo != -1) assert(validTo > validFrom)
-  assert(!agreement.isEmpty)
+case class Agreement(name: String, validFrom: Long, validTo: Long = Long.MaxValue) {
+  assert(validTo > validFrom)
+  assert(!name.isEmpty)
 
 //  Policy.policy(new Date(validFrom)) match {
 //    case Just(x) => x.findAgreement(agreement) match {
@@ -70,6 +71,8 @@ case class Agreement(agreement: String, validFrom: Long, validTo: Long) {
 //    }
 //    case _ => assert(false)
 //  }
+  
+  def timeslot = Timeslot(new Date(validFrom), new Date(validTo))
 }
 
 /**
@@ -80,12 +83,21 @@ case class AgreementSnapshot(agreements: List[Agreement], snapshotTime: Long) ex
 
   ensureNoGaps(agreements.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
 
+  def sortedAgreements: SortedMap[Timeslot, String] = {
+    var smap = TreeMap[Timeslot, String]()
+    for(agreement <- agreements) {
+      smap = smap.updated(agreement.timeslot, agreement.name)
+    }
+
+    smap
+  }
+
   def ensureNoGaps(agreements: List[Agreement]): Unit = agreements match {
     case ha :: (t @ (hb :: tail)) =>
       assert(ha.validTo - hb.validFrom == 1);
       ensureNoGaps(t)
     case h :: Nil =>
-      assert(h.validTo == -1)
+      assert(h.validTo == Long.MaxValue)
     case Nil => ()
   }
 
@@ -95,7 +107,7 @@ case class AgreementSnapshot(agreements: List[Agreement], snapshotTime: Long) ex
   def getAgreement(at: Long): Maybe[DSLAgreement] =
     agreements.find{ x => x.validFrom < at && x.validTo > at} match {
       case Some(x) => Policy.policy(new Date(at)) match {
-        case Just(y) =>  y.findAgreement(x.agreement) match {
+        case Just(y) =>  y.findAgreement(x.name) match {
           case Some(z) => Just(z)
           case None => NoVal
         }
