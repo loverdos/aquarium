@@ -60,7 +60,15 @@ class DSLTestBase extends DSL {
     if (result.isEmpty) return
     if (result.tail.isEmpty) return
     if (result.head.to.after(result.tail.head.from))
-      fail("Effectivity timeslots not successive: %s %s".format(result.head, result.tail.head))
+      fail("Timeslots not successive: %s %s".format(result.head, result.tail.head))
     testSuccessiveTimeslots(result.tail)
   }
+
+  final def testNoGaps(result: List[Timeslot]): Unit =
+    result.reduce {
+      (a,b) =>
+        if(a.to.getTime - b.from.getTime > 1)
+          fail("Timeslots leave gaps: %s %s".format(a.to.getTime, b.from.getTime))
+        a
+    }
 }

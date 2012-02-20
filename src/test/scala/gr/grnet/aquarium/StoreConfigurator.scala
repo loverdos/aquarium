@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 GRNET S.A. All rights reserved.
+ * Copyright 2012 GRNET S.A. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or
  * without modification, are permitted provided that the following
@@ -35,46 +35,24 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.sys.SysProp
-import com.ckkloverdos.maybe.Just
-import com.ckkloverdos.props.Props
-import com.ckkloverdos.convert.Converters
+import store.memory.MemStore
+import store.mongodb.MongoDBStoreProvider
+import util.Loggable
 
 /**
- * These are used to enable/disable several tests based on system properties.
+ * Returns the appropriate Configurator implementation depending on value
+ * of the test.store runtime parameter.
  *
- * Very handy when a test is based upon an external system which sometimes we may not control.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
-object LogicTestsAssumptions {
-  private def testPropertyTrue(name: String): Boolean = {
-    testPropertyTrue(name, false)
+trait StoreConfigurator extends Loggable {
+
+  def configurator: Configurator =
+    LogicTestsAssumptions.propertyValue(PropertyNames.TestStore) match {
+      case "mem" => Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
+      case "mongo" => Configurator.MasterConfigurator.withStoreProviderClass(classOf[MongoDBStoreProvider])
+      case _ =>
+        logger.warn("Unknown store type, defaulting to \"mem\"")
+        Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
   }
-
-  private def testPropertyTrue(name: String, checkEnableAll: Boolean): Boolean = {
-
-    if(checkEnableAll == false &&
-      testPropertyTrue(PropertyNames.TestEnableAll, true)) return true
-
-    implicit val converters = Converters.DefaultConverters
-    SysProp(name).value match {
-      case Just(value) =>
-        Props((name, value)).getBoolean(name) match {
-          case Just(flag) => flag
-          case _ => false
-        }
-      case _ => false
-    }
-  }
-
-  private def testPropertyFalse(name: String): Boolean = !testPropertyTrue(name)
-
-  val EnableRabbitMQTests = testPropertyTrue(PropertyNames.TestEnableRabbitMQ)
-  val EnableStoreTests  = testPropertyTrue(PropertyNames.TestEnableStore)
-  val EnablePerfTests = testPropertyTrue(PropertyNames.TestEnablePerf)
-  val EnableSprayTests = testPropertyTrue(PropertyNames.TestEnableSpray)
-  val EnableAllTests = testPropertyTrue(PropertyNames.TestEnableAll)
-  
-  def propertyValue(name: String) = SysProp(name).rawValue
 }

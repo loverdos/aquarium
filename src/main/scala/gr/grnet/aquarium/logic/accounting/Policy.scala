@@ -40,10 +40,11 @@ import gr.grnet.aquarium.Configurator._
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.logic.events.PolicyEntry
-import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
+import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
-import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
+import gr.grnet.aquarium.Configurator
+import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
+import collection.immutable.{TreeMap, SortedMap}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -53,10 +54,15 @@ import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
 object Policy extends DSL with Loggable {
 
   /* Pointer to the latest policy */
-  private lazy val policies = new AtomicReference[Map[Timeslot, DSLPolicy]](reloadPolicies)
+  private[logic] lazy val policies = {
+    new AtomicReference[SortedMap[Timeslot, DSLPolicy]](reloadPolicies)
+  }
 
   /* Pointer to the latest policy */
-  private val currentPolicy = new AtomicReference[DSLPolicy](policies.get.last._2)
+  private lazy val currentPolicy = {new AtomicReference[DSLPolicy](latestPolicy)}
+
+  /* Configurator to use for loading information about the policy store */
+  private var config: Configurator = _
 
   /**
    * Get the latest defined policy.
@@ -66,10 +72,10 @@ object Policy extends DSL with Loggable {
   /**
    * Get the policy that is valid at the specified time instance.
    */
-  def policy(at: Date): Maybe[DSLPolicy] = Maybe {
+  def policy(at: Date): DSLPolicy = {
     policies.get.find {
       a => (a._1.from.before(at) && a._1.to.after(at)) ||
-           (a._1.from.before(at) && a._1.to == -1)
+           (a._1.from.before(at) && a._1.to == Long.MaxValue)
     } match {
       case Some(x) => x._2
       case None =>
@@ -78,20 +84,21 @@ object Policy extends DSL with Loggable {
   }
 
   /**
-   * Get the policies that are valid between the specified time instances
+   * Get the policies that are valid between the specified time instances,
+   * in a map whose keys are sorted by time.
    */
-  def policies(from: Date, to: Date): List[DSLPolicy] = {
+  def policies(from: Date, to: Date): SortedMap[Timeslot, DSLPolicy] = {
     policies.get.filter {
       a => a._1.from.before(from) &&
            a._1.to.after(to)
-    }.valuesIterator.toList
+    }
   }
 
   /**
    * Get the policies that are valid throughout the specified
    * [[gr.grnet.aquarium.logic.accounting.dsl.Timeslot]]
    */
-  def policies(t: Timeslot): List[DSLPolicy] = policies(t.from, t.to)
+  def policies(t: Timeslot): SortedMap[Timeslot, DSLPolicy] = policies(t.from, t.to)
 
   /**
    * Load and parse a policy from file.
@@ -123,27 +130,42 @@ object Policy extends DSL with Loggable {
   def updatePolicies = synchronized {
     //XXX: The following update should happen as one transaction
     val tmpPol = reloadPolicies
-    currentPolicy.set(tmpPol.last._2)
+    currentPolicy.set(latestPolicy)
     policies.set(tmpPol)
   }
 
   /**
-   * Search for and open a stream to a policy.
+   * Find the latest policy in the list of policies.
    */
-  private def _policyFile: File =
-    MasterConfigurator.props.get(Keys.aquarium_policy) match {
-      case Just(x) => new File(x)
-      case _ => new File("/etc/aquarium/policy.yaml")
-    }
+  private def latestPolicy =
+    policies.get.foldLeft((Timeslot(new Date(1), new Date(2)) -> DSLPolicy.emptyPolicy)) {
+      (acc, p) =>
+        if (acc._2 == DSLPolicy.emptyPolicy)
+          p
+        else if (p._1.after(acc._1))
+          p
+        else
+          acc
+    }._2
 
-  private def policyFile = {
-    val policyConfResourceM = BasicResourceContext.getResource(PolicyConfName)
-    policyConfResourceM match {
+  /**
+   * Set the configurator to use for loading policy stores. Should only
+   * used for unit testing.
+   */
+  private[logic] def withConfigurator(config: Configurator): Unit =
+    this.config = config
+
+  /**
+   * Search default locations for a policy file and provide an
+   * arbitrary default if this cannot be found.
+   */
+   private[logic] def policyFile = {
+    BasicResourceContext.getResource(PolicyConfName) match {
       case Just(policyResource) ⇒
         val path = policyResource.url.getPath
-        new File(path) // assume it is resolved in the filesystem as it should (!)
+        new File(path)
       case _ ⇒
-        new File("/etc/aquarium/policy.yaml") // FIXME remove this since it should have been picked up by the context
+        new File("policy.yaml")
     }
   }
 
@@ -152,49 +174,57 @@ object Policy extends DSL with Loggable {
    * newer than the latest stored policy, reload and set it as current.
    * This method has side-effects to this object's state.
    */
-  private def reloadPolicies: Map[Timeslot, DSLPolicy] = {
+  private[logic] def reloadPolicies: SortedMap[Timeslot, DSLPolicy] =
+    if (config == null)
+      reloadPolicies(MasterConfigurator)
+    else
+      reloadPolicies(config)
+
+  private def reloadPolicies(config: Configurator):
+  SortedMap[Timeslot, DSLPolicy] = {
     //1. Load policies from db
-    val policies = MasterConfigurator.policyEventStore.loadPolicies(0)
+    val pol = config.policyStore.loadPolicies(0)
 
     //2. Check whether policy file has been updated
-    val latestPolicyChange = if (policies.isEmpty) 0 else policies.last.validFrom
+    val latestPolicyChange = if (pol.isEmpty) 0 else pol.last.validFrom
     val policyf = policyFile
     var updated = false
 
     if (policyf.exists) {
       if (policyf.lastModified > latestPolicyChange) {
-        logger.info("Policy changed since last check, reloading")
+        logger.info("Policy file updated since last check, reloading")
         updated = true
       } else {
-        logger.info("Policy not changed since last check")
+        logger.info("Policy file not changed since last check")
       }
     } else {
       logger.warn("User specified policy file %s does not exist, " +
         "using stored policy information".format(policyf.getAbsolutePath))
     }
 
-    val toAdd = updated match {
-      case true =>
-        val ts = TimeHelpers.nowMillis
-        val parsedNew = loadPolicyFromFile(policyf)
-        val yaml = parsedNew.toYAML
-        val newPolicy = PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, -1)
+    if (updated) {
+      val ts = TimeHelpers.nowMillis
+      val parsedNew = loadPolicyFromFile(policyf)
+      val newPolicy = parsedNew.toPolicyEntry.copy(occurredMillis = ts,
+        receivedMillis = ts, validFrom = ts)
 
-        if(!policies.isEmpty) {
-          val toUpdate = policies.last.copy(validTo = ts)
-          MasterConfigurator.policyEventStore.updatePolicy(toUpdate)
-          MasterConfigurator.policyEventStore.storePolicy(newPolicy)
-          List(toUpdate, newPolicy)
-        } else {
-          MasterConfigurator.policyEventStore.storePolicy(newPolicy)
-          List(newPolicy)
-        }
-
-      case false => List()
+      config.policyStore.findPolicy(newPolicy.id) match {
+        case Just(x) =>
+          logger.warn("Policy file contents not modified")
+        case NoVal =>
+          if (!pol.isEmpty) {
+            val toUpdate = pol.last.copy(validTo = ts - 1)
+            config.policyStore.updatePolicy(toUpdate)
+            config.policyStore.storePolicy(newPolicy)
+          } else {
+            config.policyStore.storePolicy(newPolicy)
+          }
+        case Failed(e, expl) =>
+          throw e
+      }
     }
 
-    // FIXME: policies may be empty
-    policies.init.++(toAdd).foldLeft(Map[Timeslot, DSLPolicy]()){
+    config.policyStore.loadPolicies(0).foldLeft(new TreeMap[Timeslot, DSLPolicy]()){
       (acc, p) =>
         acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML))
     }

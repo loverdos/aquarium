@@ -60,7 +60,7 @@ class MemStore extends UserStateStore
   with StoreProvider {
 
   private[this] val userStateByUserId = new ConcurrentHashMap[String, Just[UserState]]()
-  private val policyById: ConcurrentMap[String, PolicyEntry] = new ConcurrentHashMap[String, PolicyEntry]()
+  private var policies: List[PolicyEntry] = List()
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
   private val userEventById: ConcurrentMap[String, UserEvent] = new ConcurrentHashMap[String, UserEvent]()
   private[this] val resourceEventsById: ConcurrentMap[String, ResourceEvent] = new ConcurrentHashMap[String, ResourceEvent]()
@@ -73,7 +73,7 @@ class MemStore extends UserStateStore
       "UserState"     -> userStateByUserId.size,
       "ResourceEvent" -> resourceEventsById.size,
       "UserEvent"     -> userEventById.size,
-      "PolicyEntry"   -> policyById.size,
+      "PolicyEntry"   -> policies.size,
       "WalletEntry"   -> walletEntriesById.size
     )
 
@@ -238,13 +238,25 @@ class MemStore extends UserStateStore
 
   def findUserEventById(id: String) = Maybe{userEventById.getOrElse(id, null)}
 
-  def findUserEventsByUserId(userId: String) = userEventById.values.filter{v => v.userId == userId}.toList
+  def findUserEventsByUserId(userId: String) = userEventById.valuesIterator.filter{v => v.userId == userId}.toList
 
-  def loadPolicies(after: Long) = policyById.values.foldLeft(List[PolicyEntry]()){
-    (acc, v) => if(v.validFrom > after) v :: acc else acc
+  def loadPolicies(after: Long) =
+    policies.filter(p => p.validFrom > after)
+            .sortWith((a,b) => a.validFrom < b.validFrom)
+
+  def storePolicy(policy: PolicyEntry) = {policies = policy :: policies; Just(RecordID(policy.id))}
+
+  def updatePolicy(policy: PolicyEntry) =
+    policies = policies.foldLeft(List[PolicyEntry]()){
+      (acc, p) =>
+        if (p.id == policy.id)
+          policy :: acc
+        else
+          p :: acc
   }
 
-  def storePolicy(policy: PolicyEntry) = {policyById += (policy.id -> policy); Just(RecordID(policy.id))}
-
-  def updatePolicy(policy: PolicyEntry) = storePolicy(policy)
+  def findPolicy(id: String) = policies.find(p => p.id == id) match {
+    case Some(x) => Just(x)
+    case None => NoVal
+  }
 }

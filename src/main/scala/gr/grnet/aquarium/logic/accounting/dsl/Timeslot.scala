@@ -37,14 +37,14 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import java.util.Date
 import scala.collection.mutable
-import gr.grnet.aquarium.util.json.JsonSupport
+import annotation.tailrec
 
 /**
  * A representation of a timeslot with a start and end date.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class Timeslot(from: Date, to: Date)
+final case class Timeslot(from: Date, to: Date)
   extends DSLItem with Ordered[Timeslot] {
 
   /* Preconditions to ensure correct object creations */
@@ -59,6 +59,10 @@ case class Timeslot(from: Date, to: Date)
   def endsBefore(t: Timeslot) : Boolean = this.to.before(t.to)
 
   def endsAfter(t: Timeslot) : Boolean = this.to.after(t.to)
+
+  def after(t: Timeslot): Boolean = if (this.from.after(t.to)) true else false
+
+  def before(t: Timeslot): Boolean = if (this.to.before(t.from)) true else false
 
   /**
    * Check whether this time slot fully contains the provided one.
@@ -113,7 +117,7 @@ case class Timeslot(from: Date, to: Date)
       List(this)
 
   /**
-   * Find and return the timeslots whithin which this Timeslot overrides
+   * Find and return the timeslots within which this Timeslot overrides
    * with the provided list of timeslots. For example if:
    * 
    *  - `this == Timeslot(7,20)`
@@ -130,7 +134,7 @@ case class Timeslot(from: Date, to: Date)
         if (t.contains(this)) result += this
         else if (this.contains(t)) result += t
         else if (t.overlaps(this) && t.startsBefore(this)) result += this.slice(t.to).head
-        else if (t.overlaps(this) && t.startsAfter(this)) result += this.slice(t.from).tail.head
+        else if (t.overlaps(this) && t.startsAfter(this)) result += this.slice(t.from).last
     }
     result.toList
   }
@@ -171,6 +175,29 @@ case class Timeslot(from: Date, to: Date)
   }
 
   /**
+   * Align a list of consecutive timeslots to the boundaries
+   * defined by this timeslot. Elements that do not overlap
+   * with this timeslot are rejected, while elements not
+   * contained in the timeslot are trimmed to this timeslot's
+   * start and end time.
+   */
+  def align(l: List[Timeslot]): List[Timeslot] = {
+    if (l.isEmpty) return List()
+
+    val result =
+      if (!this.overlaps(l.head)) List()
+      else if (this.contains(l.head)) List(l.head)
+      else if (l.head.startsBefore(this)) List(Timeslot(this.from, l.head.to))
+      else if (l.head.endsAfter(this)) List(Timeslot(l.head.from, this.to))
+      else List(this)
+
+    if (!result.isEmpty)
+      result.head :: align(l.tail)
+    else
+      align(l.tail)
+  }
+
+  /**
    * Compares the starting times of two timeslots.
    */
   def compare(that: Timeslot): Int = {
@@ -185,4 +212,5 @@ case class Timeslot(from: Date, to: Date)
   def hours: Double = (to.getTime - from.getTime).toDouble / 1000.0 / 60.0 / 60.0
 
   def deltaMillis = to.getTime - from.getTime
+  override def toString() = "from: %l, to: %l".format(from.getTime, to.getTime)
 }

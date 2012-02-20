@@ -35,7 +35,9 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import java.util.Date
+import gr.grnet.aquarium.logic.events.PolicyEntry
+import gr.grnet.aquarium.util.CryptoUtils
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 /**
  * Root object for the Aquarium policy configuration tree.
@@ -86,9 +88,18 @@ case class DSLPolicy (
 
   def resourcesMap: DSLResourcesMap =
     new DSLResourcesMap(resources)
+
+  def toPolicyEntry: PolicyEntry = {
+    val yaml = toYAML
+    val ts = TimeHelpers.nowMillis
+    PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, Long.MaxValue)
+  }
 }
 
 object DSLPolicy {
+
+  val emptyPolicy = DSLPolicy(List(), List(), List(), List(), List())
+
   object JsonNames {
     val valid = "valid"
     val _id = "_id"

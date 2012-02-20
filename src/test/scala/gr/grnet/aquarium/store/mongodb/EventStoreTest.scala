@@ -39,22 +39,24 @@ import org.junit.Assert._
 import org.junit.Assume._
 import gr.grnet.aquarium.Configurator._
 import gr.grnet.aquarium.util.{RandomEventGenerator, TestMethods}
-import gr.grnet.aquarium.LogicTestsAssumptions
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import collection.mutable.ArrayBuffer
 import org.junit.{After, Test, Before}
+import gr.grnet.aquarium.{StoreConfigurator, LogicTestsAssumptions}
+import gr.grnet.aquarium.store.memory.MemStore
 
 /**
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class EventStoreTest extends TestMethods with RandomEventGenerator {
+class EventStoreTest extends TestMethods
+with RandomEventGenerator with StoreConfigurator {
 
   @Test
   def testStoreEvent() = {
-    assume(true, LogicTestsAssumptions.EnableStoreTests)
+    assumeTrue(LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
-    val store = MasterConfigurator.resourceEventStore
+    val store = config.resourceEventStore
     val result = store.storeResourceEvent(event)
 
     assert(result.isJust)
@@ -65,7 +67,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     assumeTrue(LogicTestsAssumptions.EnableStoreTests)
 
     val event = nextResourceEvent()
-    val store = MasterConfigurator.resourceEventStore
+    val store = config.resourceEventStore
 
     val result1 = store.storeResourceEvent(event)
     assert(result1.isJust)
@@ -78,7 +80,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
   def testfindEventsByUserId(): Unit = {
     assumeTrue(LogicTestsAssumptions.EnableStoreTests)
     val events = new ArrayBuffer[ResourceEvent]()
-    val store = MasterConfigurator.resourceEventStore
+    val store = config.resourceEventStore
 
     (1 to 100).foreach {
       n =>
@@ -106,7 +108,9 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
   }
 
   @After
-  def after() = {
+  def after: Unit = {
+    if (isInMemStore) return
+
     val a = getMongo
 
     val col = a.mongo.getDB(
@@ -118,5 +122,7 @@ class EventStoreTest extends TestMethods with RandomEventGenerator {
     //  col.remove(res.next)
   }
 
-  private def getMongo = MasterConfigurator.resourceEventStore.asInstanceOf[MongoDBStore]
+  private lazy val config = configurator
+  private val isInMemStore = config.resourceEventStore.isInstanceOf[MemStore]
+  private def getMongo = config.resourceEventStore.asInstanceOf[MongoDBStore]
 }

@@ -106,14 +106,10 @@ case class AgreementSnapshot(agreements: List[Agreement], snapshotTime: Long) ex
    */
   def getAgreement(at: Long): Maybe[DSLAgreement] =
     agreements.find{ x => x.validFrom < at && x.validTo > at} match {
-      case Some(x) => Policy.policy(new Date(at)) match {
-        case Just(y) =>  y.findAgreement(x.name) match {
+      case Some(x) => Policy.policy(new Date(at)).findAgreement(x.name) match {
           case Some(z) => Just(z)
           case None => NoVal
         }
-        case NoVal => NoVal
-        case failed @ Failed(x, y) => failed
-      }
       case None => NoVal
     }
 }

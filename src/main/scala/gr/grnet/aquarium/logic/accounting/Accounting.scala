@@ -43,7 +43,7 @@ import java.util.Date
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
 import gr.grnet.aquarium.user.Agreement
-
+import gr.grnet.aquarium.store.PolicyStore
 case class Chargeslot(startChargeMillis: Long, stopChargeMillis: Long, charge: Double)
 
 /**
@@ -55,11 +55,11 @@ case class Chargeslot(startChargeMillis: Long, stopChargeMillis: Long, charge: D
 trait Accounting extends DSLUtils with Loggable {
 
   def splitTimeslotsByPoliciesAndAgreements(bigTimeslot: Timeslot,
-                                            policies: List[DSLPolicy],
+                                            policies: SortedMap[Timeslot, DSLPolicy],
                                             agreements: List[Agreement]): Map[Timeslot, DSLAgreement] = {
     // TODO: Implement
     //       Find the agreements and their respective timeslots, taking into account the policies
-    Map(bigTimeslot -> policies.head.findAgreement(agreements.head.name).get)
+    Map()
   }
   
 //  def computeChargeSlots(timeslot: Timeslot,
@@ -253,23 +253,97 @@ trait Accounting extends DSLUtils with Loggable {
       }
     }.flatten1
   }
+
   /**
-   * Creates a list of wallet entries by applying the agreement provisions on
-   * the resource state.
+   * Creates a list of wallet entries by examining the on the resource state.
    *
    * @param currentResourceEvent The resource event to create charges for
-   * @param agreement The agreement applicable to the user mentioned in the event
+   * @param agreements The user's agreement names, indexed by their
+   *                   applicability timeslot
    * @param previousAmount The current state of the resource
    * @param previousOccurred The last time the resource state was updated
    */
   def chargeEvent(currentResourceEvent: ResourceEvent,
-//                  agreements: List[String],
-                  agreement: DSLAgreement,
+                  agreements: SortedMap[Timeslot, String],
                   previousAmount: Double,
                   previousOccurred: Date,
                   related: List[WalletEntry]): Maybe[List[WalletEntry]] = {
 
     assert(previousOccurred.getTime <= currentResourceEvent.occurredMillis)
+    val occuredDate = new Date(currentResourceEvent.occurredMillis)
+
+    /* The following makes sure that agreements exist between the start
+     * and end days of the processed event. As agreement updates are
+     * guaranteed not to leave gaps, this means that the event can be
+     * processed correctly, as at least one agreement will be valid
+     * throughout the event's life.
+     */
+    assert(
+      agreements.keys.exists {
+        p => p.includes(occuredDate)
+      } && agreements.keys.exists {
+        p => p.includes(previousOccurred)
+      }
+    )
+
+    val t = Timeslot(previousOccurred, occuredDate)
+
+    // Align policy and agreement validity timeslots to the event's boundaries
+    val policyTimeslots = t.align(
+      Policy.policies(previousOccurred, occuredDate).keys.toList)
+    val agreementTimeslots = t.align(agreements.keys.toList)
+
+    /*
+     * Get a set of timeslot slices covering the different durations of
+     * agreements and policies.
+     */
+    val aligned = alignTimeslots(policyTimeslots, agreementTimeslots)
+
+    val walletEntries = aligned.map {
+      x =>
+        // Retrieve agreement from policy valid at time of event
+        val agreementName = agreements.find(y => y._1.contains(x)) match {
+          case Some(x) => x
+          case None => return Failed(new AccountingException(("Cannot find" +
+            " user agreement for period %s").format(x)))
+        }
+
+        // Do the wallet entry calculation
+        val entries = chargeEvent(
+          currentResourceEvent,
+          Policy.policy(x.from).findAgreement(agreementName._2).getOrElse(
+            return Failed(new AccountingException("Cannot get agreement for "))
+          ),
+          previousAmount,
+          previousOccurred,
+          related
+        ) match {
+          case Just(x) => x
+          case Failed(f, e) => return Failed(f,e)
+          case NoVal => List()
+        }
+        entries
+    }.flatten
+
+    Just(walletEntries)
+  }
+
+  /**
+   * Creates a list of wallet entries by applying the agreement provisions on
+   * the resource state.
+   *
+   * @param currentResourceEvent The resource event to create charges for
+   * @param agr The agreement implementation to use
+   * @param previousAmount The current state of the resource
+   * @param previousOccurred
+   * @param related
+   * @return
+   */
+  def chargeEvent(currentResourceEvent: ResourceEvent,
+                  agr: DSLAgreement,
+                  previousAmount: Double,
+                  previousOccurred: Date,
+                  related: List[WalletEntry]): Maybe[List[WalletEntry]] = {
 
     if (!currentResourceEvent.validate())
       return Failed(new AccountingException("Event not valid"))
@@ -320,7 +394,7 @@ trait Accounting extends DSLUtils with Loggable {
       case _ => Timeslot(previousOccurred, new Date(currentResourceEvent.occurredMillis))
     }
 
-    val chargeChunks = calcChangeChunks(agreement, amount, dslResource, timeslot)
+    val chargeChunks = calcChangeChunks(agr, amount, dslResource, timeslot)
 
     val timeReceived = System.currentTimeMillis
 
@@ -392,7 +466,7 @@ trait Accounting extends DSLUtils with Loggable {
    * examines them and splits them as necessary.
    */
   private[logic] def splitChargeChunks(alg: SortedMap[Timeslot, DSLAlgorithm],
-                        price: SortedMap[Timeslot, DSLPriceList]) :
+                                       price: SortedMap[Timeslot, DSLPriceList]) :
     (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
 
     val zipped = alg.keySet.zip(price.keySet)
@@ -419,8 +493,43 @@ trait Accounting extends DSLUtils with Loggable {
         }
     }
   }
+
+  /**
+   * Given two lists of timeslots, produce a list which contains the
+   * set of timeslot slices, as those are defined by
+   * timeslot overlaps.
+   *
+   * For example, given the timeslots a and b below, split them as shown.
+   *
+   * a = |****************|
+   *     ^                ^
+   *   a.from            a.to
+   * b = |*********|
+   *     ^         ^
+   *   b.from     b.to
+   *
+   * result: List(Timeslot(a.from, b.to), Timeslot(b.to, a.to))
+   */
+  private[logic] def alignTimeslots(a: List[Timeslot],
+                                    b: List[Timeslot]): List[Timeslot] = {
+    if (a.isEmpty) return b.tail
+    if (b.isEmpty) return a.tail
+    assert (a.head.from == b.head.from)
+
+    if (a.head.endsAfter(b.head)) {
+      a.head.slice(b.head.to) ::: alignTimeslots(a.tail, b.tail)
+    } else if (b.head.endsAfter(a.head)) {
+      b.head.slice(a.head.to) ::: alignTimeslots(a.tail, b.tail)
+    } else {
+      a.head :: alignTimeslots(a.tail, b.tail)
+    }
+  }
 }
 
+/**
+ * Encapsulates a computation for a specific timeslot of
+ * resource usage.
+ */
 case class ChargeChunk(value: Double, algorithm: String,
                        price: Double, when: Timeslot,
                        resource: DSLResource) {
