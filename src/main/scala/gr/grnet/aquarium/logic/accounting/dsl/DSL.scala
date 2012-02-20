@@ -89,7 +89,7 @@ trait DSL {
     if (resources.isEmpty)
       return List()
     resources.head match {
-      case x: YAMLMapNode => List(constructResource(x)) ++ parseResources(resources.tail)
+      case x: YAMLMapNode => constructResource(x) :: parseResources(resources.tail)
       case _ => throw new DSLParseException("Resource format unknown")
     }
   }
@@ -152,7 +152,7 @@ trait DSL {
     val algorithm = constructAlgorithm(algorithms.head.asInstanceOf[YAMLMapNode],
       algoTmpl, resources)
 
-    val tmpresults = results ++ List(algorithm)
+    val tmpresults = algorithm :: results
     algorithm :: parseAlgorithms(algorithms.tail, resources, tmpresults)
   }
 
@@ -219,8 +219,8 @@ trait DSL {
     val pl = constructPriceList(pricelists.head.asInstanceOf[YAMLMapNode],
       tmpl, resources)
 
-    val tmpresults = results ++ List(pl)
-    List(pl) ++ parsePriceLists(pricelists.tail, resources, tmpresults)
+    val tmpresults = pl :: results
+    pl :: parsePriceLists(pricelists.tail, resources, tmpresults)
   }
 
   /* Construct a pricelist from a YAML node and template, which may be
@@ -285,8 +285,8 @@ trait DSL {
 
     val plan = constructCreditPlan(creditsplans.head.asInstanceOf[YAMLMapNode], tmpl)
 
-    val tmpresults = results ++ List(plan)
-    List(plan) ++ parseCreditPlans(creditsplans.tail, tmpresults)
+    val tmpresults = plan :: results
+    plan :: parseCreditPlans(creditsplans.tail, tmpresults)
   }
 
   def constructCreditPlan(plan: YAMLMapNode, tmpl: DSLCreditPlan): DSLCreditPlan = {
@@ -355,8 +355,8 @@ trait DSL {
      val agr = constructAgreement(agreements.head.asInstanceOf[YAMLMapNode],
        tmpl, policies, pricelists, resources, creditplans)
 
-     val tmpresults = results ++ List(agr)
-     List(agr) ++ parseAgreements(agreements.tail, policies, pricelists,
+     val tmpresults = agr :: results
+     agr :: parseAgreements(agreements.tail, policies, pricelists,
        resources, creditplans, tmpresults)
    }
 

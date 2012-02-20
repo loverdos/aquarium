@@ -298,7 +298,7 @@ trait Accounting extends DSLUtils with Loggable {
 
     val timeReceived = System.currentTimeMillis
 
-    val rel = related.map{x => x.sourceEventIDs}.flatten ++ List(event.id)
+    val rel = event.id :: related.map{x => x.sourceEventIDs}.flatten
 
     /*
      * Convert charge chunks to wallet entries.

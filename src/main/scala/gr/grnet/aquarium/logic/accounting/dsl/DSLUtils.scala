@@ -122,17 +122,15 @@ trait DSLUtils extends DateUtils {
 
     assert(l.head.to.getTime < l.tail.head.from.getTime)
 
-    List[Timeslot]() ++
-      List(Timeslot(new Date(l.head.to.getTime + 1),
-        new Date(l.tail.head.from.getTime - 1))) ++
-      buildNotEffectiveList(l.tail)
+    Timeslot(new Date(l.head.to.getTime + 1),
+      new Date(l.tail.head.from.getTime - 1)) :: buildNotEffectiveList(l.tail)
   }
 
   /**
    * Merges overlapping timeslots. The merge is exhaustive only if the
    * provided list is sorted in increasing timeslot from order.
    */
-  def mergeOverlaps(list: List[Timeslot]): List[Timeslot] = {
+  def mergeOverlaps(list: List[Timeslot]): List[Timeslot] =
     list.foldLeft(List[Timeslot]()) {
       (a, b) =>
         if (a.isEmpty)
@@ -144,7 +142,6 @@ trait DSLUtils extends DateUtils {
           a ++ (if (merged.size == 1) merged else List(b))
         }
     }
-  }
 
   /**
    * Get a list of all timeslots within which the provided time frame

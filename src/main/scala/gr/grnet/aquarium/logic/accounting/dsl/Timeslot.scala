@@ -69,7 +69,7 @@ final case class Timeslot(from: Date, to: Date)
    */
   def contains(t: Timeslot) : Boolean = {
     if (this.from.getTime <= t.from.getTime &&
-        this.to.getTime >= t.to.getTime)
+      this.to.getTime >= t.to.getTime)
       return true
     return false
   }
