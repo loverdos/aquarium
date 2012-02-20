@@ -152,9 +152,9 @@ trait Accounting extends DSLUtils with Loggable {
      * throughout the event's life.
      */
     assert(
-      agreements.keys.exists {
+      agreements.keysIterator.exists {
         p => p.includes(occurredDate)
-      } && agreements.keys.exists {
+      } && agreements.keysIterator.exists {
         p => p.includes(previousOccurred)
       }
     )
@@ -163,8 +163,8 @@ trait Accounting extends DSLUtils with Loggable {
 
     // Align policy and agreement validity timeslots to the event's boundaries
     val policyTimeslots = t.align(
-      Policy.policies(previousOccurred, occurredDate).keys.toList)
-    val agreementTimeslots = t.align(agreements.keys.toList)
+      Policy.policies(previousOccurred, occurredDate).keysIterator.toList)
+    val agreementTimeslots = t.align(agreements.keysIterator.toList)
 
     /*
      * Get a set of timeslot slices covering the different durations of
