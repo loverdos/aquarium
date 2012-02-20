@@ -153,7 +153,7 @@ trait DSL {
       algoTmpl, resources)
 
     val tmpresults = results ++ List(algorithm)
-    List(algorithm) ++ parseAlgorithms(algorithms.tail, resources, tmpresults)
+    algorithm :: parseAlgorithms(algorithms.tail, resources, tmpresults)
   }
 
   /** Construct an algorithm object from a yaml node*/
@@ -427,12 +427,14 @@ trait DSL {
   /** Parse a timeframe declaration */
   def parseTimeFrame(timeframe: YAMLMapNode): DSLTimeFrame = {
     val from = timeframe / Vocabulary.from match {
-      case x: YAMLIntNode => new Date(x.int)
+      case x: YAMLIntNode => new Date(x.int.longValue * 1000L)
+      case y: YAMLLongNode => new Date(y.long)
       case _ => throw new DSLParseException("No %s field for timeframe %s".format(Vocabulary.from, timeframe))
     }
 
     val to = timeframe / Vocabulary.to match {
-      case x: YAMLIntNode => Some(new Date(x.int))
+      case x: YAMLIntNode => Some(new Date(x.int.longValue * 1000L))
+      case y: YAMLLongNode => Some(new Date(y.long))
       case YAMLEmptyNode => None
     }
 
@@ -470,7 +472,7 @@ trait DSL {
    * library to parse crontab-like strings. The input format differs from the
    * [[http://en.wikipedia.org/wiki/Cron default cron format]] in the following ways:
    *
-   *  - Only 5 field resource specs are allowed
+   *  - Only 5 field cron specs are allowed
    *  - Multiple values per field (e.g. Mon,Wed,Fri) are not allowed. Ranges
    *    (e.g. Mon-Fri) are however allowed.
    */
