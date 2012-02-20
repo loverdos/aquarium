@@ -59,12 +59,14 @@ trait YAMLNode {
   def listValue: List[YAMLNode] = Nil
   def mapValue: Map[String, YAMLNode] = Map()
   def booleanValue = false
+  def longValue = 0L
 
   def isEmpty = false
 
   def isString = false
   def isInt = false
   def isDouble = false
+  def isLong = false
   def isMap = false
   def isList = false
   def isBoolean = false
@@ -118,6 +120,8 @@ object YAMLNode {
         YAMLIntNode(basePath, int)
       case double: java.lang.Double =>
         YAMLDoubleNode(basePath, double)
+      case long: java.lang.Long =>
+        YAMLLongNode(basePath, long)
       case x: java.lang.Boolean  =>
         YAMLBooleanNode(basePath, x)
       case obj =>
