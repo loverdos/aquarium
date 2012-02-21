@@ -83,7 +83,10 @@ aquariumjar=`find target -type f|egrep "aquarium-[0-9\.]+(-SNAPSHOT)?\.jar"`
 cp $aquariumjar $DIR/lib || fail "copying $aquariumjar"
 
 echo "Copying scripts and config files"
-cp aquarium.sh $DIR/bin || fail "copying aquarium.sh"
+cp dist/aquarium.sh $DIR/bin || fail "copying aquarium.sh"
+cp dist/log4j.properties $DIR/conf|| fail "copying log4j.properties"
+cp dist/aquarium.properties $DIR/conf || fail "copying aquarium.properties"
+cp dist/policy.yaml $DIR/conf || fail "copying policy.yaml"
 
 echo "Creating archive"
 tar zcvf $DIR.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
