@@ -24,7 +24,8 @@ cleanup() {
 
 # Check if there are pending changes
 status=`git status --porcelain|grep -v "??"`
-if [ ! -z "$status" ]; then
+if [ ! -z "$status" ]
+then
     echo "The following files are not committed:"
     echo 
     echo $status
@@ -34,8 +35,23 @@ if [ ! -z "$status" ]; then
     touch stashed
 fi
 
-# Get latest tag
-tag=`git tag |tail -n 1`
+# Get version or tag to checkout from cmd-line
+if [ ! -z $1 ]
+then
+    echo -n "checking commit $1... "
+    out=`git show $1 2>&1|grep "fatal: ambiguous argument '$1'"`
+    if [ -z "$out" ]
+    then
+        tag=$1
+        echo "success"
+    else
+        fail "retrieving info about commit $1"
+    fi
+else
+    echo -n "checking out latest tag ("
+    tag=`git tag |tail -n 1`
+    echo "$tag)"
+fi
 
 DIR="$tag"
 
