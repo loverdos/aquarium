@@ -60,14 +60,17 @@ start() {
     # Build classpath
     CLASSPATH=`find $LIB -type f|grep jar$|tr '\n' ':'|sed -e 's/\:$//'`
     
-    # Override default log4j.conf with the file in conf
-    CLASSPATH=$CONF/log4j.properties:$CLASSPATH
+    # load log4j from classpath
+    CLASSPATH=$CONF:$CLASSPATH
+
+    # default properties
+    PROPS="-Dlog4j.debug=true"
 
     echo "Using AQUARIUM_HOME $AQUARIUM_HOME"
     echo "Using CLASSPATH $CLASSPATH"
     echo "Using configuration files in $CONF"
     echo "Using MAIN $AQMAIN"
-    java -cp $CLASSPATH $AQMAIN >> $LOG 2>&1 &
+    java -cp $CLASSPATH $PROPS $AQMAIN >> $LOG 2>&1 &
     echo $! > $PID 
     echo "OK [pid = $!]"
 }

@@ -247,7 +247,7 @@ object Configurator {
   /**
    * Default config context for Aquarium distributions
    */
-  val LocalConfigResourceContext = new FileStreamResourceContext(".." + File.separatorChar + "conf")
+  val LocalConfigResourceContext = new FileStreamResourceContext("conf")
 
   /**
    * The venerable /etc resource context. Applicable in Unix environments
