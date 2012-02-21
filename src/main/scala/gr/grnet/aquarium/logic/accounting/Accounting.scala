@@ -42,9 +42,17 @@ import collection.immutable.SortedMap
 import java.util.Date
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
-import gr.grnet.aquarium.user.Agreement
-import gr.grnet.aquarium.store.PolicyStore
-case class Chargeslot(startChargeMillis: Long, stopChargeMillis: Long, charge: Double)
+import gr.grnet.aquarium.util.date.DateCalculator
+
+/**
+ * A timeslot together with the algorithm and unit price that apply for this particular timeslot.
+ *
+ * @param startMillis
+ * @param stopMillis
+ * @param algorithmDefinition
+ * @param unitPrice
+ */
+case class Chargeslot(startMillis: Long, stopMillis: Long, algorithmDefinition: String, unitPrice: Double)
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -53,60 +61,109 @@ case class Chargeslot(startChargeMillis: Long, stopChargeMillis: Long, charge: D
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 trait Accounting extends DSLUtils with Loggable {
+  /**
+   * Breaks a reference timeslot (e.g. billing period) according to policies and agreements.
+   *
+   * @param referenceTimeslot
+   * @param policyTimeslots
+   * @param agreementTimeslots
+   * @return
+   */
+  def splitTimeslotByPoliciesAndAgreements(referenceTimeslot: Timeslot,
+                                           policyTimeslots: List[Timeslot],
+                                           agreementTimeslots: List[Timeslot]): List[Timeslot] = {
+    // Align policy and agreement validity timeslots to the referenceTimeslot
+    val alignedPolicyTimeslots    = referenceTimeslot.align(policyTimeslots)
+    val alignedAgreementTimeslots = referenceTimeslot.align(agreementTimeslots)
 
-  def splitTimeslotsByPoliciesAndAgreements(bigTimeslot: Timeslot,
-                                            policies: SortedMap[Timeslot, DSLPolicy],
-                                            agreements: List[Agreement]): Map[Timeslot, DSLAgreement] = {
-    // TODO: Implement
-    //       Find the agreements and their respective timeslots, taking into account the policies
-    Map()
+    alignTimeslots(alignedPolicyTimeslots, alignedAgreementTimeslots)
   }
-  
-//  def computeChargeSlots(timeslot: Timeslot,
-//                         dslResource: DSLResource,
-//                         dslAgreement: DSLAgreement,
-//                         algorithmCompiler: CostPolicyAlgorithmCompiler,
-//                         costPolicyVars: Map[DSLCostPolicyVar, Any]): Maybe[Traversable[Chargeslot]] = Maybe {
-//    // TODO split further based on timeslot
-//    val ta = List((timeslot, dslAgreement))
-//    for {
-//      (timeslot, dslAgreement) <- ta
-//    } yield {
-//      val startMillis = timeslot.from.getTime
-//      val stopMillis  = timeslot.to.getTime
-//      val algorithmDefM = dslAgreement.algorithm.findDefinitionForResource(dslResource)
-//      algorithmDefM match {
-//        case Just(algorithmDef) ⇒
-//          val compiledM = algorithmCompiler.compile(algorithmDef)
-//
-//          compiledM match {
-//            case Just(compiled) ⇒
-//              val chargeM = compiled.apply(costPolicyVars)
-//              chargeM match {
-//                case Just(charge) ⇒
-//                  Chargeslot(startMillis, stopMillis, charge)
-//                case NoVal ⇒
-//                  throw new Exception("No charge could be computed")
-//                case failed @ Failed(e, _) ⇒
-//                  throw e
-//              }
-//
-//            case NoVal ⇒
-//              throw new Exception("Could not compile algorithm %s".format(algorithmDef))
-//
-//            case failed @ Failed(e, _) ⇒
-//              throw e
-//          }
-//          Nil
-//        case NoVal ⇒
-//          throw new Exception("Could not find charging algorith for resource %s".format(dslResource))
-//
-//        case failed @ Failed(e, _) ⇒
-//          throw e // TODO: handle better
-//      }
-//    }
-//  }
-  
+
+  /**
+   * Given a reference timeslot, we have to break it up to a series of timeslots where a particular
+   * algorithm and price unit is in effect.
+   *
+   * @param referenceTimeslot
+   * @param policiesByTimeslot
+   * @param agreementNamesByTimeslot
+   * @return
+   */
+  def computeChargeslots(referenceTimeslot: Timeslot,
+                         dslResource: DSLResource,
+                         policiesByTimeslot: Map[Timeslot, DSLPolicy],
+                         agreementNamesByTimeslot: Map[Timeslot, String]): Maybe[List[Chargeslot]] = Maybe {
+
+    val policyTimeslots = policiesByTimeslot.keySet
+    val agreementTimeslots = agreementNamesByTimeslot.keySet
+
+    def getPolicy(ts: Timeslot): DSLPolicy = {
+      policiesByTimeslot.find(_._1.contains(ts)).get._2
+    }
+    def getAgreementName(ts: Timeslot): String = {
+      agreementNamesByTimeslot.find(_._1.contains(ts)).get._2
+    }
+
+    // 1. Round ONE: split time according to overlapping policies and agreements.
+    val alignedPolicyTimeslots    = referenceTimeslot.align(policyTimeslots.toList)
+    val alignedAgreementTimeslots = referenceTimeslot.align(agreementTimeslots.toList)
+    val alignedTimeslots  = alignTimeslots(alignedPolicyTimeslots, alignedAgreementTimeslots)
+
+    // 2. Round TWO: Use the aligned timeslots of Round ONE to produce even more
+    //    fine-grained timeslots according to applicable algorithms.
+    //    Then pack the info into charge slots.
+    val allChargeslots = for {
+      alignedTimeslot <- alignedTimeslots
+    } yield {
+      val dslPolicy = getPolicy(alignedTimeslot)
+      val agreementName = getAgreementName(alignedTimeslot)
+      val agreementOpt = dslPolicy.findAgreement(agreementName)
+
+      agreementOpt match {
+        case None ⇒
+          throw new Exception("Unknown agreement %s during %s".format(agreementName, alignedTimeslot))
+
+        case Some(agreement) ⇒
+          val alg = resolveEffectiveAlgorithmsForTimeslot(alignedTimeslot, agreement)
+          val pri = resolveEffectivePricelistsForTimeslot(alignedTimeslot, agreement)
+          val chargeChunks = splitChargeChunks(alg, pri)
+          val algorithmByTimeslot = chargeChunks._1
+          val pricelistByTimeslot = chargeChunks._2
+
+          // Now, the timeslots must be the same
+          val finegrainedTimeslots = algorithmByTimeslot.keySet
+
+          val chargeslots = for {
+            finegrainedTimeslot <- finegrainedTimeslots
+          } yield {
+            val dslAlgorithm = algorithmByTimeslot(finegrainedTimeslot) // TODO: is this correct?
+            val dslPricelist = pricelistByTimeslot(finegrainedTimeslot) // TODO: is this correct?
+            val algorithmDefOpt = dslAlgorithm.algorithms.get(dslResource)
+            val priceUnitOpt = dslPricelist.prices.get(dslResource)
+            (algorithmDefOpt, priceUnitOpt) match {
+              case (None, None) ⇒
+                throw new Exception(
+                  "Unknown algorithm and price unit for resource %s during %s".
+                    format(dslResource.name, finegrainedTimeslot))
+              case (None, _) ⇒
+                throw new Exception(
+                  "Unknown algorithm for resource %s during %s".
+                    format(dslResource.name, finegrainedTimeslot))
+              case (_, None) ⇒
+                throw new Exception(
+                  "Unknown price unit for resource %s during %s".
+                    format(dslResource.name, finegrainedTimeslot))
+              case (Some(algorithmDefinition), Some(priceUnit)) ⇒
+                Chargeslot(finegrainedTimeslot.from.getTime, finegrainedTimeslot.to.getTime, algorithmDefinition, priceUnit)
+            }
+          }
+
+          chargeslots.toList
+      }
+    }
+
+    allChargeslots.flatten
+  }
+
   /**
    * Compute the charge chunks generated by a particular resource event.
    *
@@ -114,36 +171,28 @@ trait Accounting extends DSLUtils with Loggable {
   def computeChargeChunks(previousResourceEventM: Maybe[ResourceEvent],
                           currentResourceEvent: ResourceEvent,
                           oldCredits: Double,
-                          oldAmount: Double,
-                          newAmount: Double,
+                          oldTotalAmount: Double,
+                          newTotalAmount: Double,
                           dslResource: DSLResource,
                           defaultResourceMap: DSLResourcesMap,
-                          alltimeAgreements: List[Agreement]): Maybe[Traversable[ChargeChunk]] = Maybe {
+                          agreementNamesByTimeslot: Map[Timeslot, String],
+                          algorithmCompiler: CostPolicyAlgorithmCompiler): Maybe[Traversable[Any]] = Maybe {
+
     val occurredDate = currentResourceEvent.occurredDate
     val costPolicy = dslResource.costPolicy
     
-    costPolicy.needsPreviousEventForCreditAndAmountCalculation match {
+    val (referenceTimeslot, relevantPolicies, previousValue) = costPolicy.needsPreviousEventForCreditAndAmountCalculation match {
       // We need a previous event
       case true ⇒
         previousResourceEventM match {
           // We have a previous event
           case Just(previousResourceEvent) ⇒
-            val occurredDelta = currentResourceEvent occurredDeltaFrom previousResourceEvent
-            val bigTimeslot = Timeslot(previousResourceEvent.occurredDate, occurredDate)
+            val referenceTimeslot = Timeslot(previousResourceEvent.occurredDate, occurredDate)
             // all policies within the interval from previous to current resource event
-            val relevantPolicies = Policy.policies(bigTimeslot)
-            val dslAgreementByTimeslotFromPolicies = splitTimeslotsByPoliciesAndAgreements(bigTimeslot, relevantPolicies, alltimeAgreements)
+            val relevantPolicies = Policy.policies(referenceTimeslot)
 
-//            val allChargeslots = for {
-//              // Level 1: split into timeslots by taking into account the timeslots of policy and agreement versions
-//              (timeslot1, dslAgreement1) <- dslAgreementByTimeslotFromPolicies
-//              // Level 2: split into more fine-grained timeslots by taking into account
-//              chargeslot                 <- computeChargeSlots(timeslot1, dslResource, dslAgreement1)
-//            } yield {
-//              chargeslot
-//            }
-//
-//            allChargeslots
+            (referenceTimeslot, relevantPolicies, previousResourceEvent.value)
+
           // We do not have a previous event
           case NoVal ⇒
             throw new Exception(
@@ -160,99 +209,68 @@ trait Accounting extends DSLUtils with Loggable {
       // We do not need a previous event
       case false ⇒
         // ... so we cannot compute timedelta from a previous event, there is just one chargeslot
-        // referring to an instant in time
-        val agreementAtOccurred = alltimeAgreements.head
-    }
-//    val valueMap = costPolicy.makeValueMap(
-//      oldCredits,
-//      oldAmount,
-//      newAmount,
-//      previousResourceEventM.map(pe => currentResourceEvent.occurredMillis - pe.occurredMillis).getOr(0.0),
-//      previousResourceEventM.map(pe => pe.value).getOr(0.0),
-//      currentResourceEvent.value,
-//      1.0
-//    )
+        // referring to (almost) an instant in time
+        val referenceTimeslot = Timeslot(new DateCalculator(occurredDate).goPreviousMilli.toDate, occurredDate)
+        val agreementAtOccurred = agreementNamesByTimeslot.head
+        val relevantPolicy = Policy.policy(occurredDate)
+        val relevantPolicies = Map(referenceTimeslot -> relevantPolicy)
 
+        (referenceTimeslot, relevantPolicies, costPolicy.getResourceInstanceUndefinedAmount)
+    }
+
+    val chargeslotsM = computeChargeslots(
+      referenceTimeslot,
+      dslResource,
+      relevantPolicies,
+      agreementNamesByTimeslot
+    )
+
+    for {
+      chargeslots <- chargeslotsM
+      (chargeslot @ Chargeslot(startMillis, stopMillis, algorithmDefinition, unitPrice)) <- chargeslots
+    } yield {
+      val execAlgorithmM = algorithmCompiler.compile(algorithmDefinition)
+
+      execAlgorithmM match {
+        case NoVal ⇒
+          throw new Exception("Could not compile algorithm")
+
+        case failed @ Failed(e, m) ⇒
+          throw new Exception(m, e)
+
+        case Just(execAlgorithm) ⇒
+          val valueMap = costPolicy.makeValueMap(
+            costPolicy.name,
+            oldCredits,
+            oldTotalAmount,
+            newTotalAmount,
+            stopMillis - startMillis,
+            previousValue,
+            currentResourceEvent.value,
+            unitPrice
+          )
+
+          // This is it
+          val creditsM = execAlgorithm.apply(valueMap)
+          
+          creditsM match {
+            case NoVal ⇒
+              throw new Exception(
+                "Could not compute credits for resource %s during %s".
+                  format(dslResource.name, Timeslot(new Date(startMillis), new Date(stopMillis))))
+
+            case failed @ Failed(e, m) ⇒
+              throw new Exception(m, e)
+
+            case Just(credits) ⇒
+              credits
+          }
+      }
+    }
 
     Nil
   }
 
-  def chargeEvent2(oldResourceEventM: Maybe[ResourceEvent],
-                   newResourceEvent: ResourceEvent,
-                   dslAgreement: DSLAgreement,
-                   lastSnapshotDate: Date,
-                   related: Traversable[WalletEntry]): Maybe[Traversable[WalletEntry]] = {
-    Maybe {
-      val dslPolicy: DSLPolicy = Policy.policy // TODO: query based on time
-      val resourceEvent = newResourceEvent
-      dslPolicy.findResource(resourceEvent.resource) match {
-        case None ⇒
-          throw new AccountingException("No resource [%s]".format(resourceEvent.resource))
-        case Some(dslResource) ⇒
-
-          val costPolicy = dslResource.costPolicy
-          val isDiscrete = costPolicy.isDiscrete
-          val oldValueM = oldResourceEventM.map(_.value)
-          val newValue = newResourceEvent.value
-
-          /* This is a safeguard against the special case where the last
-          * resource state update, as marked by the lastUpdate parameter
-          * is equal to the time of the event occurrence. This means that
-          * this is the first time the resource state has been recorded.
-          * Charging in this case only makes sense for discrete resources.
-          */
-          if (lastSnapshotDate.getTime == resourceEvent.occurredMillis && !isDiscrete) {
-            Just(List())
-          } else {
-            val creditCalculationValueM = dslResource.costPolicy.getValueForCreditCalculation(oldValueM, newValue).forNoVal(Just(0.0))
-            for {
-              amount <- creditCalculationValueM
-            } yield {
-              // We don't do strict checking for all cases for OnOffPolicies as
-              // above, since this point won't be reached in case of error.
-              val isFinal = dslResource.costPolicy match {
-                case OnOffCostPolicy =>
-                  OnOffPolicyResourceState(oldValueM) match {
-                    case OnResourceState => false
-                    case OffResourceState => true
-                  }
-                case _ => true
-              }
-
-              val timeslot = dslResource.costPolicy match {
-                case DiscreteCostPolicy => Timeslot(new Date(resourceEvent.occurredMillis),
-                  new Date(resourceEvent.occurredMillis + 1))
-                case _ => Timeslot(lastSnapshotDate, new Date(resourceEvent.occurredMillis))
-              }
-
-              val chargeChunks = calcChangeChunks(dslAgreement, amount, dslResource, timeslot)
-
-              val timeReceived = System.currentTimeMillis
-
-              val rel = related.map{x => x.sourceEventIDs}.flatten ++ Traversable(resourceEvent.id)
-
-              val entries = chargeChunks.map {
-                chargedChunk ⇒
-                  WalletEntry(
-                    id = CryptoUtils.sha1(chargedChunk.id),
-                    occurredMillis = resourceEvent.occurredMillis,
-                    receivedMillis = timeReceived,
-                    sourceEventIDs = rel.toList,
-                    value = chargedChunk.cost,
-                    reason = chargedChunk.reason,
-                    userId = resourceEvent.userId,
-                    resource = resourceEvent.resource,
-                    instanceId = resourceEvent.instanceId,
-                    finalized = isFinal
-                  )
-              } // entries
-
-              entries
-            } // yield
-          } // else
-      }
-    }.flatten1
-  }
 
   /**
    * Creates a list of wallet entries by examining the on the resource state.

@@ -138,6 +138,15 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   def getResourceInstanceInitialAmount: Double
 
   /**
+   * The amount used when no amount is meant to be relevant.
+   *
+   * For example, when there is no need for a previous event but an API requires the amount of the previous event.
+   *
+   * Normally, this value will never be used by client code.
+   */
+  def getResourceInstanceUndefinedAmount: Double = -1.0
+
+  /**
    * Get the value that will be used in credit calculation in Accounting.chargeEvents
    */
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
