@@ -46,7 +46,7 @@ import store._
 import util.{Lifecycle, Loggable}
 import java.net.URL
 import collection.mutable.Buffer
-import java.io.{ByteArrayInputStream, InputStream, Reader, BufferedReader}
+import java.io._
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -241,14 +241,16 @@ object Configurator {
 
   /**
    * Current directory resource context.
-   * Normally this should be the application installation directory.
-   *
-   * It takes priority over `ClasspathBaseResourceContext`.
    */
   val AppBaseResourceContext = new FileStreamResourceContext(".")
 
   /**
-   * The venerable /etc resource context
+   * Default config context for Aquarium distributions
+   */
+  val LocalConfigResourceContext = new FileStreamResourceContext(".." + File.separatorChar + "conf")
+
+  /**
+   * The venerable /etc resource context. Applicable in Unix environments
    */
   val SlashEtcResourceContext = new FileStreamResourceContext("/etc/aquarium")
 
@@ -257,11 +259,6 @@ object Configurator {
    * This has the lowest priority.
    */
   val ClasspathBaseResourceContext = new ClassLoaderStreamResourceContext(Thread.currentThread().getContextClassLoader)
-
-  /**
-   * Last resort: read properties from the command line
-   */
-  val CmdLineResourceContext = new SysPropResourceContext
 
   /**
    * Use this property to override the place where aquarium configuration resides.
@@ -273,9 +270,9 @@ object Configurator {
   val BasicResourceContext = new CompositeStreamResourceContext(
     NoVal,
     SlashEtcResourceContext,
+    LocalConfigResourceContext,
     AppBaseResourceContext,
-    ClasspathBaseResourceContext,
-    CmdLineResourceContext)
+    ClasspathBaseResourceContext)
 
   /**
    * The resource context used in the application.
@@ -331,16 +328,6 @@ object Configurator {
    * Defines the names of all the known keys inside the master properties file.
    */
   final object Keys {
-
-    final val allKeys = List(version, actor_provider_class, rest_service_class,
-      store_provider_class, user_state_store_class, resource_event_store_class,
-      user_event_store_class, wallet_entry_store_class, policy_store_class,
-      user_actors_lru_lower_mark, user_actors_lru_upper_mark, amqp_servers,
-      amqp_port, amqp_username, amqp_password, amqp_vhost, amqp_exchanges,
-      rest_port, persistence_provider, persistence_host, persistence_username,
-      persistence_password, persistence_port, persistence_db,
-      mongo_connection_pool_size, aquarium_policy, user_state_timestamp_threshold,
-      time_unit_in_millis)
 
     /**
      * The Aquarium version. Will be reported in any due occasion.
@@ -505,39 +492,4 @@ object Configurator {
      */
     final val time_unit_in_millis = "time.unit.in.seconds"
   }
-}
-
-/**
- * Reads configuration keys from system properties.
- */
-class SysPropResource extends StreamResourceSkeleton {
-
-  def exists = true
-  def url = new URL("cmd-line://")
-  def name = "cmdline"
-  def path = "cmdline"
-  def canonicalPath = "cmdline"
-
-  override def _inputStream: InputStream = {
-    val props = Configurator.Keys.allKeys.foldLeft(new StringBuffer()){
-      (b, k) =>
-        SysProp(k).value match {
-          case Just(x) =>
-            b.append(k).append("=").append(x).append("\n")
-          case _ => b
-        }
-    }
-
-    new ByteArrayInputStream(props.toString.getBytes("UTF-8"))
-  }
-}
-
-class SysPropResourceContext extends StreamResourceContextSkeleton(NoVal) {
-  def /(child: String) = null
-
-  override def getResource(path: String, normalized: Boolean) = Just(new SysPropResource)
-
-  def getLocalResource(path: String, normalized: Boolean) = Just(new SysPropResource)
-
-  override def toString = "SysPropResourceContext"
 }
