@@ -53,7 +53,13 @@ else
     echo "$tag)"
 fi
 
-DIR="$tag"
+# Tags are marked as aquarium-*
+if [[ "$tag" =~ "aquarium-" ]];
+then
+    DIR=$tag
+else
+    DIR="aquarium-$tag"
+fi
 
 # Creating dist dirs
 mkdir -p $DIR
@@ -73,13 +79,14 @@ mvn dependency:copy-dependencies >> build.log ||  fail "collecting dependencies"
 cp target/dependency/*.jar $DIR/lib || fail "copying dependencies"
 
 echo "Copying Aquarium classes"
-cp target/$tag.jar $DIR/lib || fail "copying $tag.jar"
+aquariumjar=`find target -type f|egrep "aquarium-[0-9\.]+(-SNAPSHOT)?\.jar"`
+cp $aquariumjar $DIR/lib || fail "copying $aquariumjar"
 
 echo "Copying scripts and config files"
 cp aquarium.sh $DIR/bin || fail "copying aquarium.sh"
 
 echo "Creating archive"
-tar zcvf $tag.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
+tar zcvf $DIR.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
 
 echo "Cleaning up"
 rm -Rf $DIR
@@ -87,4 +94,5 @@ cleanup
 rm $LOG
 
 echo "File $tag.tar.gz created succesfully"
+
 # vim: set sta sts=4 shiftwidth=4 sw=4 et ai :
