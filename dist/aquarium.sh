@@ -27,6 +27,7 @@ AQMAIN=gr.grnet.aquarium.Main
 PID=$AQUARIUM_HOME/bin/aquarium.pid
 LIB=$AQUARIUM_HOME/lib
 LOG=$AQUARIUM_HOME/logs/aquarium.log
+CONF=$AQUARIUM_HOME/conf
 
 # Check the application status
 check_status() {
@@ -59,8 +60,12 @@ start() {
     # Build classpath
     CLASSPATH=`find $LIB -type f|grep jar$|tr '\n' ':'|sed -e 's/\:$//'`
     
+    # Override default log4j.conf with the file in conf
+    CLASSPATH=$CONF/log4j.properties:$CLASSPATH
+
     echo "Using AQUARIUM_HOME $AQUARIUM_HOME"
     echo "Using CLASSPATH $CLASSPATH"
+    echo "Using configuration files in $CONF"
     echo "Using MAIN $AQMAIN"
     java -cp $CLASSPATH $AQMAIN >> $LOG 2>&1 &
     echo $! > $PID 
