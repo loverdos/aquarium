@@ -1,8 +1,7 @@
-The credit DSL
+The policy DSL
 ^^^^^^^^^^^^^^
 
-The credit DSL enables administrators to specify accounting
-processing policies, price lists and combine them arbitrarily into agreements
+The policy DSL enables administrators to specify billing algorithms, price lists and combine them arbitrarily into agreements
 applicable to specific users or the whole system. The DSL's primary purpose is
 to facilitate the definition of agreements through defining and composing cost
 calculation policies with price lists.
@@ -29,7 +28,7 @@ Price lists
 ~~~~~~~~~~~
 
 A price list defines the prices applicable for a resource within a validity
-period. Prices are attached to resource types and denote the credits that
+period. Prices are attached to resource types and denote the policies that
 should be deducted from an entity's wallet in response to the entity's resource
 usage within a given charging period (currently, a month). The format is the
 following:

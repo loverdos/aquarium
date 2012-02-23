@@ -4,6 +4,11 @@ Aquarium Development Guide
 The development guide includes descriptions of the APIs and extention points
 offered by Aquarium. It also includes design and development setup information.
 
+Overall architecture
+--------------------
+
+
+
 The accounting system
 ----------------------
 
@@ -12,65 +17,35 @@ providing them with credits in order to be able to use the provided services.
 As with the rest of the Aquarium, the architecture is open-ended: the accounting
 system does not know in advance which services it supports or what resources
 are being offered. The configuration of the accounting system is done
-using a Domain Specific Language described below. 
+using a Domain Specific Language (DSL) described below. 
 
 Data exchange with external systems is done through events, which are
 persisted to an *immutable log*.
+
+The accounting system is a generic event-processing engine that is configured by a
+DSL. The DSL is mostly based on the
+`YAML <http://en.wikipedia.org/wiki/Yaml>`_ 
+format. The DSL supports limited algorithm definitions through integration of the Javascript language as defined below.
 
 Glossary of Entities
 ^^^^^^^^^^^^^^^^^^^^
 
 - *Credit*: A credit is the unit of currency used in Aquarium. It may or may not 
   correspond to real money.
-- *Raw Event*: A raw event is generated from an external source and are permanently 
-  appended in an immutable event log. A raw event carries information about changes 
-  in an external system that could affect the status of a user's wallet.
-- *AccountingEvent*: An accounting event is the result of processing one or more raw 
-  events, and is the sole input to the accounting system. 
-- *AccountingEntry*: An accounting entry is the result of processing one accounting 
-  event and is what gets stored to the user's wallet.
 - *Resource*: A resource represents an entity that can be charged for its usage. The 
-  currently charged resources are: Time of VM usage, bytes uploaded and downloaded and 
-  bytes used for storage
+  currently charged resources are: Time of VM usage, bytes uploaded and downloaded and bytes used for storage
+- *Resource Event*: A resource event is generated from an external source and are permanently appended in an immutable event log. A raw event carries information about changes in an external system that could affect the status of a user's wallet.
+- *AccountingEntry*: An accounting entry is the result of processing a resource event and is what gets stored to the user's wallet.
 - *Price List*: A price list contains information of the cost of a resource. 
   A pricelist is only applied within a specified time frame.
-- *Policy*: A policy specifies the way the charging calculation is done. It can be vary 
-  depending on resource usage, time of raw event or other information.
-- *Agreement*: An agreement associates pricelists with policies. An agreement
-  is assigned to one or more credit holders.
-
-Common syntax
-^^^^^^^^^^^^^
-
-The accounting system is a generic event-processing engine that is configured by a
-DSL. The DSL is split in two parts, one for configuring the crediting part
-of accounting and one for configuring who credits are debitted to user accounts.
-The DSL is mostly based on the
-`YAML <http://en.wikipedia.org/wiki/Yaml>`_ format. The DSL supports limited
-algorithm definitions through a simple imperative language as defined below.
-
-
-The following parts are the same for both languages, except if otherwise noted.
-
-Implicit variables
-~~~~~~~~~~~~~~~~~~
-
-Implicit variables are placeholders that are assigned a value at evaluation
-time. Variables are always bound to a resource declaration within a policy.
-The following implicit values are supported:
-
-- ``price``: Denotes the price for the designated resource in the applicable agreement
-- ``volume``: Denotes the runtime usage of the designated resource
-
-
-Operators
-~~~~~~~~~
-
-- Conditionals: ``if...then...elsif...else...end`` Conditional decisions. 
-- Comparison: ``gt, lt``: ``>`` and ``<``
+- *Algorithm*: An algorithm specifies the way the charging calculation is done. It can be vary  depending on resource usage, time of raw event or other information.
+- *Credit Plan*: Defines a periodic operation of refiling a user's wallet with a
+  configurable amount of credits.
+- *Agreement*: An agreement associates pricelists with algorithms and credit
+  plans. An agreement is assigned to one or more users/credit holders.
 
 Time frames
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 Time frames allow the specification of applicability periods for policies,
 pricelists and agreements. A timeframe is by default continuous and has a
@@ -123,15 +98,99 @@ and 15:00 Sat to 15:00 Sun.
         start: "00 15 * * Sat"
         end:   "00 15 * * Sun"
 
+Resources
+^^^^^^^^^
 
-.. toctree::
+A resource represents an entity that can be charged for.
 
-  debitdsl 
-  creditdsl
+The DSL does not assume a fixed set of resource types and is extensible to any
+number of resources. The default set of resources that the DSL supports 
+are the following: 
+
+- ``vmtime``: Time a specific VM is operating
+- ``diskspace``: Space on disk being used for storing data
+- ``bandwidthup``: Bandwidth used for uploading data
+- ``bandwidthdown``: Bandwidth used for downloading data
+
+Price lists
+^^^^^^^^^^^
+
+A price list defines the prices applicable for a resource within a validity
+period. Prices are attached to resource types and denote the policies that
+should be deducted from an entity's wallet in response to the entity's resource
+usage within a given charging period (currently, a month). The format is the
+following:
+
+.. code-block:: yaml
+
+  pricelist:                  # Pricelist structure definition  
+    name: apricelist          # Name for the price list, no spaces, must be unique
+    [extends: anotherpl]      # [Optional] Inheritance operation: all optional fields  
+                              # are inherited from the named pricelist
+    bandwidthup:              # Price for used upstream bandwidth per MB 
+    bandwidthdown:            # Price for used downstream bandwidth per MB
+    vmtime:                   # Price for time 
+    diskspace:                # Price for used diskspace, per MB
+    applicable:
+      [see Timeframe format]
+
+Algorithms
+^^^^^^^^^^
+
+An algorithm specifies the algorithm used to perform the cost calculation, by
+combining the reported resource usage with the applicable pricelist. As opposed
+to price lists, policies define behaviours (algorithms), which have certain
+validity periods. Algorithms can either be defined inline or referenced from
+the list of defined algorithms. 
+
+.. code-block:: yaml
+
+  algorithm:
+    name: default
+    bandwidthup:   {price} times {volume} 
+    bandwidthdown: {price} times {volume}
+    vmtime: {price} times {volume}
+    diskspace: {price} times {volume}
+    applicable: 
+      [see Timeframe format]
 
 
-Usage Examples
-^^^^^^^^^^^^^^
+Credit Plans
+^^^^^^^^^^^^
+
+
+
+Agreements
+^^^^^^^^^^
+
+An agreement is the result of combining a policy with a pricelist. As the
+accounting DSL's main purpose is to facilitate the construction of agreements
+(which are then associated to entities), the agreement is the centerpiece of
+the language. An agreement is defined in full using the following template:
+
+.. code-block:: yaml
+
+  agreement:
+    name: someuniqname        # Unique name for 
+    extends: other            # [opt] name of inhereted agreement 
+    pricelist: plname         # Name of declared pricelist
+      resourse: value         # [opt] Overiding of price for resource
+    policy: polname           # Name of declared policy
+      resourse: value         # [opt] Overiding of algorithm for resourse
+
+**Consistency requirements:**
+
+- If a ``pricelist`` or ``policy`` name has not been specified, all prices or
+  algorithms for the declared resources must be defined in either the processed 
+  ``agreement`` or a parent ``agreement``.
+
+The charging algorithm
+^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+Examples
+^^^^^^^^^
 .. toctree::
 
   unicase 
@@ -144,6 +203,7 @@ Document Revisions
 Revision              Description
 ==================    ================================
 0.1 (Nov 2, 2011)     Initial release. Credit and debit policy descriptions 
+0.2 (Feb 23, 2012)    Update definitions, remove company use case
 ==================    ================================
 
 
