@@ -47,7 +47,9 @@ import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, Po
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * An implementation of various stores that persists data in memory
+ * An implementation of various stores that persists data in memory.
+ *
+ * This is just for testing purposes.
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
@@ -59,7 +61,7 @@ class MemStore extends UserStateStore
   with WalletEntryStore
   with StoreProvider {
 
-  private[this] val userStateByUserId = new ConcurrentHashMap[String, Just[UserState]]()
+  private[this] var _userStates = List[UserState]()
   private var policies: List[PolicyEntry] = List()
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
   private val userEventById: ConcurrentMap[String, UserEvent] = new ConcurrentHashMap[String, UserEvent]()
@@ -70,7 +72,7 @@ class MemStore extends UserStateStore
 
   override def toString = {
     val map = Map(
-      "UserState"     -> userStateByUserId.size,
+      "UserState"     -> _userStates.size,
       "ResourceEvent" -> resourceEventsById.size,
       "UserEvent"     -> userEventById.size,
       "PolicyEntry"   -> policies.size,
@@ -95,28 +97,46 @@ class MemStore extends UserStateStore
 
   //+ UserStateStore
   def storeUserState(userState: UserState): Maybe[RecordID] = {
-    val userId = userState.userId
-    val userStateJ = Just(userState)
-    userStateByUserId.put(userId, userStateJ)
-    Just(RecordID(userId))
+    _userStates = userState :: _userStates
+    Just(RecordID(userState.userId))
   }
 
   def findUserStateByUserId(userId: String) = {
-    userStateByUserId.get(userId) match {
-      case null       ⇒ NoVal
-      case userStateJ ⇒ userStateJ
+    _userStates.find(_.userId == userId) match {
+      case Some(userState) ⇒
+        Just(userState)
+      case None ⇒
+        NoVal
     }
   }
 
   def findLatestUserStateForEndOfBillingMonth(userId: String,
                                               yearOfBillingMonth: Int,
                                               billingMonth: Int): Maybe[UserState] = {
-    NoVal // FIXME: implement
+    val goodOnes = _userStates.filter { userState ⇒
+        val f1 = userState.userId == userId
+        val f2 = userState.isFullBillingMonthState
+        val bm = userState.theFullBillingMonth
+        val f3 = (bm ne null) && {
+          bm.yearOfBillingMonth == yearOfBillingMonth && bm.billingMonth == billingMonth
+        }
+
+        f1 && f2 && f3
+    }
+    
+    goodOnes.sortWith {
+      case (us1, us2) ⇒
+        us1.oldestSnapshotTime > us2.oldestSnapshotTime
+    } match {
+      case head :: _ ⇒
+        Just(head)
+      case _ ⇒
+        NoVal
+    }
   }
 
   def deleteUserState(userId: String) {
-    if (userStateByUserId.containsKey(userId))
-      userStateByUserId.remove(userId)
+    _userStates.filterNot(_.userId == userId)
   }
   //- UserStateStore
 
