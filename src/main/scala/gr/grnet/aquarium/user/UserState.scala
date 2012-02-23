@@ -134,7 +134,10 @@ case class UserState(
     List(
       activeStateSnapshot.snapshotTime,
       creditsSnapshot.snapshotTime, agreementsSnapshot.snapshotTime, rolesSnapshot.snapshotTime,
-      ownedResourcesSnapshot.snapshotTime)
+      ownedResourcesSnapshot.snapshotTime,
+      implicitOFFsSnapshot.snapshotTime,
+      latestResourceEventsSnapshot.snapshotTime
+    )
   }
 
   def oldestSnapshotTime: Long = _allSnapshots min
