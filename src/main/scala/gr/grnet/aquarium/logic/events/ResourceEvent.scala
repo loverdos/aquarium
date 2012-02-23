@@ -40,7 +40,7 @@ import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.logic.accounting.dsl._
 import com.ckkloverdos.maybe.{MaybeOption, Maybe}
 import java.util.Date
-import gr.grnet.aquarium.util.date.DateCalculator
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -97,7 +97,7 @@ case class ResourceEvent(
     isReceivedWithinMillis(fromDate.getTime, toDate.getTime)
   }
 
-  def isReceivedWithinDateCalcs(fromDate: DateCalculator, toDate: DateCalculator): Boolean = {
+  def isReceivedWithinDateCalcs(fromDate: MutableDateCalc, toDate: MutableDateCalc): Boolean = {
     isReceivedWithinMillis(fromDate.getMillis, toDate.getMillis)
   }
 
@@ -112,7 +112,7 @@ case class ResourceEvent(
   }
   
   def isOutOfSyncForBillingMonth(yearOfBillingMonth: Int, billingMonth: Int) = {
-    val billingStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
+    val billingStartDateCalc = new MutableDateCalc(yearOfBillingMonth, billingMonth)
     val billingStartMillis = billingStartDateCalc.toMillis
     val billingStopMillis  = billingStartDateCalc.goEndOfThisMonth.toMillis
 
@@ -127,7 +127,7 @@ case class ResourceEvent(
   def toDebugString(resourcesMap: DSLResourcesMap, useOnlyInstanceId: Boolean = false): String = {
     val instanceInfo = if(useOnlyInstanceId) instanceId else "%s::%s".format(resource, instanceId)
     val bvalue = beautifyValue(resourcesMap)
-    val occurredFormatted = new DateCalculator(occurredMillis).toYYYYMMDDHHMMSS
+    val occurredFormatted = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSS
     if(occurredMillis == receivedMillis) {
       "EVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
         id,
@@ -142,7 +142,7 @@ case class ResourceEvent(
       "EVENT(%s, [%s], [%s], %s, %s, %s, %s, %s)".format(
         id,
         occurredFormatted,
-        new DateCalculator(receivedMillis),
+        new MutableDateCalc(receivedMillis),
         bvalue,
         instanceInfo,
         details,

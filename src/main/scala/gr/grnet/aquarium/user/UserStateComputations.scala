@@ -38,7 +38,7 @@ package gr.grnet.aquarium.user
 import scala.collection.mutable
 
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.util.date.DateCalculator
+import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLCostPolicy, DSLPolicy}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, ResourceEventStore}
@@ -129,8 +129,8 @@ class UserStateComputations extends Loggable {
         Just(clog))
     }
 
-    val billingMonthStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
-    val userCreationDateCalc = new DateCalculator(userCreationMillis)
+    val billingMonthStartDateCalc = new MutableDateCalc(yearOfBillingMonth, billingMonth)
+    val userCreationDateCalc = new MutableDateCalc(userCreationMillis)
     val billingMonthStartMillis = billingMonthStartDateCalc.toMillis
     val billingMonthStopMillis  = billingMonthStartDateCalc.copy.goEndOfThisMonth.toMillis
 
@@ -181,7 +181,7 @@ class UserStateComputations extends Loggable {
                            contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = Maybe {
 
 
-    val billingMonthStartDateCalc = new DateCalculator(yearOfBillingMonth, billingMonth)
+    val billingMonthStartDateCalc = new MutableDateCalc(yearOfBillingMonth, billingMonth)
     val billingMonthEndDateCalc   = billingMonthStartDateCalc.copy.goEndOfThisMonth
     val previousBillingMonthCalc = billingMonthStartDateCalc.copy.goPreviousMonth
     val previousBillingMonth = previousBillingMonthCalc.getMonthOfYear

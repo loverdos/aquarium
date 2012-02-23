@@ -3,7 +3,7 @@ package gr.grnet.aquarium.user
 import org.junit.Test
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.store.memory.MemStore
-import gr.grnet.aquarium.util.date.DateCalculator
+import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl._
 import java.util.Date
 import gr.grnet.aquarium.logic.accounting.Accounting
@@ -18,7 +18,7 @@ import simulation.{ConcurrentVMLocalUIDGenerator, ClientServiceSim, UserSim}
 class UserStateComputationsTest {
   @Test
   def testOne: Unit = {
-    val StartOfBillingYearDateCalc = new DateCalculator(2012, 1, 1)
+    val StartOfBillingYearDateCalc = new MutableDateCalc(2012, 1, 1)
 //    println("StartOfBillingYearDateCalc = %s".format(StartOfBillingYearDateCalc))
     val UserCreationDateCalc = StartOfBillingYearDateCalc.copy.goMinusMonths(2)
 //    println("UserCreationDateCalc = %s".format(UserCreationDateCalc))

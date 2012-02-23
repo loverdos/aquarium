@@ -34,7 +34,7 @@
  */
 package gr.grnet.aquarium.user.simulation
 
-import gr.grnet.aquarium.util.date.DateCalculator
+import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import java.util.Date
 import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicyValues
@@ -86,7 +86,7 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
 
     def newON_OutOfSync(occuredDate: Date, outOfSyncHours: Int): Maybe[RecordID] = {
       val id = uidGen.nextUID()
-      val occurredDateCalc = new DateCalculator(occuredDate)
+      val occurredDateCalc = new MutableDateCalc(occuredDate)
       val occurredTime = occurredDateCalc.toMillis
       val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
 
@@ -127,7 +127,7 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
 
     def newOFF_OutOfSync(occuredDate: Date, outOfSyncHours: Int): Maybe[RecordID] = {
       val id = uidGen.nextUID()
-      val occurredDateCalc = new DateCalculator(occuredDate)
+      val occurredDateCalc = new MutableDateCalc(occuredDate)
       val occurredTime = occurredDateCalc.toMillis
       val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
 
@@ -148,7 +148,7 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
 
     def newONOFF(occurredDateForON: Date, totalVMTimeInHours: Int): (Maybe[RecordID], Maybe[RecordID]) = {
       val onID = newON(occurredDateForON)
-      val offDate = new DateCalculator(occurredDateForON).goPlusHours(totalVMTimeInHours).toDate
+      val offDate = new MutableDateCalc(occurredDateForON).goPlusHours(totalVMTimeInHours).toDate
       val offID = newOFF(offDate)
 
       (onID, offID)
@@ -159,7 +159,7 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
                            outOfSyncONHours: Int,
                            outOfSyncOFFHours: Int): (Maybe[RecordID], Maybe[RecordID]) = {
       val onID = newON_OutOfSync(occurredDateForON, outOfSyncONHours)
-      val occurredDateCalcForOFF = new DateCalculator(occurredDateForON).goPlusHours(totalVMTimeInHours)
+      val occurredDateCalcForOFF = new MutableDateCalc(occurredDateForON).goPlusHours(totalVMTimeInHours)
       val occurredDateForOFF = occurredDateCalcForOFF.toDate
       val offID = newOFF_OutOfSync(occurredDateForOFF, outOfSyncOFFHours)
 
@@ -218,7 +218,7 @@ case class ClientServiceSim(clientId: String)(implicit uidGen: UIDGenerator) {
 
     def consumeMB_OutOfSync(occurredDate: Date, outOfSyncHours: Int, megaBytes: Double): Maybe[RecordID] = {
       val id = uidGen.nextUID()
-      val occurredDateCalc = new DateCalculator(occurredDate)
+      val occurredDateCalc = new MutableDateCalc(occurredDate)
       val occurredTime = occurredDateCalc.toMillis
       val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
 

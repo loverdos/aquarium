@@ -46,7 +46,7 @@ import org.joda.time.format.ISODateTimeFormat
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class DateCalculator private(private[this] var dateTime: MutableDateTime) extends Cloneable {
+class MutableDateCalc private(private[this] var dateTime: MutableDateTime) extends Cloneable {
   def this(millis: Long)  = this(new MutableDateTime(millis))
   def this(date: Date)    = this(new MutableDateTime(date))
   def this(cal: Calendar) = this(new MutableDateTime(cal))
@@ -58,11 +58,11 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
     this(year, monthOfYear, 1)
 
 
-  override def clone(): DateCalculator = new DateCalculator(this.dateTime.clone().asInstanceOf[MutableDateTime])
+  override def clone(): MutableDateCalc = new MutableDateCalc(this.dateTime.clone().asInstanceOf[MutableDateTime])
 
-  def copy: DateCalculator = clone()
+  def copy: MutableDateCalc = clone()
 
-  def <=(other: DateCalculator): Boolean = {
+  def <=(other: MutableDateCalc): Boolean = {
     getMillis <= other.getMillis
   }
 
@@ -74,7 +74,7 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
     getMillis <= other
   }
 
-  def <(other: DateCalculator): Boolean = {
+  def <(other: MutableDateCalc): Boolean = {
     getMillis < other.getMillis
   }
 
@@ -86,7 +86,7 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
     getMillis < other
   }
 
-  def >=(other: DateCalculator): Boolean = {
+  def >=(other: MutableDateCalc): Boolean = {
     getMillis >= other.getMillis
   }
 
@@ -98,7 +98,7 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
     getMillis >= other
   }
 
-  def >(other: DateCalculator): Boolean = {
+  def >(other: MutableDateCalc): Boolean = {
     getMillis >= other.getMillis
   }
 
@@ -231,7 +231,7 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
 
   /**
    * Go to the first millisecond of this month. This month is the month indicated by the
-   * state of the [[gr.grnet.aquarium.util.date.DateCalculator]] and not the real-life month.
+   * state of the [[gr.grnet.aquarium.util.date.MutableDateCalc]] and not the real-life month.
    */
   def goStartOfThisMonth: this.type = {
     goMidnight
@@ -263,10 +263,10 @@ class DateCalculator private(private[this] var dateTime: MutableDateTime) extend
   }
   
   def isSameYearAndMonthAs(other: Long): Boolean = {
-    isSameYearAndMonthAs(new DateCalculator(other))
+    isSameYearAndMonthAs(new MutableDateCalc(other))
   }
 
-  def isSameYearAndMonthAs(otherDate: DateCalculator): Boolean = {
+  def isSameYearAndMonthAs(otherDate: MutableDateCalc): Boolean = {
     this.getYear == otherDate.getYear && this.getMonthOfYear == otherDate.getMonthOfYear
   }
   

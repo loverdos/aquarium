@@ -42,7 +42,7 @@ import collection.immutable.SortedMap
 import java.util.Date
 import gr.grnet.aquarium.util.{CryptoUtils, Loggable}
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
-import gr.grnet.aquarium.util.date.DateCalculator
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
  * A timeslot together with the algorithm and unit price that apply for this particular timeslot.
@@ -210,7 +210,7 @@ trait Accounting extends DSLUtils with Loggable {
       case false ⇒
         // ... so we cannot compute timedelta from a previous event, there is just one chargeslot
         // referring to (almost) an instant in time
-        val referenceTimeslot = Timeslot(new DateCalculator(occurredDate).goPreviousMilli.toDate, occurredDate)
+        val referenceTimeslot = Timeslot(new MutableDateCalc(occurredDate).goPreviousMilli.toDate, occurredDate)
         val agreementAtOccurred = agreementNamesByTimeslot.head
         val relevantPolicy = Policy.policy(occurredDate)
         val relevantPolicies = Map(referenceTimeslot -> relevantPolicy)

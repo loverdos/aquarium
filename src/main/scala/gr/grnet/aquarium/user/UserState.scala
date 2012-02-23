@@ -137,7 +137,7 @@ case class UserState(
 
 //  def userCreationDate = new Date(userCreationMillis)
 //
-//  def userCreationFormatedDate = new DateCalculator(userCreationMillis).toString
+//  def userCreationFormatedDate = new MutableDateCalc(userCreationMillis).toString
 
   def maybeDSLAgreement(at: Long): Maybe[DSLAgreement] = {
     agreementsSnapshot match {
