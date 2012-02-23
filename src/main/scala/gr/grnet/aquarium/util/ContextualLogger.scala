@@ -183,10 +183,9 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     debug("END")
   }
 
-  def endWith[A](f: A): A = {
-    val retval = f
+  def endWith[A](f: ⇒A): A = {
     end()
-    retval
+    f
   }
 }
 
