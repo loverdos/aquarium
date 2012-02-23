@@ -112,10 +112,16 @@ case class UserState(
     latestResourceEventsSnapshot: LatestResourceEventsSnapshot,
 
     /**
-     * Counts the number of resource events used to produce this user state for
+     * Counts the total number of resource events used to produce this user state for
      * the billing period recorded by `billingPeriodSnapshot`
      */
-    resourceEventsCounter: Long,
+    billingPeriodResourceEventsCounter: Long,
+
+    /**
+     * The out of sync events used to produce this user state for
+     * the billing period recorded by `billingPeriodSnapshot`
+     */
+    billingPeriodOutOfSyncResourceEventsCounter: Long,
 
     activeStateSnapshot: ActiveStateSnapshot,
     creditsSnapshot: CreditSnapshot,

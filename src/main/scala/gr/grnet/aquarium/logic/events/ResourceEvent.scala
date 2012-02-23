@@ -114,6 +114,7 @@ case class ResourceEvent(
   def isOutOfSyncForBillingMonth(yearOfBillingMonth: Int, billingMonth: Int) = {
     val billingStartDateCalc = new MutableDateCalc(yearOfBillingMonth, billingMonth)
     val billingStartMillis = billingStartDateCalc.toMillis
+    // NOTE: no need to `copy` the mutable `billingStartDateCalc` here because we use it once
     val billingStopMillis  = billingStartDateCalc.goEndOfThisMonth.toMillis
 
     isOutOfSyncForBillingPeriod(billingStartMillis, billingStopMillis)

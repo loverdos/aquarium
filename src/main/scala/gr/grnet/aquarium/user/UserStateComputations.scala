@@ -61,7 +61,7 @@ class UserStateComputations extends Loggable {
       ImplicitOFFResourceEventsSnapshot(Map(), now),
       Nil, Nil,
       LatestResourceEventsSnapshot(Map(), now),
-      0L,
+      0L, 0L,
       ActiveStateSnapshot(false, now),
       CreditSnapshot(0, now),
       AgreementSnapshot(Agreement(agreementName, now) :: Nil, now),
@@ -81,7 +81,7 @@ class UserStateComputations extends Loggable {
         ImplicitOFFResourceEventsSnapshot(Map(), now),
         Nil, Nil,
         LatestResourceEventsSnapshot(Map(), now),
-        0L,
+        0L, 0L,
         ActiveStateSnapshot(false, now),
         CreditSnapshot(0, now),
         AgreementSnapshot(Agreement(agreementName, now) :: Nil, now),
@@ -108,7 +108,6 @@ class UserStateComputations extends Loggable {
       contextualLogger,
       logger,
       "findUserStateAtEndOfBillingMonth(%s-%02d)", yearOfBillingMonth, billingMonth)
-//    val clog = new ContextualLogger(logger, "findUserStateAtEndOfBillingMonth(%s-%02d)", yearOfBillingMonth, billingMonth)
     clog.begin()
 
     def doCompute: Maybe[UserState] = {
@@ -139,29 +138,61 @@ class UserStateComputations extends Loggable {
       clog.debug("User did not exist before %s. Returning %s", userCreationDateCalc, zeroUserState)
       clog.endWith(Just(zeroUserState))
     } else {
-      resourceEventStore.countOutOfSyncEventsForBillingPeriod(userId, billingMonthStartMillis, billingMonthStopMillis) match {
-        case Just(outOfSyncEventCount) ⇒
-          // Have out of sync, so must recompute
-          clog.debug("Found %s out of sync events, will have to (re)compute user state", outOfSyncEventCount)
-          clog.endWith(doCompute)
+      // Ask DB cache for the latest known user state for this billing period
+      val latestUserStateM = userStateStore.findLatestUserStateForEndOfBillingMonth(
+        userId,
+        yearOfBillingMonth,
+        billingMonth)
+
+      latestUserStateM match {
         case NoVal ⇒
-          // No out of sync events, ask DB cache
-          userStateStore.findLatestUserStateForEndOfBillingMonth(userId, yearOfBillingMonth, billingMonth) match {
-            case just @ Just(userState) ⇒
-              // Found from cache
-              clog.debug("Found from cache: %s", userState)
-              clog.endWith(just)
-            case NoVal ⇒
-              // otherwise compute
-              clog.debug("No user state found from cache, will have to (re)compute")
-              clog.endWith(doCompute)
-            case failed @ Failed(_, _) ⇒
-              clog.warn("Failure while quering cache for user state: %s", failed)
-              clog.endWith(failed)
-          }
+          // Not found, must compute
+          clog.debug("No user state found from cache, will have to (re)compute")
+          clog.endWith(doCompute)
+          
         case failed @ Failed(_, _) ⇒
-          clog.warn("Failure while querying for out of sync events: %s", failed)
+          clog.warn("Failure while quering cache for user state: %s", failed)
           clog.endWith(failed)
+
+        case Just(latestUserState) ⇒
+          // Found a "latest" user state but need to see if it is indeed the true and one latest.
+          // For this reason, we must count the events again.
+         val latestStateOOSEventsCounter = latestUserState.billingPeriodOutOfSyncResourceEventsCounter
+         val actualOOSEventsCounterM = resourceEventStore.countOutOfSyncEventsForBillingPeriod(
+           userId,
+           billingMonthStartMillis,
+           billingMonthStopMillis)
+
+         actualOOSEventsCounterM match {
+           case NoVal ⇒
+             val errMsg = "No counter computed for out of sync events. Should at least be zero."
+             clog.warn(errMsg)
+             clog.endWith(Failed(new Exception(errMsg)))
+
+           case failed @ Failed(_, _) ⇒
+             clog.warn("Failure while querying for out of sync events: %s", failed)
+             clog.endWith(failed)
+
+           case Just(actualOOSEventsCounter) ⇒
+             val counterDiff = actualOOSEventsCounter - latestStateOOSEventsCounter
+             counterDiff match {
+               // ZERO, we are OK!
+               case 0 ⇒
+                 latestUserStateM
+
+               // We had more, so must recompute
+               case n if n > 0 ⇒
+                 clog.debug(
+                   "Found %s out of sync events (%s more), will have to (re)compute user state", actualOOSEventsCounter, n)
+                 clog.endWith(doCompute)
+
+               // We had less????
+               case n if n < 0 ⇒
+                 val errMsg = "Found %s out of sync events (%s less). DB must be inconsistent".format(actualOOSEventsCounter, n)
+                 clog.warn(errMsg)
+                 clog.endWith(Failed(new Exception(errMsg)))
+             }
+         }
       }
     }
   }
