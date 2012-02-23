@@ -183,9 +183,11 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     debug("END")
   }
 
-  def endWith[A](f: ⇒A): A = {
+  def endWith[A : Manifest](f: A): A = {
+    // We must evaluate `f` first, since it may depend on this ContextualLogger
+    val result = f
     end()
-    f
+    result
   }
 }
 
