@@ -224,8 +224,7 @@ class MemStore extends UserStateStore
                                           stopTimeMillis: Long): List[ResourceEvent] = {
     resourceEventsById.valuesIterator.filter { ev ⇒
       ev.userId == userId &&
-      ev.receivedMillis >= startTimeMillis &&
-      ev.receivedMillis <= stopTimeMillis
+      ev.isReceivedWithinMillis(startTimeMillis, stopTimeMillis)
     }.toList
   }
 

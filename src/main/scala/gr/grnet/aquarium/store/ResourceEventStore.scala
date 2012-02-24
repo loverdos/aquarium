@@ -71,7 +71,7 @@ trait ResourceEventStore {
   /**
    * Finds all relevant resource events for the billing period.
    * The relevant events are those:
-   * a) whose `occurredMillis` is within the given billing period and
+   * a) whose `occurredMillis` is within the given billing period or
    * b) whose `receivedMillis` is within the given billing period.
    *
    * Order them by `occurredMillis`
@@ -79,6 +79,5 @@ trait ResourceEventStore {
    */
   def findAllRelevantResourceEventsForBillingPeriod(userId: String,
                                                     startMillis: Long,
-                                                    stopMillis: Long): List[ResourceEvent] =
-    findResourceEventsForReceivedPeriod(userId, startMillis, stopMillis)
+                                                    stopMillis: Long): List[ResourceEvent]
 }

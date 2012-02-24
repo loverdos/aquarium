@@ -182,6 +182,12 @@ class MongoDBStore(
     }
   }
 
+  def findAllRelevantResourceEventsForBillingPeriod(userId: String,
+                                                    startMillis: Long,
+                                                    stopMillis: Long): List[ResourceEvent] = {
+    // FIXME: Implement
+    Nil
+  }
   //-ResourceEventStore
 
   //+ UserStateStore
