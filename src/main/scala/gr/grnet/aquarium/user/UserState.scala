@@ -40,6 +40,7 @@ import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
 import gr.grnet.aquarium.logic.events.WalletEntry
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 
 /**
@@ -82,7 +83,7 @@ case class UserState(
      * This is set when the user state refers to a full billing period (= month)
      * and is used to cache the user state for subsequent queries.
      */
-    theFullBillingMonth: BillingMonth,
+    theFullBillingMonth: BillingMonthInfo,
 
     /**
      * If this is a state for a full billing month, then keep here the implicit OFF
@@ -209,4 +210,51 @@ object UserState {
   }
 }
 
-case class BillingMonth(yearOfBillingMonth: Int, billingMonth: Int)
+final class BillingMonthInfo private(val year: Int,
+                               val month: Int,
+                               val startMillis: Long,
+                               val stopMillis: Long) extends Ordered[BillingMonthInfo] {
+
+  def previousMonth: BillingMonthInfo = {
+    BillingMonthInfo.fromDateCalc(new MutableDateCalc(year, month).goPreviousMonth)
+  }
+
+  def nextMonth: BillingMonthInfo = {
+    BillingMonthInfo.fromDateCalc(new MutableDateCalc(year, month).goNextMonth)
+  }
+
+
+  def compare(that: BillingMonthInfo) = {
+    val ds = this.startMillis - that.startMillis
+    if(ds < 0) -1 else if(ds == 0) 0 else 1
+  }
+
+
+  override def equals(any: Any) = any match {
+    case that: BillingMonthInfo ⇒
+      this.year == that.year && this.month == that.month // normally everything MUST be the same by construction
+    case _ ⇒
+      false
+  }
+
+  override def hashCode() = {
+    31 * year + month
+  }
+
+  override def toString = "%s-%02d".format(year, month)
+}
+
+object BillingMonthInfo {
+  def fromMillis(millis: Long): BillingMonthInfo = {
+    fromDateCalc(new MutableDateCalc(millis))
+  }
+
+  def fromDateCalc(mdc: MutableDateCalc): BillingMonthInfo = {
+    val year = mdc.getYear
+    val month = mdc.getMonthOfYear
+    val startMillis = mdc.goStartOfThisMonth.getMillis
+    val stopMillis  = mdc.goEndOfThisMonth.getMillis
+
+    new BillingMonthInfo(year, month, startMillis, stopMillis)
+  }
+}

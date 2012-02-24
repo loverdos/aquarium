@@ -118,7 +118,7 @@ class MemStore extends UserStateStore
         val f2 = userState.isFullBillingMonthState
         val bm = userState.theFullBillingMonth
         val f3 = (bm ne null) && {
-          bm.yearOfBillingMonth == yearOfBillingMonth && bm.billingMonth == billingMonth
+          bm.year == yearOfBillingMonth && bm.month == billingMonth
         }
 
         f1 && f2 && f3

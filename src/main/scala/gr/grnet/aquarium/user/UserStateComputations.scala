@@ -35,15 +35,14 @@
 
 package gr.grnet.aquarium.user
 
-import scala.collection.mutable
 
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLCostPolicy, DSLPolicy}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLPolicy}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, ResourceEventStore}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
-import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
+import gr.grnet.aquarium.logic.accounting.Accounting
 
 /**
  *
@@ -91,8 +90,7 @@ class UserStateComputations extends Loggable {
     }
 
   def findUserStateAtEndOfBillingMonth(userId: String,
-                                       yearOfBillingMonth: Int,
-                                       billingMonth: Int,
+                                       billingMonthInfo: BillingMonthInfo,
                                        userStateStore: UserStateStore,
                                        resourceEventStore: ResourceEventStore,
                                        policyStore: PolicyStore,
@@ -107,15 +105,14 @@ class UserStateComputations extends Loggable {
     val clog = ContextualLogger.fromOther(
       contextualLogger,
       logger,
-      "findUserStateAtEndOfBillingMonth(%s-%02d)", yearOfBillingMonth, billingMonth)
+      "findUserStateAtEndOfBillingMonth(%s)", billingMonthInfo)
     clog.begin()
 
     def doCompute: Maybe[UserState] = {
       clog.debug("Computing full month billing")
       doFullMonthlyBilling(
         userId,
-        yearOfBillingMonth,
-        billingMonth,
+        billingMonthInfo,
         userStateStore,
         resourceEventStore,
         policyStore,
@@ -128,10 +125,9 @@ class UserStateComputations extends Loggable {
         Just(clog))
     }
 
-    val billingMonthStartDateCalc = new MutableDateCalc(yearOfBillingMonth, billingMonth)
     val userCreationDateCalc = new MutableDateCalc(userCreationMillis)
-    val billingMonthStartMillis = billingMonthStartDateCalc.toMillis
-    val billingMonthStopMillis  = billingMonthStartDateCalc.copy.goEndOfThisMonth.toMillis
+    val billingMonthStartMillis = billingMonthInfo.startMillis
+    val billingMonthStopMillis  = billingMonthInfo.stopMillis
 
     if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
@@ -141,8 +137,8 @@ class UserStateComputations extends Loggable {
       // Ask DB cache for the latest known user state for this billing period
       val latestUserStateM = userStateStore.findLatestUserStateForEndOfBillingMonth(
         userId,
-        yearOfBillingMonth,
-        billingMonth)
+        billingMonthInfo.year,
+        billingMonthInfo.month)
 
       latestUserStateM match {
         case NoVal ⇒
@@ -198,8 +194,7 @@ class UserStateComputations extends Loggable {
   }
 
   def doFullMonthlyBilling(userId: String,
-                           yearOfBillingMonth: Int,
-                           billingMonth: Int,
+                           billingMonthInfo: BillingMonthInfo,
                            userStateStore: UserStateStore,
                            resourceEventStore: ResourceEventStore,
                            policyStore: PolicyStore,
@@ -211,23 +206,20 @@ class UserStateComputations extends Loggable {
                            accounting: Accounting,
                            contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = Maybe {
 
+    val previousBillingMonthData = billingMonthInfo.previousMonth
 
-    val billingMonthStartDateCalc = new MutableDateCalc(yearOfBillingMonth, billingMonth)
-    val billingMonthEndDateCalc   = billingMonthStartDateCalc.copy.goEndOfThisMonth
-    val previousBillingMonthCalc = billingMonthStartDateCalc.copy.goPreviousMonth
-    val previousBillingMonth = previousBillingMonthCalc.getMonthOfYear
-    val yearOfPreviousBillingMonth = previousBillingMonthCalc.getYear
+    val previousBillingMonth = previousBillingMonthData.month
+    val yearOfPreviousBillingMonth = previousBillingMonthData.year
 
     val clog = ContextualLogger.fromOther(
       contextualLogger,
       logger,
-      "doFullMonthlyBilling(%s-%02d)", yearOfBillingMonth, billingMonth)
+      "doFullMonthlyBilling(%s)", billingMonthInfo)
     clog.begin()
 
     val previousBillingMonthUserStateM = findUserStateAtEndOfBillingMonth(
       userId,
-      yearOfPreviousBillingMonth,
-      previousBillingMonth,
+      billingMonthInfo,
       userStateStore,
       resourceEventStore,
       policyStore,
@@ -255,8 +247,8 @@ class UserStateComputations extends Loggable {
         val previousResourceEvents = startingUserState.latestResourceEventsSnapshot.toMutableWorker
         clog.debug("previousResourceEvents = %s", previousResourceEvents)
 
-        val billingMonthStartMillis = billingMonthStartDateCalc.toMillis
-        val billingMonthEndMillis  = billingMonthEndDateCalc.toMillis
+        val billingMonthStartMillis = billingMonthInfo.startMillis
+        val billingMonthEndMillis = billingMonthInfo.stopMillis
 
         // Keep the working (current) user state. This will get updated as we proceed with billing for the month
         // specified in the parameters.
