@@ -206,8 +206,6 @@ class UserStateComputations extends Loggable {
                            accounting: Accounting,
                            contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = Maybe {
 
-    val previousBillingMonthData = billingMonthInfo.previousMonth
-
     val clog = ContextualLogger.fromOther(
       contextualLogger,
       logger,
@@ -216,7 +214,7 @@ class UserStateComputations extends Loggable {
 
     val previousBillingMonthUserStateM = findUserStateAtEndOfBillingMonth(
       userId,
-      billingMonthInfo,
+      billingMonthInfo.previousMonth,
       userStateStore,
       resourceEventStore,
       policyStore,
