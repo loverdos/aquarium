@@ -44,12 +44,14 @@ import com.ckkloverdos.maybe.{Just, Maybe}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait CostPolicyAlgorithmCompiler {
+object SimpleCostPolicyAlgorithmCompiler extends CostPolicyAlgorithmCompiler {
   /**
    * Compiles the textual representation of a cost policy charging algorithm to an executable form.
    *
    * @param definition the textual representation of the algorithm
    * @return the executable form of the algorithm
    */
-  def compile(definition: String): Maybe[ExecutableCostPolicyAlgorithm]
+  def compile(definition: String): Maybe[ExecutableCostPolicyAlgorithm] = {
+    Just(SimpleExecutableCostPolicyAlgorithm)
+  }
 }
