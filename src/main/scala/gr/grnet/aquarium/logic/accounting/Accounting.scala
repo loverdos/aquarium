@@ -69,6 +69,7 @@ trait Accounting extends DSLUtils with Loggable {
    * @param agreementTimeslots
    * @return
    */
+  protected
   def splitTimeslotByPoliciesAndAgreements(referenceTimeslot: Timeslot,
                                            policyTimeslots: List[Timeslot],
                                            agreementTimeslots: List[Timeslot]): List[Timeslot] = {
@@ -88,6 +89,7 @@ trait Accounting extends DSLUtils with Loggable {
    * @param agreementNamesByTimeslot
    * @return
    */
+  protected
   def computeChargeslots(referenceTimeslot: Timeslot,
                          dslResource: DSLResource,
                          policiesByTimeslot: Map[Timeslot, DSLPolicy],
