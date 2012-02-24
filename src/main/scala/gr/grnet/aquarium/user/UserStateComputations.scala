@@ -43,6 +43,7 @@ import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, ResourceEventStore}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.logic.accounting.Accounting
+import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 
 /**
  *
@@ -250,6 +251,7 @@ class UserStateComputations extends Loggable {
         var _workingUserState = startingUserState
 
         // Prepare the implicit OFF resource events
+        // (we keep the terminology for historical reasons)
         val theImplicitOFFs = _workingUserState.implicitlyTerminatedSnapshot.toMutableWorker
         clog.debug("theImplicitOFFs = %s", theImplicitOFFs)
 
@@ -300,8 +302,8 @@ class UserStateComputations extends Loggable {
           currentResourceEvent <- allResourceEventsForMonth
         } {
           _eventCounter = _eventCounter + 1
-          val theResource = currentResourceEvent.resource
-          val theInstanceId = currentResourceEvent.instanceId
+          val theResource = currentResourceEvent.safeResource
+          val theInstanceId = currentResourceEvent.safeInstanceId
           val theValue = currentResourceEvent.value
 
           clog.indent()
@@ -323,8 +325,8 @@ class UserStateComputations extends Loggable {
           }
 
           // Ignore the event if it is not billable (but still record it in the "previous" stuff).
-          // But to make this decision, first we need the resource definiton (and its cost policy).
-          val resourceDefM = defaultResourcesMap.findResourceM(currentResourceEvent.safeResource)
+          // But to make this decision, first we need the resource definition (and its cost policy).
+          val resourceDefM = defaultResourcesMap.findResourceM(theResource)
           resourceDefM match {
             // We have a resource (and thus a cost policy)
             case Just(resourceDef) ⇒
@@ -350,16 +352,19 @@ class UserStateComputations extends Loggable {
                   val newAmount = costPolicy.computeNewAccumulatingAmount(oldAmount, theValue)
 
                   // B. Compute new wallet entries
-                  val alltimeAgreements = _workingUserState.agreementsSnapshot.agreements
-//                  val chargeChunksM = accounting.computeChargeChunks(
-//                    previousResourceEventM,
-//                    currentResourceEvent,
-//                    oldCredits,
-//                    oldAmount,
-//                    newAmount,
-//                    resourceDef,
-//                    defaultResourcesMap,
-//                    alltimeAgreements)
+                  val alltimeAgreements = _workingUserState.agreementsSnapshot.agreementsByTimeslot
+
+                  accounting.computeChargeChunks(
+                    previousResourceEventM,
+                    currentResourceEvent,
+                    oldCredits,
+                    oldAmount,
+                    newAmount,
+                    resourceDef,
+                    defaultResourcesMap,
+                    alltimeAgreements,
+                    SimpleCostPolicyAlgorithmCompiler
+                  )
 
                   // C. Compute new credit amount (based on the wallet entries)
                   // Maybe this can be consolidated inthe previous step (B)

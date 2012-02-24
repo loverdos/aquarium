@@ -83,13 +83,8 @@ case class AgreementSnapshot(agreements: List[Agreement], snapshotTime: Long) ex
 
   ensureNoGaps(agreements.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
 
-  def sortedAgreements: SortedMap[Timeslot, String] = {
-    var smap = TreeMap[Timeslot, String]()
-    for(agreement <- agreements) {
-      smap = smap.updated(agreement.timeslot, agreement.name)
-    }
-
-    smap
+  def agreementsByTimeslot: SortedMap[Timeslot, String] = {
+    TreeMap(agreements.map(ag => (ag.timeslot, ag.name)): _*)
   }
 
   def ensureNoGaps(agreements: List[Agreement]): Unit = agreements match {
