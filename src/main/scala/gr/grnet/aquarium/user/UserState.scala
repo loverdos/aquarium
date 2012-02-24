@@ -87,14 +87,14 @@ case class UserState(
 
     /**
      * If this is a state for a full billing month, then keep here the implicit OFF
-     * resource events.
+     * resource events or any other whose cost policy demands an implicit event at the end of the billing period.
      *
      * The use case is this: A VM may have been started (ON state) before the end of the billing period
      * and ended (OFF state) after the beginning of the next billing period. In order to bill this, we must assume
      * an implicit OFF even right at the end of the billing period and an implicit ON event with the beginning of the
      * next billing period.
      */
-    implicitOFFsSnapshot: ImplicitOFFResourceEventsSnapshot,
+    implicitlyTerminatedSnapshot: ImplicitlyIssuedResourceEventsSnapshot,
 
     /**
      * So far computed wallet entries for the current billing month.
@@ -136,7 +136,7 @@ case class UserState(
       activeStateSnapshot.snapshotTime,
       creditsSnapshot.snapshotTime, agreementsSnapshot.snapshotTime, rolesSnapshot.snapshotTime,
       ownedResourcesSnapshot.snapshotTime,
-      implicitOFFsSnapshot.snapshotTime,
+      implicitlyTerminatedSnapshot.snapshotTime,
       latestResourceEventsSnapshot.snapshotTime
     )
   }

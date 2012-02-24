@@ -300,46 +300,47 @@ case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceType
  * Keeps the implicit OFF events when a billing period ends.
  * This is normally recorded in the [[gr.grnet.aquarium.user.UserState]].
  *
- * @param implicitOFFEventsMap
+ * @param implicitlyIssuedEvents
  * @param snapshotTime
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ImplicitOFFResourceEventsSnapshot(implicitOFFEventsMap: FullResourceTypeMap,
-                                             snapshotTime: Long) extends DataSnapshot {
+case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[ResourceEvent],
+                                                  snapshotTime: Long) extends DataSnapshot {
   /**
    * The gateway to playing with mutable state.
    *
-   * @return A fresh instance of [[gr.grnet.aquarium.user.ImplicitOFFResourceEventsWorker]].
+   * @return A fresh instance of [[gr.grnet.aquarium.user.ImplicitlyIssuedResourceEventsWorker]].
    */
   def toMutableWorker = {
-    ImplicitOFFResourceEventsWorker(scala.collection.mutable.Map(implicitOFFEventsMap.toSeq: _*))
-  }
+    val map = scala.collection.mutable.Map[ResourceEvent.FullResourceType, ResourceEvent]()
+    for(implicitEvent <- implicitlyIssuedEvents) {
+      map(implicitEvent.fullResourceInfo) = implicitEvent
+    }
 
-  def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
-    findFromMapAsMaybe(implicitOFFEventsMap, (resource, instanceId))
+    ImplicitlyIssuedResourceEventsWorker(map)
   }
 }
 
 /**
- * This is the mutable cousin of [[gr.grnet.aquarium.user.ImplicitOFFResourceEventsSnapshot]].
+ * This is the mutable cousin of [[gr.grnet.aquarium.user.ImplicitlyIssuedResourceEventsSnapshot]].
  *
- * @param implicitOFFEventsMap
+ * @param implicitlyIssuedEventsMap
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ImplicitOFFResourceEventsWorker(implicitOFFEventsMap: FullMutableResourceTypeMap) {
+case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullMutableResourceTypeMap) {
 
   def toImmutableSnapshot(snapshotTime: Long) =
-    ImplicitOFFResourceEventsSnapshot(implicitOFFEventsMap.toMap, snapshotTime)
+    ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEventsMap.values.toList, snapshotTime)
 
   def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
-    findAndRemoveFromMap(implicitOFFEventsMap, (resource, instanceId))
+    findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))
   }
 
-  def size = implicitOFFEventsMap.size
+  def size = implicitlyIssuedEventsMap.size
 
   def foreach[U](f: ResourceEvent => U): Unit = {
-    implicitOFFEventsMap.valuesIterator.foreach(f)
+    implicitlyIssuedEventsMap.valuesIterator.foreach(f)
   }
 }

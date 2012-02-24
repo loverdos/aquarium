@@ -57,7 +57,7 @@ class UserStateComputations extends Loggable {
       0L,
       false,
       null,
-      ImplicitOFFResourceEventsSnapshot(Map(), now),
+      ImplicitlyIssuedResourceEventsSnapshot(Map(), now),
       Nil, Nil,
       LatestResourceEventsSnapshot(Map(), now),
       0L, 0L,
@@ -77,7 +77,7 @@ class UserStateComputations extends Loggable {
         0L,
         false,
         null,
-        ImplicitOFFResourceEventsSnapshot(Map(), now),
+        ImplicitlyIssuedResourceEventsSnapshot(Map(), now),
         Nil, Nil,
         LatestResourceEventsSnapshot(Map(), now),
         0L, 0L,
@@ -208,9 +208,6 @@ class UserStateComputations extends Loggable {
 
     val previousBillingMonthData = billingMonthInfo.previousMonth
 
-    val previousBillingMonth = previousBillingMonthData.month
-    val yearOfPreviousBillingMonth = previousBillingMonthData.year
-
     val clog = ContextualLogger.fromOther(
       contextualLogger,
       logger,
@@ -255,7 +252,7 @@ class UserStateComputations extends Loggable {
         var _workingUserState = startingUserState
 
         // Prepare the implicit OFF resource events
-        val theImplicitOFFs = _workingUserState.implicitOFFsSnapshot.toMutableWorker
+        val theImplicitOFFs = _workingUserState.implicitlyTerminatedSnapshot.toMutableWorker
         clog.debug("theImplicitOFFs = %s", theImplicitOFFs)
 
         /**

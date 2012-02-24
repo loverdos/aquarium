@@ -273,7 +273,7 @@ object ResourceEvent {
   type ResourceType = String
   type ResourceIdType = String
   type FullResourceType = (ResourceType, ResourceIdType)
-  type FullResourceTypeMap = Map[FullResourceType, ResourceEvent]
+//  type FullResourceTypeMap = Map[FullResourceType, ResourceEvent]
   type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]
 
   def fromJson(json: String): ResourceEvent = {
