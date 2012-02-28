@@ -106,9 +106,7 @@ trait Accounting extends DSLUtils with Loggable {
     }
 
     // 1. Round ONE: split time according to overlapping policies and agreements.
-    val alignedPolicyTimeslots    = referenceTimeslot.align(policyTimeslots.toList)
-    val alignedAgreementTimeslots = referenceTimeslot.align(agreementTimeslots.toList)
-    val alignedTimeslots  = alignTimeslots(alignedPolicyTimeslots, alignedAgreementTimeslots)
+    val alignedTimeslots = splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList)
 
     // 2. Round TWO: Use the aligned timeslots of Round ONE to produce even more
     //    fine-grained timeslots according to applicable algorithms.
