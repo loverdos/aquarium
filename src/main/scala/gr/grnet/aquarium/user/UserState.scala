@@ -211,9 +211,9 @@ object UserState {
 }
 
 final class BillingMonthInfo private(val year: Int,
-                               val month: Int,
-                               val startMillis: Long,
-                               val stopMillis: Long) extends Ordered[BillingMonthInfo] {
+                                     val month: Int,
+                                     val startMillis: Long,
+                                     val stopMillis: Long) extends Ordered[BillingMonthInfo] {
 
   def previousMonth: BillingMonthInfo = {
     BillingMonthInfo.fromDateCalc(new MutableDateCalc(year, month).goPreviousMonth)

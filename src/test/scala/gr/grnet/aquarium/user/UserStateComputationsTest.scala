@@ -117,10 +117,11 @@ class UserStateComputationsTest {
     println("============================= Events by OccurredMillis =============================")
     println("")
 
+    val billingMonthInfo = BillingMonthInfo.fromDateCalc(StartOfBillingYearDateCalc)
+
     val userStateM = computer.doFullMonthlyBilling(
       christos.userId,
-      StartOfBillingYearDateCalc.getYear,
-      StartOfBillingYearDateCalc.getMonthOfYear,
+      billingMonthInfo,
       userStateStore,
       resourceEventStore,
       policyStore,
