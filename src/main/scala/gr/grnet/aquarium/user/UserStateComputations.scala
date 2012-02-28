@@ -37,13 +37,13 @@ package gr.grnet.aquarium.user
 
 
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLPolicy}
 import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, ResourceEventStore}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLCostPolicy, DSLResourcesMap, DSLPolicy}
 
 /**
  *
@@ -344,53 +344,65 @@ class UserStateComputations extends Loggable {
                   // This is (potentially) needed to calculate new credit amount and new resource instance amount
                   val previousResourceEventM = findAndRemovePreviousResourceEvent(theResource, theInstanceId)
                   clog.debug("PreviousM %s", previousResourceEventM.map(rcDebugInfo(_)))
-                  val defaultInitialAmount = costPolicy.getResourceInstanceInitialAmount
-                  val oldAmount = _workingUserState.getResourceInstanceAmount(theResource, theInstanceId, defaultInitialAmount)
-                  val oldCredits = _workingUserState.creditsSnapshot.creditAmount
 
-                  // A. Compute new resource instance accumulating amount
-                  val newAmount = costPolicy.computeNewAccumulatingAmount(oldAmount, theValue)
+                  val havePreviousResourceEvent = previousResourceEventM.isJust
+                  val needPreviousResourceEvent = costPolicy.needsPreviousEventForCreditAndAmountCalculation
+                  if(needPreviousResourceEvent && !havePreviousResourceEvent) {
+                    // This must be the first resource event of its kind, ever.
+                    // TODO: We should normally check the DB to verify the claim (?)
+                    clog.info("First event of its kind ever %s", rcDebugInfo(currentResourceEvent))
+                  } else {
+                    val defaultInitialAmount = costPolicy.getResourceInstanceInitialAmount
+                    val oldAmount = _workingUserState.getResourceInstanceAmount(theResource, theInstanceId, defaultInitialAmount)
+                    val oldCredits = _workingUserState.creditsSnapshot.creditAmount
 
-                  // B. Compute new wallet entries
-                  val alltimeAgreements = _workingUserState.agreementsSnapshot.agreementsByTimeslot
+                    // A. Compute new resource instance accumulating amount
+                    val newAmount = costPolicy.computeNewAccumulatingAmount(oldAmount, theValue)
 
-                  val fullChargeslotsM = accounting.computeFullChargeslots(
-                    previousResourceEventM,
-                    currentResourceEvent,
-                    oldCredits,
-                    oldAmount,
-                    newAmount,
-                    resourceDef,
-                    defaultResourcesMap,
-                    alltimeAgreements,
-                    SimpleCostPolicyAlgorithmCompiler
-                  )
+                    // B. Compute new wallet entries
+                    val alltimeAgreements = _workingUserState.agreementsSnapshot.agreementsByTimeslot
 
-                  // We have the charges lots, let's associate them with the current event
-                  fullChargeslotsM match {
-                    case Just(fullChargeslots) ⇒
-                      // C. Compute new credit amount (based on the charge slots)
-                      val newCreditsDiff = fullChargeslots.map(_.computedCredits.get).sum
-                      val newCredits = oldCredits + newCreditsDiff
-                      val newWalletEntry = NewWalletEntry(
-                        userId,
-                        newCreditsDiff,
-                        TimeHelpers.nowMillis,
-                        billingMonthInfo.year,
-                        billingMonthInfo.month,
-                        currentResourceEvent,
-                        previousResourceEventM.toOption,
-                        fullChargeslots,
-                        resourceDef
-                      )
+                    val fullChargeslotsM = accounting.computeFullChargeslots(
+                      previousResourceEventM,
+                      currentResourceEvent,
+                      oldCredits,
+                      oldAmount,
+                      newAmount,
+                      resourceDef,
+                      defaultResourcesMap,
+                      alltimeAgreements,
+                      SimpleCostPolicyAlgorithmCompiler
+                    )
 
-                    case NoVal ⇒
-                      // At least one chargeslot is required.
-                      throw new Exception("No chargeslots computed")
+                    // We have the charges lots, let's associate them with the current event
+                    fullChargeslotsM match {
+                      case Just(fullChargeslots) ⇒
+                        // C. Compute new credit amount (based on the charge slots)
+                        val newCreditsDiff = fullChargeslots.map(_.computedCredits.get).sum
+                        val newCredits = oldCredits + newCreditsDiff
+                        val newWalletEntry = NewWalletEntry(
+                          userId,
+                          newCreditsDiff,
+                          TimeHelpers.nowMillis,
+                          billingMonthInfo.year,
+                          billingMonthInfo.month,
+                          currentResourceEvent,
+                          previousResourceEventM.toOption,
+                          fullChargeslots,
+                          resourceDef
+                        )
 
-                    case failed @ Failed(e, m) ⇒
-                      throw new Exception(m, e)
+                        clog.debug("New %s", newWalletEntry)
+
+                      case NoVal ⇒
+                        // At least one chargeslot is required.
+                        throw new Exception("No chargeslots computed")
+
+                      case failed @ Failed(e, m) ⇒
+                        throw new Exception(m, e)
+                    }
                   }
+
               }
 
               // After processing, all event, billable or not update the previous state
