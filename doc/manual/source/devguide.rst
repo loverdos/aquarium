@@ -7,6 +7,48 @@ offered by Aquarium. It also includes design and development setup information.
 Overall architecture
 --------------------
 
+Aquarium's architectural design is mainly driven by two requirements: scaling
+and fault tolerance. Aquarium's functionality is based on event sourcing.
+`Event sourcing <http://en.wikipedia.org/wiki/Domain-driven_design>`_ 
+assumes that all changes to application state are stored as a
+sequence of events, in an immutable log. With such a log at hand, a system can
+rebuild the current application state by replaying the events in order. The event
+sourcing design pattern has some very interesting properties, which made it
+particularity suitable for basing Aquarium on it:
+
+- Multiple models can be used in order to process the events, concurrently. This means that Aquarium can provide a limited data view to its REST API and a more detailed one to a helpdesk frontend.
+
+- It is possible to perform queries on past system states by stopping the event replay at a certain point of interest. This would prove very possible for a future debugging interface.
+
+- In a carefully implemented event sourcing system, application crashes are not destructive, as long as event replay is fast enough and no state is inserted to the application without being recorded to the event log first.
+
+- After event log replay, new events only cause updates in the system’s in-memory state, which can be done very fast.
+
+Components
+^^^^^^^^^^
+
+.. image:: arch.png
+
+An overview of the Aquarium architecture is presented in the figure above.  The
+system is modeled as a collection of logically and functionally isolated
+components, which communicate by message passing. Withing each component, a
+number of actors take care of concurrently processing incoming messages through
+a load balancer component which is the gateway to requests targeted to the
+component. Each component is also monitored by its own supervisor; should an
+actor fail, the supervisor will automatically restart it. The architecture
+allows certain application paths to fail individually while the system is still
+responsive, while also enabling future distribution of multiple components on
+clusters of machines.
+
+The system receives input mainly from two sources: a queue for resource and
+user events and a REST API for credits and resource state queries. The queue
+component reads messages from a configurable number of queues and persists them
+in the application’s immutable log store. Both input components then forward
+incoming messages to a network of dispatcher handlers which do not do any
+processing by themselves, but know where the user actors lay. Actual processing
+of billing events is done within the user actors. Finally, a separate network
+of actors take care of scheduling periodic tasks, such as refiling of user
+credits; it does so by issuing events to the appropriate queue.
 
 
 The accounting system
@@ -197,7 +239,7 @@ Examples
 
 
 Document Revisions
-^^^^^^^^^^^^^^^^^^
+------------------
 
 ==================    ================================
 Revision              Description
