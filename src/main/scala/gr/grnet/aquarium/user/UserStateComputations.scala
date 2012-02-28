@@ -354,7 +354,7 @@ class UserStateComputations extends Loggable {
                   // B. Compute new wallet entries
                   val alltimeAgreements = _workingUserState.agreementsSnapshot.agreementsByTimeslot
 
-                  accounting.computeChargeChunks(
+                  val fullChargeslots = accounting.computeFullChargeslots(
                     previousResourceEventM,
                     currentResourceEvent,
                     oldCredits,
@@ -365,6 +365,8 @@ class UserStateComputations extends Loggable {
                     alltimeAgreements,
                     SimpleCostPolicyAlgorithmCompiler
                   )
+
+                  // We have the charge
 
                   // C. Compute new credit amount (based on the wallet entries)
                   // Maybe this can be consolidated inthe previous step (B)
