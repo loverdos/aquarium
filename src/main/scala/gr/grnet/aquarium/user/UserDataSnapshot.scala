@@ -274,7 +274,7 @@ case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceType
    * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsSnapshot]].
    */
   def toImmutableSnapshot(snapshotTime: Long) =
-    LatestResourceEventsSnapshot(resourceEventsMap.values.toList, snapshotTime)
+    LatestResourceEventsSnapshot(resourceEventsMap.valuesIterator.toList, snapshotTime)
 
   def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
     resourceEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
@@ -331,7 +331,7 @@ case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[R
 case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullMutableResourceTypeMap) {
 
   def toImmutableSnapshot(snapshotTime: Long) =
-    ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEventsMap.values.toList, snapshotTime)
+    ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEventsMap.valuesIterator.toList, snapshotTime)
 
   def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
     findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))

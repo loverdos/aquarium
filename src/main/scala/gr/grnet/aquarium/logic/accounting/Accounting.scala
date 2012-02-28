@@ -213,7 +213,6 @@ trait Accounting extends DSLUtils with Loggable {
         // ... so we cannot compute timedelta from a previous event, there is just one chargeslot
         // referring to (almost) an instant in time
         val referenceTimeslot = Timeslot(new MutableDateCalc(occurredDate).goPreviousMilli.toDate, occurredDate)
-        val agreementAtOccurred = agreementNamesByTimeslot.head
         val relevantPolicy = Policy.policy(occurredDate)
         val relevantPolicies = Map(referenceTimeslot -> relevantPolicy)
 
@@ -298,9 +297,9 @@ trait Accounting extends DSLUtils with Loggable {
      * throughout the event's life.
      */
     assert(
-      agreements.keys.exists {
+      agreements.keysIterator.exists {
         p => p.includes(occuredDate)
-      } && agreements.keys.exists {
+      } && agreements.keysIterator.exists {
         p => p.includes(previousOccurred)
       }
     )
@@ -309,8 +308,8 @@ trait Accounting extends DSLUtils with Loggable {
 
     // Align policy and agreement validity timeslots to the event's boundaries
     val policyTimeslots = t.align(
-      Policy.policies(previousOccurred, occuredDate).keys.toList)
-    val agreementTimeslots = t.align(agreements.keys.toList)
+      Policy.policies(previousOccurred, occuredDate).keysIterator.toList)
+    val agreementTimeslots = t.align(agreements.keysIterator.toList)
 
     /*
      * Get a set of timeslot slices covering the different durations of
