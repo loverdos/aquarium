@@ -50,7 +50,6 @@ of billing events is done within the user actors. Finally, a separate network
 of actors take care of scheduling periodic tasks, such as refiling of user
 credits; it does so by issuing events to the appropriate queue.
 
-
 The accounting system
 ----------------------
 
@@ -76,7 +75,7 @@ Glossary of Entities
   correspond to real money.
 - *Resource*: A resource represents an entity that can be charged for its usage. The 
   currently charged resources are: Time of VM usage, bytes uploaded and downloaded and bytes used for storage
-- *Resource Event*: A resource event is generated from an external source and are permanently appended in an immutable event log. A raw event carries information about changes in an external system that could affect the status of a user's wallet.
+- *Resource Event*: A resource event is generated from an external source and are permanently appended in an immutable event log. A raw event carries information about changes in an external system that could affect the status of a user's wallet (See more about `Resource Events`_).
 - *AccountingEntry*: An accounting entry is the result of processing a resource event and is what gets stored to the user's wallet.
 - *Price List*: A price list contains information of the cost of a resource. 
   A pricelist is only applied within a specified time frame.
@@ -89,7 +88,7 @@ Glossary of Entities
 Time frames
 ^^^^^^^^^^^
 
-Time frames allow the specification of applicability periods for policies,
+Time frames allow the specification of applicability periods for algorithms,
 pricelists and agreements. A timeframe is by default continuous and has a
 starting point; if there is no ending point, the timeframe is considered open
 and its ending point is the time at the time of evaluation. 
@@ -106,20 +105,21 @@ syntax reminisent of the `cron <http://en.wikipedia.org/wiki/Cron>`_ format.
 
 .. code-block:: yaml
 
-  applicable:
-    from:                            # Milliseconds since the epoch
-    to:                              # [opt] Milliseconds since the epoch
+  effective:
+    from: %d                         # Milliseconds since the epoch
+    to:  %d                          # [opt] Milliseconds since the epoch
     repeat:                          # [opt] Defines a repetion list
       - every:                       # [opt] A repetion entry 
         start: "min hr dom moy dow"  # 5-elem cron string
         end:   "min hr dom moy dow"  # 5-elem cron string 
+
 
 The following declaration defines a timeframe starting at the designated
 timestamp and ending at the time of evaluation.
 
 .. code-block:: yaml
 
-  applicable:
+  effective:
     from: 1293703200  #(30/12/2010 10:00)
 
 The following declaration defines a timeframe of one year, within which the
@@ -129,7 +129,7 @@ and 15:00 Sat to 15:00 Sun.
 
 .. code-block:: yaml
 
-  applicable:
+  effective:
     from: 1293703200  #(30/12/2010 10:00)
     to:   1325239200  #(30/12/2011 10:00)
     repeat:
@@ -143,16 +143,13 @@ and 15:00 Sat to 15:00 Sun.
 Resources
 ^^^^^^^^^
 
-A resource represents an entity that can be charged for.
+A resource represents an entity that can be charged for. Aquarium does not
+assume a fixed set of resource types and is extensible to any number of
+resources. A resource has a ``name`` and a ``unit``; both are free form
+strings. The resource name is used to uniquely identify the resource both inside
+Aquarium and among external systems. Resource 
 
-The DSL does not assume a fixed set of resource types and is extensible to any
-number of resources. The default set of resources that the DSL supports 
-are the following: 
-
-- ``vmtime``: Time a specific VM is operating
-- ``diskspace``: Space on disk being used for storing data
-- ``bandwidthup``: Bandwidth used for uploading data
-- ``bandwidthdown``: Bandwidth used for downloading data
+A resource definition also has 
 
 Price lists
 ^^^^^^^^^^^
@@ -226,17 +223,87 @@ the language. An agreement is defined in full using the following template:
   algorithms for the declared resources must be defined in either the processed 
   ``agreement`` or a parent ``agreement``.
 
-The charging algorithm
-^^^^^^^^^^^^^^^^^^^^^^
-
-
-
 Examples
 ^^^^^^^^^
 .. toctree::
 
   unicase 
 
+
+Events
+------
+
+Aquarium communicates with external systems through events published on an `AMQP <http://en.wikipedia.org/wiki/AMQP>`_ queue. Aquarium only understands events in the
+`JSON <http://www.json.org/>`_ format.
+
+Aquarium events share a common base format consisting of the following fields:
+
+.. code-block:: javascript
+
+  {
+    id: "SHA-1",
+    occurredMillis: 12345,
+    receivedMillis: 12346 
+  }
+
+- *id:* [``string``] A per message unique string. Should be able to identify messages of the same type uniquely across Aquarium clients. Preferably a SHA-1.
+-  *occurredMillis:* [``long``] The timestamp at the event creation time. In milliseconds since the epoch.
+- *receivedMillis:* [``long``] For Aquarium internal use. Clients should not set a value. If a value is set, it will be overwritten upon receipt.
+
+In the following sections, we describe the exact format of each one of the concrete messages that Aquarium can process.
+
+Resource Events
+^^^^^^^^^^^^^^^
+
+A resource event is sent by Aquarium clients to signify a change in a resource's
+state. This change is processed by Aquarium's accounting system according to 
+the provisions of the configured policy in order to create entries to the user's
+wallet.
+
+.. code-block:: javascript
+
+  {
+    id: "<SHA-1>",
+    occurredMillis: 1321020852,
+    receivedMillis: 1321020852,
+    clientID: "platform-wide-unique-ID",
+    userID: "administrator@admin.grnet.gr",
+    resource: "vmtime",
+    instanceId: "vmtime-01.02.123X.Z",
+    eventVersion: "1.0", 
+    value: 0.3,
+    details: {
+      keyA: "value1",
+      keyB: "value2",
+    }
+  }
+
+The meaning of the fields is as follows:
+
+- *id:* As above.
+-  *occurredMillis:* As above.
+- *receivedMillis:* As above. 
+- *clientID:* ``string`` A unique name for each message producer.
+- *userID:* ``string`` The ID of the user that will be charged for the resource usage details reported in the resource event. 
+- *resource* ``string`` The name of the resource as declared in the Aquarium DSL. See `Resources`_ for more. 
+- *instanceId* ``string`` If the resource is complex, then this field is set to a unique identifier for the specific instance of the resource. In case of a non-complex resource, Aquarium does not examine this value.
+- *eventVersion* ``string`` The event version. Currently fixed to "1". 
+- *value*: ``double`` The value of resource usage. Depends on the cost policy defined for the resource as follows:
+   + For ``continuous`` resources
+   + For ``onoff`` resources
+   + For ``discrete`` resources
+- *details*: ``map[string, string]`` A map/dictionary indicating extra metadata for this resource event. Aquarium does not process this metadata. The field must always be present, even if it is empty.
+
+
+User Events
+^^^^^^^^^^^
+
+
+The charging algorithm
+----------------------
+
+The Aquarium REST API
+---------------------
 
 Document Revisions
 ------------------
@@ -246,6 +313,7 @@ Revision              Description
 ==================    ================================
 0.1 (Nov 2, 2011)     Initial release. Credit and debit policy descriptions 
 0.2 (Feb 23, 2012)    Update definitions, remove company use case
+0.3 (Feb 28, 2012)    Event and resource descriptions
 ==================    ================================
 
 
