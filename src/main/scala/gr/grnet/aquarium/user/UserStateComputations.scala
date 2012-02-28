@@ -37,13 +37,13 @@ package gr.grnet.aquarium.user
 
 
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLPolicy}
-import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, ResourceEventStore}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
+import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
+import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 
 /**
  *
@@ -354,7 +354,7 @@ class UserStateComputations extends Loggable {
                   // B. Compute new wallet entries
                   val alltimeAgreements = _workingUserState.agreementsSnapshot.agreementsByTimeslot
 
-                  val fullChargeslots = accounting.computeFullChargeslots(
+                  val fullChargeslotsM = accounting.computeFullChargeslots(
                     previousResourceEventM,
                     currentResourceEvent,
                     oldCredits,
@@ -366,13 +366,31 @@ class UserStateComputations extends Loggable {
                     SimpleCostPolicyAlgorithmCompiler
                   )
 
-                  // We have the charge
+                  // We have the charges lots, let's associate them with the current event
+                  fullChargeslotsM match {
+                    case Just(fullChargeslots) ⇒
+                      // C. Compute new credit amount (based on the charge slots)
+                      val newCreditsDiff = fullChargeslots.map(_.computedCredits.get).sum
+                      val newCredits = oldCredits + newCreditsDiff
+                      val newWalletEntry = NewWalletEntry(
+                        userId,
+                        newCreditsDiff,
+                        TimeHelpers.nowMillis,
+                        billingMonthInfo.year,
+                        billingMonthInfo.month,
+                        currentResourceEvent,
+                        previousResourceEventM.toOption,
+                        fullChargeslots,
+                        resourceDef
+                      )
 
-                  // C. Compute new credit amount (based on the wallet entries)
-                  // Maybe this can be consolidated inthe previous step (B)
+                    case NoVal ⇒
+                      // At least one chargeslot is required.
+                      throw new Exception("No chargeslots computed")
 
-
-                  ()
+                    case failed @ Failed(e, m) ⇒
+                      throw new Exception(m, e)
+                  }
               }
 
               // After processing, all event, billable or not update the previous state

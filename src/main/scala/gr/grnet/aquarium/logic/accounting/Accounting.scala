@@ -184,7 +184,7 @@ trait Accounting extends DSLUtils with Loggable {
                              dslResource: DSLResource,
                              defaultResourceMap: DSLResourcesMap,
                              agreementNamesByTimeslot: Map[Timeslot, String],
-                             algorithmCompiler: CostPolicyAlgorithmCompiler): Maybe[Traversable[Chargeslot]] = Maybe {
+                             algorithmCompiler: CostPolicyAlgorithmCompiler): Maybe[List[Chargeslot]] = Maybe {
 
     val occurredDate = currentResourceEvent.occurredDate
     val costPolicy = dslResource.costPolicy
