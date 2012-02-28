@@ -41,7 +41,6 @@ import gr.grnet.aquarium.logic.accounting.Policy
 import java.util.Date
 import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
 import logic.events.ResourceEvent
-import logic.events.ResourceEvent.FullResourceTypeMap
 import logic.events.ResourceEvent.FullMutableResourceTypeMap
 import logic.accounting.dsl.{Timeslot, DSLAgreement}
 import collection.immutable.{TreeMap, SortedMap}
@@ -237,12 +236,12 @@ case class ActiveStateSnapshot(isActive: Boolean, snapshotTime: Long) extends Da
 /**
  * Keeps the latest resource event per resource instance.
  *
- * @param resourceEventsMap
+ * @param resourceEvents
  * @param snapshotTime
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class LatestResourceEventsSnapshot(resourceEventsMap: FullResourceTypeMap,
+case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEvent],
                                         snapshotTime: Long) extends DataSnapshot {
 
   /**
@@ -250,8 +249,13 @@ case class LatestResourceEventsSnapshot(resourceEventsMap: FullResourceTypeMap,
    *
    * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsWorker]].
    */
-  def toMutableWorker =
-    LatestResourceEventsWorker(scala.collection.mutable.Map(resourceEventsMap.toSeq: _*))
+  def toMutableWorker = {
+    val map = scala.collection.mutable.Map[ResourceEvent.FullResourceType, ResourceEvent]()
+    for(latestEvent <- resourceEvents) {
+      map(latestEvent.fullResourceInfo) = latestEvent
+    }
+    LatestResourceEventsWorker(map)
+  }
 }
 
 /**
@@ -270,7 +274,7 @@ case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceType
    * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsSnapshot]].
    */
   def toImmutableSnapshot(snapshotTime: Long) =
-    LatestResourceEventsSnapshot(resourceEventsMap.toMap, snapshotTime)
+    LatestResourceEventsSnapshot(resourceEventsMap.values.toList, snapshotTime)
 
   def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
     resourceEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
