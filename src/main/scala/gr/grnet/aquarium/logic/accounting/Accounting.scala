@@ -51,8 +51,13 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
  * @param stopMillis
  * @param algorithmDefinition
  * @param unitPrice
+ * @param computedCredits The computed credits
  */
-case class Chargeslot(startMillis: Long, stopMillis: Long, algorithmDefinition: String, unitPrice: Double)
+case class Chargeslot(startMillis: Long,
+                      stopMillis: Long,
+                      algorithmDefinition: String,
+                      unitPrice: Double,
+                      computedCredits: Option[Double] = None)
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -123,6 +128,9 @@ trait Accounting extends DSLUtils with Loggable {
           throw new Exception("Unknown agreement %s during %s".format(agreementName, alignedTimeslot))
 
         case Some(agreement) ⇒
+          // TODO: Factor this out, just like we did with:
+          // TODO:  val alignedTimeslots = splitTimeslotByPoliciesAndAgreements
+          // TODO: Note that most of the code is already taken from calcChangeChunks()
           val alg = resolveEffectiveAlgorithmsForTimeslot(alignedTimeslot, agreement)
           val pri = resolveEffectivePricelistsForTimeslot(alignedTimeslot, agreement)
           val chargeChunks = splitChargeChunks(alg, pri)
@@ -176,7 +184,7 @@ trait Accounting extends DSLUtils with Loggable {
                           dslResource: DSLResource,
                           defaultResourceMap: DSLResourcesMap,
                           agreementNamesByTimeslot: Map[Timeslot, String],
-                          algorithmCompiler: CostPolicyAlgorithmCompiler): Maybe[Traversable[Any]] = Maybe {
+                          algorithmCompiler: CostPolicyAlgorithmCompiler): Maybe[Traversable[Chargeslot]] = Maybe {
 
     val occurredDate = currentResourceEvent.occurredDate
     val costPolicy = dslResource.costPolicy
@@ -224,9 +232,9 @@ trait Accounting extends DSLUtils with Loggable {
       agreementNamesByTimeslot
     )
     
-    val creditsM = chargeslotsM.map { chargeslots ⇒
+    val fullChargeslotsM = chargeslotsM.map { chargeslots ⇒
       chargeslots.map {
-        case chargeslot @ Chargeslot(startMillis, stopMillis, algorithmDefinition, unitPrice) ⇒
+        case chargeslot @ Chargeslot(startMillis, stopMillis, algorithmDefinition, unitPrice, _) ⇒
           val execAlgorithmM = algorithmCompiler.compile(algorithmDefinition)
           execAlgorithmM match {
             case NoVal ⇒
@@ -260,13 +268,20 @@ trait Accounting extends DSLUtils with Loggable {
                   throw new Exception(m, e)
 
                 case Just(credits) ⇒
-                  credits
+                  chargeslot.copy(computedCredits = Some(credits))
               }
           }
       }
     }
 
-    Nil
+    fullChargeslotsM match {
+      case Just(fullChargeslots) ⇒
+        fullChargeslots
+      case NoVal ⇒
+        null
+      case failed @ Failed(e, m) ⇒
+        throw new Exception(m, e)
+    }
   }
 
 

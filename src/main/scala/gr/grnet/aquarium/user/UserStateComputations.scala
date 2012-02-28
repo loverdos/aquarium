@@ -332,7 +332,7 @@ class UserStateComputations extends Loggable {
             case Just(resourceDef) ⇒
               val costPolicy = resourceDef.costPolicy
               clog.debug("Cost policy: %s", costPolicy)
-              val isBillable = costPolicy.isBillableEventBasedOnValue(currentResourceEvent.value)
+              val isBillable = costPolicy.isBillableEventBasedOnValue(theValue)
               isBillable match {
                 // The resource event is not billable
                 case false ⇒
