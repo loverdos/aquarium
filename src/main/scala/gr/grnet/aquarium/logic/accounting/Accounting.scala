@@ -226,46 +226,45 @@ trait Accounting extends DSLUtils with Loggable {
       relevantPolicies,
       agreementNamesByTimeslot
     )
-
-    for {
-      chargeslots <- chargeslotsM
-      (chargeslot @ Chargeslot(startMillis, stopMillis, algorithmDefinition, unitPrice)) <- chargeslots
-    } yield {
-      val execAlgorithmM = algorithmCompiler.compile(algorithmDefinition)
-
-      execAlgorithmM match {
-        case NoVal ⇒
-          throw new Exception("Could not compile algorithm")
-
-        case failed @ Failed(e, m) ⇒
-          throw new Exception(m, e)
-
-        case Just(execAlgorithm) ⇒
-          val valueMap = costPolicy.makeValueMap(
-            costPolicy.name,
-            oldCredits,
-            oldTotalAmount,
-            newTotalAmount,
-            stopMillis - startMillis,
-            previousValue,
-            currentResourceEvent.value,
-            unitPrice
-          )
-
-          // This is it
-          val creditsM = execAlgorithm.apply(valueMap)
-          
-          creditsM match {
+    
+    val creditsM = chargeslotsM.map { chargeslots ⇒
+      chargeslots.map {
+        case chargeslot @ Chargeslot(startMillis, stopMillis, algorithmDefinition, unitPrice) ⇒
+          val execAlgorithmM = algorithmCompiler.compile(algorithmDefinition)
+          execAlgorithmM match {
             case NoVal ⇒
-              throw new Exception(
-                "Could not compute credits for resource %s during %s".
-                  format(dslResource.name, Timeslot(new Date(startMillis), new Date(stopMillis))))
+              throw new Exception("Could not compile algorithm %s".format(algorithmDefinition))
 
             case failed @ Failed(e, m) ⇒
               throw new Exception(m, e)
 
-            case Just(credits) ⇒
-              credits
+            case Just(execAlgorithm) ⇒
+              val valueMap = costPolicy.makeValueMap(
+                costPolicy.name,
+                oldCredits,
+                oldTotalAmount,
+                newTotalAmount,
+                stopMillis - startMillis,
+                previousValue,
+                currentResourceEvent.value,
+                unitPrice
+              )
+
+              // This is it
+              val creditsM = execAlgorithm.apply(valueMap)
+
+              creditsM match {
+                case NoVal ⇒
+                  throw new Exception(
+                    "Could not compute credits for resource %s during %s".
+                      format(dslResource.name, Timeslot(new Date(startMillis), new Date(stopMillis))))
+
+                case failed @ Failed(e, m) ⇒
+                  throw new Exception(m, e)
+
+                case Just(credits) ⇒
+                  credits
+              }
           }
       }
     }
