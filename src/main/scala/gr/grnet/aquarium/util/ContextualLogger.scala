@@ -148,6 +148,13 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     }
   }
 
+  def info(fmt: String, args: Any*): Unit = {
+    if(logger.isInfoEnabled) {
+      val msg = ctx + " " + nestMsg(fmt, args:_*)
+      logger.info(msg)
+    }
+  }
+
   def warn(fmt: String, args: Any*): Unit = {
     if(logger.isWarnEnabled) {
       val msg = ctx + " " + nestMsg(fmt, args:_*)
