@@ -140,6 +140,12 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     _nesting = _nesting - 1
     this
   }
+  
+  def withIndent[A](f: => A): Unit = {
+    import com.ckkloverdos.maybe.effect
+    this.indent()
+    effect(f){}{unindent()}
+  }
 
   def debug(fmt: String, args: Any*): Unit = {
     if(logger.isDebugEnabled) {
