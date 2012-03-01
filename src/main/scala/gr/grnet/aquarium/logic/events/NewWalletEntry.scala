@@ -67,8 +67,11 @@ case class NewWalletEntry(userId: String,
                           previousResourceEvent: Option[ResourceEvent],
                           chargeslots: List[Chargeslot],
                           resourceDef: DSLResource) {
+
   def resource = currentResourceEvent.resource
   def instanceId = currentResourceEvent.instanceId
+  def chargslotCount = chargeslots.length
+  def isOutOfSync = currentResourceEvent.isOutOfSyncForBillingMonth(yearOfBillingMonth, billingMonth)
 }
 
 object NewWalletEntry {
