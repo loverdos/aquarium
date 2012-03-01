@@ -251,13 +251,13 @@ class UserStateComputations extends Loggable {
         var _workingUserState = startingUserState
 
         // Prepare the implicit OFF resource events
-        // (we keep the terminology for historical reasons)
-        val theImplicitOFFs = _workingUserState.implicitlyTerminatedSnapshot.toMutableWorker
-        clog.debug("theImplicitOFFs = %s", theImplicitOFFs)
+        val implicitlyTerminatedResourceEvents = _workingUserState.implicitlyTerminatedSnapshot.toMutableWorker
+        clog.debug("implicitlyTerminated = %s", implicitlyTerminatedResourceEvents)
 
         /**
-         * Finds the previous resource event by checking two possible sources: a) The implicit OFF resource events and
-         * b) the explicit previous resource events. If the event is found, it is removed from the respective source.
+         * Finds the previous resource event by checking two possible sources: a) The implicitly terminated resource
+         * events and b) the explicit previous resource events. If the event is found, it is removed from the
+         * respective source.
          *
          * If the event is not found, then this must be for a new resource instance.
          * (and probably then some `zero` resource event must be implied as the previous one)
@@ -267,12 +267,12 @@ class UserStateComputations extends Loggable {
          * @return
          */
         def findAndRemovePreviousResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
-          // implicit OFFs are checked first
-          theImplicitOFFs.findAndRemoveResourceEvent(resource, instanceId) match {
+          // implicitly terminated events are checked first
+          implicitlyTerminatedResourceEvents.findAndRemoveResourceEvent(resource, instanceId) match {
             case just @ Just(_) ⇒
               just
             case NoVal ⇒
-              // explicit previous are checked second
+              // explicit previous resource events are checked second
               previousResourceEvents.findAndRemoveResourceEvent(resource, instanceId) match {
                 case just @ Just(_) ⇒
                   just
@@ -317,10 +317,10 @@ class UserStateComputations extends Loggable {
             previousResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
             clog.unindent()
           }
-          if(theImplicitOFFs.size > 0) {
-            clog.debug("%s theImplicitOFFs", theImplicitOFFs.size)
+          if(implicitlyTerminatedResourceEvents.size > 0) {
+            clog.debug("%s theImplicitOFFs", implicitlyTerminatedResourceEvents.size)
             clog.indent()
-            theImplicitOFFs.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
+            implicitlyTerminatedResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
             clog.unindent()
           }
 

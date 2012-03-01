@@ -232,7 +232,7 @@ final class BillingMonthInfo private(val year: Int,
 
   override def equals(any: Any) = any match {
     case that: BillingMonthInfo ⇒
-      this.year == that.year && this.month == that.month // normally everything MUST be the same by construction
+      this.year == that.year && this.month == that.month // normally everything else MUST be the same by construction
     case _ ⇒
       false
   }
@@ -253,7 +253,7 @@ object BillingMonthInfo {
     val year = mdc.getYear
     val month = mdc.getMonthOfYear
     val startMillis = mdc.goStartOfThisMonth.getMillis
-    val stopMillis  = mdc.goEndOfThisMonth.getMillis
+    val stopMillis  = mdc.goEndOfThisMonth.getMillis // no need to `copy` here, since we are discarding `mdc`
 
     new BillingMonthInfo(year, month, startMillis, stopMillis)
   }
