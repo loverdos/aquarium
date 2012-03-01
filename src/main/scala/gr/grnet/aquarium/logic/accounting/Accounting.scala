@@ -196,6 +196,7 @@ trait Accounting extends DSLUtils with Loggable {
           // We have a previous event
           case Just(previousResourceEvent) ⇒
             val referenceTimeslot = Timeslot(previousResourceEvent.occurredDate, occurredDate)
+            println("referenceTimeslot = %s".format(referenceTimeslot.toISODateString))
             // all policies within the interval from previous to current resource event
             val relevantPolicies = Policy.policies(referenceTimeslot)
 

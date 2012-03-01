@@ -250,9 +250,12 @@ class UserStateComputations extends Loggable {
         // specified in the parameters.
         var _workingUserState = startingUserState
 
-        // Prepare the implicit OFF resource events
+        // Prepare the implicitly terminated resource events from previous billing period
         val implicitlyTerminatedResourceEvents = _workingUserState.implicitlyTerminatedSnapshot.toMutableWorker
         clog.debug("implicitlyTerminatedResourceEvents = %s", implicitlyTerminatedResourceEvents)
+
+        // Keep the resource events from this period that were first (and unused) of their kind
+        val ignoredFirstResourceEvents = IgnoredFirstResourceEventsWorker.Empty
 
         /**
          * Finds the previous resource event by checking two possible sources: a) The implicitly terminated resource
@@ -296,8 +299,12 @@ class UserStateComputations extends Loggable {
         var _eventCounter = 0
 
         clog.debug("resourceEventStore = %s".format(resourceEventStore))
-        clog.debug("Found %s resource events, starting processing...", allResourceEventsForMonth.size)
-        
+        if(allResourceEventsForMonth.size > 0) {
+          clog.debug("Found %s resource events, starting processing...", allResourceEventsForMonth.size)
+        } else {
+          clog.debug("Not found any resource events")
+        }
+
         for {
           currentResourceEvent <- allResourceEventsForMonth
         } {
@@ -307,21 +314,29 @@ class UserStateComputations extends Loggable {
           val theValue = currentResourceEvent.value
 
           clog.indent()
+          clog.debug("")
           clog.debug("Processing %s", currentResourceEvent)
-          clog.debug("Friendlier %s", rcDebugInfo(currentResourceEvent))
+          clog.debug("+========= %s", rcDebugInfo(currentResourceEvent))
+
           clog.indent()
 
           if(previousResourceEvents.size > 0) {
             clog.debug("%s previousResourceEvents", previousResourceEvents.size)
-            clog.indent()
-            previousResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
-            clog.unindent()
+            clog.withIndent {
+              previousResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
+            }
           }
           if(implicitlyTerminatedResourceEvents.size > 0) {
             clog.debug("%s implicitlyTerminatedResourceEvents", implicitlyTerminatedResourceEvents.size)
-            clog.indent()
-            implicitlyTerminatedResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
-            clog.unindent()
+            clog.withIndent {
+              implicitlyTerminatedResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
+            }
+          }
+          if(ignoredFirstResourceEvents.size > 0) {
+            clog.debug("%s ignoredFirstResourceEvents", ignoredFirstResourceEvents.size)
+            clog.withIndent {
+              ignoredFirstResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
+            }
           }
 
           // Ignore the event if it is not billable (but still record it in the "previous" stuff).
@@ -351,6 +366,7 @@ class UserStateComputations extends Loggable {
                     // This must be the first resource event of its kind, ever.
                     // TODO: We should normally check the DB to verify the claim (?)
                     clog.info("Ignoring first event of its kind %s", rcDebugInfo(currentResourceEvent))
+                    ignoredFirstResourceEvents.updateResourceEvent(currentResourceEvent)
                   } else {
                     val defaultInitialAmount = costPolicy.getResourceInstanceInitialAmount
                     val oldAmount = _workingUserState.getResourceInstanceAmount(theResource, theInstanceId, defaultInitialAmount)
@@ -358,6 +374,8 @@ class UserStateComputations extends Loggable {
 
                     // A. Compute new resource instance accumulating amount
                     val newAmount = costPolicy.computeNewAccumulatingAmount(oldAmount, theValue)
+                    
+                    clog.debug("oldAmount = %s, newAmount = %s, oldCredits = %s", oldAmount, newAmount, oldCredits)
 
                     // B. Compute new wallet entries
                     val alltimeAgreements = _workingUserState.agreementsSnapshot.agreementsByTimeslot
@@ -377,9 +395,22 @@ class UserStateComputations extends Loggable {
                     // We have the chargeslots, let's associate them with the current event
                     fullChargeslotsM match {
                       case Just(fullChargeslots) ⇒
+                        if(fullChargeslots.length == 0) {
+                          // At least one chargeslot is required.
+                          throw new Exception("No chargeslots computed")
+                        }
+                        clog.debug("chargeslots:")
+                        clog.withIndent {
+                          for(fullChargeslot <- fullChargeslots) {
+                            clog.debug("%s", fullChargeslot)
+                          }
+                        }
+                        
                         // C. Compute new credit amount (based on the charge slots)
                         val newCreditsDiff = fullChargeslots.map(_.computedCredits.get).sum
                         val newCredits = oldCredits + newCreditsDiff
+                        clog.debug("newCreditsDiff = %s, newCredits = %s", newCreditsDiff, newCredits)
+
                         val newWalletEntry = NewWalletEntry(
                           userId,
                           newCreditsDiff,
@@ -422,6 +453,7 @@ class UserStateComputations extends Loggable {
           }
 
           clog.unindent()
+          clog.debug("-========= %s", rcDebugInfo(currentResourceEvent))
           clog.unindent()
         }
         

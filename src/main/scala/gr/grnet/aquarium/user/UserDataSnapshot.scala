@@ -376,7 +376,15 @@ case class IgnoredFirstResourceEventsWorker(ignoredFirstEventsMap: FullMutableRe
     findAndRemoveFromMap(ignoredFirstEventsMap, (resource, instanceId))
   }
 
+  def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
+    ignoredFirstEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
+  }
+
   def size = ignoredFirstEventsMap.size
+
+  def foreach[U](f: ResourceEvent => U): Unit = {
+    ignoredFirstEventsMap.valuesIterator.foreach(f)
+  }
 }
 
 object IgnoredFirstResourceEventsWorker {
