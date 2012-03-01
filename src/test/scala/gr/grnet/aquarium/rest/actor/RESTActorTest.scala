@@ -39,13 +39,10 @@ import org.junit.Test
 import org.junit.Assert._
 import org.junit.Assume.assumeTrue
 
-import gr.grnet.aquarium.actor.RESTRole
-import cc.spray.can.HttpMethods.{GET, POST}
+import cc.spray.can.HttpMethods.{GET}
 import cc.spray.can.HttpClient._
 import cc.spray.can.HttpClient.{HttpDialog ⇒ SprayHttpDialog}
-import cc.spray.can.{HttpResponse, HttpHeader, HttpRequest, HttpServer ⇒ SprayHttpServer, HttpClient ⇒ SprayHttpClient}
-import akka.actor.{PoisonPill, Actor}
-import gr.grnet.aquarium.logic.events.ResourceEvent
+import cc.spray.can.{HttpResponse, HttpHeader, HttpRequest}
 import net.liftweb.json.JsonAST.JInt
 import gr.grnet.aquarium.util.json.JsonHelpers
 import gr.grnet.aquarium.{LogicTestsAssumptions, Configurator}

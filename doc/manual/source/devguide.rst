@@ -4,6 +4,52 @@ Aquarium Development Guide
 The development guide includes descriptions of the APIs and extention points
 offered by Aquarium. It also includes design and development setup information.
 
+Overall architecture
+--------------------
+
+Aquarium's architectural design is mainly driven by two requirements: scaling
+and fault tolerance. Aquarium's functionality is based on event sourcing.
+`Event sourcing <http://en.wikipedia.org/wiki/Domain-driven_design>`_ 
+assumes that all changes to application state are stored as a
+sequence of events, in an immutable log. With such a log at hand, a system can
+rebuild the current application state by replaying the events in order. The event
+sourcing design pattern has some very interesting properties, which made it
+particularity suitable for basing Aquarium on it:
+
+- Multiple models can be used in order to process the events, concurrently. This means that Aquarium can provide a limited data view to its REST API and a more detailed one to a helpdesk frontend.
+
+- It is possible to perform queries on past system states by stopping the event replay at a certain point of interest. This would prove very possible for a future debugging interface.
+
+- In a carefully implemented event sourcing system, application crashes are not destructive, as long as event replay is fast enough and no state is inserted to the application without being recorded to the event log first.
+
+- After event log replay, new events only cause updates in the system’s in-memory state, which can be done very fast.
+
+Components
+^^^^^^^^^^
+
+.. image:: arch.png
+
+An overview of the Aquarium architecture is presented in the figure above.  The
+system is modeled as a collection of logically and functionally isolated
+components, which communicate by message passing. Withing each component, a
+number of actors take care of concurrently processing incoming messages through
+a load balancer component which is the gateway to requests targeted to the
+component. Each component is also monitored by its own supervisor; should an
+actor fail, the supervisor will automatically restart it. The architecture
+allows certain application paths to fail individually while the system is still
+responsive, while also enabling future distribution of multiple components on
+clusters of machines.
+
+The system receives input mainly from two sources: a queue for resource and
+user events and a REST API for credits and resource state queries. The queue
+component reads messages from a configurable number of queues and persists them
+in the application’s immutable log store. Both input components then forward
+incoming messages to a network of dispatcher handlers which do not do any
+processing by themselves, but know where the user actors lay. Actual processing
+of billing events is done within the user actors. Finally, a separate network
+of actors take care of scheduling periodic tasks, such as refiling of user
+credits; it does so by issuing events to the appropriate queue.
+
 The accounting system
 ----------------------
 
@@ -12,67 +58,37 @@ providing them with credits in order to be able to use the provided services.
 As with the rest of the Aquarium, the architecture is open-ended: the accounting
 system does not know in advance which services it supports or what resources
 are being offered. The configuration of the accounting system is done
-using a Domain Specific Language described below. 
+using a Domain Specific Language (DSL) described below. 
 
 Data exchange with external systems is done through events, which are
 persisted to an *immutable log*.
+
+The accounting system is a generic event-processing engine that is configured by a
+DSL. The DSL is mostly based on the
+`YAML <http://en.wikipedia.org/wiki/Yaml>`_ 
+format. The DSL supports limited algorithm definitions through integration of the Javascript language as defined below.
 
 Glossary of Entities
 ^^^^^^^^^^^^^^^^^^^^
 
 - *Credit*: A credit is the unit of currency used in Aquarium. It may or may not 
   correspond to real money.
-- *Raw Event*: A raw event is generated from an external source and are permanently 
-  appended in an immutable event log. A raw event carries information about changes 
-  in an external system that could affect the status of a user's wallet.
-- *AccountingEvent*: An accounting event is the result of processing one or more raw 
-  events, and is the sole input to the accounting system. 
-- *AccountingEntry*: An accounting entry is the result of processing one accounting 
-  event and is what gets stored to the user's wallet.
 - *Resource*: A resource represents an entity that can be charged for its usage. The 
-  currently charged resources are: Time of VM usage, bytes uploaded and downloaded and 
-  bytes used for storage
+  currently charged resources are: Time of VM usage, bytes uploaded and downloaded and bytes used for storage
+- *Resource Event*: A resource event is generated from an external source and are permanently appended in an immutable event log. A raw event carries information about changes in an external system that could affect the status of a user's wallet (See more about `Resource Events`_).
+- *AccountingEntry*: An accounting entry is the result of processing a resource event and is what gets stored to the user's wallet.
 - *Price List*: A price list contains information of the cost of a resource. 
   A pricelist is only applied within a specified time frame.
-- *Policy*: A policy specifies the way the charging calculation is done. It can be vary 
-  depending on resource usage, time of raw event or other information.
-- *Agreement*: An agreement associates pricelists with policies. An agreement
-  is assigned to one or more credit holders.
-
-Common syntax
-^^^^^^^^^^^^^
-
-The accounting system is a generic event-processing engine that is configured by a
-DSL. The DSL is split in two parts, one for configuring the crediting part
-of accounting and one for configuring who credits are debitted to user accounts.
-The DSL is mostly based on the
-`YAML <http://en.wikipedia.org/wiki/Yaml>`_ format. The DSL supports limited
-algorithm definitions through a simple imperative language as defined below.
-
-
-The following parts are the same for both languages, except if otherwise noted.
-
-Implicit variables
-~~~~~~~~~~~~~~~~~~
-
-Implicit variables are placeholders that are assigned a value at evaluation
-time. Variables are always bound to a resource declaration within a policy.
-The following implicit values are supported:
-
-- ``price``: Denotes the price for the designated resource in the applicable agreement
-- ``volume``: Denotes the runtime usage of the designated resource
-
-
-Operators
-~~~~~~~~~
-
-- Conditionals: ``if...then...elsif...else...end`` Conditional decisions. 
-- Comparison: ``gt, lt``: ``>`` and ``<``
+- *Algorithm*: An algorithm specifies the way the charging calculation is done. It can be vary  depending on resource usage, time of raw event or other information.
+- *Credit Plan*: Defines a periodic operation of refiling a user's wallet with a
+  configurable amount of credits.
+- *Agreement*: An agreement associates pricelists with algorithms and credit
+  plans. An agreement is assigned to one or more users/credit holders.
 
 Time frames
-~~~~~~~~~~~
+^^^^^^^^^^^
 
-Time frames allow the specification of applicability periods for policies,
+Time frames allow the specification of applicability periods for algorithms,
 pricelists and agreements. A timeframe is by default continuous and has a
 starting point; if there is no ending point, the timeframe is considered open
 and its ending point is the time at the time of evaluation. 
@@ -89,20 +105,21 @@ syntax reminisent of the `cron <http://en.wikipedia.org/wiki/Cron>`_ format.
 
 .. code-block:: yaml
 
-  applicable:
-    from:                            # Milliseconds since the epoch
-    to:                              # [opt] Milliseconds since the epoch
+  effective:
+    from: %d                         # Milliseconds since the epoch
+    to:  %d                          # [opt] Milliseconds since the epoch
     repeat:                          # [opt] Defines a repetion list
       - every:                       # [opt] A repetion entry 
         start: "min hr dom moy dow"  # 5-elem cron string
         end:   "min hr dom moy dow"  # 5-elem cron string 
+
 
 The following declaration defines a timeframe starting at the designated
 timestamp and ending at the time of evaluation.
 
 .. code-block:: yaml
 
-  applicable:
+  effective:
     from: 1293703200  #(30/12/2010 10:00)
 
 The following declaration defines a timeframe of one year, within which the
@@ -112,7 +129,7 @@ and 15:00 Sat to 15:00 Sun.
 
 .. code-block:: yaml
 
-  applicable:
+  effective:
     from: 1293703200  #(30/12/2010 10:00)
     to:   1325239200  #(30/12/2011 10:00)
     repeat:
@@ -123,27 +140,180 @@ and 15:00 Sat to 15:00 Sun.
         start: "00 15 * * Sat"
         end:   "00 15 * * Sun"
 
+Resources
+^^^^^^^^^
 
-.. toctree::
+A resource represents an entity that can be charged for. Aquarium does not
+assume a fixed set of resource types and is extensible to any number of
+resources. A resource has a ``name`` and a ``unit``; both are free form
+strings. The resource name is used to uniquely identify the resource both inside
+Aquarium and among external systems. Resource 
 
-  debitdsl 
-  creditdsl
+A resource definition also has 
+
+Price lists
+^^^^^^^^^^^
+
+A price list defines the prices applicable for a resource within a validity
+period. Prices are attached to resource types and denote the policies that
+should be deducted from an entity's wallet in response to the entity's resource
+usage within a given charging period (currently, a month). The format is the
+following:
+
+.. code-block:: yaml
+
+  pricelist:                  # Pricelist structure definition  
+    name: apricelist          # Name for the price list, no spaces, must be unique
+    [extends: anotherpl]      # [Optional] Inheritance operation: all optional fields  
+                              # are inherited from the named pricelist
+    bandwidthup:              # Price for used upstream bandwidth per MB 
+    bandwidthdown:            # Price for used downstream bandwidth per MB
+    vmtime:                   # Price for time 
+    diskspace:                # Price for used diskspace, per MB
+    applicable:
+      [see Timeframe format]
+
+Algorithms
+^^^^^^^^^^
+
+An algorithm specifies the algorithm used to perform the cost calculation, by
+combining the reported resource usage with the applicable pricelist. As opposed
+to price lists, policies define behaviours (algorithms), which have certain
+validity periods. Algorithms can either be defined inline or referenced from
+the list of defined algorithms. 
+
+.. code-block:: yaml
+
+  algorithm:
+    name: default
+    bandwidthup:   {price} times {volume} 
+    bandwidthdown: {price} times {volume}
+    vmtime: {price} times {volume}
+    diskspace: {price} times {volume}
+    applicable: 
+      [see Timeframe format]
 
 
-Usage Examples
-^^^^^^^^^^^^^^
+Credit Plans
+^^^^^^^^^^^^
+
+
+
+Agreements
+^^^^^^^^^^
+
+An agreement is the result of combining a policy with a pricelist. As the
+accounting DSL's main purpose is to facilitate the construction of agreements
+(which are then associated to entities), the agreement is the centerpiece of
+the language. An agreement is defined in full using the following template:
+
+.. code-block:: yaml
+
+  agreement:
+    name: someuniqname        # Unique name for 
+    extends: other            # [opt] name of inhereted agreement 
+    pricelist: plname         # Name of declared pricelist
+      resourse: value         # [opt] Overiding of price for resource
+    policy: polname           # Name of declared policy
+      resourse: value         # [opt] Overiding of algorithm for resourse
+
+**Consistency requirements:**
+
+- If a ``pricelist`` or ``policy`` name has not been specified, all prices or
+  algorithms for the declared resources must be defined in either the processed 
+  ``agreement`` or a parent ``agreement``.
+
+Examples
+^^^^^^^^^
 .. toctree::
 
   unicase 
 
 
+Events
+------
+
+Aquarium communicates with external systems through events published on an `AMQP <http://en.wikipedia.org/wiki/AMQP>`_ queue. Aquarium only understands events in the
+`JSON <http://www.json.org/>`_ format.
+
+Aquarium events share a common base format consisting of the following fields:
+
+.. code-block:: javascript
+
+  {
+    id: "SHA-1",
+    occurredMillis: 12345,
+    receivedMillis: 12346 
+  }
+
+- *id:* [``string``] A per message unique string. Should be able to identify messages of the same type uniquely across Aquarium clients. Preferably a SHA-1.
+-  *occurredMillis:* [``long``] The timestamp at the event creation time. In milliseconds since the epoch.
+- *receivedMillis:* [``long``] For Aquarium internal use. Clients should not set a value. If a value is set, it will be overwritten upon receipt.
+
+In the following sections, we describe the exact format of each one of the concrete messages that Aquarium can process.
+
+Resource Events
+^^^^^^^^^^^^^^^
+
+A resource event is sent by Aquarium clients to signify a change in a resource's
+state. This change is processed by Aquarium's accounting system according to 
+the provisions of the configured policy in order to create entries to the user's
+wallet.
+
+.. code-block:: javascript
+
+  {
+    id: "<SHA-1>",
+    occurredMillis: 1321020852,
+    receivedMillis: 1321020852,
+    clientID: "platform-wide-unique-ID",
+    userID: "administrator@admin.grnet.gr",
+    resource: "vmtime",
+    instanceId: "vmtime-01.02.123X.Z",
+    eventVersion: "1.0", 
+    value: 0.3,
+    details: {
+      keyA: "value1",
+      keyB: "value2",
+    }
+  }
+
+The meaning of the fields is as follows:
+
+- *id:* As above.
+-  *occurredMillis:* As above.
+- *receivedMillis:* As above. 
+- *clientID:* ``string`` A unique name for each message producer.
+- *userID:* ``string`` The ID of the user that will be charged for the resource usage details reported in the resource event. 
+- *resource* ``string`` The name of the resource as declared in the Aquarium DSL. See `Resources`_ for more. 
+- *instanceId* ``string`` If the resource is complex, then this field is set to a unique identifier for the specific instance of the resource. In case of a non-complex resource, Aquarium does not examine this value.
+- *eventVersion* ``string`` The event version. Currently fixed to "1". 
+- *value*: ``double`` The value of resource usage. Depends on the cost policy defined for the resource as follows:
+   + For ``continuous`` resources
+   + For ``onoff`` resources
+   + For ``discrete`` resources
+- *details*: ``map[string, string]`` A map/dictionary indicating extra metadata for this resource event. Aquarium does not process this metadata. The field must always be present, even if it is empty.
+
+
+User Events
+^^^^^^^^^^^
+
+
+The charging algorithm
+----------------------
+
+The Aquarium REST API
+---------------------
+
 Document Revisions
-^^^^^^^^^^^^^^^^^^
+------------------
 
 ==================    ================================
 Revision              Description
 ==================    ================================
 0.1 (Nov 2, 2011)     Initial release. Credit and debit policy descriptions 
+0.2 (Feb 23, 2012)    Update definitions, remove company use case
+0.3 (Feb 28, 2012)    Event and resource descriptions
 ==================    ================================
 
 

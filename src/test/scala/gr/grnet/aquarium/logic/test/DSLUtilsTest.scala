@@ -182,12 +182,12 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
       "00 20 * * 5")
     val tf = DSLTimeFrame(from, None, List(repeat1, repeat2))
 
-    var result = allEffectiveTimeslots(tf, from, to)
+    var result = allEffectiveTimeslots(tf, Timeslot(from, to))
     assertEquals(36, result.size)
     testSuccessiveTimeslots(result)
 
     result = allEffectiveTimeslots(DSLTimeFrame(new Date(0), None, List()),
-      new Date(14), new Date(40))
+      Timeslot(new Date(14), new Date(40)))
     assertEquals(1, result.size)
   }
 

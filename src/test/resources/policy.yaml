@@ -52,7 +52,7 @@ aquariumpolicy:
           - start: "00 00 18 * *"
             end:   "00 00 20 * *"
         from: 0
-        to: 124443
+        to: 1424442196 # Fri, 20 Feb 2015 14:23:16 GMT
 
   pricelists:
     - pricelist: 
@@ -135,4 +135,11 @@ aquariumpolicy:
         effective:
           from: 1322061528 #Wed 23 Nov 2011 17:18
           to: 1324661839 #Fri, 23 Dec 2011 17:37
+
+    - agreement:
+      overrides: default
+      name: complextimeslots
+      creditplan: every10days
+      pricelist: foobar
+      algorithm: freedisk
 

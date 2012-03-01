@@ -89,7 +89,7 @@ trait DSL {
     if (resources.isEmpty)
       return List()
     resources.head match {
-      case x: YAMLMapNode => List(constructResource(x)) ++ parseResources(resources.tail)
+      case x: YAMLMapNode => constructResource(x) :: parseResources(resources.tail)
       case _ => throw new DSLParseException("Resource format unknown")
     }
   }
@@ -152,8 +152,8 @@ trait DSL {
     val algorithm = constructAlgorithm(algorithms.head.asInstanceOf[YAMLMapNode],
       algoTmpl, resources)
 
-    val tmpresults = results ++ List(algorithm)
-    List(algorithm) ++ parseAlgorithms(algorithms.tail, resources, tmpresults)
+    val tmpresults = algorithm :: results
+    algorithm :: parseAlgorithms(algorithms.tail, resources, tmpresults)
   }
 
   /** Construct an algorithm object from a yaml node*/
@@ -219,8 +219,8 @@ trait DSL {
     val pl = constructPriceList(pricelists.head.asInstanceOf[YAMLMapNode],
       tmpl, resources)
 
-    val tmpresults = results ++ List(pl)
-    List(pl) ++ parsePriceLists(pricelists.tail, resources, tmpresults)
+    val tmpresults = pl :: results
+    pl :: parsePriceLists(pricelists.tail, resources, tmpresults)
   }
 
   /* Construct a pricelist from a YAML node and template, which may be
@@ -285,8 +285,8 @@ trait DSL {
 
     val plan = constructCreditPlan(creditsplans.head.asInstanceOf[YAMLMapNode], tmpl)
 
-    val tmpresults = results ++ List(plan)
-    List(plan) ++ parseCreditPlans(creditsplans.tail, tmpresults)
+    val tmpresults = plan :: results
+    plan :: parseCreditPlans(creditsplans.tail, tmpresults)
   }
 
   def constructCreditPlan(plan: YAMLMapNode, tmpl: DSLCreditPlan): DSLCreditPlan = {
@@ -355,8 +355,8 @@ trait DSL {
      val agr = constructAgreement(agreements.head.asInstanceOf[YAMLMapNode],
        tmpl, policies, pricelists, resources, creditplans)
 
-     val tmpresults = results ++ List(agr)
-     List(agr) ++ parseAgreements(agreements.tail, policies, pricelists,
+     val tmpresults = agr :: results
+     agr :: parseAgreements(agreements.tail, policies, pricelists,
        resources, creditplans, tmpresults)
    }
 
@@ -427,12 +427,14 @@ trait DSL {
   /** Parse a timeframe declaration */
   def parseTimeFrame(timeframe: YAMLMapNode): DSLTimeFrame = {
     val from = timeframe / Vocabulary.from match {
-      case x: YAMLIntNode => new Date(x.int)
+      case x: YAMLIntNode => new Date(x.int.longValue * 1000L)
+      case y: YAMLLongNode => new Date(y.long)
       case _ => throw new DSLParseException("No %s field for timeframe %s".format(Vocabulary.from, timeframe))
     }
 
     val to = timeframe / Vocabulary.to match {
-      case x: YAMLIntNode => Some(new Date(x.int))
+      case x: YAMLIntNode => Some(new Date(x.int.longValue * 1000L))
+      case y: YAMLLongNode => Some(new Date(y.long))
       case YAMLEmptyNode => None
     }
 
@@ -470,7 +472,7 @@ trait DSL {
    * library to parse crontab-like strings. The input format differs from the
    * [[http://en.wikipedia.org/wiki/Cron default cron format]] in the following ways:
    *
-   *  - Only 5 field resource specs are allowed
+   *  - Only 5 field cron specs are allowed
    *  - Multiple values per field (e.g. Mon,Wed,Fri) are not allowed. Ranges
    *    (e.g. Mon-Fri) are however allowed.
    */

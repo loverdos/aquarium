@@ -68,7 +68,12 @@ final case class Timeslot(from: Date, to: Date)
   /**
    * Check whether this time slot fully contains the provided one.
    */
-  def contains(t: Timeslot) : Boolean = t.startsAfter(this) && t.endsBefore(this)
+  def contains(t: Timeslot) : Boolean = {
+    if (this.from.getTime <= t.from.getTime &&
+      this.to.getTime >= t.to.getTime)
+      return true
+    return false
+  }
 
   /**
    * Check whether this timeslot contains the provided time instant.

@@ -45,10 +45,10 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait DateUtils {
+trait DateUtils extends Loggable {
 
   /**
-   * Returns a date that is either equal to the latest of
+   * Returns a date that is equal to the latest of
    * (`d - 1 year`, `limit`)
    */
   def oneYearBack(d: Date, limit: Date): Date = {
@@ -62,7 +62,7 @@ trait DateUtils {
   }
 
   /**
-   * Returns a date that is either equal to the earliest of
+   * Returns a date that is equal to the earliest of
    * (`d + 1 year`, `limit`)
    */
   def oneYearAhead(d: Date, limit: Date): Date = {

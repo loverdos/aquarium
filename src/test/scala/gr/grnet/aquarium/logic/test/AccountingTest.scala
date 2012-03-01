@@ -55,13 +55,14 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
   def testAlignTimeslots() {
     before
     val from = new Date(1322555880000L) //Tue, 29 Nov 2011 10:38:00 EET
-    val to = new Date(1322689082000L) //Wed, 30 Nov 2011 23:38:02 EET
-    val agr = dsl.findAgreement("scaledbandwidth").get
-    val a = resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr).keys.toList
-    val b = resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr).keys.toList
+    val to = new Date(1322689082000L)  //Wed, 30 Nov 2011 23:38:02 EET
+    val agr = dsl.findAgreement("complextimeslots").get
+    val a = resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr).keySet.toList
+    val b = resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr).keySet.toList
 
     val result = alignTimeslots(a, b)
-    assertEquals(12, result.size)
+    assertEquals(9, result.size)
+    assertEquals(result.last,  b.last)
   }
 
   @Test
@@ -95,7 +96,7 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
     //Simple, continuous resource
     var evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bandwidthup", "1", "1", 123, Map())
-    var wallet = chargeEvent(evt, agr, 112, new Date(1325755902000L), List())
+    var wallet = chargeEvent(evt, agr, 112, new Date(1325755902000L), List(), None)
     wallet match {
       case Just(x) => assertEquals(2, x.size)
       case _ => fail("No results returned")
@@ -103,11 +104,11 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
     //Complex resource event without details, should fail
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", "1", 1, Map())
-    assertFailed[Exception, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List()))
+    assertFailed[Exception, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List(), None))
 
     //Complex, onoff resource
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", "1", 1, Map("vmid" -> "3"))
-    wallet = chargeEvent(evt, agr, 0, new Date(1325755902000L), List())
+    wallet = chargeEvent(evt, agr, 0, new Date(1325755902000L), List(), None)
     wallet match {
       case Just(x) => assertEquals(2, x.size)
       case _ => fail("No results returned")
@@ -115,11 +116,11 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
     //Complex, onoff resource, with wrong states, should fail
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", "1", 1, Map("vmid" -> "3"))
-    assertFailed[Exception, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List()))
+    assertFailed[Exception, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List(), None))
 
     //Simple, discrete resource
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bookpages", "1", "1", 120, Map())
-    wallet = chargeEvent(evt, agr, 15, new Date(1325755902000L), List())
+    wallet = chargeEvent(evt, agr, 15, new Date(1325755902000L), List(), None)
     wallet match {
       case Just(x) => assertEquals(1, x.size)
       case _ => fail("No results returned")
@@ -127,12 +128,12 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
     //Simple, discrete resource, time of last update equal to current event's occurred time
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bookpages", "1", "1", 120, Map())
-    wallet = chargeEvent(evt, agr, 15, new Date(1325762772000L), List())
+    wallet = chargeEvent(evt, agr, 15, new Date(1325762772000L), List(), None)
     assertEquals(1, wallet.getOr(List(WalletEntry.zero, WalletEntry.zero)).size)
 
     //Simple, continuous resource, time of last update equal to current event's occurred time
     evt = ResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bandwidthup", "1", "1", 123, Map())
-    wallet = chargeEvent(evt, agr, 15, new Date(1325762772000L), List())
+    wallet = chargeEvent(evt, agr, 15, new Date(1325762772000L), List(), None)
     assertEquals(0, wallet.getOr(List(WalletEntry.zero)).size)
   }
 }

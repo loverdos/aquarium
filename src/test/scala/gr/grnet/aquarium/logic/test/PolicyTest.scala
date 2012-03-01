@@ -73,7 +73,7 @@ class PolicyTest extends DSLTestBase with StoreConfigurator {
     var polNew = Policy.reloadPolicies
 
     assertEquals(pol.keys.size, polNew.keys.size)
-    assertEquals(pol.keys.head, polNew.keys.head)
+    //assertEquals(pol.keys.head, polNew.keys.head)
 
     //Copy the file and add a new element -> new policy
     val fileCopy = new File(f.getParent, "policy.yaml.old")

@@ -49,7 +49,9 @@ case class DSLTimeFrame (
 ) extends DSLItem {
 
   to match {
-    case Some(x) => assert(x.after(from))
+    case Some(x) =>
+      assert(x.after(from), "Time frame to (%s) must be after from (%s)"
+        .format(x.getTime, from.getTime))
     case None =>
   }
 
@@ -61,7 +63,7 @@ case class DSLTimeFrame (
 
     val repeatMap = if (repeat.size > 0) {
       Map(Vocabulary.repeat -> repeat.map{r => r.toMap})
-    } else{
+    } else {
       Map()
     }
 
