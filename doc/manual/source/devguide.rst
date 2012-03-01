@@ -289,21 +289,47 @@ The meaning of the fields is as follows:
 - *instanceId* ``string`` If the resource is complex, then this field is set to a unique identifier for the specific instance of the resource. In case of a non-complex resource, Aquarium does not examine this value.
 - *eventVersion* ``string`` The event version. Currently fixed to "1". 
 - *value*: ``double`` The value of resource usage. Depends on the cost policy defined for the resource as follows:
-   + For ``continuous`` resources
-   + For ``onoff`` resources
-   + For ``discrete`` resources
+   + For ``continuous`` resources, the value indicates the amount of resource usage since the last resource event for the specific resource.
+   + For ``onoff`` resources, it is set to 1 when the resource is actively used and to 0 when the resource usage has stopped.
+   + For ``discrete`` resources, the field indicates the amount of resource usage at the time of the event.
 - *details*: ``map[string, string]`` A map/dictionary indicating extra metadata for this resource event. Aquarium does not process this metadata. The field must always be present, even if it is empty.
-
 
 User Events
 ^^^^^^^^^^^
 
-
 The charging algorithm
 ----------------------
 
+The 
+
 The Aquarium REST API
 ---------------------
+
+The Aquarium REST API is used to query a 
+
+As Aquarium is a backend system, clients are trusted and therefore no
+authentication is required for accessing Aquarium's API.
+
+Get User Balance
+^^^^^^^^^^^^^^^^
+
+**GET** /user/*id*/balance
+
+**Normal Response Code**: 200
+
+**Error Response Codes**: itemNotFound (404), timeout (500) 
+
+The operation returns the current balance for a user. 
+
+**Example get balance response**
+
+.. code-block:: javascript
+
+  {
+    userId: "1234"
+    balance: "321,32"
+  }
+
 
 Document Revisions
 ------------------
