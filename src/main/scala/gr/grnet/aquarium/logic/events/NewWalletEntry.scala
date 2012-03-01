@@ -40,12 +40,26 @@ import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
 import gr.grnet.aquarium.util.json.JsonHelpers
 
 /**
+ * The following equation must hold: `newTotalCredits = oldTotalCredits + entryCredits`.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
+ *
+ * @param userId The user ID this wallet entry is related to.
+ * @param entryCredits The credit amount generated for this wallet entry.
+ * @param oldTotalCredits
+ * @param newTotalCredits
+ * @param whenComputedMillis When the computation took place
+ * @param yearOfBillingMonth
+ * @param billingMonth
+ * @param currentResourceEvent
+ * @param previousResourceEvent
+ * @param chargeslots The details of the credit computation
+ * @param resourceDef
  */
-
 case class NewWalletEntry(userId: String,
-                          credits: Double,
+                          entryCredits: Double,
+                          oldTotalCredits: Double,
+                          newTotalCredits: Double,
                           whenComputedMillis: Long,
                           yearOfBillingMonth: Int,
                           billingMonth: Int,
@@ -65,7 +79,9 @@ object NewWalletEntry {
   object JsonNames {
     final val _id = "_id"
     final val id = "id"
-    final val credits = "credits"
+    final val entryCredits = "entryCredits"
+    final val oldTotalCredits = "oldTotalCredits"
+    final val newTotalCredits = "newTotalCredits"
     final val whenComputedMillis = "whenComputedMillis"
     final val yearOfBillingMonth = "yearOfBillingMonth"
     final val billingMonth = "billingMonth"

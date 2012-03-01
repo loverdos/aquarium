@@ -252,7 +252,7 @@ class UserStateComputations extends Loggable {
 
         // Prepare the implicit OFF resource events
         val implicitlyTerminatedResourceEvents = _workingUserState.implicitlyTerminatedSnapshot.toMutableWorker
-        clog.debug("implicitlyTerminated = %s", implicitlyTerminatedResourceEvents)
+        clog.debug("implicitlyTerminatedResourceEvents = %s", implicitlyTerminatedResourceEvents)
 
         /**
          * Finds the previous resource event by checking two possible sources: a) The implicitly terminated resource
@@ -318,7 +318,7 @@ class UserStateComputations extends Loggable {
             clog.unindent()
           }
           if(implicitlyTerminatedResourceEvents.size > 0) {
-            clog.debug("%s theImplicitOFFs", implicitlyTerminatedResourceEvents.size)
+            clog.debug("%s implicitlyTerminatedResourceEvents", implicitlyTerminatedResourceEvents.size)
             clog.indent()
             implicitlyTerminatedResourceEvents.foreach(ev ⇒ clog.debug("%s", rcDebugInfo(ev)))
             clog.unindent()
@@ -350,7 +350,7 @@ class UserStateComputations extends Loggable {
                   if(needPreviousResourceEvent && !havePreviousResourceEvent) {
                     // This must be the first resource event of its kind, ever.
                     // TODO: We should normally check the DB to verify the claim (?)
-                    clog.info("First event of its kind ever %s", rcDebugInfo(currentResourceEvent))
+                    clog.info("Ignoring first event of its kind %s", rcDebugInfo(currentResourceEvent))
                   } else {
                     val defaultInitialAmount = costPolicy.getResourceInstanceInitialAmount
                     val oldAmount = _workingUserState.getResourceInstanceAmount(theResource, theInstanceId, defaultInitialAmount)
@@ -374,7 +374,7 @@ class UserStateComputations extends Loggable {
                       SimpleCostPolicyAlgorithmCompiler
                     )
 
-                    // We have the charges lots, let's associate them with the current event
+                    // We have the chargeslots, let's associate them with the current event
                     fullChargeslotsM match {
                       case Just(fullChargeslots) ⇒
                         // C. Compute new credit amount (based on the charge slots)
@@ -383,6 +383,8 @@ class UserStateComputations extends Loggable {
                         val newWalletEntry = NewWalletEntry(
                           userId,
                           newCreditsDiff,
+                          oldCredits,
+                          newCredits,
                           TimeHelpers.nowMillis,
                           billingMonthInfo.year,
                           billingMonthInfo.month,
