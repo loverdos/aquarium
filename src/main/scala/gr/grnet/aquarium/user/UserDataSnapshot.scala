@@ -343,3 +343,42 @@ case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullM
     implicitlyIssuedEventsMap.valuesIterator.foreach(f)
   }
 }
+
+/**
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ *
+ * @param ignoredFirstEvents
+ * @param snapshotTime
+ */
+case class IgnoredFirstResourceEventsSnapshot(ignoredFirstEvents: List[ResourceEvent],
+                                              snapshotTime: Long) extends DataSnapshot {
+  def toMutableWorker = {
+    val map = scala.collection.mutable.Map[ResourceEvent.FullResourceType, ResourceEvent]()
+    for(ignoredFirstEvent <- ignoredFirstEvents) {
+      map(ignoredFirstEvent.fullResourceInfo) = ignoredFirstEvent
+    }
+
+    IgnoredFirstResourceEventsWorker(map)
+  }
+}
+
+/**
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @param ignoredFirstEventsMap
+ */
+case class IgnoredFirstResourceEventsWorker(ignoredFirstEventsMap: FullMutableResourceTypeMap) {
+  def toImmutableSnapshot(snapshotTime: Long) =
+    IgnoredFirstResourceEventsSnapshot(ignoredFirstEventsMap.valuesIterator.toList, snapshotTime)
+
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+    findAndRemoveFromMap(ignoredFirstEventsMap, (resource, instanceId))
+  }
+
+  def size = ignoredFirstEventsMap.size
+}
+
+object IgnoredFirstResourceEventsWorker {
+  final val Empty = IgnoredFirstResourceEventsWorker(scala.collection.mutable.Map())
+}
