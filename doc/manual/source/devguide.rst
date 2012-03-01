@@ -84,6 +84,9 @@ Glossary of Entities
   configurable amount of credits.
 - *Agreement*: An agreement associates pricelists with algorithms and credit
   plans. An agreement is assigned to one or more users/credit holders.
+- *Billing Period*: A billing period defines a recurring timeslot at the end
+  of which the accumulated resource usage is accounted for and reset.
+
 
 Time frames
 ^^^^^^^^^^^
@@ -147,9 +150,41 @@ A resource represents an entity that can be charged for. Aquarium does not
 assume a fixed set of resource types and is extensible to any number of
 resources. A resource has a ``name`` and a ``unit``; both are free form
 strings. The resource name is used to uniquely identify the resource both inside
-Aquarium and among external systems. Resource 
+Aquarium and among external systems.
 
-A resource definition also has 
+A resource definition also has a two fields that define how a resource is
+charged and whether a user can be assigned more instances of a resource.
+Specifically, the ``costpolicy`` field can have the following values:
+
+- `continuous:` For ``continuous`` resources, the charging algorithm calculates the
+  total amount of resource usage over time, per billing period. Each new
+  resource event modifies the resource usage counter and forces Aquarium
+  to calculate a new cost for the previous amount of resource usage. A typical
+  example  of a continuous resource is disk space.
+- `onoff:` ``onoff`` resources are a category of continuous resources where the
+  resource can only be in two states, on or off. In such cases, maintaining a usage
+  counter is not necessary; the charging algorithm uses time as the unit of
+  calculation. Virtual machine time is a typical example.
+- `discrete:` ``discrete`` resources are charged for instantly for the
+  reported resource value. Examples are bandwidth and every resource whose usage
+  is not a function of time (books, hits to an API etc). 
+
+Regarding resource complexity, a resource can either be labeled complex 
+or not. In the former case, a resource can have more than one instances per
+user, and resource usage is tracked individually per instance. The 
+``instance-id`` field in the resource event message (See `Resource Events`_) 
+helps Aquarium separate resource instances at charge time. 
+
+The following resource definition prescribes that the `bandwidthup` 
+resource will be charged instantly; this means that the resource will be charged
+
+.. code-block:: yaml
+
+  resource:
+    name: bandwidthup
+    unit: MB/hr
+    complex: false
+    costpolicy: discrete
 
 Price lists
 ^^^^^^^^^^^
