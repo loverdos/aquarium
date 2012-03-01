@@ -38,6 +38,7 @@ package gr.grnet.aquarium.logic.accounting.dsl
 import java.util.Date
 import scala.collection.mutable
 import annotation.tailrec
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
  * A representation of a timeslot with a start and end date.
@@ -50,7 +51,7 @@ final case class Timeslot(from: Date, to: Date)
   /* Preconditions to ensure correct object creations */
   assert(from != null)
   assert(to != null)
-  assert(from.before(to))
+  assert(from.before(to), "from = %s, to = %s".format(new MutableDateCalc(from), new MutableDateCalc(to)))
 
   def startsBefore(t: Timeslot) : Boolean = this.from.before(t.from)
 
@@ -213,4 +214,7 @@ final case class Timeslot(from: Date, to: Date)
 
   def deltaMillis = to.getTime - from.getTime
   override def toString() = "from: %l, to: %l".format(from.getTime, to.getTime)
+
+  def toDateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from), new MutableDateCalc(to))
+  def toISODateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from).toISOString, new MutableDateCalc(to).toISOString)
 }
