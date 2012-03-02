@@ -46,6 +46,7 @@ import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.logic.events.ResourceEvent.{JsonNames => ResourceJsonNames}
 import gr.grnet.aquarium.logic.events.UserEvent.{JsonNames => UserEventJsonNames}
 import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
+import gr.grnet.aquarium.logic.events.PolicyEntry.{JsonNames => PolicyJsonNames}
 import java.util.Date
 import gr.grnet.aquarium.logic.accounting.Policy
 import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLPolicy, DSLComplexResource}
@@ -75,7 +76,8 @@ class MongoDBStore(
   private[store] lazy val userStates     = getCollection(MongoDBStore.USER_STATES_COLLECTION)
   private[store] lazy val userEvents     = getCollection(MongoDBStore.USER_EVENTS_COLLECTION)
   private[store] lazy val walletEntries  = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
-  private[store] lazy val policies      = getCollection(MongoDBStore.POLICIES_COLLECTION)
+//  private[store] lazy val policies       = getCollection(MongoDBStore.POLICIES_COLLECTION)
+  private[store] lazy val policyEntries  = getCollection(MongoDBStore.POLICY_ENTRIES_COLLECTION)
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
@@ -319,24 +321,24 @@ class MongoDBStore(
   //-UserEventStore
 
   //+PolicyStore
-  def loadPolicies(after: Long): List[PolicyEntry] = {
+  def loadPolicyEntriesAfter(after: Long): List[PolicyEntry] = {
     val query = new BasicDBObject(PolicyEntry.JsonNames.validFrom,
       new BasicDBObject("$gt", after))
-    MongoDBStore.runQuery(query, policies)(MongoDBStore.dbObjectToPolicyEvent)(Some(_sortByTimestampAsc))
+    MongoDBStore.runQuery(query, policyEntries)(MongoDBStore.dbObjectToPolicyEntry)(Some(_sortByTimestampAsc))
   }
 
-  def storePolicy(policy: PolicyEntry): Maybe[RecordID] = MongoDBStore.storeAquariumEvent(policy, policies)
+  def storePolicyEntry(policy: PolicyEntry): Maybe[RecordID] = MongoDBStore.storePolicyEntry(policy, policyEntries)
 
 
-  def updatePolicy(policy: PolicyEntry) = {
+  def updatePolicyEntry(policy: PolicyEntry) = {
     //Find the entry
     val query = new BasicDBObject(PolicyEntry.JsonNames.id, policy.id)
     val policyObject = MongoDBStore.jsonSupportToDBObject(policy)
-    policies.update(query, policyObject, true, false)
+    policyEntries.update(query, policyObject, true, false)
   }
   
-  def findPolicy(id: String) =
-    MongoDBStore.findById[PolicyEntry](id, policies, MongoDBStore.dbObjectToPolicyEvent)
+  def findPolicyEntry(id: String) =
+    MongoDBStore.findById[PolicyEntry](id, policyEntries, MongoDBStore.dbObjectToPolicyEntry)
 
   //-PolicyStore
 }
@@ -377,7 +379,12 @@ object MongoDBStore {
   /**
    * Collection holding [[gr.grnet.aquarium.logic.accounting.dsl.DSLPolicy]].
    */
-  final val POLICIES_COLLECTION = "policies"
+//  final val POLICIES_COLLECTION = "policies"
+
+  /**
+   * Collection holding [[gr.grnet.aquarium.logic.events.PolicyEntry]].
+   */
+  final val POLICY_ENTRIES_COLLECTION = "policyEntries"
 
   /* TODO: Some of the following methods rely on JSON (de-)serialization).
   * A method based on proper object serialization would be much faster.
@@ -398,7 +405,7 @@ object MongoDBStore {
     UserEvent.fromJson(JSON.serialize(dbObj))
   }
 
-  def dbObjectToPolicyEvent(dbObj: DBObject): PolicyEntry = {
+  def dbObjectToPolicyEntry(dbObj: DBObject): PolicyEntry = {
     PolicyEntry.fromJson(JSON.serialize(dbObj))
   }
 
@@ -451,6 +458,10 @@ object MongoDBStore {
 
   def storeUserState(userState: UserState, collection: DBCollection): Maybe[RecordID] = {
     storeAny[UserState](userState, collection, ResourceJsonNames.userId, _.userId, MongoDBStore.jsonSupportToDBObject)
+  }
+  
+  def storePolicyEntry(policyEntry: PolicyEntry, collection: DBCollection): Maybe[RecordID] = {
+    storeAny[PolicyEntry](policyEntry, collection, PolicyJsonNames.id, _.id, MongoDBStore.jsonSupportToDBObject)
   }
 
   def storeAny[A](any: A,
