@@ -265,8 +265,11 @@ following:
 Credit Plans
 ^^^^^^^^^^^^
 
-Credit plans define how user accounts are refilled with credits. A credit plan
-has 
+Credit plans define how user accounts are refilled with credits.  Apart from
+the usual ``name`` and ``effective`` attributes, a credit plan has an ``at``
+attribute (a five-field Cron string) which defines how offen the refilling
+operation will run and a ``credits`` attribute which defines the number of
+credits to add to the user's wallet.
 
 .. code-block:: yaml
 

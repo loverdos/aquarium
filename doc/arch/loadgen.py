@@ -49,9 +49,9 @@ def exit_handler(signum, frame):
 
 (opts, args) = parse_arguments(sys.argv[1:])
 
-credentials = pika.PlainCredentials('aquarium', opts.passwd)
+credentials = pika.PlainCredentials('rabbit', opts.passwd)
 parameters = pika.ConnectionParameters(
-    host = 'aquarium.dev.grnet.gr',
+    host = 'dev72.dev.grnet.gr',
     credentials = credentials)
 connection = pika.BlockingConnection(parameters)
 
