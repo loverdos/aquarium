@@ -93,18 +93,18 @@ class PolicyTest extends DSLTestBase with StoreConfigurator {
     before
 
     val policies = configurator.policyStore
-    policies.storePolicy(this.dsl.toPolicyEntry)
+    policies.storePolicyEntry(this.dsl.toPolicyEntry)
 
     val copy1 = this.dsl.copy(algorithms = List())
-    policies.storePolicy(copy1.toPolicyEntry)
+    policies.storePolicyEntry(copy1.toPolicyEntry)
 
     val copy2 = this.dsl.copy(pricelists = List())
-    policies.storePolicy(copy2.toPolicyEntry)
+    policies.storePolicyEntry(copy2.toPolicyEntry)
 
-    var pol = policies.loadPolicies(TimeHelpers.nowMillis)
+    var pol = policies.loadPolicyEntriesAfter(TimeHelpers.nowMillis)
     assert(pol.isEmpty)
 
-    pol = policies.loadPolicies(0)
+    pol = policies.loadPolicyEntriesAfter(0)
     assertEquals(3, pol.size)
     assertEquals(pol.head.policyYAML, this.dsl.toYAML)
     assertEquals(pol.tail.head.policyYAML, copy1.toYAML)

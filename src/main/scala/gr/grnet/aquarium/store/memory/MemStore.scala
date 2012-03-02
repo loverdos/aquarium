@@ -64,7 +64,7 @@ class MemStore extends UserStateStore
   private[this] var _userStates     = List[UserState]()
   private[this] var _policyEntries  = List[PolicyEntry]()
   private[this] var _resourceEvents = List[ResourceEvent]()
-  
+
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
   private val userEventById: ConcurrentMap[String, UserEvent] = new ConcurrentHashMap[String, UserEvent]()
 
@@ -268,13 +268,13 @@ class MemStore extends UserStateStore
 
   def findUserEventsByUserId(userId: String) = userEventById.valuesIterator.filter{v => v.userId == userId}.toList
 
-  def loadPolicies(after: Long) =
+  def loadPolicyEntriesAfter(after: Long) =
     _policyEntries.filter(p => p.validFrom > after)
             .sortWith((a,b) => a.validFrom < b.validFrom)
 
-  def storePolicy(policy: PolicyEntry) = {_policyEntries = policy :: _policyEntries; Just(RecordID(policy.id))}
+  def storePolicyEntry(policy: PolicyEntry) = {_policyEntries = policy :: _policyEntries; Just(RecordID(policy.id))}
 
-  def updatePolicy(policy: PolicyEntry) =
+  def updatePolicyEntry(policy: PolicyEntry) =
     _policyEntries = _policyEntries.foldLeft(List[PolicyEntry]()){
       (acc, p) =>
         if (p.id == policy.id)
@@ -283,7 +283,7 @@ class MemStore extends UserStateStore
           p :: acc
   }
 
-  def findPolicy(id: String) = _policyEntries.find(p => p.id == id) match {
+  def findPolicyEntry(id: String) = _policyEntries.find(p => p.id == id) match {
     case Some(x) => Just(x)
     case None => NoVal
   }

@@ -49,21 +49,21 @@ trait PolicyStore {
    * Load all accounting policies valid after the specified time instance.
    * The results are returned sorted by PolicyEntry.validFrom
    */
-  def loadPolicies(after: Long): List[PolicyEntry]
+  def loadPolicyEntriesAfter(after: Long): List[PolicyEntry]
 
   /**
    * Store an accounting policy.
    */
-  def storePolicy(policy: PolicyEntry): Maybe[RecordID]
+  def storePolicyEntry(policy: PolicyEntry): Maybe[RecordID]
 
   /**
    * Updates the policy record whose id is equal to the id
    * of the provided policy entry.
    */
-  def updatePolicy(policy: PolicyEntry): Unit
+  def updatePolicyEntry(policy: PolicyEntry): Unit
 
   /**
    * Find a policy by its unique id
    */
-  def findPolicy(id: String): Maybe[PolicyEntry]
+  def findPolicyEntry(id: String): Maybe[PolicyEntry]
 }
