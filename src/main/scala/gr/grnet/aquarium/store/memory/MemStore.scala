@@ -61,11 +61,12 @@ class MemStore extends UserStateStore
   with WalletEntryStore
   with StoreProvider {
 
-  private[this] var _userStates = List[UserState]()
-  private var policies: List[PolicyEntry] = List()
+  private[this] var _userStates     = List[UserState]()
+  private[this] var _policyEntries  = List[PolicyEntry]()
+  private[this] var _resourceEvents = List[ResourceEvent]()
+  
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
   private val userEventById: ConcurrentMap[String, UserEvent] = new ConcurrentHashMap[String, UserEvent]()
-  private[this] val resourceEventsById: ConcurrentMap[String, ResourceEvent] = new ConcurrentHashMap[String, ResourceEvent]()
 
   def configure(props: Props) = {
   }
@@ -73,9 +74,9 @@ class MemStore extends UserStateStore
   override def toString = {
     val map = Map(
       "UserState"     -> _userStates.size,
-      "ResourceEvent" -> resourceEventsById.size,
+      "ResourceEvent" -> _resourceEvents.size,
       "UserEvent"     -> userEventById.size,
-      "PolicyEntry"   -> policies.size,
+      "PolicyEntry"   -> _policyEntries.size,
       "WalletEntry"   -> walletEntriesById.size
     )
 
@@ -183,18 +184,26 @@ class MemStore extends UserStateStore
   //- WalletEntryStore
 
   //+ ResourceEventStore
+
+  override def clearResourceEvents() = {
+    _resourceEvents = Nil
+  }
+
   def storeResourceEvent(event: ResourceEvent) = {
-    resourceEventsById(event.id) = event
+    _resourceEvents ::= event
     Just(RecordID(event.id))
   }
 
   def findResourceEventById(id: String) = {
-    Maybe(resourceEventsById(id))
+    _resourceEvents.find(ev ⇒ ev.id == id) match {
+      case Some(ev) ⇒ Just(ev)
+      case None     ⇒ NoVal
+    }
   }
 
   def findResourceEventsByUserId(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
-    val byUserId = resourceEventsById.valuesIterator.filter(_.userId == userId).toArray
+    val byUserId = _resourceEvents.filter(_.userId == userId).toArray
     val sorted = sortWith match {
       case Some(sorter) ⇒
         byUserId.sortWith(sorter)
@@ -206,7 +215,7 @@ class MemStore extends UserStateStore
   }
 
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
-    resourceEventsById.valuesIterator.filter { ev ⇒
+    _resourceEvents.filter { ev ⇒
       ev.userId == userId &&
       (ev.occurredMillis > timestamp)
     }.toList
@@ -222,14 +231,14 @@ class MemStore extends UserStateStore
   def findResourceEventsForReceivedPeriod(userId: String,
                                           startTimeMillis: Long,
                                           stopTimeMillis: Long): List[ResourceEvent] = {
-    resourceEventsById.valuesIterator.filter { ev ⇒
+    _resourceEvents.filter { ev ⇒
       ev.userId == userId &&
       ev.isReceivedWithinMillis(startTimeMillis, stopTimeMillis)
     }.toList
   }
 
   def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Maybe[Long] = Maybe {
-    resourceEventsById.valuesIterator.filter { case ev ⇒
+    _resourceEvents.filter { case ev ⇒
       // out of sync events are those that were received in the billing month but occurred in previous (or next?)
       // months
       ev.isOutOfSyncForBillingPeriod(startMillis, stopMillis)
@@ -247,7 +256,7 @@ class MemStore extends UserStateStore
   override def findAllRelevantResourceEventsForBillingPeriod(userId: String,
                                                              startMillis: Long,
                                                              stopMillis: Long): List[ResourceEvent] = {
-    resourceEventsById.valuesIterator.filter { case ev ⇒
+    _resourceEvents.filter { case ev ⇒
       ev.isOccurredOrReceivedWithinMillis(startMillis, stopMillis)
     }.toList sortWith { case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis }
   }
@@ -260,13 +269,13 @@ class MemStore extends UserStateStore
   def findUserEventsByUserId(userId: String) = userEventById.valuesIterator.filter{v => v.userId == userId}.toList
 
   def loadPolicies(after: Long) =
-    policies.filter(p => p.validFrom > after)
+    _policyEntries.filter(p => p.validFrom > after)
             .sortWith((a,b) => a.validFrom < b.validFrom)
 
-  def storePolicy(policy: PolicyEntry) = {policies = policy :: policies; Just(RecordID(policy.id))}
+  def storePolicy(policy: PolicyEntry) = {_policyEntries = policy :: _policyEntries; Just(RecordID(policy.id))}
 
   def updatePolicy(policy: PolicyEntry) =
-    policies = policies.foldLeft(List[PolicyEntry]()){
+    _policyEntries = _policyEntries.foldLeft(List[PolicyEntry]()){
       (acc, p) =>
         if (p.id == policy.id)
           policy :: acc
@@ -274,7 +283,7 @@ class MemStore extends UserStateStore
           p :: acc
   }
 
-  def findPolicy(id: String) = policies.find(p => p.id == id) match {
+  def findPolicy(id: String) = _policyEntries.find(p => p.id == id) match {
     case Some(x) => Just(x)
     case None => NoVal
   }

@@ -45,6 +45,10 @@ import gr.grnet.aquarium.logic.events.ResourceEvent
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
 trait ResourceEventStore {
+  def clearResourceEvents(): Unit = {
+    throw new Exception("Unsupported operation")
+  }
+
   def storeResourceEvent(event: ResourceEvent): Maybe[RecordID]
 
   def findResourceEventById(id: String): Maybe[ResourceEvent]
