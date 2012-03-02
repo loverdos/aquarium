@@ -97,7 +97,7 @@ final case class Timeslot(from: Date, to: Date)
   /**
    * Merges this timeslot with the provided one. If the timeslots overlap,
    * a list with the resulting merge is returned. If the timeslots do not
-   * overlap, the returned list contains both timeslots in increasing start
+     * overlap, the returned list contains both timeslots in increasing start
    * date order.
    */
   def merge(t: Timeslot) : List[Timeslot] = {
@@ -218,7 +218,8 @@ final case class Timeslot(from: Date, to: Date)
   def hours: Double = (to.getTime - from.getTime).toDouble / 1000.0 / 60.0 / 60.0
 
   def deltaMillis = to.getTime - from.getTime
-  override def toString() = "from: %l, to: %l".format(from.getTime, to.getTime)
+
+  override def toString() = toDateString
 
   def toDateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from), new MutableDateCalc(to))
   def toISODateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from).toISOString, new MutableDateCalc(to).toISOString)
