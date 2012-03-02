@@ -152,7 +152,7 @@ object Policy extends DSL with Loggable {
    * Set the configurator to use for loading policy stores. Should only
    * used for unit testing.
    */
-  private[logic] def withConfigurator(config: Configurator): Unit =
+  /*private[logic] */def withConfigurator(config: Configurator): Unit =
     this.config = config
 
   /**
