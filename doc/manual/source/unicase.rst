@@ -31,7 +31,7 @@ service initialization.
 
 .. code-block:: yaml
 
-  creditdsl:
+  aquariumdsl:
     resources:
       - vmtimeA
       - vmtimeB
@@ -50,8 +50,8 @@ service initialization.
         netbandwidth: 0.01
         applicable: 
           from: 0
-    policies:
-      policy:
+    algorithms:
+      algorithm:
         name: default
         vmtimeA: {price} times {volume}
         vmtimeB: {price} times {volume}
@@ -64,7 +64,7 @@ service initialization.
     agreements:
       agreement:
         name: default
-        policy: default
+        algorithm: default
         pricelist: default
 
 
@@ -109,7 +109,7 @@ charging policy:
       filedisk: 0.25
       applicable: 
         from: 1320665415 #7/11/2011 13:30
-    policy:
+    algorithm:
       volumedisk: {price} * 0.7
       filedisk: {price} * 0.7
       applicable:
@@ -123,7 +123,7 @@ charging policy:
             end:   "59 23 * * Sun"
 
 The team is defined as a group and all individual team members are added to it.
-[ckkl]
+
 
 New price plan and resource
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,7 +136,7 @@ all agreements that inherit from the default will need to be recursively
 updated while agreement history will need to be preserved.
 
 To cope with the above, the NOC administrators add a new default policy that
-`supersedes` the old one and set the applicability period of the old default 
+supersedes the old one and set the applicability period of the old default 
 pricelist to end at the point where the new pricelist comes in effect. 
 
 .. code-block:: yaml
@@ -164,9 +164,10 @@ pricelist to end at the point where the new pricelist comes in effect.
           to: 1320665415 #7/11/2011 13:30
       pricelist: 
         name: default
-        superseeds: olddefault
+        override: olddefault
         vmtimeA: 0.5
         vmtimeB: 1
         vmtimeC: 1.5
         vmtimeD: 2
-   
+        applicable:
+          from: 1320665416 

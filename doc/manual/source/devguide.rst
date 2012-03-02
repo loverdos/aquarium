@@ -87,6 +87,41 @@ Glossary of Entities
 - *Billing Period*: A billing period defines a recurring timeslot at the end
   of which the accumulated resource usage is accounted for and reset.
 
+Overall Schema
+^^^^^^^^^^^^^^
+
+The Aquarium policy DSL allows the hierarchical definition of agreements, by
+means of compositing ingredients and specifying validity periods for individual
+components or for the policies themselves. The DSL also allows overriding
+between items of the same class (i.e. an algorithm definition can override
+certain fields of another algorithm definition, while both definitions can 
+be referenced individually). 
+
+The top-level schema for the DSL is as follows.
+
+.. code-block:: yaml
+
+  aquariumpolicy:
+    resources:
+      - resource:
+        ... [see Resources]
+
+    algorithms:
+      - algorithm:
+        ... [see Algorithms]
+
+    pricelists:
+      - pricelist:
+        ... [see Pricelists]
+
+    creditplans:
+      - creditplan:
+        ... [see Creditplans]
+
+    agreements:
+      - agreement:
+        ... [see Agreements]
+
 
 Time frames
 ^^^^^^^^^^^
@@ -175,8 +210,8 @@ user, and resource usage is tracked individually per instance. The
 ``instance-id`` field in the resource event message (See `Resource Events`_) 
 helps Aquarium separate resource instances at charge time. 
 
-The following resource definition prescribes that the `bandwidthup` 
-resource will be charged instantly; this means that the resource will be charged
+The following resource definition defines the `bandwidthup` 
+resource. 
 
 .. code-block:: yaml
 
@@ -185,6 +220,25 @@ resource will be charged instantly; this means that the resource will be charged
     unit: MB/hr
     complex: false
     costpolicy: discrete
+
+Algorithms
+^^^^^^^^^^
+
+An algorithm specifies the algorithm used to perform the cost calculation, by
+combining the reported resource usage with the applicable pricelist. As opposed
+to price lists, algorithms define behaviours, which have certain
+validity periods. 
+
+.. code-block:: yaml
+
+  algorithm:
+    name: default
+    bandwidthup:   {price} times {volume} 
+    bandwidthdown: {price} times {volume}
+    vmtime: {price} times {volume}
+    diskspace: {price} times {volume}
+    effective: 
+      [see Time frames]
 
 Price lists
 ^^^^^^^^^^^
@@ -205,41 +259,31 @@ following:
     bandwidthdown:            # Price for used downstream bandwidth per MB
     vmtime:                   # Price for time 
     diskspace:                # Price for used diskspace, per MB
-    applicable:
+    effective:
       [see Timeframe format]
-
-Algorithms
-^^^^^^^^^^
-
-An algorithm specifies the algorithm used to perform the cost calculation, by
-combining the reported resource usage with the applicable pricelist. As opposed
-to price lists, policies define behaviours (algorithms), which have certain
-validity periods. Algorithms can either be defined inline or referenced from
-the list of defined algorithms. 
-
-.. code-block:: yaml
-
-  algorithm:
-    name: default
-    bandwidthup:   {price} times {volume} 
-    bandwidthdown: {price} times {volume}
-    vmtime: {price} times {volume}
-    diskspace: {price} times {volume}
-    applicable: 
-      [see Timeframe format]
-
 
 Credit Plans
 ^^^^^^^^^^^^
 
+Credit plans define how user accounts are refilled with credits. A credit plan
+has 
 
+.. code-block:: yaml
+
+  creditplan:
+    name: default
+    credits: 100
+    at: "00 00 1 * *"
+    effective:
+      from: 0
 
 Agreements
 ^^^^^^^^^^
 
-An agreement is the result of combining a policy with a pricelist. As the
+An agreement is the result of combining an with algorithm with a pricelist
+and a creditplan. As the
 accounting DSL's main purpose is to facilitate the construction of agreements
-(which are then associated to entities), the agreement is the centerpiece of
+(which are then associated to users), the agreement is the centerpiece of
 the language. An agreement is defined in full using the following template:
 
 .. code-block:: yaml
@@ -249,14 +293,17 @@ the language. An agreement is defined in full using the following template:
     extends: other            # [opt] name of inhereted agreement 
     pricelist: plname         # Name of declared pricelist
       resourse: value         # [opt] Overiding of price for resource
-    policy: polname           # Name of declared policy
+    algorithm: polname           # Name of declared policy
       resourse: value         # [opt] Overiding of algorithm for resourse
 
-**Consistency requirements:**
+An agreement definition can either reuse the pricelists, algorithms and creditplans 
+defined above (referenced by name) or define the effective algorithm or pricelist
+in place.
+If a ``pricelist`` or ``algorithm`` name has not been defined explicitely (and
+therefore referenced by name), all prices or algorithms for the declared
+resources must be defined in either the  ``agreement`` or one of its parents.
 
-- If a ``pricelist`` or ``policy`` name has not been specified, all prices or
-  algorithms for the declared resources must be defined in either the processed 
-  ``agreement`` or a parent ``agreement``.
+As with all DSL resources, agreements can be overriden by other agreements.
 
 Examples
 ^^^^^^^^^
