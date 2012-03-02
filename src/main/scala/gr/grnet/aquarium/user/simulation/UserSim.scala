@@ -48,7 +48,6 @@ import math.Ordering
 
 case class UserSim(userId: String, userCreationDate: Date, resourceEventStore: ResourceEventStore) { userSelf ⇒
   private[this] var _serviceClients = List[ClientServiceSim]()
-  private[this] var _resourceEvents = List[ResourceEvent]()
 
   private[this] val myResourcesGen: () => List[ClientServiceSim#ResourceSim] = () => {
     for {
@@ -69,7 +68,6 @@ case class UserSim(userId: String, userCreationDate: Date, resourceEventStore: R
   
   private[simulation]
   def _addResourceEvent(resourceEvent: ResourceEvent): Maybe[RecordID] = {
-    _resourceEvents = resourceEvent :: _resourceEvents
     resourceEventStore.storeResourceEvent(resourceEvent)
   }
 
@@ -82,11 +80,11 @@ case class UserSim(userId: String, userCreationDate: Date, resourceEventStore: R
   }
 
   def myResourceEvents: List[ResourceEvent] = {
-    _resourceEvents
+    resourceEventStore.findResourceEventsByUserId(userId)(None)
   }
 
   def myResourceEventsByReceivedDate: List[ResourceEvent] = {
-    _resourceEvents.sorted(new Ordering[ResourceEvent] {
+    myResourceEvents.sorted(new Ordering[ResourceEvent] {
       def compare(x: ResourceEvent, y: ResourceEvent) = {
         if(x.receivedMillis < y.receivedMillis)
           -1
@@ -99,7 +97,7 @@ case class UserSim(userId: String, userCreationDate: Date, resourceEventStore: R
   }
 
   def myResourceEventsByOccurredDate: List[ResourceEvent] = {
-    _resourceEvents.sorted(new Ordering[ResourceEvent] {
+    myResourceEvents.sorted(new Ordering[ResourceEvent] {
       def compare(x: ResourceEvent, y: ResourceEvent) = {
         if(x.occurredMillis < y.occurredMillis)
           -1
