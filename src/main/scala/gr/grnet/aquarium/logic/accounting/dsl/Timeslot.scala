@@ -75,6 +75,10 @@ final case class Timeslot(from: Date, to: Date)
     return false
   }
 
+  def containsTimeInMillis(millis: Long) = {
+    fromMillis <= millis && millis <= toMillis
+  }
+
   /**
    * Check whether this timeslot contains the provided time instant.
    */
@@ -218,6 +222,9 @@ final case class Timeslot(from: Date, to: Date)
   def hours: Double = (to.getTime - from.getTime).toDouble / 1000.0 / 60.0 / 60.0
 
   def deltaMillis = to.getTime - from.getTime
+
+  def fromMillis = from.getTime
+  def toMillis   = to.getTime
 
   override def toString() = toDateString
 
