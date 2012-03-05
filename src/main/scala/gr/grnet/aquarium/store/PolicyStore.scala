@@ -36,10 +36,10 @@
 package gr.grnet.aquarium.store
 
 import scala.collection.immutable
-import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.logic.events.PolicyEntry
 import collection.immutable.SortedMap
 import gr.grnet.aquarium.logic.accounting.dsl.{DSL, DSLPolicy, Timeslot}
+import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
 
 /**
  * A store for serialized policy entries.
@@ -69,6 +69,21 @@ trait PolicyStore {
   def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long, dsl: DSL): SortedMap[Timeslot, DSLPolicy] = {
     for((timeslot, policyEntry) <- loadAndSortPolicyEntriesWithin(fromMillis, toMillis))
       yield (timeslot, dsl.parse(policyEntry.policyYAML))
+  }
+  
+  def loadValidPolicyEntryAt(atMillis: Long): Maybe[PolicyEntry] = Maybe {
+    loadPolicyEntriesAfter(0L).find { policyEntry ⇒
+      policyEntry.fromToTimeslot.containsTimeInMillis(atMillis)
+    } match {
+      case Some(policyEntry) ⇒
+        policyEntry
+      case None ⇒
+        null // Do not worry, this will be transformed to a NoVal by the Maybe polymorphic constructor
+    }
+  }
+  
+  def loadValidPolicyAt(atMillis: Long, dsl: DSL): Maybe[DSLPolicy] = {
+    loadValidPolicyEntryAt(atMillis).map(policyEntry ⇒ dsl.parse(policyEntry.policyYAML))
   }
 
   /**
