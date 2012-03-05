@@ -1,12 +1,11 @@
-\documentclass[preprint,10pt]{sigplanconf}
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix, epsfig, endnotes, xspace, url}
+
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{graphicx}
-\usepackage[british]{babel}
-\usepackage{url}
 \usepackage{listings}
 \usepackage{color}
-\usepackage{xspace}
 
 \newcommand{\cL}{{\cal L}}
 \newcommand{\TODO}{{\sl TODO \marginpar{\sl TODO}}}
@@ -18,269 +17,140 @@
 \newcommand{\GB}[1]{\ensuremath{#1\,\mbox{\sc GB}}}
 \newcommand{\secs}[1]{\ensuremath{#1\,sec}}
 
+\newcommand{\grnet}{{\sc grnet}\xspace}
+
 \begin{document}
-\conferenceinfo{ScalaDays '12}{London, UK.}
-\copyrightyear{2012}
-\copyrightdata{1-59593-056-6/05/0006}
 
-\titlebanner{DRAFT---Do not distribute}
+%don't want date printed
+\date{}
 
-
-
+%make title bold and 14 pt font (Latex default is non-bold, 16 pt)
 \title{Aquarium: Billing for the Cloud in the Cloud}
 
-\authorinfo{Georgios Gousios \and Christos KK Loverdos \and Nectarios Koziris}
-{GRNET SA}
-{\{gousiosg,loverdos,nkoziris\}@grnet.gr}
+\author{
+{\rm Georgios Gousios}\\
+\and
+{\rm Christos KK Loverdos }\\
+\and
+{\rm Nectarios Koziris}\\
+GRNET S.A.
+% copy the following lines to add more authors
+% \and
+% {\rm Name}\\
+%Name Institution
+} % end author
 
 \maketitle
-\begin{abstract}
 
-An important part of all public IaaS offerings is resource management and
-customer billing. In this paper, we present the design and implementation of
-Aquarium, an extensible billing service software. Aquarium associates state
-changes in cloud resources with respective charges, based on configurable,
-user-specific and versioned charging policy. The implementation of Aquarium is
-characterized by pervasive data immutability, actor message passing and service
-orientation.  
 
-\end{abstract}
+% Use the following at camera-ready time to suppress page numbers.
+% Comment it out when you first submit the paper for review.
+\thispagestyle{empty}
 
-\category{D.2.11}{Software Architectures}{Domain-specific architectures}
+\subsection*{Abstract}
 
-\terms
-    Algorithms, Performance
-
-\keywords
-    Billing, Cloud Computing, Scala, Akka
+An important part of public IaaS offerings is resource management and
+customer billing. In this paper, we present the design and
+implementation of Aquarium, an extensible billing service software.
+Aquarium associates state changes in cloud resources with respective
+charges, based on configurable, user-specific and versioned charging
+policy. The implementation of Aquarium is characterized by pervasive
+data immutability, actor message passing and service orientation.
 
 \section{Introduction}
 
-Public cloud infrastructures have emerged as an alternative to building and
-maintaining expensive proprietary data centers. At no upfront investment cost,
-companies, especially startups, and individual users rent computing power from
-service providers, using the pay-as-you-go charging model and enjoying high
-scalability should the requirement arise~\cite{Lourid10}. The use of public cloud
-infrastructures is particularly attractive for various forms of research
-activities, where budget is usually tight and availability of computing power
-can make or break an experiment. An important part of all public clouds is
-resource management and customer billing~\cite{Armbr10}. Unfortunately, even
-though all proprietary platforms do feature mechanisms for billing customers
-for resource usage, there is currently a lack of open solutions.
+Public cloud infrastructures have emerged as an alternative to
+building and maintaining expensive proprietary data
+centers.~\cite{Lourid10}. An important part of all public clouds is
+resource management and customer billing~\cite{Armbr10}.
+Unfortunately, even though all proprietary platforms do feature
+mechanisms for billing customers for resource usage, there is
+currently a lack of open solutions.
 
 In this paper we present Aquarium, an open source resource billing software,
-designed to handle the production  requirements of {\sc grnet}'s public
+designed to handle the production  requirements of \grnet's public
 Infrastructure as a Service (IaaS) platform. Aquarium utilizes a custom Domain
 Specific Language ({\sc dsl}) for configuring the supported resources, the
-pricelists and the billing algorithms. It receives input from an event queue
+pricelists, and the billing algorithms. It receives input from an event queue
 and presents billing results through a {\sc rest api}. It has been developed
 in Scala, using the Akka library to handle concurrency and actor-based
 event processing. In the following sections, we present the requirements
 that have driven Aquarium's design, the software architecture and
-implementation of important computational algorithms along with a preliminary
-evaluation of Aquarium's performance. We also present an account of our
-experience in introducing Scala to {\sc grnet}.
+implementation of important computational algorithms, and a preliminary
+evaluation of Aquarium's performance. 
 
 \section{Requirements}
 
-Aquarium was designed on a clean sheet to serve a particular purpose, namely
-the provision of billing services to an IaaS infrastructure, and also be
-extensible to new services. In the following sections, we briefly present the
-requirements that shaped Aquarium's design.
+Aquarium was designed on a clean sheet to serve a particular purpose,
+namely the provision of billing services to an IaaS infrastructure,
+and also be extensible to new services. In the following sections, we
+briefly present the requirements that shaped Aquarium's design.
 
-\subsection{Application Environment} The Okeanos project at {\sc grnet} is
-building a full stack public IaaS system for Greek universities, and several
-services on top of it. The Okeanos infrastructure is comprised by several
-components:
+Aquarium is developed to provide accounting and billing to \grnet's
+cloud computing services---although its design ensures that its use is
+not limitted to \grnet's specific requirements. These services include
+provision of {\sc vm}s and online storage; additional services will be
+built on top of them (for instance, repository services and services
+for big data computations). Aquarium should be therefore able to:
+\begin{itemize}
+\item Provide accounting and billing for different resources, not all of
+them known in advance. 
+\item Cater for a variety of different pricing policies.
+\item Allow for application of different pricing policies to different
+  resources, for different users, at different periods of time.
+\item Allow for dynamic modification of any of the above.
+\item Provide a consistent (not eventually consistent) view of users'
+  resource usage and billing.
+\end{itemize}
 
-\begin{description}
+Since \grnet's cloud computing services are offered to the whole Greek
+research and academic community, Aquarium must be able to scale and be
+flexible to cover different resource usage patterns for different
+users.
 
-    \item[Synnefo] is an IaaS management console. Users can create and start
-        Virtual Machines ({\sc vm})s, monitor their usage, create private
-        internal networks among {\sc vm}s and connect to them over the web. The
-        service backend is based on Google's Ganneti for {\sc vm} host
-        management and features hundrends of physical VM container nodes.
+As Aquarium must accommodate different resources with different
+policies for different users over time, we were faced either with a
+logistical nightmare of giving users resource chunks directly, or
+adopting a \emph{pecunia non olet} approach, where users are given
+credit, which they can use as they see fit. In \grnet's case, users
+are not charged real money for using the services, so the credit is
+virtual, but this does not make any difference to Aquarium.
+Specifically, \grnet will supply virtual currency to its users, which
+they will be able to spend on acquiring and using resources. If real
+cash were used, \grnet (or any entity using Aquarium) would only need
+to substitute real credit for virtual credit, without any changes in
+Aquarium itself.
 
-    \item[Archipelago] is a storage service, based on the Rados distributed
-        object store. It is currently under development, and the plan is to act
-        as the single point of storage for {\sc vm} images, shared volumes and
-        user files, providing clonable snapshots and distributed fault
-        tolerance.
-    
-    \item[Pithos] is a user oriented file storage service. Currently it its
-        second incarnation, it supports content deduplication, sharing of files
-        and folders and a multitude of clients.
+Aquarium is in the critical path of user requests that modify resource
+state; all supported applications must query Aquarium in order to
+ensure that the user has enough credits to create a new resource. This
+means that for a large number of users (more than tens of thousands),
+Aquarium must update and maintain in a queryable form their credit
+status, with soft realtime guarantees.
 
-    \item[Astakos] is an identity consolidation system that also acts as the
-        entry point to the entire infrastructure. Users can login using
-        identities from multiple systems, such as the Shibboleth ({\sc saml})
-        federation enabled across all Greek universities or their OAuth 
-        accounts.
+Being on the critical path also means that Aquarium must be highly
+resilient. If Aquarium fails, even for a short period of time, it must
+not loose any billing events, as this will allow users to use
+resources without being charged. Moreover, in case of failure,
+Aquarium must not corrupt any billing data under any circumstance,
+while it should reach an operating state very fast after a service
+restart.
 
-\end{description}
+\section{Resources, Events, and Policies}
 
-While the above systems (and several prospective ones) have different user
-interfaces and provide distinct functionality in the context of the {\sc grnet}
-IaaS,they all share a common notion of \emph{resources}, access and
-manipulation options with they provide to users. 
+Aquarium is the recipient of several types of events from external
+systems. More specifically, systems that manage the lifetime and
+operation of chargeable resources are responsible to send events that
+describe notable resource state changes. As an example, when a user
+consumes disk space during a file upload, a resource event for the
+\textsf{diskspace} resource along with the amount of bytes consumed
+will be sent to Aquarium.
 
-\subsection{Sharing and Resource Limiting}
+Another type of events are the user-related events. For example,
+Aquarium needs to know when a user is first created and when the user
+is activated or suspended. 
 
-The Okeanos IaaS will support the Greek higher education, an estimated
-population of 100.000 students and researchers. Being a free service, it is
-prone to abuse, either by misappropriating resources or by utilizing resources
-for purposes not related to research. A billing system can help with
-controlling resource usage if it permits users to use resources up to a
-periodically renewable limit. In order facilitate the development of other
-infrastructure systems, this limit can be expressed into currency (real or
-provisional). In the Okeanos service, each member will be granted access to a
-collection of resources using her institutional account. To enforce a limit to
-the resources that can be acquired from the platform, each user will have a
-limited amount of credits, renewable each month, which will be allowed to spend
-on any resource available through the infrastructure. Resources can also be
-shared; for example files on the Pithos file service or virtual machine images
-on the Archipelago storage are potentially subject to concurrent usage from
-multiple users. This means that charges for the use of a single resource may
-need to be distributed among several users. Also this may mean that in order
-for sharing to work correctly, users may need to transfer credits among them.
-
-
-\subsection{Configuration}
-
-Billing systems are by nature open ended. As new services are deployed, new
-resources appear, while others might be phased out.  Moreover, changes to
-company policies may trigger changes to price lists for those resources, while
-ad-hoc requests for large scale computational resources may require special
-pricing policies. In order for a billing system to be able to successfully
-adapt to changing requirements, it must be able to accommodate such changes
-without requiring changes to the application itself. This means that all
-information required for Aquarium in order to perform a billing operation, must
-be provided to it externally. Moreover, to ensure high-availability, billing
-configuration should be updatable while Aquarium is running, or at least with
-minimal downtime, without affecting the operation of external systems.
-
-
-\subsection{Scaling}
-
-In the context of the Okeanos system, Aquarium provides billing services on a
-per user basis for all resources exposed by other systems. As such, it is in
-the critical path of user requests that modify resource state; all supported
-applications must query Aquarium in order to ensure that the user has enough
-credits to create a new resource. This means that for a large number of users
-(given previous {\sc grnet} systems usage by the Greek research community, we
-estimate a concurrency level of 30.000 users), Aquarium must update and
-maintain in a queryable form their credit status, with soft realtime
-guarantees. 
-
-Being on the critical path also means that Aquarium must be highly resilient,
-too. If Aquarium fails, all supported systems will also fail. Even if it
-fails for a short period of time, it must not loose any billing events, as this
-will allow users to use resources without being charged. Moreover, in case of
-failure, Aquarium must not corrupt any billing data under any circumstance,
-while it should reach an operating state very fast after a service restart.
-
-\section{Domain Modeling}
-
-\subsection{Basic terminology}
-We have already mentioned several entities in our description so far. Let us be a bit more specific on several terms playing a key role in the design and implementation of Aquarium.
-
-\begin{description}
-\item[Credits]
-The analog of currency. Credits are the `universal currency' within Aquarium.
-
-\item[Resource]
-    A billable/chargeable entity. Credits are generally consumed when using a resource. Examples of resources are the \textsf{download bandwidth} and, respectively,  the \textsf{upload bandwidth}, the \textsf{disk space} occupied by a user's files and the \textsf{VM time}\footnote{\textsf{VM time} refers to the use of a {\sc vm} in the cloud and is associated with when the {\sc vm} is operating.} to name a few. Generally speaking, the ``resource'' term specifies the type. A resource may have several properties attached, i.e. a name, unit of measurement, a description of how its usage translates to credit consumption and whether it can have more than one instances.
-
-\item[Resource instance]
-    A user may be associated with several instances of a resource type. For example, regarding a \textsf{Virtual Machine} resource, it is obvious that a user may have more than one {\sc vm}. They are distinguished by their unique resource instance identifier. We call resources that can have more than one instance ``complex'' resources.
-
-\item[Resource event]
-An event that is generated by an external system, which is responsible for the resource.
-The resource event describes a state change for the resource. In particular, a resource event records the time when that state change occurred and the changed value.
-
-\item[Cost policy]
-A cost policy refers to a resource and it is the policy used in order to charge credits for resource usage. Cost policies in Aquarium come in three flavors, namely \textsf{continuous}, \textsf{discrete} and \textsf{onoff}.
-          
-\item[Pricelists] assign a price tag to each resource, within a timeframe.
-
-\item[Charging algorithms] specify the way in which a resource event usage can generate consumed credits. 
-A charging algorithm can be as simple as a direct multiplication of the 
-        chargeable resource quantity with the applicable price. We offer the option, though, to define more complex charging  scenarios. The Aquarium Domain Specific Language (DSL) supports a simple imperative language with
-        a number of implicit variables (e.g. \texttt{price, volume, date}) 
-        that enable administrators to specify, e.g. billing algorithms that
-        scale with billable volume. Similarly to price lists, charging algorithms
-        have an applicability timeframe attached to them.
-        
-\item[Credit plans] define a number of credits to give to users and a repetition
-        period.
-
-\item[Agreements] assign a name to a charging algorithm, pricelist and creditplan triplets,
-        which is then assigned to each user.
-        
-
-\item[Resource instance state]
-A value which is associated with a resource instance and is usually a floating point number representing an accumulating amount.
-
-\item[User]
-An owner of resources and credits. Users are defined externally of Aquarium.
-
-\item[Resource event store]
-A datatabase, in the general sense, where resource events are stored.
-
-\item[User bill]
-A, usually, periodic statement of how many credits the user has consumed. It may contain detailed analysis that relates consumed credits to resources.
-  
-\item[Billing period]
-A time period at the end of which a user bill is issued.
-A billing period is made of a starting date and a duration that is a multiple of a week.
-A usual billing period starts on a particular month date and lasts for a month.
-Each resource type designates what happens to its accumulated value (if any) at the beginning of the billing period. Usually, at the beginning of the billing period, the accumulating amounts of resources are reset to some predefined value, usually zero. For example, at the end of a monthly billing period, the total uploading bandwidth is reset to zero.
-   
-\item[User state]
-The user state is made of the following distinct parts:
-\begin{enumerate}
-\item User credit state, that is the total credit amount for the user.
-
-\item User resource state, which refers to the state of each resource instance that the user owns.
-\end{enumerate}
-
-\item[Resource event processing]
-The set of algorithmic steps by which a resource event leads to state changes of the user state, that is the credit state as well as the resources state.
-
-\end{description}
-
-\subsection{Representation of events}
-Aquarium is the recipient of several types of events from external systems. More specifically, systems that manage the lifetime and operation of chargeable resources are responsible to send events that describe notable resource state changes. As an example, when a user consumes disk space during a file upload, Pithos, which is the service responsible for user storage, will send a resource event for the \textsf{diskspace} resource along with the amount of bytes consumed.
-
-Another type of events are the user-related events, from the perspective of the Identity Management service. For example, Aquarium needs to know when a user is first created and when the user is activated or suspended. Also, several types of users (e.g. Lab Administrators or Professors in the academic setting where Aquarium is initially targeted at) may be assigned more privileged credit plans that periodically give them more credits.
-
-\begin{figure}
-\lstset{language=c, basicstyle=\footnotesize,
-stringstyle=\ttfamily, 
-flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
-
-\begin{lstlisting}
-abstract class AquariumEvent(
-  val id: String,
-  val occurredMillis: Long,
-  val receivedMillis: Long)
-  
-case class ResourceEvent(
-    override val id: String,
-    override val occurredMillis: Long, 
-    override val receivedMillis: Long, 
-    userId: String,
-    clientId: String,               
-    resource: String,
-    value: Double,
-    details: Map[String, String])
-  extends AquariumEvent(id, occurredMillis, receivedMillis)
-\end{lstlisting}
-\caption{Representation of events in Scala.}
-\label{fig:aqevent}
-\end{figure}
-
-\begin{figure}
+\begin{figure}[th]
 \lstset{language=C, basicstyle=\footnotesize,
 stringstyle=\ttfamily, 
 flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
@@ -304,49 +174,42 @@ flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 \label{fig:resevt}
 \end{figure}
 
-For the exchange of events we adopt the ubiquitous {\sc json} format. This is chosen for the ease of manipulation from both Scala, used in Aquarium, and Python, used for the rest of the communicating systems. Our base entity, \texttt{AquariumEvent} and the \texttt{ResourceEvent} corresponding to a resource event are shown in Figure~\ref{fig:aqevent}, while Figure~\ref{fig:resevt} presents a JSON-formatted \texttt{ResourceEvent} value. The given attributes are:
+For the exchange of events we have adopted the {\sc json} format.
+Figure~\ref{fig:resevt} presents a JSON-formatted
+\texttt{ResourceEvent} value. 
 
-\begin{description}
-
-\item[id] is a unique identification of the event at the client side
-
-\item[occurredMillis] gives us the Unix time of when the event occurred. It is the responsibility of the system generating the event to provide a correct value for this attribute.
-
-\item[receivedMillis] gives us the Unix time of when the event was received in the Aquarium processing pipeline.
-
-\item[userId] is the unique identifier of the user this event relates to. User identifiers are managed by an external Identity Management system.
-
-\item[clientId] is a unique, across all systems, identifier for the external system generating the event.
-
-\item[resource] is the resource name.
-
-\item[value] is the resource's changed value.
-
-\item[details] is a resource-specific collection of  attributes and their values.
-\end{description}
-
-Of particular interest is the \textsf{details} map. Several resource types can use this map in order to pass resource-specific attributes to Aquarium, which in turn can be hooked into the charging algorithm. We motivate this extension mechanism with an example for the \textsf{VMtime} resource type, which simply represents usage of virtual machines. A respective resource event needs to specify:
+Of particular interest is the \textsf{details} map. Several resource
+types can use this map in order to pass resource-specific attributes
+to Aquarium, which in turn can be hooked into the charging algorithm.
+We motivate this extension mechanism with an example for the
+\textsf{VMtime} resource type, which simply represents usage of
+virtual machines. A respective resource event needs to specify:
 \begin{itemize}
 \item Which particular resource instance (which virtual machine) it refers to.
 \item The relevant state change for the resource instance. In this case, a virtual machine can be started (\textsf{on} state) or stopped (\textsf{off} state).
 \end{itemize}
 
-In our example of Figure~\ref{fig:resevt}, we use the \textsf{vmId} and \textsf{action} extensions to specify that the virtual machine instance with identifier \textsf{3300} was started, i.e. it transitioned to \textsf{on} state. We should generally note that each resource type is free to choose the domain-specific attribute name for the instance \textsf{ID}. 
+In our example of Figure~\ref{fig:resevt}, we use the \textsf{vmid}
+and \textsf{action} extensions to specify that the virtual machine
+instance with identifier \textsf{3300} was started, i.e. it
+transitioned to the \textsf{on} state. We should generally note that each
+resource type is free to choose the domain-specific attribute name for
+the instance \textsf{ID}.
 
-Finally, for the timing of events we assume all systems that send events to Aquarium have synchronized clocks. We actually \textit{require} this, so that Aquarium is not concerned with time book keeping.
+For the timing of events we assume all systems that send events to
+Aquarium have synchronized clocks. We actually \textit{require} this,
+so that Aquarium is not concerned with time book keeping.
 
-
-\subsection{The configuration DSL}
-\label{sec:dsl}
-
-We addressed the configuration requirements of Aquarium by creating a new {\sc
-dsl}, based on the {\sc yaml} format.  The {\sc dsl} enables administrators to
-specify chargeable resources, charging policies and price lists and combine
-them arbitrarily into agreements applicable to specific users, user groups or
-the whole system. The {\sc dsl} supports inheritance for policies, price lists
-and agreements and composition in the case of agreements.  It also facilitates
-the definition of generic, repeatable debiting rules, which are then used by
-the system to refill the user's account with credits on a periodic base.
+We addressed the configuration requirements of Aquarium by creating a
+new {\sc dsl}, based on the {\sc yaml} format. The {\sc dsl} enables
+administrators to specify chargeable resources, charging policies and
+price lists and combine them arbitrarily into agreements applicable to
+specific users, user groups or the whole system. The {\sc dsl}
+supports inheritance for policies, price lists and agreements and
+composition in the case of agreements. It also facilitates the
+definition of generic, repeatable debiting rules, which are then used
+by the system to refill the user's account with credits on a periodic
+base.
 
 \begin{figure}
 \lstset{language=c, basicstyle=\footnotesize,
@@ -395,7 +258,7 @@ agreements:
           $volume times price times 1.4
         end
 \end{lstlisting}
-
+%$
 \caption{A simple billing policy definition.} 
 \label{fig:dsl}
 \end{figure}
@@ -418,9 +281,28 @@ Aquarium {\sc dsl} to provide a scaling charge algorithm.
 \section{Computational aspects}
 
 \subsection{Charging basics}
-The previously mentioned {\sc dsl} gives us a declarative way of describing the charging algorithms and the other related concepts. The computational engine of Aquarium then transforms these declarations to computing steps for the charging process.
 
-Charging, based on a resource event, is inherently multidimensional. Time (\DTime) is always one dimension to consider: there are resources whose charging is based on the passing of time. Also, rather obviously, the unit of measure (\DUnitR) for a resource ($R$) is yet another dimension to take into account. These dimensions usually enter the formulas of the charging algorithms, although it is not necessary that all of them do. But there is one more aspect to consider, which clearly adds up to the multidimensionality of the problem. More specifically, \DUnitR can be taken into account either as whole value or as a difference \DeltaDUnitR. An avid reader may be already wondering about time. Shouldn't it be treated in the same footing, at least for reasons of conceptual uniformity? Shouldn't we treat both \DTime and \DeltaDTime? In reality, we \textit{always} work with time differences. Usually, \DeltaDTime means the time difference between two resource events for the same resource instance. In such a setting, \DTime would mean the time difference from some well-known and predefined point in time. This is generally a possibility, for example by considering the beginning of a billing period as the beginning of time as far as a particular charging calculation is concerned. So all combinations of either full values or differences can be considered, as given in Table~\ref{tab:dt}.
+Charging, based on a resource event, is inherently multidimensional.
+Time (\DTime) is always one dimension to consider: there are resources
+whose charging is based on the passing of time. Also, rather
+obviously, the unit of measure (\DUnitR) for a resource ($R$) is yet
+another dimension to take into account. These dimensions usually enter
+the formulas of the charging algorithms, although it is not necessary
+that all of them do. But there is one more aspect to consider, which
+clearly adds up to the multidimensionality of the problem. More
+specifically, \DUnitR can be taken into account either as whole value
+or as a difference \DeltaDUnitR. An avid reader may be already
+wondering about time. Shouldn't it be treated in the same footing, at
+least for reasons of conceptual uniformity? Shouldn't we treat both
+\DTime and \DeltaDTime? In reality, we \textit{always} work with time
+differences. Usually, \DeltaDTime means the time difference between
+two resource events for the same resource instance. In such a setting,
+\DTime would mean the time difference from some well-known and
+predefined point in time. This is generally a possibility, for example
+by considering the beginning of a billing period as the beginning of
+time as far as a particular charging calculation is concerned. So all
+combinations of either full values or differences can be considered,
+as given in Table~\ref{tab:dt}.
 
 \begin{table}[htdp]
 \label{tab:dt}
@@ -439,7 +321,7 @@ Difference & \DeltaDTime  & \DeltaDUnitR \\
 }
 \end{table}%
 
-The above reasoning, together with some dimensional analysis, leads to first-order formulas for the charging algorithms\footnote{We also omit multiplicative and additive constants.}. These formulas capture the qualitative and quantitative essence of resource charging. We will briefly  study charging scenarios for three well-known resources, namely \textsf{bandwidth}, \textsf{diskspace} and \textsf{vmtime}. For the analysis of each case, we assume: 
+The above reasoning, together with some dimensional analysis, leads to first-order formulas for the charging algorithms\endnote{We also omit multiplicative and additive constants.}. These formulas capture the qualitative and quantitative essence of resource charging. We will briefly  study charging scenarios for three well-known resources, namely \textsf{bandwidth}, \textsf{diskspace} and \textsf{vmtime}. For the analysis of each case, we assume: 
 \begin{itemize}
 \item The arrival of two consecutive resource events, happening at times $t_0$ and $t_1$ respectively. The time difference is denoted as $\Delta T = \Delta T_{0, 1} = t_1 - t_0$. We should note that not both events are needed in all three cases for the computation of credit charging.
 
@@ -474,7 +356,6 @@ Events for VM usage come into pairs that record \textsf{on} and \textsf{off} sta
 \label{eq:vmtime}
 \Delta T \cdot [ \frac{C}{T} ]
 \end{equation}
-The meaning of the above formula should be obvious.
 
 We should stress that each one of the above three formulas, (\ref{eq:bandwidth}), (\ref{eq:diskspace}) and (\ref{eq:vmtime}) is not to be taken as the exact computation machinery for the particular case. They are first-order approximations, indicative of what is involved and if it is involved as a total value (e.g. $U_R^0$) or a difference (e.g. $\Delta T$).
 
@@ -491,48 +372,63 @@ of the amount of resource usage to be charged as follows:
     \item Resources using the \textsf{onoff} cost policy are charged based on Formula~(\ref{eq:vmtime}), just like \textsf{vmtime}.
 \end{itemize}
 
-
 \subsection{State management}
 
-External systems communicate resource state changes and user state changes by means of respective events. Aquarium, upon reception of these events, records them to an append-only immutable log and then forwards them to the appropriate user's actor mailbox. All computations that are triggered by an event are handled by the respective user actor. The only data mutation that takes place is the actor's state. Since each actor handles only its user's events and since there is only one actor for a user, the user state mutation is guaranteed to be race-free and events for different users are handled asynchronously and concurrently.
+External systems communicate resource state changes and user state
+changes by means of respective events. Aquarium, upon reception of
+these events, records them to an append-only immutable log and then
+forwards them to the appropriate user's actor mailbox. All
+computations that are triggered by an event are handled by the
+respective user actor. The only data mutation that takes place is the
+actor's state. Since each actor handles only its user's events and
+since there is only one actor for a user, the user state mutation is
+guaranteed to be race-free and events for different users are handled
+asynchronously and concurrently.
 
-Scheduled tasks compute total charges, the updated resource state and a total credit amount for each billing period. This computation is recorded to a persistent store, in an append-only fashion, for future reference and as a cached value. This cached value can be handy in computations or in case of system crashes. In the latter, we wish to avoid recomputation based on the whole history of events.
+Scheduled tasks compute total charges, the updated resource state and
+a total credit amount for each billing period. This computation is
+recorded to a persistent store, in an append-only fashion, for future
+reference and as a cached value. This cached value can be handy in
+computations or in case of system crashes. In the latter, we wish to
+avoid recomputation based on the whole history of events.
 
 \section{Performance}
 
-To evaluate the performance of Aquarium, we formulated an experiment that
-evaluated two important properties: the time required to perform the charging
-operation for a resource event and the overall time required to process a
-resource event, end to end. To conduct the experiment, Aquarium was configured,
-using the policy {\sc dsl} to handle billing events for 5 types of resources,
-using 3 overloaded pricelists, 2 overloaded algorithms, all of which were
-combined to 5 different agreements. Aquarium's data store was pre-filled in
-with 1.000.000 resource events, evenly distributed among 1.000 users. To drive
-the benchmark, we used a synthetic load generator that produced random
-billing events, at a configurable rate per minute. 
+To evaluate the performance of Aquarium, we formulated an experiment
+that evaluated two important properties: the time required to perform
+the charging operation for a resource event and the overall time
+required to process a resource event, end to end. To conduct the
+experiment, Aquarium was configured, using the policy {\sc dsl} to
+handle billing events for 5 types of resources, using 3 overloaded
+pricelists, 2 overloaded algorithms, all of which were combined to 5
+different agreements. Aquarium's data store was pre-filled in with
+1.000.000 resource events, evenly distributed among 1.000 users. To
+drive the benchmark, we used a synthetic load generator that produced
+random billing events, at a configurable rate per minute.
 
-To run the benchmark, we deployed Aquarium on a virtualized 4 core 2{\sc gh}z
-class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux server, on the Okeanos
-cloud infrastructure. The virtual machine running Aquarium was configured with
-a 4{\sc gb} maximum heap size. We selected Rabbit{\sc mq} and Mongo{\sc db} as
-the queue and database server respectively, both of which where run in another
-4-core, 4{\sc gb ram} virtual machine. Both systems were run using current
-versions at the time of benchmarking (2.7.1 for Rabbit{\sc mq} and 2.6 for
-Mongo{\sc db}). The two virtual machines did not share a physical host and
-communicated over Okeanos's switched network fabric at an effective rate of 800
-Mbits/sec, as reported by the \texttt{iperf} utility.  We paid particular
-attention to have Mongo{\sc db} load the full working data set in memory, by
-repeatedly querying all stored records. No further optimization was performed
-on either back-end system.
+To run the benchmark, we deployed Aquarium on a virtualized 4 core
+2{\sc gh}z class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux
+server, on the Okeanos cloud infrastructure. The virtual machine
+running Aquarium was configured with a 4{\sc gb} maximum heap size.
+Rabbit{\sc mq} and Mongo{\sc db} where run in another 4-core, 4{\sc gb
+  ram} virtual machine. Both systems were run using current versions
+at the time of benchmarking (2.7.1 for Rabbit{\sc mq} and 2.6 for
+Mongo{\sc db}). The two virtual machines did not share a physical host
+and communicated over Okeanos's switched network fabric at an
+effective rate of 800 Mbits/sec, as reported by the \texttt{iperf}
+utility. We paid particular attention to have Mongo{\sc db} load the
+full working data set in memory, by repeatedly querying all stored
+records. No further optimization was performed on either back-end
+system.
 
 \begin{figure}[t]
     \begin{center}
         \includegraphics[scale=0.63]{perf.pdf}
     \end{center}
 
-    \caption{Average time for peforming a billing operation and end for end to
-    end message processing for 100 active users and a varying number of
-    messages per minute.}
+    \caption{Average time for performing a billing operation and end
+      for end to end message processing for 100 active users and a
+      varying number of messages per minute.}
     
     \label{fig:perf}
 \end{figure}
@@ -564,63 +460,69 @@ system could handle around 4.500 concurrent users. While such back of the
 envelop calculations do not account for traffic spikes, they do provide an
 rough estimation of the optimisation effort that must be put in place. 
 
+\section{Related Work}
 
-\section{Lessons Learned}
+Yousef et al.~\cite{Youse08} described the three pricing models that
+are used by cloud service providers for billing used resources, namely
+tiered pricing, per-unit pricing and subscription-based pricing.
+Aquarium's cost policies that are assigned to resources map exactly to
+Yousef's pricing models. In fact, most offerings by public IaaS
+providers~\cite{Azure12, Amaz12} offer services charged according to
+Yousef models.
 
-One of the topics of debate while designing Aquarium was the choice of
-programming platform to use. With all user facing systems in the Okeanos cloud
-being developed in Python and the initial Aquarium designers being beginner
-Scala users (but experts in Java), the choice certainly involved risk that
-management was initially reluctant to take. However, by breaking down the
-requirements and considering the various safeguards that the software would
-need to employ in order to satisfy them, it became clear that a
-typesafe language was a hard requirement. Of the platforms examined, the {\sc
-jvm} had the richest collection of ready made components; the Akka library was
-particularly enticing for the scalability and distribution possibilities it
-offered.
+Work on resource accounting and billing has been carried out in the
+context cloud federation~\cite{Rochw09, Elmro09} and (earlier) grid
+federation projects. The Distributed Grid Accounting System ({\sc
+  dgas})~\cite{Piro06} was among the first to enable resource
+accounting at the computing and storage layers and then aggregation of
+the resources in a centralized location. The Reservoir project
+investigated the use of service level agreements~\cite{Elmro09} for
+resource provisioning in federated cloud scenarios.
 
-The choice of Scala at the moment it had been made was a high risk/high gain
-bet for {sc grnet}. However, the development team's experience has been generally
-positive. Scala as a language was an enabling factor; case classes permitted
-the expression of data models, including the configuration {\sc dsl}, that
-could be easily be serialized or read back from wire formats while also
-promoting immutability through the use of the \texttt{copy()} constructor. The
-pervasive use of immutability allowed us to write strict, yet simple and
-concise unit tests, as the number of cases to be examined was generally low.
-The \textsf{Maybe}\footnote{\textsf{Maybe} works like \textsf{Option}, but it
-has an extra possible state (\textsf{Failed}), which allows exceptions to be
-encapsulated in the return type of a function, and then retrieved and accounted
-for in a pattern matching operation with no side effects. More at
-\url{https://github.com/loverdos/Maybe}} monad, enabled side-effect free
-development of data processing functions, even in cases where exceptions were
-the only way to go. Java interoperability was excellent, while thin Scala
-wrappers around existing Java libraries enabled higher productivity and use of
-Scala idioms in conjunction with Java code.
+On the cloud computing front, vendors such as VMWare, Microsoft and
+{\sc ibm} provide full stack solutions, which also include resource
+accounting. Usually, such systems are connected with existing
+enterprise resource planning systems. \"Ubersmith has developed an
+engine dedicated to resource accounting; much like Aquarium, it tracks
+resource usage and applies accounting policies to it. On the open
+source front, neither the Cloustack nor the Openstack projects, have
+yet incorporated billing into their services. To the best of our
+knowledge, Aquarium is the first open source system to offer
+configurable accounting services for IaaS deployments.
 
-The Akka library, which is the backbone of our system, is a prime example of 
-the simplicity that can be achieved by using carefully designed high-level
-components. Akka's custom supervision hierarchies allowed us to partition the
-system in self-healing sub-components, each of which can fail independently
-of the other. For example, if the queue reader component fails due to a queue
-failure, Aquarium will still be accessible and responsive for the {\sc rest}
-interface. Also, Akka allowed us to easily saturate the processing components
-of any system we tested Aquarium on, simply by tuning the number of threads (in
-{\sc i/o} bound parts) and actors (in {\sc cpu} bound parts) per dispatcher. 
+Check also~\cite{Ruiz-Agundez11}.
 
-Despite the above, the experience was not as smooth as initially expected. The
-most prominent problem we encountered was that of lacking documentation. The
-Akka library documentation, even as extensive as is, only scratches the surface.
-Several other libraries we use, for example Spray for {\sc rest} handling, have
-non-existent documentation. The Java platform, and .Net that followed, has
-shown that thorough and precise documentation are key to adoption, and we
-expected a similar quality level. Related is the problem of shared community
-wisdom; as most developers know, a search for any programming problem will
-reveal several straightforward Java or scripting language sources. The
-situation with Scala is usually the opposite; the expressive power of the
-language makes it the current language of choice for treating esoteric
-functional programming concepts, while simple topics are often neglected. Scala
-has several libraries of algebraic datatypes but no {\sc yaml} parser. As Scala
-gains mainstream adoption, we hope that such problems will fade.
+\section{Discussion}
+
+A typesafe language was a hard requirement. Of the platforms examined,
+the {\sc jvm} had the richest collection of ready made components; the
+Akka library was particularly enticing for the scalability and
+distribution possibilities it offered.
+
+Scala as a language was an enabling factor; case classes permitted the
+expression of data models, including the configuration {\sc dsl}, that
+could be easily be serialized or read back from wire formats while
+also promoting immutability through the use of the \texttt{copy()}
+constructor. The pervasive use of immutability allowed us to write
+strict, yet simple and concise unit tests, as the number of cases to
+be examined was generally low. The
+\textsf{Maybe}\endnote{\textsf{Maybe} works like \textsf{Option}, but
+  it has an extra possible state (\textsf{Failed}), which allows
+  exceptions to be encapsulated in the return type of a function, and
+  then retrieved and accounted for in a pattern matching operation
+  with no side effects. More at
+  \url{https://github.com/loverdos/Maybe}} monad, enabled side-effect
+free development of data processing functions, even in cases where
+exceptions were the only way to go. 
+
+Akka's custom supervision hierarchies allowed us to partition the
+system in self-healing sub-components, each of which can fail
+independently of the other. For example, if the queue reader component
+fails due to a queue failure, Aquarium will still be accessible and
+responsive for the {\sc rest} interface. Also, Akka allowed us to
+easily saturate the processing components of any system we tested
+Aquarium on, simply by tuning the number of threads (in {\sc i/o}
+bound parts) and actors (in {\sc cpu} bound parts) per dispatcher.
 
 From a software engineering point of view, the current state of the project was
 reached using about 6 person months of effort, 2 of which were devoted to
@@ -629,60 +531,28 @@ language. The source code currently consists of 5.000 lines of executable
 statements (including about 1.000 lines of tests), divided in about 10
 packages. The system is built using both {\sc sbt} and Maven. 
 
+In this paper, we presented Aquarium, a generic billing system,
+currently tuned for cloud resource billing. We presented the
+requirements that underpinned its design, outlined the architectural
+decisions made and analysed its implementation and performance. Scala
+has been an enabling factor for the implementation of Aquarium, both
+at the system prototyping phase and during actual development.
 
-\section{Related Work}
+\section{Acknowledgments}
 
-While IaaS offerings are cheap, they are not free. Service provisioning
-incurs costs that service providers must charge to users. Yousef et
-al.~\cite{Youse08} described the three pricing models that are used by cloud
-service providers for billing used resources, namely tiered pricing, per-unit
-pricing and subscription-based pricing. Aquarium's cost policies that are
-assigned to resources map exactly to Yousef's pricing models. In fact,
-most offerings by public IaaS providers~\cite{Azure12, Amaz12} offer
-services charged according to Yousef models.
+A polite author always includes acknowledgments.  Thank everyone,
+especially those who funded the work. 
 
-A lot of research work on resource accounting and billing has been carried out
-in the context cloud federation~\cite{Rochw09, Elmro09} and (earlier) grid
-federation projects. The Distributed Grid Accounting System ({\sc
-dgas})~\cite{Piro06} was among the first to enable resource accounting at the
-computing and storage layers and then aggregation of the resources in a
-centralized location. The {\sc dgas} system was then adopted by the {\sc egee}
-project that provided federation of grid computing resources among European
-institutions. The Reservoir project investigated the use of service level
-agreements~\cite{Elmro09} for resource provisioning in federated cloud
-scenarios. Resource monitoring and billing are identified as key
-functionalities for such services, however, no actual implementation was
-produced.
+\section{Availability}
 
-On the cloud computing front, vendors such as VMWare, Microsoft and {\sc ibm}
-provide full stack solutions, which also include resource accounting. Usually,
-such systems are connected with existing enterprise resource planning systems
-\"Ubersmith has developed an engine dedicated to resource accounting; much like
-Aquarium, it tracks resource usage and applies accounting policies to it.
-On the open source front, neither the Cloustack nor the Openstack projects,
-have yet incorporated billing into their services. To the best of our
-knowledge, Aquarium is the first open source system to offer configurable
-accounting services for IaaS deployments.
+Aquarium is available under a {\sc bsd} 2-clause license from:
+\begin{center}
+\url{https://code.grnet.gr/projects/aquarium}
+\end{center}
 
-\section{Conclusions and Future Work}
+{\footnotesize \bibliographystyle{acm}
+\bibliography{aquarium}}
 
-In this paper, we presented Aquarium, a generic billing system, currently tuned
-for cloud resource billing. We presented the requirements that underpinned its
-design, outlined the architectural decisions made and analysed its
-implementation and performance.
-Scala has been an enabling factor for the
-implementation of Aquarium, both at the system prototyping phase and during
-actual development.  
-
-Aquarium is still under development; a first stable version will be available
-in mid-2012, with an service deployment being planned for February 2012. 
-The majority of features described in this paper have already been developed.
-Future work includes optimization and fine tuning, along with user interfaces
-for retrieving account state by end users.
-It is available under the {\sc bsd} license at 
-\url{https://code.grnet.gr/projects/aquarium}.
-
-\bibliographystyle{abbrvnat}
-\bibliography{aquarium}
+\theendnotes
 
 \end{document}
