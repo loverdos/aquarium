@@ -135,7 +135,7 @@ class UserStateComputations extends Loggable {
     if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
       clog.debug("User did not exist before %s", userCreationDateCalc)
-      clog.debug("Returning %s".format(zeroUserState))
+      clog.debug("Returning ZERO state %s".format(zeroUserState))
       clog.endWith(Just(zeroUserState))
     } else {
       // Ask DB cache for the latest known user state for this billing period
@@ -398,6 +398,7 @@ class UserStateComputations extends Loggable {
                       defaultResourcesMap,
                       alltimeAgreements,
                       SimpleCostPolicyAlgorithmCompiler,
+                      policyStore,
                       Just(clog)
                     )
 
