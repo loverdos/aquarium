@@ -35,8 +35,11 @@
 
 package gr.grnet.aquarium.store
 
-import com.ckkloverdos.maybe.Maybe
+import scala.collection.immutable
 import gr.grnet.aquarium.logic.events.PolicyEntry
+import collection.immutable.SortedMap
+import gr.grnet.aquarium.logic.accounting.dsl.{DSL, DSLPolicy, Timeslot}
+import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
 
 /**
  * A store for serialized policy entries.
@@ -49,21 +52,53 @@ trait PolicyStore {
    * Load all accounting policies valid after the specified time instance.
    * The results are returned sorted by PolicyEntry.validFrom
    */
-  def loadPolicies(after: Long): List[PolicyEntry]
+  def loadPolicyEntriesAfter(after: Long): List[PolicyEntry]
+
+  def loadAndSortPolicyEntriesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyEntry] = {
+    val all = loadPolicyEntriesAfter(0L)
+    val filtered = all.filter { policyEntry ⇒
+      policyEntry.validFrom <= fromMillis &&
+      policyEntry.validTo   >= toMillis
+    }
+
+    (immutable.SortedMap[Timeslot, PolicyEntry]() /: filtered) { (map, policyEntry) ⇒
+      map.updated(policyEntry.fromToTimeslot, policyEntry)
+    }
+  }
+  
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long, dsl: DSL): SortedMap[Timeslot, DSLPolicy] = {
+    for((timeslot, policyEntry) <- loadAndSortPolicyEntriesWithin(fromMillis, toMillis))
+      yield (timeslot, dsl.parse(policyEntry.policyYAML))
+  }
+  
+  def loadValidPolicyEntryAt(atMillis: Long): Maybe[PolicyEntry] = Maybe {
+    loadPolicyEntriesAfter(0L).find { policyEntry ⇒
+      policyEntry.fromToTimeslot.containsTimeInMillis(atMillis)
+    } match {
+      case Some(policyEntry) ⇒
+        policyEntry
+      case None ⇒
+        null // Do not worry, this will be transformed to a NoVal by the Maybe polymorphic constructor
+    }
+  }
+  
+  def loadValidPolicyAt(atMillis: Long, dsl: DSL): Maybe[DSLPolicy] = {
+    loadValidPolicyEntryAt(atMillis).map(policyEntry ⇒ dsl.parse(policyEntry.policyYAML))
+  }
 
   /**
    * Store an accounting policy.
    */
-  def storePolicy(policy: PolicyEntry): Maybe[RecordID]
+  def storePolicyEntry(policy: PolicyEntry): Maybe[RecordID]
 
   /**
    * Updates the policy record whose id is equal to the id
    * of the provided policy entry.
    */
-  def updatePolicy(policy: PolicyEntry): Unit
+  def updatePolicyEntry(policy: PolicyEntry): Unit
 
   /**
    * Find a policy by its unique id
    */
-  def findPolicy(id: String): Maybe[PolicyEntry]
+  def findPolicyEntry(id: String): Maybe[PolicyEntry]
 }

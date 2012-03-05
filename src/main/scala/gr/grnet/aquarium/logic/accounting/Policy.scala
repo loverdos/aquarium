@@ -152,7 +152,7 @@ object Policy extends DSL with Loggable {
    * Set the configurator to use for loading policy stores. Should only
    * used for unit testing.
    */
-  private[logic] def withConfigurator(config: Configurator): Unit =
+  /*private[logic] */def withConfigurator(config: Configurator): Unit =
     this.config = config
 
   /**
@@ -183,7 +183,7 @@ object Policy extends DSL with Loggable {
   private def reloadPolicies(config: Configurator):
   SortedMap[Timeslot, DSLPolicy] = {
     //1. Load policies from db
-    val pol = config.policyStore.loadPolicies(0)
+    val pol = config.policyStore.loadPolicyEntriesAfter(0)
 
     //2. Check whether policy file has been updated
     val latestPolicyChange = if (pol.isEmpty) 0 else pol.last.validFrom
@@ -208,23 +208,23 @@ object Policy extends DSL with Loggable {
       val newPolicy = parsedNew.toPolicyEntry.copy(occurredMillis = ts,
         receivedMillis = ts, validFrom = ts)
 
-      config.policyStore.findPolicy(newPolicy.id) match {
+      config.policyStore.findPolicyEntry(newPolicy.id) match {
         case Just(x) =>
           logger.warn("Policy file contents not modified")
         case NoVal =>
           if (!pol.isEmpty) {
             val toUpdate = pol.last.copy(validTo = ts - 1)
-            config.policyStore.updatePolicy(toUpdate)
-            config.policyStore.storePolicy(newPolicy)
+            config.policyStore.updatePolicyEntry(toUpdate)
+            config.policyStore.storePolicyEntry(newPolicy)
           } else {
-            config.policyStore.storePolicy(newPolicy)
+            config.policyStore.storePolicyEntry(newPolicy)
           }
         case Failed(e, expl) =>
           throw e
       }
     }
 
-    config.policyStore.loadPolicies(0).foldLeft(new TreeMap[Timeslot, DSLPolicy]()){
+    config.policyStore.loadPolicyEntriesAfter(0).foldLeft(new TreeMap[Timeslot, DSLPolicy]()){
       (acc, p) =>
         acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML))
     }

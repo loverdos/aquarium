@@ -83,18 +83,15 @@ class UserActor extends AquariumActor
         if(agreementOpt.isEmpty) {
           ERROR("No default agreement found. Cannot initialize user state")
         } else {
-          this._userState = DefaultUserStateComputations.createFirstUserState(userId, DSLAgreement.DefaultAgreementName)
+          this._userState = DefaultUserStateComputations.createFirstUserState(
+            userId,
+            event.occurredMillis,
+            DSLAgreement.DefaultAgreementName)
           saveUserState
           DEBUG("Created and stored %s", this._userState)
         }
     }
   }
-
-  private[this] def findRelatedEntries(res: DSLResource, instid: String): List[WalletEntry] = {
-    val walletDB = _configurator.storeProvider.walletEntryStore
-    walletDB.findPreviousEntry(_userId, res.name, instid, Some(false))
-  }
-
 
   private[this] def processModifyUser(event: UserEvent): Unit = {
     val now = TimeHelpers.nowMillis
@@ -172,7 +169,7 @@ class UserActor extends AquariumActor
    * Create an empty state for a user
    */
   def createBlankState = {
-    this._userState = DefaultUserStateComputations.createFirstUserState(this._userId, DSLAgreement.DefaultAgreementName)
+    this._userState = DefaultUserStateComputations.createFirstUserState(this._userId)
   }
 
   /**
@@ -180,22 +177,6 @@ class UserActor extends AquariumActor
    */
   def replayUserEvents(initState: UserState, events: List[UserEvent],
                        from: Long, to: Long): UserState = {
-//    var act = initState.active
-//    var rol = initState.roles
-//    events
-//      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
-//      .foreach {
-//        e =>
-//          act = act.copy(
-//            data = e.isStateActive, snapshotTime = e.occurredMillis)
-//          // TODO: Implement the following
-//          //_userState.agreement = _userState.agreement.copy(
-//          //  data = e.newAgreement, e.occurredMillis)
-//
-//          rol = rol.copy(data = e.roles,
-//            snapshotTime = e.occurredMillis)
-//    }
-//    initState.copy(active = act, roles = rol)
     initState
   }
 
@@ -205,19 +186,6 @@ class UserActor extends AquariumActor
    */
   def replayWalletEntries(initState: UserState, events: List[WalletEntry],
                           from: Long, to: Long): UserState = {
-//    var cred = initState.credits
-//    events
-//      .filter(e => e.occurredMillis >= from && e.occurredMillis < to)
-//      .foreach {
-//        w =>
-//          val newVal = cred.creditAmount + w.value
-//          cred = cred.copy(data = newVal)
-//    }
-//    if (!events.isEmpty) {
-//      val snapTime = events.map{e => e.occurredMillis}.max
-//      cred = cred.copy(snapshotTime = snapTime)
-//    }
-//    initState.copy(credits = cred)
     initState
   }
 
