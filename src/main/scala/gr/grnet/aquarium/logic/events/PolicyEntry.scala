@@ -37,6 +37,8 @@ package gr.grnet.aquarium.logic.events
 
 import net.liftweb.json.{Extraction, parse => parseJson}
 import gr.grnet.aquarium.util.json.JsonHelpers
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import java.util.Date
 
 /**
  * Store entry for serialized policy data.
@@ -58,6 +60,8 @@ extends AquariumEvent(id, occurredMillis, receivedMillis) {
   def validate = true
 
   def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+
+  def fromToTimeslot = Timeslot(new Date(validFrom), new Date(validTo))
 }
 
 object PolicyEntry {
