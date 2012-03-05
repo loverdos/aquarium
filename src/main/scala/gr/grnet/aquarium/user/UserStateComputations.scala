@@ -43,14 +43,16 @@ import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLCostPolicy, DSLResourcesMap, DSLPolicy}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLResourcesMap, DSLPolicy}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 class UserStateComputations extends Loggable {
-  def createFirstUserState(userId: String, agreementName: String = "default") = {
+  def createFirstUserState(userId: String,
+                           millis: Long = TimeHelpers.nowMillis,
+                           agreementName: String = DSLAgreement.DefaultAgreementName) = {
     val now = 0L
     UserState(
       userId,

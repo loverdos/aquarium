@@ -166,6 +166,11 @@ aquariumpolicy:
 
     val billingMonthInfo = BillingMonthInfo.fromDateCalc(StartOfBillingYearDateCalc)
 
+    val initialUserState = computer.createFirstUserState(
+      userId = UserCKKL.userId,
+      millis = StartOfBillingYearDateCalc.copy.goPreviousYear.toMillis
+    )
+
     val userStateM = computer.doFullMonthlyBilling(
       UserCKKL.userId,
       billingMonthInfo,
@@ -173,8 +178,8 @@ aquariumpolicy:
       resourceEventStore,
       policyStore,
       UserCKKL.userCreationDate.getTime,
-      computer.createFirstUserState(UserCKKL.userId),
-      computer.createFirstUserState(UserCKKL.userId),
+      initialUserState,
+      initialUserState,
       DefaultPolicy,
       DefaultResourcesMap,
       new Accounting{},
