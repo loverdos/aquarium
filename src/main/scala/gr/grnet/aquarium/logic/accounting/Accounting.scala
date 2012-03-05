@@ -43,6 +43,7 @@ import java.util.Date
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.util.{ContextualLogger, CryptoUtils, Loggable}
+import gr.grnet.aquarium.store.PolicyStore
 
 /**
  * A timeslot together with the algorithm and unit price that apply for this particular timeslot.
@@ -219,6 +220,7 @@ trait Accounting extends DSLUtils with Loggable {
                              defaultResourceMap: DSLResourcesMap,
                              agreementNamesByTimeslot: Map[Timeslot, String],
                              algorithmCompiler: CostPolicyAlgorithmCompiler,
+                             policyStore: PolicyStore,
                              contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[List[Chargeslot]] = Maybe {
 
     val clog = ContextualLogger.fromOther(contextualLogger, logger, "computeFullChargeslots()")
@@ -237,7 +239,8 @@ trait Accounting extends DSLUtils with Loggable {
             val referenceTimeslot = Timeslot(previousResourceEvent.occurredDate, occurredDate)
 
             // all policies within the interval from previous to current resource event
-            val relevantPolicies = Policy.policies(referenceTimeslot)
+            clog.debug("Calling Policy.policies(%s)", referenceTimeslot)
+            val relevantPolicies = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime, new DSL{})
 
             (referenceTimeslot, relevantPolicies, previousResourceEvent.value)
 
@@ -261,13 +264,20 @@ trait Accounting extends DSLUtils with Loggable {
         clog.debug("DO NOT have previous event")
         val referenceTimeslot = Timeslot(new MutableDateCalc(occurredDate).goPreviousMilli.toDate, occurredDate)
         val relevantPolicy = Policy.policy(occurredDate)
+        clog.debug("Calling Policy.policy(%s)", new MutableDateCalc(occurredDate))
         val relevantPolicies = Map(referenceTimeslot -> relevantPolicy)
 
         (referenceTimeslot, relevantPolicies, costPolicy.getResourceInstanceUndefinedAmount)
     }
-    clog.debug("referenceTimeslot = %s".format(referenceTimeslot))
-    clog.debug("relevantPolicies = %s".format(relevantPolicies))
     clog.debug("previousValue = %s".format(previousValue))
+    clog.debug("referenceTimeslot = %s".format(referenceTimeslot))
+    clog.debug("relevantPolicies:")
+    clog.withIndent {
+      val timeslots = relevantPolicies.keysIterator
+      for(ts <- timeslots) {
+        clog.debug("%s: %s", ts, relevantPolicies(ts))
+      }
+    }
 
     val initialChargeslotsM = computeInitialChargeslots(
       referenceTimeslot,
