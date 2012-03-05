@@ -43,6 +43,7 @@ import java.util.Date
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.util.{ContextualLogger, CryptoUtils, Loggable}
+import gr.grnet.aquarium.store.PolicyStore
 
 /**
  * A timeslot together with the algorithm and unit price that apply for this particular timeslot.
@@ -77,12 +78,22 @@ trait Accounting extends DSLUtils with Loggable {
   protected
   def splitTimeslotByPoliciesAndAgreements(referenceTimeslot: Timeslot,
                                            policyTimeslots: List[Timeslot],
-                                           agreementTimeslots: List[Timeslot]): List[Timeslot] = {
+                                           agreementTimeslots: List[Timeslot],
+                                           clogM: Maybe[ContextualLogger] = NoVal): List[Timeslot] = {
+
+    val clog = ContextualLogger.fromOther(clogM, logger, "splitTimeslotByPoliciesAndAgreements()")
+    clog.begin()
+
     // Align policy and agreement validity timeslots to the referenceTimeslot
     val alignedPolicyTimeslots    = referenceTimeslot.align(policyTimeslots)
     val alignedAgreementTimeslots = referenceTimeslot.align(agreementTimeslots)
 
-    alignTimeslots(alignedPolicyTimeslots, alignedAgreementTimeslots)
+    ContextualLogger.debugList(clog, "alignedPolicyTimeslots", alignedPolicyTimeslots)
+    ContextualLogger.debugList(clog, "alignedAgreementTimeslots", alignedAgreementTimeslots)
+
+    val result = alignTimeslots(alignedPolicyTimeslots, alignedAgreementTimeslots, Just(clog))
+    clog.end()
+    result
   }
 
   /**
@@ -102,15 +113,14 @@ trait Accounting extends DSLUtils with Loggable {
                                 contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[List[Chargeslot]] = Maybe {
 
     val clog = ContextualLogger.fromOther(contextualLogger, logger, "computeInitialChargeslots()")
+    clog.begin()
 
     val policyTimeslots = policiesByTimeslot.keySet
     val agreementTimeslots = agreementNamesByTimeslot.keySet
 
-    clog.begin()
-
     clog.debug("policiesByTimeslot:")
     clog.withIndent {
-      policyTimeslots.foreach(pt ⇒ clog.debug("%s: %s", pt,  policyTimeslots(pt)))
+      policyTimeslots.foreach(pt ⇒ clog.debug("%s: %s", pt,  policiesByTimeslot(pt)))
     }
     clog.debug("agreementNamesByTimeslot:")
     clog.withIndent {
@@ -125,7 +135,7 @@ trait Accounting extends DSLUtils with Loggable {
     }
 
     // 1. Round ONE: split time according to overlapping policies and agreements.
-    val alignedTimeslots = splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList)
+    val alignedTimeslots = splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList, Just(clog))
     clog.debug("ROUND 1: alignedTimeslots:")
     clog.withIndent {
       alignedTimeslots.foreach(ts ⇒ clog.debug("%s", ts))
@@ -135,7 +145,7 @@ trait Accounting extends DSLUtils with Loggable {
     //    fine-grained timeslots according to applicable algorithms.
     //    Then pack the info into charge slots.
     clog.debug("ROUND 2")
-    clog.begin()
+    clog.indent()
     val allChargeslots = for {
       alignedTimeslot <- alignedTimeslots
     } yield {
@@ -199,6 +209,9 @@ trait Accounting extends DSLUtils with Loggable {
           chargeslots.toList
       }
     }
+    clog.unindent() // ROUND 2
+
+    clog.end()
 
     clog.end()
     clog.end()
@@ -219,6 +232,7 @@ trait Accounting extends DSLUtils with Loggable {
                              defaultResourceMap: DSLResourcesMap,
                              agreementNamesByTimeslot: Map[Timeslot, String],
                              algorithmCompiler: CostPolicyAlgorithmCompiler,
+                             policyStore: PolicyStore,
                              contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[List[Chargeslot]] = Maybe {
 
     val clog = ContextualLogger.fromOther(contextualLogger, logger, "computeFullChargeslots()")
@@ -237,7 +251,8 @@ trait Accounting extends DSLUtils with Loggable {
             val referenceTimeslot = Timeslot(previousResourceEvent.occurredDate, occurredDate)
 
             // all policies within the interval from previous to current resource event
-            val relevantPolicies = Policy.policies(referenceTimeslot)
+            clog.debug("Calling Policy.policies(%s)", referenceTimeslot)
+            val relevantPolicies = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime, new DSL{})
 
             (referenceTimeslot, relevantPolicies, previousResourceEvent.value)
 
@@ -261,13 +276,20 @@ trait Accounting extends DSLUtils with Loggable {
         clog.debug("DO NOT have previous event")
         val referenceTimeslot = Timeslot(new MutableDateCalc(occurredDate).goPreviousMilli.toDate, occurredDate)
         val relevantPolicy = Policy.policy(occurredDate)
+        clog.debug("Calling Policy.policy(%s)", new MutableDateCalc(occurredDate))
         val relevantPolicies = Map(referenceTimeslot -> relevantPolicy)
 
         (referenceTimeslot, relevantPolicies, costPolicy.getResourceInstanceUndefinedAmount)
     }
-    clog.debug("referenceTimeslot = %s".format(referenceTimeslot))
-    clog.debug("relevantPolicies = %s".format(relevantPolicies))
     clog.debug("previousValue = %s".format(previousValue))
+    clog.debug("referenceTimeslot = %s".format(referenceTimeslot))
+    clog.debug("relevantPolicies:")
+    clog.withIndent {
+      val timeslots = relevantPolicies.keysIterator
+      for(ts <- timeslots) {
+        clog.debug("%s: %s", ts, relevantPolicies(ts))
+      }
+    }
 
     val initialChargeslotsM = computeInitialChargeslots(
       referenceTimeslot,
@@ -319,9 +341,7 @@ trait Accounting extends DSLUtils with Loggable {
       }
     }
 
-    clog.end()
-
-    fullChargeslotsM match {
+    val result = fullChargeslotsM match {
       case Just(fullChargeslots) ⇒
         fullChargeslots
       case NoVal ⇒
@@ -329,6 +349,10 @@ trait Accounting extends DSLUtils with Loggable {
       case failed @ Failed(e, m) ⇒
         throw new Exception(m, e)
     }
+
+    clog.end()
+
+    result
   }
 
   /**
@@ -625,18 +649,32 @@ trait Accounting extends DSLUtils with Loggable {
    * result: List(Timeslot(a.from, b.to), Timeslot(b.to, a.to))
    */
   private[logic] def alignTimeslots(a: List[Timeslot],
-                                    b: List[Timeslot]): List[Timeslot] = {
+                                    b: List[Timeslot],
+                                    clogM: Maybe[ContextualLogger] = NoVal): List[Timeslot] = {
+    val clog = ContextualLogger.fromOther(clogM, logger, "alignTimeslots()")
+    clog.begin()
+
+    ContextualLogger.debugList(clog, "a", a)
+    ContextualLogger.debugList(clog, "b", b)
+
     if (a.isEmpty) return b.tail
     if (b.isEmpty) return a.tail
     assert (a.head.from == b.head.from)
 
-    if (a.head.endsAfter(b.head)) {
-      a.head.slice(b.head.to) ::: alignTimeslots(a.tail, b.tail)
+    val clogJ = Just(clog)
+    val result = if (a.head.endsAfter(b.head)) {
+      clog.debug("Branch: a.head.endsAfter(b.head)")
+      a.head.slice(b.head.to) ::: alignTimeslots(a.tail, b.tail, clogJ)
     } else if (b.head.endsAfter(a.head)) {
-      b.head.slice(a.head.to) ::: alignTimeslots(a.tail, b.tail)
+      clog.debug("Branch: b.head.endsAfter(a.head)")
+      b.head.slice(a.head.to) ::: alignTimeslots(a.tail, b.tail, clogJ)
     } else {
-      a.head :: alignTimeslots(a.tail, b.tail)
+      clog.debug("Branch: !a.head.endsAfter(b.head) && !b.head.endsAfter(a.head)")
+      a.head :: alignTimeslots(a.tail, b.tail, clogJ)
     }
+
+    clog.end()
+    result
   }
 }
 

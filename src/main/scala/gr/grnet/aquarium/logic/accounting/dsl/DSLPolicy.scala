@@ -94,6 +94,12 @@ case class DSLPolicy (
     val ts = TimeHelpers.nowMillis
     PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, Long.MaxValue)
   }
+  
+  def toPolicyEntry(occurredMillis: Long, validFromMillis: Long, validToMillis: Long = Long.MaxValue) = {
+    val yaml = toYAML
+    val id = CryptoUtils.sha1(yaml)
+    PolicyEntry(id, occurredMillis,  occurredMillis, yaml, validFromMillis, validToMillis)
+  }
 }
 
 object DSLPolicy {

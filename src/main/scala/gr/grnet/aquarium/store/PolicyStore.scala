@@ -35,8 +35,11 @@
 
 package gr.grnet.aquarium.store
 
+import scala.collection.immutable
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.logic.events.PolicyEntry
+import collection.immutable.SortedMap
+import gr.grnet.aquarium.logic.accounting.dsl.{DSL, DSLPolicy, Timeslot}
 
 /**
  * A store for serialized policy entries.
@@ -50,6 +53,23 @@ trait PolicyStore {
    * The results are returned sorted by PolicyEntry.validFrom
    */
   def loadPolicyEntriesAfter(after: Long): List[PolicyEntry]
+
+  def loadAndSortPolicyEntriesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyEntry] = {
+    val all = loadPolicyEntriesAfter(0L)
+    val filtered = all.filter { policyEntry ⇒
+      policyEntry.validFrom <= fromMillis &&
+      policyEntry.validTo   >= toMillis
+    }
+
+    (immutable.SortedMap[Timeslot, PolicyEntry]() /: filtered) { (map, policyEntry) ⇒
+      map.updated(policyEntry.fromToTimeslot, policyEntry)
+    }
+  }
+  
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long, dsl: DSL): SortedMap[Timeslot, DSLPolicy] = {
+    for((timeslot, policyEntry) <- loadAndSortPolicyEntriesWithin(fromMillis, toMillis))
+      yield (timeslot, dsl.parse(policyEntry.policyYAML))
+  }
 
   /**
    * Store an accounting policy.

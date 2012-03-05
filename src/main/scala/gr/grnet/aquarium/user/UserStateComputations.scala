@@ -43,14 +43,16 @@ import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLCostPolicy, DSLResourcesMap, DSLPolicy}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLResourcesMap, DSLPolicy}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 class UserStateComputations extends Loggable {
-  def createFirstUserState(userId: String, agreementName: String = "default") = {
+  def createFirstUserState(userId: String,
+                           millis: Long = TimeHelpers.nowMillis,
+                           agreementName: String = DSLAgreement.DefaultAgreementName) = {
     val now = 0L
     UserState(
       userId,
@@ -133,7 +135,7 @@ class UserStateComputations extends Loggable {
     if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
       clog.debug("User did not exist before %s", userCreationDateCalc)
-      clog.debug("Returning %s".format(zeroUserState))
+      clog.debug("Returning ZERO state %s".format(zeroUserState))
       clog.endWith(Just(zeroUserState))
     } else {
       // Ask DB cache for the latest known user state for this billing period
@@ -396,6 +398,7 @@ class UserStateComputations extends Loggable {
                       defaultResourcesMap,
                       alltimeAgreements,
                       SimpleCostPolicyAlgorithmCompiler,
+                      policyStore,
                       Just(clog)
                     )
 

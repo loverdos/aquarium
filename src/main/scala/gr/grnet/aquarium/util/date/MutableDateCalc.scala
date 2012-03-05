@@ -130,6 +130,26 @@ class MutableDateCalc private(private[this] var dateTime: MutableDateTime) exten
     goMinusMonths(1)
   }
 
+  def goPlusYears(n: Int): this.type = {
+    dateTime.addYears(n)
+
+    this
+  }
+
+  def goMinusYears(n: Int): this.type = {
+    dateTime.addYears(-n)
+
+    this
+  }
+
+  def goNextYear: this.type = {
+    goPlusYears(1)
+  }
+
+  def goPreviousYear: this.type = {
+    goMinusYears(1)
+  }
+
   def goPlusDays(n: Int): this.type = {
     dateTime.addDays(n)
     this

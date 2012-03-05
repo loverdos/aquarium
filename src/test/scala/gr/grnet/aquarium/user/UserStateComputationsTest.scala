@@ -44,9 +44,9 @@ aquariumpolicy:
   algorithms:
     - algorithm:
       name: default
-      bandwidth: $price times $volume
-      vmtime: $price times $volume
-      diskspace: $price times $volume
+      bandwidth: $NotNow
+      vmtime: $NotNow
+      diskspace: $NotNow
       effective:
         from: 0
 
@@ -107,7 +107,10 @@ aquariumpolicy:
     val resourceEventStore = storeProvider.resourceEventStore
     val policyStore = storeProvider.policyStore
 
-    policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry)
+    val policyOccurredMillis  = StartOfBillingYearDateCalc.toMillis
+    val policyValidFromMillis = StartOfBillingYearDateCalc.copy.goPreviousYear.toMillis
+    val policyValidToMillis   = StartOfBillingYearDateCalc.copy.goNextYear.toMillis
+    policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry(policyOccurredMillis, policyValidFromMillis, policyValidToMillis))
 
     // A new user is created on 2012-01-15 00:00:00.000
     val UserCKKL  = UserSim("CKKL", UserCreationDateCalc.toDate, storeProvider.resourceEventStore)
@@ -166,6 +169,11 @@ aquariumpolicy:
 
     val billingMonthInfo = BillingMonthInfo.fromDateCalc(StartOfBillingYearDateCalc)
 
+    val initialUserState = computer.createFirstUserState(
+      userId = UserCKKL.userId,
+      millis = StartOfBillingYearDateCalc.copy.goPreviousYear.toMillis
+    )
+
     val userStateM = computer.doFullMonthlyBilling(
       UserCKKL.userId,
       billingMonthInfo,
@@ -173,8 +181,8 @@ aquariumpolicy:
       resourceEventStore,
       policyStore,
       UserCKKL.userCreationDate.getTime,
-      computer.createFirstUserState(UserCKKL.userId),
-      computer.createFirstUserState(UserCKKL.userId),
+      initialUserState,
+      initialUserState,
       DefaultPolicy,
       DefaultResourcesMap,
       new Accounting{},
