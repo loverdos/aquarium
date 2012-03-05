@@ -239,8 +239,10 @@ trait Accounting extends DSLUtils with Loggable {
     clog.begin()
 
     val occurredDate = currentResourceEvent.occurredDate
+    val occurredMillis = currentResourceEvent.occurredMillis
     val costPolicy = dslResource.costPolicy
-    
+
+    val dsl = new DSL{}
     val (referenceTimeslot, relevantPolicies, previousValue) = costPolicy.needsPreviousEventForCreditAndAmountCalculation match {
       // We need a previous event
       case true ⇒
@@ -251,8 +253,8 @@ trait Accounting extends DSLUtils with Loggable {
             val referenceTimeslot = Timeslot(previousResourceEvent.occurredDate, occurredDate)
 
             // all policies within the interval from previous to current resource event
-            clog.debug("Calling Policy.policies(%s)", referenceTimeslot)
-            val relevantPolicies = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime, new DSL{})
+            clog.debug("Calling policyStore.loadAndSortPoliciesWithin(%s)", referenceTimeslot)
+            val relevantPolicies = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime, dsl)
 
             (referenceTimeslot, relevantPolicies, previousResourceEvent.value)
 
@@ -266,7 +268,7 @@ trait Accounting extends DSLUtils with Loggable {
           case failed @ Failed(e, m) ⇒
             throw new Exception(
               "Unable to charge. Could not obtain previous event for %s".
-                format(currentResourceEvent.toDebugString(defaultResourceMap)))
+                format(currentResourceEvent.toDebugString(defaultResourceMap)), e)
         }
         
       // We do not need a previous event
@@ -275,9 +277,17 @@ trait Accounting extends DSLUtils with Loggable {
         // referring to (almost) an instant in time
         clog.debug("DO NOT have previous event")
         val referenceTimeslot = Timeslot(new MutableDateCalc(occurredDate).goPreviousMilli.toDate, occurredDate)
-        val relevantPolicy = Policy.policy(occurredDate)
-        clog.debug("Calling Policy.policy(%s)", new MutableDateCalc(occurredDate))
-        val relevantPolicies = Map(referenceTimeslot -> relevantPolicy)
+        clog.debug("Calling policyStore.loadValidPolicyEntryAt(%s)", new MutableDateCalc(occurredMillis))
+        val relevantPolicyM = policyStore.loadValidPolicyAt(occurredMillis, dsl)
+        val relevantPolicies = relevantPolicyM match {
+          case Just(relevantPolicy) ⇒
+            Map(referenceTimeslot -> relevantPolicy)
+          case NoVal ⇒
+            throw new Exception("No relevant policy found for %s".format(referenceTimeslot))
+          case failed @ Failed(e, _) ⇒
+            throw new Exception("No relevant policy found for %s".format(referenceTimeslot), e)
+
+        }
 
         (referenceTimeslot, relevantPolicies, costPolicy.getResourceInstanceUndefinedAmount)
     }
