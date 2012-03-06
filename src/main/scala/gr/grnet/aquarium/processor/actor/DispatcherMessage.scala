@@ -76,7 +76,7 @@ case class UserResponseGetBalance(userId: String, balance: Double) extends Dispa
   def error = None
 }
 
-case class UserRequestGetState(userId: String, timestampt: Long) extends DispatcherMessage
+case class UserRequestGetState(userId: String, timestamp: Long) extends DispatcherMessage
 case class UserResponseGetState(userId: String, state: UserState) extends DispatcherResponseMessage {
   def responseBody = state
   val error = None

@@ -40,6 +40,7 @@ package actor
 import akka.actor.Actor
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import util.{Loggable, shortNameOfClass}
+import java.lang.reflect.InvocationTargetException
 
 /**
  * An actor who dispatches to particular methods based on the type of the received message.
@@ -47,7 +48,7 @@ import util.{Loggable, shortNameOfClass}
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 trait ReflectiveAquariumActor extends Actor with Loggable {
-  private val messageMethodMap: Map[Class[_ <: AnyRef], java.lang.reflect.Method] = {
+  private val messageMethodMap: Map[Class[_], java.lang.reflect.Method] = {
     val classMethodPairs = for(knownMessageType <- knownMessageTypes) yield {
       require(knownMessageType ne null, "Null in knownMessageTypes of %s".format(this.getClass))
       val methodName = "on%s".format(shortNameOfClass(knownMessageType))
@@ -67,26 +68,20 @@ trait ReflectiveAquariumActor extends Actor with Loggable {
     Map(classMethodPairs: _*)
   }
 
-  def knownMessageTypes: List[Class[_ <: AnyRef]]
+  def knownMessageTypes: List[Class[_]]
 
   protected def receive: Receive  = {
     case null =>
       receiveNull
-    case message: AnyRef =>
-      messageMethodMap.get(message.getClass) match {
-        case Some(reflectiveMethod) =>
-          reflectiveMethod.invoke(this, message)
-        case None =>
-          receiveUnknown(message)
+    case message: AnyRef if messageMethodMap.contains(message.getClass) ⇒
+      try messageMethodMap(message.getClass).invoke(this, message)
+      catch {
+        case e: InvocationTargetException ⇒
+          throw e.getTargetException
+        case e ⇒
+          throw e
       }
-    case message =>
-      // For the Anys....
-      receiveUnknown(message)
   }
 
   def receiveNull: Unit = {}
-
-  def receiveUnknown(message: Any): Unit = {
-    logger.warn("Received unknown message: %s".format(message))
-  }
 }

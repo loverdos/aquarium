@@ -85,10 +85,14 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
     logger.info("Stopped")
   }
 
+  private[this] def _newActor(role: ActorRole): ActorRef = {
+    akka.actor.Actor.actorOf(role.actorType).start()
+  }
+
   private[this] def _fromCacheOrNew(role: ActorRole): ActorRef = {
     actorCache.get(role) match {
       case null ⇒
-        val actorRef = akka.actor.Actor.actorOf(role.actorType).start()
+        val actorRef = _newActor(role)
         actorCache.put(role, actorRef)
         actorRef ! AquariumPropertiesLoaded(this._props)
         actorRef
@@ -114,7 +118,7 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
         // E.g. UserActorProvider knows how to manage multiple user actors and properly initialize them.
         //
         // Note that the returned actor is not initialized!
-        val actorRef = akka.actor.Actor.actorOf(UserActorRole.actorType).start()
+        val actorRef = _newActor(UserActorRole)
         actorRef ! AquariumPropertiesLoaded(this._props)
         actorRef ! ActorProviderConfigured(this)
         actorRef

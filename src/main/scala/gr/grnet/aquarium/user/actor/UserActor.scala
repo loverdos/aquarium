@@ -54,7 +54,8 @@ import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
  */
 
 class UserActor extends AquariumActor
-  with Loggable with Accounting with DateUtils {
+                   with ReflectiveAquariumActor
+                   with Loggable {
   @volatile
   private[this] var _userId: String = _
   @volatile
@@ -65,72 +66,6 @@ class UserActor extends AquariumActor
   def role = UserActorRole
 
   private[this] def _configurator: Configurator = Configurator.MasterConfigurator
-
-  private[this] def processCreateUser(event: UserEvent): Unit = {
-    val userId = event.userId
-    DEBUG("Creating user from state %s", event)
-    val usersDB = _configurator.storeProvider.userStateStore
-    usersDB.findUserStateByUserId(userId) match {
-      case Just(userState) ⇒
-        WARN("User already created, state = %s".format(userState))
-      case failed @ Failed(e, m) ⇒
-        ERROR("[%s][%s] %s", e.getClass.getName, e.getMessage, m)
-      case NoVal ⇒
-        // OK. Create a default UserState and store it
-        val now = TimeHelpers.nowMillis
-        val agreementOpt = Policy.policy.findAgreement(DSLAgreement.DefaultAgreementName)
-
-        if(agreementOpt.isEmpty) {
-          ERROR("No default agreement found. Cannot initialize user state")
-        } else {
-          this._userState = DefaultUserStateComputations.createFirstUserState(
-            userId,
-            event.occurredMillis,
-            DSLAgreement.DefaultAgreementName)
-          saveUserState
-          DEBUG("Created and stored %s", this._userState)
-        }
-    }
-  }
-
-  private[this] def processModifyUser(event: UserEvent): Unit = {
-    val now = TimeHelpers.nowMillis
-    val newActive = ActiveStateSnapshot(event.isStateActive, now)
-
-    DEBUG("New active status = %s".format(newActive))
-
-    this._userState = this._userState.copy( activeStateSnapshot = newActive )
-  }
-  /**
-   * Use the provided [[gr.grnet.aquarium.logic.events.UserEvent]] to change any user state.
-   */
-  private[this] def processUserEvent(event: UserEvent): Unit = {
-    if(event.isCreateUser) {
-      processCreateUser(event)
-    } else if(event.isModifyUser) {
-      processModifyUser(event)
-    }
-  }
-
-  /**
-   * Tries to makes sure that the internal user state exists.
-   *
-   * May contact the [[gr.grnet.aquarium.store.UserStateStore]] for that.
-   *
-   */
-  private[this] def ensureUserState(): Unit = {
-    if (_userState == null)
-      rebuildState(0)
-    else
-      rebuildState(_userState.oldestSnapshotTime, System.currentTimeMillis())
-  }
-
-  /**
-   * Replay the event log for all events that affect the user state, starting
-   * from the provided time instant.
-   */
-  def rebuildState(from: Long): Unit =
-    rebuildState(from, oneYearAhead(new Date(), new Date(Long.MaxValue)).getTime)
 
   /**
    * Replay the event log for all events that affect the user state.
@@ -202,56 +137,107 @@ class UserActor extends AquariumActor
     }
   }
 
-  protected def receive: Receive = {
-    case m @ AquariumPropertiesLoaded(props) ⇒
-      this._timestampTheshold = props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
-      INFO("Setup my timestampTheshold = %s", this._timestampTheshold)
+  def onAquariumPropertiesLoaded(event: AquariumPropertiesLoaded): Unit = {
+    this._timestampTheshold = event.props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
+    INFO("Setup my timestampTheshold = %s", this._timestampTheshold)
+  }
 
-    case m @ UserActorInitWithUserId(userId) ⇒
-      this._userId = userId
-      DEBUG("Actor starting, loading state")
-      ensureUserState()
+  def onUserActorInitWithUserId(event: UserActorInitWithUserId): Unit = {
+    this._userId = event.userId
+    DEBUG("Actor starting, loading state")
+  }
 
-    case m @ ProcessResourceEvent(resourceEvent) ⇒
-      if(resourceEvent.userId != this._userId) {
-        ERROR("Received %s but my userId = %s".format(m, this._userId))
-      } else {
-        //ensureUserState()
+  def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
+    val resourceEvent = event.rce
+    if(resourceEvent.userId != this._userId) {
+      ERROR("Received %s but my userId = %s".format(event, this._userId))
+    } else {
+      //ensureUserState()
 //        calcWalletEntries()
-        //processResourceEvent(resourceEvent, true)
-      }
+      //processResourceEvent(resourceEvent, true)
+    }
+  }
 
-    case m @ ProcessUserEvent(userEvent) ⇒
-      if(userEvent.userId != this._userId) {
-        ERROR("Received %s but my userId = %s".format(m, this._userId))
-      } else {
-        ensureUserState()
-        processUserEvent(userEvent)
-      }
+  private[this] def processCreateUser(event: UserEvent): Unit = {
+    val userId = event.userId
+    DEBUG("Creating user from state %s", event)
+    val usersDB = _configurator.storeProvider.userStateStore
+    usersDB.findUserStateByUserId(userId) match {
+      case Just(userState) ⇒
+        WARN("User already created, state = %s".format(userState))
+      case failed @ Failed(e, m) ⇒
+        ERROR("[%s][%s] %s", e.getClass.getName, e.getMessage, m)
+      case NoVal ⇒
+        // OK. Create a default UserState and store it
+        val now = TimeHelpers.nowMillis
+        val agreementOpt = Policy.policy.findAgreement(DSLAgreement.DefaultAgreementName)
 
-    case m @ RequestUserBalance(userId, timestamp) ⇒
-      if (System.currentTimeMillis() - _userState.newestSnapshotTime > 60 * 1000)
-      {
+        if(agreementOpt.isEmpty) {
+          ERROR("No default agreement found. Cannot initialize user state")
+        } else {
+          this._userState = DefaultUserStateComputations.createFirstUserState(
+            userId,
+            event.occurredMillis,
+            DSLAgreement.DefaultAgreementName)
+          saveUserState
+          DEBUG("Created and stored %s", this._userState)
+        }
+    }
+  }
+
+  private[this] def processModifyUser(event: UserEvent): Unit = {
+    val now = TimeHelpers.nowMillis
+    val newActive = ActiveStateSnapshot(event.isStateActive, now)
+
+    DEBUG("New active status = %s".format(newActive))
+
+    this._userState = this._userState.copy( activeStateSnapshot = newActive )
+  }
+
+  def onProcessUserEvent(event: ProcessUserEvent): Unit = {
+    val userEvent = event.ue
+    if(userEvent.userId != this._userId) {
+      ERROR("Received %s but my userId = %s".format(userEvent, this._userId))
+    } else {
+//      ensureUserState()
+      if(userEvent.isCreateUser) {
+        processCreateUser(userEvent)
+      } else if(userEvent.isModifyUser) {
+        processModifyUser(userEvent)
+      }
+    }
+  }
+
+  def onRequestUserBalance(event: RequestUserBalance): Unit = {
+    val userId = event.userId
+    val timestamp = event.timestamp
+
+    if (System.currentTimeMillis() - _userState.newestSnapshotTime > 60 * 1000)
+    {
 //        calcWalletEntries()
-      }
-      self reply UserResponseGetBalance(userId, _userState.creditsSnapshot.creditAmount)
+    }
+    self reply UserResponseGetBalance(userId, _userState.creditsSnapshot.creditAmount)
+  }
 
-    case m @ UserRequestGetState(userId, timestamp) ⇒
-      if(this._userId != userId) {
-        ERROR("Received %s but my userId = %s".format(m, this._userId))
-        // TODO: throw an exception here
-      } else {
-        // FIXME: implement
-        ERROR("FIXME: Should have properly computed the user state")
-        ensureUserState()
-        self reply UserResponseGetState(userId, this._userState)
-      }
+  def onUserRequestGetState(event: UserRequestGetState): Unit = {
+    val userId = event.userId
+    if(this._userId != userId) {
+      ERROR("Received %s but my userId = %s".format(event, this._userId))
+      // TODO: throw an exception here
+    } else {
+      // FIXME: implement
+      ERROR("FIXME: Should have properly computed the user state")
+//      ensureUserState()
+      self reply UserResponseGetState(userId, this._userState)
+    }
   }
 
   override def postStop {
     DEBUG("Stopping, saving state")
     //saveUserState
   }
+
+  def knownMessageTypes = UserActor.KnownMessageTypes
 
   private[this] def DEBUG(fmt: String, args: Any*) =
     logger.debug("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
@@ -264,4 +250,15 @@ class UserActor extends AquariumActor
 
   private[this] def ERROR(fmt: String, args: Any*) =
     logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
+}
+
+object UserActor {
+  final val KnownMessageTypes = List(
+    classOf[AquariumPropertiesLoaded],
+    classOf[UserActorInitWithUserId],
+    classOf[ProcessResourceEvent],
+    classOf[ProcessUserEvent],
+    classOf[RequestUserBalance],
+    classOf[UserRequestGetState]
+  )
 }
