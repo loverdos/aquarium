@@ -287,7 +287,7 @@ Aquarium {\sc dsl} to provide a scaling charge algorithm.
 
 \section{Computational aspects}
 
-\subsection{Charging basics and cost policies}
+%\subsection{Charging basics and cost policies}
 
 In order to charge based on the incoming resource events, time (\DTime) and the unit of measure (\DUnitR) for a resource ($R$) play a central role. \DUnitR can be taken into account either as whole value or as a difference \DeltaDUnitR. On first approximation, these lead to linear formulas that capture the essence of charging algorithms. Below, we will briefly  study charging scenarios for three well-known resources, namely \textsf{bandwidth}, \textsf{diskspace} and \textsf{vmtime}. For the analysis of each case, we assume: 
 \begin{itemize}
@@ -317,7 +317,7 @@ Events for VM usage come into pairs that record \textsf{on} and \textsf{off} sta
 The charging algorithms for the sample resources given previously motivate related cost policies, namely \textsf{discrete}, \textsf{continuous} and \textsf{onoff}. Resources employing the \textsf{discrete} cost policy are charged just like \textsf{bandwidth}, those employing the \textsf{continuous} cost policy are charged like \textsf{diskspace} and finally resources with a \textsf{onoff} cost policy are charged like \textsf{vmtime}. Due to space limits we omit a more detailed analysis and the description of more involved scenarios.
 
 
-\subsection{State management}
+%\subsection{State management}
 
 %The only data mutation that takes place is the
 %actor's state. Since each actor handles only its user's events and
