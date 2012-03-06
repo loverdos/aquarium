@@ -255,15 +255,7 @@ agreements:
   - agreement:
     name: scaledbandwidth
     pricelist: everyTue2
-    algorithm:
-      bandwidthup: |
-        if $volume gt 15 then
-          $volume times $price
-        elsif $volume gt 15 and volume lt 30 then
-          $volume times $price times 1.2
-        else
-          $volume times price times 1.4
-        end
+    algorithm: default
 \end{lstlisting}
 %$
 \caption{A simple billing policy definition.} 
