@@ -91,7 +91,7 @@ trait Accounting extends DSLUtils with Loggable {
     ContextualLogger.debugList(clog, "alignedPolicyTimeslots", alignedPolicyTimeslots)
     ContextualLogger.debugList(clog, "alignedAgreementTimeslots", alignedAgreementTimeslots)
 
-    val result = alignTimeslots(alignedPolicyTimeslots, alignedAgreementTimeslots, Just(clog))
+    val result = alignTimeslots(alignedPolicyTimeslots, alignedAgreementTimeslots)
     clog.end()
     result
   }
@@ -270,7 +270,7 @@ trait Accounting extends DSLUtils with Loggable {
               "Unable to charge. Could not obtain previous event for %s".
                 format(currentResourceEvent.toDebugString(defaultResourceMap)), e)
         }
-        
+
       // We do not need a previous event
       case false ⇒
         // ... so we cannot compute timedelta from a previous event, there is just one chargeslot
@@ -308,7 +308,7 @@ trait Accounting extends DSLUtils with Loggable {
       agreementNamesByTimeslot,
       Just(clog)
     )
-    
+
     val fullChargeslotsM = initialChargeslotsM.map { chargeslots ⇒
       chargeslots.map {
         case chargeslot @ Chargeslot(startMillis, stopMillis, algorithmDefinition, unitPrice, _) ⇒
@@ -659,32 +659,20 @@ trait Accounting extends DSLUtils with Loggable {
    * result: List(Timeslot(a.from, b.to), Timeslot(b.to, a.to))
    */
   private[logic] def alignTimeslots(a: List[Timeslot],
-                                    b: List[Timeslot],
-                                    clogM: Maybe[ContextualLogger] = NoVal): List[Timeslot] = {
-    val clog = ContextualLogger.fromOther(clogM, logger, "alignTimeslots()")
-    clog.begin()
-
-    ContextualLogger.debugList(clog, "a", a)
-    ContextualLogger.debugList(clog, "b", b)
+                                    b: List[Timeslot]): List[Timeslot] = {
 
     if (a.isEmpty) return b.tail
     if (b.isEmpty) return a.tail
+
     assert (a.head.from == b.head.from)
 
-    val clogJ = Just(clog)
-    val result = if (a.head.endsAfter(b.head)) {
-      clog.debug("Branch: a.head.endsAfter(b.head)")
-      a.head.slice(b.head.to) ::: alignTimeslots(a.tail, b.tail, clogJ)
+    if (a.head.endsAfter(b.head)) {
+      a.head.slice(b.head.to) ::: alignTimeslots((a.head.slice(b.head.to) ::: a.tail).tail, b.tail)
     } else if (b.head.endsAfter(a.head)) {
-      clog.debug("Branch: b.head.endsAfter(a.head)")
-      b.head.slice(a.head.to) ::: alignTimeslots(a.tail, b.tail, clogJ)
+      b.head.slice(a.head.to) ::: alignTimeslots((b.head.slice(a.head.to) ::: a.tail).tail, b.tail)
     } else {
-      clog.debug("Branch: !a.head.endsAfter(b.head) && !b.head.endsAfter(a.head)")
-      a.head :: alignTimeslots(a.tail, b.tail, clogJ)
+      a.head :: alignTimeslots(a.tail, b.tail)
     }
-
-    clog.end()
-    result
   }
 }
 
