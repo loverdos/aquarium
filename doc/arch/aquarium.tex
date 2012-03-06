@@ -346,24 +346,19 @@ different agreements. Aquarium's data store was pre-filled in with
 drive the benchmark, we used a synthetic load generator that produced
 random billing events, at a configurable rate per minute.
 
-To run the benchmark, we deployed Aquarium on a virtualized 4 core
-2{\sc gh}z class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux
-server, on the Okeanos cloud infrastructure. The virtual machine
-running Aquarium was configured with a 4{\sc gb} maximum heap size.
-Rabbit{\sc mq} and Mongo{\sc db} where run in another 4-core, 4{\sc gb
-  ram} virtual machine. Both systems were run using current versions
-at the time of benchmarking (2.7.1 for Rabbit{\sc mq} and 2.6 for
-Mongo{\sc db}). The two virtual machines did not share a physical host
-and communicated over Okeanos's switched network fabric at an
-effective rate of 800 Mbits/sec, as reported by the \texttt{iperf}
-utility. We paid particular attention to have Mongo{\sc db} load the
-full working data set in memory, by repeatedly querying all stored
-records. No further optimization was performed on either back-end
-system.
+To run the benchmark, we deployed Aquarium on a virtualized 4 core 2{\sc gh}z
+class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux server, on the Okeanos
+cloud infrastructure. The virtual machine running Aquarium was configured with
+a 4{\sc gb} maximum heap size.  Rabbit{\sc mq} and Mongo{\sc db} where run in
+another 4-core, 4{\sc gb ram} virtual machine. The two virtual machines did not
+share a physical host and communicated over Okeanos's switched network fabric
+at an effective rate of 800 Mbits/sec, as reported by the \texttt{iperf}
+utility. No
+further optimization was performed on either back-end system.
 
 \begin{figure}[t]
     \begin{center}
-        \includegraphics[scale=0.63]{perf.pdf}
+        \includegraphics[scale=0.59]{perf.pdf}
     \end{center}
 
     \caption{Average time for performing a billing operation and end
@@ -390,15 +385,15 @@ full collection cycle; when we forced one after the benchmark run was over,
 we observed that the actual heap memory usage was only 80{\sc mb}, which
 amounts to less than 1 {\sc mb} per user.
 
-Even so, by extrapolating on the results and hardware configuration, an average
-12-core box could handle more 1.500 messages per minute from about 300 active
-users, at 5 events per minute. Given that activity from users is expected to
-arrive in bursts, a more realistic expectation might be to receive 1 message
-per user per 5 minutes on average; in that case, and provided that the resource
-query cost is negligible as it is being served from an in memory cache, the
-system could handle around 4.500 concurrent users. While such back of the
-envelop calculations do not account for traffic spikes, they do provide an
-rough estimation of the optimisation effort that must be put in place. 
+% Even so, by extrapolating on the results and hardware configuration, an average
+% 12-core box could handle more 1.500 messages per minute from about 300 active
+% users, at 5 events per minute. Given that activity from users is expected to
+% arrive in bursts, a more realistic expectation might be to receive 1 message
+% per user per 5 minutes on average; in that case, and provided that the resource
+% query cost is negligible as it is being served from an in memory cache, the
+% system could handle around 4.500 concurrent users. While such back of the
+% envelop calculations do not account for traffic spikes, they do provide an
+% rough estimation of the optimisation effort that must be put in place. 
 
 \section{Related Work}
 
@@ -430,9 +425,9 @@ yet incorporated billing into their services. To the best of our
 knowledge, Aquarium is the first open source system to offer
 configurable accounting services for IaaS deployments.
 
-Check also~\cite{Ruiz-Agundez11}.
+%Check also~\cite{Ruiz-Agundez11}.
 
-\section{Discussion and Future Work}
+\section{Development Effort and Future Work}
 
 A typesafe language was a hard requirement. Of the platforms examined,
 the {\sc jvm} had the richest collection of ready made components; the
@@ -445,15 +440,7 @@ could be easily be serialized or read back from wire formats while
 also promoting immutability through the use of the \texttt{copy()}
 constructor. The pervasive use of immutability allowed us to write
 strict, yet simple and concise unit tests, as the number of cases to
-be examined was generally low. The
-\textsf{Maybe}\endnote{\textsf{Maybe} works like \textsf{Option}, but
-  it has an extra possible state (\textsf{Failed}), which allows
-  exceptions to be encapsulated in the return type of a function, and
-  then retrieved and accounted for in a pattern matching operation
-  with no side effects. More at
-  \url{https://github.com/loverdos/Maybe}} monad, enabled side-effect
-free development of data processing functions, even in cases where
-exceptions were the only way to go. 
+be examined was generally low. 
 
 Akka's custom supervision hierarchies allowed us to partition the
 system in self-healing sub-components, each of which can fail
