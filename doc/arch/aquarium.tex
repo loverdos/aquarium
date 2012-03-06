@@ -17,6 +17,8 @@
 \newcommand{\GB}[1]{\ensuremath{#1\,\mbox{\sc GB}}}
 \newcommand{\secs}[1]{\ensuremath{#1\,sec}}
 
+\newcommand{\todo}[1]{\textbf{TODO}\footnote{\textbf{TODO:} #1}}
+
 \newcommand{\grnet}{{\sc grnet}\xspace}
 
 \begin{document}
@@ -29,8 +31,13 @@
 
 \author{
 {\rm Georgios Gousios}\\
+GRNET S.A.
 \and
-{\rm Christos KK Loverdos }\\
+{\rm Christos KK Loverdos}\\
+GRNET S.A.
+\and
+{\rm Panos Louridas}\\
+GRNET S.A.
 \and
 {\rm Nectarios Koziris}\\
 GRNET S.A.
@@ -425,7 +432,7 @@ configurable accounting services for IaaS deployments.
 
 Check also~\cite{Ruiz-Agundez11}.
 
-\section{Discussion}
+\section{Discussion and Future Work}
 
 A typesafe language was a hard requirement. Of the platforms examined,
 the {\sc jvm} had the richest collection of ready made components; the
@@ -458,30 +465,25 @@ Aquarium on, simply by tuning the number of threads (in {\sc i/o}
 bound parts) and actors (in {\sc cpu} bound parts) per dispatcher.
 
 From a software engineering point of view, the current state of the project was
-reached using about 6 person months of effort, 2 of which were devoted to
+reached using about 8 person months of effort, 2 of which were devoted to
 requirements elicitation, prototype building and familiarizing with the
-language. The source code currently consists of 5.000 lines of executable
-statements (including about 1.000 lines of tests), divided in about 10
-packages. The system is built using both {\sc sbt} and Maven. 
+language. The source code currently consists of 7.000 lines of executable
+statements (including about 1.200 lines of tests), divided in about 10
+packages. The system is built using both {\sc sbt} and Maven.
 
-In this paper, we presented Aquarium, a generic billing system,
-currently tuned for cloud resource billing. We presented the
-requirements that underpinned its design, outlined the architectural
-decisions made and analysed its implementation and performance. Scala
-has been an enabling factor for the implementation of Aquarium, both
-at the system prototyping phase and during actual development.
+Aquarium is currenty under development, with a first production deployment
+planned for April 2012. In the future, we plan to invest resources into
+creating a comprehensive {\sc rest api} for accessing the user actor state and
+to distribute the message processing accross multiple nodes in an active-active
+mode.
 
-\section{Acknowledgments}
+\section{Acknowledgments and Availability}
 
-A polite author always includes acknowledgments.  Thank everyone,
-especially those who funded the work. 
-
-\section{Availability}
+Aquarium has been developed under contract from the Greek Ministry of Education
+\todo{Fix Ack}
 
 Aquarium is available under a {\sc bsd} 2-clause license from:
-\begin{center}
 \url{https://code.grnet.gr/projects/aquarium}
-\end{center}
 
 {\footnotesize \bibliographystyle{acm}
 \bibliography{aquarium}}
