@@ -1,63 +1,42 @@
 \paragraph{Architectural decisions} As in most similar systems, Aquarium's
 architectural design is driven by two requirements: scaling and fault
-tolerance.
+tolerance. Interestingly, Aquarium does not follow conventional design
+patterns; even though the first Aquarium prototype was developed along a 3
+tiered architecture, it quickly became clear that it would not meet our needs.
+Complications arose from the fact that it was too difficult to describe
+versioned tree-based structures, such as the configuration {\sc dsl},
+in a relational format and to
+make sure that resource events were described in an abstract way that would
+include all future system expansions. Moreover, the single query that cloud
+services will be asking Aquarium continually (number of remaining credits) must
+be answered within a few (less than 10) milliseconds for a large number of
+concurrent requests, which means that it must be somehow cached and
+automatically updated when new chargeable resources are invoked by the user.
+To address the requirements, Aquarium's data processing architecture was
+based on the based on the event sourcing
+pattern~\cite{Fowle05}, while system state handling and processing components
+are modeled as collections of actors~\cite{Hewit73}.
 
-Although the first Aquarium prototype was developed along a 3 tiered
-architecture, it quickly became clear that it would not meet our
-needs. Complications arose from the fact that it was too difficult to
-describe versioned tree-based structures, such as the configuration
-{\sc dsl} and to make sure that resource events were described in an
-abstract way that would include all future system expansions.
-Moreover, the single query that cloud services will be asking Aquarium
-continually (number of remaining credits) must be answered within a
-few (less than 10) milliseconds for a large number of concurrent
-requests, which means that it must be somehow cached and automatically
-updated when new chargeable resources are invoked by the user.
-
-For the reasons outlined above, we chose to base Aquarium on event
-sourcing. Event sourcing assumes that all changes to application state
-are stored as a sequence of events, in an immutable log. With such a
-log at hand, a system can easily rebuild the current state by
-replaying the events in order. This allows the following:
-
-\begin{itemize}
-
-    \item Multiple models can be used in order to process the events, 
-        concurrently. This means that Aquarium can provide a limited
-        data view to its {\sc rest api} and a more detailed one to a
-        helpdesk frontend.
-
-      \item It is possible to perform queries on past system states by
-        stopping the event replay at a certain point of interest. This
-        would prove very useful for a future debugging interface.
-
-      \item Application crashes are not destructive, as long as event
-        replay is fast enough and no state is inserted to the
-        application without being recorded to the event log first.
-
-      \item After event log replay, new events only cause updates in
-        the system's in-memory state, which can be done very fast.
-
-\end{itemize}
+Event sourcing assumes that all changes to application
+state are stored as a sequence of events, in an immutable log. With such a log,
+a system can rebuild its state at any point in time by replaying the
+events in order, so it is possible to perform queries on past system states for
+debugging purposes. Moreover, multiple models can be used in order to process
+the events, concurrently, which would enable Aquarium to provide a limited data
+view to its {\sc rest api} and a more detailed one to a potential helpdesk
+frontend. Furthermore, application crashes are not destructive, as long as
+event replay is fast enough and no state is inserted to the application without
+being recorded to the event log first.
 
 \begin{figure}
     \begin{center}
-    \includegraphics[scale=1.5]{arch.pdf}
+    \includegraphics[scale=1.2]{arch.pdf}
     \end{center}
 \caption{Functional components in Aquarium's architecture} 
 \label{fig:arch}
 \end{figure}
 
-We wanted to model was the current state of resource usage for each
-user, along with the user's credits. One possibility we wanted to
-explore on that front was copy on write updates; even for trivial
-updates, the system would have to copy the affected data graphs to new
-versions, instead of modifying the system in place. For that, we
-briefly explored the use of software transactional memory, but found
-it restrictive for our pursposes. What we chose instead was to contain
-each user's runtime state in an actor.% XX add ref 
-
-Using this design, shared state was eliminated; the use of the actor
+Moreover, Aquarium uses actors to encapsulate state; the use of the actor
 model guarantees that only one thread can execute within the context
 of an actor and concequently renders the protection (with copy on
 write or other mechanism) of the actor's state superfluous. The actor
@@ -91,16 +70,14 @@ to the appropriate queue.
 
 \paragraph{Implementation}
 
-Aquarium is being developed as a standalone service, based on the Akka
-library for handling actor related functionality. Akka also provided
-actor-based components for communicating with the message queue and,
-through a third party component
-(Spray)\endnote{\url{http://github.com/spray}} for handling {\sc
-  rest} requests. We chose the {\sc amqp} protocol and its Rabbit{\sc
-  mq} implementation for implementing the request queue, specifically
-because recent versions include support for active/active cluster
-configurations. The persistence layer is currently implemented by
-Mongo{\sc db}, for its replication and sharding support. However, this
-is not a hard requirement, as Aquarium features an abstraction layer
-for all database queries (currently 10 methods), which can then be
-implemented by any persistence system, relational or not.
+Aquarium is being developed as a standalone service, based on the Akka library
+for handling actor related functionality. Akka also provided actor-based
+components for communicating with the message queue and, through a third party
+component (Spray) for handling {\sc rest} requests. We chose the {\sc amqp}
+protocol and its Rabbit{\sc mq} implementation for implementing the request
+queue, specifically because recent versions include support for active/active
+cluster configurations. The persistence layer is currently implemented by
+Mongo{\sc db}, for its replication and sharding support. However, this is not a
+hard requirement, as Aquarium features an abstraction layer for all database
+queries (currently 10 methods), which can then be implemented by any
+persistence system, relational or not.

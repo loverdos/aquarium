@@ -68,9 +68,9 @@ data immutability, actor message passing and service orientation.
 
 Public cloud infrastructures have emerged as an alternative to
 building and maintaining expensive proprietary data
-centers.~\cite{Lourid10}. An important part of all public clouds is
+centers~\cite{Lourid10}. An important part of all public clouds is
 resource management and customer billing~\cite{Armbr10}.
-Unfortunately, even though all proprietary platforms do feature
+Even though all proprietary platforms do feature
 mechanisms for billing customers for resource usage, there is
 currently a lack of open solutions.
 
@@ -88,26 +88,28 @@ evaluation of Aquarium's performance.
 
 \section{Requirements}
 
-Aquarium was designed on a clean sheet to serve a particular purpose,
-namely the provision of billing services to an IaaS infrastructure,
-and also be extensible to new services. In the following sections, we
-briefly present the requirements that shaped Aquarium's design.
-
 Aquarium is developed to provide accounting and billing to \grnet's
 cloud computing services---although its design ensures that its use is
 not limitted to \grnet's specific requirements. These services include
 provision of {\sc vm}s and online storage; additional services will be
 built on top of them (for instance, repository services and services
 for big data computations). Aquarium should be therefore able to:
+
 \begin{itemize}
+
 \item Provide accounting and billing for different resources, not all of
 them known in advance. 
+
 \item Cater for a variety of different pricing policies.
+
 \item Allow for application of different pricing policies to different
   resources, for different users, at different periods of time.
+
 \item Allow for dynamic modification of any of the above.
+
 \item Provide a consistent (not eventually consistent) view of users'
   resource usage and billing.
+
 \end{itemize}
 
 Since \grnet's cloud computing services are offered to the whole Greek
@@ -119,10 +121,10 @@ As Aquarium must accommodate different resources with different
 policies for different users over time, we were faced either with a
 logistical nightmare of giving users resource chunks directly, or
 adopting a \emph{pecunia non olet} approach, where users are given
-credit, which they can use as they see fit. In \grnet's case, users
+credit, which they can use as they see fit. While in \grnet's case, users
 are not charged real money for using the services, so the credit is
-virtual, but this does not make any difference to Aquarium.
-Specifically, \grnet will supply virtual currency to its users, which
+virtual, this should not make any difference to Aquarium.
+\grnet will supply virtual currency to its users, which
 they will be able to spend on acquiring and using resources. If real
 cash were used, \grnet (or any entity using Aquarium) would only need
 to substitute real credit for virtual credit, without any changes in
@@ -131,7 +133,7 @@ Aquarium itself.
 Aquarium is in the critical path of user requests that modify resource
 state; all supported applications must query Aquarium in order to
 ensure that the user has enough credits to create a new resource. This
-means that for a large number of users (more than tens of thousands),
+means that for a large number of users (in the order of tens of thousands),
 Aquarium must update and maintain in a queryable form their credit
 status, with soft realtime guarantees.
 
@@ -145,19 +147,17 @@ restart.
 
 \section{Resources, Events, and Policies}
 
-Aquarium is the recipient of several types of events from external
+\paragraph{Events}Aquarium is the recipient of several types of events from external
 systems. More specifically, systems that manage the lifetime and
 operation of chargeable resources are responsible to send events that
 describe notable resource state changes. As an example, when a user
 consumes disk space during a file upload, a resource event for the
 \textsf{diskspace} resource along with the amount of bytes consumed
 will be sent to Aquarium.
+Figure~\ref{fig:resevt} presents a JSON-formatted
+\texttt{ResourceEvent}.
 
-Another type of events are the user-related events. For example,
-Aquarium needs to know when a user is first created and when the user
-is activated or suspended. 
-
-\begin{figure}[th]
+\begin{figure}
 \lstset{language=C, basicstyle=\footnotesize,
 stringstyle=\ttfamily, 
 flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
@@ -168,45 +168,17 @@ flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
   "occuredMillis":1314829876295,
   "receivedMillis":1314829876300,
   "userId": "31",
-  "cliendId": "snf-astakos-1",
+  "cliendId": "snf-vm-1",
   "resource": "vmtime",
   "value": 1,
-  "details": {
-    "vmid": "3300",
-    "action": "on"
-  }
+  "instance-id" : 3300,
 }
 \end{lstlisting}
 \caption{A JSON-formatted \texttt{ResourceEvent}} 
 \label{fig:resevt}
 \end{figure}
 
-For the exchange of events we have adopted the {\sc json} format.
-Figure~\ref{fig:resevt} presents a JSON-formatted
-\texttt{ResourceEvent} value. 
-
-Of particular interest is the \textsf{details} map. Several resource
-types can use this map in order to pass resource-specific attributes
-to Aquarium, which in turn can be hooked into the charging algorithm.
-We motivate this extension mechanism with an example for the
-\textsf{VMtime} resource type, which simply represents usage of
-virtual machines. A respective resource event needs to specify:
-\begin{itemize}
-\item Which particular resource instance (which virtual machine) it refers to.
-\item The relevant state change for the resource instance. In this case, a virtual machine can be started (\textsf{on} state) or stopped (\textsf{off} state).
-\end{itemize}
-
-In our example of Figure~\ref{fig:resevt}, we use the \textsf{vmid}
-and \textsf{action} extensions to specify that the virtual machine
-instance with identifier \textsf{3300} was started, i.e. it
-transitioned to the \textsf{on} state. We should generally note that each
-resource type is free to choose the domain-specific attribute name for
-the instance \textsf{ID}.
-
-For the timing of events we assume all systems that send events to
-Aquarium have synchronized clocks. We actually \textit{require} this,
-so that Aquarium is not concerned with time book keeping.
-
+\paragraph{Policies}
 We addressed the configuration requirements of Aquarium by creating a
 new {\sc dsl}, based on the {\sc yaml} format. The {\sc dsl} enables
 administrators to specify chargeable resources, charging policies and
@@ -467,6 +439,5 @@ Aquarium is available under a {\sc bsd} 2-clause license from:
 {\footnotesize \bibliographystyle{acm}
 \bibliography{aquarium}}
 
-\theendnotes
 
 \end{document}
