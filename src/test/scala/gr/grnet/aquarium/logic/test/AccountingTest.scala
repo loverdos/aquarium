@@ -40,9 +40,9 @@ import org.junit.{Test}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import java.util.Date
 import junit.framework.Assert._
-import gr.grnet.aquarium.logic.accounting.{AccountingException, Accounting}
+import gr.grnet.aquarium.logic.accounting.{Accounting}
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
-import com.ckkloverdos.maybe.{NoVal, Failed, Just}
+import com.ckkloverdos.maybe.Just
 
 /**
  * Tests for the methods that do accounting
@@ -53,14 +53,24 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
   @Test
   def testAlignTimeslots() {
+    var a = List(Timeslot(0,1))
+    var b = List(Timeslot(0,2))
+    var result = alignTimeslots(a, b)
+    assertEquals(2, result.size)
+
+    a = List(Timeslot(0,1), Timeslot(1,3), Timeslot(3,4))
+    b = List(Timeslot(0,2), Timeslot(2,4))
+    result = alignTimeslots(a, b)
+    assertEquals(4, result.size)
+
     before
     val from = new Date(1322555880000L) //Tue, 29 Nov 2011 10:38:00 EET
     val to = new Date(1322689082000L)  //Wed, 30 Nov 2011 23:38:02 EET
     val agr = dsl.findAgreement("complextimeslots").get
-    val a = resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr).keySet.toList
-    val b = resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr).keySet.toList
+    a = resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr).keySet.toList
+    b = resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr).keySet.toList
 
-    val result = alignTimeslots(a, b)
+    result = alignTimeslots(a, b)
     assertEquals(9, result.size)
     assertEquals(result.last,  b.last)
   }

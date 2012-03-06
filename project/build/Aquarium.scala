@@ -37,7 +37,7 @@ import sbt._
 
 class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   object Versions {
-    final val akka  = "1.3"
+    final val akka  = "1.3.1"
     final val lift  = "2.4"
     final val maybe = "0.3.0"
   }

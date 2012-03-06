@@ -231,3 +231,11 @@ final case class Timeslot(from: Date, to: Date)
   def toDateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from), new MutableDateCalc(to))
   def toISODateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from).toISOString, new MutableDateCalc(to).toISOString)
 }
+
+object Timeslot {
+  def apply(x: Long, y: Long): Timeslot =
+    new Timeslot(new Date(x), new Date(y))
+
+  def apply(x: Int, y: Int): Timeslot =
+    new Timeslot(new Date(x), new Date(y))
+}
