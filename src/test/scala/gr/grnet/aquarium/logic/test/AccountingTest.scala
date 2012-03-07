@@ -57,11 +57,25 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
     var b = List(Timeslot(0,2))
     var result = alignTimeslots(a, b)
     assertEquals(2, result.size)
+    assertEquals(result.head, Timeslot(0,1))
+    assertEquals(result.tail.head, Timeslot(1,2))
+
+    a = List(Timeslot(0,10))
+    b = List(Timeslot(0,4), Timeslot(4,12))
+    result = alignTimeslots(a, b)
+    assertEquals(3, result.size)
+    assertEquals(result.head, Timeslot(0,4))
+    assertEquals(result.tail.head, Timeslot(4,10))
+    assertEquals(result.last, Timeslot(10,12))
 
     a = List(Timeslot(0,1), Timeslot(1,3), Timeslot(3,4))
     b = List(Timeslot(0,2), Timeslot(2,4))
     result = alignTimeslots(a, b)
     assertEquals(4, result.size)
+    assertEquals(result.head, Timeslot(0,1))
+    assertEquals(result.tail.head, Timeslot(1,2))
+    assertEquals(result.tail.tail.head, Timeslot(2,3))
+    assertEquals(result.last, Timeslot(3,4))
 
     before
     val from = new Date(1322555880000L) //Tue, 29 Nov 2011 10:38:00 EET

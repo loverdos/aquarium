@@ -661,17 +661,25 @@ trait Accounting extends DSLUtils with Loggable {
   private[logic] def alignTimeslots(a: List[Timeslot],
                                     b: List[Timeslot]): List[Timeslot] = {
 
-    if (a.isEmpty) return b.tail
-    if (b.isEmpty) return a.tail
+    def safeTail(foo: List[Timeslot]) = foo match {
+      case Nil       => List()
+      case x :: Nil  => List()
+      case x :: rest => rest
+    }
+
+    if (a.isEmpty) return b
+    if (b.isEmpty) return a
 
     assert (a.head.from == b.head.from)
 
     if (a.head.endsAfter(b.head)) {
-      a.head.slice(b.head.to) ::: alignTimeslots((a.head.slice(b.head.to) ::: a.tail).tail, b.tail)
+      val slice = a.head.slice(b.head.to)
+      slice.head :: alignTimeslots(slice.last :: a.tail, safeTail(b))
     } else if (b.head.endsAfter(a.head)) {
-      b.head.slice(a.head.to) ::: alignTimeslots((b.head.slice(a.head.to) ::: a.tail).tail, b.tail)
+      val slice = b.head.slice(a.head.to)
+      slice.head :: alignTimeslots(safeTail(a), slice.last :: b.tail)
     } else {
-      a.head :: alignTimeslots(a.tail, b.tail)
+      a.head :: alignTimeslots(safeTail(a), safeTail(b))
     }
   }
 }
