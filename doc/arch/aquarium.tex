@@ -27,7 +27,7 @@
 \date{}
 
 %make title bold and 14 pt font (Latex default is non-bold, 16 pt)
-\title{Aquarium: Billing for the Cloud in the Cloud}
+\title{Aquarium: Billing for the Cloud in a Sea of Events}
 
 \author{
 {\rm Georgios Gousios}\\
@@ -384,41 +384,38 @@ providers, including Amazon and Azure, offer services charged
 according to Yousef models.
 
 Work on resource accounting and billing has been carried out in the
-context of cloud federation~\cite{Rochw09, Elmro09} and (earlier) grid
-federation projects. The Distributed Grid Accounting System ({\sc
-  dgas})~\cite{Piro06} was among the first to enable resource
-accounting at the computing and storage layers and then aggregation of
-the resources in a centralized location. The Reservoir project
-investigated the use of service level agreements~\cite{Elmro09} for
-resource provisioning in federated cloud scenarios.
+context of cloud federation~\cite{Rochw09, Elmro09, Piro06} and
+(earlier) grid federation projects. The Reservoir project investigated
+the use of service level agreements~\cite{Elmro09} for resource
+provisioning in federated cloud scenarios.  
 
 On the cloud computing front, vendors such as VMWare, Microsoft and
 {\sc ibm} provide full stack solutions, which also include resource
 accounting. Usually, such systems are connected with existing
 enterprise resource planning systems. \"Ubersmith has developed an
 engine dedicated to resource accounting; much like Aquarium, it tracks
-resource usage and applies accounting policies to it. On the open
-source front, neither the Cloustack nor the Openstack projects, have
-yet incorporated billing into their services. To the best of our
-knowledge, Aquarium is the first open source system to offer
-configurable accounting services for IaaS deployments.
-
-%Check also~\cite{Ruiz-Agundez11}.
+resource usage and applies accounting policies to it. Ruiz-Agundez et
+al.~\cite{Ruiz-Agundez11} proposed an accounting model for cloud
+computing based on Internet Protocol Detail Record ({\sc ipdr}) and
+the jBilling platform. To the best of our knowledge, Aquarium is the
+first working open source system to offer declaratively configurable
+charging and accounting services for IaaS deployments.
 
 \section{Lessons Learned and Future Work}
 
-A typesafe language was a hard requirement. Of the platforms examined,
-the {\sc jvm} had the richest collection of ready made components; the
-Akka library was particularly enticing for the scalability and
-distribution possibilities it offered.
+Three requirements guided our platform choices: (1) type safety, (2)
+concurrency using native threads, (3) distributed computation across
+physical {\sc cpu}s. We chose Scala since the {\sc jvm} had the
+richest collection of ready made components and the Akka library
+offers good scalability and distributed computation capabilities.
 
-Scala as a language was an enabling factor; case classes permitted the
-expression of data models, including the configuration {\sc dsl}, that
-could be easily be serialized or read back from wire formats while
-also promoting immutability through the use of the \texttt{copy()}
-constructor. The pervasive use of immutability allowed us to write
-strict, yet simple and concise unit tests, as the number of cases to
-be examined was generally low. 
+Regarding Scala, case classes permitted the expression of data models,
+including the configuration {\sc dsl}, that could be easily be
+serialized or read back from wire formats while also promoting
+immutability through the use of the \texttt{copy()} constructor. The
+pervasive use of immutability allowed us to write strict, yet simple
+and concise unit tests, as the number of cases to be examined was
+generally low.
 
 Akka's custom supervision hierarchies allowed us to partition the
 system in self-healing sub-components, each of which can fail
@@ -434,10 +431,10 @@ project was reached using about 8 person months of effort, 2 of which
 were devoted to requirements elicitation, prototype building and
 familiarizing with the language. The source code currently consists of
 7,000 lines of executable statements (including about 1,200 lines of
-tests), divided in about 10 packages. The system is built using both
-{\sc sbt} and Maven. In the future we will add a comprehensive {\sc
-  rest api} for accessing the user actor state and we will distribute
-the message processing across multiple nodes in an active-active mode.
+tests), divided in about 10 packages. In the future we will add a
+comprehensive {\sc rest api} for accessing the user actor state and we
+will distribute the message processing across multiple nodes in an
+active-active mode.
 
 \section{Acknowledgments and Availability}
 
