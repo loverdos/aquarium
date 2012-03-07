@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import gr.grnet.aquarium.{Configurator}
+import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 
 import akka.actor._
@@ -107,6 +107,23 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   def start(): Unit
   def stop() : Unit
+
+  protected def declareQueues(conf: String) = {
+    val decl = _configurator.get(conf)
+    decl.split(";").foreach {
+      q =>
+        val i = q.split(":")
+
+        if (i.size < 3)
+          throw new Exception("Queue declaration \"%s\" not correct".format(q))
+
+        val exchange = i(0)
+        val route = i(1)
+        val qname = i(2)
+        logger.info("Declaring queue %s (%s -> %s)".format(qname, exchange, route))
+        consumer(route, name, exchange, queueReaderManager.lb, false)
+    }
+  }
 
   class QueueReader extends Actor {
 

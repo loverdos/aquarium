@@ -41,12 +41,9 @@ import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
-import processor.actor.{UserEventProcessorService, ResourceEventProcessorService, EventProcessorService}
+import processor.actor.{UserEventProcessorService, ResourceEventProcessorService}
 import store._
 import util.{Lifecycle, Loggable}
-import java.net.URL
-import collection.mutable.Buffer
-import java.io._
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -422,6 +419,22 @@ object Configurator {
      * Comma separated list of exchanges known to aquarium
      */
     final val amqp_exchanges = "amqp.exchanges"
+
+    /**
+     * Queues for retrieving resource events from. Multiple queues can be
+     * declared, seperated by semicolon
+     *
+     * Format is `exchange:routing.key:queue-name;<exchnage2:routing.key2:queue-name>;...`
+     */
+    final val amqp_resevents_queues = "amqp.resevents.queues"
+
+    /**
+     * Queues for retrieving user events from. Multiple queues can be
+     * declared, seperated by semicolon
+     *
+     * Format is `exchange:routing.key:queue-name;<exchnage2:routing.key2:queue-name>;...`
+     */
+    final val amqp_userevents_queues="amqp.userevents.queues"
 
     /**
      * REST service listening port.

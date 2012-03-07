@@ -1,10 +1,10 @@
 package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.messaging.MessagingNames
-import gr.grnet.aquarium.logic.events.{UserEvent, AquariumEvent}
+import gr.grnet.aquarium.logic.events.UserEvent
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
 import gr.grnet.aquarium.actor.DispatcherRole
-
+import gr.grnet.aquarium.Configurator.Keys
 
 /**
  * An event processor service for user events coming from the IM system
@@ -47,10 +47,7 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
 
   def start() {
     logger.info("Starting user event processor service")
-
-    consumer("%s.#".format(MessagingNames.IM_EVENT_KEY),
-      MessagingNames.IM_EVENT_QUEUE, MessagingNames.IM_EXCHANGE,
-      queueReaderManager.lb, false)
+    declareQueues(Keys.amqp_userevents_queues)
   }
 
   def stop() {

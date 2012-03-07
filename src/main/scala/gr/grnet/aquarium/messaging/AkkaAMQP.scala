@@ -86,7 +86,8 @@ trait AkkaAMQP extends Loggable {
       connection = (new AMQPConnection()).connection,
       consumerParameters = ConsumerParameters(
         routingKey = routekey,
-        exchangeParameters = Some(ExchangeParameters(exchange, Topic, decl, Map("x-ha-policy" -> "all"))),
+        exchangeParameters =
+          Some(ExchangeParameters(exchange, Topic, decl, Map("x-ha-policy" -> "all"))),
         deliveryHandler = recipient,
         queueName = Some(queue),
         queueDeclaration = decl,

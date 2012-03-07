@@ -7,7 +7,7 @@ package gr.grnet.aquarium.messaging
 object MessagingNames {
 
   def AQUARIUM_EXCHANGE = "aquarium"
-  def IM_EXCHANGE = "im"
+  def IM_EXCHANGE = "astakos"
 
   def RES_EVENT_KEY = "resevent"
   def IM_EVENT_KEY = "imevent"

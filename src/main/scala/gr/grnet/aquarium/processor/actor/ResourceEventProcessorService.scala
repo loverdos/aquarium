@@ -1,11 +1,11 @@
 package gr.grnet.aquarium.processor.actor
 
 import com.ckkloverdos.maybe.{Just, Failed, NoVal}
-import gr.grnet.aquarium.messaging.MessagingNames
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.actor.DispatcherRole
 import java.lang.ThreadLocal
 import gr.grnet.aquarium.store.{ResourceEventStore}
+import gr.grnet.aquarium.Configurator.Keys
 
 
 /**
@@ -59,10 +59,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
 
   def start() {
     logger.info("Starting resource event processor service")
-
-    consumer("%s.#".format(MessagingNames.RES_EVENT_KEY),
-      MessagingNames.RESOURCE_EVENT_QUEUE, MessagingNames.AQUARIUM_EXCHANGE,
-      queueReaderManager.lb, false)
+    declareQueues(Keys.amqp_resevents_queues)
   }
 
   def stop() {
