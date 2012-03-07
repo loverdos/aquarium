@@ -61,7 +61,7 @@ customer billing. In this paper, we present the design and
 implementation of Aquarium, an extensible billing service software.
 Aquarium associates state changes in cloud resources with respective
 charges, based on configurable, user-specific and versioned charging
-policy. The implementation of Aquarium is characterized by pervasive
+policies. The implementation of Aquarium is characterized by pervasive
 data immutability, actor message passing and service orientation.
 
 \section{Introduction}
@@ -147,13 +147,11 @@ restart.
 
 \section{Resources, Events, and Policies}
 
-\paragraph{Events}Aquarium is the recipient of several types of events from external
+\paragraph{Events}
+Aquarium is the recipient of several types of events from external
 systems. More specifically, systems that manage the lifetime and
 operation of chargeable resources are responsible to send events that
-describe notable resource state changes. As an example, when a user
-consumes disk space during a file upload, a resource event for the
-\textsf{diskspace} resource along with the amount of bytes consumed
-will be sent to Aquarium.
+describe notable resource state changes. As an example, during a file upload a resource event for the respective \textsf{diskspace} resource along with the amount of bytes consumed will be sent to Aquarium.
 Figure~\ref{fig:resevt} presents a JSON-formatted
 \texttt{ResourceEvent}.
 
@@ -163,16 +161,14 @@ stringstyle=\ttfamily,
 flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 
 \begin{lstlisting}
-{
-  "id":"4b3288b57e5c1b08a67147c495e54a68655fdab8",
+{ "id":"4b3288b57e5c1b08a67147c495e54a68655fdab8",
   "occuredMillis":1314829876295,
   "receivedMillis":1314829876300,
   "userId": "31",
-  "cliendId": "snf-vm-1",
-  "resource": "vmtime",
-  "value": 1,
-  "instance-id" : 3300,
-}
+  "cliendId": "pithos-storage-service",
+  "resource": "diskspace.1",
+  "value": 10,
+  "instance-id" : 3300 }
 \end{lstlisting}
 \caption{A JSON-formatted \texttt{ResourceEvent}} 
 \label{fig:resevt}
@@ -251,16 +247,13 @@ Aquarium {\sc dsl} to provide a scaling charge algorithm.
 
 \section{Computational aspects}
 
-%\subsection{Charging basics and cost policies}
-
-In order to charge based on the incoming resource events, time (\DTime) and the unit of measure (\DUnitR) for a resource ($R$) play a central role. \DUnitR can be taken into account either as whole value or as a difference \DeltaDUnitR. On first approximation, these lead to linear formulas that capture the essence of charging algorithms. Below, we will briefly  study charging scenarios for three well-known resources, namely \textsf{bandwidth}, \textsf{diskspace} and \textsf{vmtime}. For the analysis of each case, we assume: 
+In order to charge based on the incoming resource events, time (\DTime) and the unit of measure (\DUnitR) for a resource ($R$) play a central role. On first approximation, these lead to linear formulas that capture the essence of charging algorithms. Below, we will briefly  study charging scenarios for three well-known resources, namely \textsf{bandwidth}, \textsf{diskspace} and \textsf{vmtime}. For the analysis of each case, we assume: 
 \begin{itemize}
 \item The arrival of two consecutive resource events, happening at times $t_0$ and $t_1$ respectively, with a time difference of  $\Delta T = \Delta T_{0, 1} = t_1 - t_0$.
 
 \item The total values of resource $R$ for times $t_0$ and $t_1$ are $U_R^0$ and $U_R^1$ respectively.
-%In general, for time $t_i$, the respective total value would be $U_R^i$.
 
-\item The charging unit is denoted as $C$. %By definition it is one credit.
+\item The charging unit is denoted as $C$.
 
 \item A factor in the form $[\frac{C}{D}]$ represents the resource-specific charging unit, where $C$ is defined above, and $D$ depends on the combination of the previously discussed dimensions ($T$, $U_R$) that enters the calculation. The meaning of the factor is probably clearer if we think of it as ``credits per $D$'', as the representation readily suggests.
 \end{itemize}
@@ -279,15 +272,6 @@ Events for VM usage come into pairs that record \textsf{on} and \textsf{off} sta
 
 
 The charging algorithms for the sample resources given previously motivate related cost policies, namely \textsf{discrete}, \textsf{continuous} and \textsf{onoff}. Resources employing the \textsf{discrete} cost policy are charged just like \textsf{bandwidth}, those employing the \textsf{continuous} cost policy are charged like \textsf{diskspace} and finally resources with a \textsf{onoff} cost policy are charged like \textsf{vmtime}. Due to space limits we omit a more detailed analysis and the description of more involved scenarios.
-
-
-%\subsection{State management}
-
-%The only data mutation that takes place is the
-%actor's state. Since each actor handles only its user's events and
-%since there is only one actor for a user, the user state mutation is
-%guaranteed to be race-free and events for different users are handled
-%asynchronously and concurrently.
 
 Scheduled tasks compute total charges, the updated resource state and
 a total credit amount for each billing period. This computation is

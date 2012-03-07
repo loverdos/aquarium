@@ -1,19 +1,18 @@
-\paragraph{Architectural decisions} As in most similar systems, Aquarium's
+\paragraph{Architectural decisions} Aquarium's
 architectural design is driven by two requirements: scaling and fault
-tolerance. Interestingly, Aquarium does not follow conventional design
-patterns; even though the first Aquarium prototype was developed along a 3
-tiered architecture, it quickly became clear that it would not meet our needs.
+tolerance. Although initially we used a 3-tiered architecture, it quickly became clear
+that it would not meet our needs.
 Complications arose from the fact that it was too difficult to describe
 versioned tree-based structures, such as the configuration {\sc dsl},
 in a relational format and to
 make sure that resource events were described in an abstract way that would
 include all future system expansions. Moreover, the single query that cloud
 services will be asking Aquarium continually (number of remaining credits) must
-be answered within a few (less than 10) milliseconds for a large number of
-concurrent requests, which means that it must be somehow cached and
+be answered within a few milliseconds for a large number of
+concurrent requests, meaning that it must be somehow cached and
 automatically updated when new chargeable resources are invoked by the user.
 To address the requirements, Aquarium's data processing architecture was
-based on the based on the event sourcing
+based on the event sourcing
 pattern~\cite{Fowle05}, while system state handling and processing components
 are modeled as collections of actors~\cite{Hewit73}.
 
