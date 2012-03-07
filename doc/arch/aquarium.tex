@@ -57,22 +57,21 @@ GRNET S.A.
 \subsection*{Abstract}
 
 An important part of public IaaS offerings is resource management and
-customer billing. In this paper, we present the design and
+customer billing. In this paper we present the design and
 implementation of Aquarium, an extensible billing service software.
 Aquarium associates state changes in cloud resources with respective
 charges, based on configurable, user-specific and versioned charging
 policies. The implementation of Aquarium is characterized by pervasive
-data immutability, actor message passing and service orientation.
+data immutability, actor message passing, and service orientation.
 
 \section{Introduction}
 
 Public cloud infrastructures have emerged as an alternative to
 building and maintaining expensive proprietary data
 centers~\cite{Lourid10}. An important part of all public clouds is
-resource management and customer billing~\cite{Armbr10}.
-Even though all proprietary platforms do feature
-mechanisms for billing customers for resource usage, there is
-currently a lack of open solutions.
+resource management and customer billing~\cite{Armbr10}. Even though
+all proprietary platforms feature mechanisms for billing customers for
+resource usage, there is currently a lack of open solutions.
 
 In this paper we present Aquarium, an open source resource billing software,
 designed to handle the production  requirements of \grnet's public
@@ -81,7 +80,7 @@ Specific Language ({\sc dsl}) for configuring the supported resources, the
 price lists, and the billing algorithms. It receives input from an event queue
 and presents billing results through a {\sc rest api}. It has been developed
 in Scala, using the Akka library to handle concurrency and actor-based
-event processing. In the following sections, we present the requirements
+event processing. In the following sections we present the requirements
 that have driven Aquarium's design, the software architecture and
 implementation of important computational algorithms, and a preliminary
 evaluation of Aquarium's performance. 
@@ -89,45 +88,40 @@ evaluation of Aquarium's performance.
 \section{Requirements}
 
 Aquarium is developed to provide accounting and billing to \grnet's
-cloud computing services---although its design ensures that its use is
-not limited to \grnet's specific requirements. These services include
-provision of {\sc vm}s and online storage; additional services will be
-built on top of them (for instance, repository services and services
-for big data computations). Aquarium should be therefore able to:
+cloud computing services---although its design ensures that it can be
+used by other cloud infrastructures. These services include provision
+of {\sc vm}s and online storage; additional services will be built on
+top of them (for instance, repository services and services for big
+data computations). Aquarium should be therefore able to:
 
 \begin{itemize}
 
-\item Provide accounting and billing for different resources, not all of
-them known in advance. 
+\item Provide accounting and billing for different resources, not all
+  of them known in advance.
 
-\item Allow for application of different pricing policies to different
+\item Allow the application of different pricing policies to different
   resources, for different users, at different periods of time.
 
-\item Allow for dynamic modification of any of the above, while maintaining
-        full traceability of changes. 
+\item Allow for dynamic modification of any of the above, while
+  maintaining full traceability of changes.
 
-\item Provide a consistent (not eventually consistent) view of users'
-  resource usage and billing while scaling to thousands of concurrent users.
+\item Provide a consistent (not just eventually consistent) view of
+  users' resource usage and billing while scaling to thousands of
+  concurrent users.
 
 \end{itemize}
-
-Since \grnet's cloud computing services are offered to the whole Greek
-research and academic community, Aquarium must be able to scale and be
-flexible to cover different resource usage patterns for different
-users.
 
 As Aquarium must accommodate different resources with different
 policies for different users over time, we were faced either with a
 logistical nightmare of giving users resource chunks directly, or
-adopting a \emph{pecunia non olet} approach, where users are given
-credit, which they can use as they see fit. While in \grnet's case, users
-are not charged real money for using the services, so the credit is
-virtual, this should not make any difference to Aquarium.
-\grnet will supply virtual currency to its users, which
-they will be able to spend on acquiring and using resources. If real
-cash were used, \grnet (or any entity using Aquarium) would only need
-to substitute real credit for virtual credit, without any changes in
-Aquarium itself.
+adopting a monetary approach, where users are given credit that they
+can use as they see fit. While in \grnet's case users are not charged
+real money for using the services, so the credit is virtual, this
+should not make any difference to Aquarium. \grnet will supply virtual
+currency to its users, which they will be able to spend on acquiring
+and using resources. If real cash were used, \grnet (or any entity
+using Aquarium) would only need to substitute real credit for virtual
+credit, without any changes in Aquarium itself.
 
 Aquarium is in the critical path of user requests that modify resource
 state; all supported applications must query Aquarium in order to
@@ -140,19 +134,17 @@ Being on the critical path also means that Aquarium must be highly
 resilient. If Aquarium fails, even for a short period of time, it must
 not loose any billing events, as this will allow users to use
 resources without being charged. Moreover, in case of failure,
-Aquarium must not corrupt any billing data under any circumstance,
-while it should reach an operating state very fast after a service
-restart.
+Aquarium must not corrupt any billing data, while it should reach an
+operating state very fast after a service restart.
 
 \section{Resources, Events, Policies and Cost Calculation}
 
-For Aquarium, a resource represents an entity that can be charged for. Aquarium
-does not assume a fixed set of resource types and is extensible to any number
-of resources. A resource is associated with a name and a cost unit; 
-the name is used to uniquely identify the resource among Aquarium
-and external systems. Depending on whether a resource can have many instances
-per user, a resource can be complex or simple. Finally, each resource
-is associated with a cost calculation policy.
+A resource represents an entity that can be charged for. Aquarium does
+not assume a fixed set of resource types and is extensible to any
+number of resources. A resource is associated with a name and a cost
+unit. Depending on whether a resource can have many instances per
+user, a resource can be complex or simple. Finally, each resource is
+associated with a cost calculation policy.
 
 Usage of resources by users of external systems triggers the generation or
 resource events, which are received by Aquarium and charged for on a per user
@@ -190,7 +182,7 @@ specific users, user groups or the whole system. It
 supports inheritance for policies, price lists and agreements and
 composition in the case of agreements. It also facilitates the
 definition of generic, repeatable debiting rules, that specify
-periodically refills of user's credits.
+periodically refills of users credits.
 
 In Figure~\ref{fig:dsl}, we present the definition of a simple but valid
 policy. Policy parsing is done top down, so the order of definition 
@@ -248,39 +240,70 @@ agreements:
 %\section{Computational aspects}
 %\label{computation}
 
-\paragraph{Cost calculation}In order to charge based on the incoming resource events, time (\DTime) and the unit of measure (\DUnitR) for a resource ($R$) play a central role. Below, we present charging scenarios for three well-known resources, namely \textsf{bandwidth}, \textsf{diskspace} and \textsf{vmtime}. For the analysis of each case, we assume: 
+\paragraph{Cost calculation}In order to charge based on the incoming
+resource events, time (\DTime) and the unit of measure (\DUnitR) for a
+resource ($R$) play a central role. Below, we present charging
+scenarios for three well-known resources, namely \textsf{bandwidth},
+\textsf{diskspace} and \textsf{vmtime}. For the analysis of each case,
+we assume:
 
 \begin{itemize}
-\item The arrival of two consecutive resource events, happening at times $t_0$ and $t_1$ respectively, with a time difference of  $\Delta T = \Delta T_{0, 1} = t_1 - t_0$.
+\item The arrival of two consecutive resource events, happening at
+  times $t_0$ and $t_1$, with a time difference of
+  $\Delta T = t_1 - t_0$.
 
-\item The total values of resource $R$ for times $t_0$ and $t_1$ are $U_R^0$ and $U_R^1$ respectively.
+\item The total values of resource $R$ for times $t_0$ and $t_1$ are
+  $U_R^0$ and $U_R^1$ respectively.
 
-\item The charging unit is denoted as $C$.
-
-\item A factor in the form $[\frac{C}{D}]$ represents the resource-specific charging unit, where $C$ is defined above, and $D$ depends on the combination of the previously discussed dimensions ($T$, $U_R$) that enters the calculation. The meaning of the factor is probably clearer if we think of it as ``credits per $D$'', as the representation readily suggests.
+\item A ratio of the form $[\frac{C}{D}]$ represents the
+  resource-specific charging unit, where $C$ is the credit unit, and
+  $D$ depends on the combination of the previously discussed
+  dimensions ($T$, $U_R$) that enters the calculation. The meaning of
+  the factor is ``credits per $D$''.
 \end{itemize}
 
 \paragraph{\textsf{bandwidth}}
-In this case, an event at $t_1$ records a change of bandwidth, using the relevant unit of measure $U_R$.  The credit usage computation is $\Delta U_R \cdot  [ \frac{C}{U_R} ]$.
-A concrete example is $\Delta U_R = \MB{10}$ and in this case the bandwidth charging unit $[ \frac{C}{U_R} ]$ is ``$credits$ per {\sc MB}'', since $U_R$ is measured in {\sc MB}.
+In this case, an event at $t_1$ records a change of bandwidth, using
+the relevant unit of measure $U_R$. The credit usage computation is
+$\Delta U_R \cdot [ \frac{C}{U_R} ]$. For example, let $\Delta U_R =
+\MB{10}$; then the bandwidth charging unit $[ \frac{C}{U_R} ]$ is
+``$credits$ per {\sc MB}'', since $U_R$ is measured in {\sc MB}.
 
 \paragraph{\textsf{diskspace}}
-We take into account the disk space $U_R^0$ occupied at $t_0$ together with the time passed, $\Delta T$. The credit usage computation is $U_R^{0} \cdot \Delta T \cdot [ \frac{C}{U_R \cdot T} ]$.
-That is, when we receive a new state change for disk space, we actually calculate for how long we occupied the total disk space without counting the new state change. If we had \GB{1} at $t_0 = \secs{1}$ and we gained another \GB{3.14} at $t_1 = \secs{3.5}$ then we are charged for the \GB{1} we occupied for $3.5 - 1 = 2.5$ seconds. The disk space charging unit $[ \frac{C}{U_R \cdot T} ]$ is ``$credits$ per {\sc GB} per $sec$'', assuming $U_R$ (disk space) is measured in {\sc GB} and time in $sec$.
-
+We take into account the disk space $U_R^0$ occupied at $t_0$ together
+with the time passed, $\Delta T$. The credit usage computation is
+$U_R^{0} \cdot \Delta T \cdot [ \frac{C}{U_R \cdot T} ]$. That is,
+when we receive a new state change for disk space, we calculate for
+how long we occupied the total disk space without counting the new
+state change. If we had \GB{1} at $t_0 = \secs{1}$ and we gained
+another \GB{3.14} at $t_1 = \secs{3.5}$ then we are charged for the
+\GB{1} we occupied for $3.5 - 1 = 2.5$ seconds. The disk space
+charging unit $[ \frac{C}{U_R \cdot T} ]$ is ``$credits$ per {\sc GB}
+per $sec$'', assuming $U_R$ (disk space) is measured in {\sc GB} and
+time in $sec$.
 
 \paragraph{\textsf{vmtime}}
-Events for VM usage come into pairs that record \textsf{on} and \textsf{off} states of the VM. We use the time difference between these events for the credit usage computation, given by $\Delta T \cdot [ \frac{C}{T} ]$.
+Events for VM usage come into pairs that record \textsf{on} and
+\textsf{off} states of the VM. We use the time difference between
+these events for the credit usage computation, given by $\Delta T
+\cdot [ \frac{C}{T} ]$.
 
-
-The charging algorithms for the sample resources given previously motivate related cost policies, namely \textsf{discrete}, \textsf{continuous} and \textsf{onoff}. Resources employing the \textsf{discrete} cost policy are charged just like \textsf{bandwidth}, those employing the \textsf{continuous} cost policy are charged like \textsf{diskspace} and finally resources with a \textsf{onoff} cost policy are charged like \textsf{vmtime}. Due to space limits we omit a more detailed analysis and the description of more involved scenarios.
+The charging algorithms for the sample resources given previously
+motivate related cost policies, namely \textsf{discrete},
+\textsf{continuous} and \textsf{onoff}. Resources employing the
+\textsf{discrete} cost policy are charged just like
+\textsf{bandwidth}, those employing the \textsf{continuous} cost
+policy are charged like \textsf{diskspace} and finally resources with
+a \textsf{onoff} cost policy are charged like \textsf{vmtime}. Due to
+space limits we omit a more detailed analysis and the description of
+more involved scenarios.
 
 Scheduled tasks compute total charges, the updated resource state and
 a total credit amount for each billing period. This computation is
-recorded to a persistent store, in an append-only fashion, for future
+recorded in a persistent store, in an append-only fashion, for future
 reference and as a cached value. This cached value can be handy in
-computations or in case of system crashes. In the latter, we wish to
-avoid recomputation based on the whole history of events.
+computations or in system crashes, to avoid recomputation based on the
+whole history of events.
 
 \section{Architecture}
 \input{arch}
@@ -291,23 +314,23 @@ To evaluate the performance of Aquarium, we formulated an experiment
 that evaluated two important properties: the time required to perform
 the charging operation for a resource event and the overall time
 required to process a resource event, end to end. To conduct the
-experiment, Aquarium was configured, using the policy {\sc dsl} to
+experiment, Aquarium was configured using the policy {\sc dsl} to
 handle billing events for 5 types of resources, using 3 overloaded
 price lists, 2 overloaded algorithms, all of which were combined to 5
 different agreements. Aquarium's data store was pre-filled in with
-1.000.000 resource events, evenly distributed among 1.000 users. To
-drive the benchmark, we used a synthetic load generator that produced
+1,000,000 resource events, evenly distributed among 1,000 users. To
+drive the benchmark we used a synthetic load generator that produced
 random billing events, at a configurable rate per minute.
 
-To run the benchmark, we deployed Aquarium on a virtualized 4 core 2{\sc gh}z
-class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux server, on the Okeanos
-cloud infrastructure. The virtual machine running Aquarium was configured with
-a 4{\sc gb} maximum heap size.  Rabbit{\sc mq} and Mongo{\sc db} where run in
-another 4-core, 4{\sc gb ram} virtual machine. The two virtual machines did not
-share a physical host and communicated over the infrastructure's switched
-network fabric at an effective rate of 800 Mbits/sec, as reported by the
-\texttt{iperf} utility. No further optimization was performed on either
-back-end system.
+To run the benchmark we deployed Aquarium on a virtualized 4 core
+2{\sc gh}z class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux server.
+The virtual machine running Aquarium was configured with a 4{\sc gb}
+maximum heap size. Rabbit{\sc mq} and Mongo{\sc db} where run in
+another 4-core, 4{\sc gb ram} virtual machine. The two virtual
+machines did not share a physical host and communicated over the
+infrastructure's switched network fabric at an effective rate of 800
+Mbits/sec, as reported by the \texttt{iperf} utility. No further
+optimization was performed on either back-end system.
 
 \begin{figure}[t]
     \begin{center}
@@ -322,7 +345,7 @@ back-end system.
 \end{figure}
 
 All measurements were done using the first working version of the Aquarium
-deployment, so no real optimisation effort has taken place. This shows in the
+deployment, so no real optimization effort has taken place. This shows in the
 current performance measurements, as Aquarium was not able to handle more than
 about 500 billing operations per second. One factor that contributed to this
 result was the way resource state recalculations was done; in the current
@@ -355,11 +378,11 @@ are used by cloud service providers for billing used resources, namely
 tiered pricing, per-unit pricing and subscription-based pricing.
 Aquarium's cost policies that are assigned to resources map exactly to
 Yousef's pricing models. In fact, most offerings by public IaaS
-providers~\cite{Azure12, Amaz12} offer services charged according to
-Yousef models.
+providers, including Amazon and Azure, offer services charged
+according to Yousef models.
 
 Work on resource accounting and billing has been carried out in the
-context cloud federation~\cite{Rochw09, Elmro09} and (earlier) grid
+context of cloud federation~\cite{Rochw09, Elmro09} and (earlier) grid
 federation projects. The Distributed Grid Accounting System ({\sc
   dgas})~\cite{Piro06} was among the first to enable resource
 accounting at the computing and storage layers and then aggregation of
@@ -404,23 +427,22 @@ easily saturate the processing components of any system we tested
 Aquarium on, simply by tuning the number of threads (in {\sc i/o}
 bound parts) and actors (in {\sc cpu} bound parts) per dispatcher.
 
-From a software engineering point of view, the current state of the project was
-reached using about 8 person months of effort, 2 of which were devoted to
-requirements elicitation, prototype building and familiarizing with the
-language. The source code currently consists of 7.000 lines of executable
-statements (including about 1.200 lines of tests), divided in about 10
-packages. The system is built using both {\sc sbt} and Maven.
-
-Aquarium is currently under development, with a first production deployment
-planned for April 2012. In the future, we plan to invest resources into
-creating a comprehensive {\sc rest api} for accessing the user actor state and
-to distribute the message processing across multiple nodes in an active-active
-mode.
+From a software engineering point of view, the current state of the
+project was reached using about 8 person months of effort, 2 of which
+were devoted to requirements elicitation, prototype building and
+familiarizing with the language. The source code currently consists of
+7,000 lines of executable statements (including about 1,200 lines of
+tests), divided in about 10 packages. The system is built using both
+{\sc sbt} and Maven. In the future we will add a comprehensive {\sc
+  rest api} for accessing the user actor state and we will distribute
+the message processing across multiple nodes in an active-active mode.
 
 \section{Acknowledgments and Availability}
 
-Aquarium has been developed under contract from the Greek Ministry of Education and is available under a {\sc bsd} 2-clause license from:
-\url{https://code.grnet.gr/projects/aquarium}
+Aquarium is developed under a contract from the Greek Ministry of
+Education for the ``Advanced Computing Services for the Research and
+Academic Community'' project (code 296114) and is available under a {\sc bsd}
+2-clause license from: \url{https://code.grnet.gr/projects/aquarium}.
 
 {\footnotesize \bibliographystyle{acm}
 \bibliography{aquarium}}
