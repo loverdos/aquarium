@@ -1,27 +1,28 @@
-\paragraph{Architectural decisions} Aquarium's
-architectural design is driven by two requirements: scaling and fault
-tolerance. Although initially we used a 3-tiered architecture, it quickly became clear
-that it would not meet our needs.
-Complications arose from the fact that it was too difficult to describe
-versioned tree-based structures, such as the configuration {\sc dsl},
-in a relational format and to
-make sure that resource events were described in an abstract way that would
-include all future system expansions. Moreover, the single query that cloud
-services will be asking Aquarium continually (number of remaining credits) must
-be answered within a few milliseconds for a large number of
-concurrent requests, meaning that it must be somehow cached and
-automatically updated when new chargeable resources are invoked by the user.
-To address the requirements, Aquarium's data processing architecture was
-based on the event sourcing
-pattern~\cite{Fowle05}, while system state handling and processing components
-are modeled as collections of actors~\cite{Hewit73}.
+\paragraph{Architectural decisions} 
+Aquarium's architectural design is driven
+by two requirements: scaling and fault tolerance. Although initially we used a
+3-tiered architecture, it quickly became clear that it would not meet our
+needs.  Complications arose from the fact that it was too difficult to describe
+versioned tree-based structures, such as the configuration {\sc dsl}, in a
+relational format and to make sure that resource events were described in an
+abstract way that would be adaptable to all future system expansions. Moreover,
+for performance reasons, Aquarium must maintain in-memory caches of computed; 
+for example the
+single query that cloud services will be asking Aquarium continually (number of
+remaining credits) must be answered within a few milliseconds for a large
+number of concurrent requests.
+Consequently, Aquarium's data processing architecture was based
+on the event sourcing pattern~\cite{Fowle05}, while system state handling and
+processing components are modeled as collections of actors~\cite{Hewit73}.
 
 Event sourcing assumes that all changes to application
 state are stored as a sequence of events, in an immutable log. With such a log,
-a system can rebuild its state at any point in time by replaying the
+Aquarium can rebuild its state at any point in time by replaying the
 events in order, so it is possible to perform queries on past system states for
-debugging purposes. Also, using multiple models can make Aquarium  provide a limited data view to its {\sc rest api} and a more detailed one to a potential helpdesk
-frontend. Furthermore, application crashes are not destructive, as long as
+debugging purposes. Similarly, Aquarium can concurrently employ several event
+processing models to cater for different front-end data requirements, a pattern
+called command-query separation ({\sc cqrs}).
+Furthermore, application crashes are not destructive for Aquarium, as long as
 event replay is fast enough and no state is inserted to the application without
 being recorded to the event log first.
 
@@ -47,7 +48,7 @@ The architecture allows certain application paths to fail individually
 while the system is still responsive, while also enabling future
 distribution of multiple components on clusters of machines.
 
-The system receives input mainly from two sources: a queue for
+The system receives input mainly from two sources: queues for
 resource and user events and a {\sc rest api} for credits and resource
 state queries. The queue component reads messages from a configurable
 number of queues and persists them in the application's immutable log
