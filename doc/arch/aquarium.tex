@@ -71,19 +71,20 @@ resource management and customer billing~\cite{Armbr10}. Even though
 all proprietary platforms feature mechanisms for billing customers for
 resource usage, there is currently a lack of open solutions.
 
-In this paper we present Aquarium, an open source resource billing software,
-designed to handle the production  requirements of \grnet's public
-Infrastructure as a Service (IaaS) platform. Aquarium utilizes a custom Domain
-Specific Language ({\sc dsl}) for configuring the supported resources, the
-price lists, and the billing algorithms. It receives input from an event queue
-and presents billing results through a {\sc rest api}. It has been developed
-in Scala, using the Akka library to handle concurrency and actor-based
-event processing. In the following sections we present the requirements
-that have driven Aquarium's design, the software architecture and
-implementation of important computational algorithms, and a preliminary
-evaluation of Aquarium's performance. 
+In this paper we present Aquarium, an open source resource billing
+software, designed to handle the production requirements of \grnet's
+public Infrastructure as a Service (IaaS) platform. Aquarium utilizes
+a custom Domain Specific Language ({\sc dsl}) for configuring the
+supported resources, the price lists, and the billing algorithms. It
+receives input from an event queue and presents billing results
+through a {\sc rest api}. It has been developed in Scala, using the
+Akka library to handle concurrency and actor-based event processing.
+In the following sections we present the context that has shaped
+Aquarium's design, the software architecture and implementation of
+important computational algorithms, and a preliminary evaluation of
+Aquarium's performance.
 
-\section{Requirements}
+\section{Context}
 
 Aquarium is developed to provide accounting and billing to \grnet's
 cloud computing services---although its design ensures that it can be
