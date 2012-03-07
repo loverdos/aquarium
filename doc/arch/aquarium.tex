@@ -31,16 +31,14 @@
 
 \author{
 {\rm Georgios Gousios}\\
-GRNET S.A.
 \and
 {\rm Christos KK Loverdos}\\
-GRNET S.A.
 \and
 {\rm Panos Louridas}\\
-GRNET S.A.
 \and
 {\rm Nectarios Koziris}\\
-GRNET S.A.
+\and
+\multicolumn{1}{p\textwidth}{\centering Greek Research and Technology Network (GRNET)}\\
 % copy the following lines to add more authors
 % \and
 % {\rm Name}\\
@@ -152,7 +150,8 @@ basis. As an example, after a successful file upload to a cloud storage
 service, a resource event for the \textsf{diskspace} resource along with the
 amount of bytes consumed will be sent to Aquarium.  Figure~\ref{fig:resevt}
 presents an example of a {\sc json}-formatted resource event.  Apart from
-resource events, Aquarium also processes events relating to users.
+resource events, Aquarium also processes events relating to users
+(e.g., user creation).
 
 \begin{figure}
 \lstset{language=C, basicstyle=\footnotesize,

@@ -45,11 +45,12 @@ collection of logically and functionally isolated components that
 communicate by message passing. Within each component, a number of
 actors take care of concurrently processing incoming messages through
 a load balancer component that is the gateway to requests targeted to
-the component. Each component is also monitored by its own supervisor;
-should an actor fail, the supervisor will automatically restart it.
-The architecture allows certain application paths to fail individually
-while the system is still responsive, while also enabling future
-distribution of multiple components on clusters of machines.
+the component. Each component is also monitored by its own supervisor
+(also an actor); should an actor fail, the supervisor will
+automatically restart it. The architecture allows certain application
+paths to fail individually while the system is still responsive, while
+also enabling future distribution of multiple components on clusters
+of machines.
 
 The system receives input mainly from two sources: queues for
 resource and user events and a {\sc rest api} for credits and resource
