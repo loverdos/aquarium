@@ -184,14 +184,15 @@ composition in the case of agreements. It also facilitates the
 definition of generic, repeatable debiting rules, that specify
 periodically refills of users credits.
 
-In Figure~\ref{fig:dsl}, we present the definition of a simple but valid
-policy. Policy parsing is done top down, so the order of definition 
-is important. The definition starts with a resource, whose name is then
-re-used when attaching a price list and a charging algorithm to it.
-In the case of price lists, we present an example of \emph{temporal overloading};
-the \texttt{everyTue2} pricelist overrides the default one, but only for 
-all repeating time frames between every Tuesday at 02:00 and Wednesday at
-02:00, starting from the timestamp indicated at the \texttt{from} field.
+In Figure~\ref{fig:dsl}, we present the definition of a simple but
+valid policy. Policy parsing is done top down, so the order of
+definition is important. The definition starts with a resource, whose
+name is then re-used when attaching a price list and a charging
+algorithm to it. In the case of price lists, we present an example of
+\emph{temporal overloading}; the \texttt{everyTue2} pricelist
+overrides the default one, but only for all repeating time frames
+between every Tuesday at 02:00 and Wednesday at 02:00, starting from
+the timestamp indicated at the \texttt{from} field.
 
 \begin{figure}
 \lstset{language=c, basicstyle=\footnotesize,
@@ -344,22 +345,24 @@ optimization was performed on either back-end system.
     \label{fig:perf}
 \end{figure}
 
-All measurements were done using the first working version of the Aquarium
-deployment, so no real optimization effort has taken place. This shows in the
-current performance measurements, as Aquarium was not able to handle more than
-about 500 billing operations per second. One factor that contributed to this
-result was the way resource state recalculations was done; in the current
-version, the system needs to re-read parts of the event and billing state from
-the datastore every time a new resource event appears. This contributes to more
-than 50\% of the time required to produce a charging event, and can be
-completely eliminated when proper billing snapshots are implemented. In other
-measurements, we also observed that the rate of garbage creation was extremely
-high, more that 250 {\sc mb}/sec. Upon further investigation, we attributed it
-to the way policy timeslot applicability is calculated. Despite the high
-allocation rate, the {\sc jvm}'s garbage collector never went through a
-full collection cycle; when we forced one after the benchmark run was over, 
-we observed that the actual heap memory usage was only 80{\sc mb}, which
-amounts to less than 1 {\sc mb} per user.
+All measurements were done using the first working version of the
+Aquarium deployment, so no real optimization effort has taken place.
+This shows in the current performance measurements, as Aquarium was
+not able to handle more than about 500 billing operations per second
+(see Figure~\ref{fig:perf}). One factor that contributed to this result
+was the way resource state recalculations was done; in the current
+version, the system needs to re-read parts of the event and billing
+state from the datastore every time a new resource event appears. This
+contributes to more than 50\% of the time required to produce a
+charging event, and can be completely eliminated when proper billing
+snapshots are implemented. In other measurements, we also observed
+that the rate of garbage creation was extremely high, more that 250
+{\sc mb}/sec. Upon further investigation, we attributed it to the way
+policy timeslot applicability is calculated. Despite the high
+allocation rate, the {\sc jvm}'s garbage collector never went through
+a full collection cycle; when we forced one after the benchmark run
+was over, we observed that the actual heap memory usage was only
+80{\sc mb}, which amounts to less than 1 {\sc mb} per user.
 
 % Even so, by extrapolating on the results and hardware configuration, an average
 % 12-core box could handle more 1.500 messages per minute from about 300 active
