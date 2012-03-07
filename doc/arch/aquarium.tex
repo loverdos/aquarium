@@ -147,7 +147,6 @@ restart.
 
 \section{Resources, Events, and Policies}
 
-\paragraph{Events}
 Aquarium is the recipient of several types of events from external
 systems. More specifically, systems that manage the lifetime and
 operation of chargeable resources are responsible to send events that
@@ -174,17 +173,15 @@ flexiblecolumns=true, aboveskip=-0.9em, belowskip=0em, lineskip=0em}
 \label{fig:resevt}
 \end{figure}
 
-\paragraph{Policies}
 We addressed the configuration requirements of Aquarium by creating a
 new {\sc dsl}, based on the {\sc yaml} format. The {\sc dsl} enables
-administrators to specify chargeable resources, charging policies and
+us to specify chargeable resources, charging policies and
 price lists and combine them arbitrarily into agreements applicable to
-specific users, user groups or the whole system. The {\sc dsl}
+specific users, user groups or the whole system. It
 supports inheritance for policies, price lists and agreements and
 composition in the case of agreements. It also facilitates the
-definition of generic, repeatable debiting rules, which are then used
-by the system to refill the user's account with credits on a periodic
-base.
+definition of generic, repeatable debiting rules, which are used
+by the system to periodically refill the user's credits.
 
 \begin{figure}
 \lstset{language=c, basicstyle=\footnotesize,
@@ -230,17 +227,14 @@ agreements:
 \label{fig:dsl}
 \end{figure}
 
-In Figure~\ref{fig:dsl}, we present the definition of a simple (albeit valid) 
-policy. The policy parsing is done top down, so the order of definition 
+In Figure~\ref{fig:dsl}, we present the definition of a simple but valid
+policy. Policy parsing is done top down, so the order of definition 
 is important. The definition starts with a resource, whose name is then
-re-used in order to attach a pricelist and a price calculation algorith to it.
+re-used when attaching a pricelist and a charging algorithm to it.
 In the case of pricelists, we present an example of \emph{temporal overloading};
 the \texttt{everyTue2} pricelist overrides the default one, but only for 
 all repeating time frames between every Tuesday at 02:00 and Wednesday at
-02:00, starting from the timestamp indicated at the \texttt{from} field. Another
-example of overloading is presented at the definition of the agreement, which
-overloads the default algorithm definition using the imperative part of the
-Aquarium {\sc dsl} to provide a scaling charge algorithm.
+02:00, starting from the timestamp indicated at the \texttt{from} field.
 
 \section{Architecture}
 \input{arch}
