@@ -166,7 +166,8 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
       case Acknowledged(deliveryTag) =>
         logger.debug("Actor[%s] - Msg with tag [%d] acked. Forwarding...".format(self.getUuid(), deliveryTag))
-        forward(inFlightEvents.remove(deliveryTag))
+        inFlightEvents.remove(deliveryTag)
+        //forward(inFlightEvents.remove(deliveryTag))
 
       case Rejected(deliveryTag) =>
         logger.debug("Actor[%s] - Msg with tag [%d] rejected".format(self.getUuid(), deliveryTag))

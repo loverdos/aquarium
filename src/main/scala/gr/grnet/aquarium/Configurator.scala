@@ -418,7 +418,7 @@ object Configurator {
     /**
      * Comma separated list of exchanges known to aquarium
      */
-    final val amqp_exchanges = "amqp.exchanges"
+    final val amqp_exchange = "amqp.exchange"
 
     /**
      * Queues for retrieving resource events from. Multiple queues can be

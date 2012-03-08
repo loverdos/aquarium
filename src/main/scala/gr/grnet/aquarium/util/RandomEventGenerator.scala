@@ -39,7 +39,7 @@ import akka.amqp._
 import util.Random
 import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
 import scopt.OptionParser
-import gr.grnet.aquarium.messaging.{MessagingNames, AkkaAMQP}
+import gr.grnet.aquarium.messaging.AkkaAMQP
 import java.lang.StringBuffer
 import gr.grnet.aquarium.logic.accounting.Policy
 
@@ -82,7 +82,7 @@ trait RandomEventGenerator extends AkkaAMQP {
    * Generate a random resource event
    */
   def genPublishUserEvents(num: Int) = {
-    val publisher = producer(MessagingNames.IM_EXCHANGE)
+    val publisher = producer(im_exchanges(0))
 
     (1 to num).foreach {
       n =>
@@ -95,14 +95,14 @@ trait RandomEventGenerator extends AkkaAMQP {
    * Generete and publish create events for test users
    */
   def initUsers(num: Int) = {
-    val publisher = producer(MessagingNames.IM_EXCHANGE)
+    val publisher = producer(im_exchanges(0))
 
     userIds.filter(_ < num).foreach {
       i =>
         val sha1 = CryptoUtils.sha1(genRndAsciiString(35))
         val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
         val user = UserEvent(sha1, ts, ts, i.toString, 1, 1, "ACTIVE", "LOCAL", "TENTANT1", List("NORMAL"))
-        publisher ! Message(user.toBytes, "%s.%s".format(MessagingNames.IM_EVENT_KEY,"CREATED"))
+        publisher ! Message(user.toBytes, "%s.%s".format(im_exchanges(0),"CREATED"))
     }
   }
 
@@ -147,13 +147,13 @@ trait RandomEventGenerator extends AkkaAMQP {
   def genPublishResEvents(num: Int) = {
 
     assert(num > 0)
-    val publisher = producer(MessagingNames.AQUARIUM_EXCHANGE)
+    val publisher = producer(resevent_exchanges(0))
 
     (1 to num).foreach {
       n =>
         var event = nextResourceEvent
         publisher ! Message(event.toBytes,
-          "%s.%s.%s".format(MessagingNames.RES_EVENT_KEY,event.clientId, event.resource))
+          "%s.%s.%s".format("",event.clientId, event.resource))
     }
   }
 }

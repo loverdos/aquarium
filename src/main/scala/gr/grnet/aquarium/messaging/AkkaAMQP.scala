@@ -72,10 +72,13 @@ trait AkkaAMQP extends Loggable {
     }
   }
 
-  private lazy val exchanges = {
-    val mc = Configurator.MasterConfigurator
-    mc.props.getTrimmedList(Configurator.Keys.amqp_exchanges)
-  }
+  lazy val im_exchanges =
+    Configurator.MasterConfigurator.get(Configurator.Keys.amqp_userevents_queues).split(';').map(e => e.split(':')(0))
+
+  lazy val aquarium_exchnage = Configurator.MasterConfigurator.get(Configurator.Keys.amqp_exchange)
+
+  lazy val resevent_exchanges =
+    Configurator.MasterConfigurator.get(Configurator.Keys.amqp_resevents_queues).split(';').map(e => e.split(':')(0))
 
   //Queues and exchnages are by default durable and persistent
   val decl = ActiveDeclaration(durable = true, autoDelete = false)
@@ -95,9 +98,6 @@ trait AkkaAMQP extends Loggable {
         ))
 
   def producer(exchange: String) = {
-    
-    if (!exchanges.contains(exchange))
-      logger.warn("Exchange %s is unknown".format(exchange))
 
     AMQP.newProducer(
       connection = (new AMQPConnection()).connection,

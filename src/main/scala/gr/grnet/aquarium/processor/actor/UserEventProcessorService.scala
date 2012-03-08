@@ -1,6 +1,5 @@
 package gr.grnet.aquarium.processor.actor
 
-import gr.grnet.aquarium.messaging.MessagingNames
 import gr.grnet.aquarium.logic.events.UserEvent
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
 import gr.grnet.aquarium.actor.DispatcherRole
