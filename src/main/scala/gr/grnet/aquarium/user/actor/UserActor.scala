@@ -232,6 +232,9 @@ class UserActor extends AquariumActor
     }
   }
 
+  def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
+  }
+
   override def postStop {
     DEBUG("Stopping, saving state")
     //saveUserState
@@ -259,6 +262,7 @@ object UserActor {
     classOf[ProcessResourceEvent],
     classOf[ProcessUserEvent],
     classOf[RequestUserBalance],
-    classOf[UserRequestGetState]
+    classOf[UserRequestGetState],
+    classOf[ActorProviderConfigured]
   )
 }
