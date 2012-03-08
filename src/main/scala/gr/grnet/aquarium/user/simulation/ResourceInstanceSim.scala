@@ -35,24 +35,45 @@
 
 package gr.grnet.aquarium.user.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.{DiscreteCostPolicy, ContinuousCostPolicy, OnOffCostPolicy, DSLCostPolicy, DSLComplexResource}
-
+import gr.grnet.aquarium.logic.events.ResourceEvent
 
 /**
- * A simulator for a resource.
+ * A simulator for a resource instance.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ResourceSim(val name: String, val unit: String, val costPolicy: DSLCostPolicy) {
-  def toDSLResource = DSLComplexResource(name, unit, costPolicy, "")
+class ResourceInstanceSim (val resource: ResourceSim,
+                           val instanceId: String,
+                           val owner: UserSim,
+                           val client: ClientSim) {
 
-  def newInstance(instanceId: String, owner: UserSim, client: ClientSim)=
-    new ResourceInstanceSim(this, instanceId, owner, client)
+  def uidGen = client.uidGen
+
+  def newResourceEvent(occurredMillis: Long,
+                       receivedMillis: Long,
+                       value: Double,
+                       details: ResourceEvent.Details,
+                       eventVersion: String = "1.0") = {
+
+    val event = ResourceEvent(
+      uidGen.nextUID(),
+      occurredMillis,
+      receivedMillis,
+      owner.userId,
+      client.clientId,
+      resource.name,
+      instanceId,
+      eventVersion,
+      value,
+      details
+    )
+
+    owner._addResourceEvent(event)
+  }
 }
 
-
-object ResourceSim {
-  def apply(name: String, unit: String, costPolicy: DSLCostPolicy) =
-    new ResourceSim(name, unit, costPolicy)
+object ResourceInstanceSim {
+  def apply(resource: ResourceSim, instanceId: String, owner: UserSim, client: ClientSim) =
+    new ResourceInstanceSim(resource, instanceId, owner, client)
 }

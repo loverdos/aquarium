@@ -35,24 +35,15 @@
 
 package gr.grnet.aquarium.user.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.{DiscreteCostPolicy, ContinuousCostPolicy, OnOffCostPolicy, DSLCostPolicy, DSLComplexResource}
-
+import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy
 
 /**
- * A simulator for a resource.
+ * A simulator for the standard `vmtime` resource.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ResourceSim(val name: String, val unit: String, val costPolicy: DSLCostPolicy) {
-  def toDSLResource = DSLComplexResource(name, unit, costPolicy, "")
-
-  def newInstance(instanceId: String, owner: UserSim, client: ClientSim)=
-    new ResourceInstanceSim(this, instanceId, owner, client)
-}
-
-
-object ResourceSim {
-  def apply(name: String, unit: String, costPolicy: DSLCostPolicy) =
-    new ResourceSim(name, unit, costPolicy)
+object StdVMTimeResourceSim extends ResourceSim("vmtime", "Hr", OnOffCostPolicy) {
+  override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
+    StdVMTimeInstanceSim(instanceId, owner, client)
 }

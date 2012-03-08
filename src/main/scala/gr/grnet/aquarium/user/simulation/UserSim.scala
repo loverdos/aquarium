@@ -46,37 +46,13 @@ import math.Ordering
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class UserSim(userId: String, userCreationDate: Date, resourceEventStore: ResourceEventStore) { userSelf ⇒
-  private[this] var _serviceClients = List[ClientServiceSim]()
+case class UserSim(userId: String, userCreationDate: Date, aquarium: AquariumSim) { userSelf ⇒
+  private[this]
+  def resourceEventStore = aquarium.resourceEventStore
 
-  private[this] val myResourcesGen: () => List[ClientServiceSim#ResourceSim] = () => {
-    for {
-      serviceClient   <- _serviceClients
-      resource <- serviceClient.myResources if(resource.owner == this)
-    } yield {
-      resource
-    }
-  }
-
-  private[simulation]
-  def _addServiceClient(serviceClient: ClientServiceSim): ClientServiceSim = {
-    if(!_serviceClients.exists(_ == serviceClient)) {
-      _serviceClients = serviceClient :: _serviceClients
-    }
-    serviceClient
-  }
-  
   private[simulation]
   def _addResourceEvent(resourceEvent: ResourceEvent): Maybe[RecordID] = {
     resourceEventStore.storeResourceEvent(resourceEvent)
-  }
-
-  def myServiceClients: List[ClientServiceSim] = {
-    _serviceClients
-  }
-
-  def myResources: List[ClientServiceSim#ResourceSim] = {
-    myResourcesGen.apply()
   }
 
   def myResourceEvents: List[ResourceEvent] = {

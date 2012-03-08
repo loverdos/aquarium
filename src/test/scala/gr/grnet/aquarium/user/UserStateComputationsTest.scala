@@ -9,7 +9,7 @@ import java.util.Date
 import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
 import com.ckkloverdos.maybe.{Just, NoVal}
-import simulation.{AquariumSim, ResourceSim, ConcurrentVMLocalUIDGenerator, ClientServiceSim, UserSim}
+import simulation._
 
 
 /**
@@ -79,25 +79,20 @@ aquariumpolicy:
 
   // TODO: integrate this with the rest of the simulation stuff
   // TODO: since, right now, the resource strings have to be given twice
-  val VMTimeResource    = ResourceSim("vmtime",    "Hr",    OnOffCostPolicy)
-  val DiskspaceResource = ResourceSim("diskspace", "MB/Hr", ContinuousCostPolicy)
-  val BandwidthResource = ResourceSim("bandwidth", "MB/Hr", DiscreteCostPolicy)
-
-  val Aquarium = AquariumSim(List(VMTimeResource, DiskspaceResource, BandwidthResource))
-  val DefaultResourcesMap = Aquarium.resourcesMap
+  val VMTimeResource    = StdVMTimeResourceSim
+  val DiskspaceResource = StdDiskspaceResourceSim
+  val BandwidthResource = StdBandwidthResourceSim
 
   // There are two client services, synnefo and pithos.
   val TheUIDGenerator = new ConcurrentVMLocalUIDGenerator
-  val Synnefo = ClientServiceSim("synnefo")(TheUIDGenerator)
-  val Pithos  = ClientServiceSim("pithos")(TheUIDGenerator)
+  val Synnefo = ClientSim("synnefo")(TheUIDGenerator)
+  val Pithos  = ClientSim("pithos" )(TheUIDGenerator)
 
   @Test
   def testOne: Unit = {
     val clog = ContextualLogger.fromOther(NoVal, logger, "testOne()")
     val StartOfBillingYearDateCalc = new MutableDateCalc(2012, 1, 1)
-//    println("StartOfBillingYearDateCalc = %s".format(StartOfBillingYearDateCalc))
     val UserCreationDateCalc = StartOfBillingYearDateCalc.copy.goMinusMonths(2)
-//    println("UserCreationDateCalc = %s".format(UserCreationDateCalc))
 
     val computer = new UserStateComputations
 
@@ -114,24 +109,26 @@ aquariumpolicy:
     val policyValidToMillis   = StartOfBillingYearDateCalc.copy.goNextYear.toMillis
     policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry(policyOccurredMillis, policyValidFromMillis, policyValidToMillis))
 
+    val Aquarium = AquariumSim(List(VMTimeResource, DiskspaceResource, BandwidthResource), storeProvider.resourceEventStore)
+    val DefaultResourcesMap = Aquarium.resourcesMap
+
     // A new user is created on 2012-01-15 00:00:00.000
-    val UserCKKL  = UserSim("CKKL", UserCreationDateCalc.toDate, storeProvider.resourceEventStore)
+    val UserCKKL  = Aquarium.newUser("CKKL", UserCreationDateCalc.toDate)
 
     // By convention
     // - synnefo is for VMTime and Bandwidth
     // - pithos is for Diskspace
-    val VMTimeInstance    = Synnefo.newVMTime   (UserCKKL, "VM.1")
-    val BandwidthInstance = Synnefo.newBandwidth(UserCKKL, "3G.1")
-    val DiskInstance      = Pithos .newDiskspace(UserCKKL, "DISK.1")
+    val VMTimeInstance    = StdVMTimeInstanceSim   ("VM.1",   UserCKKL, Synnefo)
+    val BandwidthInstance = StdBandwidthInstanceSim("3G.1",   UserCKKL, Synnefo)
+    val DiskInstance      = StdDiskspaceInstanceSim("DISK.1", UserCKKL, Pithos)
 
     // Let's create our dates of interest
     val vmStartDateCalc = StartOfBillingYearDateCalc.copy.goPlusDays(1).goPlusHours(1)
-//    println("vmStartDateCalc = %s".format(vmStartDateCalc))
     // 2012-01-16 01:00:00.000
     val vmStartDate = vmStartDateCalc.toDate
 
     // Within January, create one VM ON-OFF ...
-    val onOff1_M = VMTimeInstance.newONOFF(vmStartDate, 9)
+    VMTimeInstance.newONOFF(vmStartDate, 9)
 
     val diskConsumptionDateCalc = StartOfBillingYearDateCalc.copy.goPlusHours(3)
     // 2012-01-16 04:00:00.000
@@ -141,8 +138,8 @@ aquariumpolicy:
     val diskConsumptionDate2 = diskConsumptionDateCalc2.toDate
 
     // ... and two diskspace changes
-    val consume1_M = DiskInstance.consumeMB(diskConsumptionDate1, 99)
-    val consume2_M = DiskInstance.consumeMB(diskConsumptionDate2, 23)
+    DiskInstance.consumeMB(diskConsumptionDate1, 99)
+    DiskInstance.consumeMB(diskConsumptionDate2, 23)
 
     // 100MB 3G bandwidth
     val bwDateCalc = diskConsumptionDateCalc2.copy.goPlusDays(1)

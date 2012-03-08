@@ -269,6 +269,7 @@ case class ResourceEvent(
 
 object ResourceEvent {
   type Details = Map[String, String]
+  final val EmptyDetails: Details = Map()
 
   type ResourceType = String
   type ResourceIdType = String

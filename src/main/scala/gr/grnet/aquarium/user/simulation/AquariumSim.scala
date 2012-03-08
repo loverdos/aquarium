@@ -35,7 +35,9 @@
 
 package gr.grnet.aquarium.user.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLComplexResource, DSLCostPolicy}
+import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
+import gr.grnet.aquarium.store.ResourceEventStore
+import java.util.Date
 
 
 /**
@@ -44,6 +46,8 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLResourcesMap, DSLComplexResour
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class AquariumSim(resources: List[ResourceSim]) {
+case class AquariumSim(resources: List[ResourceSim], resourceEventStore: ResourceEventStore) {
   def resourcesMap = new DSLResourcesMap(resources.map(_.toDSLResource))
+  
+  def newUser(userId: String, userCreationDate: Date) = UserSim(userId, userCreationDate, this)
 }
