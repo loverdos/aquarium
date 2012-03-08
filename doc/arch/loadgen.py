@@ -23,13 +23,13 @@ def msg():
                                            "vmtime", "diskspace"), 1)[0]
     msg['eventVersion']   = str(1)
 
-    details = {}
     if msg['resource'] == 'vmtime':
+        msg['instanceId'] = str(random.randrange(1, 4000))
         msg['value']    = random.randrange(0, 2)
-        details['vmid'] = str(random.randrange(1, 4000))
     else:
+        msg['instanceId'] = 1 
         msg['value'] = random.randrange(1, 5000)
-    msg['details'] = details
+    msg['details'] = {} 
     return msg
 
 def parse_arguments(args):
@@ -56,7 +56,7 @@ parameters = pika.ConnectionParameters(
 connection = pika.BlockingConnection(parameters)
 
 channel = connection.channel()
-channel.exchange_declare(exchange='aquarium', passive = True)
+channel.exchange_declare(exchange='pithos', passive = True)
 connection.set_backpressure_multiplier(1000)
 
 random.seed(0xdeadbabe)
@@ -72,12 +72,12 @@ while True:
     print "QUEUE %s %d" % (foo['id'], time.time() * 1000) 
     # Construct a message and send it
     #print json.dumps(foo)
-    channel.basic_publish(exchange='aquarium',
-                      routing_key='resevent.1.%s' % foo['resource'],
+    channel.basic_publish(exchange='pithos',
+                      routing_key='pithos.resource.%s' % foo['resource'],
                       body=json.dumps(foo),
                       properties=pika.BasicProperties(
                           content_type="text/plain",
-                          delivery_mode=1))
+                          delivery_mode=2))
     num_msgs += 1
     newtime = time.time() * 1000
 
