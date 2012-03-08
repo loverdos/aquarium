@@ -27,7 +27,11 @@
 \date{}
 
 %make title bold and 14 pt font (Latex default is non-bold, 16 pt)
+<<<<<<< HEAD
 \title{Aquarium: An Extensible Billing Platform for Cloud Infrastructures}
+=======
+\title{Aquarium: An Extensible Billing Platform for Cloud Applications}
+>>>>>>> 55840e27864a0f88d7c7228e663677ec72841dcc
 
 \author{
 {\rm Georgios Gousios}\\
@@ -313,17 +317,16 @@ whole history of events.
 
 \section{Performance}
 
-To evaluate the performance of Aquarium, we formulated an experiment
-that evaluated two important properties: the time required to perform
-the charging operation for a resource event and the overall time
-required to process a resource event, end to end. To conduct the
-experiment, Aquarium was configured using the policy {\sc dsl} to
-handle billing events for 5 types of resources, using 3 overloaded
-price lists, 2 overloaded algorithms, all of which were combined to 5
-different agreements. Aquarium's data store was pre-filled in with
-1,000,000 resource events, evenly distributed among 1,000 users. To
-drive the benchmark we used a synthetic load generator that produced
-random billing events, at a configurable rate per minute.
+To evaluate the performance of Aquarium, we formulated an experiment that
+evaluated two important properties: the time required to perform the charging
+operation for a resource event and the overall time required to process a
+resource event, end to end. To conduct the experiment, Aquarium was configured
+using the policy {\sc dsl} to handle billing events for 5 types of resources,
+using 3 overloaded price lists, 2 overloaded algorithms, all of which were
+combined to 5 different agreements. Aquarium's data store was pre-filled in
+with 1,000,000 resource events, evenly distributed among 1,000 users. To drive
+the benchmark we used a synthetic load generator that produced random billing
+events, at a configurable rate per minute.
 
 To run the benchmark we deployed Aquarium on a virtualized 4 core
 2{\sc gh}z class {\sc cpu} and 4{\sc gb} {\sc ram} Debian Linux server.
@@ -375,6 +378,8 @@ was over, we observed that the actual heap memory usage was only
 % system could handle around 4.500 concurrent users. While such back of the
 % envelop calculations do not account for traffic spikes, they do provide an
 % rough estimation of the optimisation effort that must be put in place. 
+
+
 
 \section{Related Work}
 
