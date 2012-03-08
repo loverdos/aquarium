@@ -5,11 +5,11 @@ import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl._
-import java.util.Date
 import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
 import com.ckkloverdos.maybe.{Just, NoVal}
-import simulation._
+import gr.grnet.aquarium.simulation._
+import gr.grnet.aquarium.simulation.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
 
 
 /**
@@ -84,7 +84,7 @@ aquariumpolicy:
   val BandwidthResource = StdBandwidthResourceSim
 
   // There are two client services, synnefo and pithos.
-  val TheUIDGenerator = new ConcurrentVMLocalUIDGenerator
+  val TheUIDGenerator: UIDGenerator = new ConcurrentVMLocalUIDGenerator
   val Synnefo = ClientSim("synnefo")(TheUIDGenerator)
   val Pithos  = ClientSim("pithos" )(TheUIDGenerator)
 

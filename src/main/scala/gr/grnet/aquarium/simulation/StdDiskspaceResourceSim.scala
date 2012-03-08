@@ -33,17 +33,18 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.DiscreteCostPolicy
+import gr.grnet.aquarium.logic.accounting.dsl.ContinuousCostPolicy
 
 /**
- * A simulator for the standard `bandwidth` resource.
+ * A simulator for the standard `diskspace` resource.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object StdBandwidthResourceSim extends ResourceSim("bandwidth", "MB/Hr", DiscreteCostPolicy) {
+object StdDiskspaceResourceSim extends ResourceSim("diskspace", "MB/Hr", ContinuousCostPolicy) {
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
-    StdBandwidthInstanceSim(instanceId, owner, client)
+    StdDiskspaceInstanceSim(instanceId, owner, client)
 }
+

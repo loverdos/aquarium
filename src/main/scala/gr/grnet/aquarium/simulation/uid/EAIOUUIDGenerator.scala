@@ -33,12 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation.uid
+
+import com.eaio.uuid.UUID
 
 /**
- * A simulator for an aquarium client system.
+ * [[gr.grnet.aquarium.simulation.uid.UIDGenerator]] based on [[com.eaio.uuid.UUID]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class ClientSim(clientId: String)(implicit val uidGen: UIDGenerator)
+object EAIOUUIDGenerator extends UIDGenerator {
+  def nextUID() = new UUID().toString
+}

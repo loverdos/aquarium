@@ -33,17 +33,17 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy
+import gr.grnet.aquarium.logic.accounting.dsl.DiscreteCostPolicy
 
 /**
- * A simulator for the standard `vmtime` resource.
+ * A simulator for the standard `bandwidth` resource.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object StdVMTimeResourceSim extends ResourceSim("vmtime", "Hr", OnOffCostPolicy) {
+object StdBandwidthResourceSim extends ResourceSim("bandwidth", "MB/Hr", DiscreteCostPolicy) {
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
-    StdVMTimeInstanceSim(instanceId, owner, client)
+    StdBandwidthInstanceSim(instanceId, owner, client)
 }

@@ -33,34 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation.uid
 
-import java.util.Date
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.store.RecordID
-import gr.grnet.aquarium.logic.events.ResourceEvent
+import java.rmi.server.UID
 
 /**
- * A simulator for an instance of the standard `bandwidth` resource.
+ * Unique ID generator based on RMI [[java.rmi.server.UID]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdBandwidthInstanceSim(override val instanceId: String,
-                                   override val owner: UserSim,
-                                   override val client: ClientSim)
-extends ResourceInstanceSim(StdBandwidthResourceSim, instanceId, owner, client) {
-  def useBandwidth(occurredDate: Date,
-                   megaBytes: Double,
-                   details: ResourceEvent.Details = Map(),
-                   eventVersion: String = "1.0"): Maybe[RecordID] = {
-
-    newResourceEvent(
-     occurredDate.getTime,
-     occurredDate.getTime,
-     megaBytes,
-     details,
-     eventVersion
-    )
-  }
+object RMIUIDGenerator extends UIDGenerator {
+  def nextUID() = new UID().toString
 }

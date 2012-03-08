@@ -32,56 +32,23 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
-package gr.grnet.aquarium.user.simulation
 
-import java.util.Date
-import gr.grnet.aquarium.logic.events.ResourceEvent
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.store.{RecordID, ResourceEventStore}
-import math.Ordering
+package gr.grnet.aquarium.simulation.uid
+
+import java.util.concurrent.atomic.AtomicLong
 
 /**
- * A simulator for a user.
+ * A [[gr.grnet.aquarium.simulation.uid.UIDGenerator]] providing values by incrementing an
+ * [[java.util.concurrent.atomic.AtomicLong]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class UserSim(userId: String, userCreationDate: Date, aquarium: AquariumSim) { userSelf ⇒
-  private[this]
-  def resourceEventStore = aquarium.resourceEventStore
+class ConcurrentVMLocalUIDGenerator extends UIDGenerator {
+  private[this] val counter = new AtomicLong()
 
-  private[simulation]
-  def _addResourceEvent(resourceEvent: ResourceEvent): Maybe[RecordID] = {
-    resourceEventStore.storeResourceEvent(resourceEvent)
-  }
-
-  def myResourceEvents: List[ResourceEvent] = {
-    resourceEventStore.findResourceEventsByUserId(userId)(None)
-  }
-
-  def myResourceEventsByReceivedDate: List[ResourceEvent] = {
-    myResourceEvents.sorted(new Ordering[ResourceEvent] {
-      def compare(x: ResourceEvent, y: ResourceEvent) = {
-        if(x.receivedMillis < y.receivedMillis)
-          -1
-        else if(x.receivedMillis == y.receivedMillis)
-          0
-        else
-          1
-      }
-    })
-  }
-
-  def myResourceEventsByOccurredDate: List[ResourceEvent] = {
-    myResourceEvents.sorted(new Ordering[ResourceEvent] {
-      def compare(x: ResourceEvent, y: ResourceEvent) = {
-        if(x.occurredMillis < y.occurredMillis)
-          -1
-        else if(x.occurredMillis == y.occurredMillis)
-          0
-        else
-          1
-      }
-    })
+  def nextUID() = {
+    val next = counter.getAndIncrement
+    next.toString
   }
 }

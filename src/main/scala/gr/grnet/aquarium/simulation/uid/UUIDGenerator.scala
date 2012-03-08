@@ -33,12 +33,12 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation.uid
 
 import java.util.UUID
 
 /**
- * [[gr.grnet.aquarium.user.simulation.UIDGenerator]] based on [[java.util.UUID]].
+ * [[gr.grnet.aquarium.simulation.uid.UIDGenerator]] based on [[java.util.UUID]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

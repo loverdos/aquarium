@@ -33,18 +33,26 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.ContinuousCostPolicy
+import gr.grnet.aquarium.logic.accounting.dsl.{DiscreteCostPolicy, ContinuousCostPolicy, OnOffCostPolicy, DSLCostPolicy, DSLComplexResource}
+
 
 /**
- * A simulator for the standard `diskspace` resource.
+ * A simulator for a resource.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object StdDiskspaceResourceSim extends ResourceSim("diskspace", "MB/Hr", ContinuousCostPolicy) {
-  override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
-    StdDiskspaceInstanceSim(instanceId, owner, client)
+class ResourceSim(val name: String, val unit: String, val costPolicy: DSLCostPolicy) {
+  def toDSLResource = DSLComplexResource(name, unit, costPolicy, "")
+
+  def newInstance(instanceId: String, owner: UserSim, client: ClientSim)=
+    new ResourceInstanceSim(this, instanceId, owner, client)
 }
 
+
+object ResourceSim {
+  def apply(name: String, unit: String, costPolicy: DSLCostPolicy) =
+    new ResourceSim(name, unit, costPolicy)
+}

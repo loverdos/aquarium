@@ -33,22 +33,47 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation
 
-import java.util.concurrent.atomic.AtomicLong
+import gr.grnet.aquarium.logic.events.ResourceEvent
 
 /**
- * A [[gr.grnet.aquarium.user.simulation.UIDGenerator]] providing values by incrementing an
- * [[java.util.concurrent.atomic.AtomicLong]].
+ * A simulator for a resource instance.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ConcurrentVMLocalUIDGenerator extends UIDGenerator {
-  private[this] val counter = new AtomicLong()
+class ResourceInstanceSim (val resource: ResourceSim,
+                           val instanceId: String,
+                           val owner: UserSim,
+                           val client: ClientSim) {
 
-  def nextUID() = {
-    val next = counter.getAndIncrement
-    next.toString
+  def uidGen = client.uidGen
+
+  def newResourceEvent(occurredMillis: Long,
+                       receivedMillis: Long,
+                       value: Double,
+                       details: ResourceEvent.Details,
+                       eventVersion: String = "1.0") = {
+
+    val event = ResourceEvent(
+      uidGen.nextUID(),
+      occurredMillis,
+      receivedMillis,
+      owner.userId,
+      client.clientId,
+      resource.name,
+      instanceId,
+      eventVersion,
+      value,
+      details
+    )
+
+    owner._addResourceEvent(event)
   }
+}
+
+object ResourceInstanceSim {
+  def apply(resource: ResourceSim, instanceId: String, owner: UserSim, client: ClientSim) =
+    new ResourceInstanceSim(resource, instanceId, owner, client)
 }

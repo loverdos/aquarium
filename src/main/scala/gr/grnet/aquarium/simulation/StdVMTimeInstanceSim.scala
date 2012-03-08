@@ -33,70 +33,73 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.events.ResourceEvent
+import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicyValues
 import gr.grnet.aquarium.store.RecordID
 import com.ckkloverdos.maybe.Maybe
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.logic.events.ResourceEvent
 
 /**
- * A simulator for an instance of the standard `diskspace` resource.
+ * A simulator for an instance of the standard `vmtime` resource.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class StdDiskspaceInstanceSim(override val instanceId: String,
-                                   override val owner: UserSim,
-                                   override val client: ClientSim)
-extends ResourceInstanceSim(StdDiskspaceResourceSim, instanceId, owner, client) {
-  def consumeMB(occurredDate: Date,
-                megaBytes: Double,
-                details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-                eventVersion: String = "1.0"): Maybe[RecordID] = {
+
+case class StdVMTimeInstanceSim(override val instanceId: String,
+                                override val owner: UserSim,
+                                override val client: ClientSim)
+extends ResourceInstanceSim(StdVMTimeResourceSim, instanceId, owner, client) {
+
+  def newON(occurredDate: Date,
+            details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
+            eventVersion: String = "1.0"): Maybe[RecordID] = {
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
-      megaBytes,
+      OnOffCostPolicyValues.ON,
       details,
       eventVersion
     )
   }
 
-
-  def freeMB(occurredDate: Date,
-             megaBytes: Double,
+  def newOFF(occurredDate: Date,
              details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
              eventVersion: String = "1.0"): Maybe[RecordID] = {
-
-    consumeMB(occurredDate, -megaBytes)
+    newResourceEvent(
+      occurredDate.getTime,
+      occurredDate.getTime,
+      OnOffCostPolicyValues.OFF,
+      details,
+      eventVersion
+    )
   }
 
-  def consumeMB_OutOfSync(occurredDate: Date,
-                          outOfSyncHours: Int,
-                          megaBytes: Double,
-                          details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-                          eventVersion: String = "1.0"): Maybe[RecordID] = {
+  def newONOFF(occurredDateForON: Date, totalVMTimeInHours: Int): (Maybe[RecordID], Maybe[RecordID]) = {
+    val onID = newON(occurredDateForON)
+    val offDate = new MutableDateCalc(occurredDateForON).goPlusHours(totalVMTimeInHours).toDate
+    val offID = newOFF(offDate)
 
-    val occurredDateCalc = new MutableDateCalc(occurredDate)
+    (onID, offID)
+  }
+
+  def newOFF_OutOfSync(occuredDate: Date,
+                       outOfSyncHours: Int,
+                       details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
+                       eventVersion: String = "1.0"): Maybe[RecordID] = {
+
+    val occurredDateCalc = new MutableDateCalc(occuredDate)
     val occurredTime = occurredDateCalc.toMillis
     val receivedTime = occurredDateCalc.goPlusHours(outOfSyncHours).toMillis
 
     newResourceEvent(
       occurredTime,
       receivedTime,
-      megaBytes,
+      OnOffCostPolicyValues.OFF,
       details,
       eventVersion
     )
-  }
-
-  def freeMB_OutOfSync(occurredDate: Date,
-                       outOfSyncHours: Int,
-                       megaBytes: Double,
-                       details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-                       eventVersion: String = "1.0"): Maybe[RecordID] = {
-
-    consumeMB_OutOfSync(occurredDate, outOfSyncHours, -megaBytes)
   }
 }

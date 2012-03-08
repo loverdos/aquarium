@@ -32,48 +32,56 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
+package gr.grnet.aquarium.simulation
 
-package gr.grnet.aquarium.user.simulation
-
+import java.util.Date
 import gr.grnet.aquarium.logic.events.ResourceEvent
+import com.ckkloverdos.maybe.Maybe
+import gr.grnet.aquarium.store.{RecordID, ResourceEventStore}
+import math.Ordering
 
 /**
- * A simulator for a resource instance.
+ * A simulator for a user.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ResourceInstanceSim (val resource: ResourceSim,
-                           val instanceId: String,
-                           val owner: UserSim,
-                           val client: ClientSim) {
+case class UserSim(userId: String, userCreationDate: Date, aquarium: AquariumSim) { userSelf ⇒
+  private[this]
+  def resourceEventStore = aquarium.resourceEventStore
 
-  def uidGen = client.uidGen
-
-  def newResourceEvent(occurredMillis: Long,
-                       receivedMillis: Long,
-                       value: Double,
-                       details: ResourceEvent.Details,
-                       eventVersion: String = "1.0") = {
-
-    val event = ResourceEvent(
-      uidGen.nextUID(),
-      occurredMillis,
-      receivedMillis,
-      owner.userId,
-      client.clientId,
-      resource.name,
-      instanceId,
-      eventVersion,
-      value,
-      details
-    )
-
-    owner._addResourceEvent(event)
+  private[simulation]
+  def _addResourceEvent(resourceEvent: ResourceEvent): Maybe[RecordID] = {
+    resourceEventStore.storeResourceEvent(resourceEvent)
   }
-}
 
-object ResourceInstanceSim {
-  def apply(resource: ResourceSim, instanceId: String, owner: UserSim, client: ClientSim) =
-    new ResourceInstanceSim(resource, instanceId, owner, client)
+  def myResourceEvents: List[ResourceEvent] = {
+    resourceEventStore.findResourceEventsByUserId(userId)(None)
+  }
+
+  def myResourceEventsByReceivedDate: List[ResourceEvent] = {
+    myResourceEvents.sorted(new Ordering[ResourceEvent] {
+      def compare(x: ResourceEvent, y: ResourceEvent) = {
+        if(x.receivedMillis < y.receivedMillis)
+          -1
+        else if(x.receivedMillis == y.receivedMillis)
+          0
+        else
+          1
+      }
+    })
+  }
+
+  def myResourceEventsByOccurredDate: List[ResourceEvent] = {
+    myResourceEvents.sorted(new Ordering[ResourceEvent] {
+      def compare(x: ResourceEvent, y: ResourceEvent) = {
+        if(x.occurredMillis < y.occurredMillis)
+          -1
+        else if(x.occurredMillis == y.occurredMillis)
+          0
+        else
+          1
+      }
+    })
+  }
 }

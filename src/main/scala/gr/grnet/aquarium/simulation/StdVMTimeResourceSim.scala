@@ -33,21 +33,17 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
-import gr.grnet.aquarium.store.ResourceEventStore
-import java.util.Date
-
+import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy
 
 /**
- * A simulator for Aquarium.
+ * A simulator for the standard `vmtime` resource.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class AquariumSim(resources: List[ResourceSim], resourceEventStore: ResourceEventStore) {
-  def resourcesMap = new DSLResourcesMap(resources.map(_.toDSLResource))
-  
-  def newUser(userId: String, userCreationDate: Date) = UserSim(userId, userCreationDate, this)
+object StdVMTimeResourceSim extends ResourceSim("vmtime", "Hr", OnOffCostPolicy) {
+  override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
+    StdVMTimeInstanceSim(instanceId, owner, client)
 }

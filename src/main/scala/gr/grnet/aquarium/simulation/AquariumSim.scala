@@ -32,16 +32,22 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
-package gr.grnet.aquarium.user.simulation
 
-import java.rmi.server.UID
+package gr.grnet.aquarium.simulation
+
+import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
+import gr.grnet.aquarium.store.ResourceEventStore
+import java.util.Date
+
 
 /**
- * Unique ID generator based on RMI [[java.rmi.server.UID]].
+ * A simulator for Aquarium.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object RMIUIDGenerator extends UIDGenerator {
-  def nextUID() = new UID().toString
+case class AquariumSim(resources: List[ResourceSim], resourceEventStore: ResourceEventStore) {
+  def resourcesMap = new DSLResourcesMap(resources.map(_.toDSLResource))
+  
+  def newUser(userId: String, userCreationDate: Date) = UserSim(userId, userCreationDate, this)
 }

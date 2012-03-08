@@ -33,14 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.simulation
+package gr.grnet.aquarium.simulation
+
+import uid.UIDGenerator
 
 /**
- * Unique ID generator.
+ * A simulator for an aquarium client system.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UIDGenerator {
-  def nextUID(): String
-}
+case class ClientSim(clientId: String)(implicit val uidGen: UIDGenerator)
