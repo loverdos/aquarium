@@ -6,10 +6,10 @@ import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl._
 import java.util.Date
-import simulation.{ConcurrentVMLocalUIDGenerator, ClientServiceSim, UserSim}
 import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
 import com.ckkloverdos.maybe.{Just, NoVal}
+import simulation.{AquariumSim, ResourceSim, ConcurrentVMLocalUIDGenerator, ClientServiceSim, UserSim}
 
 
 /**
@@ -79,10 +79,12 @@ aquariumpolicy:
 
   // TODO: integrate this with the rest of the simulation stuff
   // TODO: since, right now, the resource strings have to be given twice
-  val VMTimeResource    = DSLComplexResource("vmtime",    "Hr",    OnOffCostPolicy,      "")
-  val DiskspaceResource = DSLComplexResource("diskspace", "MB/Hr", ContinuousCostPolicy, "")
-  val BandwidthResource = DSLComplexResource("bandwidth", "MB/Hr", DiscreteCostPolicy,   "")
-  val DefaultResourcesMap = new DSLResourcesMap(VMTimeResource :: DiskspaceResource :: BandwidthResource :: Nil)
+  val VMTimeResource    = ResourceSim("vmtime",    "Hr",    OnOffCostPolicy)
+  val DiskspaceResource = ResourceSim("diskspace", "MB/Hr", ContinuousCostPolicy)
+  val BandwidthResource = ResourceSim("bandwidth", "MB/Hr", DiscreteCostPolicy)
+
+  val Aquarium = AquariumSim(List(VMTimeResource, DiskspaceResource, BandwidthResource))
+  val DefaultResourcesMap = Aquarium.resourcesMap
 
   // There are two client services, synnefo and pithos.
   val TheUIDGenerator = new ConcurrentVMLocalUIDGenerator
