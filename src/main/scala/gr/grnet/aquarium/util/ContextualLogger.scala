@@ -188,14 +188,14 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     this.error(failed.exception, "%s", failed.explanation)
   }
 
-  def begin(): Unit = {
-    debug("BEGIN")
+  def begin(message: String = ""): Unit = {
+    if(message == "") debug("BEGIN") else debug("+++ [%s] +++", message)
     indent()
   }
 
-  def end(): Unit = {
+  def end(message: String = ""): Unit = {
     unindent()
-    debug("END")
+    if(message == "") debug("END") else debug("--- [%s] ---", message)
   }
 
   def endWith[A : Manifest](f: ⇒A): A = {
