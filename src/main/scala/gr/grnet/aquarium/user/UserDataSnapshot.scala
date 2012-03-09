@@ -36,7 +36,7 @@
 package gr.grnet.aquarium
 package user
 
-import gr.grnet.aquarium.util.{findFromMapAsMaybe, findAndRemoveFromMap}
+import gr.grnet.aquarium.util.{findFromMapAsMaybe, findAndRemoveFromMap, shortClassNameOf}
 import gr.grnet.aquarium.logic.accounting.Policy
 import java.util.Date
 import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
@@ -111,6 +111,10 @@ case class AgreementSnapshot(agreements: List[Agreement], snapshotTime: Long) ex
         }
       case None => NoVal
     }
+
+  override def toString = {
+    "%s(%s, %s)".format(shortClassNameOf(this), agreements, new MutableDateCalc(snapshotTime).toString)
+  }
 }
 
 /**

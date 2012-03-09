@@ -40,6 +40,7 @@ import org.junit.Assert._
 import org.junit.{Test}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import java.util.Date
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
  * Tests for the Timeslot class
@@ -125,6 +126,28 @@ class TimeslotTest extends TestMethods {
     assertEquals(3, aligned.size)
     assertEquals(Timeslot(new Date(7), new Date(8)), aligned.head)
     assertEquals(Timeslot(new Date(19), new Date(20)), aligned.last)
+
+  }
+
+  @Test
+  def testAlign2 = {
+    val t = Timeslot(
+      new MutableDateCalc(2012, 1, 1).goPlusHours(3).toDate,
+      new MutableDateCalc(2012, 1, 2).goPlusHours(4).toDate)
+
+    val dc20110101 = new MutableDateCalc(2011, 1, 1)
+    val dc20111101 = new MutableDateCalc(2011, 11, 1)
+    val polTs = List(Timeslot(dc20110101.toDate, dc20110101.copy.goPlusYears(2).toDate))
+    val agrTs = List(Timeslot(dc20111101.toDate, new Date(Long.MaxValue)))
+
+    val alignedPolTs = t.align(polTs)
+    assertEquals(1, alignedPolTs.size)
+    assertEquals(t.to, alignedPolTs.last.to)
+
+    val alignedAgrTs = t.align(agrTs)
+    assertEquals(1, alignedAgrTs.size)
+    assertEquals(t.to, alignedAgrTs.last.to)
+
 
   }
 }

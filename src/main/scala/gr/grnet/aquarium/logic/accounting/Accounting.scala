@@ -88,6 +88,7 @@ trait Accounting extends DSLUtils with Loggable {
     val alignedPolicyTimeslots    = referenceTimeslot.align(policyTimeslots)
     val alignedAgreementTimeslots = referenceTimeslot.align(agreementTimeslots)
 
+    clog.debug("referenceTimeslot = %s", referenceTimeslot)
     clog.debugSeq("alignedPolicyTimeslots", alignedPolicyTimeslots, 0)
     clog.debugSeq("alignedAgreementTimeslots", alignedAgreementTimeslots, 0)
 
@@ -186,35 +187,37 @@ trait Accounting extends DSLUtils with Loggable {
           val chargeslots = for {
             finegrainedTimeslot <- finegrainedTimeslots
           } yield {
+            val finegrainedTimeslotMsg = "finegrainedTimeslot = %s".format(finegrainedTimeslot)
+            clog.begin(finegrainedTimeslotMsg)
+
             val dslAlgorithm = algorithmByTimeslot(finegrainedTimeslot) // TODO: is this correct?
+            clog.debug("dslAlgorithm = %s", dslAlgorithm)
             val dslPricelist = pricelistByTimeslot(finegrainedTimeslot) // TODO: is this correct?
+            clog.debug("dslPricelist = %s", dslPricelist)
             val algorithmDefOpt = dslAlgorithm.algorithms.get(dslResource)
+            clog.debug("algorithmDefOpt = %s", algorithmDefOpt)
             val priceUnitOpt = dslPricelist.prices.get(dslResource)
+            clog.debug("priceUnitOpt = %s", priceUnitOpt)
 
-            clog.debug("%s:", finegrainedTimeslot)
-            clog.withIndent {
-              clog.debug("dslAlgorithm = %s", dslAlgorithm)
-              clog.debug("dslPricelist = %s", dslPricelist)
-              clog.debug("algorithmDefOpt = %s", algorithmDefOpt)
-              clog.debug("priceUnitOpt = %s", priceUnitOpt)
-            }
-
-            (algorithmDefOpt, priceUnitOpt) match {
+            val chargeslot = (algorithmDefOpt, priceUnitOpt) match {
               case (None, None) ⇒
                 throw new Exception(
                   "Unknown algorithm and price unit for resource %s during %s".
-                    format(dslResource.name, finegrainedTimeslot))
+                    format(dslResource, finegrainedTimeslot))
               case (None, _) ⇒
                 throw new Exception(
                   "Unknown algorithm for resource %s during %s".
-                    format(dslResource.name, finegrainedTimeslot))
+                    format(dslResource, finegrainedTimeslot))
               case (_, None) ⇒
                 throw new Exception(
                   "Unknown price unit for resource %s during %s".
-                    format(dslResource.name, finegrainedTimeslot))
+                    format(dslResource, finegrainedTimeslot))
               case (Some(algorithmDefinition), Some(priceUnit)) ⇒
                 Chargeslot(finegrainedTimeslot.from.getTime, finegrainedTimeslot.to.getTime, algorithmDefinition, priceUnit)
             }
+
+            clog.end(finegrainedTimeslotMsg)
+            chargeslot
           }
 
           clog.end(alignedTimeslotMsg)
@@ -268,7 +271,7 @@ trait Accounting extends DSLUtils with Loggable {
             // all policies within the interval from previous to current resource event
             clog.debug("Calling policyStore.loadAndSortPoliciesWithin(%s)", referenceTimeslot)
             val relevantPolicies = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime, dsl)
-            clog.debugMap("relevantPolicies", relevantPolicies)
+            clog.debugMap("==> relevantPolicies", relevantPolicies, 1)
 
             (referenceTimeslot, relevantPolicies, previousResourceEvent.value)
 
@@ -298,7 +301,7 @@ trait Accounting extends DSLUtils with Loggable {
 
         clog.debug("Calling policyStore.loadValidPolicyEntryAt(%s)", new MutableDateCalc(occurredMillis))
         val relevantPolicyM = policyStore.loadValidPolicyAt(occurredMillis, dsl)
-        clog.debug("relevantPolicyM = %s", relevantPolicyM)
+        clog.debug("  ==> relevantPolicyM = %s", relevantPolicyM)
 
         val relevantPolicies = relevantPolicyM match {
           case Just(relevantPolicy) ⇒

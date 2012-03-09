@@ -54,10 +54,9 @@ class UserStateComputations extends Loggable {
                            userCreationMillis: Long,
                            isActive: Boolean,
                            credits: Double,
-                           defaultPolicy: DSLPolicy,
+                           roleNames: List[String] = List(),
                            agreementName: String = DSLAgreement.DefaultAgreementName) = {
     val now = userCreationMillis
-    defaultPolicy.findAgreement(agreementName).get // needed only for the side-effect
 
     UserState(
       userId,
@@ -74,7 +73,7 @@ class UserStateComputations extends Loggable {
       ActiveStateSnapshot(isActive, now),
       CreditSnapshot(credits, now),
       AgreementSnapshot(List(Agreement(agreementName, userCreationMillis)), now),
-      RolesSnapshot(Nil, now),
+      RolesSnapshot(roleNames, now),
       OwnedResourcesSnapshot(Nil, now)
     )
   }
@@ -304,12 +303,9 @@ class UserStateComputations extends Loggable {
           val theInstanceId = currentResourceEvent.safeInstanceId
           val theValue = currentResourceEvent.value
 
-          clog.indent()
           clog.debug("")
           clog.debug("Processing %s", currentResourceEvent)
-          clog.debug("+========= %s", rcDebugInfo(currentResourceEvent))
-
-          clog.indent()
+          clog.begin(rcDebugInfo(currentResourceEvent))
 
           if(previousResourceEvents.size > 0) {
             clog.debug("%s previousResourceEvents", previousResourceEvents.size)
@@ -447,9 +443,7 @@ class UserStateComputations extends Loggable {
               clog.error(e, m)
           }
 
-          clog.unindent()
-          clog.debug("-========= %s", rcDebugInfo(currentResourceEvent))
-          clog.unindent()
+          clog.end(rcDebugInfo(currentResourceEvent))
         }
         
 

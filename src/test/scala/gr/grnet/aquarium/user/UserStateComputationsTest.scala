@@ -91,8 +91,8 @@ aquariumpolicy:
   @Test
   def testOne: Unit = {
     val clog = ContextualLogger.fromOther(NoVal, logger, "testOne()")
-    val StartOfBillingYearDateCalc = new MutableDateCalc(2012, 1, 1)
-    val UserCreationDateCalc       = new MutableDateCalc(2012, 1, 1).goMinusMonths(2)
+    val StartOfBillingYearDateCalc = new MutableDateCalc(2012,  1, 1)
+    val UserCreationDate           = new MutableDateCalc(2011, 11, 1).toDate
 
     val computations = new UserStateComputations
 
@@ -104,6 +104,7 @@ aquariumpolicy:
     val resourceEventStore = storeProvider.resourceEventStore
     val policyStore = storeProvider.policyStore
 
+    // Store the default policy
     val policyDateCalc        = StartOfBillingYearDateCalc.copy
     val policyOccurredMillis  = policyDateCalc.toMillis
     val policyValidFromMillis = policyDateCalc.copy.goPreviousYear.toMillis
@@ -114,7 +115,7 @@ aquariumpolicy:
     val DefaultResourcesMap = Aquarium.resourcesMap
 
     // A new user is created on 2012-01-15 00:00:00.000
-    val UserCKKL  = Aquarium.newUser("CKKL", UserCreationDateCalc.toDate)
+    val UserCKKL  = Aquarium.newUser("CKKL", UserCreationDate)
 
     // By convention
     // - synnefo is for VMTime and Bandwidth
@@ -154,27 +155,29 @@ aquariumpolicy:
       777)
 
     clog.debug("")
-    clog.debug("=== Events by OccurredMillis ===")
+    clog.begin("Events by OccurredMillis")
     clog.withIndent {
       for(event <- UserCKKL.myResourceEventsByOccurredDate) {
         clog.debug(event.toDebugString(DefaultResourcesMap))
       }
     }
-    clog.debug("=== Events by OccurredMillis ===")
+    clog.end("Events by OccurredMillis")
     clog.debug("")
 
     val billingMonthInfo = BillingMonthInfo.fromDateCalc(StartOfBillingYearDateCalc)
 
     val initialUserState = computations.createFirstUserState(
       userId = UserCKKL.userId,
-      userCreationMillis = UserCreationDateCalc.toMillis,
+      userCreationMillis = UserCreationDate.getTime,
       isActive = true,
       credits = 0.0,
-      defaultPolicy = DefaultPolicy,
+      roleNames = List("user"),
       agreementName = DSLAgreement.DefaultAgreementName
     )
 
     val currentUserState = initialUserState
+
+    // Policy: from 2012-01-01 to Infinity
 
     val userStateM = computations.doFullMonthlyBilling(
       UserCKKL.userId,

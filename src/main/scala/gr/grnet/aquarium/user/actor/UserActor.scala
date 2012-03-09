@@ -104,7 +104,7 @@ class UserActor extends AquariumActor
    * Create an empty state for a user
    */
   def createBlankState = {
-    this._userState = DefaultUserStateComputations.createFirstUserState(this._userId, 0L, true, 0.0, null)
+    this._userState = DefaultUserStateComputations.createFirstUserState(this._userId, 0L, true, 0.0)
   }
 
   /**
@@ -178,8 +178,7 @@ class UserActor extends AquariumActor
           this._userState = DefaultUserStateComputations.createFirstUserState(
             userId,
             event.occurredMillis,
-            true, 0.0, null,
-            DSLAgreement.DefaultAgreementName)
+            true, 0.0)
           saveUserState
           DEBUG("Created and stored %s", this._userState)
         }
