@@ -124,6 +124,8 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     }
   }
 
+  def isDebugEnabled = logger.isDebugEnabled
+
   def nesting = _nesting
 
   def indentAs(other: ContextualLogger): this.type = {
@@ -204,6 +206,44 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
         throw e
     } finally end()
   }
+
+  def debugMap[K, V](name: String, map: scala.collection.Map[K, V], limit: Int = 3): Unit = {
+    val clog = this
+    if(clog.isDebugEnabled) {
+      if(map.size < limit) {
+        clog.debug("%s = %s", name, map)
+      } else {
+        clog.debug("%s:", name)
+        clog.withIndent {
+          for((k, v) <- map) {
+            clog.debug("%s: %s", k, v)
+          }
+        }
+      }
+    }
+  }
+
+  def debugSeq[T](name: String, seq: scala.collection.Seq[T], limit: Int = 3): Unit = {
+    if(this.isDebugEnabled) {
+      if(seq.lengthCompare(limit) <= 0) {
+        this.debug("%s = %s", name, seq)
+      } else {
+        this.debug("%s: ", name)
+        this.withIndent(seq.foreach(this.debug("%s", _)))
+      }
+    }
+  }
+
+  def debugSet[T](name: String, set: scala.collection.Set[T], limit: Int = 3): Unit = {
+    if(this.isDebugEnabled) {
+      if(set.size <= limit) {
+        this.debug("%s = %s", name, set)
+      } else {
+        this.debug("%s: ", name)
+        this.withIndent(set.foreach(this.debug("%s", _)))
+      }
+    }
+  }
 }
 
 /**
@@ -240,28 +280,6 @@ object ContextualLogger {
         new ContextualLogger(clog.logger, fmt, args:_*).indentAs(clog)
       case _ ⇒
         new ContextualLogger(logger, fmt, args:_*)
-    }
-  }
-  
-  def debugMap[K, V](clog: ContextualLogger, name: String, map: scala.collection.Map[K, V]): Unit = {
-    if(map.size < 3) {
-      clog.debug("%s = %s", name, map)
-    } else {
-      clog.debug("%s:", name)
-      clog.withIndent {
-        for((k, v) <- map) {
-          clog.debug("%s: %s", k, v)
-        }
-      }
-    }
-  }
-  
-  def debugList[T](clog: ContextualLogger, name: String, list: List[T]): Unit = {
-    if(list.lengthCompare(3) <= 0) {
-      clog.debug("%s = %s", name, list)
-    } else {
-      clog.debug("%s: ", name)
-      clog.withIndent(list.foreach(clog.debug("%s", _)))
     }
   }
 }
