@@ -44,6 +44,7 @@ import logic.events.ResourceEvent
 import logic.events.ResourceEvent.FullMutableResourceTypeMap
 import logic.accounting.dsl.{Timeslot, DSLAgreement}
 import collection.immutable.{TreeMap, SortedMap}
+import util.date.MutableDateCalc
 
 /**
  * Snapshot of data that are user-related.
@@ -72,6 +73,10 @@ case class Agreement(name: String, validFrom: Long, validTo: Long = Long.MaxValu
 //  }
   
   def timeslot = Timeslot(new Date(validFrom), new Date(validTo))
+
+  override def toString =
+    "Agreement(%s, %s, %s)".
+      format(name, new MutableDateCalc(validFrom), new MutableDateCalc(validTo))
 }
 
 /**
