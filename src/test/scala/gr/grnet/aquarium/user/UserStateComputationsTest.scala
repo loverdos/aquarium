@@ -104,9 +104,10 @@ aquariumpolicy:
     val resourceEventStore = storeProvider.resourceEventStore
     val policyStore = storeProvider.policyStore
 
-    val policyOccurredMillis  = StartOfBillingYearDateCalc.toMillis
-    val policyValidFromMillis = StartOfBillingYearDateCalc.copy.goPreviousYear.toMillis
-    val policyValidToMillis   = StartOfBillingYearDateCalc.copy.goNextYear.toMillis
+    val policyDateCalc        = StartOfBillingYearDateCalc.copy
+    val policyOccurredMillis  = policyDateCalc.toMillis
+    val policyValidFromMillis = policyDateCalc.copy.goPreviousYear.toMillis
+    val policyValidToMillis   = policyDateCalc.copy.goNextYear.toMillis
     policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry(policyOccurredMillis, policyValidFromMillis, policyValidToMillis))
 
     val Aquarium = AquariumSim(List(VMTimeResource, DiskspaceResource, BandwidthResource), storeProvider.resourceEventStore)
@@ -184,7 +185,6 @@ aquariumpolicy:
       UserCKKL.userCreationDate.getTime,
       currentUserState,
       initialUserState,
-      DefaultPolicy,
       DefaultResourcesMap,
       new Accounting{},
       Just(clog)

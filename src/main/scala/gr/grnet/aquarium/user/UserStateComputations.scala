@@ -87,7 +87,6 @@ class UserStateComputations extends Loggable {
                                        userCreationMillis: Long,
                                        currentUserState: UserState,
                                        zeroUserState: UserState, 
-                                       defaultPolicy: DSLPolicy,
                                        defaultResourcesMap: DSLResourcesMap,
                                        accounting: Accounting,
                                        contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = {
@@ -109,7 +108,6 @@ class UserStateComputations extends Loggable {
         userCreationMillis,
         currentUserState,
         zeroUserState,
-        defaultPolicy,
         defaultResourcesMap,
         accounting,
         Just(clog))
@@ -192,7 +190,6 @@ class UserStateComputations extends Loggable {
                            userCreationMillis: Long,
                            currentUserState: UserState,
                            zeroUserState: UserState,
-                           defaultPolicy: DSLPolicy,
                            defaultResourcesMap: DSLResourcesMap,
                            accounting: Accounting,
                            contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = Maybe {
@@ -216,7 +213,6 @@ class UserStateComputations extends Loggable {
       userCreationMillis,
       currentUserState,
       zeroUserState,
-      defaultPolicy,
       defaultResourcesMap,
       accounting,
       Just(clog)
