@@ -44,9 +44,9 @@ aquariumpolicy:
   algorithms:
     - algorithm:
       name: default
-      bandwidth: $NotNow
-      vmtime: $NotNow
-      diskspace: $NotNow
+      bandwidth: function bandwidth() {return 1;}
+      vmtime: function vmtime() {return 1;}
+      diskspace: function diskspace() {return 1;}
       effective:
         from: 0
 
@@ -75,7 +75,7 @@ aquariumpolicy:
       creditplan: default
   """
 
-  val DefaultPolicy = new DSL{}.parse(PolicyYAML)
+  val DefaultPolicy = new DSL{} parse PolicyYAML
 
   // TODO: integrate this with the rest of the simulation stuff
   // TODO: since, right now, the resource strings have to be given twice
@@ -92,9 +92,9 @@ aquariumpolicy:
   def testOne: Unit = {
     val clog = ContextualLogger.fromOther(NoVal, logger, "testOne()")
     val StartOfBillingYearDateCalc = new MutableDateCalc(2012, 1, 1)
-    val UserCreationDateCalc = StartOfBillingYearDateCalc.copy.goMinusMonths(2)
+    val UserCreationDateCalc       = new MutableDateCalc(2012, 1, 1).goMinusMonths(2)
 
-    val computer = new UserStateComputations
+    val computations = new UserStateComputations
 
     val mc = Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
     Policy.withConfigurator(mc)
@@ -124,16 +124,13 @@ aquariumpolicy:
 
     // Let's create our dates of interest
     val vmStartDateCalc = StartOfBillingYearDateCalc.copy.goPlusDays(1).goPlusHours(1)
-    // 2012-01-16 01:00:00.000
     val vmStartDate = vmStartDateCalc.toDate
 
     // Within January, create one VM ON-OFF ...
     VMTimeInstance.newONOFF(vmStartDate, 9)
 
     val diskConsumptionDateCalc = StartOfBillingYearDateCalc.copy.goPlusHours(3)
-    // 2012-01-16 04:00:00.000
     val diskConsumptionDate1 = diskConsumptionDateCalc.toDate
-    // 2012-01-17 05:00:00.000
     val diskConsumptionDateCalc2 = diskConsumptionDateCalc.copy.goPlusDays(1).goPlusHours(1)
     val diskConsumptionDate2 = diskConsumptionDateCalc2.toDate
 
@@ -146,7 +143,6 @@ aquariumpolicy:
     BandwidthInstance.useBandwidth(bwDateCalc.toDate, 100.0)
 
     // ... and one "future" event
-    // 2012-02-07 07:07:07.007
     DiskInstance.consumeMB(
       StartOfBillingYearDateCalc.copy.
         goNextMonth.goPlusDays(6).
@@ -168,19 +164,25 @@ aquariumpolicy:
 
     val billingMonthInfo = BillingMonthInfo.fromDateCalc(StartOfBillingYearDateCalc)
 
-    val initialUserState = computer.createFirstUserState(
+    val initialUserState = computations.createFirstUserState(
       userId = UserCKKL.userId,
-      millis = StartOfBillingYearDateCalc.copy.goPreviousYear.toMillis
+      userCreationMillis = UserCreationDateCalc.toMillis,
+      isActive = true,
+      credits = 0.0,
+      defaultPolicy = DefaultPolicy,
+      agreementName = DSLAgreement.DefaultAgreementName
     )
 
-    val userStateM = computer.doFullMonthlyBilling(
+    val currentUserState = initialUserState
+
+    val userStateM = computations.doFullMonthlyBilling(
       UserCKKL.userId,
       billingMonthInfo,
       userStateStore,
       resourceEventStore,
       policyStore,
       UserCKKL.userCreationDate.getTime,
-      initialUserState,
+      currentUserState,
       initialUserState,
       DefaultPolicy,
       DefaultResourcesMap,

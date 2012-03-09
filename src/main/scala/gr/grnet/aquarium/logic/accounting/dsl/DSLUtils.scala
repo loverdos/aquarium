@@ -94,7 +94,7 @@ trait DSLUtils extends DateUtils {
       Timeslot(oneYearBack(timeslot.from, policy.effective.from),
       oneYearAhead (timeslot.to, policy.effective.to.getOrElse(maxdate))))
 
-    logger.debug("effective timeslots: %d".format(eff.size))
+//    logger.debug("effective timeslots: %d".format(eff.size))
 
     immutable.SortedMap[Timeslot, T]() ++
       timeslot.overlappingTimeslots(eff).flatMap {

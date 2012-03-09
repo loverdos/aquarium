@@ -373,8 +373,10 @@ class UserStateComputations extends Loggable {
                     clog.debug("theValue = %s, oldAmount = %s, newAmount = %s, oldCredits = %s", theValue, oldAmount, newAmount, oldCredits)
 
                     // B. Compute new wallet entries
+                    clog.debug("agreementsSnapshot = %s", _workingUserState.agreementsSnapshot)
                     val alltimeAgreements = _workingUserState.agreementsSnapshot.agreementsByTimeslot
 
+                    clog.debug("Computing full chargeslots")
                     val fullChargeslotsM = accounting.computeFullChargeslots(
                       previousResourceEventM,
                       currentResourceEvent,
