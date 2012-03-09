@@ -197,6 +197,7 @@ object DSLCostPolicyNames {
   final val onoff      = "onoff"
   final val discrete   = "discrete"
   final val continuous = "continuous"
+  final val once       = "once"
 }
 
 object DSLCostPolicy {
@@ -209,12 +210,54 @@ object DSLCostPolicy {
         case DSLCostPolicyNames.onoff      ⇒ OnOffCostPolicy
         case DSLCostPolicyNames.discrete   ⇒ DiscreteCostPolicy
         case DSLCostPolicyNames.continuous ⇒ ContinuousCostPolicy
+        case DSLCostPolicyNames.once       ⇒ ContinuousCostPolicy
 
         case _ ⇒
           throw new DSLParseException("Invalid cost policy %s".format(name))
       }
     }
   }
+}
+
+/**
+ * A cost policy for which resource events just carry a credit amount that will be added to the total one.
+ *
+ * Examples are: a) Give a gift of X credits to the user, b) User bought a book, so charge for the book price.
+ *
+ */
+case object OnceCostPolicy
+  extends DSLCostPolicy(DSLCostPolicyNames.once, Set(DSLCostPolicyNameVar, DSLCurrentValueVar)) {
+
+  def makeValueMap(costPolicyName: String,
+                   totalCredits: Double,
+                   oldTotalAmount: Double,
+                   newTotalAmount: Double,
+                   timeDelta: Double,
+                   previousValue: Double,
+                   currentValue: Double,
+                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
+
+    Map(DSLCostPolicyNameVar -> costPolicyName,
+        DSLCurrentValueVar   -> currentValue)
+  }
+
+  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = false
+
+  def isBillableFirstEventBasedOnValue(eventValue: Double) = true
+
+  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = NoVal
+
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double) = oldAmount
+
+  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double) = getResourceInstanceInitialAmount
+
+  def getResourceInstanceInitialAmount = 0.0
+
+  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double) = Just(newEventValue)
+
+  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double) = newEventValue
+
+  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
 }
 
 /**
