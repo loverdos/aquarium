@@ -51,46 +51,33 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLR
  */
 class UserStateComputations extends Loggable {
   def createFirstUserState(userId: String,
-                           millis: Long = TimeHelpers.nowMillis,
+                           userCreationMillis: Long,
+                           isActive: Boolean,
+                           credits: Double,
+                           defaultPolicy: DSLPolicy,
                            agreementName: String = DSLAgreement.DefaultAgreementName) = {
-    val now = 0L
+    val now = userCreationMillis
+    defaultPolicy.findAgreement(agreementName).get // needed only for the side-effect
+
     UserState(
       userId,
-      now,
+      userCreationMillis,
       0L,
       false,
       null,
       ImplicitlyIssuedResourceEventsSnapshot(List(), now),
-      Nil, Nil,
+      Nil,
+      Nil,
       LatestResourceEventsSnapshot(List(), now),
-      0L, 0L,
-      ActiveStateSnapshot(false, now),
-      CreditSnapshot(0, now),
-      AgreementSnapshot(Agreement(agreementName, now) :: Nil, now),
-      RolesSnapshot(List(), now),
-      OwnedResourcesSnapshot(List(), now)
+      0L,
+      0L,
+      ActiveStateSnapshot(isActive, now),
+      CreditSnapshot(credits, now),
+      AgreementSnapshot(List(Agreement(agreementName, userCreationMillis)), now),
+      RolesSnapshot(Nil, now),
+      OwnedResourcesSnapshot(Nil, now)
     )
   }
-
-  def createFirstUserState(userId: String, agreementName: String, resourcesMap: DSLResourcesMap) = {
-      val now = 0L
-      UserState(
-        userId,
-        now,
-        0L,
-        false,
-        null,
-        ImplicitlyIssuedResourceEventsSnapshot(List(), now),
-        Nil, Nil,
-        LatestResourceEventsSnapshot(List(), now),
-        0L, 0L,
-        ActiveStateSnapshot(false, now),
-        CreditSnapshot(0, now),
-        AgreementSnapshot(Agreement(agreementName, now) :: Nil, now),
-        RolesSnapshot(List(), now),
-        OwnedResourcesSnapshot(List(), now)
-      )
-    }
 
   def findUserStateAtEndOfBillingMonth(userId: String,
                                        billingMonthInfo: BillingMonthInfo,
