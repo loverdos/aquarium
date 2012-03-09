@@ -35,7 +35,10 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import gr.grnet.aquarium.util.shortNameOfClass
+
 import java.util.Date
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
  * Represents an effectivity timeframe.
@@ -71,6 +74,13 @@ case class DSLTimeFrame (
     Map(Vocabulary.from -> from.getTime) ++
     repeatMap
   }
+
+  override def toString = "%s(%s, %s, %s)".format(
+    shortNameOfClass(classOf[DSLTimeFrame]),
+    new MutableDateCalc(from).toString,
+    to.map(t => new MutableDateCalc(t)),
+    repeat
+  )
 }
 
 object DSLTimeFrame{
