@@ -226,7 +226,7 @@ object Policy extends DSL with Loggable {
 
     config.policyStore.loadPolicyEntriesAfter(0).foldLeft(new TreeMap[Timeslot, DSLPolicy]()){
       (acc, p) =>
-        acc ++ Map(Timeslot(new Date(p.validFrom), new Date(p.validTo)) -> parse(p.policyYAML))
+        acc ++ Map(Timeslot(p.validFrom, p.validTo) -> parse(p.policyYAML))
     }
   }
 }

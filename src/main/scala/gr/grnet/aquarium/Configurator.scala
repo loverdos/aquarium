@@ -484,6 +484,11 @@ object Configurator {
     final val aquarium_policy = "aquarium.policy"
 
     /**
+     * Location of the role-agreement mapping file
+     */
+    final val aquarium_role_agreement_map = "aquarium.role-agreement.map"
+    
+    /**
      * A time period in milliseconds for which we can tolerate stale data regarding user state.
      *
      * The smaller the value, the more accurate the user credits and other state data are.
