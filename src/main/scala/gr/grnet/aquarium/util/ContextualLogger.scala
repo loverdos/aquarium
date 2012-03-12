@@ -208,15 +208,15 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
   }
 
   def debugMap[K, V](name: String, map: scala.collection.Map[K, V], limit: Int = 3): Unit = {
-    val clog = this
-    if(clog.isDebugEnabled) {
-      if(map.size < limit) {
-        clog.debug("%s = %s", name, map)
+    if(this.isDebugEnabled) {
+      val mapSize = map.size
+      if(mapSize <= limit) {
+        this.debug("%s [#=%s] = %s", name, mapSize, map)
       } else {
-        clog.debug("%s:", name)
-        clog.withIndent {
+        this.debug("%s [#=%s]:", name, mapSize)
+        this.withIndent {
           for((k, v) <- map) {
-            clog.debug("%s: %s", k, v)
+            this.debug("%s -> %s", k, v)
           }
         }
       }
@@ -225,10 +225,11 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
 
   def debugSeq[T](name: String, seq: scala.collection.Seq[T], limit: Int = 3): Unit = {
     if(this.isDebugEnabled) {
-      if(seq.lengthCompare(limit) <= 0) {
+      val seqSize = seq.size
+      if(seqSize <= limit) {
         this.debug("%s = %s", name, seq)
       } else {
-        this.debug("%s: ", name)
+        this.debug("%s [#=%s]: ", name, seqSize)
         this.withIndent(seq.foreach(this.debug("%s", _)))
       }
     }
@@ -236,10 +237,11 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
 
   def debugSet[T](name: String, set: scala.collection.Set[T], limit: Int = 3): Unit = {
     if(this.isDebugEnabled) {
-      if(set.size <= limit) {
-        this.debug("%s = %s", name, set)
+      val setSize = set.size
+      if(setSize <= limit) {
+        this.debug("%s [#=%s] = %s", name, setSize, set)
       } else {
-        this.debug("%s: ", name)
+        this.debug("%s [#=%s]: ", name, setSize)
         this.withIndent(set.foreach(this.debug("%s", _)))
       }
     }
