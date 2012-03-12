@@ -194,17 +194,17 @@ final case class Timeslot(from: Date, to: Date)
   def align(l: List[Timeslot]): List[Timeslot] = {
     if (l.isEmpty) return List()
 
-    val result =
-      if (!this.overlaps(l.head)) List()
-      else if (this.contains(l.head)) List(l.head)
-      else if (l.head.startsBefore(this)) List(Timeslot(this.from, l.head.to))
-      else if (l.head.endsAfter(this)) List(Timeslot(l.head.from, this.to))
-      else List(this)
+    val result : Option[Timeslot] =
+      if (!this.overlaps(l.head)) None
+      else if (l.head.contains(this)) Some(this)
+      else if (l.head.startsBefore(this)) Some(Timeslot(this.from, l.head.to))
+      else if (l.head.endsAfter(this)) Some(Timeslot(l.head.from, this.to))
+      else Some(this)
 
-    if (!result.isEmpty)
-      result.head :: align(l.tail)
-    else
-      align(l.tail)
+    result match {
+      case Some(x) => x :: align(l.tail)
+      case None => align(l.tail)
+    }
   }
 
   /**

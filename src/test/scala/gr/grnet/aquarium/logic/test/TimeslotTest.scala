@@ -112,7 +112,7 @@ class TimeslotTest extends TestMethods {
 
   @Test
   def testAlign = {
-    val t = Timeslot(new Date(7), new Date(20))
+    var t = Timeslot(new Date(7), new Date(20))
     var list = List(Timeslot(new Date(1), new Date(3)),
       Timeslot(new Date(6), new Date(8)),
       Timeslot(new Date(11), new Date(15)))
@@ -127,11 +127,8 @@ class TimeslotTest extends TestMethods {
     assertEquals(Timeslot(new Date(7), new Date(8)), aligned.head)
     assertEquals(Timeslot(new Date(19), new Date(20)), aligned.last)
 
-  }
-
-  @Test
-  def testAlign2 = {
-    val t = Timeslot(
+    // Real-world failure, test whether aligned timeslot contains this
+    t = Timeslot(
       new MutableDateCalc(2012, 1, 1).goPlusHours(3).toDate,
       new MutableDateCalc(2012, 1, 2).goPlusHours(4).toDate)
 
@@ -147,7 +144,5 @@ class TimeslotTest extends TestMethods {
     val alignedAgrTs = t.align(agrTs)
     assertEquals(1, alignedAgrTs.size)
     assertEquals(t.to, alignedAgrTs.last.to)
-
-
   }
 }
