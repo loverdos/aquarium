@@ -214,9 +214,10 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
         this.debug("%s [#=%s] = %s", name, mapSize, map)
       } else {
         this.debug("%s [#=%s]:", name, mapSize)
+        val maxKeySize = maxStringSize(map.keySet)
         this.withIndent {
           for((k, v) <- map) {
-            this.debug("%s -> %s", k, v)
+            this.debug("%s -> %s", rpad(k.toString, maxKeySize), v)
           }
         }
       }
