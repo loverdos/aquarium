@@ -4,6 +4,42 @@ Aquarium Development Guide
 The development guide includes descriptions of the APIs and extention points
 offered by Aquarium. It also includes design and development setup information.
 
+Obtaining and Compiling
+-----------------------
+
+The source code to the Aquarium project can be obtained through Git, by
+cloning the repository `http://code.grnet.gr/git/aquarium`. This will give
+you read-only access to the repository. You need to contact the Aquarium
+team to obtain read-write access.
+
+To compile Aquarium, you need the following software in your path:
+
+- Java SDK 6. Java 7 has not been tested yet.
+- `Maven <http://maven.apache.org>`_, version > 3
+
+After you install them, you can do the following:
+
+- ``mvn install``: To compile Aquarium and run the tests. This will also create 
+  the file ``target/aquarium-<ver>-jar-with-dependencies.jar`` which can be
+  used to start Aquarium from the command line
+- ``mvn deploy``:  To deploy the Aquarium libraries to the remote Maven repository
+- ``mvn release:prepare``, ``mvn release:perform``: To prepare a release,
+  tag a new version and start the next development version
+- ``mvn scala:cctest``: To run the Scala compiler in continuous compilation
+  mode
+
+Aquarium can also be build with the Simple Build Tool
+(`SBT <https://github.com/harrah/xsbt/wiki>`_). Just run ``sbt`` in the directory 
+containing the Aquarium source code.
+
+Distributing
+^^^^^^^^^^^^
+
+To prepare a binary distribution of Aquarium, use the ``make-dist.sh`` script.
+If the script is run without an argument, it will create a TAR archive from
+the latest tagged version of Aquarium. The script also accepts a Git commit-ish,
+in which case it will build a TAR archive out of the provided Git commit.
+
 Overall architecture
 --------------------
 
