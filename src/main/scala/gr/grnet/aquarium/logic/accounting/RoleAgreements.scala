@@ -36,14 +36,11 @@
 package gr.grnet.aquarium.logic.accounting
 
 import dsl.DSLAgreement
-import scala.collection.mutable.ConcurrentMap
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.Configurator.{MasterConfigurator, Keys}
 import io.Source
 import java.io.{InputStream, File}
 import java.util.regex.Pattern
-import collection.JavaConversions._
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Encapsulates mappings from user roles to Aquarium policies. The mappings
@@ -57,10 +54,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object RoleAgreements extends Loggable {
 
-  lazy val mappings: ConcurrentMap[String, DSLAgreement] = {
-    new ConcurrentHashMap[String, DSLAgreement]()
-
-  }
+  lazy val mappings: Map[String, DSLAgreement] = loadMappings
 
   /**
    * Returns the agreement that matches the provided role. The search for a
@@ -69,11 +63,10 @@ object RoleAgreements extends Loggable {
    */
   def agreementForRole(role : String) = mappings.get(role.toLowerCase)
 
-
   /**
    * Load and parse the mappings file
    */
-  def loadMappings = synchronized {
+  private[logic] def loadMappings = {
     val config = MasterConfigurator.get(Keys.aquarium_role_agreement_map)
     val configFile = new File(config)
 
@@ -93,19 +86,24 @@ object RoleAgreements extends Loggable {
     val source = if (configFile.exists && configFile.isFile) {
         if (configFile.isFile)
           Source.fromFile(configFile)
-        else
+        else {
           logger.warn(("Configured file %s is a directory. " +
             "Trying the default one.").format(config))
-        loadFromClasspath
+          loadFromClasspath
+        }
     } else {
         logger.warn("Configured file %s for role-agreement mappings cannot " +
           "be found. Trying the default one.".format(config))
         loadFromClasspath
     }
-    
-    val p = Pattern.compile("^\\s*?([a-zA-Z0-9]+)\\s*=\\s*([a-zA-Z0-9]+)\\s+.*$")
 
-    val parsed = source.getLines.foldLeft(Map[String, DSLAgreement]()) {
+    parseMappings(source)
+  }
+
+  def parseMappings(src: Source) = {
+    val p = Pattern.compile("^\\s*([\\*a-zA-Z0-9-_]+)\\s*=\\s*([a-zA-Z0-9-_]+).*$")
+
+    src.getLines.foldLeft(Map[String, DSLAgreement]()) {
       (acc, l) =>
         l match {
           case x if (x.matches("^\\s*$")) => acc
@@ -125,8 +123,5 @@ object RoleAgreements extends Loggable {
           case _ => acc
         }
     }
-
-    mappings.clear()
-    parsed.foreach{r => mappings.add(r._1, r._2)}
   }
 }
