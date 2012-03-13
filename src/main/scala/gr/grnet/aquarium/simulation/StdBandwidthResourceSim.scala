@@ -48,8 +48,8 @@ class StdBandwidthResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
                               unit: String = StdVMTimeResourceSim.DSLNames.unit,
                               isComplex: Boolean = false,
                               descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
-extends ResourceSim(StdBandwidthResourceSim.DSLNames.name,
-                    StdBandwidthResourceSim.DSLNames.unit,
+extends ResourceSim(name,
+                    unit,
                     DiscreteCostPolicy,
                     isComplex,
                     descriminatorField) {

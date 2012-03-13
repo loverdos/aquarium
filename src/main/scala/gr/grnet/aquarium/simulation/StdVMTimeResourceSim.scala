@@ -48,8 +48,8 @@ class StdVMTimeResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
                            unit: String = StdVMTimeResourceSim.DSLNames.unit,
                            isComplex: Boolean = true,
                            descriminatorField: String = StdVMTimeResourceSim.DSLNames.descriminatorField)
-  extends ResourceSim(StdVMTimeResourceSim.DSLNames.name,
-                      StdVMTimeResourceSim.DSLNames.unit,
+  extends ResourceSim(name,
+                      unit,
                       OnOffCostPolicy,
                       isComplex,
                       descriminatorField) {
