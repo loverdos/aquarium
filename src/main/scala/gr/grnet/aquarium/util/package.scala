@@ -121,4 +121,17 @@ package object util {
         null.asInstanceOf[B]
     }
   }
+
+  // Dear scalac. Optimize this.
+  def nspaces(n: Int): String = {
+    ("" /: (1 to n)) ((string, _) => string + " ")
+  }
+
+  def rpad(s: String, size: Int) = {
+    s + nspaces((size - s.length()) max 0)
+  }
+  
+  def maxStringSize[A](trav: Traversable[A]): Int = {
+    (0 /: trav)(_ max _.toString.length)
+  }
 }
