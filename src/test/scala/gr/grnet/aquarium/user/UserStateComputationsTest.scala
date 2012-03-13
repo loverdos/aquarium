@@ -22,12 +22,12 @@ aquariumpolicy:
   resources:
     - resource:
       name: bandwidth
-      unit: MB/hr
+      unit: MB/Hr
       complex: false
       costpolicy: discrete
     - resource:
       name: vmtime
-      unit: Hour
+      unit: Hr
       complex: true
       costpolicy: onoff
       descriminatorfield: vmid
