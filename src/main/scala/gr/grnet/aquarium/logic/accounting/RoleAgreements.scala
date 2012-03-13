@@ -63,7 +63,8 @@ object RoleAgreements extends Loggable {
    */
   def agreementForRole(role : String) = mappings.get(role.toLowerCase) match {
     case Some(x) => x
-    case None => mappings.get("*").getOrElse()
+    case None => mappings.get("*").getOrElse(
+      throw new RuntimeException("Cannot find agreement for default role *"))
   }
 
   /**
@@ -74,7 +75,7 @@ object RoleAgreements extends Loggable {
   /**
    * Load and parse the mappings file
    */
-  private[logic] def loadMappings = {
+  private[logic] def loadMappings = synchronized {
     val config = MasterConfigurator.get(Keys.aquarium_role_agreement_map)
     val configFile = new File(config)
 

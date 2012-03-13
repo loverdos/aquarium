@@ -3,8 +3,8 @@ package gr.grnet.aquarium.logic.test
 import org.junit.Assert._
 import org.junit.{Test}
 import io.Source
-import gr.grnet.aquarium.logic.accounting.RoleAgreements
 import gr.grnet.aquarium.util.TestMethods
+import gr.grnet.aquarium.logic.accounting.{Policy, RoleAgreements}
 
 
 /**
@@ -43,6 +43,12 @@ prof=default
 
   @Test
   def testLoadMappings {
-    //assertEquals("")
+    // Uses the roles-agreements.map file in test/resources
+    RoleAgreements.loadMappings
+
+    assertEquals("default", RoleAgreements.agreementForRole("student").name)
+
+    // Check that default policies are applied
+    assertEquals("default", RoleAgreements.agreementForRole("foobar").name)
   }
 }
