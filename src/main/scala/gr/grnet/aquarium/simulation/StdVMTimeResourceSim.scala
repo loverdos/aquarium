@@ -35,7 +35,8 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, OnOffCostPolicy}
+
 
 /**
  * A simulator for the standard `vmtime` resource.
@@ -43,7 +44,28 @@ import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object StdVMTimeResourceSim extends ResourceSim("vmtime", "Hr", OnOffCostPolicy) {
+class StdVMTimeResourceSim(isComplex: Boolean = true,
+                           descriminatorField: String = StdVMTimeResourceSim.DSLNames.descriminatorField)
+  extends ResourceSim(StdVMTimeResourceSim.DSLNames.name,
+                      StdVMTimeResourceSim.DSLNames.unit,
+                      OnOffCostPolicy,
+                      isComplex,
+                      descriminatorField) {
+
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
-    StdVMTimeInstanceSim(instanceId, owner, client)
+    StdVMTimeInstanceSim(this, instanceId, owner, client)
+}
+
+
+object StdVMTimeResourceSim {
+  object DSLNames {
+    final val name = "vmtime"
+    final val unit = "Hr"
+    final val descriminatorField = "vmtime"
+  }
+
+  def fromPolicy(dslPolicy: DSLPolicy): StdVMTimeResourceSim = {
+    val dslResource = dslPolicy.findResource(DSLNames.name).get
+    new StdVMTimeResourceSim(dslResource.isComplex, dslResource.descriminatorField)
+  }
 }

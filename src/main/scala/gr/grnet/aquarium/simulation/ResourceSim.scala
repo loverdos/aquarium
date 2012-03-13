@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.{DiscreteCostPolicy, ContinuousCostPolicy, OnOffCostPolicy, DSLCostPolicy, DSLComplexResource}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, DSLCostPolicy}
 
 
 /**
@@ -44,15 +44,24 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DiscreteCostPolicy, ContinuousCos
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ResourceSim(val name: String, val unit: String, val costPolicy: DSLCostPolicy) {
-  def toDSLResource = DSLComplexResource(name, unit, costPolicy, "")
+class ResourceSim(val name: String,
+                  val unit: String,
+                  val costPolicy: DSLCostPolicy,
+                  val isComplex: Boolean = false,
+                  val descriminatorField: String = "instanceId") {
+  def toDSLResource = DSLResource(name, unit, costPolicy, isComplex, descriminatorField)
 
-  def newInstance(instanceId: String, owner: UserSim, client: ClientSim)=
+  def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
     new ResourceInstanceSim(this, instanceId, owner, client)
 }
 
 
 object ResourceSim {
-  def apply(name: String, unit: String, costPolicy: DSLCostPolicy) =
-    new ResourceSim(name, unit, costPolicy)
+  def apply(name: String,
+            unit: String,
+            costPolicy: DSLCostPolicy,
+            isComplex: Boolean = false,
+            descriminatorField: String = "instanceId") =
+
+    new ResourceSim(name, unit, costPolicy, isComplex, descriminatorField)
 }

@@ -46,10 +46,11 @@ import gr.grnet.aquarium.logic.events.ResourceEvent
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdBandwidthInstanceSim(override val instanceId: String,
+case class StdBandwidthInstanceSim(override val resource: StdBandwidthResourceSim,
+                                   override val instanceId: String,
                                    override val owner: UserSim,
                                    override val client: ClientSim)
-extends ResourceInstanceSim(StdBandwidthResourceSim, instanceId, owner, client) {
+extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def useBandwidth(occurredDate: Date,
                    megaBytes: Double,
                    details: ResourceEvent.Details = Map(),

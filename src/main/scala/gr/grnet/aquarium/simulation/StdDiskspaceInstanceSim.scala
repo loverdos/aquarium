@@ -46,10 +46,11 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class StdDiskspaceInstanceSim(override val instanceId: String,
+case class StdDiskspaceInstanceSim(override val resource: StdDiskspaceResourceSim,
+                                   override val instanceId: String,
                                    override val owner: UserSim,
                                    override val client: ClientSim)
-extends ResourceInstanceSim(StdDiskspaceResourceSim, instanceId, owner, client) {
+extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def consumeMB(occurredDate: Date,
                 megaBytes: Double,
                 details: ResourceEvent.Details = ResourceEvent.EmptyDetails,

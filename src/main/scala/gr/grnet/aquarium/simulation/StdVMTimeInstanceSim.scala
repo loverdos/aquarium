@@ -48,10 +48,11 @@ import gr.grnet.aquarium.logic.events.ResourceEvent
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdVMTimeInstanceSim(override val instanceId: String,
+case class StdVMTimeInstanceSim(override val resource: StdVMTimeResourceSim,
+                                override val instanceId: String,
                                 override val owner: UserSim,
                                 override val client: ClientSim)
-extends ResourceInstanceSim(StdVMTimeResourceSim, instanceId, owner, client) {
+extends ResourceInstanceSim(resource, instanceId, owner, client) {
 
   def newON(occurredDate: Date,
             details: ResourceEvent.Details = ResourceEvent.EmptyDetails,

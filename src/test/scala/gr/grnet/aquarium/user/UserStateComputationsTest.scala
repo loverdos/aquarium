@@ -77,11 +77,11 @@ aquariumpolicy:
 
   val DefaultPolicy = new DSL{} parse PolicyYAML
 
-  // TODO: integrate this with the rest of the simulation stuff
-  // TODO: since, right now, the resource strings have to be given twice
-  val VMTimeResource    = StdVMTimeResourceSim
-  val DiskspaceResource = StdDiskspaceResourceSim
-  val BandwidthResource = StdBandwidthResourceSim
+  // For this to work, the definitions must match those in the YAML above.
+  // Those StdXXXResourceSim are just for debugging convenience anyway, so they must match by design.
+  val VMTimeResource    = StdVMTimeResourceSim.fromPolicy(DefaultPolicy)
+  val DiskspaceResource = StdDiskspaceResourceSim.fromPolicy(DefaultPolicy)
+  val BandwidthResource = StdBandwidthResourceSim.fromPolicy(DefaultPolicy)
 
   // There are two client services, synnefo and pithos.
   val TheUIDGenerator: UIDGenerator = new ConcurrentVMLocalUIDGenerator
@@ -120,9 +120,9 @@ aquariumpolicy:
     // By convention
     // - synnefo is for VMTime and Bandwidth
     // - pithos is for Diskspace
-    val VMTimeInstance    = StdVMTimeInstanceSim   ("VM.1",   UserCKKL, Synnefo)
-    val BandwidthInstance = StdBandwidthInstanceSim("3G.1",   UserCKKL, Synnefo)
-    val DiskInstance      = StdDiskspaceInstanceSim("DISK.1", UserCKKL, Pithos)
+    val VMTimeInstance    = VMTimeResource.newInstance   ("VM.1",   UserCKKL, Synnefo)
+    val BandwidthInstance = BandwidthResource.newInstance("3G.1",   UserCKKL, Synnefo)
+    val DiskInstance      = DiskspaceResource.newInstance("DISK.1", UserCKKL, Pithos)
 
     // Let's create our dates of interest
     val vmStartDateCalc = StartOfBillingYearDateCalc.copy.goPlusDays(1).goPlusHours(1)

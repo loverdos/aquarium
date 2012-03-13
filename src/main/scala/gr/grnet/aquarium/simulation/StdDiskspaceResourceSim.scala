@@ -35,7 +35,8 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.ContinuousCostPolicy
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, ContinuousCostPolicy}
+
 
 /**
  * A simulator for the standard `diskspace` resource.
@@ -43,8 +44,28 @@ import gr.grnet.aquarium.logic.accounting.dsl.ContinuousCostPolicy
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object StdDiskspaceResourceSim extends ResourceSim("diskspace", "MB/Hr", ContinuousCostPolicy) {
+class StdDiskspaceResourceSim(isComplex: Boolean = false,
+                              descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
+  extends ResourceSim(StdDiskspaceResourceSim.DSLNames.name,
+                      StdDiskspaceResourceSim.DSLNames.unit,
+                      ContinuousCostPolicy,
+                      isComplex,
+                      descriminatorField) {
+
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
-    StdDiskspaceInstanceSim(instanceId, owner, client)
+    StdDiskspaceInstanceSim(this, instanceId, owner, client)
 }
 
+
+object StdDiskspaceResourceSim {
+  object DSLNames {
+    final val name = "diskspace"
+    final val unit = "MB/Hr"
+    final val descriminatorField = "instanceId"
+  }
+
+  def fromPolicy(dslPolicy: DSLPolicy): StdDiskspaceResourceSim = {
+    val dslResource = dslPolicy.findResource(DSLNames.name).get
+    new StdDiskspaceResourceSim(dslResource.isComplex, dslResource.descriminatorField)
+  }
+}

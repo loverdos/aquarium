@@ -35,7 +35,8 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.DiscreteCostPolicy
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DiscreteCostPolicy}
+
 
 /**
  * A simulator for the standard `bandwidth` resource.
@@ -43,7 +44,29 @@ import gr.grnet.aquarium.logic.accounting.dsl.DiscreteCostPolicy
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object StdBandwidthResourceSim extends ResourceSim("bandwidth", "MB/Hr", DiscreteCostPolicy) {
-  override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
-    StdBandwidthInstanceSim(instanceId, owner, client)
+class StdBandwidthResourceSim(isComplex: Boolean = false,
+                              descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
+extends ResourceSim(StdBandwidthResourceSim.DSLNames.name,
+                    StdBandwidthResourceSim.DSLNames.unit,
+                    DiscreteCostPolicy,
+                    isComplex,
+                    descriminatorField) {
+
+override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
+    StdBandwidthInstanceSim(this, instanceId, owner, client)
 }
+
+
+object StdBandwidthResourceSim {
+  object DSLNames {
+    final val name = "bandwidth"
+    final val unit = "MB/Hr"
+    final val descriminatorField = "instanceId"
+  }
+
+  def fromPolicy(dslPolicy: DSLPolicy): StdBandwidthResourceSim = {
+    val dslResource = dslPolicy.findResource(DSLNames.name).get
+    new StdBandwidthResourceSim(dslResource.isComplex, dslResource.descriminatorField)
+  }
+}
+
