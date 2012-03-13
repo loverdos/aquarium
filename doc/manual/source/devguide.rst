@@ -1,5 +1,5 @@
-Aquarium Development Guide
-==========================
+Development Guide
+=================
 
 The development guide includes descriptions of the APIs and extention points
 offered by Aquarium. It also includes design and development setup information.
