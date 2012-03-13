@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.simulation
 
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, DSLCostPolicy}
+import gr.grnet.aquarium.util.shortClassNameOf
 
 
 /**
@@ -53,6 +54,10 @@ class ResourceSim(val name: String,
 
   def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
     new ResourceInstanceSim(this, instanceId, owner, client)
+
+  override def toString = "%s(%s)".format(
+    shortClassNameOf(this),
+    List(name, unit, costPolicy, isComplex, descriminatorField).mkString(","))
 }
 
 
