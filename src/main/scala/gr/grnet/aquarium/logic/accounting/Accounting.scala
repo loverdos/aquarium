@@ -360,6 +360,9 @@ trait Accounting extends DSLUtils with Loggable {
                 unitPrice
               )
 
+              clog.debug("execAlgorithm = %s", execAlgorithm)
+              clog.debugMap("valueMap", valueMap, 1)
+
               // This is it
               val creditsM = execAlgorithm.apply(valueMap)
 
