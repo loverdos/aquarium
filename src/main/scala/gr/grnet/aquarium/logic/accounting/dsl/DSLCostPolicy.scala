@@ -82,6 +82,8 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   def isContinuous: Boolean = isNamed(DSLCostPolicyNames.continuous)
 
   def isDiscrete: Boolean = isNamed(DSLCostPolicyNames.discrete)
+  
+  def isOnce: Boolean = isNamed(DSLCostPolicyNames.once)
 
   def isNamed(aName: String): Boolean = aName == name
 
@@ -90,32 +92,6 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
     // then we do need a previous event
     vars.exists(_.isDirectlyRelatedToPreviousEvent)
   }
-
-  /**
-   * True if the resource event has an absolute value.
-   */
-  def resourceEventValueIsAbs: Boolean = !resourceEventValueIsDiff
-  def resourceEventValueIsDiff: Boolean = !resourceEventValueIsAbs
-
-  /**
-   * True if an absolute value is needed for the credit calculation (for example: diskspace).
-   * An absolute value is obtained using the beginning of the billing period as a reference point
-   * and is modified every time a new resource event arrives.
-   *
-   * At the beginning of the billing period, a resource's absolute value can either:
-   * a) Set to zero
-   * b) Set to a non-zero, constant value
-   * c) Set to a varying value, based on some function
-   * d) Not change at all. For this case, we need some initial value to start with.
-   */
-  def needsAbsValueForCreditCalculation: Boolean = !needsDiffValueForCreditCalculation
-  def needsDiffValueForCreditCalculation: Boolean = !needsAbsValueForCreditCalculation
-
-  /**
-   * Given the old amount of a resource instance (see [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]) and the
-   * value arriving in a new resource event, compute the new instance amount.
-   */
-  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
 
   /**
    * Given the old amount of a resource instance (see [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]) and the
@@ -142,7 +118,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    *
    * For example, when there is no need for a previous event but an API requires the amount of the previous event.
    *
-   * Normally, this value will never be used by client code.
+   * Normally, this value will never be used by client code (= charge computation code).
    */
   def getResourceInstanceUndefinedAmount: Double = -1.0
 
@@ -150,8 +126,6 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * Get the value that will be used in credit calculation in Accounting.chargeEvents
    */
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
-
-  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double
 
   /**
    * An event's value by itself should carry enough info to characterize it billable or not.
@@ -172,8 +146,6 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    */
   def isBillableFirstEventBasedOnValue(eventValue: Double): Boolean
   
-  def accumulatesAmount: Boolean = false
-
   /**
    * This models in a generic way the fact that On events of the OnOff cost policy must be implicitly terminated
    * at the end of the billing period.
@@ -245,8 +217,6 @@ case object OnceCostPolicy
 
   def isBillableFirstEventBasedOnValue(eventValue: Double) = true
 
-  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = NoVal
-
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double) = oldAmount
 
   def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double) = getResourceInstanceInitialAmount
@@ -254,8 +224,6 @@ case object OnceCostPolicy
   def getResourceInstanceInitialAmount = 0.0
 
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double) = Just(newEventValue)
-
-  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double) = newEventValue
 
   def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
 }
@@ -286,21 +254,6 @@ case object ContinuousCostPolicy
         DSLTimeDeltaVar      -> timeDelta)
   }
 
-  override def needsAbsValueForCreditCalculation = true
-
-  override def resourceEventValueIsDiff = true
-
-  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
-    oldAmountM match {
-      case Just(oldAmount) ⇒
-        Just(oldAmount + newEventValue)
-      case NoVal ⇒
-        Failed(new Exception("NoVal for oldValue instead of Just"))
-      case Failed(e, m) ⇒
-        Failed(new Exception("Failed for oldValue instead of Just", e), m)
-    }
-  }
-
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
     oldAmount + newEventValue
   }
@@ -315,10 +268,6 @@ case object ContinuousCostPolicy
 
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
     oldAmountM
-  }
-
-  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
-    oldAmount
   }
 
   def isBillableFirstEventBasedOnValue(eventValue: Double) = {
@@ -360,14 +309,6 @@ case object OnOffCostPolicy
         DSLTimeDeltaVar -> timeDelta)
   }
 
-  override def needsAbsValueForCreditCalculation = true
-
-  override def resourceEventValueIsAbs = true
-
-  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
-    Just(newEventValue)
-  }
-
   /**
    *
    * @param oldAmount is ignored
@@ -401,6 +342,7 @@ case object OnOffCostPolicy
     }
   }
 
+  private[this]
   def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
     import OnOffCostPolicyValues.{ON, OFF}
 
@@ -471,14 +413,6 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
         DSLCurrentValueVar   -> currentValue)
   }
 
-  override def needsDiffValueForCreditCalculation = true
-
-  override def resourceEventValueIsDiff = true
-
-  def computeNewResourceInstanceAmount(oldAmountM: Maybe[Double], newEventValue: Double) = {
-    oldAmountM.map(_ + newEventValue)
-  }
-
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
     oldAmount + newEventValue
   }
@@ -493,10 +427,6 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
   
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
     Just(newEventValue)
-  }
-
-  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
-    newEventValue
   }
 
   def isBillableFirstEventBasedOnValue(eventValue: Double) = {
