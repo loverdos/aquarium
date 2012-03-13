@@ -301,7 +301,7 @@ case object ContinuousCostPolicy
  */
 case object OnOffCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.onoff,
-                        Set(DSLUnitPriceVar, DSLTimeDeltaVar)) {
+                        Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLTimeDeltaVar)) {
 
   /**
    *
@@ -391,7 +391,7 @@ object OnOffCostPolicyValues {
  * that should be charged per volume once (e.g. the allocation of a volume)
  */
 case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete,
-                                                     Set(DSLCostPolicyNameVar, DSLCurrentValueVar)) {
+                                                     Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLCurrentValueVar)) {
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
     oldAmount + newEventValue
