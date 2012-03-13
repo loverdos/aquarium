@@ -54,14 +54,22 @@ import java.util.regex.Pattern
  */
 object RoleAgreements extends Loggable {
 
-  lazy val mappings: Map[String, DSLAgreement] = loadMappings
+  private var mappings: Map[String, DSLAgreement] = loadMappings
 
   /**
    * Returns the agreement that matches the provided role. The search for a
    * matching agreement is done with the current version of the Aquarium
    * policy.
    */
-  def agreementForRole(role : String) = mappings.get(role.toLowerCase)
+  def agreementForRole(role : String) = mappings.get(role.toLowerCase) match {
+    case Some(x) => x
+    case None => mappings.get("*").getOrElse()
+  }
+
+  /**
+   * Trigger reloading of the mappings file.
+   */
+  def reloadMappings = mappings = loadMappings
 
   /**
    * Load and parse the mappings file
@@ -103,7 +111,7 @@ object RoleAgreements extends Loggable {
   def parseMappings(src: Source) = {
     val p = Pattern.compile("^\\s*([\\*a-zA-Z0-9-_]+)\\s*=\\s*([a-zA-Z0-9-_]+).*$")
 
-    src.getLines.foldLeft(Map[String, DSLAgreement]()) {
+    val mappings = src.getLines.foldLeft(Map[String, DSLAgreement]()) {
       (acc, l) =>
         l match {
           case x if (x.matches("^\\s*$")) => acc
@@ -123,5 +131,8 @@ object RoleAgreements extends Loggable {
           case _ => acc
         }
     }
+    if (!mappings.keysIterator.contains("*"))
+      throw new RuntimeException("Cannot find agreement for default role *")
+    mappings
   }
 }
