@@ -179,6 +179,8 @@ aquariumpolicy:
 
     // Policy: from 2012-01-01 to Infinity
 
+    clog.debugMap("DefaultResourcesMap", DefaultResourcesMap.map, 1)
+
     val userStateM = computations.doFullMonthlyBilling(
       UserCKKL.userId,
       billingMonthInfo,

@@ -329,11 +329,12 @@ class UserStateComputations extends Loggable {
           // Ignore the event if it is not billable (but still record it in the "previous" stuff).
           // But to make this decision, first we need the resource definition (and its cost policy).
           val resourceDefM = defaultResourcesMap.findResourceM(theResource)
+          clog.debugMap("defaultResourcesMap", defaultResourcesMap.map, 1)
           resourceDefM match {
             // We have a resource (and thus a cost policy)
             case Just(resourceDef) ⇒
               val costPolicy = resourceDef.costPolicy
-              clog.debug("Cost policy: %s", costPolicy)
+              clog.debug("Cost policy: %s for %s", costPolicy, resourceDef)
               val isBillable = costPolicy.isBillableEventBasedOnValue(theValue)
               isBillable match {
                 // The resource event is not billable

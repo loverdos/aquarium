@@ -36,78 +36,41 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 /**
- * Represents a chargable resource.
+ * Represents a chargeable resource.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @param name
+ * @param unit
+ * @param costPolicy
  */
-sealed abstract class DSLResource (
-  /** Name of resource */
-  val name: String,
-
-  /** Informative name for resource charging unit*/
-  val unit: String,
-
-  /** Algorithm used to calculate costs */
-  val costPolicy: DSLCostPolicy
+case class DSLResource (
+  name: String,
+  unit: String,
+  costPolicy: DSLCostPolicy,
+  isComplex: Boolean = false,
+  descriminatorField: String = "instanceId"
 ) extends DSLItem {
-  def isComplex: Boolean
-
-  def findInstanceId(details: Map[String, String]): Option[String]
 
   override def toMap(): Map[String, Any] =
     Map(Vocabulary.name -> name) ++
     Map(Vocabulary.unit -> unit) ++
     Map(Vocabulary.costpolicy -> costPolicy.name) ++
-    Map(Vocabulary.complex -> isComplex)
-}
-
-/**
- * A complex resource can have many chargable instances, separated through
- * a descriminator field.
- */
-case class DSLComplexResource (
-  /**Name of resource */
-  override val name: String,
-
-  /**Informative name for resource charging unit*/
-  override val unit: String,
-
-  /**Algorithm used to calculate costs */
-  override val costPolicy: DSLCostPolicy,
-
-  /**Name of field used to describe a unique instance of the resource*/
-  descriminatorField: String
-) extends DSLResource(name, unit, costPolicy) {
-  override def isComplex = true
-
-  override def toMap(): Map[String, Any] =
-    super.toMap ++ Map(Vocabulary.descriminatorfield -> descriminatorField)
-
-  def findInstanceId(details: Map[String, String]) =
-    details.get(descriminatorField)
-
-}
-
-/**
- * A simple resource can only have a single chargable instance.
- */
-case class DSLSimpleResource (
-  /**Name of resource */
-  override val name: String,
-
-  /**Informative name for resource charging unit*/
-  override val unit: String,
-
-  /**Algorithm used to calculate costs */
-  override val costPolicy: DSLCostPolicy
-) extends DSLResource(name, unit, costPolicy) {
-  def isComplex = false
-
-  def findInstanceId(details: Map[String, String]) =
-    DSLResource.SomeSimpleResourceInstanceId
+    Map(Vocabulary.complex -> isComplex) ++
+    Map(Vocabulary.descriminatorfield -> descriminatorField)
 }
 
 object DSLResource {
   final val SimpleResourceInstanceId = "1"
   final val SomeSimpleResourceInstanceId = Some(SimpleResourceInstanceId)
+}
+
+object DSLSimpleResource {
+  def apply(name: String, unit: String, costPolicy: DSLCostPolicy) = {
+    DSLResource(name, unit, costPolicy)
+  }
+}
+
+object DSLComplexResource {
+  def apply(name: String, unit: String, costPolicy: DSLCostPolicy, descriminatorField: String) = {
+    DSLResource(name, unit, costPolicy, true, descriminatorField)
+  }
 }

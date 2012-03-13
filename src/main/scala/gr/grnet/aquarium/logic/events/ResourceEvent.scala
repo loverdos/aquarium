@@ -156,13 +156,9 @@ case class ResourceEvent(
   private[this]
   def beatifyValue(resourceProvider: (String) ⇒ Option[DSLResource]): String = {
     resourceProvider(this.resource) match {
-      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
+      case Some(DSLResource(_, _, OnOffCostPolicy, _, _)) ⇒
         OnOffPolicyResourceState(this.value).state.toUpperCase
-      case Some(rc @ DSLComplexResource(_, _, _, _)) ⇒
-        "%s [%s]".format(value, rc.unit)
-      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
-        OnOffPolicyResourceState(this.value).state.toUpperCase
-      case Some(rc @ DSLSimpleResource(_, _, _)) ⇒
+      case Some(rc @ DSLResource(_, _, _, _, _)) ⇒
         "%s [%s]".format(value, rc.unit)
       case _ ⇒
         value.toString
@@ -207,9 +203,7 @@ case class ResourceEvent(
    */
   def isOnEvent(policy: DSLPolicy): Boolean = {
     policy.findResource(this.resource) match {
-      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
-        OnOffPolicyResourceState(this.value).isOn
-      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
+      case Some(DSLResource(_, _, OnOffCostPolicy, _, _)) ⇒
         OnOffPolicyResourceState(this.value).isOn
       case _ ⇒
         false
@@ -223,9 +217,7 @@ case class ResourceEvent(
    */
   def isOffEvent(policy: DSLPolicy): Boolean = {
     policy.findResource(this.resource) match {
-      case Some(DSLComplexResource(_, _, OnOffCostPolicy, _)) ⇒
-        OnOffPolicyResourceState(this.value).isOff
-      case Some(DSLSimpleResource(_, _, OnOffCostPolicy)) ⇒
+      case Some(DSLResource(_, _, OnOffCostPolicy, _, _)) ⇒
         OnOffPolicyResourceState(this.value).isOff
       case _ ⇒
         false

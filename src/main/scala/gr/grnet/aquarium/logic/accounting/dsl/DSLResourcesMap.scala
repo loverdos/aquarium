@@ -47,16 +47,17 @@ import gr.grnet.aquarium.util
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class DSLResourcesMap(map: Map[String, DSLResource]) {
+class DSLResourcesMap(underlying: Map[String, DSLResource]) {
   def this(list: List[DSLResource]) = this(Map(list.map(r ⇒ (r.name, r)): _*))
 
-  def names = map.keySet
+  def map   = underlying
+  def names = underlying.keySet
 
-  def findResourceOoooooooooooold(name: String): Option[DSLResource] = map.get(name)
+  def findResourceOoooooooooooold(name: String): Option[DSLResource] = underlying.get(name)
   
   def findResourceM(name: String): Maybe[DSLResource] = {
-    util.findFromMapAsMaybe(map, name)
+    util.findFromMapAsMaybe(underlying, name)
   }
 
-  def toResourcesList: List[DSLResource] = map.valuesIterator.toList
+  def toResourcesList: List[DSLResource] = underlying.valuesIterator.toList
 }

@@ -49,10 +49,10 @@ import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
 import gr.grnet.aquarium.logic.events.PolicyEntry.{JsonNames => PolicyJsonNames}
 import java.util.Date
 import gr.grnet.aquarium.logic.accounting.Policy
-import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLPolicy, DSLComplexResource}
 import gr.grnet.aquarium.logic.events._
 import com.mongodb._
 import com.ckkloverdos.maybe.{NoVal, Maybe}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, Timeslot, DSLPolicy, DSLComplexResource}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -145,7 +145,7 @@ class MongoDBStore(
       case Some(id) =>
         Policy.policy.findResource(resName) match {
           case Some(y) => query.put(ResourceJsonNames.details,
-            new BasicDBObject(y.asInstanceOf[DSLComplexResource].descriminatorField, instid.get))
+            new BasicDBObject(y.descriminatorField, instid.get))
           case None =>
         }
       case None =>
