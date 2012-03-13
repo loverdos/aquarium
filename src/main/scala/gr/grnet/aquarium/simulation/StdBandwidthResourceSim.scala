@@ -34,8 +34,7 @@
  */
 
 package gr.grnet.aquarium.simulation
-
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DiscreteCostPolicy}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLCostPolicy, DSLPolicy, DiscreteCostPolicy}
 
 
 /**
@@ -46,11 +45,12 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DiscreteCostPolicy}
 
 class StdBandwidthResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
                               unit: String = StdVMTimeResourceSim.DSLNames.unit,
+                              costPolicy: DSLCostPolicy = DiscreteCostPolicy,
                               isComplex: Boolean = false,
                               descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
 extends ResourceSim(name,
                     unit,
-                    DiscreteCostPolicy,
+                    costPolicy,
                     isComplex,
                     descriminatorField) {
 
@@ -71,6 +71,7 @@ object StdBandwidthResourceSim {
     new StdBandwidthResourceSim(
       dslResource.name,
       dslResource.unit,
+      dslResource.costPolicy,
       dslResource.isComplex,
       dslResource.descriminatorField)
   }

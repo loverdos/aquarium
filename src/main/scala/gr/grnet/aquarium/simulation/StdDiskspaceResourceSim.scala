@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, ContinuousCostPolicy}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, ContinuousCostPolicy, DSLCostPolicy}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 
 
@@ -47,11 +47,12 @@ import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 
 class StdDiskspaceResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
                               unit: String = StdVMTimeResourceSim.DSLNames.unit,
+                              costPolicy: DSLCostPolicy = ContinuousCostPolicy,
                               isComplex: Boolean = false,
                               descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
   extends ResourceSim(name,
                       unit,
-                      ContinuousCostPolicy,
+                      costPolicy,
                       isComplex,
                       descriminatorField) {
 
@@ -60,9 +61,7 @@ class StdDiskspaceResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
 }
 
 
-object StdDiskspaceResourceSim extends Loggable {
-  val clog = new ContextualLogger(logger, "StdDiskspaceResourceSim()")
-
+object StdDiskspaceResourceSim {
   object DSLNames {
     final val name = "diskspace"
     final val unit = "MB/Hr"
@@ -74,6 +73,7 @@ object StdDiskspaceResourceSim extends Loggable {
     new StdDiskspaceResourceSim(
       dslResource.name,
       dslResource.unit,
+      dslResource.costPolicy,
       dslResource.isComplex,
       dslResource.descriminatorField)
   }

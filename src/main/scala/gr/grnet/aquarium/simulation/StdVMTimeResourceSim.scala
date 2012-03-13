@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, OnOffCostPolicy}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, OnOffCostPolicy, DSLCostPolicy}
 
 
 /**
@@ -46,11 +46,12 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, OnOffCostPolicy}
 
 class StdVMTimeResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
                            unit: String = StdVMTimeResourceSim.DSLNames.unit,
+                           costPolicy: DSLCostPolicy = OnOffCostPolicy,
                            isComplex: Boolean = true,
                            descriminatorField: String = StdVMTimeResourceSim.DSLNames.descriminatorField)
   extends ResourceSim(name,
                       unit,
-                      OnOffCostPolicy,
+                      costPolicy,
                       isComplex,
                       descriminatorField) {
 
@@ -71,6 +72,7 @@ object StdVMTimeResourceSim {
     new StdVMTimeResourceSim(
       dslResource.name,
       dslResource.unit,
+      dslResource.costPolicy,
       dslResource.isComplex,
       dslResource.descriminatorField)
   }
