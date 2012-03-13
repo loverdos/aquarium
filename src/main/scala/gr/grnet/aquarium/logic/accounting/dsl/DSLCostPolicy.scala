@@ -75,7 +75,19 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
                    timeDelta: Double,
                    previousValue: Double,
                    currentValue: Double,
-                   unitPrice: Double): Map[DSLCostPolicyVar, Any]
+                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
+
+    DSLCostPolicy.makeValueMapFor(
+      this,
+      costPolicyName,
+      totalCredits,
+      oldTotalAmount,
+      newTotalAmount,
+      timeDelta,
+      previousValue,
+      currentValue,
+      unitPrice)
+  }
 
   def isOnOff: Boolean = isNamed(DSLCostPolicyNames.onoff)
 
@@ -189,6 +201,30 @@ object DSLCostPolicy {
       }
     }
   }
+
+  def makeValueMapFor(costPolicy: DSLCostPolicy,
+                      costPolicyName: String,
+                      totalCredits: Double,
+                      oldTotalAmount: Double,
+                      newTotalAmount: Double,
+                      timeDelta: Double,
+                      previousValue: Double,
+                      currentValue: Double,
+                      unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
+    val vars = costPolicy.vars
+    val map = scala.collection.mutable.Map[DSLCostPolicyVar, Any]()
+
+    if(vars.contains(DSLCostPolicyNameVar)) map += DSLCostPolicyNameVar -> costPolicyName
+    if(vars.contains(DSLTotalCreditsVar))   map += DSLTotalCreditsVar   -> totalCredits
+    if(vars.contains(DSLOldTotalAmountVar)) map += DSLOldTotalAmountVar -> oldTotalAmount
+    if(vars.contains(DSLNewTotalAmountVar)) map += DSLNewTotalAmountVar -> newTotalAmount
+    if(vars.contains(DSLTimeDeltaVar))      map += DSLTimeDeltaVar      -> timeDelta
+    if(vars.contains(DSLPreviousValueVar))  map += DSLPreviousValueVar  -> previousValue
+    if(vars.contains(DSLCurrentValueVar))   map += DSLCurrentValueVar   -> currentValue
+    if(vars.contains(DSLUnitPriceVar))      map += DSLUnitPriceVar      -> unitPrice
+
+    map.toMap
+  }
 }
 
 /**
@@ -199,19 +235,6 @@ object DSLCostPolicy {
  */
 case object OnceCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.once, Set(DSLCostPolicyNameVar, DSLCurrentValueVar)) {
-
-  def makeValueMap(costPolicyName: String,
-                   totalCredits: Double,
-                   oldTotalAmount: Double,
-                   newTotalAmount: Double,
-                   timeDelta: Double,
-                   previousValue: Double,
-                   currentValue: Double,
-                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
-
-    Map(DSLCostPolicyNameVar -> costPolicyName,
-        DSLCurrentValueVar   -> currentValue)
-  }
 
   def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = false
 
@@ -238,21 +261,6 @@ case object OnceCostPolicy
 case object ContinuousCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.continuous,
                         Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLOldTotalAmountVar, DSLTimeDeltaVar)) {
-
-  def makeValueMap(costPolicyName: String,
-                   totalCredits: Double,
-                   oldTotalAmount: Double,
-                   newTotalAmount: Double,
-                   timeDelta: Double,
-                   previousValue: Double,
-                   currentValue: Double,
-                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
-
-    Map(DSLCostPolicyNameVar -> costPolicyName,
-        DSLUnitPriceVar      -> unitPrice,
-        DSLOldTotalAmountVar -> oldTotalAmount,
-        DSLTimeDeltaVar      -> timeDelta)
-  }
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
     oldAmount + newEventValue
@@ -294,20 +302,6 @@ case object ContinuousCostPolicy
 case object OnOffCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.onoff,
                         Set(DSLUnitPriceVar, DSLTimeDeltaVar)) {
-
-  def makeValueMap(costPolicyName: String,
-                   totalCredits: Double,
-                   oldTotalAmount: Double,
-                   newTotalAmount: Double,
-                   timeDelta: Double,
-                   previousValue: Double,
-                   currentValue: Double,
-                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
-
-    Map(DSLCostPolicyNameVar -> costPolicyName,
-        DSLUnitPriceVar -> unitPrice,
-        DSLTimeDeltaVar -> timeDelta)
-  }
 
   /**
    *
@@ -398,20 +392,6 @@ object OnOffCostPolicyValues {
  */
 case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete,
                                                      Set(DSLCostPolicyNameVar, DSLCurrentValueVar)) {
-
-  def makeValueMap(costPolicyName: String,
-                   totalCredits: Double,
-                   oldTotalAmount: Double,
-                   newTotalAmount: Double,
-                   timeDelta: Double,
-                   previousValue: Double,
-                   currentValue: Double,
-                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
-
-    Map(DSLCostPolicyNameVar -> costPolicyName,
-        DSLUnitPriceVar      -> unitPrice,
-        DSLCurrentValueVar   -> currentValue)
-  }
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
     oldAmount + newEventValue
