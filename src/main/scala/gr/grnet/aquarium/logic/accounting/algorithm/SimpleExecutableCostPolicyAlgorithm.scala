@@ -52,25 +52,37 @@ object SimpleExecutableCostPolicyAlgorithm extends ExecutableCostPolicyAlgorithm
   def apply(vars: Map[DSLCostPolicyVar, Any]): Maybe[Double] = Maybe {
     vars.apply(DSLCostPolicyNameVar) match {
       case DSLCostPolicyNames.continuous ⇒
-        val unitPrice = vars.get(DSLUnitPriceVar).get.asInstanceOf[Double]
-        val oldTotalAmount = vars.get(DSLOldTotalAmountVar).get.asInstanceOf[Double]
-        val timeDelta = vars.get(DSLTimeDeltaVar).get.asInstanceOf[Double]
+        val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
+        val oldTotalAmount = vars(DSLOldTotalAmountVar).asInstanceOf[Double]
+        val timeDelta = vars(DSLTimeDeltaVar).asInstanceOf[Double]
 
         hrs(timeDelta) * oldTotalAmount * unitPrice
 
       case DSLCostPolicyNames.discrete ⇒
-        val unitPrice = vars.get(DSLUnitPriceVar).get.asInstanceOf[Double]
-        val currentValue = vars.get(DSLCurrentValueVar).get.asInstanceOf[Double]
+        val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
+        val currentValue = vars(DSLCurrentValueVar).asInstanceOf[Double]
 
         currentValue * unitPrice
 
       case DSLCostPolicyNames.onoff ⇒
-        val unitPrice = vars.get(DSLUnitPriceVar).get.asInstanceOf[Double]
-        val timeDelta = vars.get(DSLTimeDeltaVar).get.asInstanceOf[Double]
+        val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
+        val timeDelta = vars(DSLTimeDeltaVar).asInstanceOf[Double]
 
         hrs(timeDelta) * unitPrice
+
+      case DSLCostPolicyNames.once ⇒
+        val currentValue = vars(DSLCurrentValueVar).asInstanceOf[Double]
+        currentValue
+
       case name ⇒
         throw new Exception("Unknown cost policy %s".format(name))
     }
   }
+
+  override def toString = "SimpleExecutableCostPolicyAlgorithm(%s)".format(
+    Map(
+      DSLCostPolicyNames.continuous -> "hrs(timeDelta) * oldTotalAmount * unitPrice",
+      DSLCostPolicyNames.discrete   -> "currentValue * unitPrice",
+      DSLCostPolicyNames.onoff      -> "hrs(timeDelta) * unitPrice",
+      DSLCostPolicyNames.once       -> "currentValue"))
 }
