@@ -192,6 +192,7 @@ trait Accounting extends DSLUtils with Loggable {
 
             val dslAlgorithm = algorithmByTimeslot(finegrainedTimeslot) // TODO: is this correct?
             clog.debug("dslAlgorithm = %s", dslAlgorithm)
+            clog.debugMap("dslAlgorithm.algorithms", dslAlgorithm.algorithms, 1)
             val dslPricelist = pricelistByTimeslot(finegrainedTimeslot) // TODO: is this correct?
             clog.debug("dslPricelist = %s", dslPricelist)
             clog.debug("dslResource = %s", dslResource)
