@@ -44,7 +44,9 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, OnOffCostPolicy}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class StdVMTimeResourceSim(isComplex: Boolean = true,
+class StdVMTimeResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
+                           unit: String = StdVMTimeResourceSim.DSLNames.unit,
+                           isComplex: Boolean = true,
                            descriminatorField: String = StdVMTimeResourceSim.DSLNames.descriminatorField)
   extends ResourceSim(StdVMTimeResourceSim.DSLNames.name,
                       StdVMTimeResourceSim.DSLNames.unit,
@@ -66,6 +68,10 @@ object StdVMTimeResourceSim {
 
   def fromPolicy(dslPolicy: DSLPolicy): StdVMTimeResourceSim = {
     val dslResource = dslPolicy.findResource(DSLNames.name).get
-    new StdVMTimeResourceSim(dslResource.isComplex, dslResource.descriminatorField)
+    new StdVMTimeResourceSim(
+      dslResource.name,
+      dslResource.unit,
+      dslResource.isComplex,
+      dslResource.descriminatorField)
   }
 }

@@ -44,7 +44,9 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, ContinuousCostPolicy}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class StdDiskspaceResourceSim(isComplex: Boolean = false,
+class StdDiskspaceResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
+                              unit: String = StdVMTimeResourceSim.DSLNames.unit,
+                              isComplex: Boolean = false,
                               descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
   extends ResourceSim(StdDiskspaceResourceSim.DSLNames.name,
                       StdDiskspaceResourceSim.DSLNames.unit,
@@ -66,6 +68,10 @@ object StdDiskspaceResourceSim {
 
   def fromPolicy(dslPolicy: DSLPolicy): StdDiskspaceResourceSim = {
     val dslResource = dslPolicy.findResource(DSLNames.name).get
-    new StdDiskspaceResourceSim(dslResource.isComplex, dslResource.descriminatorField)
+    new StdDiskspaceResourceSim(
+      dslResource.name,
+      dslResource.unit,
+      dslResource.isComplex,
+      dslResource.descriminatorField)
   }
 }

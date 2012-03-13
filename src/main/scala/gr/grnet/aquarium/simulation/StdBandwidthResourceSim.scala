@@ -44,7 +44,9 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, DiscreteCostPolicy}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class StdBandwidthResourceSim(isComplex: Boolean = false,
+class StdBandwidthResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
+                              unit: String = StdVMTimeResourceSim.DSLNames.unit,
+                              isComplex: Boolean = false,
                               descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
 extends ResourceSim(StdBandwidthResourceSim.DSLNames.name,
                     StdBandwidthResourceSim.DSLNames.unit,
@@ -66,7 +68,11 @@ object StdBandwidthResourceSim {
 
   def fromPolicy(dslPolicy: DSLPolicy): StdBandwidthResourceSim = {
     val dslResource = dslPolicy.findResource(DSLNames.name).get
-    new StdBandwidthResourceSim(dslResource.isComplex, dslResource.descriminatorField)
+    new StdBandwidthResourceSim(
+      dslResource.name,
+      dslResource.unit,
+      dslResource.isComplex,
+      dslResource.descriminatorField)
   }
 }
 
