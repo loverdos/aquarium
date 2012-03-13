@@ -35,6 +35,7 @@
 
 package gr.grnet.aquarium.logic.accounting
 
+import gr.grnet.aquarium.util.shortClassNameOf
 import algorithm.CostPolicyAlgorithmCompiler
 import dsl._
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
@@ -58,7 +59,17 @@ case class Chargeslot(startMillis: Long,
                       stopMillis: Long,
                       algorithmDefinition: String,
                       unitPrice: Double,
-                      computedCredits: Option[Double] = None)
+                      computedCredits: Option[Double] = None) {
+
+  override def toString = "%s(%s, %s, %s, %s, %s)".format(
+    shortClassNameOf(this),
+    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
+    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
+    unitPrice,
+    computedCredits,
+    algorithmDefinition
+  )
+}
 
 /**
  * Methods for converting accounting events to wallet entries.
