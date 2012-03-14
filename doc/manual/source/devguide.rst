@@ -415,8 +415,16 @@ The meaning of the fields is as follows:
    + For ``discrete`` resources, the field indicates the amount of resource usage at the time of the event.
 - *details*: ``map[string, string]`` A map/dictionary indicating extra metadata for this resource event. Aquarium does not process this metadata. The field must always be present, even if it is empty.
 
-User Events
-^^^^^^^^^^^
+User Event
+^^^^^^^^^^
+
+A user event is sent by an external identity provider system to signify
+changes in user states. The message format is the following:
+
+.. code-block:: javascript
+
+
+
 
 The charging algorithm
 ----------------------
