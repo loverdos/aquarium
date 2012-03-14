@@ -84,9 +84,9 @@ class DSLTest extends DSLTestBase with TestMethods {
     before
     assertEquals(5, dsl.resources.size)
     assertNotNone(dsl.findResource("vmtime"))
-    assertTrue(dsl.findResource("vmtime").get.isInstanceOf[DSLComplexResource])
-    assertEquals("vmid", dsl.findResource("vmtime").get.asInstanceOf[DSLComplexResource].descriminatorField)
-    assertTrue(dsl.findResource("diskspace").get.isInstanceOf[DSLSimpleResource])
+    assertTrue(dsl.findResource("vmtime").get.isComplex)
+    assertEquals("vmid", dsl.findResource("vmtime").get.descriminatorField)
+    assertTrue(!dsl.findResource("diskspace").get.isComplex)
   }
 
   @Test
