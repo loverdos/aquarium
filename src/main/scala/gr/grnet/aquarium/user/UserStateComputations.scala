@@ -400,7 +400,7 @@ class UserStateComputations extends Loggable {
                         
                         // C. Compute new credit amount (based on the charge slots)
                         val newCreditsDiff = fullChargeslots.map(_.computedCredits.get).sum
-                        val newCredits = oldCredits + newCreditsDiff
+                        val newCredits = oldCredits - newCreditsDiff
                         clog.debug("newCreditsDiff = %s, newCredits = %s", newCreditsDiff, newCredits)
 
                         val newWalletEntry = NewWalletEntry(
