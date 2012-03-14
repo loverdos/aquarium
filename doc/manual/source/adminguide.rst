@@ -41,13 +41,14 @@ MongoDB configuration for Aquarium
    if data replication is a strong requirement.
 
 Before starting Aquarium with MongoDB, you will need to create a data schema
-and an account for Aquarium. To do so, execute the following commands
+and an account for Aquarium. To do that, execute the following commands:
 
 .. code-block:: bash
 
+  $ mongo 
   > use aquarium
-  > 
-
+  > db.addUser("aquarium", "aquarpasswd")
+  > db.aquarium.users.find()
 
 Aquarium automatically creates the following MongoDB collections upon first run:
 
@@ -69,10 +70,8 @@ Collection      Indexes on fields
 ==============  ==================================================
 resevents       id, userId
 userstates      userId
-
-
+userevents      id, userId
 ==============  ==================================================
-
 
 To create a MongoDB index, open a MongoDB shell and do the following:
 
@@ -88,13 +87,50 @@ You can see more on MongoDB indexes
 Failover Configuration
 ++++++++++++++++++++++
 
+MongoDB enables easy master/slave replication configuration, and it is
+advisable to enable it in all Aquarium installations. To configure replication
+for nodes A (IP: 10.0.0.1) and B (IP:10.0.0.2) with node A being the master do
+the following:
 
+1. Edit the MongoDB configuration file (``/etc/mongodb.conf`` on Debian) and include
+   the following entries:
 
+.. code-block:: bash
+
+        directoryperdb = true
+        replSet = aquarium-replicas
+
+2. Login to MongoDB on the master node with the admin account: ``mongo A/admin``. 
+3. Enter the following configuration:
+
+.. code-block:: bash
+
+   >cfg = {
+      _id : "aquarium-replicas", 
+      members : [ 
+        {_id: 0, host: "10.0.0.1"}, 
+        {_id: 1, host: "10.0.0.2"}
+      ]
+    }
+    
+   >rs.initiate(cfg)
+
+4. Check that replication has started with: ``rs.status()``
+
+You can find more on the 
+`MongoDB replication <http://www.mongodb.org/display/DOCS/Replication>`_ page
+ 
+.. TIP::
+   MongoDB also supports splitting the data on multiple nodes in a cluster on
+   a per collection basis, using a pre-defined data key. This is called 
+   `sharding <http://www.mongodb.org/display/DOCS/Sharding+Introduction>`_,
+   and is only recommended on installations with very high incoming data volumes,
+   primarily for the ``resevents`` collection.
 
 RabbitMQ configuration for Aquarium
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Active-active
+
 
 Running Aquarium
 ----------------
@@ -104,7 +140,7 @@ To run Aquarium, change the current directory to the checked out and
 ``./bin/aquarium.sh start``
 
 Aquarium can also be started in debug mode, where all output is written to the
-console and the JVM is started with the JPDA remote debugger intereface
+console and the JVM is started with the JPDA remote debugger interface
 listening to port 8000. An IDE can then be connected to ``localhost:8000`` 
 
 ``./bin/aquarium.sh debug``
