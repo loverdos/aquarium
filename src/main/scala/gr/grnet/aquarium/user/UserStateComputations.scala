@@ -452,6 +452,14 @@ class UserStateComputations extends Loggable {
       clog.end(currentResourceEventDebugInfo)
     } // for { currentResourceEvent <- allResourceEventsForMonth }
 
+    val lastUpdateTime = TimeHelpers.nowMillis
+
+    _workingUserState = _workingUserState.copy(
+      implicitlyTerminatedSnapshot = implicitlyTerminatedResourceEvents.toImmutableSnapshot(lastUpdateTime),
+      latestResourceEventsSnapshot = previousResourceEvents.toImmutableSnapshot(lastUpdateTime),
+      stateChangeCounter = _workingUserState.stateChangeCounter + 1
+    )
+    
     clog.debug("RETURN %s", _workingUserState)
     clog.end()
     _workingUserState
