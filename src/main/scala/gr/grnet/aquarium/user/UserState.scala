@@ -128,7 +128,8 @@ case class UserState(
     creditsSnapshot: CreditSnapshot,
     agreementsSnapshot: AgreementSnapshot,
     rolesSnapshot: RolesSnapshot,
-    ownedResourcesSnapshot: OwnedResourcesSnapshot
+    ownedResourcesSnapshot: OwnedResourcesSnapshot,
+    totalEventsProcessedCounter: Long = 0L
 ) extends JsonSupport {
 
   private[this] def _allSnapshots: List[Long] = {
