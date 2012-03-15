@@ -182,7 +182,7 @@ case class ResourceEvent(
    * @return A beautiful string representation of the value.
    */
   def beautifyValue(resourcesMap: DSLResourcesMap): String = {
-    beatifyValue(resourcesMap.findResourceOoooooooooooold)
+    beatifyValue(resourcesMap.findResource)
   }
 
   /**
@@ -252,7 +252,7 @@ case class ResourceEvent(
    */
   def findCostPolicyM(resourcesMap: DSLResourcesMap): Maybe[DSLCostPolicy] = {
     for {
-      rc <- resourcesMap.findResourceM(this.safeResource)
+      rc <- resourcesMap.findResource(this.safeResource)
     } yield {
       rc.costPolicy
     }

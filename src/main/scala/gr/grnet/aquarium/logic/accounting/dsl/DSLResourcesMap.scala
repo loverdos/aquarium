@@ -53,10 +53,8 @@ class DSLResourcesMap(underlying: Map[String, DSLResource]) {
   def map   = underlying
   def names = underlying.keySet
 
-  def findResourceOoooooooooooold(name: String): Option[DSLResource] = underlying.get(name)
-  
-  def findResourceM(name: String): Maybe[DSLResource] = {
-    util.findFromMapAsMaybe(underlying, name)
+  def findResource(name: String): Option[DSLResource] = {
+    underlying.get(name)
   }
 
   def toResourcesList: List[DSLResource] = underlying.valuesIterator.toList
