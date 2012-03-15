@@ -198,15 +198,6 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     if(message == "") debug("END") else debug("--- [%s] ---", message)
   }
 
-  def endWith[A : Manifest](f: ⇒A): A = {
-    try f
-    catch {
-      case e: Exception ⇒
-        this.error(e, "")
-        throw e
-    } finally end()
-  }
-
   def debugMap[K, V](name: String, map: scala.collection.Map[K, V], oneLineLimit: Int = 3): Unit = {
     if(this.isDebugEnabled) {
       val mapSize = map.size

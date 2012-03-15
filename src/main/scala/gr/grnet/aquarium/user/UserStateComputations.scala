@@ -97,7 +97,6 @@ class UserStateComputations extends Loggable {
     clog.begin()
 
     def doCompute: Maybe[UserState] = {
-      clog.debug("Computing full month billing")
       doFullMonthlyBilling(
         userId,
         billingMonthInfo,
@@ -120,7 +119,8 @@ class UserStateComputations extends Loggable {
       // If the user did not exist for this billing month, piece of cake
       clog.debug("User did not exist before %s", userCreationDateCalc)
       clog.debug("Returning ZERO state %s".format(zeroUserState))
-      clog.endWith(Just(zeroUserState))
+      clog.end()
+      Just(zeroUserState)
     } else {
       // Ask DB cache for the latest known user state for this billing period
       val latestUserStateM = userStateStore.findLatestUserStateForEndOfBillingMonth(
@@ -132,11 +132,14 @@ class UserStateComputations extends Loggable {
         case NoVal ⇒
           // Not found, must compute
           clog.debug("No user state found from cache, will have to (re)compute")
-          clog.endWith(doCompute)
+          val result = doCompute
+          clog.end()
+          result
           
         case failed @ Failed(_, _) ⇒
           clog.warn("Failure while quering cache for user state: %s", failed)
-          clog.endWith(failed)
+          clog.end()
+          failed
 
         case Just(latestUserState) ⇒
           // Found a "latest" user state but need to see if it is indeed the true and one latest.
@@ -151,11 +154,14 @@ class UserStateComputations extends Loggable {
            case NoVal ⇒
              val errMsg = "No counter computed for out of sync events. Should at least be zero."
              clog.warn(errMsg)
-             clog.endWith(Failed(new Exception(errMsg)))
+             val result = Failed(new Exception(errMsg))
+             clog.end()
+             result
 
            case failed @ Failed(_, _) ⇒
              clog.warn("Failure while querying for out of sync events: %s", failed)
-             clog.endWith(failed)
+             clog.end()
+             failed
 
            case Just(actualOOSEventsCounter) ⇒
              val counterDiff = actualOOSEventsCounter - latestStateOOSEventsCounter
@@ -168,13 +174,17 @@ class UserStateComputations extends Loggable {
                case n if n > 0 ⇒
                  clog.debug(
                    "Found %s out of sync events (%s more), will have to (re)compute user state", actualOOSEventsCounter, n)
-                 clog.endWith(doCompute)
+                 val result = doCompute
+                 clog.end()
+                 result
 
                // We had less????
                case n if n < 0 ⇒
                  val errMsg = "Found %s out of sync events (%s less). DB must be inconsistent".format(actualOOSEventsCounter, n)
                  clog.warn(errMsg)
-                 clog.endWith(Failed(new Exception(errMsg)))
+                 val result = Failed(new Exception(errMsg))
+                 clog.end()
+                 result
              }
          }
       }
@@ -298,7 +308,6 @@ class UserStateComputations extends Loggable {
       billingMonthEndMillis)
     var _eventCounter = 0
 
-    clog.debug("resourceEventStore = %s".format(resourceEventStore))
     if(allResourceEventsForMonth.size > 0) {
       clog.debug("Found %s resource events, starting processing...", allResourceEventsForMonth.size)
     } else {
@@ -443,6 +452,8 @@ class UserStateComputations extends Loggable {
       clog.end(currentResourceEventDebugInfo)
     } // for { currentResourceEvent <- allResourceEventsForMonth }
 
-    clog.endWith(_workingUserState)
+    clog.debug("RETURN %s", _workingUserState)
+    clog.end()
+    _workingUserState
   }
 }
