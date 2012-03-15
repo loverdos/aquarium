@@ -423,13 +423,39 @@ changes in user states. The message format is the following:
 
 .. code-block:: javascript
 
+   {
+    id: "<SHA-1>",
+    occurredMillis: 1321020852,
+    receivedMillis: 1321020852,
+    clientID: "platform-wide-unique-ID",
+    userID: "administrator@admin.grnet.gr",
+    isActive: "true",
+    role: "STUDENT",
+    eventVersion: "1", 
+    eventType: "ACTIVE",
+    details: { }
+  }
 
+The meaning of the fields is as follows:
+
+- *id:* As above.
+-  *occurredMillis:* As above.
+- *receivedMillis:* As above. 
+- *clientID:* ``string`` A unique name for each message producer.
+- *userID:* ``string`` The ID of the user whom this event concerns 
+- *isActive* ``boolean`` Whether the user is active or not (allowed values are
+  ``true`` or ``false``)
+- *eventVersion* ``string`` The event version. Currently fixed to "1". 
+- *role* ``string`` The role of the user. If different than the role currently
+  stored, the role will be changed.
+- *eventType* ``string (ACTIVE/SUSPENDED)`` The requested change to the user
+  profile. 
+- *details*: ``map[string, string]`` A map/dictionary indicating extra metadata for this resource event. Aquarium does not process this metadata. The field must always be present, even if it is empty.
 
 
 The charging algorithm
 ----------------------
 
-The 
 
 The Aquarium REST API
 ---------------------
