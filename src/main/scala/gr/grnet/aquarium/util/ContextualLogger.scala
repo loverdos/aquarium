@@ -207,10 +207,10 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     } finally end()
   }
 
-  def debugMap[K, V](name: String, map: scala.collection.Map[K, V], limit: Int = 3): Unit = {
+  def debugMap[K, V](name: String, map: scala.collection.Map[K, V], oneLineLimit: Int = 3): Unit = {
     if(this.isDebugEnabled) {
       val mapSize = map.size
-      if(mapSize <= limit) {
+      if(mapSize <= oneLineLimit) {
         this.debug("%s [#=%s] = %s", name, mapSize, map)
       } else {
         this.debug("%s [#=%s]:", name, mapSize)
@@ -224,10 +224,10 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     }
   }
 
-  def debugSeq[T](name: String, seq: scala.collection.Seq[T], limit: Int = 3): Unit = {
+  def debugSeq[T](name: String, seq: scala.collection.Seq[T], oneLineLimit: Int = 3): Unit = {
     if(this.isDebugEnabled) {
       val seqSize = seq.size
-      if(seqSize <= limit) {
+      if(seqSize <= oneLineLimit) {
         this.debug("%s = %s", name, seq)
       } else {
         this.debug("%s [#=%s]: ", name, seqSize)
@@ -236,10 +236,10 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     }
   }
 
-  def debugSet[T](name: String, set: scala.collection.Set[T], limit: Int = 3): Unit = {
+  def debugSet[T](name: String, set: scala.collection.Set[T], oneLineLimit: Int = 3): Unit = {
     if(this.isDebugEnabled) {
       val setSize = set.size
-      if(setSize <= limit) {
+      if(setSize <= oneLineLimit) {
         this.debug("%s [#=%s] = %s", name, setSize, set)
       } else {
         this.debug("%s [#=%s]: ", name, setSize)
