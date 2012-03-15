@@ -20,7 +20,12 @@ aquariumpolicy:
       unit: MB/hr
       complex: false
       costpolicy: continuous
-   
+    - resource:
+      name: refills
+      unit: credits
+      complex: false
+      costpolicy: once
+
   implicitvars:
     - price
     - volume
@@ -33,6 +38,7 @@ aquariumpolicy:
       vmtime: $price times $volume
       diskspace: $price times $volume
       bookpages: $price times $volume
+      refills: $price times $volume
       effective:
         from: 0
   
@@ -44,6 +50,7 @@ aquariumpolicy:
       vmtime: 0.1
       diskspace: 0.05
       bookpages: 0.1
+      refills: 1
       effective:
         from: 0
   

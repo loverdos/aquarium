@@ -21,6 +21,11 @@ aquariumpolicy:
       unit: MB/hr
       complex: false
       costpolicy: continuous
+    - resource:
+      name: refills
+      unit: credits
+      complex: false
+      costpolicy: once
 
   algorithms:
     - algorithm:
@@ -29,6 +34,7 @@ aquariumpolicy:
       bnddown: $price times $volume
       vmtime: $price times $volume
       dsksp: $price times $volume
+      refills: $price times $volume
       effective:
         from: 0
 
@@ -39,6 +45,7 @@ aquariumpolicy:
       bnddown: 0.02
       vmtime: 0.1
       dsksp: 0.05
+      refills: 1
       effective:
         from: 0
 
