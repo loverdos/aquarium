@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.maybe.{MaybeOption, Just, NoVal, Maybe}
+import com.ckkloverdos.maybe.{Failed, MaybeOption, Just, NoVal, Maybe}
 
 
 /**
@@ -133,5 +133,31 @@ package object util {
   
   def maxStringSize[A](trav: Traversable[A]): Int = {
     (0 /: trav)(_ max _.toString.length)
+  }
+
+  /**
+   * Given a [[com.ckkloverdos.maybe.Maybe]] that is actually a [[com.ckkloverdos.maybe.Failed]], return the latter.
+   *
+   * Use this only when you are sure what the `maybe` contains, since the methods can break type safety.
+   *
+   * @param maybe
+   * @tparam A
+   * @return
+   */
+  def failedForSure[A](maybe: Maybe[A]): Failed = {
+    maybe.asInstanceOf[Failed]
+  }
+
+  /**
+   * Given a [[com.ckkloverdos.maybe.Maybe]] that is actually a [[com.ckkloverdos.maybe.Just]], return the latter.
+   *
+   * Use this only when you are sure what the `maybe` contains, since the methods can break type safety.
+   *
+   * @param maybe
+   * @tparam A
+   * @return
+   */
+  def justForSure[A](maybe: Maybe[A]): Just[A] = {
+    maybe.asInstanceOf[Just[A]]
   }
 }
