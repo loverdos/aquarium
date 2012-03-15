@@ -308,7 +308,7 @@ class MongoDBStore(
   //+UserEventStore
   def storeUserEvent(event: UserEvent): Maybe[RecordID] =
     MongoDBStore.storeAny[UserEvent](event, userEvents, UserEventJsonNames.userId,
-      _.userId, MongoDBStore.jsonSupportToDBObject)
+      _.userID, MongoDBStore.jsonSupportToDBObject)
 
 
   def findUserEventById(id: String): Maybe[UserEvent] =

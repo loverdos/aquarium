@@ -46,33 +46,28 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Just}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class  UserEvent(
-    override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    override val occurredMillis: Long, // When it occurred at client side (the sender)
+    override val id: String,           // The id at the sender side
+    override val occurredMillis: Long, // When it occurred at the sender side
     override val receivedMillis: Long, // When it was received by Aquarium
-    userId: String,
+    userID: String,
+    clientID: String,
+    isActive: Boolean,
+    role: String,
     eventVersion: Short,
-    eventType: Short, //1: create, 2: modify
-    state: String,    //ACTIVE, SUSPENDED
-    idp: String,      // Identity Provider
-    tenant: String,
-    roles: List[String])
+    eventType: String,
+    details: UserEvent.Details)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
-  assert(eventType == 1 || eventType == 2)
-  assert(state.equalsIgnoreCase("ACTIVE") ||
-    state.equalsIgnoreCase("SUSPENDED"))
-
-  if (eventType == 1)
-    if(!state.equalsIgnoreCase("ACTIVE"))
-      assert(false)
+  assert(eventType.equalsIgnoreCase("create") ||
+    eventType.equalsIgnoreCase("modify"))
 
   /**
    * Validate this event according to the following rules:
    *
    * Valid event states: `(eventType, state)`:
-   *  - `a := 1, ACTIVE`
-   *  - `b := 2, ACTIVE`
-   *  - `c := 2, SUSPENDED`
+   *  - `a := CREATE, ACTIVE`
+   *  - `b := MODIFY, ACTIVE`
+   *  - `c := MODIFY, SUSPENDED`
    *
    * Valid transitions:
    *  - `(non-existent) -> a`
@@ -81,14 +76,14 @@ case class  UserEvent(
    */
   def validate: Boolean = {
 
-    MasterConfigurator.userStateStore.findUserStateByUserId(userId) match {
+    MasterConfigurator.userStateStore.findUserStateByUserId(userID) match {
       case Just(x) =>
-        if (eventType == 1){
+        if (eventType == "CREATE"){
           logger.warn("User to create exists: IMEvent".format(this.toJson));
           return false
         }
       case NoVal =>
-        if (eventType != 2){
+        if (eventType != "MODIFY"){
           logger.warn("Inexistent user to modify. IMEvent:".format(this.toJson))
           return false
         }
@@ -101,16 +96,19 @@ case class  UserEvent(
 
   def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
-  def isCreateUser = eventType == 1
+  def isCreateUser = eventType == "create"
 
-  def isModifyUser = eventType == 2
+  def isModifyUser = eventType == "modify"
 
-  def isStateActive = state equalsIgnoreCase "ACTIVE"
+  def isStateActive = isActive
 
-  def isStateSuspended =  state equalsIgnoreCase "SUSPENDED"
+  def isStateSuspended = !isActive
 }
 
 object UserEvent {
+
+  type Details = Map[String, String]
+
   def fromJson(json: String): UserEvent = {
     implicit val formats = JsonHelpers.DefaultJsonFormats
     val jsonAST = parseJson(json)

@@ -66,16 +66,20 @@ trait RandomEventGenerator extends AkkaAMQP {
    * Generate a random resource event
    */
   def nextUserEvent(): UserEvent = {
-
-    val sha1 = CryptoUtils.sha1(genRndAsciiString(35))
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
-    val id = userIds.apply(rnd.nextInt(100))
-    val event = Array("ACTIVE", "SUSPENDED").apply(rnd.nextInt(2))
-    val idp = Array("LOCAL", "SHIBBOLETH", "OPENID").apply(rnd.nextInt(3))
-    val tenant = Array("TENTANT1", "TENANT2").apply(rnd.nextInt(2))
-    val role = Array("ADMIN", "NORMAL").apply(rnd.nextInt(2))
 
-    UserEvent(sha1, ts.toLong, ts.toLong, id.toString, 1, 2, event, idp, tenant, List(role))
+    UserEvent(
+      id = CryptoUtils.sha1(genRndAsciiString(35)),
+      occurredMillis = ts.toLong,
+      receivedMillis = ts.toLong,
+      userID = userIds(rnd.nextInt(100)).toString,
+      clientID = "defclient",
+      isActive = rnd.nextBoolean,
+      role = Array("PROF", "STUDENT", "ADMIN").apply(rnd.nextInt(3)),
+      eventVersion = 1,
+      eventType = Array("ACTIVE", "SUSPENDED").apply(rnd.nextInt(2)),
+      details = Map()
+    )
   }
 
   /**
@@ -99,9 +103,19 @@ trait RandomEventGenerator extends AkkaAMQP {
 
     userIds.filter(_ < num).foreach {
       i =>
-        val sha1 = CryptoUtils.sha1(genRndAsciiString(35))
         val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
-        val user = UserEvent(sha1, ts, ts, i.toString, 1, 1, "ACTIVE", "LOCAL", "TENTANT1", List("NORMAL"))
+        val user = UserEvent(
+          id = CryptoUtils.sha1(genRndAsciiString(35)),
+          occurredMillis = ts.toLong,
+          receivedMillis = ts.toLong,
+          userID = i.toString,
+          clientID = "defclient",
+          isActive = rnd.nextBoolean,
+          role = Array("PROF", "STUDENT", "ADMIN").apply(rnd.nextInt(3)),
+          eventVersion = 1,
+          eventType = "ACTIVE",
+          details = Map()
+        )
         publisher ! Message(user.toBytes, "%s.%s".format(im_exchanges(0),"CREATED"))
     }
   }

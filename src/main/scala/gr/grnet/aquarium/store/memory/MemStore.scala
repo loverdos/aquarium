@@ -266,7 +266,7 @@ class MemStore extends UserStateStore
 
   def findUserEventById(id: String) = Maybe{userEventById.getOrElse(id, null)}
 
-  def findUserEventsByUserId(userId: String) = userEventById.valuesIterator.filter{v => v.userId == userId}.toList
+  def findUserEventsByUserId(userId: String) = userEventById.valuesIterator.filter{v => v.userID == userId}.toList
 
   def loadPolicyEntriesAfter(after: Long) =
     _policyEntries.filter(p => p.validFrom > after)

@@ -159,7 +159,7 @@ class UserActor extends AquariumActor
   }
 
   private[this] def processCreateUser(event: UserEvent): Unit = {
-    val userId = event.userId
+    val userId = event.userID
     DEBUG("Creating user from state %s", event)
     val usersDB = _configurator.storeProvider.userStateStore
     usersDB.findUserStateByUserId(userId) match {
@@ -196,7 +196,7 @@ class UserActor extends AquariumActor
 
   def onProcessUserEvent(event: ProcessUserEvent): Unit = {
     val userEvent = event.ue
-    if(userEvent.userId != this._userId) {
+    if(userEvent.userID != this._userId) {
       ERROR("Received %s but my userId = %s".format(userEvent, this._userId))
     } else {
 //      ensureUserState()

@@ -103,7 +103,7 @@ class UserActorManager extends AquariumActor with Loggable {
       _forwardToUserActor(resourceEvent.userId, m)
 
     case m @ ProcessUserEvent(userEvent) ⇒
-      _forwardToUserActor(userEvent.userId, m)
+      _forwardToUserActor(userEvent.userID, m)
   }
 
   override def postStop = {
