@@ -44,8 +44,8 @@ import java.util.concurrent.atomic.AtomicLong
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ConcurrentVMLocalUIDGenerator extends UIDGenerator {
-  private[this] val counter = new AtomicLong()
+class ConcurrentVMLocalUIDGenerator(initialValue: Long = 0L) extends UIDGenerator {
+  private[this] val counter = new AtomicLong(initialValue)
 
   def nextUID() = {
     val next = counter.getAndIncrement
