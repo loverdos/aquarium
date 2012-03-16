@@ -184,14 +184,13 @@ aquariumpolicy:
     val userStateM = computations.doFullMonthlyBilling(
       UserCKKL.userId,
       billingMonthInfo,
-      userStateStore,
-      resourceEventStore,
-      policyStore,
+      storeProvider,
       UserCKKL.userCreationDate.getTime,
       currentUserState,
       initialUserState,
       DefaultResourcesMap,
       new Accounting{},
+      MonthlyBillingCalculation(billingMonthInfo),
       Just(clog)
     )
     

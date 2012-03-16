@@ -37,13 +37,13 @@ package gr.grnet.aquarium.user
 
 
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
-import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, ResourceEventStore}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable, justForSure, failedForSure}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLResourcesMap, DSLPolicy}
+import gr.grnet.aquarium.store.{StoreProvider, PolicyStore, UserStateStore, ResourceEventStore}
 
 /**
  *
@@ -80,14 +80,13 @@ class UserStateComputations extends Loggable {
 
   def findUserStateAtEndOfBillingMonth(userId: String,
                                        billingMonthInfo: BillingMonthInfo,
-                                       userStateStore: UserStateStore,
-                                       resourceEventStore: ResourceEventStore,
-                                       policyStore: PolicyStore,
+                                       storeProvider: StoreProvider,
                                        userCreationMillis: Long,
                                        currentUserState: UserState,
                                        zeroUserState: UserState, 
                                        defaultResourcesMap: DSLResourcesMap,
                                        accounting: Accounting,
+                                       calculationReason: UserStateCalculationReason,
                                        contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = {
 
     val clog = ContextualLogger.fromOther(
@@ -100,16 +99,18 @@ class UserStateComputations extends Loggable {
       doFullMonthlyBilling(
         userId,
         billingMonthInfo,
-        userStateStore,
-        resourceEventStore,
-        policyStore,
+        storeProvider,
         userCreationMillis,
         currentUserState,
         zeroUserState,
         defaultResourcesMap,
         accounting,
+        calculationReason,
         Just(clog))
     }
+
+    val userStateStore = storeProvider.userStateStore
+    val resourceEventStore = storeProvider.resourceEventStore
 
     val userCreationDateCalc = new MutableDateCalc(userCreationMillis)
     val billingMonthStartMillis = billingMonthInfo.startMillis
@@ -193,14 +194,13 @@ class UserStateComputations extends Loggable {
 
   def doFullMonthlyBilling(userId: String,
                            billingMonthInfo: BillingMonthInfo,
-                           userStateStore: UserStateStore,
-                           resourceEventStore: ResourceEventStore,
-                           policyStore: PolicyStore,
+                           storeProvider: StoreProvider,
                            userCreationMillis: Long,
                            currentUserState: UserState,
                            zeroUserState: UserState,
                            defaultResourcesMap: DSLResourcesMap,
                            accounting: Accounting,
+                           calculationReason: UserStateCalculationReason = NoSpecificCalculationReason,
                            contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = Maybe {
 
     //+ Utility methods
@@ -218,14 +218,13 @@ class UserStateComputations extends Loggable {
     val previousBillingMonthUserStateM = findUserStateAtEndOfBillingMonth(
       userId,
       billingMonthInfo.previousMonth,
-      userStateStore,
-      resourceEventStore,
-      policyStore,
+      storeProvider,
       userCreationMillis,
       currentUserState,
       zeroUserState,
       defaultResourcesMap,
       accounting,
+      calculationReason.forPreviousBillingMonth,
       Just(clog)
     )
     
@@ -235,6 +234,10 @@ class UserStateComputations extends Loggable {
     if(previousBillingMonthUserStateM.isFailed) {
       throw failedForSure(previousBillingMonthUserStateM).exception
     }
+
+    val userStateStore = storeProvider.userStateStore
+    val resourceEventStore = storeProvider.resourceEventStore
+    val policyStore = storeProvider.policyStore
 
     val billingMonthStartMillis = billingMonthInfo.startMillis
     val billingMonthEndMillis = billingMonthInfo.stopMillis
@@ -460,6 +463,18 @@ class UserStateComputations extends Loggable {
       stateChangeCounter = _workingUserState.stateChangeCounter + 1
     )
     
+    if(calculationReason.shouldStoreUserState) {
+      val storeIDM = userStateStore.storeUserState(_workingUserState)
+      storeIDM match {
+        case Just(id) ⇒
+          clog.info("Saved [ID=%s] %s", id, _workingUserState)
+        case NoVal ⇒
+          clog.warn("Could not store %s", _workingUserState)
+        case failed @ Failed(e, m) ⇒
+          clog.error(e, "Could not store %s", _workingUserState)
+      }
+    }
+    clog.debug("calculationReason = %s", calculationReason)
     clog.debug("RETURN %s", _workingUserState)
     clog.end()
     _workingUserState

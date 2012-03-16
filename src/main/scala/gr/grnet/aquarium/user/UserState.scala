@@ -129,6 +129,7 @@ case class UserState(
     agreementsSnapshot: AgreementSnapshot,
     rolesSnapshot: RolesSnapshot,
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
+    calculationReason: UserStateCalculationReason = NoSpecificCalculationReason,
     totalEventsProcessedCounter: Long = 0L
 ) extends JsonSupport {
 
@@ -258,4 +259,51 @@ object BillingMonthInfo {
 
     new BillingMonthInfo(year, month, startMillis, stopMillis)
   }
+}
+
+sealed trait UserStateCalculationReason {
+  /**
+   * Return `true` if the result of the calculation should be stored back to the
+   * [[gr.grnet.aquarium.store.UserStateStore]].
+   *
+   */
+  def shouldStoreUserState: Boolean
+
+  def forPreviousBillingMonth: UserStateCalculationReason
+}
+
+/**
+ * A calculation made for no specific reason. Can be for testing, for example.
+ *
+ */
+case object NoSpecificCalculationReason extends UserStateCalculationReason {
+  def shouldStoreUserState = false
+
+  def forBillingMonthInfo(bmi: BillingMonthInfo) = this
+
+  def forPreviousBillingMonth = this
+}
+
+/**
+ * An authoritative calculation for the billing period.
+ *
+ * This marks a state for caching.
+ *
+ * @param billingMonthInfo
+ */
+case class MonthlyBillingCalculation(billingMonthInfo: BillingMonthInfo) extends UserStateCalculationReason {
+  def shouldStoreUserState = true
+
+  def forPreviousBillingMonth = MonthlyBillingCalculation(billingMonthInfo.previousMonth)
+}
+
+/**
+ * Any calculation.
+ *
+ * @param forWhenMillis The time this calculation is for
+ */
+case class GenericBillingCalculation(forWhenMillis: Long) extends UserStateCalculationReason {
+  def shouldStoreUserState = false
+
+  def forPreviousBillingMonth = this
 }
