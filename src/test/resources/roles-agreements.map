@@ -9,5 +9,5 @@
 # Aquarium encounters a user role not defined in this file
 
 student=default
-prof=default
+prof=onemonthexperiment
 *=default
