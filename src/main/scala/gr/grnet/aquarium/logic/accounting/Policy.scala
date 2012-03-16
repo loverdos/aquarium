@@ -43,7 +43,8 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
 import gr.grnet.aquarium.Configurator
-import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
+import gr.grnet.aquarium.Configurator.Keys
+import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import collection.immutable.{TreeMap, SortedMap}
 
 /**
@@ -152,22 +153,8 @@ object Policy extends DSL with Loggable {
    * Set the configurator to use for loading policy stores. Should only
    * used for unit testing.
    */
-  /*private[logic] */def withConfigurator(config: Configurator): Unit =
+  def withConfigurator(config: Configurator): Unit =
     this.config = config
-
-  /**
-   * Search default locations for a policy file and provide an
-   * arbitrary default if this cannot be found.
-   */
-   private[logic] def policyFile = {
-    BasicResourceContext.getResource(PolicyConfName) match {
-      case Just(policyResource) ⇒
-        val path = policyResource.url.getPath
-        new File(path)
-      case _ ⇒
-        new File("policy.yaml")
-    }
-  }
 
   /**
    * Check whether the policy definition file (in whichever path) is
@@ -187,7 +174,7 @@ object Policy extends DSL with Loggable {
 
     //2. Check whether policy file has been updated
     val latestPolicyChange = if (pol.isEmpty) 0 else pol.last.validFrom
-    val policyf = policyFile
+    val policyf = MasterConfigurator.findConfigFile(PolicyConfName, Keys.aquarium_policy, PolicyConfName)
     var updated = false
 
     if (policyf.exists) {

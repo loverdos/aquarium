@@ -37,6 +37,7 @@ package gr.grnet.aquarium.logic.accounting
 
 import dsl.DSLAgreement
 import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.Configurator.{MasterConfigurator, Keys}
 import io.Source
 import java.io.{InputStream, File}
@@ -77,10 +78,12 @@ object RoleAgreements extends Loggable {
    */
   private[logic] def loadMappings = synchronized {
     val config = MasterConfigurator.get(Keys.aquarium_role_agreement_map)
-    val configFile = new File(config)
+    val configFile = MasterConfigurator.findConfigFile(
+      Configurator.RolesAgreementsName, Keys.aquarium_role_agreement_map,
+      Configurator.RolesAgreementsName)
 
     def loadFromClasspath: Source = {
-      getClass.getClassLoader.getResourceAsStream("roles-agreements.map") match {
+      getClass.getClassLoader.getResourceAsStream(Configurator.RolesAgreementsName) match {
         case x: InputStream =>
           logger.warn("Using default role to agreement mappings, this is " +
             "problably not what you want")
