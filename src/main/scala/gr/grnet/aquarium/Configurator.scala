@@ -44,6 +44,7 @@ import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConver
 import processor.actor.{UserEventProcessorService, ResourceEventProcessorService}
 import store._
 import util.{Lifecycle, Loggable}
+import java.io.File
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -161,6 +162,30 @@ class Configurator(val props: Props) extends Loggable {
 
   def defaultClassLoader = Thread.currentThread().getContextClassLoader
 
+  /**
+   * Find a file whose location can be overiden in
+   * the configuration file (e.g. policy.yaml)
+   *
+   * @param name Name of the file to search for
+   * @param prop Name of the property that defines the file path
+   * @param default Name to return if no file is found
+   */
+  def findConfigFile(name: String, prop: String, default: String): File = {
+    // Check for the configured value first
+    val configured = new File(get(prop))
+    if (configured.exists)
+      return configured
+
+    // Look into the configuration context
+    Configurator.BasicResourceContext.getResource(name) match {
+      case Just(policyResource) ⇒
+        val path = policyResource.url.getPath
+        new File(path)
+      case _ ⇒
+        new File(default)
+    }
+  }
+
   def startServices(): Unit = {
     _restService.start()
     _actorProvider.start()
@@ -235,6 +260,8 @@ object Configurator {
   val MasterConfName = "aquarium.properties"
 
   val PolicyConfName = "policy.yaml"
+
+  val RolesAgreementsName = "roles-agreements.map"
 
   /**
    * Current directory resource context.
