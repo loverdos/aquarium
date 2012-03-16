@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.store.memory
 
-import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.Configurable
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
@@ -45,6 +44,8 @@ import java.util.Date
 import collection.mutable.ConcurrentMap
 import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, PolicyEntry}
 import java.util.concurrent.ConcurrentHashMap
+import gr.grnet.aquarium.user.UserState
+import gr.grnet.aquarium.simulation.uid.ConcurrentVMLocalUIDGenerator
 
 /**
  * An implementation of various stores that persists data in memory.
@@ -61,6 +62,8 @@ class MemStore extends UserStateStore
   with WalletEntryStore
   with StoreProvider {
 
+  private[this] val idGen = new ConcurrentVMLocalUIDGenerator(1000)
+  
   private[this] var _userStates     = List[UserState]()
   private[this] var _policyEntries  = List[PolicyEntry]()
   private[this] var _resourceEvents = List[ResourceEvent]()
@@ -98,8 +101,8 @@ class MemStore extends UserStateStore
 
   //+ UserStateStore
   def storeUserState(userState: UserState): Maybe[RecordID] = {
-    _userStates = userState :: _userStates
-    Just(RecordID(userState.userId))
+    _userStates = userState.copy(_id = idGen.nextUID()) :: _userStates
+    Just(RecordID(_userStates.head._id))
   }
 
   def findUserStateByUserId(userId: String) = {
