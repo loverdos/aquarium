@@ -53,6 +53,15 @@ trait UserStateStore {
    */
   def storeUserState(userState: UserState): Maybe[RecordID]
 
+
+  def storeUserState2(userState: UserState): Maybe[UserState] = {
+    for {
+      recordID <- storeUserState(userState)
+    } yield {
+      userState.copy(_id = recordID.id)
+    }
+  }
+
   /**
    * Find a state by user ID
    */
