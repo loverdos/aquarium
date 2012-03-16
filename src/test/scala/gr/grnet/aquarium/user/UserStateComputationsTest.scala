@@ -185,7 +185,6 @@ aquariumpolicy:
       UserCKKL.userId,
       billingMonthInfo,
       storeProvider,
-      UserCKKL.userCreationDate.getTime,
       currentUserState,
       initialUserState,
       DefaultResourcesMap,

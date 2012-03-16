@@ -81,7 +81,6 @@ class UserStateComputations extends Loggable {
   def findUserStateAtEndOfBillingMonth(userId: String,
                                        billingMonthInfo: BillingMonthInfo,
                                        storeProvider: StoreProvider,
-                                       userCreationMillis: Long,
                                        currentUserState: UserState,
                                        zeroUserState: UserState, 
                                        defaultResourcesMap: DSLResourcesMap,
@@ -100,7 +99,6 @@ class UserStateComputations extends Loggable {
         userId,
         billingMonthInfo,
         storeProvider,
-        userCreationMillis,
         currentUserState,
         zeroUserState,
         defaultResourcesMap,
@@ -112,6 +110,7 @@ class UserStateComputations extends Loggable {
     val userStateStore = storeProvider.userStateStore
     val resourceEventStore = storeProvider.resourceEventStore
 
+    val userCreationMillis = currentUserState.userCreationMillis
     val userCreationDateCalc = new MutableDateCalc(userCreationMillis)
     val billingMonthStartMillis = billingMonthInfo.startMillis
     val billingMonthStopMillis  = billingMonthInfo.stopMillis
@@ -195,7 +194,6 @@ class UserStateComputations extends Loggable {
   def doFullMonthlyBilling(userId: String,
                            billingMonthInfo: BillingMonthInfo,
                            storeProvider: StoreProvider,
-                           userCreationMillis: Long,
                            currentUserState: UserState,
                            zeroUserState: UserState,
                            defaultResourcesMap: DSLResourcesMap,
@@ -219,7 +217,6 @@ class UserStateComputations extends Loggable {
       userId,
       billingMonthInfo.previousMonth,
       storeProvider,
-      userCreationMillis,
       currentUserState,
       zeroUserState,
       defaultResourcesMap,
