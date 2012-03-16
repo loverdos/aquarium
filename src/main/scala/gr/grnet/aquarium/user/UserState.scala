@@ -130,7 +130,11 @@ case class UserState(
     rolesSnapshot: RolesSnapshot,
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
     calculationReason: UserStateCalculationReason = NoSpecificCalculationReason,
-    totalEventsProcessedCounter: Long = 0L
+    totalEventsProcessedCounter: Long = 0L,
+    // The user state we used to compute this one. Normally the (cached)
+    // state at the beginning of the billing period.
+    parentUserStateId: Option[String] = None,
+    _id: String = ""
 ) extends JsonSupport {
 
   private[this] def _allSnapshots: List[Long] = {
@@ -146,6 +150,12 @@ case class UserState(
   def oldestSnapshotTime: Long = _allSnapshots min
 
   def newestSnapshotTime: Long  = _allSnapshots max
+
+  def idOpt: Option[String] = _id match {
+    case null ⇒ None
+    case ""   ⇒ None
+    case _id  ⇒ Some(_id)
+  }
 
 //  def userCreationDate = new Date(userCreationMillis)
 //
