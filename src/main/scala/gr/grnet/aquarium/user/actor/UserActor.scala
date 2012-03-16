@@ -104,7 +104,7 @@ class UserActor extends AquariumActor
    * Create an empty state for a user
    */
   def createBlankState = {
-    this._userState = DefaultUserStateComputations.createFirstUserState(this._userId, 0L, true, 0.0)
+    this._userState = DefaultUserStateComputations.createInitialUserState(this._userId, 0L, true, 0.0)
   }
 
   /**
@@ -175,7 +175,7 @@ class UserActor extends AquariumActor
         if(agreementOpt.isEmpty) {
           ERROR("No default agreement found. Cannot initialize user state")
         } else {
-          this._userState = DefaultUserStateComputations.createFirstUserState(
+          this._userState = DefaultUserStateComputations.createInitialUserState(
             userId,
             event.occurredMillis,
             true, 0.0)

@@ -43,19 +43,19 @@ import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCom
 import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLResourcesMap, DSLPolicy}
-import gr.grnet.aquarium.store.{StoreProvider, PolicyStore, UserStateStore, ResourceEventStore}
+import gr.grnet.aquarium.store.{RecordID, StoreProvider, PolicyStore, UserStateStore, ResourceEventStore}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 class UserStateComputations extends Loggable {
-  def createFirstUserState(userId: String,
-                           userCreationMillis: Long,
-                           isActive: Boolean,
-                           credits: Double,
-                           roleNames: List[String] = List(),
-                           agreementName: String = DSLAgreement.DefaultAgreementName) = {
+  def createInitialUserState(userId: String,
+                             userCreationMillis: Long,
+                             isActive: Boolean,
+                             credits: Double,
+                             roleNames: List[String] = List(),
+                             agreementName: String = DSLAgreement.DefaultAgreementName) = {
     val now = userCreationMillis
 
     UserState(
@@ -74,7 +74,19 @@ class UserStateComputations extends Loggable {
       CreditSnapshot(credits, now),
       AgreementSnapshot(List(Agreement(agreementName, userCreationMillis)), now),
       RolesSnapshot(roleNames, now),
-      OwnedResourcesSnapshot(Nil, now)
+      OwnedResourcesSnapshot(Nil, now),
+      InitialUserStateCalculation
+    )
+  }
+
+  def createInitialUserStateFrom(us: UserState): UserState = {
+    createInitialUserState(
+      us.userId,
+      us.userCreationMillis,
+      us.activeStateSnapshot.isActive,
+      us.creditsSnapshot.creditAmount,
+      us.rolesSnapshot.roles,
+      us.agreementsSnapshot.agreementsByTimeslot.valuesIterator.toList.last
     )
   }
 
@@ -82,7 +94,6 @@ class UserStateComputations extends Loggable {
                                        billingMonthInfo: BillingMonthInfo,
                                        storeProvider: StoreProvider,
                                        currentUserState: UserState,
-                                       zeroUserState: UserState, 
                                        defaultResourcesMap: DSLResourcesMap,
                                        accounting: Accounting,
                                        calculationReason: UserStateCalculationReason,
@@ -100,7 +111,6 @@ class UserStateComputations extends Loggable {
         billingMonthInfo,
         storeProvider,
         currentUserState,
-        zeroUserState,
         defaultResourcesMap,
         accounting,
         calculationReason,
@@ -118,9 +128,15 @@ class UserStateComputations extends Loggable {
     if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
       clog.debug("User did not exist before %s", userCreationDateCalc)
-      clog.debug("Returning ZERO state %s".format(zeroUserState))
+
+      // NOTE: Reason here will be: InitialUserStateCalculation
+      val initialUserState0 = createInitialUserStateFrom(currentUserState)
+      val initialUserStateM = userStateStore.storeUserState2(initialUserState0)
+
+      clog.debug("Returning ZERO state [_idM=%s] %s".format(initialUserStateM.map(_._id), initialUserStateM))
       clog.end()
-      Just(zeroUserState)
+
+      initialUserStateM
     } else {
       // Ask DB cache for the latest known user state for this billing period
       val latestUserStateM = userStateStore.findLatestUserStateForEndOfBillingMonth(
@@ -168,7 +184,8 @@ class UserStateComputations extends Loggable {
              counterDiff match {
                // ZERO, we are OK!
                case 0 ⇒
-                 latestUserStateM
+                 // NOTE: Keep the caller's calculation reason
+                 Just(latestUserState.copy(calculationReason = calculationReason))
 
                // We had more, so must recompute
                case n if n > 0 ⇒
@@ -195,7 +212,6 @@ class UserStateComputations extends Loggable {
                            billingMonthInfo: BillingMonthInfo,
                            storeProvider: StoreProvider,
                            currentUserState: UserState,
-                           zeroUserState: UserState,
                            defaultResourcesMap: DSLResourcesMap,
                            accounting: Accounting,
                            calculationReason: UserStateCalculationReason = NoSpecificCalculationReason,
@@ -218,7 +234,6 @@ class UserStateComputations extends Loggable {
       billingMonthInfo.previousMonth,
       storeProvider,
       currentUserState,
-      zeroUserState,
       defaultResourcesMap,
       accounting,
       calculationReason.forPreviousBillingMonth,
@@ -242,7 +257,8 @@ class UserStateComputations extends Loggable {
     val startingUserState = justForSure(previousBillingMonthUserStateM).get
     // Keep the working (current) user state. This will get updated as we proceed with billing for the month
     // specified in the parameters.
-    var _workingUserState = startingUserState
+    // NOTE: The calculation reason is not the one we get from the previous user state but the one our caller specifies
+    var _workingUserState = startingUserState.copy(calculationReason = calculationReason)
 
     // This is a collection of all the latest resource events.
     // We want these in order to correlate incoming resource events with their previous (in `occurredMillis` time)
@@ -457,21 +473,25 @@ class UserStateComputations extends Loggable {
     _workingUserState = _workingUserState.copy(
       implicitlyTerminatedSnapshot = implicitlyTerminatedResourceEvents.toImmutableSnapshot(lastUpdateTime),
       latestResourceEventsSnapshot = previousResourceEvents.toImmutableSnapshot(lastUpdateTime),
-      stateChangeCounter = _workingUserState.stateChangeCounter + 1
+      stateChangeCounter = _workingUserState.stateChangeCounter + 1,
+      parentUserStateId = startingUserState.idOpt
     )
-    
+
+    clog.debug("calculationReason = %s", calculationReason)
+
     if(calculationReason.shouldStoreUserState) {
-      val storeIDM = userStateStore.storeUserState(_workingUserState)
-      storeIDM match {
-        case Just(id) ⇒
-          clog.info("Saved [ID=%s] %s", id, _workingUserState)
+      val storedUserStateM = userStateStore.storeUserState2(_workingUserState)
+      storedUserStateM match {
+        case Just(storedUserState) ⇒
+          clog.info("Saved [_id=%s] %s", storedUserState._id, storedUserState)
+          _workingUserState = storedUserState
         case NoVal ⇒
           clog.warn("Could not store %s", _workingUserState)
         case failed @ Failed(e, m) ⇒
           clog.error(e, "Could not store %s", _workingUserState)
       }
     }
-    clog.debug("calculationReason = %s", calculationReason)
+
     clog.debug("RETURN %s", _workingUserState)
     clog.end()
     _workingUserState

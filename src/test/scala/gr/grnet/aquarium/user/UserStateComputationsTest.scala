@@ -166,7 +166,7 @@ aquariumpolicy:
 
     val billingMonthInfo = BillingMonthInfo.fromDateCalc(StartOfBillingYearDateCalc)
 
-    val initialUserState = computations.createFirstUserState(
+    val initialUserState = computations.createInitialUserState(
       userId = UserCKKL.userId,
       userCreationMillis = UserCreationDate.getTime,
       isActive = true,
@@ -174,8 +174,6 @@ aquariumpolicy:
       roleNames = List("user"),
       agreementName = DSLAgreement.DefaultAgreementName
     )
-
-    val currentUserState = initialUserState
 
     // Policy: from 2012-01-01 to Infinity
 
@@ -185,7 +183,6 @@ aquariumpolicy:
       UserCKKL.userId,
       billingMonthInfo,
       storeProvider,
-      currentUserState,
       initialUserState,
       DefaultResourcesMap,
       new Accounting{},
