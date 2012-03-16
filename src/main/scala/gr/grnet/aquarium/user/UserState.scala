@@ -41,6 +41,7 @@ import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
 import gr.grnet.aquarium.logic.events.WalletEntry
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.store.RecordID
 
 
 /**
@@ -282,6 +283,11 @@ sealed trait UserStateCalculationReason {
   def forPreviousBillingMonth: UserStateCalculationReason
 }
 
+case object InitialUserStateCalculation extends UserStateCalculationReason {
+  def shouldStoreUserState = true
+
+  def forPreviousBillingMonth = this
+}
 /**
  * A calculation made for no specific reason. Can be for testing, for example.
  *
