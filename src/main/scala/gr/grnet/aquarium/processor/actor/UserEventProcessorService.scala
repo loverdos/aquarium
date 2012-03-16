@@ -14,10 +14,8 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
 
   override def decode(data: Array[Byte]) = UserEvent.fromBytes(data)
 
-  override def forward(event: UserEvent) = {
-    val dispatcher = _configurator.actorProvider.actorForRole(DispatcherRole)
-    //dispatcher ! ProcessUserEvent(event)
-  }
+  override def forward(event: UserEvent) =
+    _configurator.actorProvider.actorForRole(DispatcherRole) ! ProcessUserEvent(event)
 
   override def exists(event: UserEvent) =
     _configurator.userEventStore.findUserEventById(event.id).isJust
