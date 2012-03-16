@@ -21,7 +21,8 @@ After you install them, you can do the following:
 
 - ``mvn install``: To compile Aquarium and run the tests. This will also create 
   the file ``target/aquarium-<ver>-jar-with-dependencies.jar`` which can be
-  used to start Aquarium from the command line
+  used to start Aquarium from the command line. To skip the tests while compiling,
+  run ``mvn install --skipTests=true``.
 - ``mvn deploy``:  To deploy the Aquarium libraries to the remote Maven repository
 - ``mvn release:prepare``, ``mvn release:perform``: To prepare a release,
   tag a new version and start the next development version

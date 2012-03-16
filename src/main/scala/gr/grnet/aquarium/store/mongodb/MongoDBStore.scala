@@ -307,7 +307,7 @@ class MongoDBStore(
 
   //+UserEventStore
   def storeUserEvent(event: UserEvent): Maybe[RecordID] =
-    MongoDBStore.storeAny[UserEvent](event, userEvents, UserEventJsonNames.userId,
+    MongoDBStore.storeAny[UserEvent](event, userEvents, UserEventJsonNames.userID,
       _.userID, MongoDBStore.jsonSupportToDBObject)
 
 
@@ -315,7 +315,7 @@ class MongoDBStore(
     MongoDBStore.findById[UserEvent](id, userEvents, MongoDBStore.dbObjectToUserEvent)
 
   def findUserEventsByUserId(userId: String): List[UserEvent] = {
-    val query = new BasicDBObject(UserEventJsonNames.userId, userId)
+    val query = new BasicDBObject(UserEventJsonNames.userID, userId)
     MongoDBStore.runQuery(query, userEvents)(MongoDBStore.dbObjectToUserEvent)(Some(_sortByTimestampAsc))
   }
   //-UserEventStore

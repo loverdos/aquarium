@@ -91,7 +91,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     (1 to num).foreach {
       n =>
         var event = nextUserEvent()
-        publisher ! Message(event.toBytes, "")
+        publisher ! Message(event.toBytes, "astakos.user")
     }
   }
 
@@ -113,10 +113,10 @@ trait RandomEventGenerator extends AkkaAMQP {
           isActive = rnd.nextBoolean,
           role = Array("PROF", "STUDENT", "ADMIN").apply(rnd.nextInt(3)),
           eventVersion = 1,
-          eventType = "ACTIVE",
+          eventType = "CREATE",
           details = Map()
         )
-        publisher ! Message(user.toBytes, "%s.%s".format(im_exchanges(0),"CREATED"))
+        publisher ! Message(user.toBytes, "astakos.user")
     }
   }
 

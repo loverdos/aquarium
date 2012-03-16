@@ -121,6 +121,16 @@ object UserEvent {
 
   object JsonNames {
     final val _id = "_id"
-    final val userId = "userId"
+    final val id = "id"
+
+    final val occurredMillis = "occurredMillis"
+    final val receivedMillis = "receivedMillis"
+    final val userID = "userID"
+    final val clientID = "clientID"
+    final val isActive = "isActive"
+    final val role = "role"
+    final val eventVersion = "eventVersion"
+    final val eventType = "eventType"
+    final val details = "details"
   }
 }
