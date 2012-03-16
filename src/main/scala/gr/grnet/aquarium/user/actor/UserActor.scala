@@ -38,7 +38,6 @@ package gr.grnet.aquarium.user.actor
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.processor.actor._
-import gr.grnet.aquarium.logic.accounting.{AccountingException, Policy, Accounting}
 import gr.grnet.aquarium.user._
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
 import java.util.Date
@@ -46,6 +45,7 @@ import gr.grnet.aquarium.util.{DateUtils, Loggable}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResource, DSLComplexResource}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
+import gr.grnet.aquarium.logic.accounting.{RoleAgreements, AccountingException, Policy, Accounting}
 
 
 /**
@@ -128,7 +128,6 @@ class UserActor extends AquariumActor
    * Persist current user state
    */
   private[this] def saveUserState(): Unit = {
-    _configurator.storeProvider.userStateStore.deleteUserState(this._userId)
     _configurator.storeProvider.userStateStore.storeUserState(this._userState) match {
       case Just(record) => record
       case NoVal => ERROR("Unknown error saving state")
@@ -168,20 +167,15 @@ class UserActor extends AquariumActor
       case failed @ Failed(e, m) ⇒
         ERROR("[%s][%s] %s", e.getClass.getName, e.getMessage, m)
       case NoVal ⇒
-        // OK. Create a default UserState and store it
-        val now = TimeHelpers.nowMillis
-        val agreementOpt = Policy.policy.findAgreement(DSLAgreement.DefaultAgreementName)
+        val agreement = RoleAgreements.agreementForRole(event.role)
+        DEBUG("User %s assigned agreement %s".format(userId, agreement.name))
 
-        if(agreementOpt.isEmpty) {
-          ERROR("No default agreement found. Cannot initialize user state")
-        } else {
-          this._userState = DefaultUserStateComputations.createInitialUserState(
-            userId,
-            event.occurredMillis,
-            true, 0.0)
-          saveUserState
-          DEBUG("Created and stored %s", this._userState)
-        }
+        this._userState = DefaultUserStateComputations.createInitialUserState(
+          userId,
+          event.occurredMillis,
+          event.isActive, 0.0, List(event.role), agreement.name)
+        saveUserState
+        DEBUG("Created and stored %s", this._userState)
     }
   }
 
