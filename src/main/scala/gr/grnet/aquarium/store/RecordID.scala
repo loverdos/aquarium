@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.store
 
 /**
- * Represents an ID given to a message by the store.
+ * Represents an ID given to a (JSON) document by the store.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
