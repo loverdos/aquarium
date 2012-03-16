@@ -58,8 +58,10 @@ case class  UserEvent(
     details: UserEvent.Details)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
-  assert(eventType.equalsIgnoreCase("create") ||
-    eventType.equalsIgnoreCase("modify"))
+  assert(eventType.equalsIgnoreCase(UserEvent.EventTypes.create) ||
+    eventType.equalsIgnoreCase(UserEvent.EventTypes.modify))
+
+  assert(!role.isEmpty)
 
   /**
    * Validate this event according to the following rules:
@@ -78,12 +80,12 @@ case class  UserEvent(
 
     MasterConfigurator.userStateStore.findUserStateByUserId(userID) match {
       case Just(x) =>
-        if (eventType == "CREATE"){
+        if (eventType.equalsIgnoreCase(UserEvent.EventTypes.create)){
           logger.warn("User to create exists: IMEvent".format(this.toJson));
           return false
         }
       case NoVal =>
-        if (eventType != "MODIFY"){
+        if (!eventType.equalsIgnoreCase(UserEvent.EventTypes.modify)){
           logger.warn("Inexistent user to modify. IMEvent:".format(this.toJson))
           return false
         }
@@ -96,9 +98,9 @@ case class  UserEvent(
 
   def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
-  def isCreateUser = eventType == "create"
+  def isCreateUser = eventType.equalsIgnoreCase(UserEvent.EventTypes.create)
 
-  def isModifyUser = eventType == "modify"
+  def isModifyUser = eventType.equalsIgnoreCase(UserEvent.EventTypes.modify)
 
   def isStateActive = isActive
 
@@ -106,6 +108,11 @@ case class  UserEvent(
 }
 
 object UserEvent {
+
+  object EventTypes {
+    val create = "create"
+    val modify = "modify"
+  }
 
   type Details = Map[String, String]
 
