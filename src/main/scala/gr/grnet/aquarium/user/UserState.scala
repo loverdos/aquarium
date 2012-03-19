@@ -39,9 +39,9 @@ import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
-import gr.grnet.aquarium.logic.events.WalletEntry
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.store.RecordID
+import gr.grnet.aquarium.logic.events.{NewWalletEntry, UserEvent, WalletEntry}
 
 
 /**
@@ -127,7 +127,7 @@ case class UserState(
      * an implicit OFF even right at the end of the billing period and an implicit ON event with the beginning of the
      * next billing period.
      */
-    implicitlyTerminatedSnapshot: ImplicitlyIssuedResourceEventsSnapshot,
+    implicitlyIssuedSnapshot: ImplicitlyIssuedResourceEventsSnapshot,
 
     /**
      * So far computed wallet entries for the current billing month.
@@ -162,7 +162,10 @@ case class UserState(
     agreementsSnapshot: AgreementSnapshot,
     rolesSnapshot: RolesSnapshot,
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
-    calculationReason: UserStateCalculationReason = NoSpecificCalculationReason,
+    newWalletEntries: List[NewWalletEntry],
+    lastChangeReasonCode: UserStateChangeReasonCodes.ChangeReasonCode,
+    // The last known change reason for this userState
+    lastChangeReason: UserStateChangeReason = NoSpecificChangeReason,
     totalEventsProcessedCounter: Long = 0L,
     // The user state we used to compute this one. Normally the (cached)
     // state at the beginning of the billing period.
@@ -175,7 +178,7 @@ case class UserState(
       activeStateSnapshot.snapshotTime,
       creditsSnapshot.snapshotTime, agreementsSnapshot.snapshotTime, rolesSnapshot.snapshotTime,
       ownedResourcesSnapshot.snapshotTime,
-      implicitlyTerminatedSnapshot.snapshotTime,
+      implicitlyIssuedSnapshot.snapshotTime,
       latestResourceEventsSnapshot.snapshotTime
     )
   }
@@ -222,13 +225,19 @@ case class UserState(
       ownedResourcesSnapshot = newResources,
       stateChangeCounter = this.stateChangeCounter + 1)
   }
+  
+  def copyForChangeReason(changeReason: UserStateChangeReason) = {
+    this.copy(lastChangeReasonCode = changeReason.code, lastChangeReason = changeReason)
+  }
 
   def resourcesMap = ownedResourcesSnapshot.toResourcesMap
-  
-  def safeCredits = creditsSnapshot match {
-    case c @ CreditSnapshot(_, _) ⇒ c
-    case _ ⇒ CreditSnapshot(0.0, 0)
-  }
+
+//  def toShortString = "UserState(%s, %s, %s, %s, %s)".format(
+//    userId,
+//    _id,
+//    parentUserStateId,
+//    totalEventsProcessedCounter,
+//    calculationReason)
 }
 
 
@@ -304,7 +313,7 @@ object BillingMonthInfo {
   }
 }
 
-sealed trait UserStateCalculationReason {
+sealed trait UserStateChangeReason {
   /**
    * Return `true` if the result of the calculation should be stored back to the
    * [[gr.grnet.aquarium.store.UserStateStore]].
@@ -312,24 +321,52 @@ sealed trait UserStateCalculationReason {
    */
   def shouldStoreUserState: Boolean
 
-  def forPreviousBillingMonth: UserStateCalculationReason
+  def shouldStoreCalculatedWalletEntries: Boolean
+
+  def forPreviousBillingMonth: UserStateChangeReason
+
+  def calculateCreditsForImplicitlyTerminated: Boolean
+
+  def code: UserStateChangeReasonCodes.ChangeReasonCode
 }
 
-case object InitialUserStateCalculation extends UserStateCalculationReason {
+object UserStateChangeReasonCodes {
+  type ChangeReasonCode = Int
+
+  final val InitialCalculationCode = 1
+  final val NoSpecificChangeCode   = 2
+  final val MonthlyBillingCode     = 3
+  final val RealtimeBillingCode    = 4
+  final val UserEventArrivalCode   = 5
+}
+
+case object InitialUserStateCalculation extends UserStateChangeReason {
   def shouldStoreUserState = true
 
+  def shouldStoreCalculatedWalletEntries = false
+
   def forPreviousBillingMonth = this
+
+  def calculateCreditsForImplicitlyTerminated = false
+
+  def code = UserStateChangeReasonCodes.InitialCalculationCode
 }
 /**
  * A calculation made for no specific reason. Can be for testing, for example.
  *
  */
-case object NoSpecificCalculationReason extends UserStateCalculationReason {
+case object NoSpecificChangeReason extends UserStateChangeReason {
   def shouldStoreUserState = false
+
+  def shouldStoreCalculatedWalletEntries = false
 
   def forBillingMonthInfo(bmi: BillingMonthInfo) = this
 
   def forPreviousBillingMonth = this
+
+  def calculateCreditsForImplicitlyTerminated = false
+
+  def code = UserStateChangeReasonCodes.NoSpecificChangeCode
 }
 
 /**
@@ -339,19 +376,43 @@ case object NoSpecificCalculationReason extends UserStateCalculationReason {
  *
  * @param billingMonthInfo
  */
-case class MonthlyBillingCalculation(billingMonthInfo: BillingMonthInfo) extends UserStateCalculationReason {
+case class MonthlyBillingCalculation(billingMonthInfo: BillingMonthInfo) extends UserStateChangeReason {
   def shouldStoreUserState = true
 
+  def shouldStoreCalculatedWalletEntries = true
+
   def forPreviousBillingMonth = MonthlyBillingCalculation(billingMonthInfo.previousMonth)
+
+  def calculateCreditsForImplicitlyTerminated = true
+
+  def code = UserStateChangeReasonCodes.MonthlyBillingCode
 }
 
 /**
- * Any calculation.
+ * Used for the realtime billing calculation.
  *
  * @param forWhenMillis The time this calculation is for
  */
-case class GenericBillingCalculation(forWhenMillis: Long) extends UserStateCalculationReason {
+case class RealtimeBillingCalculation(forWhenMillis: Long) extends UserStateChangeReason {
   def shouldStoreUserState = false
 
+  def shouldStoreCalculatedWalletEntries = false
+
   def forPreviousBillingMonth = this
+
+  def calculateCreditsForImplicitlyTerminated = false
+
+  def code = UserStateChangeReasonCodes.RealtimeBillingCode
+}
+
+case class UserEventArrival(userEvent: UserEvent) extends UserStateChangeReason {
+  def shouldStoreUserState = true
+
+  def shouldStoreCalculatedWalletEntries = false
+
+  def forPreviousBillingMonth = this
+
+  def calculateCreditsForImplicitlyTerminated = false
+
+  def code = UserStateChangeReasonCodes.UserEventArrivalCode
 }
