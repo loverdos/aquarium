@@ -223,7 +223,7 @@ object DSLCostPolicy {
     if(vars contains DSLCurrentValueVar  ) map += DSLCurrentValueVar   -> currentValue
     if(vars contains DSLUnitPriceVar     ) map += DSLUnitPriceVar      -> unitPrice
 
-    map.toMap
+    map
   }
 }
 
