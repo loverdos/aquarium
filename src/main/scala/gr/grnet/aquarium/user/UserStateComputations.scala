@@ -345,7 +345,6 @@ class UserStateComputations extends Loggable {
       val theInstanceId = currentResourceEvent.safeInstanceId
       val theValue = currentResourceEvent.value
 
-      clog.debug("Processing %s", currentResourceEvent)
       val currentResourceEventDebugInfo = rcDebugInfo(currentResourceEvent)
       clog.begin(currentResourceEventDebugInfo)
 
@@ -462,7 +461,7 @@ class UserStateComputations extends Loggable {
         // We do not have a resource (and no cost policy)
         case None ⇒
           // Now, this is a matter of politics: what do we do if no policy was found?
-          clog.warn("No cost policy for %s", currentResourceEventDebugInfo)
+          clog.warn("Unknown resource for %s", currentResourceEventDebugInfo)
       } // dslResourceOpt match
 
       clog.end(currentResourceEventDebugInfo)
