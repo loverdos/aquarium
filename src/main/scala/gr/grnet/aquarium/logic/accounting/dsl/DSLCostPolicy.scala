@@ -212,16 +212,16 @@ object DSLCostPolicy {
                       currentValue: Double,
                       unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
     val vars = costPolicy.vars
-    val map = scala.collection.mutable.Map[DSLCostPolicyVar, Any]()
+    var map = Map[DSLCostPolicyVar, Any]()
 
-    if(vars.contains(DSLCostPolicyNameVar)) map += DSLCostPolicyNameVar -> costPolicyName
-    if(vars.contains(DSLTotalCreditsVar))   map += DSLTotalCreditsVar   -> totalCredits
-    if(vars.contains(DSLOldTotalAmountVar)) map += DSLOldTotalAmountVar -> oldTotalAmount
-    if(vars.contains(DSLNewTotalAmountVar)) map += DSLNewTotalAmountVar -> newTotalAmount
-    if(vars.contains(DSLTimeDeltaVar))      map += DSLTimeDeltaVar      -> timeDelta
-    if(vars.contains(DSLPreviousValueVar))  map += DSLPreviousValueVar  -> previousValue
-    if(vars.contains(DSLCurrentValueVar))   map += DSLCurrentValueVar   -> currentValue
-    if(vars.contains(DSLUnitPriceVar))      map += DSLUnitPriceVar      -> unitPrice
+    if(vars contains DSLCostPolicyNameVar) map += DSLCostPolicyNameVar -> costPolicyName
+    if(vars contains DSLTotalCreditsVar  ) map += DSLTotalCreditsVar   -> totalCredits
+    if(vars contains DSLOldTotalAmountVar) map += DSLOldTotalAmountVar -> oldTotalAmount
+    if(vars contains DSLNewTotalAmountVar) map += DSLNewTotalAmountVar -> newTotalAmount
+    if(vars contains DSLTimeDeltaVar     ) map += DSLTimeDeltaVar      -> timeDelta
+    if(vars contains DSLPreviousValueVar ) map += DSLPreviousValueVar  -> previousValue
+    if(vars contains DSLCurrentValueVar  ) map += DSLCurrentValueVar   -> currentValue
+    if(vars contains DSLUnitPriceVar     ) map += DSLUnitPriceVar      -> unitPrice
 
     map.toMap
   }
