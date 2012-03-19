@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.logic.events
 
 import gr.grnet.aquarium.logic.accounting.Chargeslot
-import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
 import gr.grnet.aquarium.util.json.JsonHelpers
+import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLResource}
 
 /**
@@ -52,8 +52,7 @@ import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLResource}
  * @param whenComputedMillis When the computation took place
  * @param yearOfBillingMonth
  * @param billingMonth
- * @param currentResourceEvent
- * @param previousResourceEvent
+ * @param resourceEvents
  * @param chargeslots The details of the credit computation
  * @param resourceDef
  */
@@ -65,11 +64,11 @@ case class NewWalletEntry(userId: String,
                           referenceTimeslot: Timeslot,
                           yearOfBillingMonth: Int,
                           billingMonth: Int,
-                          currentResourceEvent: ResourceEvent,
-                          previousResourceEvent: Option[ResourceEvent],
+                          resourceEvents: List[ResourceEvent], // current is at the head
                           chargeslots: List[Chargeslot],
                           resourceDef: DSLResource) {
 
+  def currentResourceEvent = resourceEvents.head
   def resource = currentResourceEvent.resource
   def instanceId = currentResourceEvent.instanceId
   def chargslotCount = chargeslots.length
