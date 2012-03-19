@@ -38,6 +38,7 @@ package gr.grnet.aquarium.logic.events
 import gr.grnet.aquarium.logic.accounting.Chargeslot
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
 import gr.grnet.aquarium.util.json.JsonHelpers
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLResource}
 
 /**
  * The following equation must hold: `newTotalCredits = oldTotalCredits + entryCredits`.
@@ -61,6 +62,7 @@ case class NewWalletEntry(userId: String,
                           oldTotalCredits: Double,
                           newTotalCredits: Double,
                           whenComputedMillis: Long,
+                          referenceTimeslot: Timeslot,
                           yearOfBillingMonth: Int,
                           billingMonth: Int,
                           currentResourceEvent: ResourceEvent,
