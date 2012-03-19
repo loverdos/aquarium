@@ -54,17 +54,49 @@ import gr.grnet.aquarium.store.RecordID
  *
  * The user state is meant to be partially updated according to relevant events landing on Aquarium.
  *
+ * @define communicatedByIM
+ *          This is communicated to Aquarium from the `IM` system.
+ *
+ *
+ * @param userId
+ *          The user ID. $communicatedByIM
+ * @param userCreationMillis
+ *          When the user was created.
+ *          $communicatedByIM
+ *          Set to zero if unknown.
+ * @param stateChangeCounter
+ * @param isFullBillingMonthState
+ * @param theFullBillingMonth
+ * @param implicitlyIssuedSnapshot
+ * @param billingMonthWalletEntries
+ * @param outOfSyncWalletEntries
+ * @param latestResourceEventsSnapshot
+ * @param billingPeriodResourceEventsCounter
+ * @param billingPeriodOutOfSyncResourceEventsCounter
+ * @param activeStateSnapshot
+ * @param creditsSnapshot
+ * @param agreementsSnapshot
+ * @param rolesSnapshot
+ * @param ownedResourcesSnapshot
+ * @param newWalletEntries
+ *          The wallet entries computed. Not all user states need to holds wallet entries,
+ *          only those that refer to billing periods (end of billing period).
+ * @param lastChangeReasonCode
+ *          The code for the `lastChangeReason`.
+ * @param lastChangeReason
+ *          The [[gr.grnet.aquarium.user.UserStateChangeReason]] for which the usr state has changed.
+ * @param totalEventsProcessedCounter
+ * @param parentUserStateId
+ *          The `ID` of the parent state. The parent state is the one used as a reference point in order to calculate
+ *          this user state.
+ * @param _id
+ *          The unique `ID` given by the store.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
 case class UserState(
     userId: String,
 
-    /**
-     * When the user was created in the system (not Aquarium). We use this as a basis for billing periods. Set to
-     * zero if unknown.
-     * 
-     */
     userCreationMillis: Long,
 
     /**
