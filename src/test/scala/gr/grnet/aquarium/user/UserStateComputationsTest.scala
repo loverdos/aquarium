@@ -7,9 +7,9 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
-import com.ckkloverdos.maybe.{Just, NoVal}
 import gr.grnet.aquarium.simulation._
 import gr.grnet.aquarium.simulation.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
+import com.ckkloverdos.maybe.{Failed, Just, NoVal}
 
 
 /**
@@ -189,12 +189,33 @@ aquariumpolicy:
       MonthlyBillingCalculation(billingMonthInfo),
       Just(clog)
     )
-    
+
     clog.debug("userStateM = %s".format(userStateM))
-    userStateM.forFailed { failed ⇒
-      clog.error(failed)
-      failed.exception.printStackTrace()
-      NoVal
+
+    userStateM match {
+      case Just(userState) ⇒
+        val _id = userState._id
+        val parentId = userState.parentUserStateId
+        val credits = userState.creditsSnapshot.creditAmount
+        val newWalletEntries = userState.newWalletEntries
+        val changeReasonCode = userState.lastChangeReasonCode
+        val changeReason     = userState.lastChangeReason
+        userState.implicitlyIssuedSnapshot
+
+        clog.indent()
+        clog.debug("_id = %s", _id)
+        clog.debug("parentId = %s", parentId)
+        clog.debug("credits = %s", credits)
+        clog.debug("changeReasonCode = %s", changeReasonCode)
+        clog.debug("changeReason = %s", changeReason)
+        clog.debugSeq("newWalletEntries", newWalletEntries.map(_.toDebugString), 0)
+        clog.unindent()
+
+      case NoVal ⇒
+
+      case failed @ Failed(_, _) ⇒
+        clog.error(failed)
+        failed.exception.printStackTrace()
     }
   }
 }

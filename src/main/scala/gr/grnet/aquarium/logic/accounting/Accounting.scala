@@ -261,10 +261,10 @@ trait Accounting extends DSLUtils with Loggable {
                              agreementNamesByTimeslot: Map[Timeslot, String],
                              algorithmCompiler: CostPolicyAlgorithmCompiler,
                              policyStore: PolicyStore,
-                             contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[List[Chargeslot]] = Maybe {
+                             contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[(Timeslot, List[Chargeslot])] = Maybe {
 
     val clog = ContextualLogger.fromOther(contextualLogger, logger, "computeFullChargeslots()")
-    clog.begin()
+//    clog.begin()
 
     val occurredDate = currentResourceEvent.occurredDate
     val occurredMillis = currentResourceEvent.occurredMillis
@@ -386,14 +386,14 @@ trait Accounting extends DSLUtils with Loggable {
 
     val result = fullChargeslotsM match {
       case Just(fullChargeslots) ⇒
-        fullChargeslots
+        referenceTimeslot -> fullChargeslots
       case NoVal ⇒
         null
       case failed @ Failed(e, m) ⇒
         throw new Exception(m, e)
     }
 
-    clog.end()
+//    clog.end()
 
     result
   }
