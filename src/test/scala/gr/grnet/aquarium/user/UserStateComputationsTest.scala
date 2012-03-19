@@ -158,7 +158,7 @@ aquariumpolicy:
     clog.begin("Events by OccurredMillis")
     clog.withIndent {
       for(event <- UserCKKL.myResourceEventsByOccurredDate) {
-        clog.debug(event.toDebugString(DefaultResourcesMap))
+        clog.debug(event.toDebugString())
       }
     }
     clog.end("Events by OccurredMillis")

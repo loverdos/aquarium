@@ -125,15 +125,14 @@ case class ResourceEvent(
     (occurredMillis < billingStartMillis || occurredMillis > billingStopMillis)
   }
 
-  def toDebugString(resourcesMap: DSLResourcesMap, useOnlyInstanceId: Boolean = false): String = {
+  def toDebugString(useOnlyInstanceId: Boolean = false): String = {
     val instanceInfo = if(useOnlyInstanceId) instanceId else "%s::%s".format(resource, instanceId)
-    val bvalue = beautifyValue(resourcesMap)
     val occurredFormatted = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSS
     if(occurredMillis == receivedMillis) {
       "EVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
         id,
         occurredFormatted,
-        bvalue,
+        value,
         instanceInfo,
         details,
         userId,
@@ -144,45 +143,13 @@ case class ResourceEvent(
         id,
         occurredFormatted,
         new MutableDateCalc(receivedMillis),
-        bvalue,
+        value,
         instanceInfo,
         details,
         userId,
         clientId
       )
     }
-  }
-
-  private[this]
-  def beatifyValue(resourceProvider: (String) ⇒ Option[DSLResource]): String = {
-    resourceProvider(this.resource) match {
-      case Some(DSLResource(_, _, OnOffCostPolicy, _, _)) ⇒
-        OnOffPolicyResourceState(this.value).state.toUpperCase
-      case Some(rc @ DSLResource(_, _, _, _, _)) ⇒
-        "%s [%s]".format(value, rc.unit)
-      case _ ⇒
-        value.toString
-    }
-  }
-
-  /**
-   * Returns a beautiful string representation of the value.
-   *
-   * @param policy The policy to be asked for resources.
-   * @return A beautiful string representation of the value.
-   */
-  def beautifyValue(policy: DSLPolicy): String = {
-    beatifyValue(policy.findResource)
-  }
-
-  /**
-   * Returns a beautiful string representation of the value.
-   *
-   * @param resourcesMap The resources map to be asked for resources.
-   * @return A beautiful string representation of the value.
-   */
-  def beautifyValue(resourcesMap: DSLResourcesMap): String = {
-    beatifyValue(resourcesMap.findResource)
   }
 
   /**

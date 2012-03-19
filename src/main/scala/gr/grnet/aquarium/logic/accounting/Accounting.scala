@@ -294,13 +294,13 @@ trait Accounting extends DSLUtils with Loggable {
           case NoVal ⇒
             throw new Exception(
               "Unable to charge. No previous event given for %s".
-                format(currentResourceEvent.toDebugString(defaultResourceMap)))
+                format(currentResourceEvent.toDebugString()))
 
           // We could not obtain a previous event
           case failed @ Failed(e, m) ⇒
             throw new Exception(
               "Unable to charge. Could not obtain previous event for %s".
-                format(currentResourceEvent.toDebugString(defaultResourceMap)), e)
+                format(currentResourceEvent.toDebugString()), e)
         }
 
       // We do not need a previous event
