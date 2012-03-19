@@ -217,14 +217,14 @@ class UserStateComputations extends Loggable {
   }
   //- Utility methods
 
-  def walletEntriesForResourceEvent(startingUserState: UserState,
-                                    userStateWorker: UserStateWorker,
-                                    currentResourceEvent: ResourceEvent,
-                                    policyStore: PolicyStore,
-                                    stateChangeReason: UserStateChangeReason,
-                                    billingMonthInfo: BillingMonthInfo,
-                                    walletEntriesBuffer: Buffer[NewWalletEntry],
-                                    clogM: Maybe[ContextualLogger] = NoVal): UserState = {
+  def processResourceEvent(startingUserState: UserState,
+                           userStateWorker: UserStateWorker,
+                           currentResourceEvent: ResourceEvent,
+                           policyStore: PolicyStore,
+                           stateChangeReason: UserStateChangeReason,
+                           billingMonthInfo: BillingMonthInfo,
+                           walletEntriesBuffer: Buffer[NewWalletEntry],
+                           clogM: Maybe[ContextualLogger] = NoVal): UserState = {
 
     val clog = ContextualLogger.fromOther(clogM, logger, "walletEntriesForResourceEvent(%s)", currentResourceEvent.id)
 
@@ -364,20 +364,20 @@ class UserStateComputations extends Loggable {
     _workingUserState
   }
 
-  def walletEntriesForResourceEvents(resourceEvents: List[ResourceEvent],
-                                     startingUserState: UserState,
-                                     userStateWorker: UserStateWorker,
-                                     policyStore: PolicyStore,
-                                     stateChangeReason: UserStateChangeReason,
-                                     billingMonthInfo: BillingMonthInfo,
-                                     walletEntriesBuffer: Buffer[NewWalletEntry],
-                                     clogM: Maybe[ContextualLogger] = NoVal): UserState = {
+  def processResourceEvents(resourceEvents: Traversable[ResourceEvent],
+                            startingUserState: UserState,
+                            userStateWorker: UserStateWorker,
+                            policyStore: PolicyStore,
+                            stateChangeReason: UserStateChangeReason,
+                            billingMonthInfo: BillingMonthInfo,
+                            walletEntriesBuffer: Buffer[NewWalletEntry],
+                            clogM: Maybe[ContextualLogger] = NoVal): UserState = {
 
     var _workingUserState = startingUserState
 
     for(currentResourceEvent <- resourceEvents) {
 
-      _workingUserState = walletEntriesForResourceEvent(
+      _workingUserState = processResourceEvent(
         _workingUserState,
         userStateWorker,
         currentResourceEvent,
@@ -459,7 +459,7 @@ class UserStateComputations extends Loggable {
 
     val newWalletEntries = scala.collection.mutable.ListBuffer[NewWalletEntry]()
 
-    _workingUserState = walletEntriesForResourceEvents(
+    _workingUserState = processResourceEvents(
       allResourceEventsForMonth,
       _workingUserState,
       userStateWorker,
