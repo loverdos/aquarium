@@ -43,8 +43,8 @@ import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLResourcesMap, DSLPolicy}
 import gr.grnet.aquarium.store.{RecordID, StoreProvider, PolicyStore, UserStateStore, ResourceEventStore}
-import collection.mutable.ListBuffer
 import gr.grnet.aquarium.logic.accounting.{Chargeslot, Accounting}
+import collection.mutable.{Buffer, ListBuffer}
 
 /**
  *
@@ -217,25 +217,25 @@ class UserStateComputations extends Loggable {
   }
   //- Utility methods
 
-
   def walletEntriesForResourceEvent(startingUserState: UserState,
                                     userStateWorker: UserStateWorker,
                                     currentResourceEvent: ResourceEvent,
                                     policyStore: PolicyStore,
                                     stateChangeReason: UserStateChangeReason,
                                     billingMonthInfo: BillingMonthInfo,
-                                    clogM: Maybe[ContextualLogger] = NoVal): List[NewWalletEntry] = {
+                                    walletEntriesBuffer: Buffer[NewWalletEntry],
+                                    clogM: Maybe[ContextualLogger] = NoVal): UserState = {
 
     val clog = ContextualLogger.fromOther(clogM, logger, "walletEntriesForResourceEvent(%s)", currentResourceEvent.id)
 
-    val newWalletEntriesBuffer = ListBuffer[NewWalletEntry]()
-    var _workingUserState: UserState = startingUserState
+    var _workingUserState = startingUserState
+
     val theResource = currentResourceEvent.safeResource
     val theInstanceId = currentResourceEvent.safeInstanceId
     val theValue = currentResourceEvent.value
 
     val accounting = userStateWorker.accounting
-    val defaultResourcesMap = userStateWorker.resourcesMap
+    val resourcesMap = userStateWorker.resourcesMap
 
     val currentResourceEventDebugInfo = rcDebugInfo(currentResourceEvent)
     clog.begin(currentResourceEventDebugInfo)
@@ -244,8 +244,7 @@ class UserStateComputations extends Loggable {
 
     // Ignore the event if it is not billable (but still record it in the "previous" stuff).
     // But to make this decision, first we need the resource definition (and its cost policy).
-    val dslResourceOpt = defaultResourcesMap.findResource(theResource)
-
+    val dslResourceOpt = resourcesMap.findResource(theResource)
     dslResourceOpt match {
       // We have a resource (and thus a cost policy)
       case Some(dslResource) ⇒
@@ -291,7 +290,7 @@ class UserStateComputations extends Loggable {
               oldAmount,
               newAmount,
               dslResource,
-              defaultResourcesMap,
+              resourcesMap,
               alltimeAgreements,
               SimpleCostPolicyAlgorithmCompiler,
               policyStore,
@@ -330,7 +329,7 @@ class UserStateComputations extends Loggable {
                   )
                   clog.debug("New %s", newWalletEntry)
 
-                  newWalletEntriesBuffer += newWalletEntry
+                  walletEntriesBuffer += newWalletEntry
                 } else {
                   clog.debug("newCreditsDiff = %s, newCredits = %s", newCreditsDiff, newCredits)
                 }
@@ -351,18 +350,48 @@ class UserStateComputations extends Loggable {
           }
         }
 
-        // After processing, all event, billable or not update the previous state
+        // After processing, all events billable or not update the previous state
         userStateWorker.updatePrevious(currentResourceEvent)
 
-      // We do not have a resource (and no cost policy)
+      // We do not have a resource (and thus, no cost policy)
       case None ⇒
         // Now, this is a matter of politics: what do we do if no policy was found?
         clog.warn("Unknown resource for %s", currentResourceEventDebugInfo)
     } // dslResourceOpt match
 
     clog.end(currentResourceEventDebugInfo)
-    newWalletEntriesBuffer.toList
+
+    _workingUserState
   }
+
+  def walletEntriesForResourceEvents(resourceEvents: List[ResourceEvent],
+                                     startingUserState: UserState,
+                                     userStateWorker: UserStateWorker,
+                                     policyStore: PolicyStore,
+                                     stateChangeReason: UserStateChangeReason,
+                                     billingMonthInfo: BillingMonthInfo,
+                                     walletEntriesBuffer: Buffer[NewWalletEntry],
+                                     clogM: Maybe[ContextualLogger] = NoVal): UserState = {
+
+    var _workingUserState = startingUserState
+
+    for(currentResourceEvent <- resourceEvents) {
+
+      _workingUserState = walletEntriesForResourceEvent(
+        _workingUserState,
+        userStateWorker,
+        currentResourceEvent,
+        policyStore,
+        stateChangeReason,
+        billingMonthInfo,
+        walletEntriesBuffer,
+        clogM
+      )
+    }
+
+    _workingUserState
+  }
+
 
   def doFullMonthlyBilling(userId: String,
                            billingMonthInfo: BillingMonthInfo,
@@ -398,6 +427,8 @@ class UserStateComputations extends Loggable {
       throw failedForSure(previousBillingMonthUserStateM).exception
     }
 
+    val startingUserState = justForSure(previousBillingMonthUserStateM).get
+
     val userStateStore = storeProvider.userStateStore
     val resourceEventStore = storeProvider.resourceEventStore
     val policyStore = storeProvider.policyStore
@@ -405,7 +436,6 @@ class UserStateComputations extends Loggable {
     val billingMonthStartMillis = billingMonthInfo.startMillis
     val billingMonthEndMillis = billingMonthInfo.stopMillis
 
-    val startingUserState = justForSure(previousBillingMonthUserStateM).get
     // Keep the working (current) user state. This will get updated as we proceed with billing for the month
     // specified in the parameters.
     // NOTE: The calculation reason is not the one we get from the previous user state but the one our caller specifies
@@ -420,7 +450,6 @@ class UserStateComputations extends Loggable {
       userId,
       billingMonthStartMillis,
       billingMonthEndMillis)
-    var _eventCounter = 0
 
     if(allResourceEventsForMonth.size > 0) {
       clog.debug("Found %s resource events, starting processing...", allResourceEventsForMonth.size)
@@ -428,36 +457,18 @@ class UserStateComputations extends Loggable {
       clog.debug("Not found any resource events")
     }
 
-    var _newWalletEntries = scala.collection.mutable.ListBuffer[NewWalletEntry]()
-    def calculatedNewWalletEntries = {
-      if(calculationReason.shouldStoreCalculatedWalletEntries) {
-        _newWalletEntries.toList
-      } else {
-        _workingUserState.newWalletEntries
-      }
-    }
+    val newWalletEntries = scala.collection.mutable.ListBuffer[NewWalletEntry]()
 
-    for {
-      currentResourceEvent <- allResourceEventsForMonth
-    } {
-      _eventCounter = _eventCounter + 1
-      
-      if(_eventCounter == 1) {
-        clog.debugMap("defaultResourcesMap", defaultResourcesMap.map, 1)
-      } else {
-        clog.debug("")
-      }
-      
-      val currentResourceEventWalletEntries = walletEntriesForResourceEvent(
-        _workingUserState,
-        userStateWorker,
-        currentResourceEvent,
-        policyStore,
-        calculationReason,
-        billingMonthInfo,
-        Just(clog)
-      )
-    } // for { currentResourceEvent <- allResourceEventsForMonth }
+    _workingUserState = walletEntriesForResourceEvents(
+      allResourceEventsForMonth,
+      _workingUserState,
+      userStateWorker,
+      policyStore,
+      calculationReason,
+      billingMonthInfo,
+      newWalletEntries,
+      Just(clog)
+    )
 
     val lastUpdateTime = TimeHelpers.nowMillis
 
@@ -466,7 +477,7 @@ class UserStateComputations extends Loggable {
       latestResourceEventsSnapshot = userStateWorker.previousResourceEvents.toImmutableSnapshot(lastUpdateTime),
       stateChangeCounter = _workingUserState.stateChangeCounter + 1,
       parentUserStateId = startingUserState.idOpt,
-      newWalletEntries = calculatedNewWalletEntries
+      newWalletEntries = newWalletEntries.toList
     )
 
     clog.debug("calculationReason = %s", calculationReason)
