@@ -73,6 +73,20 @@ case class NewWalletEntry(userId: String,
   def instanceId = currentResourceEvent.instanceId
   def chargslotCount = chargeslots.length
   def isOutOfSync = currentResourceEvent.isOutOfSyncForBillingMonth(yearOfBillingMonth, billingMonth)
+
+  def toDebugString = "%s(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(
+    gr.grnet.aquarium.util.shortClassNameOf(this),
+    userId,
+    referenceTimeslot,
+    entryCredits,
+    oldTotalCredits,
+    newTotalCredits,
+    new MutableDateCalc(whenComputedMillis).toYYYYMMDDHHMMSSSSS,
+    yearOfBillingMonth,
+    billingMonth,
+    resourceEvents,
+    chargeslots,
+    resourceDef)
 }
 
 object NewWalletEntry {
