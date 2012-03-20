@@ -45,6 +45,7 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLR
 import gr.grnet.aquarium.store.{RecordID, StoreProvider, PolicyStore, UserStateStore, ResourceEventStore}
 import gr.grnet.aquarium.logic.accounting.{Chargeslot, Accounting}
 import collection.mutable.{Buffer, ListBuffer}
+import gr.grnet.aquarium.logic.events.ResourceEvent._
 
 /**
  *
@@ -409,6 +410,8 @@ class UserStateComputations extends Loggable {
       "doFullMonthlyBilling(%s)", billingMonthInfo)
     clog.begin()
 
+    val clogJ = Just(clog)
+
     val previousBillingMonthUserStateM = findUserStateAtEndOfBillingMonth(
       userId,
       billingMonthInfo.previousMonth,
@@ -417,7 +420,7 @@ class UserStateComputations extends Loggable {
       defaultResourcesMap,
       accounting,
       calculationReason.forPreviousBillingMonth,
-      Just(clog)
+      clogJ
     )
     
     if(previousBillingMonthUserStateM.isNoVal) {
@@ -441,21 +444,15 @@ class UserStateComputations extends Loggable {
     // NOTE: The calculation reason is not the one we get from the previous user state but the one our caller specifies
     var _workingUserState = startingUserState.copyForChangeReason(calculationReason)
 
-    val userStateWorker = UserStateWorker.fromUserState(startingUserState, accounting, defaultResourcesMap)
+    val userStateWorker = UserStateWorker.fromUserState(_workingUserState, accounting, defaultResourcesMap)
 
     userStateWorker.debugTheMaps(clog)(rcDebugInfo)
 
-    // Find the actual resource events from DB
+    // First, find and process the actual resource events from DB
     val allResourceEventsForMonth = resourceEventStore.findAllRelevantResourceEventsForBillingPeriod(
       userId,
       billingMonthStartMillis,
       billingMonthEndMillis)
-
-    if(allResourceEventsForMonth.size > 0) {
-      clog.debug("Found %s resource events, starting processing...", allResourceEventsForMonth.size)
-    } else {
-      clog.debug("Not found any resource events")
-    }
 
     val newWalletEntries = scala.collection.mutable.ListBuffer[NewWalletEntry]()
 
@@ -467,13 +464,28 @@ class UserStateComputations extends Loggable {
       calculationReason,
       billingMonthInfo,
       newWalletEntries,
-      Just(clog)
+      clogJ
     )
+
+    // Second, for the remaining events which must contribute an implicit OFF, we collect and process
+    // those OFFs and generate an implicit ON
+    val allEndEventsBuffer = ListBuffer[ResourceEvent]()
+    for {
+      aPreviousEvent <- userStateWorker.allPreviousAndAllImplicitlyStarted
+      dslResource    <- defaultResourcesMap.findResource(aPreviousEvent.safeResource)
+      costPolicy     =  dslResource.costPolicy
+    } {
+      if(costPolicy.supportsImplicitEvents) {
+        if(costPolicy.mustConstructImplicitEndEventFor(aPreviousEvent)) {
+          allEndEventsBuffer append costPolicy.constructImplicitEndEventFor(aPreviousEvent, billingMonthEndMillis)
+        }
+      }
+    }
 
     val lastUpdateTime = TimeHelpers.nowMillis
 
     _workingUserState = _workingUserState.copy(
-      implicitlyIssuedSnapshot = userStateWorker.implicitlyIssuedResourceEvents.toImmutableSnapshot(lastUpdateTime),
+      implicitlyIssuedSnapshot = userStateWorker.implicitlyIssuedStartEvents.toImmutableSnapshot(lastUpdateTime),
       latestResourceEventsSnapshot = userStateWorker.previousResourceEvents.toImmutableSnapshot(lastUpdateTime),
       stateChangeCounter = _workingUserState.stateChangeCounter + 1,
       parentUserStateId = startingUserState.idOpt,
@@ -509,8 +521,8 @@ class UserStateComputations extends Loggable {
  *          We want these in order to correlate incoming resource events with their previous (in `occurredMillis` time)
  *          ones. Will be updated on processing the next resource event.
  *
- * @param implicitlyIssuedResourceEvents
- *          The implicitly issued resource events (from previous billing period).
+ * @param implicitlyIssuedStartEvents
+ *          The implicitly issued resource events at the beginning of the billing period.
  *
  * @param ignoredFirstResourceEvents
  *          The resource events that were first (and unused) of their kind.
@@ -519,7 +531,7 @@ class UserStateComputations extends Loggable {
  */
 case class UserStateWorker(userId: String,
                            previousResourceEvents: LatestResourceEventsWorker,
-                           implicitlyIssuedResourceEvents: ImplicitlyIssuedResourceEventsWorker,
+                           implicitlyIssuedStartEvents: ImplicitlyIssuedResourceEventsWorker,
                            ignoredFirstResourceEvents: IgnoredFirstResourceEventsWorker,
                            accounting: Accounting,
                            resourcesMap: DSLResourcesMap) {
@@ -538,7 +550,7 @@ case class UserStateWorker(userId: String,
    */
   def findAndRemovePreviousResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
     // implicitly issued events are checked first
-    implicitlyIssuedResourceEvents.findAndRemoveResourceEvent(resource, instanceId) match {
+    implicitlyIssuedStartEvents.findAndRemoveResourceEvent(resource, instanceId) match {
       case just @ Just(_) ⇒
         just
       case NoVal ⇒
@@ -564,11 +576,11 @@ case class UserStateWorker(userId: String,
 
   def debugTheMaps(clog: ContextualLogger)(rcDebugInfo: ResourceEvent ⇒ String): Unit = {
     if(previousResourceEvents.size > 0) {
-      val map = previousResourceEvents.resourceEventsMap.map { case (k, v) => (k, rcDebugInfo(v)) }
+      val map = previousResourceEvents.latestEventsMap.map { case (k, v) => (k, rcDebugInfo(v)) }
       clog.debugMap("previousResourceEvents", map, 0)
     }
-    if(implicitlyIssuedResourceEvents.size > 0) {
-      val map = implicitlyIssuedResourceEvents.implicitlyIssuedEventsMap.map { case (k, v) => (k, rcDebugInfo(v)) }
+    if(implicitlyIssuedStartEvents.size > 0) {
+      val map = implicitlyIssuedStartEvents.implicitlyIssuedEventsMap.map { case (k, v) => (k, rcDebugInfo(v)) }
       clog.debugMap("implicitlyTerminatedResourceEvents", map, 0)
     }
     if(ignoredFirstResourceEvents.size > 0) {
@@ -577,6 +589,14 @@ case class UserStateWorker(userId: String,
     }
   }
 
+  def allPreviousAndAllImplicitlyStarted: List[ResourceEvent] = {
+    val buffer: FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]()
+
+    buffer ++= implicitlyIssuedStartEvents.implicitlyIssuedEventsMap
+    buffer ++= previousResourceEvents.latestEventsMap
+    
+    buffer.valuesIterator.toList
+  }
 }
 
 object UserStateWorker {

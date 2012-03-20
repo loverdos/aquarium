@@ -169,10 +169,10 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    */
   def supportsImplicitEvents: Boolean
 
-  def mustConstructImplicitEndEventFor(eventValue: Double): Boolean
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent): Boolean
 
   @throws(classOf[Exception])
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent): ResourceEvent
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, newOccurredMillis: Long): ResourceEvent
 
   @throws(classOf[Exception])
   def constructImplicitStartEventFor(resourceEvent: ResourceEvent): ResourceEvent
@@ -237,10 +237,6 @@ object DSLCostPolicy {
 case object OnceCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.once, Set(DSLCostPolicyNameVar, DSLCurrentValueVar)) {
 
-  def supportsImplicitEvents = false
-
-  def mustConstructImplicitEndEventFor(eventValue: Double) = false
-
   def isBillableFirstEventBasedOnValue(eventValue: Double) = true
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double) = oldAmount
@@ -251,7 +247,11 @@ case object OnceCostPolicy
 
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double) = Just(newEventValue)
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+  def supportsImplicitEvents = false
+
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = false
+
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, occurredMillis: Long) = {
     throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
 
@@ -292,13 +292,25 @@ case object ContinuousCostPolicy
   }
 
   def supportsImplicitEvents = {
-    false
+    true
   }
 
-  def mustConstructImplicitEndEventFor(eventValue: Double) = false
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+    true
+  }
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
-    throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, newOccurredMillis: Long) = {
+    assert(supportsImplicitEvents && mustConstructImplicitEndEventFor(resourceEvent))
+
+    val details = resourceEvent.details
+    val newDetails = ResourceEvent.setAquariumSyntheticAndImplicitEnd(details)
+    val newValue   = resourceEvent.value
+
+    resourceEvent.copy(
+      occurredMillis = newOccurredMillis,
+      details = newDetails,
+      value = newValue
+    )
   }
 
   def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
@@ -374,7 +386,7 @@ case object OnOffCostPolicy
 
   override def isBillableEventBasedOnValue(eventValue: Double) = {
     // ON events do not contribute, only OFF ones.
-    OnOffCostPolicyValues.isOFF(eventValue)
+    OnOffCostPolicyValues.isOFFValue(eventValue)
   }
 
   def isBillableFirstEventBasedOnValue(eventValue: Double) = {
@@ -386,14 +398,25 @@ case object OnOffCostPolicy
   }
 
 
-  def mustConstructImplicitEndEventFor(eventValue: Double) = {
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
     // If we have ON events with no OFF companions at the end of the billing period,
     // then we must generate implicit OFF events.
-    OnOffCostPolicyValues.isON(eventValue)
+    OnOffCostPolicyValues.isONValue(resourceEvent.value)
   }
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
-    throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, newOccurredMillis: Long) = {
+    assert(supportsImplicitEvents && mustConstructImplicitEndEventFor(resourceEvent))
+    assert(OnOffCostPolicyValues.isONValue(resourceEvent.value))
+
+    val details = resourceEvent.details
+    val newDetails = ResourceEvent.setAquariumSyntheticAndImplicitEnd(details)
+    val newValue   = OnOffCostPolicyValues.OFF
+
+    resourceEvent.copy(
+      occurredMillis = newOccurredMillis,
+      details = newDetails,
+      value = newValue
+    )
   }
 
   def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
@@ -402,11 +425,11 @@ case object OnOffCostPolicy
 }
 
 object OnOffCostPolicyValues {
-  final val ON : Double = 1.0
-  final val OFF: Double = 0.0
+  final val ON  = 1.0
+  final val OFF = 0.0
 
-  def isON (value: Double) = value == ON
-  def isOFF(value: Double) = value == OFF
+  def isONValue (value: Double) = value == ON
+  def isOFFValue(value: Double) = value == OFF
 }
 
 /**
@@ -445,9 +468,11 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
     false
   }
 
-  def mustConstructImplicitEndEventFor(eventValue: Double) = false
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+    false
+  }
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, occurredMillis: Long) = {
     throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
 

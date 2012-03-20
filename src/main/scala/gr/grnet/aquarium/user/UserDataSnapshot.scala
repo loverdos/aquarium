@@ -270,11 +270,11 @@ case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEvent],
 /**
  * This is the mutable cousin of [[gr.grnet.aquarium.user.LatestResourceEventsSnapshot]].
  *
- * @param resourceEventsMap
+ * @param latestEventsMap
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceTypeMap) {
+case class LatestResourceEventsWorker(latestEventsMap: FullMutableResourceTypeMap) {
 
   /**
    * The gateway to immutable state.
@@ -283,24 +283,24 @@ case class LatestResourceEventsWorker(resourceEventsMap: FullMutableResourceType
    * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsSnapshot]].
    */
   def toImmutableSnapshot(snapshotTime: Long) =
-    LatestResourceEventsSnapshot(resourceEventsMap.valuesIterator.toList, snapshotTime)
+    LatestResourceEventsSnapshot(latestEventsMap.valuesIterator.toList, snapshotTime)
 
   def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
-    resourceEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
+    latestEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
   }
   
   def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
-    findFromMapAsMaybe(resourceEventsMap, (resource, instanceId))
+    findFromMapAsMaybe(latestEventsMap, (resource, instanceId))
   }
 
   def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
-    findAndRemoveFromMap(resourceEventsMap, (resource, instanceId))
+    findAndRemoveFromMap(latestEventsMap, (resource, instanceId))
   }
 
-  def size = resourceEventsMap.size
+  def size = latestEventsMap.size
 
   def foreach[U](f: ResourceEvent => U): Unit = {
-    resourceEventsMap.valuesIterator.foreach(f)
+    latestEventsMap.valuesIterator.foreach(f)
   }
 }
 
@@ -339,8 +339,12 @@ case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[R
  */
 case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullMutableResourceTypeMap) {
 
+  def toList: scala.List[ResourceEvent] = {
+    implicitlyIssuedEventsMap.valuesIterator.toList
+  }
+
   def toImmutableSnapshot(snapshotTime: Long) =
-    ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEventsMap.valuesIterator.toList, snapshotTime)
+    ImplicitlyIssuedResourceEventsSnapshot(toList, snapshotTime)
 
   def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
     findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))

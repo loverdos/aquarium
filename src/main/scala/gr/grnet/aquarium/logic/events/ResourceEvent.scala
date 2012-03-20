@@ -41,6 +41,7 @@ import gr.grnet.aquarium.logic.accounting.dsl._
 import com.ckkloverdos.maybe.{MaybeOption, Maybe}
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import collection.SeqLike
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -233,7 +234,7 @@ object ResourceEvent {
   type ResourceType = String
   type ResourceIdType = String
   type FullResourceType = (ResourceType, ResourceIdType)
-//  type FullResourceTypeMap = Map[FullResourceType, ResourceEvent]
+  type FullResourceTypeMap = Map[FullResourceType, ResourceEvent]
   type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]
 
   def fromJson(json: String): ResourceEvent = {
@@ -252,6 +253,20 @@ object ResourceEvent {
     fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
   }
 
+  def setAquariumSynthetic(map: ResourceEvent.Details): ResourceEvent.Details = {
+    map.updated(JsonNames.details_aquarium_is_synthetic, "true")
+  }
+
+  def setAquariumSyntheticAndImplicitEnd(map: ResourceEvent.Details): ResourceEvent.Details = {
+    map.
+      updated(JsonNames.details_aquarium_is_synthetic, "true").
+      updated(JsonNames.details_aquarium_is_implicit_end, "true")
+  }
+  
+  def sortByOccurred[S <: Seq[ResourceEvent]](events: S with SeqLike[ResourceEvent, S]): S = {
+    events.sortWith(_.occurredMillis <= _.occurredMillis)
+  }
+
   object JsonNames {
     final val _id = "_id"
     final val id = "id"
@@ -264,5 +279,12 @@ object ResourceEvent {
     final val eventVersion = "eventVersion"
     final val value = "value"
     final val details = "details"
+
+    // This is set in the details map to indicate a synthetic resource event (ie not a real one).
+    // Examples of synthetic resource events are those that are implicitly generated at the
+    // end of the billing period (e.g. `OFF`s).
+    final val details_aquarium_is_synthetic    = "__aquarium_is_synthetic__"
+
+    final val details_aquarium_is_implicit_end = "__aquarium_is_implicit_end__"
   }
 }
