@@ -159,22 +159,23 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   def isBillableFirstEventBasedOnValue(eventValue: Double): Boolean
   
   /**
-   * This models in a generic way the fact that On events of the OnOff cost policy must be implicitly terminated
-   * at the end of the billing period.
+   * There are resources (cost policies) for which implicit events must be generated at the end of the billing period
+   * and also at the beginning of the next one. For these cases, this method must return `true`.
+   *
+   * The motivating example comes from the [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]] for which we
+   * must implicitly assume `OFF` events at the end of the billing period and `ON` events at the beginning of the next
+   * one.
    *
    */
-  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double): Boolean
+  def supportsImplicitEvents: Boolean
 
-  /**
-   * Must be called only when
-   * [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]].`needsImplicitCompanionAtEndOfBillingPeriod(resourceEvent.value)`
-   * returns `true`
-   *
-   * Otherwise the result is undefined.
-   *
-   * @param resourceEvent
-   */
-  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent): ResourceEvent
+  def mustConstructImplicitEndEventFor(eventValue: Double): Boolean
+
+  @throws(classOf[Exception])
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent): ResourceEvent
+
+  @throws(classOf[Exception])
+  def constructImplicitStartEventFor(resourceEvent: ResourceEvent): ResourceEvent
 }
 
 object DSLCostPolicyNames {
@@ -236,7 +237,9 @@ object DSLCostPolicy {
 case object OnceCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.once, Set(DSLCostPolicyNameVar, DSLCurrentValueVar)) {
 
-  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = false
+  def supportsImplicitEvents = false
+
+  def mustConstructImplicitEndEventFor(eventValue: Double) = false
 
   def isBillableFirstEventBasedOnValue(eventValue: Double) = true
 
@@ -248,7 +251,13 @@ case object OnceCostPolicy
 
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double) = Just(newEventValue)
 
-  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+    throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
+  }
+
+  def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
+    throw new Exception("constructImplicitStartEventFor() Not compliant with %s".format(this))
+  }
 }
 
 /**
@@ -282,11 +291,19 @@ case object ContinuousCostPolicy
     false
   }
 
-  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = {
+  def supportsImplicitEvents = {
     false
   }
 
-  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
+  def mustConstructImplicitEndEventFor(eventValue: Double) = false
+
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+    throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
+  }
+
+  def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
+    throw new Exception("constructImplicitStartEventFor() Not compliant with %s".format(this))
+  }
 }
 
 /**
@@ -364,13 +381,24 @@ case object OnOffCostPolicy
     false
   }
 
-  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = {
+  def supportsImplicitEvents = {
+    true
+  }
+
+
+  def mustConstructImplicitEndEventFor(eventValue: Double) = {
     // If we have ON events with no OFF companions at the end of the billing period,
     // then we must generate implicit OFF events.
     OnOffCostPolicyValues.isON(eventValue)
   }
 
-  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+    throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
+  }
+
+  def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
+    throw new Exception("constructImplicitStartEventFor() Not compliant with %s".format(this))
+  }
 }
 
 object OnOffCostPolicyValues {
@@ -413,11 +441,19 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
     false // nope, we definitely need a  previous one.
   }
 
-  def needsImplicitCompanionAtEndOfBillingPeriod(eventValue: Double) = {
+  def supportsImplicitEvents = {
     false
   }
 
-  def constructImplicitCompanionAtEndOfBillingPeriod(resourceEvent: ResourceEvent) = null
+  def mustConstructImplicitEndEventFor(eventValue: Double) = false
+
+  def constructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+    throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
+  }
+
+  def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
+    throw new Exception("constructImplicitStartEventFor() Not compliant with %s".format(this))
+  }
 }
 
 /**
