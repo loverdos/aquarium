@@ -36,8 +36,6 @@
 package gr.grnet.aquarium.user.actor
 
 import gr.grnet.aquarium.actor.ActorMessage
-import gr.grnet.aquarium.logic.accounting.dsl.DSLResource
-import java.util.Date
 
 /**
  * Messages handled by a UserActor.

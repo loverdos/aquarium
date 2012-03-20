@@ -57,7 +57,6 @@ import gr.grnet.aquarium.processor.actor._
 
 class UserActorManager extends AquariumActor with Loggable {
   // TODO: Get the constructor values from configuration
-  private[this] val userActorLRU = new UserActorsLRU(1000, 800)
   @volatile
   private[this] var _actorProvider: ActorProvider = _
   
@@ -67,19 +66,21 @@ class UserActorManager extends AquariumActor with Loggable {
     // create a fresh instance
     val userActor = _actorProvider.actorForRole(UserActorRole)
     userActor ! UserActorInitWithUserId(userId)
+    UserActorSupervisor.supervisor.link(userActor)
+    logger.info("New actor for userId: %s".format(userId))
     userActor
   }
   
   private[this] def _forwardToUserActor(userId: String, m: DispatcherMessage): Unit = {
     logger.debug("Received %s".format(m))
-    userActorLRU.get(userId) match {
+    UserActorCache.get(userId) match {
       case Some(userActor) ⇒
         logger.debug("Found user actor and forwarding request %s".format(m))
         userActor forward m
       case None ⇒
         logger.debug("Not found user actor for request %s. Launching new actor".format(m))
         val userActor = _launchUserActor(userId)
-        userActorLRU.put(userId, userActor)
+        UserActorCache.put(userId, userActor)
         logger.debug("Launched new user actor and forwarding request %s".format(m))
         userActor forward m
     }
@@ -108,6 +109,6 @@ class UserActorManager extends AquariumActor with Loggable {
 
   override def postStop = {
     logger.debug("Shutting down and stopping all user actors")
-    userActorLRU.shutdownAll()
+    UserActorCache.stop
   }
 }

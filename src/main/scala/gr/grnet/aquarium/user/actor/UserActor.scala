@@ -39,13 +39,12 @@ import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.processor.actor._
 import gr.grnet.aquarium.user._
-import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry, ResourceEvent}
+import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry}
 import java.util.Date
-import gr.grnet.aquarium.util.{DateUtils, Loggable}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResource, DSLComplexResource}
+import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.date.TimeHelpers
-import com.ckkloverdos.maybe.{Maybe, Failed, NoVal, Just}
-import gr.grnet.aquarium.logic.accounting.{RoleAgreements, AccountingException, Policy, Accounting}
+import com.ckkloverdos.maybe.{Failed, NoVal, Just}
+import gr.grnet.aquarium.logic.accounting.RoleAgreements
 
 
 /**

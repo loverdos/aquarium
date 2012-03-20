@@ -132,4 +132,6 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   val lib_joda_conv = "org.joda" % "joda-convert" % "1.1" withSources()
 
   val lib_test = "com.novocode" % "junit-interface" % "0.7" % "test->default"
+
+  val lib_guava = "com.google.guava" % "guava" % "11.0.2" withSources()
 }

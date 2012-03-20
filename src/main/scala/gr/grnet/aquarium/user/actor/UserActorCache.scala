@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 GRNET S.A. All rights reserved.
+ * Copyright 2012 GRNET S.A. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or
  * without modification, are permitted provided that the following
@@ -34,70 +34,48 @@
  */
 package gr.grnet.aquarium.user.actor
 
-import org.apache.solr.util.ConcurrentLRUCache
 import akka.actor.ActorRef
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import collection.JavaConversions._
+import com.google.common.cache._
 
 /**
- * This class holds an LRU cache for the user actors.
+ * An actor cache implementation using Guava.
  *
- * The underlying implementation is borrowed from the Apache lucene+solr project(s).
- *
- * The provided collections-like API is neither Java- nor Scala-oriented.
- * 
- * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
+object UserActorCache extends Lifecycle {
 
-class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Lifecycle {
-  private[this] val _cache = new ConcurrentLRUCache[String, ActorRef](
-    upperWaterMark,
-    lowerWatermark,
-    ((upperWaterMark + lowerWatermark).toLong / 2).toInt,
-    (3L * upperWaterMark / 4).toInt,
-    true,
-    false,
-    EvictionListener)
+  private lazy val cache : Cache[String, ActorRef] =
+    CacheBuilder.newBuilder()
+      .maximumSize(1000)
+      .initialCapacity(100)
+      .removalListener(EvictionListener)
+      .build()
 
-  def put(userId: String, userActor: ActorRef): Unit = {
-    _cache.put(userId, userActor)
-  }
+  private[this] object EvictionListener
+    extends RemovalListener[String, ActorRef] with Loggable {
 
-  def get(userId: String): Option[ActorRef] = {
-    _cache.get(userId) match {
-      case null     ⇒ None
-      case actorRef ⇒ Some(actorRef)
-    }
-  }
+    def onRemoval(p1: RemovalNotification[String, ActorRef]) {
+      val userId = p1.getKey
+      val userActor = p1.getValue
 
-  def shutdownAll() = {
-    val accessed = mapAsScalaMap(_cache.getLatestAccessedItems(_cache.size()))
-
-    //Send the poison pill and make sure that all futures have been returned
-    accessed.keysIterator.map {
-      x =>
-        UserActorSupervisor.supervisor.unlink(_cache.get(x))
-        _cache.get(x).stop()
-    }
-  }
-
-  def size: Int   = _cache.size()
-  def clear: Unit = _cache.clear()
-
-  def start() = {}
-
-  def stop() = {
-    _cache.destroy()
-  }
-  
-  private[this] object EvictionListener extends ConcurrentLRUCache.EvictionListener[String, ActorRef] with Loggable {
-    def evictedEntry(userId: String, userActor: ActorRef): Unit = {
       logger.debug("Parking UserActor for userId = %s".format(userId))
       UserActorSupervisor.supervisor.unlink(userActor)
       // Check this is received after any currently servicing business logic message.
       userActor.stop()
-      // Hopefully no need to further track these actors as they will now cause their own death.
     }
   }
-}
 
+  def start() {}
+
+  def stop() = cache.invalidateAll; cache.cleanUp
+
+  def put(userId: String, userActor: ActorRef): Unit =
+    cache.put(userId, userActor)
+
+  def get(userId: String): Option[ActorRef] =
+    cache.getIfPresent(userId) match {
+      case null     ⇒ None
+      case actorRef ⇒ Some(actorRef)
+    }
+}
