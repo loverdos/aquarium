@@ -38,7 +38,6 @@ package gr.grnet.aquarium.user
 
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable, justForSure, failedForSure}
-import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLResourcesMap, DSLPolicy}
@@ -46,6 +45,7 @@ import gr.grnet.aquarium.store.{RecordID, StoreProvider, PolicyStore, UserStateS
 import gr.grnet.aquarium.logic.accounting.{Chargeslot, Accounting}
 import scala.collection.mutable
 import gr.grnet.aquarium.logic.events.ResourceEvent._
+import gr.grnet.aquarium.logic.accounting.algorithm.{CostPolicyAlgorithmCompiler, SimpleCostPolicyAlgorithmCompiler}
 
 /**
  *
@@ -100,6 +100,7 @@ class UserStateComputations extends Loggable {
                                        currentUserState: UserState,
                                        defaultResourcesMap: DSLResourcesMap,
                                        accounting: Accounting,
+                                       algorithmCompiler: CostPolicyAlgorithmCompiler,
                                        calculationReason: UserStateChangeReason,
                                        contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = {
 
@@ -117,6 +118,7 @@ class UserStateComputations extends Loggable {
         currentUserState,
         defaultResourcesMap,
         accounting,
+        algorithmCompiler,
         calculationReason,
         Just(clog))
     }
@@ -225,6 +227,7 @@ class UserStateComputations extends Loggable {
                            stateChangeReason: UserStateChangeReason,
                            billingMonthInfo: BillingMonthInfo,
                            walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
+                           algorithmCompiler: CostPolicyAlgorithmCompiler,
                            clogM: Maybe[ContextualLogger] = NoVal): UserState = {
 
     val clog = ContextualLogger.fromOther(clogM, logger, "walletEntriesForResourceEvent(%s)", currentResourceEvent.id)
@@ -293,7 +296,7 @@ class UserStateComputations extends Loggable {
               dslResource,
               resourcesMap,
               alltimeAgreements,
-              SimpleCostPolicyAlgorithmCompiler,
+              algorithmCompiler,
               policyStore,
               Just(clog)
             )
@@ -373,6 +376,7 @@ class UserStateComputations extends Loggable {
                             stateChangeReason: UserStateChangeReason,
                             billingMonthInfo: BillingMonthInfo,
                             walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
+                            algorithmCompiler: CostPolicyAlgorithmCompiler,
                             clogM: Maybe[ContextualLogger] = NoVal): UserState = {
 
     var _workingUserState = startingUserState
@@ -387,6 +391,7 @@ class UserStateComputations extends Loggable {
         stateChangeReason,
         billingMonthInfo,
         walletEntriesBuffer,
+        algorithmCompiler,
         clogM
       )
     }
@@ -401,6 +406,7 @@ class UserStateComputations extends Loggable {
                            currentUserState: UserState,
                            defaultResourcesMap: DSLResourcesMap,
                            accounting: Accounting,
+                           algorithmCompiler: CostPolicyAlgorithmCompiler,
                            calculationReason: UserStateChangeReason = NoSpecificChangeReason,
                            contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = Maybe {
 
@@ -420,6 +426,7 @@ class UserStateComputations extends Loggable {
       currentUserState,
       defaultResourcesMap,
       accounting,
+      algorithmCompiler,
       calculationReason.forPreviousBillingMonth,
       clogJ
     )
@@ -467,6 +474,7 @@ class UserStateComputations extends Loggable {
       calculationReason,
       billingMonthInfo,
       newWalletEntries,
+      algorithmCompiler,
       clogJ
     )
 
@@ -498,6 +506,7 @@ class UserStateComputations extends Loggable {
       calculationReason,
       billingMonthInfo,
       newWalletEntries,
+      algorithmCompiler,
       clogJ
     )
 
