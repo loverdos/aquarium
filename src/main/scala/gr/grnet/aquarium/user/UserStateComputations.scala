@@ -326,7 +326,8 @@ class UserStateComputations extends Loggable {
                     else
                       List(currentResourceEvent),
                     fullChargeslots,
-                    dslResource
+                    dslResource,
+                    currentResourceEvent.isSynthetic
                   )
                   clog.debug("New %s", newWalletEntry)
 
@@ -456,6 +457,7 @@ class UserStateComputations extends Loggable {
 
     val newWalletEntries = scala.collection.mutable.ListBuffer[NewWalletEntry]()
 
+    clog.debug("Process all occurred events")
     _workingUserState = processResourceEvents(
       allResourceEventsForMonth,
       _workingUserState,
@@ -481,6 +483,18 @@ class UserStateComputations extends Loggable {
         }
       }
     }
+
+    clog.debug("Process implicitly issued events")
+    _workingUserState = processResourceEvents(
+      allEndEventsBuffer.toList,
+      _workingUserState,
+      userStateWorker,
+      policyStore,
+      calculationReason,
+      billingMonthInfo,
+      newWalletEntries,
+      clogJ
+    )
 
     val lastUpdateTime = TimeHelpers.nowMillis
 

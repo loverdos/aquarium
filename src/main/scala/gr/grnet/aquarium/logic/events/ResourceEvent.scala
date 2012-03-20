@@ -225,6 +225,16 @@ case class ResourceEvent(
       rc.costPolicy
     }
   }
+
+  /**
+   * `Synthetic` means that Aquarium has manufactured this resource event for some purpose. For example, the implicitly
+   * issued resource events at the end a a billing period.
+   *
+   * @return `true` iff this resource event is synthetic.
+   */
+  def isSynthetic = {
+    details contains ResourceEvent.JsonNames.details_aquarium_is_synthetic
+  }
 }
 
 object ResourceEvent {
