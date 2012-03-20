@@ -464,8 +464,6 @@ class UserStateComputations extends Loggable {
 
     val newWalletEntries = scala.collection.mutable.ListBuffer[NewWalletEntry]()
 
-    clog.debug("")
-    clog.debug("Process all occurred events")
     _workingUserState = processResourceEvents(
       allResourceEventsForMonth,
       _workingUserState,
@@ -478,14 +476,16 @@ class UserStateComputations extends Loggable {
       clogJ
     )
 
-    clog.debug("")
-    clog.debug("Process implicitly issued events")
     // Second, for the remaining events which must contribute an implicit OFF, we collect those OFFs
     // ... in order to generate an implicit ON later
     val (specialEvents, theirImplicitEnds) = userStateWorker.
       findAndRemoveGeneratorsOfImplicitEndEvents(billingMonthEndMillis)
-    clog.debugSeq("specialEvents", specialEvents, 0)
-    clog.debugSeq("theirImplicitEnds", theirImplicitEnds, 0)
+    if(specialEvents.lengthCompare(1) >= 0 || theirImplicitEnds.lengthCompare(1) >= 0) {
+      clog.debug("")
+      clog.debug("Process implicitly issued events")
+      clog.debugSeq("specialEvents", specialEvents, 0)
+      clog.debugSeq("theirImplicitEnds", theirImplicitEnds, 0)
+    }
 
     // Now, the previous and implicitly started must be our base for the following computation, so we create an
     // appropriate worker
@@ -509,8 +509,6 @@ class UserStateComputations extends Loggable {
       algorithmCompiler,
       clogJ
     )
-
-    clog.debug("")
 
     val lastUpdateTime = TimeHelpers.nowMillis
 

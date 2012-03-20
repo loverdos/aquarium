@@ -1,16 +1,16 @@
 package gr.grnet.aquarium.user
 
-import org.junit.Test
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
-import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
+import gr.grnet.aquarium.util.{Loggable, ContextualLogger, justForSure}
 import gr.grnet.aquarium.simulation._
 import gr.grnet.aquarium.simulation.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
-import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
+import org.junit.{Ignore, Test}
+import gr.grnet.aquarium.logic.accounting.algorithm.{SimpleExecutableCostPolicyAlgorithm, SimpleCostPolicyAlgorithmCompiler}
 
 
 /**
@@ -76,9 +76,12 @@ aquariumpolicy:
       creditplan: default
   """
 
+  val Computations = new UserStateComputations
+
   val DefaultPolicy = new DSL{} parse PolicyYAML
   val DefaultAccounting = new Accounting{}
-  val DefaultCompiler = SimpleCostPolicyAlgorithmCompiler
+  val DefaultCompiler  = SimpleCostPolicyAlgorithmCompiler
+  val DefaultAlgorithm = justForSure(DefaultCompiler.compile("")).get // hardcoded since we know exactly what this is
 
   // For this to work, the definitions must match those in the YAML above.
   // Those StdXXXResourceSim are just for debugging convenience anyway, so they must match by design.
@@ -93,22 +96,36 @@ aquariumpolicy:
 
   val mc = Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
   Policy.withConfigurator(mc)
-  val DefaultStoreProvider = mc.storeProvider
+  val StoreProvider = mc.storeProvider
+  val ResourceEventStore = StoreProvider.resourceEventStore
 
   val StartOfBillingYearDateCalc = new MutableDateCalc(2012,  1, 1)
   val UserCreationDate           = new MutableDateCalc(2011, 11, 1).toDate
+
+  val BillingMonthInfoJan = BillingMonthInfo.fromDateCalc(new MutableDateCalc(2012,  1, 1))
+  val BillingMonthInfoFeb = BillingMonthInfo.fromDateCalc(new MutableDateCalc(2012,  2, 1))
+  val BillingMonthInfoMar = BillingMonthInfo.fromDateCalc(new MutableDateCalc(2012,  3, 1))
 
   // Store the default policy
   val policyDateCalc        = StartOfBillingYearDateCalc.copy
   val policyOccurredMillis  = policyDateCalc.toMillis
   val policyValidFromMillis = policyDateCalc.copy.goPreviousYear.toMillis
   val policyValidToMillis   = policyDateCalc.copy.goNextYear.toMillis
-  DefaultStoreProvider.policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry(policyOccurredMillis, policyValidFromMillis, policyValidToMillis))
+  StoreProvider.policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry(policyOccurredMillis, policyValidFromMillis, policyValidToMillis))
 
-  val Aquarium = AquariumSim(List(VMTimeResource, DiskspaceResource, BandwidthResource), DefaultStoreProvider.resourceEventStore)
+  val Aquarium = AquariumSim(List(VMTimeResource, DiskspaceResource, BandwidthResource), StoreProvider.resourceEventStore)
   val DefaultResourcesMap = Aquarium.resourcesMap
 
   val UserCKKL  = Aquarium.newUser("CKKL", UserCreationDate)
+
+  val InitialUserState = Computations.createInitialUserState(
+    userId = UserCKKL.userId,
+    userCreationMillis = UserCreationDate.getTime,
+    isActive = true,
+    credits = 0.0,
+    roleNames = List("user"),
+    agreementName = DSLAgreement.DefaultAgreementName
+  )
 
   // By convention
   // - synnefo is for VMTime and Bandwidth
@@ -117,8 +134,7 @@ aquariumpolicy:
   val BandwidthInstance = BandwidthResource.newInstance("3G.1",   UserCKKL, Synnefo)
   val DiskInstance      = DiskspaceResource.newInstance("DISK.1", UserCKKL, Pithos)
 
-  val Computations = new UserStateComputations
-
+  private[this]
   def showUserState(clog: ContextualLogger, userStateM: Maybe[UserState]) {
     userStateM match {
       case Just(userState) ⇒
@@ -147,18 +163,60 @@ aquariumpolicy:
     }
   }
 
+  private[this]
+  def showResourceEvents(clog: ContextualLogger): Unit = {
+    clog.debug("")
+    clog.begin("Events by OccurredMillis")
+    clog.withIndent {
+      for(event <- UserCKKL.myResourceEventsByOccurredDate) {
+        clog.debug(event.toDebugString())
+      }
+    }
+    clog.end("Events by OccurredMillis")
+    clog.debug("")
+  }
+
+  private[this]
+  def doFullMonthlyBilling(clog: ContextualLogger, billingMonthInfo: BillingMonthInfo) = {
+    Computations.doFullMonthlyBilling(
+      UserCKKL.userId,
+      billingMonthInfo,
+      StoreProvider,
+      InitialUserState,
+      DefaultResourcesMap,
+      DefaultAccounting,
+      DefaultCompiler,
+      MonthlyBillingCalculation(billingMonthInfo),
+      Just(clog)
+    )
+  }
+
+  @Test
+  def testFullOnOff: Unit = {
+    val clog = ContextualLogger.fromOther(NoVal, logger, "testFullOnOff()")
+
+    ResourceEventStore.clearResourceEvents()
+    VMTimeInstance.newONOFF(
+      new MutableDateCalc(2012, 01, 10).goPlusHours(13).goPlusMinutes(30).toDate, // 2012-01-10 13:30:00.000
+      10
+    )
+
+    showResourceEvents(clog)
+    val userStateM = doFullMonthlyBilling(clog, BillingMonthInfoJan)
+    showUserState(clog, userStateM)
+  }
+
+  @Ignore
   @Test
   def testOne: Unit = {
     val clog = ContextualLogger.fromOther(NoVal, logger, "testOne()")
 
-
-
     // Let's create our dates of interest
-    val vmStartDateCalc = StartOfBillingYearDateCalc.copy.goPlusDays(1).goPlusHours(1)
-    val vmStartDate = vmStartDateCalc.toDate
+    val VMStartDateCalc = StartOfBillingYearDateCalc.copy.goPlusDays(1).goPlusHours(1)
+    val VMStartDate = VMStartDateCalc.toDate
 
     // Within January, create one VM ON-OFF ...
-    VMTimeInstance.newONOFF(vmStartDate, 9)
+    VMTimeInstance.newONOFF(VMStartDate, 9)
 
     val diskConsumptionDateCalc = StartOfBillingYearDateCalc.copy.goPlusHours(3)
     val diskConsumptionDate1 = diskConsumptionDateCalc.toDate
@@ -183,42 +241,13 @@ aquariumpolicy:
         goPlusMillis(7).toDate,
       777)
 
-    clog.debug("")
-    clog.begin("Events by OccurredMillis")
-    clog.withIndent {
-      for(event <- UserCKKL.myResourceEventsByOccurredDate) {
-        clog.debug(event.toDebugString())
-      }
-    }
-    clog.end("Events by OccurredMillis")
-    clog.debug("")
-
-    val billingMonthInfo = BillingMonthInfo.fromDateCalc(StartOfBillingYearDateCalc)
-
-    val initialUserState = Computations.createInitialUserState(
-      userId = UserCKKL.userId,
-      userCreationMillis = UserCreationDate.getTime,
-      isActive = true,
-      credits = 0.0,
-      roleNames = List("user"),
-      agreementName = DSLAgreement.DefaultAgreementName
-    )
+    showResourceEvents(clog)
 
     // Policy: from 2012-01-01 to Infinity
 
     clog.debugMap("DefaultResourcesMap", DefaultResourcesMap.map, 1)
 
-    val userStateM = Computations.doFullMonthlyBilling(
-      UserCKKL.userId,
-      billingMonthInfo,
-      DefaultStoreProvider,
-      initialUserState,
-      DefaultResourcesMap,
-      DefaultAccounting,
-      DefaultCompiler,
-      MonthlyBillingCalculation(billingMonthInfo),
-      Just(clog)
-    )
+    val userStateM = doFullMonthlyBilling(clog, BillingMonthInfoJan)
 
     showUserState(clog, userStateM)
   }
