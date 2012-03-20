@@ -304,6 +304,17 @@ case class LatestResourceEventsWorker(latestEventsMap: FullMutableResourceTypeMa
   }
 }
 
+object LatestResourceEventsWorker {
+  final val Empty = LatestResourceEventsWorker(scala.collection.mutable.Map())
+
+  /**
+   * Helper factory to construct a worker from a list of events.
+   */
+  def fromList(latestEventsList: List[ResourceEvent]): LatestResourceEventsWorker = {
+    LatestResourceEventsSnapshot(latestEventsList, 0L).toMutableWorker
+  }
+}
+
 /**
  * Keeps the implicit OFF events when a billing period ends.
  * This is normally recorded in the [[gr.grnet.aquarium.user.UserState]].
@@ -355,6 +366,10 @@ case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullM
   def foreach[U](f: ResourceEvent => U): Unit = {
     implicitlyIssuedEventsMap.valuesIterator.foreach(f)
   }
+}
+
+object ImplicitlyIssuedResourceEventsWorker {
+  final val Empty = ImplicitlyIssuedResourceEventsWorker(scala.collection.mutable.Map())
 }
 
 /**

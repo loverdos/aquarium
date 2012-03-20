@@ -75,7 +75,8 @@ case class NewWalletEntry(userId: String,
   def chargslotCount = chargeslots.length
   def isOutOfSync = currentResourceEvent.isOutOfSyncForBillingMonth(yearOfBillingMonth, billingMonth)
 
-  def toDebugString = "%s(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(
+  def toDebugString = "%s%s(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(
+    if(isSynthetic) "*" else "",
     gr.grnet.aquarium.util.shortClassNameOf(this),
     userId,
     referenceTimeslot,
@@ -87,8 +88,7 @@ case class NewWalletEntry(userId: String,
     billingMonth,
     resourceEvents,
     chargeslots,
-    resourceDef,
-    if(isSynthetic) "SYNTHETIC" else ""
+    resourceDef
   )
 }
 

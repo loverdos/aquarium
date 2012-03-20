@@ -130,7 +130,8 @@ case class ResourceEvent(
     val instanceInfo = if(useOnlyInstanceId) instanceId else "%s::%s".format(resource, instanceId)
     val occurredFormatted = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSS
     if(occurredMillis == receivedMillis) {
-      "EVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
+      "%sEVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
+        if(isSynthetic) "*" else "",
         id,
         occurredFormatted,
         value,
@@ -140,7 +141,8 @@ case class ResourceEvent(
         clientId
       )
     } else {
-      "EVENT(%s, [%s], [%s], %s, %s, %s, %s, %s)".format(
+      "%sEVENT(%s, [%s], [%s], %s, %s, %s, %s, %s)".format(
+        if(isSynthetic) "*" else "",
         id,
         occurredFormatted,
         new MutableDateCalc(receivedMillis),

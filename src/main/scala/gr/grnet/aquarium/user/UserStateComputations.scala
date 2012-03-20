@@ -44,7 +44,7 @@ import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLResourcesMap, DSLPolicy}
 import gr.grnet.aquarium.store.{RecordID, StoreProvider, PolicyStore, UserStateStore, ResourceEventStore}
 import gr.grnet.aquarium.logic.accounting.{Chargeslot, Accounting}
-import collection.mutable.{Buffer, ListBuffer}
+import scala.collection.mutable
 import gr.grnet.aquarium.logic.events.ResourceEvent._
 
 /**
@@ -224,7 +224,7 @@ class UserStateComputations extends Loggable {
                            policyStore: PolicyStore,
                            stateChangeReason: UserStateChangeReason,
                            billingMonthInfo: BillingMonthInfo,
-                           walletEntriesBuffer: Buffer[NewWalletEntry],
+                           walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
                            clogM: Maybe[ContextualLogger] = NoVal): UserState = {
 
     val clog = ContextualLogger.fromOther(clogM, logger, "walletEntriesForResourceEvent(%s)", currentResourceEvent.id)
@@ -372,7 +372,7 @@ class UserStateComputations extends Loggable {
                             policyStore: PolicyStore,
                             stateChangeReason: UserStateChangeReason,
                             billingMonthInfo: BillingMonthInfo,
-                            walletEntriesBuffer: Buffer[NewWalletEntry],
+                            walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
                             clogM: Maybe[ContextualLogger] = NoVal): UserState = {
 
     var _workingUserState = startingUserState
@@ -457,6 +457,7 @@ class UserStateComputations extends Loggable {
 
     val newWalletEntries = scala.collection.mutable.ListBuffer[NewWalletEntry]()
 
+    clog.debug("")
     clog.debug("Process all occurred events")
     _workingUserState = processResourceEvents(
       allResourceEventsForMonth,
@@ -469,32 +470,38 @@ class UserStateComputations extends Loggable {
       clogJ
     )
 
-    // Second, for the remaining events which must contribute an implicit OFF, we collect and process
-    // those OFFs and generate an implicit ON
-    val allEndEventsBuffer = ListBuffer[ResourceEvent]()
-    for {
-      aPreviousEvent <- userStateWorker.allPreviousAndAllImplicitlyStarted
-      dslResource    <- defaultResourcesMap.findResource(aPreviousEvent.safeResource)
-      costPolicy     =  dslResource.costPolicy
-    } {
-      if(costPolicy.supportsImplicitEvents) {
-        if(costPolicy.mustConstructImplicitEndEventFor(aPreviousEvent)) {
-          allEndEventsBuffer append costPolicy.constructImplicitEndEventFor(aPreviousEvent, billingMonthEndMillis)
-        }
-      }
-    }
-
+    clog.debug("")
     clog.debug("Process implicitly issued events")
+    // Second, for the remaining events which must contribute an implicit OFF, we collect those OFFs
+    // ... in order to generate an implicit ON later
+    val (specialEvents, theirImplicitEnds) = userStateWorker.
+      findAndRemoveGeneratorsOfImplicitEndEvents(billingMonthEndMillis)
+    clog.debugSeq("specialEvents", specialEvents, 0)
+    clog.debugSeq("theirImplicitEnds", theirImplicitEnds, 0)
+
+    // Now, the previous and implicitly started must be our base for the following computation, so we create an
+    // appropriate worker
+    val specialUserStateWorker = UserStateWorker(
+      userStateWorker.userId,
+      LatestResourceEventsWorker.fromList(specialEvents),
+      ImplicitlyIssuedResourceEventsWorker.Empty,
+      IgnoredFirstResourceEventsWorker.Empty,
+      userStateWorker.accounting,
+      userStateWorker.resourcesMap
+    )
+
     _workingUserState = processResourceEvents(
-      allEndEventsBuffer.toList,
+      theirImplicitEnds,
       _workingUserState,
-      userStateWorker,
+      specialUserStateWorker,
       policyStore,
       calculationReason,
       billingMonthInfo,
       newWalletEntries,
       clogJ
     )
+
+    clog.debug("")
 
     val lastUpdateTime = TimeHelpers.nowMillis
 
@@ -603,13 +610,55 @@ case class UserStateWorker(userId: String,
     }
   }
 
-  def allPreviousAndAllImplicitlyStarted: List[ResourceEvent] = {
-    val buffer: FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]()
+//  private[this]
+//  def allPreviousAndAllImplicitlyStarted: List[ResourceEvent] = {
+//    val buffer: FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]()
+//
+//    buffer ++= implicitlyIssuedStartEvents.implicitlyIssuedEventsMap
+//    buffer ++= previousResourceEvents.latestEventsMap
+//
+//    buffer.valuesIterator.toList
+//  }
 
-    buffer ++= implicitlyIssuedStartEvents.implicitlyIssuedEventsMap
-    buffer ++= previousResourceEvents.latestEventsMap
+  /**
+   * Find those events from `implicitlyIssuedStartEvents` and `previousResourceEvents` that will generate implicit
+   * end events along with those implicitly issued events. Before returning, remove the events that generated the
+   * implicit ends from the internal state of this instance.
+   *
+   * @see [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
+   */
+  def findAndRemoveGeneratorsOfImplicitEndEvents(newOccuredMillis: Long
+                                                ): (List[ResourceEvent], List[ResourceEvent]) = {
+    val buffer = mutable.ListBuffer[(ResourceEvent, ResourceEvent)]()
+    val checkSet = mutable.Set[ResourceEvent]()
     
-    buffer.valuesIterator.toList
+    def doItFor(map: ResourceEvent.FullMutableResourceTypeMap): Unit = {
+      val resourceEvents = map.valuesIterator
+      for {
+        resourceEvent <- resourceEvents
+        dslResource   <- resourcesMap.findResource(resourceEvent.safeResource)
+        costPolicy    =  dslResource.costPolicy
+      } {
+        if(costPolicy.supportsImplicitEvents) {
+          if(costPolicy.mustConstructImplicitEndEventFor(resourceEvent)) {
+            val implicitEnd = costPolicy.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
+            
+            if(!checkSet.contains(resourceEvent)) {
+              checkSet.add(resourceEvent)
+              buffer append ((resourceEvent, implicitEnd))
+            }
+
+            // remove it anyway
+            map.remove((resourceEvent.safeResource, resourceEvent.safeInstanceId))
+          }
+        }
+      }
+    }
+
+    doItFor(previousResourceEvents.latestEventsMap)                // we give priority for previous
+    doItFor(implicitlyIssuedStartEvents.implicitlyIssuedEventsMap) // ... over implicitly issued...
+
+    (buffer.view.map(_._1).toList, buffer.view.map(_._2).toList)
   }
 }
 
