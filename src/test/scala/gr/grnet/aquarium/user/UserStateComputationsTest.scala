@@ -144,19 +144,20 @@ aquariumpolicy:
     val id = userState.id
     val parentId = userState.parentUserStateId
     val credits = userState.creditsSnapshot.creditAmount
-    val newWalletEntries = userState.newWalletEntries
+    val newWalletEntries = userState.newWalletEntries.map(_.toDebugString)
     val changeReasonCode = userState.lastChangeReasonCode
     val changeReason = userState.lastChangeReason
-    userState.implicitlyIssuedSnapshot
+    val implicitlyIssued = userState.implicitlyIssuedSnapshot.implicitlyIssuedEvents.map(_.toDebugString())
+    val latestResourceEvents = userState.latestResourceEventsSnapshot.resourceEvents.map(_.toDebugString())
 
-    clog.indent()
     clog.debug("_id = %s", id)
     clog.debug("parentId = %s", parentId)
     clog.debug("credits = %s", credits)
     clog.debug("changeReasonCode = %s", changeReasonCode)
     clog.debug("changeReason = %s", changeReason)
-    clog.debugSeq("newWalletEntries", newWalletEntries.map(_.toDebugString), 0)
-    clog.unindent()
+    clog.debugSeq("implicitlyIssued", implicitlyIssued, 0)
+    clog.debugSeq("latestResourceEvents", latestResourceEvents, 0)
+    clog.debugSeq("newWalletEntries", newWalletEntries, 0)
   }
 
   private[this]
@@ -214,9 +215,11 @@ aquariumpolicy:
   /**
    * Test a sequence of ON, OFF vmtime events.
    */
-  @Test @Ignore
-  def testFullOnOff_FullMonthBilling: Unit = {
+  @Ignore
+  @Test
+  def testFullOnOff: Unit = {
     val clog = ContextualLogger.fromOther(NoVal, logger, "testFullOnOff()")
+    clog.begin()
 
     ResourceEventStore.clearResourceEvents()
     val OnOffDurationHrs = 10
@@ -248,11 +251,15 @@ aquariumpolicy:
     showUserState(clog, userState)
 
     expectCredits(clog, credits, userState)
+
+    clog.end()
   }
 
+  @Ignore
   @Test
-  def testLonelyON_FullMonthBilling: Unit = {
+  def testLonelyON: Unit = {
     val clog = ContextualLogger.fromOther(NoVal, logger, "testLonelyON()")
+    clog.begin()
 
     ResourceEventStore.clearResourceEvents()
     
@@ -287,12 +294,48 @@ aquariumpolicy:
     showUserState(clog, userState)
 
     expectCredits(clog, credits, userState)
+
+    clog.end()
+  }
+
+//  @Ignore
+  @Test
+  def testOrphanOFF: Unit = {
+    val clog = ContextualLogger.fromOther(NoVal, logger, "testOrphanOFF()")
+    clog.begin()
+
+    ResourceEventStore.clearResourceEvents()
+
+    val JanStart = new MutableDateCalc(2012, 01, 01)
+    val JanEnd = JanStart.copy.goEndOfThisMonth
+    val JanStartDate = JanStart.toDate
+    val OnOffImplicitDurationMillis = JanEnd.toMillis - JanStart.toMillis
+    val OnOffImplicitDurationHrs = millis2hrs(OnOffImplicitDurationMillis)
+
+    VMTimeInstanceSim.newOFF(
+      JanStartDate
+    )
+
+    // This is an orphan event, so no credits will be charged
+    val credits = 0
+
+    showResourceEvents(clog)
+
+    val userStateM = doFullMonthlyBilling(clog, BillingMonthInfoJan)
+    val userState = justUserState(userStateM)
+
+    showUserState(clog, userState)
+
+    expectCredits(clog, credits, userState)
+
+    clog.end()
   }
 
   @Ignore
   @Test
   def testOne: Unit = {
     val clog = ContextualLogger.fromOther(NoVal, logger, "testOne()")
+    clog.begin()
 
     // Let's create our dates of interest
     val VMStartDateCalc = StartOfBillingYearDateCalc.copy.goPlusDays(1).goPlusHours(1)
@@ -333,5 +376,7 @@ aquariumpolicy:
     val userStateM = doFullMonthlyBilling(clog, BillingMonthInfoJan)
     val userState = justUserState(userStateM)
     showUserState(clog, userState)
+
+    clog.end()
   }
 }

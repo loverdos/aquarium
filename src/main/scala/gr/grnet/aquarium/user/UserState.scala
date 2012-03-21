@@ -141,7 +141,7 @@ case class UserState(
     outOfSyncWalletEntries: List[WalletEntry],
 
     /**
-     * The latest resource events per resource instance
+     * The latest (previous) resource events per resource instance.
      */
     latestResourceEventsSnapshot: LatestResourceEventsSnapshot,
 
