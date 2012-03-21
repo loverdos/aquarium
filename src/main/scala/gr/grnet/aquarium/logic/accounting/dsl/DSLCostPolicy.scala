@@ -68,8 +68,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    *
    * @return a map from [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]]s to respective values.
    */
-  def makeValueMap(costPolicyName: String,
-                   totalCredits: Double,
+  def makeValueMap(totalCredits: Double,
                    oldTotalAmount: Double,
                    newTotalAmount: Double,
                    timeDelta: Double,
@@ -79,7 +78,6 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
 
     DSLCostPolicy.makeValueMapFor(
       this,
-      costPolicyName,
       totalCredits,
       oldTotalAmount,
       newTotalAmount,
@@ -204,7 +202,6 @@ object DSLCostPolicy {
   }
 
   def makeValueMapFor(costPolicy: DSLCostPolicy,
-                      costPolicyName: String,
                       totalCredits: Double,
                       oldTotalAmount: Double,
                       newTotalAmount: Double,
@@ -215,7 +212,7 @@ object DSLCostPolicy {
     val vars = costPolicy.vars
     var map = Map[DSLCostPolicyVar, Any]()
 
-    if(vars contains DSLCostPolicyNameVar) map += DSLCostPolicyNameVar -> costPolicyName
+    if(vars contains DSLCostPolicyNameVar) map += DSLCostPolicyNameVar -> costPolicy.name
     if(vars contains DSLTotalCreditsVar  ) map += DSLTotalCreditsVar   -> totalCredits
     if(vars contains DSLOldTotalAmountVar) map += DSLOldTotalAmountVar -> oldTotalAmount
     if(vars contains DSLNewTotalAmountVar) map += DSLNewTotalAmountVar -> newTotalAmount

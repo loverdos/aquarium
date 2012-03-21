@@ -352,7 +352,6 @@ trait Accounting extends DSLUtils with Loggable {
 
             case Just(execAlgorithm) ⇒
               val valueMap = costPolicy.makeValueMap(
-                costPolicy.name,
                 oldCredits,
                 oldTotalAmount,
                 newTotalAmount,
