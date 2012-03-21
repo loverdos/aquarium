@@ -101,7 +101,7 @@ class MemStore extends UserStateStore
 
   //+ UserStateStore
   def storeUserState(userState: UserState): Maybe[RecordID] = {
-    _userStates = userState.copy(_id = idGen.nextUID()) :: _userStates
+    _userStates = userState.copy(id = idGen.nextUID()) :: _userStates
     Just(RecordID(_userStates.head._id))
   }
 

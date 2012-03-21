@@ -170,7 +170,7 @@ case class UserState(
     // The user state we used to compute this one. Normally the (cached)
     // state at the beginning of the billing period.
     parentUserStateId: Option[String] = None,
-    _id: String = ""
+    id: String = ""
 ) extends JsonSupport {
 
   private[this] def _allSnapshots: List[Long] = {
@@ -187,6 +187,7 @@ case class UserState(
 
   def newestSnapshotTime: Long  = _allSnapshots max
 
+  def _id = id
   def idOpt: Option[String] = _id match {
     case null ⇒ None
     case ""   ⇒ None
