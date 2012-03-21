@@ -219,7 +219,7 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
     if(this.isDebugEnabled) {
       val seqSize = seq.size
       if(seqSize <= oneLineLimit) {
-        this.debug("%s = %s", name, seq)
+        this.debug("%s [#=%s] = %s", name, seqSize, seq)
       } else {
         this.debug("%s [#=%s]: ", name, seqSize)
         this.withIndent(seq.foreach(this.debug("%s", _)))
