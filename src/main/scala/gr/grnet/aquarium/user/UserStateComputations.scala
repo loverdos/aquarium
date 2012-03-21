@@ -36,16 +36,15 @@
 package gr.grnet.aquarium.user
 
 
+import scala.collection.mutable
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable, justForSure, failedForSure}
 import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLCostPolicy, DSLResourcesMap, DSLPolicy}
-import gr.grnet.aquarium.store.{RecordID, StoreProvider, PolicyStore, UserStateStore, ResourceEventStore}
-import gr.grnet.aquarium.logic.accounting.{Chargeslot, Accounting}
-import scala.collection.mutable
-import gr.grnet.aquarium.logic.events.ResourceEvent._
-import gr.grnet.aquarium.logic.accounting.algorithm.{CostPolicyAlgorithmCompiler, SimpleCostPolicyAlgorithmCompiler}
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResourcesMap}
+import gr.grnet.aquarium.store.{StoreProvider, PolicyStore}
+import gr.grnet.aquarium.logic.accounting.Accounting
+import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
 
 /**
  *
@@ -157,7 +156,7 @@ class UserStateComputations extends Loggable {
           val result = doCompute
           clog.end()
           result
-          
+
         case failed @ Failed(_, _) ⇒
           clog.warn("Failure while quering cache for user state: %s", failed)
           clog.end()
@@ -358,6 +357,10 @@ class UserStateComputations extends Loggable {
         // After processing, all events billable or not update the previous state
         userStateWorker.updatePrevious(currentResourceEvent)
 
+        _workingUserState = _workingUserState.copy(
+          latestResourceEventsSnapshot = userStateWorker.previousResourceEvents.toImmutableSnapshot(TimeHelpers.nowMillis)
+        )
+
       // We do not have a resource (and thus, no cost policy)
       case None ⇒
         // Now, this is a matter of politics: what do we do if no policy was found?
@@ -430,7 +433,7 @@ class UserStateComputations extends Loggable {
       calculationReason.forPreviousBillingMonth,
       clogJ
     )
-    
+
     if(previousBillingMonthUserStateM.isNoVal) {
       throw new Exception("Could not calculate initial user state for billing %s".format(billingMonthInfo))
     }
@@ -638,7 +641,7 @@ case class UserStateWorker(userId: String,
                                                 ): (List[ResourceEvent], List[ResourceEvent]) = {
     val buffer = mutable.ListBuffer[(ResourceEvent, ResourceEvent)]()
     val checkSet = mutable.Set[ResourceEvent]()
-    
+
     def doItFor(map: ResourceEvent.FullMutableResourceTypeMap): Unit = {
       val resourceEvents = map.valuesIterator
       for {
@@ -649,7 +652,7 @@ case class UserStateWorker(userId: String,
         if(costPolicy.supportsImplicitEvents) {
           if(costPolicy.mustConstructImplicitEndEventFor(resourceEvent)) {
             val implicitEnd = costPolicy.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
-            
+
             if(!checkSet.contains(resourceEvent)) {
               checkSet.add(resourceEvent)
               buffer append ((resourceEvent, implicitEnd))
