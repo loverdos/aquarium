@@ -35,3 +35,5 @@ doc/arch/prv_aquarium.log
 doc/arch/aquarium.synctex.gz
 doc/arch/aquarium.ent
 doc/arch/arch.texshop
+build.log
+_gitstats
