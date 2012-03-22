@@ -88,6 +88,8 @@ cp dist/log4j.properties $DIR/conf|| fail "copying log4j.properties"
 cp dist/aquarium.properties $DIR/conf || fail "copying aquarium.properties"
 cp dist/policy.yaml $DIR/conf || fail "copying policy.yaml"
 cp dist/roles-agreements.map $DIR/conf || fail "copying roles-agreements.map"
+cp dist/test.sh $DIR/bin || fail "copying test.sh"
+
 
 echo "Creating archive"
 tar zcvf $DIR.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
