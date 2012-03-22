@@ -49,6 +49,7 @@ object UserActorCache extends Lifecycle {
     CacheBuilder.newBuilder()
       .maximumSize(1000)
       .initialCapacity(100)
+      .concurrencyLevel(20)
       .removalListener(EvictionListener)
       .build()
 

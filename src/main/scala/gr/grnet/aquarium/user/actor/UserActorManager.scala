@@ -65,8 +65,8 @@ class UserActorManager extends AquariumActor with Loggable {
   private[this] def _launchUserActor(userId: String): ActorRef = {
     // create a fresh instance
     val userActor = _actorProvider.actorForRole(UserActorRole)
-    userActor ! UserActorInitWithUserId(userId)
     UserActorSupervisor.supervisor.link(userActor)
+    userActor ! UserActorInitWithUserId(userId)
     logger.info("New actor for userId: %s".format(userId))
     userActor
   }
