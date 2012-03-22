@@ -136,6 +136,10 @@ the following:
    >rs.initiate(cfg)
 
 4. Check that replication has started with: ``rs.status()``
+5. Try to login to the aquarium database on both nodes: ``mongo A/aquarium`` and
+   ``mongo B/aquarium``. On the master (A) the prompt will be ``PRIMARY>`` while
+   on the slave (B) the prompt will be ``SECONDARY>``. 
+6. Add a record to a test collection on the master: ``db.test.insert({'test':1})``. Go to the slave and type ``rs.slaveOk()`` and then ``db.test.find()``. You should see the entry just added. Remove the test collection from the master: ``db.test.drop()``.
 
 You can find more on the
 `MongoDB replication <http://www.mongodb.org/display/DOCS/Replication>`_ page
