@@ -45,6 +45,7 @@ import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.date.TimeHelpers
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import gr.grnet.aquarium.logic.accounting.RoleAgreements
+import gr.grnet.aquarium.messaging.AkkaAMQP
 
 
 /**
@@ -53,6 +54,7 @@ import gr.grnet.aquarium.logic.accounting.RoleAgreements
  */
 
 class UserActor extends AquariumActor
+                   with AkkaAMQP
                    with ReflectiveAquariumActor
                    with Loggable {
   @volatile
@@ -61,6 +63,8 @@ class UserActor extends AquariumActor
   private[this] var _userState: UserState = _
   @volatile
   private[this] var _timestampTheshold: Long = _
+
+  private[this] lazy val messenger = producer("aquarium")
 
   def role = UserActorRole
 
@@ -184,7 +188,7 @@ class UserActor extends AquariumActor
 
     DEBUG("New active status = %s".format(newActive))
 
-    this._userState = this._userState.copy( activeStateSnapshot = newActive )
+    this._userState = this._userState.copy(activeStateSnapshot = newActive)
   }
 
   def onProcessUserEvent(event: ProcessUserEvent): Unit = {
@@ -192,7 +196,6 @@ class UserActor extends AquariumActor
     if(userEvent.userID != this._userId) {
       ERROR("Received %s but my userId = %s".format(userEvent, this._userId))
     } else {
-//      ensureUserState()
       if(userEvent.isCreateUser) {
         processCreateUser(userEvent)
       } else if(userEvent.isModifyUser) {
@@ -230,7 +233,15 @@ class UserActor extends AquariumActor
 
   override def postStop {
     DEBUG("Stopping, saving state")
-    //saveUserState
+    saveUserState
+  }
+
+  override def preRestart(reason: Throwable) {
+    DEBUG("Actor failed, restarting")
+  }
+
+  override def postRestart(reason: Throwable) {
+    DEBUG("Actor restarted succesfully")
   }
 
   def knownMessageTypes = UserActor.KnownMessageTypes
