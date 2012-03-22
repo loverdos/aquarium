@@ -94,7 +94,9 @@ trait AkkaAMQP extends Loggable {
         deliveryHandler = recipient,
         queueName = Some(queue),
         queueDeclaration = decl,
-        selfAcknowledging = selfAck
+        selfAcknowledging = selfAck,
+        /* Better safe than sorry */
+        channelParameters = Some(ChannelParameters(prefetchSize = 1))
         ))
 
   def producer(exchange: String) = {
@@ -103,6 +105,6 @@ trait AkkaAMQP extends Loggable {
       connection = (new AMQPConnection()).connection,
       producerParameters = ProducerParameters(
         exchangeParameters = Some(ExchangeParameters(exchange, Topic, decl)),
-        channelParameters = Some(ChannelParameters(prefetchSize = 0))))
+        channelParameters = Some(ChannelParameters(prefetchSize = 1))))
   }
 }
