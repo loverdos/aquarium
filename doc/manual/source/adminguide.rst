@@ -35,6 +35,8 @@ The steps required to configure Aquarium are in a nutshell the following:
 3. Configure `The aquarium.properties file`_ so that it points to the correct
    external systems.
 
+4. `Make sure it works`_
+
 External Software Dependencies
 ------------------------------
 
@@ -358,6 +360,45 @@ all roles not defined earlier on.
 
 Currently, Aquarium does not keep a history of the ``role-agreement.map`` file,
 as it does with the ``policy.yaml`` one.
+
+Make sure it works
+------------------
+
+The processing in Aquarium is event-based.  When the system starts, not much
+will happen until events show up on one of the configured queues. This 
+however creates problems when Aquarium starts for the first time without
+any external systems configured. For this reason, Aquarium comes with the
+``bin/test.sh`` script that generates dummy resource and user events.
+
+.. WARNING::
+        Never run the ``test.sh`` script in a system that is already running
+        in production, or you risk ending up with an inconsistent database.
+
+To test an installation with the ``test.sh`` script, you can do the following:
+
+* Make use the script is executable: ``chmod +x bin/test.sh``
+* Start Aquarium in debug mode on a seperate terminal: ``./bin/aquarium.sh debug``
+* Create 10 users: ``./bin/test.sh -u 10``. Check that Aquarium has gone through at least the following steps:
+
+  1. Connected to the queue (search for ``FaultTolerantConnectionActor``)
+  2. Read the policy.yaml file with no errors (look for ``Policy.scala``)
+  3. Connected to MongoDB (look for ``Loaded StoreProvider``)
+  4. User actors have been created without errors/exceptions
+  5. MongoDB contains entries in both the ``userevents`` and ``userstates`` collections
+  6. No messages are left unprocessed on RabbitMQ's queues ``rabbitmqctl list_queues``
+
+Similarily, you can test the accounting system (and the correct loading of
+the configured ``policy.yaml`` file) by producing dummy test messages with ``./bin/test.sh -r 10``.
+
+To clean-up the database after testing, run the following in the mongo shell:
+
+.. code-block:: bash
+
+        > db.resevents.remove()
+        > db.userevents.remove()
+        > db.userstates.remove()
+        > db.policyEntries.remove()
+
 
 Document Revisions
 ------------------
