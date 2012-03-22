@@ -15,7 +15,6 @@ aquariumpolicy:
       unit: Hour
       complex: true
       costpolicy: onoff
-      descriminatorfield: vmid
     - resource:
       name: dsksp
       unit: MB/hr

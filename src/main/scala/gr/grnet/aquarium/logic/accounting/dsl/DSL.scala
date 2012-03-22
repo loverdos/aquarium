@@ -117,12 +117,12 @@ trait DSL {
 
     complex match {
       case true =>
-        val field = resource / Vocabulary.descriminatorfield match {
+        /*val field = resource / Vocabulary.descriminatorfield match {
           case x: YAMLStringNode => x.string
           case _ => throw new DSLParseException(("Resource %s is complex, " +
             "but no descriminator field specified").format(name))
-        }
-        DSLComplexResource(name, unit, costpolicy, field)
+        }*/
+        DSLComplexResource(name, unit, costpolicy)//, field)
       case false =>
         DSLSimpleResource(name, unit, costpolicy)
     }

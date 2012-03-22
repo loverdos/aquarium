@@ -63,4 +63,5 @@ object Vocabulary {
   val complex = "complex"
   val costpolicy = "costpolicy"
   val descriminatorfield = "descriminatorfield"
+  val instanceid = "instanceid"
 }

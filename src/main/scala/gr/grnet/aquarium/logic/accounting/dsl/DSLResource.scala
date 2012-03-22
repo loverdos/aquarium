@@ -70,7 +70,7 @@ object DSLSimpleResource {
 }
 
 object DSLComplexResource {
-  def apply(name: String, unit: String, costPolicy: DSLCostPolicy, descriminatorField: String) = {
-    DSLResource(name, unit, costPolicy, true, descriminatorField)
+  def apply(name: String, unit: String, costPolicy: DSLCostPolicy) = {//, descriminatorField: String) = {
+    DSLResource(name, unit, costPolicy, true)
   }
 }
