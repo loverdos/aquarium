@@ -112,7 +112,7 @@ Glossary of Entities
   correspond to real money.
 - *Resource*: A resource represents an entity that can be charged for its usage. The 
   currently charged resources are: Time of VM usage, bytes uploaded and downloaded and bytes used for storage
-- *Resource Event*: A resource event is generated from an external source and are permanently appended in an immutable event log. A raw event carries information about changes in an external system that could affect the status of a user's wallet (See more about `Resource Events`_).
+- *Resource Event*: A resource event is generated from an external source and are permanently appended in an immutable event log. A raw event carries information about changes in an external system that could affect the status of a user's wallet (See more about `Resource Event`_).
 - *AccountingEntry*: An accounting entry is the result of processing a resource event and is what gets stored to the user's wallet.
 - *Price List*: A price list contains information of the cost of a resource. 
   A pricelist is only applied within a specified time frame.
@@ -244,7 +244,7 @@ Specifically, the ``costpolicy`` field can have the following values:
 Regarding resource complexity, a resource can either be labeled complex 
 or not. In the former case, a resource can have more than one instances per
 user, and resource usage is tracked individually per instance. The 
-``instance-id`` field in the resource event message (See `Resource Events`_) 
+``instance-id`` field in the resource event message (See `Resource Event`_) 
 helps Aquarium separate resource instances at charge time. 
 
 The following resource definition defines the `bandwidthup` 
@@ -374,8 +374,9 @@ Aquarium events share a common base format consisting of the following fields:
 
 In the following sections, we describe the exact format of each one of the concrete messages that Aquarium can process.
 
-Resource Events
-^^^^^^^^^^^^^^^
+Resource Event
+^^^^^^^^^^^^^^
+.. _resource_event:
 
 A resource event is sent by Aquarium clients to signify a change in a resource's
 state. This change is processed by Aquarium's accounting system according to 
@@ -418,6 +419,7 @@ The meaning of the fields is as follows:
 
 User Event
 ^^^^^^^^^^
+.. _user_event:
 
 A user event is sent by an external identity provider system to signify
 changes in user states. The message format is the following:

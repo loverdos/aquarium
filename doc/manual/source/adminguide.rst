@@ -19,6 +19,22 @@ Upon un-archiving the binary archive, the following directories will appear:
 - ``conf`` Configuration files
 - ``logs`` Where the Aquarium log output goes by default
 
+The steps required to configure Aquarium are in a nutshell the following:
+
+1. Install and configure the `External Software Dependencies`_
+2. Decide which external systems will be using Aquarium. Aquarium 
+   requires one of each of the following two kinds of external systems:
+
+   2.1 One or more identity providers, which provide details about the users that Aquarium will keep accounts for, through :ref:`user_event` s.
+
+   2.2 One or more resource providers, which keep track of and monitor resource usage and inform Aquarium by sending :ref:`resource_event` s.
+  
+   For each external system, Aquarium requires a queue binding so that it
+   can retrieve its messages. See more in the `Configuring Queues`_ section.
+
+3. Configure `The aquarium.properties file`_ so that it points to the correct
+   external systems.
+
 External Software Dependencies
 ------------------------------
 
@@ -53,7 +69,8 @@ and an account for Aquarium. To do that, execute the following commands:
   > db.addUser("aquarium", "aquarpasswd")
   > db.aquarium.users.find()
 
-Aquarium automatically creates the following MongoDB collections upon first run:
+Aquarium automatically creates the following MongoDB collections when it 
+first needs them:
 
 - ``resevents``: Contains incoming resource events
 - ``userstates``: Contains timestamped snapshots of the in memory data stored per
@@ -273,25 +290,26 @@ Key                             Description                        Default value
 =============================== ================================== =============
 
 
-**Defining queues**:
-        The format for defining a queue mapping to retrieve messages from an AMQP
-        exchange is the following:
+Configuring queues
+^^^^^^^^^^^^^^^^^^
 
-        .. code-block:: bash
+The format for defining a queue mapping to retrieve messages from an AMQP
+exchange is the following:
 
-                exchange:routing.key:queue[;exchange:routing.key:queue]
+.. code-block:: bash
 
-        This means that multiple queues can be declared per message type. The
-        routing key and exchange name must be agreed in advance with the external
-        system that provides the messages to it. For example, if Aquarium must be
-        connected to its project siblings
-        (`Pithos <https://code.grnet.gr/projects/pithos>`_,
-        `Cyclades <https://code.grnet.gr/projects/synnefo/>`_), the following
-        configuration must be applied:
+        exchange:routing.key:queue[;exchange:routing.key:queue]
 
-        .. code-block:: bash
+This means that multiple queues can be declared per message type. The routing
+key and exchange name must be agreed in advance with the external system that
+provides the messages to it. For example, if Aquarium must be connected to its
+project siblings (`Pithos <https://code.grnet.gr/projects/pithos>`_, `Cyclades
+<https://code.grnet.gr/projects/synnefo/>`_), the following configuration must
+be applied:
 
-                pithos:pithos.resource.#:aquarium-pithos-resevents;cyclades:cyclades.resource.#:aquarium-cyclades-resevents
+.. code-block:: bash
+
+        pithos:pithos.resource.#:aquarium-pithos-resevents;cyclades:cyclades.resource.#:aquarium-cyclades-resevents
 
 
 The policy.yaml file
@@ -344,6 +362,7 @@ Document Revisions
 Revision              Description
 ==================    =========================================
 0.1 (Mar 2012)        Configuration options, running
+0.2 (Mar 2012)        Instructions on how to config all files
 ==================    =========================================
 
 
