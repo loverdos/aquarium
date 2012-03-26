@@ -450,6 +450,8 @@
           </jvmArgs>
           <args>
             <arg>-deprecation</arg>
+            <arg>-unchecked</arg>
+            <arg>-explaintypes</arg>
           </args>
         </configuration>
         <executions>
