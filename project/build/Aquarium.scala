@@ -126,7 +126,7 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   val lib_lucene_core = "org.apache.lucene" % "lucene-core" % "3.5.0" withSources()
   val lib_solr_core = "org.apache.solr" % "solr-core" % "3.5.0" withSources()
 
-  val lib_scopt = "com.github.scopt" %% "scopt" % "1.1.2" withSources()
+  val lib_scopt = "com.github.scopt" %% "scopt" % "2.0.1" withSources()
 
   val lib_joda = "joda-time" % "joda-time" % "2.0" withSources()
   val lib_joda_conv = "org.joda" % "joda-convert" % "1.1" withSources()
