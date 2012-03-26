@@ -64,7 +64,7 @@ class UserActor extends AquariumActor
   @volatile
   private[this] var _timestampTheshold: Long = _
 
-  private[this] lazy val messenger = producer("aquarium")
+  private[this] lazy val messenger = producer("aquarium") // FIXME: Read this from configuration
 
   def role = UserActorRole
 

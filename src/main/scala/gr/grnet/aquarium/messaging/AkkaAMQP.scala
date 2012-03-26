@@ -57,6 +57,7 @@ trait AkkaAMQP extends Loggable {
       val servers = mc.get(Keys.amqp_servers)
       val port = mc.get(Keys.amqp_port).toInt
 
+      // INFO: Can connect to more than one rabbitmq nodes
       val addresses = servers.split(",").foldLeft(Array[Address]()) {
         (x, y) => x ++ Array(new Address(y, port))
       }
@@ -90,6 +91,7 @@ trait AkkaAMQP extends Loggable {
       consumerParameters = ConsumerParameters(
         routingKey = routekey,
         exchangeParameters =
+          // INFO "x-ha-policy" is used to make queues on all nodes
           Some(ExchangeParameters(exchange, Topic, decl, Map("x-ha-policy" -> "all"))),
         deliveryHandler = recipient,
         queueName = Some(queue),
