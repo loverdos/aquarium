@@ -9,8 +9,8 @@ import gr.grnet.aquarium.util.{Loggable, ContextualLogger, justForSure}
 import gr.grnet.aquarium.simulation._
 import gr.grnet.aquarium.simulation.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
 import com.ckkloverdos.maybe.{Maybe, Just, NoVal}
-import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 import org.junit.{Assert, Ignore, Test}
+import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler, SimpleCostPolicyAlgorithmCompiler}
 
 
 /**
@@ -18,7 +18,17 @@ import org.junit.{Assert, Ignore, Test}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 class UserStateComputationsTest extends Loggable {
-  val PolicyYAML = """
+  final val DoubleDelta = 0.001
+
+  final val BandwidthPriceUnit = 3.3 //
+  final val VMTimePriceUnit    = 1.5 //
+  final val DiskspacePriceUnit = 2.7 //
+
+  final val OnOffPriceUnit = VMTimePriceUnit
+  final val ContinuousPriceUnit = DiskspacePriceUnit
+  final val DiscretePriceUnit = BandwidthPriceUnit
+
+  final val PolicyYAML = """
 aquariumpolicy:
   resources:
     - resource:
@@ -54,9 +64,9 @@ aquariumpolicy:
   pricelists:
     - pricelist:
       name: default
-      bandwidth: 1.0
-      vmtime: 1.0
-      diskspace: 1.0
+      bandwidth: %s
+      vmtime: %s
+      diskspace: %s
       effective:
         from: 0
 
@@ -74,14 +84,86 @@ aquariumpolicy:
       algorithm: default
       pricelist: default
       creditplan: default
-  """
+  """.format(
+    BandwidthPriceUnit,
+    VMTimePriceUnit,
+    DiskspacePriceUnit
+  )
 
   val Computations = new UserStateComputations
 
   val DefaultPolicy = new DSL{} parse PolicyYAML
   val DefaultAccounting = new Accounting{}
-  val DefaultCompiler  = SimpleCostPolicyAlgorithmCompiler
-  val DefaultAlgorithm = justForSure(DefaultCompiler.compile("")).get // hardcoded since we know exactly what this is
+  
+  val DefaultAlgorithm = new ExecutableCostPolicyAlgorithm {
+    def creditsForContinuous(timeDelta: Double, oldTotalAmount: Double) =
+      hrs(timeDelta) * oldTotalAmount * ContinuousPriceUnit
+
+    final val creditsForDiskspace = creditsForContinuous(_, _)
+    
+    def creditsForDiscrete(currentValue: Double) =
+      currentValue * DiscretePriceUnit
+
+    final val creditsForBandwidth = creditsForDiscrete(_)
+
+    def creditsForOnOff(timeDelta: Double) =
+      hrs(timeDelta) * OnOffPriceUnit
+
+    final val creditsForVMTime = creditsForOnOff(_)
+
+    @inline private[this]
+    def hrs(millis: Double) = millis / 1000 / 60 / 60
+
+    def apply(vars: Map[DSLCostPolicyVar, Any]): Maybe[Double] = Maybe {
+      vars.apply(DSLCostPolicyNameVar) match {
+        case DSLCostPolicyNames.continuous ⇒
+          val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
+          val oldTotalAmount = vars(DSLOldTotalAmountVar).asInstanceOf[Double]
+          val timeDelta = vars(DSLTimeDeltaVar).asInstanceOf[Double]
+
+          Assert.assertEquals(ContinuousPriceUnit, unitPrice, DoubleDelta)
+
+          creditsForContinuous(timeDelta, oldTotalAmount)
+
+        case DSLCostPolicyNames.discrete ⇒
+          val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
+          val currentValue = vars(DSLCurrentValueVar).asInstanceOf[Double]
+
+          Assert.assertEquals(DiscretePriceUnit, unitPrice, DoubleDelta)
+
+          creditsForDiscrete(currentValue)
+
+        case DSLCostPolicyNames.onoff ⇒
+          val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
+          val timeDelta = vars(DSLTimeDeltaVar).asInstanceOf[Double]
+
+          Assert.assertEquals(OnOffPriceUnit, unitPrice, DoubleDelta)
+
+          creditsForOnOff(timeDelta)
+
+        case DSLCostPolicyNames.once ⇒
+          val currentValue = vars(DSLCurrentValueVar).asInstanceOf[Double]
+          currentValue
+
+        case name ⇒
+          throw new Exception("Unknown cost policy %s".format(name))
+      }
+    }
+
+    override def toString = "DefaultAlgorithm(%s)".format(
+      Map(
+        DSLCostPolicyNames.continuous -> "hrs(timeDelta) * oldTotalAmount * %s".format(ContinuousPriceUnit),
+        DSLCostPolicyNames.discrete   -> "currentValue * %s".format(DiscretePriceUnit),
+        DSLCostPolicyNames.onoff      -> "hrs(timeDelta) * %s".format(OnOffPriceUnit),
+        DSLCostPolicyNames.once       -> "currentValue"))
+  }
+
+  val DefaultCompiler  = new CostPolicyAlgorithmCompiler {
+    def compile(definition: String): Maybe[ExecutableCostPolicyAlgorithm] = {
+      Just(DefaultAlgorithm)
+    }
+  }
+  //val DefaultAlgorithm = justForSure(DefaultCompiler.compile("")).get // hardcoded since we know exactly what this is
 
   val VMTimeDSLResource = DefaultPolicy.findResource("vmtime").get
 
@@ -230,18 +312,7 @@ aquariumpolicy:
       OnOffDurationHrs
     )
 
-    // Make a value map for the billable OFF event
-    val valueMap = OnOffCostPolicy.makeValueMap(
-      totalCredits = 0,
-      oldTotalAmount = OnOffCostPolicy.getResourceInstanceUndefinedAmount,
-      newTotalAmount = OnOffCostPolicy.getResourceInstanceUndefinedAmount,
-      timeDelta = OnOffDurationMillis,
-      previousValue = OnOffCostPolicyValues.ON,
-      currentValue = OnOffCostPolicyValues.OFF,
-      unitPrice = DefaultPolicy.findPriceList("default").get.prices(VMTimeDSLResource)
-    )
-
-    val credits = justForSure(DefaultAlgorithm(valueMap)).get
+    val credits = DefaultAlgorithm.creditsForVMTime(OnOffDurationMillis)
 
     showResourceEvents(clog)
 
@@ -269,22 +340,9 @@ aquariumpolicy:
     val OnOffImplicitDurationMillis = JanEnd.toMillis - JanStart.toMillis
     val OnOffImplicitDurationHrs = millis2hrs(OnOffImplicitDurationMillis)
 
-    VMTimeInstanceSim.newON(
-      JanStartDate
-    )
+    VMTimeInstanceSim.newON(JanStartDate)
 
-    // Make a value map for the billable *implicit* OFF event
-    val valueMap = OnOffCostPolicy.makeValueMap(
-      totalCredits = 0,
-      oldTotalAmount = OnOffCostPolicy.getResourceInstanceUndefinedAmount,
-      newTotalAmount = OnOffCostPolicy.getResourceInstanceUndefinedAmount,
-      timeDelta = OnOffImplicitDurationMillis,
-      previousValue = OnOffCostPolicyValues.ON,
-      currentValue = OnOffCostPolicyValues.OFF,
-      unitPrice = DefaultPolicy.findPriceList("default").get.prices(VMTimeDSLResource)
-    )
-
-    val credits = justForSure(DefaultAlgorithm(valueMap)).get
+    val credits = DefaultAlgorithm.creditsForVMTime(OnOffImplicitDurationMillis)
 
     showResourceEvents(clog)
 
@@ -312,9 +370,7 @@ aquariumpolicy:
     val OnOffImplicitDurationMillis = JanEnd.toMillis - JanStart.toMillis
     val OnOffImplicitDurationHrs = millis2hrs(OnOffImplicitDurationMillis)
 
-    VMTimeInstanceSim.newOFF(
-      JanStartDate
-    )
+    VMTimeInstanceSim.newOFF(JanStartDate)
 
     // This is an orphan event, so no credits will be charged
     val credits = 0
