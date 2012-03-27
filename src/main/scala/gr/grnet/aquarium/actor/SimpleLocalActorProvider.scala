@@ -143,6 +143,7 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
 
 object SimpleLocalActorProvider {
   // Always set Dispatcher at the end.
+  // We could definitely use some automatic dependency sorting here (topological sorting anyone?)
   final val RolesToBeStarted = List(
 //    ResourceProcessorRole,
     RESTRole,
