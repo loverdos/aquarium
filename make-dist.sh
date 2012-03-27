@@ -1,104 +1,84 @@
 #!/usr/bin/env bash
 
-# For debugging
-clear
-# set -x
-LOG=build.log
+# Make an Aquarium binary distribution out of current working directory.
+# Use at your own risk (i.e. make sure it compiles etc).
+
+WHERE=`dirname $0`
+SHA=`git rev-parse HEAD`
+DATE_FORMAT=+'%Y%m%d%H%M%S'
+NOW=`date $DATE_FORMAT`
+DIST=aquarium-$SHA
+SERVER_SCRIPTS_SRC=$WHERE/scripts
+CONF_SRC=$WHERE/src/main/resources
 
 fail() {
     echo "failed while $1"
-    echo "last log lines are"
-    tail -n 15 $LOG
-    echo "see file $LOG for details"
-    cleanup
     exit 1
 }
 
-cleanup() {
-    git checkout master 2>>$LOG 1>>$LOG
-    if [ -f stashed ]; then
-        git stash pop 2>>$LOG 1>>$LOG
-        rm stashed
-    fi
+checkdist() {
+    [ -e $DIST ] && {
+        echo Folder $DIST exists.
+        echo Please remove it before proceeding
+        exit 1
+    }
+    echo Creating dist dirs
+
+    mkdir -pv $DIST
+    mkdir -pv $DIST/bin
+    mkdir -pv $DIST/lib
+    mkdir -pv $DIST/conf
+    mkdir -pv $DIST/logs
 }
 
-# Check if there are pending changes
-status=`git status --porcelain|grep -v "??"`
-if [ ! -z "$status" ]
-then
-    echo "The following files are not committed:"
-    echo 
-    echo $status
-    echo
-    echo "Stashing them"
-    git stash save 2>&1 >>$LOG
-    touch stashed
-fi
+clean() {
+    mvn clean || fail "cleaning compilation artifacts"
+}
 
-# Get version or tag to checkout from cmd-line
-if [ ! -z $1 ]
-then
-    echo -n "checking commit $1... "
-    out=`git show $1 2>&1|grep "fatal: ambiguous argument '$1'"`
-    if [ -z "$out" ]
-    then
-        tag=$1
-        echo "success"
-    else
-        fail "retrieving info about commit $1"
-    fi
-else
-    echo -n "checking out latest tag ("
-    tag=`git tag |tail -n 1`
-    echo "$tag)"
-fi
+collectdeps() {
+    mvn dependency:copy-dependencies && cp target/dependency/*.jar $DIST/lib || fail "collecting dependencies"
+}
 
-# Tags are marked as aquarium-*
-if [[ "$tag" =~ "aquarium-" ]];
-then
-    DIR=$tag
-else
-    DIR="aquarium-$tag"
-fi
+build() {
+    echo "Building Aquarium"
+    mvn package -DskipTests && {
+        echo "Copying Aquarium classes"
+        aquariumjar=`find target -type f|egrep "aquarium-[0-9\.]+(-SNAPSHOT)?\.jar"`
+        cp $aquariumjar $DIST/lib || fail "copying $aquariumjar"ß
+    } || fail "building"
+}
 
-# Creating dist dirs
-mkdir -p $DIR
-mkdir -p $DIR/bin
-mkdir -p $DIR/lib
-mkdir -p $DIR/conf
-mkdir -p $DIR/logs
+collectconf() {
+    echo Copying config files from $CONF_SRC
+    cp $CONF_SRC/log4j.properties $DIST/conf|| fail "copying log4j.properties"
+    cp $CONF_SRC/aquarium.properties $DIST/conf || fail "copying aquarium.properties"
+    cp $CONF_SRC/policy.yaml $DIST/conf || fail "copying policy.yaml"
+    cp $CONF_SRC/roles-agreements.map $DIST/conf || fail "copying roles-agreements.map"
+}
 
-echo "Checking out $tag"
-git checkout $tag 2>>$LOG 1>>$LOG || fail "checking out"
+collectscripts() {
+    echo Copying scripts from $SERVER_SCRIPTS_SRC
+    cp $SERVER_SCRIPTS_SRC/aquarium.sh $DIST/bin || fail "copying aquarium.sh"
+    cp $SERVER_SCRIPTS_SRC/test.sh $DIST/bin || fail "copying test.sh"
+}
 
-echo "Building $tag"
-mvn clean install -DskipTests=true >>build.log || fail "building project"
+gitmark() {
+    git rev-parse HEAD > $DIST/gitsha.txt
+}
 
-echo "Collecting dependencies"
-mvn dependency:copy-dependencies >> build.log ||  fail "collecting dependencies"
-cp target/dependency/*.jar $DIR/lib || fail "copying dependencies"
+archive() {
+    ARC=$DIST.tar.gz
+    echo "Creating archive"
+    tar zcvf $ARC $DIST/ || fail "creating archive"
+    echo "File $ARC created succesfully"
+    echo "Cleaning up"
+    ls -al $ARC
+}
 
-echo "Copying Aquarium classes"
-aquariumjar=`find target -type f|egrep "aquarium-[0-9\.]+(-SNAPSHOT)?\.jar"`
-cp $aquariumjar $DIR/lib || fail "copying $aquariumjar"
-
-echo "Copying scripts and config files"
-cp dist/aquarium.sh $DIR/bin || fail "copying aquarium.sh"
-cp dist/log4j.properties $DIR/conf|| fail "copying log4j.properties"
-cp dist/aquarium.properties $DIR/conf || fail "copying aquarium.properties"
-cp dist/policy.yaml $DIR/conf || fail "copying policy.yaml"
-cp dist/roles-agreements.map $DIR/conf || fail "copying roles-agreements.map"
-cp dist/test.sh $DIR/bin || fail "copying test.sh"
-
-
-echo "Creating archive"
-tar zcvf $DIR.tar.gz $DIR >> build.log 2>&1 || fail "creating archive"
-
-echo "Cleaning up"
-rm -Rf $DIR
-cleanup
-rm $LOG
-
-echo "File $tag.tar.gz created succesfully"
-
-# vim: set sta sts=4 shiftwidth=4 sw=4 et ai :
+checkdist      && \
+clean          && \
+build          && \
+collectdeps    && \
+collectconf    && \
+collectscripts && \
+archive
