@@ -116,7 +116,7 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
 
 
 //  val lib_javaxrs = "javax.ws.rs" % "jsr311-api" % "1.1.1" withSources()
-  val lib_spray_can = "cc.spray" % "spray-can" % "0.9.2" withSources()
+  val lib_spray_can = "cc.spray" % "spray-can" % "0.9.3" withSources()
 
   val lib_maybe = "com.ckkloverdos" %% "maybe" % Versions.maybe withSources()
   val lib_converter = "com.ckkloverdos" %% "converter" % "0.3.0" withSources()
