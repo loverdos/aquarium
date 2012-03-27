@@ -8,4 +8,4 @@ import com.ckkloverdos.props.Props
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class AquariumPropertiesLoaded(props: Props) extends ActorMessage
+case class AquariumPropertiesLoaded(props: Props) extends ActorConfigurationMessage

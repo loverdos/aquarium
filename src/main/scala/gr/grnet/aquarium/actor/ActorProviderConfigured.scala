@@ -36,8 +36,9 @@
 package gr.grnet.aquarium.actor
 
 /**
- * 
+ * Sent with the configured [[gr.grnet.aquarium.actor.ActorProvider]].
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class ActorProviderConfigured(actorProvider: ActorProvider) extends ActorMessage
+case class ActorProviderConfigured(actorProvider: ActorProvider) extends ActorConfigurationMessage

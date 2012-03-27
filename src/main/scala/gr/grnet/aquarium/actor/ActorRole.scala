@@ -40,21 +40,32 @@ import gr.grnet.aquarium.rest.actor.RESTActor
 import gr.grnet.aquarium.user.actor.{UserActor, UserActorManager}
 
 /**
- * Each actor plays one role. This is a one-to-one correspondance.
+ * Each actor within Aquarium plays one role.
+ *
+ * A role also dictates which configuration messages the respective actor handles.
  */
-sealed abstract class ActorRole(val role: String, val actorType: Class[_ <: AquariumActor])
+sealed abstract class ActorRole(val role: String,
+                                val actorType: Class[_ <: AquariumActor],
+                                val handledConfigurationMessages: Set[Class[_ <: ActorConfigurationMessage]] = Set()) {
+
+  def canHandleConfigurationMessage[A <: ActorConfigurationMessage](cl: Class[A]): Boolean = {
+    handledConfigurationMessages contains cl
+  }
+}
 
 /**
  * The generic router/dispatcher.
  */
-case object DispatcherRole extends ActorRole("DispatcherRole", classOf[DispatcherActor]) {
-
-}
+case object DispatcherRole
+    extends ActorRole("DispatcherRole",
+                      classOf[DispatcherActor],
+                      Set(classOf[ActorProviderConfigured]))
 
 /**
  * Processes user-related resource events.
  */
-case object ResourceProcessorRole extends ActorRole("ResourceProcessorRole", classOf[ResourceProcessorActor])
+case object ResourceProcessorRole
+    extends ActorRole("ResourceProcessorRole", classOf[ResourceProcessorActor])
 
 /**
  * REST request handler.
@@ -64,9 +75,15 @@ case object RESTRole extends ActorRole("RESTRole", classOf[RESTActor])
 /**
  * Role for the actor that is responsible for user actor provisioning.
  */
-case object UserActorManagerRole extends ActorRole("UserActorManagerRole", classOf[UserActorManager])
+case object UserActorManagerRole
+    extends ActorRole("UserActorManagerRole",
+                      classOf[UserActorManager],
+                      Set(classOf[ActorProviderConfigured], classOf[AquariumPropertiesLoaded]))
 
 /**
  * User-oriented business logic handler role.
  */
-case object UserActorRole extends ActorRole("UserActorRole", classOf[UserActor])
+case object UserActorRole
+    extends ActorRole("UserActorRole",
+                      classOf[UserActor],
+                      Set(classOf[ActorProviderConfigured], classOf[AquariumPropertiesLoaded]))

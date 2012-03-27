@@ -94,7 +94,11 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
       case null ⇒
         val actorRef = _newActor(role)
         actorCache.put(role, actorRef)
-        actorRef ! AquariumPropertiesLoaded(this._props)
+
+        if(role.canHandleConfigurationMessage(classOf[AquariumPropertiesLoaded])) {
+          actorRef ! AquariumPropertiesLoaded(this._props)
+        }
+
         actorRef
       case actorRef ⇒
         actorRef
@@ -119,13 +123,22 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
         //
         // Note that the returned actor is not initialized!
         val actorRef = _newActor(UserActorRole)
-        actorRef ! AquariumPropertiesLoaded(this._props)
-        actorRef ! ActorProviderConfigured(this)
+
+        if(role.canHandleConfigurationMessage(classOf[AquariumPropertiesLoaded])) {
+          actorRef ! AquariumPropertiesLoaded(this._props)
+        }
+
+        if(role.canHandleConfigurationMessage(classOf[ActorProviderConfigured])) {
+          actorRef ! ActorProviderConfigured(this)
+        }
+
         actorRef
       case _ ⇒
         throw new Exception("Cannot create actor for role %s".format(role))
     }
   }
+
+  override def toString = gr.grnet.aquarium.util.shortClassNameOf(this)
 }
 
 object SimpleLocalActorProvider {
