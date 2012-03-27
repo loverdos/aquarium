@@ -252,6 +252,12 @@ class Configurator(val props: Props) extends Loggable {
     val newProps = new Props(newMap)
     new Configurator(newProps)
   }
+
+  // FIXME: This is instead of props.getInt which currently contains a bug.
+  // FIXME: Fix the original bug and delete this method
+  def getInt(name: String): Maybe[Int] = {
+    props.get(name).map(_.toInt)
+  }
 }
 
 object Configurator {
