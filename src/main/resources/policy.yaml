@@ -1,22 +1,22 @@
 aquariumpolicy:
   resources:
     - resource:
-      name: bndup
+      name: bandwidthup
       unit: MB/hr
       complex: false
-      costpolicy: continuous
+      costpolicy: discrete
     - resource:
-      name: bnddown
+      name: bandwidthdown
       unit: MB/hr
       complex: false
-      costpolicy: continuous
+      costpolicy: discrete
     - resource:
       name: vmtime
       unit: Hour
       complex: true
       costpolicy: onoff
     - resource:
-      name: dsksp
+      name: diskspace
       unit: MB/hr
       complex: false
       costpolicy: continuous
@@ -26,28 +26,34 @@ aquariumpolicy:
       complex: false
       costpolicy: once
 
+  implicitvars:
+    - price
+    - volume
+
   algorithms:
     - algorithm:
       name: default
-      bndup: $price times $volume
-      bnddown: $price times $volume
+      bandwidthup: $price times $volume
+      bandwidthdown: $price times $volume
       vmtime: $price times $volume
-      dsksp: $price times $volume
+      diskspace: $price times $volume
+      bookpages: $price times $volume
       refills: $price times $volume
       effective:
         from: 0
-
+  
   pricelists:
     - pricelist: 
       name: default
-      bndup: 0.01
-      bnddown: 0.02
+      bandwidthup: 0.01
+      bandwidthdown: 0.02
       vmtime: 0.1
-      dsksp: 0.05
+      diskspace: 0.05
+      bookpages: 0.1
       refills: 1
       effective:
         from: 0
-
+  
   creditplans:
     - creditplan:
       name: default
@@ -62,3 +68,4 @@ aquariumpolicy:
       algorithm: default
       pricelist: default
       creditplan: default
+
