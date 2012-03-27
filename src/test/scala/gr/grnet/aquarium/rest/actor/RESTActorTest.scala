@@ -59,7 +59,7 @@ class RESTActorTest {
     // Initialize configuration subsystem
     val mc = Configurator.MasterConfigurator
     mc.startServices()
-    val port = mc.props.getInt(Configurator.Keys.rest_port).getOr(8080)
+    val port = mc.getInt(Configurator.Keys.rest_port).getOr(RESTActorService.DefaultHttpPort)
     val dialog = SprayHttpDialog("localhost", port)
 
     val pingReq = HttpRequest(method = GET, uri = "/ping", headers = HttpHeader("Content-Type", "text/plain; charset=UTF-8")::Nil)

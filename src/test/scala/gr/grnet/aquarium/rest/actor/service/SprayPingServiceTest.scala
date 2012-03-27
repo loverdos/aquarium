@@ -45,6 +45,7 @@ import gr.grnet.aquarium.LogicTestsAssumptions
 import cc.spray.can._
 import akka.actor.{Actor, PoisonPill}
 import org.slf4j.LoggerFactory
+import akka.config.{Config ⇒ AkkaConfig}
 
 /**
  * This class is heavily based on the Spray samples.
@@ -123,15 +124,17 @@ class SprayPingService(_id: String = "spray-root-service") extends Actor {
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class SprayPingServiceTest extends Loggable {
+  final val Port = 8888
+
   @Test
   def testPing: Unit = {
     assumeTrue(LogicTestsAssumptions.EnableSprayTests)
 
     val service = Actor.actorOf(new SprayPingService("spray-root-service")).start()
-    val server = Actor.actorOf(new HttpServer()).start()
-    val client = Actor.actorOf(new HttpClient()).start()
+    val server = Actor.actorOf(new HttpServer(ServerConfig(port = Port))).start()
+    val client = Actor.actorOf(new HttpClient(ClientConfig())).start()
 
-    val dialog = HttpDialog("localhost", 8080)
+    val dialog = HttpDialog("localhost", Port)
     val result = dialog.send(HttpRequest(method = GET, uri = "/ping", headers = HttpHeader("Content-Type", "text/plain; charset=UTF-8")::Nil)).end
     result onComplete { future =>
       future.value match {
@@ -144,8 +147,9 @@ class SprayPingServiceTest extends Loggable {
           logger.error("Error: %s".format(other))
       }
 
-      service ! PoisonPill
+      server  ! PoisonPill
       client  ! PoisonPill
+      service ! PoisonPill
     }
 
     Thread sleep 100

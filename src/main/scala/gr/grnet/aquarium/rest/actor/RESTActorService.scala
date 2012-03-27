@@ -39,14 +39,15 @@ package actor
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.actor.RESTRole
 import _root_.akka.actor._
-import cc.spray.can.{ClientConfig, HttpClient, ServerConfig, HttpServer}
-import gr.grnet.aquarium.util.Lifecycle
+import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
+import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 
 /**
- * 
+ * REST service based on Actors and Spray.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RESTActorService extends Lifecycle {
+class RESTActorService extends Lifecycle with Loggable {
   private[this] var _port: Int = 8080
   private[this] var _restActor: ActorRef = _
   private[this] var _serverActor: ActorRef = _
@@ -54,13 +55,13 @@ class RESTActorService extends Lifecycle {
 
   def start(): Unit = {
     val mc = Configurator.MasterConfigurator
-    this._port = mc.props.getInt(Configurator.Keys.rest_port).getOr(this._port)
+    this._port = mc.getInt(Configurator.Keys.rest_port).getOr(
+      throw new Exception("%s was not specified in aquarium properties".format(Configurator.Keys.rest_port)))
+    logger.info("Starting on port {}", this._port)
     this._restActor = mc.actorProvider.actorForRole(RESTRole)
     // Start Spray subsystem
-    val serverConfig = ServerConfig(port = _port)
-    val clientConfig = ClientConfig()
-    this._serverActor = Actor.actorOf(new HttpServer(serverConfig)).start()
-    this._clientActor = Actor.actorOf(new HttpClient(clientConfig)).start()
+    this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
+    this._clientActor = Actor.actorOf(new HttpClient()).start()
   }
 
   def stop(): Unit = {
