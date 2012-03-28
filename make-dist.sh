@@ -81,4 +81,5 @@ build          && \
 collectdeps    && \
 collectconf    && \
 collectscripts && \
+gitmark        && \
 archive
