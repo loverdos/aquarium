@@ -32,7 +32,10 @@ checkdist() {
 }
 
 clean() {
-    mvn clean || fail "cleaning compilation artifacts"
+    local p="$1"
+    [ "$p"="dev" -o "$p"="fast" -o "$p"="noclean" ] || {
+        mvn clean || fail "cleaning compilation artifacts"
+    }
 }
 
 collectdeps() {
