@@ -177,7 +177,7 @@ class Configurator(val props: Props) extends Loggable {
       return configured
 
     // Look into the configuration context
-    Configurator.BasicResourceContext.getResource(name) match {
+    ResourceLocator.getResource(name) match {
       case Just(policyResource) ⇒
         val path = policyResource.url.getPath
         new File(path)
@@ -269,58 +269,8 @@ object Configurator {
 
   val RolesAgreementsName = "roles-agreements.map"
 
-  /**
-   * Current directory resource context.
-   */
-  val AppBaseResourceContext = new FileStreamResourceContext(".")
-
-  /**
-   * Default config context for Aquarium distributions
-   */
-  val LocalConfigResourceContext = new FileStreamResourceContext("conf")
-
-  /**
-   * The venerable /etc resource context. Applicable in Unix environments
-   */
-  val SlashEtcResourceContext = new FileStreamResourceContext("/etc/aquarium")
-
-  /**
-   * Class loader resource context.
-   * This has the lowest priority.
-   */
-  val ClasspathBaseResourceContext = new ClassLoaderStreamResourceContext(Thread.currentThread().getContextClassLoader)
-
-  /**
-   * Use this property to override the place where aquarium configuration resides.
-   *
-   * The value of this property is a folder that defines the highest-priority resource context.
-   */
-  val ConfBaseFolderSysProp = SysProp("aquarium.conf.base.folder")
-
-  val BasicResourceContext = new CompositeStreamResourceContext(
-    NoVal,
-    SlashEtcResourceContext,
-    LocalConfigResourceContext,
-    AppBaseResourceContext,
-    ClasspathBaseResourceContext)
-
-  /**
-   * The resource context used in the application.
-   */
-  lazy val MasterResourceContext = {
-    ConfBaseFolderSysProp.value match {
-      case Just(value) ⇒
-        // We have a system override for the configuration location
-        new CompositeStreamResourceContext(Just(BasicResourceContext), new FileStreamResourceContext(value))
-      case NoVal ⇒
-        BasicResourceContext
-      case Failed(e, m) ⇒
-        throw new RuntimeException(m , e)
-    }
-  }
-
   lazy val MasterConfResource = {
-    val maybeMCResource = MasterResourceContext getResource MasterConfName
+    val maybeMCResource = ResourceLocator getResource MasterConfName
     maybeMCResource match {
       case Just(masterConfResource) ⇒
         masterConfResource
@@ -542,5 +492,7 @@ object Configurator {
      * infrastructures.
      */
     final val time_unit_in_millis = "time.unit.in.seconds"
+
+    final val message_queues_store_folder = "messages"
   }
 }
