@@ -72,12 +72,18 @@ PRGDIR=`dirname "$PRG"`
 [ -z "$AQUARIUM_OPTS" ] && AQUARIUM_OPTS=""
 [ -z "$JAVA_OPTS" ]     && JAVA_OPTS="-Xms1024M -Xmx4096M"
 
-
-AQMAIN=gr.grnet.aquarium.Main
 PID=$AQUARIUM_HOME/bin/aquarium.pid
-LIB=$AQUARIUM_HOME/lib
-LOG=$AQUARIUM_HOME/logs/aquarium.log
-CONF=$AQUARIUM_HOME/conf
+
+AQUARIUM_LIB=$AQUARIUM_HOME/lib
+AQUARIUM_CONF=$AQUARIUM_HOME/conf
+AQUARIUM_LOGFILE=$AQUARIUM_HOME/logs/aquarium.log
+
+AQUARIUM_MAIN_CLASS=gr.grnet.aquarium.Main
+
+# We use jbootstrap to start the application.
+# No need to manually setup the CLASSPATH
+JBOOT_JAR=$AQUARIUM_LIB/jbootstrap-3.0.0.jar
+JBOOT_MAIN_CLASS=com.ckkloverdos.jbootstrap.Main
 
 # Check the application status
 check_status() {
@@ -110,21 +116,19 @@ start() {
 
     echo "Starting Aquarium"
 
-    # Build classpath
-    CLASSPATH=`find $LIB -type f|grep jar$|tr '\n' ':'|sed -e 's/\:$//'`
-    
     # load log4j from classpath
-    CLASSPATH=$CONF:$CLASSPATH
+    CLASSPATH=$AQUARIUM_CONF:$JBOOT_JAR
 
-    echo "Using CLASSPATH $CLASSPATH"
+    echo "Using initial CLASSPATH $CLASSPATH"
     echo "Using AQUARIUM_HOME $AQUARIUM_HOME"
-    echo "Using MAIN $AQMAIN"
+    echo "Using MAIN $AQUARIUM_MAIN_CLASS"
     echo "Using AQUARIUM_PROP $AQUARIUM_PROP"
     echo "Using JAVA_OPTS $JAVA_OPTS"
+    echo "nohup java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $JBOOT_MAIN_CLASS -debug -lib $AQUARIUM_LIB $AQUARIUM_MAIN_CLASS > $AQUARIUM_LOGFILE"
 
-    java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $AQMAIN >> $LOG 2>&1 &
+    nohup java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $JBOOT_MAIN_CLASS -debug -lib $AQUARIUM_LIB $AQUARIUM_MAIN_CLASS > $AQUARIUM_LOGFILE 2>&1 &
     echo $! > $PID
-    echo "OK [pid = $!]"
+    echo "OK [pid = "`cat $PID`"]"
 }
 
 # Stops the application
@@ -165,15 +169,12 @@ case "$1" in
     status)
         status
         ;;
-    debug)
-        start "debug"
-        ;;
     restart)
         stop
         start
         ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status|debug}"
+        echo "Usage: $0 {start|stop|restart|status}"
         exit 1
 esac
 
