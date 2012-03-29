@@ -37,24 +37,69 @@ package gr.grnet.aquarium
 
 import util.Loggable
 import akka.actor.Actor
+import collection.immutable.SortedSet
+import com.ckkloverdos.sys.{SysEnv, SysProp}
+import com.ckkloverdos.maybe.{NoVal, Just}
+import java.io.File
 
 /**
  * Main method for Aquarium
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object Main extends Loggable {
+  final val AQUARIUM_HOME = SysEnv("AQUARIUM_HOME")
+
+  private[this] final val PropsToShow = List(
+    SysProp.JavaVMName,
+    SysProp.JavaVersion,
+    SysProp.JavaHome,
+    SysProp.JavaClassVersion,
+    SysProp.JavaLibraryPath,
+    SysProp.JavaClassPath,
+    SysProp.JavaIOTmpDir,
+    SysProp.UserName,
+    SysProp.UserHome,
+    SysProp.UserDir,
+    SysProp("file.encoding")
+  )
+
+
+  lazy val AQUARIUM_HOME_FOLDER: File = {
+    AQUARIUM_HOME.value match {
+      case Just(home) ⇒
+        val file = new File(home)
+        if(!file.isDirectory) {
+          throw new Exception("%s (%s) is not a folder".format(AQUARIUM_HOME.name, home))
+        }
+        file
+      case _ ⇒
+        throw new Exception("%s is not set".format(AQUARIUM_HOME.name))
+    }
+  }
 
   def main(args: Array[String]) = {
+    logger.info("Starting Aquarium from {}", AQUARIUM_HOME_FOLDER.getCanonicalPath)
 
-    logger.info("Starting Aquarium")
+    val mc = Configurator.MasterConfigurator
+    val rl = ResourceLocator
+    val HERE = gr.grnet.aquarium.util.justForSure(rl.getResource(".")).get.url.toExternalForm
 
-    Configurator.MasterConfigurator.startServices()
+    for {
+      prop <- PropsToShow
+    } {
+      logger.info("{} = {}", prop.name, prop.rawValue)
+    }
+    logger.info("{} = {}", AQUARIUM_HOME.name, AQUARIUM_HOME_FOLDER)
+    logger.info("HERE = {}", HERE)
+
+    mc.startServices()
 
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       def run = {
         logger.info("Shutting down Aquarium")
-        Configurator.MasterConfigurator.stopServices()
+        mc.stopServices()
         Actor.registry.shutdownAll()
       }
     }))
