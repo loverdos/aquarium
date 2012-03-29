@@ -4,7 +4,8 @@
 # Use at your own risk (i.e. make sure it compiles etc).
 
 WHERE=`dirname $0`
-SHA=`git rev-parse HEAD`
+SHAFULL=`git rev-parse HEAD`
+SHA=`echo $SHAFULL | cut -c 1-11`
 DATE_FORMAT=+'%Y%m%d%H%M%S'
 NOW=`date $DATE_FORMAT`
 DIST=aquarium-$SHA
@@ -47,7 +48,7 @@ build() {
     mvn package -DskipTests && {
         echo "Copying Aquarium classes"
         aquariumjar=`find target -type f|egrep "aquarium-[0-9\.]+(-SNAPSHOT)?\.jar"`
-        cp $aquariumjar $DIST/lib || fail "copying $aquariumjar"ß
+        cp $aquariumjar $DIST/lib || fail "copying $aquariumjar"
     } || fail "building"
 }
 
@@ -66,7 +67,7 @@ collectscripts() {
 }
 
 gitmark() {
-    git rev-parse HEAD > $DIST/gitsha.txt
+    echo $SHAFULL > $DIST/gitsha.txt
 }
 
 archive() {
