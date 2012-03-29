@@ -163,6 +163,8 @@ class Configurator(val props: Props) extends Loggable {
   def defaultClassLoader = Thread.currentThread().getContextClassLoader
 
   /**
+   * FIXME: This must be ditched.
+   * 
    * Find a file whose location can be overiden in
    * the configuration file (e.g. policy.yaml)
    *
