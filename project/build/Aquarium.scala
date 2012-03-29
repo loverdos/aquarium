@@ -122,6 +122,7 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   val lib_converter = "com.ckkloverdos" %% "converter" % "0.3.0" withSources()
   val lib_sysprop = "com.ckkloverdos" %% "sysprop" % "0.1.0" withSources()
   val lib_streamresource = "com.ckkloverdos" %% "streamresource" % "0.2.0" withSources()
+  val lib_jbootstrap = "com.ckkloverdos" % "jbootstrap" % "3.0.0" withSources()
 
   val lib_lucene_core = "org.apache.lucene" % "lucene-core" % "3.5.0" withSources()
   val lib_solr_core = "org.apache.solr" % "solr-core" % "3.5.0" withSources()

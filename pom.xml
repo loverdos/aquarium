@@ -206,6 +206,12 @@
 
     <dependency>
       <groupId>com.ckkloverdos</groupId>
+      <artifactId>jbootstrap</artifactId>
+      <version>3.0.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.ckkloverdos</groupId>
       <artifactId>streamresource_2.9.1</artifactId>
       <version>0.2.0</version>
     </dependency>
