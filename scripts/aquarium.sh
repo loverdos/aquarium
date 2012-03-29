@@ -81,7 +81,6 @@ CONF=$AQUARIUM_HOME/conf
 
 # Check the application status
 check_status() {
-
     if [ -f $PID ]
     then
         aqrunning=`ps -ef|grep java|grep aquarium`
@@ -109,11 +108,6 @@ start() {
         exit 1
     fi
 
-    if [ $1 == "debug" ]
-    then
-        DBG=1
-    fi
-
     echo "Starting Aquarium"
 
     # Build classpath
@@ -122,26 +116,15 @@ start() {
     # load log4j from classpath
     CLASSPATH=$CONF:$CLASSPATH
 
-    # Debug mode config, permit debugger attachment
-    DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=8000,suspend=n"
-
     echo "Using CLASSPATH $CLASSPATH"
     echo "Using AQUARIUM_HOME $AQUARIUM_HOME"
     echo "Using MAIN $AQMAIN"
     echo "Using AQUARIUM_PROP $AQUARIUM_PROP"
     echo "Using JAVA_OPTS $JAVA_OPTS"
 
-    if [ -z "$DBG" ]
-    then
-        java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $AQMAIN >> $LOG 2>&1 &
-        echo $! > $PID
-        echo "OK [pid = $!]"
-    else
-        echo "DEBUG MODE: You can connect a JPDA debugger at port 8000"
-        echo "DEBUG MODE: Hit Ctrl+c to exit"
-
-        java $JAVA_OPTS $DEBUG -cp $CLASSPATH $AQUARIUM_PROP $AQMAIN
-    fi
+    java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $AQMAIN >> $LOG 2>&1 &
+    echo $! > $PID
+    echo "OK [pid = $!]"
 }
 
 # Stops the application
