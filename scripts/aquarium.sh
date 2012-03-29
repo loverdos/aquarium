@@ -72,6 +72,8 @@ PRGDIR=`dirname "$PRG"`
 [ -z "$AQUARIUM_OPTS" ] && AQUARIUM_OPTS=""
 [ -z "$JAVA_OPTS" ]     && JAVA_OPTS="-Xms1024M -Xmx4096M"
 
+export AQUARIUM_HOME
+
 PID=$AQUARIUM_HOME/bin/aquarium.pid
 
 AQUARIUM_LIB=$AQUARIUM_HOME/lib
