@@ -58,10 +58,10 @@ case class  UserEvent(
     details: UserEvent.Details)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
-  assert(eventType.equalsIgnoreCase(UserEvent.EventTypes.create) ||
-    eventType.equalsIgnoreCase(UserEvent.EventTypes.modify))
+//  assert(eventType.equalsIgnoreCase(UserEvent.EventTypes.create) ||
+//    eventType.equalsIgnoreCase(UserEvent.EventTypes.modify))
 
-  assert(!role.isEmpty)
+//  assert(!role.isEmpty)
 
   /**
    * Validate this event according to the following rules:
