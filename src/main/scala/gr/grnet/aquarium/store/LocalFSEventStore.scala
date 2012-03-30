@@ -37,7 +37,6 @@ package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.Configurator
 import com.ckkloverdos.maybe.Maybe
-import java.text.SimpleDateFormat
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
@@ -45,7 +44,7 @@ import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.
  *
- * The methods guarantee they will not fail.
+ * The public methods guarantee they will not propagate any failure.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
