@@ -35,9 +35,7 @@
 
 package gr.grnet.aquarium
 
-import actor.{ActorProvider}
-import com.ckkloverdos.resource._
-import com.ckkloverdos.sys.SysProp
+import actor.ActorProvider
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
@@ -66,17 +64,17 @@ class Configurator(val props: Props) extends Loggable {
             case Just(_) ⇒
               instance
             case Failed(e, _) ⇒
-              throw new Exception("Could not configure instance of %s".format(className), e)
+              throw new AquariumException("Could not configure instance of %s".format(className), e)
             case NoVal ⇒
-              throw new Exception("Could not configure instance of %s".format(className))
+              throw new AquariumException("Could not configure instance of %s".format(className))
           }
         case _ ⇒
           instance
       }
       case Failed(e, _) ⇒
-        throw new Exception("Could not instantiate %s".format(className), e)
+        throw new AquariumException("Could not instantiate %s".format(className), e)
       case NoVal ⇒
-        throw new Exception("Could not instantiate %s".format(className))
+        throw new AquariumException("Could not instantiate %s".format(className))
     }
 
   }
@@ -277,9 +275,9 @@ object Configurator {
       case Just(masterConfResource) ⇒
         masterConfResource
       case NoVal ⇒
-        throw new RuntimeException("Could not find master configuration file: %s".format(MasterConfName))
+        throw new AquariumException("Could not find master configuration file: %s".format(MasterConfName))
       case Failed(e, m) ⇒
-        throw new RuntimeException(m, e)
+        throw new AquariumException(m, e)
     }
   }
 
@@ -289,9 +287,9 @@ object Configurator {
       case Just(props) ⇒
         props
       case NoVal ⇒
-        throw new RuntimeException("Could not load master configuration file: %s".format(MasterConfName))
+        throw new AquariumException("Could not load master configuration file: %s".format(MasterConfName))
       case Failed(e, m) ⇒
-        throw new RuntimeException(m, e)
+        throw new AquariumException(m, e)
     }
   }
 
@@ -300,9 +298,9 @@ object Configurator {
       case Just(masterConf) ⇒
         masterConf
       case NoVal ⇒
-        throw new RuntimeException("Could not initialize master configuration file: %s".format(MasterConfName))
+        throw new AquariumException("Could not initialize master configuration file: %s".format(MasterConfName))
       case Failed(e, m) ⇒
-        throw new RuntimeException(m, e)
+        throw new AquariumException(m, e)
     }
   }
 
