@@ -55,7 +55,7 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
   override def exists(event: UserEvent) =
     _configurator.userEventStore.findUserEventById(event.id).isJust
 
-  override def persist(event: UserEvent) = {
+  override def persist(event: UserEvent, initialPayload: Array[Byte]) = {
     _configurator.userEventStore.storeUserEvent(event) match {
       case Just(x) => true
       case x: Failed =>

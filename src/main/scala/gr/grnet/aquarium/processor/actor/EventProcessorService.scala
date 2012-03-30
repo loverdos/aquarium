@@ -65,7 +65,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   /* Messages exchanged between the persister and the queuereader */
   case class AckData(msgId: String, deliveryTag: Long, queue: ActorRef)
-  case class Persist(event: E, sender: ActorRef, ackData: AckData)
+  case class Persist(event: E, initialPayload: Array[Byte], sender: ActorRef, ackData: AckData)
   case class PersistOK(ackData: AckData)
   case class PersistFailed(ackData: AckData)
   case class Duplicate(ackData: AckData)
@@ -92,7 +92,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
   protected def decode(data: Array[Byte]): E
   protected def forward(event: E): Unit
   protected def exists(event: E): Boolean
-  protected def persist(event: E): Boolean
+  protected def persist(event: E, initialPayload: Array[Byte]): Boolean
 
   protected def queueReaderThreads: Int
   protected def persisterThreads: Int
@@ -142,11 +142,11 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
           } else {
             //Redeliver, but keep track of the message
             redeliveries.add(event.id)
-            persisterManager.lb ! Persist(event, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
+            persisterManager.lb ! Persist(event, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
           }
         } else {
           val eventWithReceivedMillis = event.copyWithReceivedMillis(System.currentTimeMillis()).asInstanceOf[E]
-          persisterManager.lb ! Persist(eventWithReceivedMillis, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
+          persisterManager.lb ! Persist(eventWithReceivedMillis, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
         }
 
       case PersistOK(ackData) =>
@@ -185,12 +185,12 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
   class Persister extends Actor {
 
     def receive = {
-      case Persist(event, sender, ackData) =>
+      case Persist(event, initialPayload, sender, ackData) =>
         logger.debug("Persister-%s attempting store".format(self.getUuid()))
         //val time = System.currentTimeMillis()
         if (exists(event))
           sender ! Duplicate(ackData)
-        else if (persist(event)) {
+        else if (persist(event, initialPayload)) {
           //logger.debug("Persist time: %d ms".format(System.currentTimeMillis() - time))
           sender ! PersistOK(ackData)
         } else

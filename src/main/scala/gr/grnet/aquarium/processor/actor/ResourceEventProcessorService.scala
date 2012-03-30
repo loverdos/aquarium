@@ -65,9 +65,9 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
       case x => x.findResourceEventById(event.id).isJust
     }
 
-  override def persist(event: ResourceEvent): Boolean = {
+  override def persist(event: ResourceEvent, initialPayload: Array[Byte]): Boolean = {
     val st = store.get match {
-      case null => store.set(_configurator.resourceEventStore); return persist(event)
+      case null => store.set(_configurator.resourceEventStore); return persist(event, initialPayload)
       case x => x
     }
 
