@@ -152,6 +152,19 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
+  private[this] lazy val _eventsStoreFolder: Maybe[File] = {
+    props.get(Keys.events_store_folder) map {
+      folderName ⇒
+        val folder = new File(folderName)
+        folder.mkdirs()
+        if(folder.isDirectory) {
+          folder.getCanonicalFile
+        } else {
+          throw new AquariumException("%s = %s is not a folder".format(Keys.events_store_folder, folder))
+        }
+    }
+  }
+
   private[this] lazy val _resEventProc: ResourceEventProcessorService = new ResourceEventProcessorService
 
   private[this] lazy val _imEventProc: UserEventProcessorService = new UserEventProcessorService
@@ -258,6 +271,10 @@ class Configurator(val props: Props) extends Loggable {
   def getInt(name: String): Maybe[Int] = {
     props.get(name).map(_.toInt)
   }
+
+  def hasEventsStoreFolder = _eventsStoreFolder.isJust
+
+  def eventsStoreFolder = gr.grnet.aquarium.util.justForSure(_eventsStoreFolder).get
 }
 
 object Configurator {
@@ -493,6 +510,10 @@ object Configurator {
      */
     final val time_unit_in_millis = "time.unit.in.seconds"
 
-    final val message_queues_store_folder = "messages"
+    /**
+     * If a value is given to this property, then it represents a folder where all events coming to aquarium are
+     * stored.
+     */
+    final val events_store_folder = "events.store.folder"
   }
 }

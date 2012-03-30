@@ -83,6 +83,11 @@ object Main extends Loggable {
     logger.info("Starting Aquarium from {}", AQUARIUM_HOME_FOLDER.getCanonicalPath)
 
     val mc = Configurator.MasterConfigurator
+
+    if(mc.hasEventsStoreFolder) {
+      logger.info("{} = {}", Configurator.Keys.events_store_folder, mc.eventsStoreFolder)
+    }
+
     val rl = ResourceLocator
     val HERE = gr.grnet.aquarium.util.justForSure(rl.getResource(".")).get.url.toExternalForm
 
