@@ -39,6 +39,7 @@ import gr.grnet.aquarium.logic.events.UserEvent
 import com.ckkloverdos.maybe.{NoVal, Failed, Just}
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
+import gr.grnet.aquarium.store.LocalFSEventStore
 
 /**
  * An event processor service for user events coming from the IM system
@@ -56,6 +57,8 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
     _configurator.userEventStore.findUserEventById(event.id).isJust
 
   override def persist(event: UserEvent, initialPayload: Array[Byte]) = {
+    LocalFSEventStore.storeUserEvent(_configurator, event, initialPayload)
+
     _configurator.userEventStore.storeUserEvent(event) match {
       case Just(x) => true
       case x: Failed =>

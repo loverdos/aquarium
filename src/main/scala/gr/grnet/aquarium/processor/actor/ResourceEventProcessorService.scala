@@ -39,8 +39,8 @@ import com.ckkloverdos.maybe.{Just, Failed, NoVal}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.actor.DispatcherRole
 import java.lang.ThreadLocal
-import gr.grnet.aquarium.store.{ResourceEventStore}
 import gr.grnet.aquarium.Configurator.Keys
+import gr.grnet.aquarium.store.{LocalFSEventStore, ResourceEventStore}
 
 
 /**
@@ -66,6 +66,8 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
     }
 
   override def persist(event: ResourceEvent, initialPayload: Array[Byte]): Boolean = {
+    LocalFSEventStore.storeResourceEvent(_configurator, event, initialPayload)
+
     val st = store.get match {
       case null => store.set(_configurator.resourceEventStore); return persist(event, initialPayload)
       case x => x
