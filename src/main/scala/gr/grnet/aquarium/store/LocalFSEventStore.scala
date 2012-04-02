@@ -37,6 +37,7 @@ package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.Configurator
 import com.ckkloverdos.maybe.Maybe
+import gr.grnet.aquarium.util.makeBytes
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
@@ -58,7 +59,7 @@ object LocalFSEventStore {
   }
 
   private[this] def writeToFile(file: File, data: String): Unit = {
-    writeToFile(file, data.getBytes("UTF-8"))
+    writeToFile(file, makeBytes(data))
   }
 
   def storeResourceEvent(mc: Configurator, event: ResourceEvent, initialPayload: Array[Byte]): Maybe[Unit] = Maybe {

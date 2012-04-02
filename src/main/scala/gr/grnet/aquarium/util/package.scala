@@ -164,7 +164,17 @@ package object util {
     maybe.asInstanceOf[Just[A]]
   }
 
+  /**
+   * Transform an array of bytes to a string, assuming UTF-8 encoding.
+   */
   def makeString(bytes: Array[Byte]): String = {
     new String(bytes, UTF_8_Charset)
+  }
+
+  /**
+   * Transform a string to an array of bytes, following a UTF-8 decoding scheme.
+   */
+  def makeBytes(string: String): Array[Byte] = {
+    string.getBytes(UTF_8_Charset)
   }
 }
