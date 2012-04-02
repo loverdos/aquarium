@@ -48,8 +48,6 @@ import java.io.File
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object Main extends Loggable {
-  final val AQUARIUM_HOME = SysEnv("AQUARIUM_HOME")
-
   private[this] final val PropsToShow = List(
     SysProp.JavaVMName,
     SysProp.JavaVersion,
@@ -64,22 +62,9 @@ object Main extends Loggable {
     SysProp("file.encoding")
   )
 
-
-  lazy val AQUARIUM_HOME_FOLDER: File = {
-    AQUARIUM_HOME.value match {
-      case Just(home) ⇒
-        val file = new File(home)
-        if(!file.isDirectory) {
-          throw new Exception("%s (%s) is not a folder".format(AQUARIUM_HOME.name, home))
-        }
-        file.getCanonicalFile()
-      case _ ⇒
-        throw new Exception("%s is not set".format(AQUARIUM_HOME.name))
-    }
-  }
-
   def main(args: Array[String]) = {
-    logger.info("Starting Aquarium from {}", AQUARIUM_HOME_FOLDER.getCanonicalPath)
+    import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER}
+    logger.info("Starting Aquarium from {}", AQUARIUM_HOME_FOLDER)
 
     val mc = Configurator.MasterConfigurator
 
