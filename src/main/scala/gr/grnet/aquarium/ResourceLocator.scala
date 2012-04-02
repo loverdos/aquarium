@@ -72,37 +72,38 @@ object ResourceLocator {
   /**
    * This exists in order to have a feeling of where we are.
    */
-  final val HERE = justForSure(getResource(".")).get.url.toExternalForm
+  final lazy val HERE = justForSure(getResource(".")).get.url.toExternalForm
 
   /**
    * Current directory resource context.
    */
-  private[this] final val AppBaseResourceContext = new FileStreamResourceContext(".")
+  private[this] final lazy val AppBaseResourceContext = new FileStreamResourceContext(".")
 
   /**
    * Default config context for Aquarium distributions
    */
-  private[this] final val LocalConfigResourceContext = new FileStreamResourceContext("conf")
+  private[this] final lazy val LocalConfigResourceContext = new FileStreamResourceContext("conf")
 
   /**
    * The venerable /etc resource context. Applicable in Unix environments
    */
-  private[this] final val SlashEtcResourceContext = new FileStreamResourceContext("/etc/aquarium")
+  private[this] final lazy val SlashEtcResourceContext = new FileStreamResourceContext("/etc/aquarium")
 
   /**
    * Class loader resource context.
    * This has the lowest priority.
    */
-  private[this] final val ClasspathBaseResourceContext = new ClassLoaderStreamResourceContext(Thread.currentThread().getContextClassLoader)
+  private[this] final lazy val ClasspathBaseResourceContext = new ClassLoaderStreamResourceContext(Thread
+    .currentThread().getContextClassLoader)
 
   /**
    * Use this property to override the place where aquarium configuration resides.
    *
    * The value of this property is a folder that defines the highest-priority resource context.
    */
-  private[this] final val ConfBaseFolderSysProp = SysProp("aquarium.conf.base.folder")
+  private[this] final lazy val ConfBaseFolderSysProp = SysProp("aquarium.conf.base.folder")
 
-  private[this] final val BasicResourceContext = new CompositeStreamResourceContext(
+  private[this] final lazy val BasicResourceContext = new CompositeStreamResourceContext(
     NoVal,
     SlashEtcResourceContext,
     LocalConfigResourceContext,
@@ -112,7 +113,7 @@ object ResourceLocator {
   /**
    * The resource context used in the application.
    */
-  private[this] final val MasterResourceContext = {
+  private[this] final lazy val MasterResourceContext = {
     ConfBaseFolderSysProp.value match {
       case Just(value) ⇒
         // We have a system override for the configuration location
