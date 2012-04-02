@@ -37,9 +37,8 @@ package gr.grnet.aquarium
 
 import util.Loggable
 import akka.actor.Actor
-import collection.immutable.SortedSet
 import com.ckkloverdos.sys.{SysEnv, SysProp}
-import com.ckkloverdos.maybe.{NoVal, Just}
+import com.ckkloverdos.maybe.Just
 import java.io.File
 
 /**
@@ -73,7 +72,7 @@ object Main extends Loggable {
         if(!file.isDirectory) {
           throw new Exception("%s (%s) is not a folder".format(AQUARIUM_HOME.name, home))
         }
-        file
+        file.getCanonicalFile()
       case _ ⇒
         throw new Exception("%s is not set".format(AQUARIUM_HOME.name))
     }
