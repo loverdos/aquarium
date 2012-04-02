@@ -38,3 +38,4 @@ doc/arch/arch.texshop
 build.log
 _gitstats
 *.aquarium.properties
+sshfs
