@@ -39,3 +39,5 @@ build.log
 _gitstats
 *.aquarium.properties
 sshfs
+aquarium-dist
+aquarium-dist.tar.gz

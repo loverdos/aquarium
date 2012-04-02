@@ -48,6 +48,7 @@ P_PROPS=""
 P_BUILD="normal"
 P_KEEPDIST="no"
 P_FAKEIT="no"
+P_ARCHIVE=""
 
 verbose() {
   if [ "$P_VERBOSE" = "yes" ]; then
@@ -59,12 +60,19 @@ verbose_p() {
   verbose "Build type          :" $P_BUILD
   verbose "Custom configuration:" $P_PROPS
   verbose "Keep dist/ folder   :" $P_KEEPDIST
+  verbose "Custom achive name  :" $P_ARCHIVE
   verbose "Fake it             :" $P_FAKEIT
 }
 
 fail() {
     echo "failed while $1"
     exit 1
+}
+
+makedistname() {
+  if [ -n "$P_ARCHIVE" ]; then
+    DIST="$P_ARCHIVE"
+  fi
 }
 
 removedist() {
@@ -152,23 +160,27 @@ gitmark() {
 }
 
 archive() {
-  ARC=$DIST.tar.gz
+  ARC="${DIST}.tar.gz"
+
   if [ -e "$ARC" ]; then
     echo
     echo Removing previous $ARC
+    rm "$ARC"
   fi
   echo
   echo "Creating archive"
-  tar zcvf $ARC $DIST/ || fail "creating archive"
+  tar zcvf "$ARC" $DIST/ || fail "creating archive"
   echo "File $ARC created succesfully"
   echo "Cleaning up"
-  ls -al $ARC
+  ls -al "$ARC"
 }
 
 usage() {
   echo "Usage: $0 [options]"
   echo ""
   echo "OPTIONS:"
+  echo "  -a NAME   Use archive NAME."
+  echo "            The full name will be NAME.tar.gz."
   echo "  -b TYPE   Use build TYPE. One of 'normal', 'fast'."
   echo "            'normal' is the default and can be omitted."
   echo "            'fast' means that it will not run mvn clean."
@@ -181,9 +193,11 @@ usage() {
   exit 0
 }
 
-while getopts ":b:hkc:nv" opt
+while getopts ":a:b:hkc:nv" opt
 do
   case $opt in
+    a) P_ARCHIVE=$OPTARG
+    ;;
     b) P_BUILD=$OPTARG
     ;;
     c) P_PROPS=$OPTARG
@@ -224,6 +238,7 @@ if [ "$P_FAKEIT" = "yes" ]; then
 fi
 
 verbose_p         && \
+makedistname      && \
 removedist     no && \
 createdist        && \
 clean             && \
