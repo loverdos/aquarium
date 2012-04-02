@@ -155,7 +155,15 @@ class Configurator(val props: Props) extends Loggable {
   private[this] lazy val _eventsStoreFolder: Maybe[File] = {
     props.get(Keys.events_store_folder) map {
       folderName ⇒
-        val folder = new File(folderName)
+        val folder = {
+          val folder = new File(folderName)
+          if(folder.isAbsolute) {
+            folder
+          } else {
+            logger.info("{} is not absolute, making it relative to AQUARIUM_HOME", Keys.events_store_folder)
+            new File(ResourceLocator.AQUARIUM_HOME_FOLDER, folderName)
+          }
+        }
         folder.mkdirs()
         if(folder.isDirectory) {
           folder.getCanonicalFile
