@@ -56,10 +56,10 @@ verbose() {
 }
 
 verbose_p() {
-  verbose "Build type       :" $P_BUILD
-  verbose "Custom properties:" $P_PROPS
-  verbose "Keep dist/ folder:" $P_KEEPDIST
-  verbose "Fake it          :" $P_FAKEIT
+  verbose "Build type          :" $P_BUILD
+  verbose "Custom configuration:" $P_PROPS
+  verbose "Keep dist/ folder   :" $P_KEEPDIST
+  verbose "Fake it             :" $P_FAKEIT
 }
 
 fail() {
@@ -126,7 +126,7 @@ collectconf() {
   echo
   echo Copying config files from $CONF_SRC
   echo
-  cp $CONF_SRC/log4j.properties $DIST/conf|| fail "copying log4j.properties"
+  cp $CONF_SRC/logback.xml $DIST/conf|| fail "copying logback.xml"
   cp $CONF_SRC/policy.yaml $DIST/conf || fail "copying policy.yaml"
   cp $CONF_SRC/roles-agreements.map $DIST/conf || fail "copying roles-agreements.map"
 
@@ -166,27 +166,27 @@ usage() {
   echo "  -b TYPE   Use build TYPE. One of 'normal', 'fast'."
   echo "            'normal' is the default and can be omitted."
   echo "            'fast' means that it will not run mvn clean."
+  echo "  -c FILE   Use FILE as aquarium.properties configuration."
   echo "  -k        Keep generated dist folder."
   echo "  -h        Show this message."
   echo "  -n        As in make -n."
-  echo "  -p FILE   Use FILE as aquarium.properties."
   echo "  -v        Be verbose."
 
   exit 0
 }
 
-while getopts ":b:hkp:nv" opt
+while getopts ":b:hkc:nv" opt
 do
   case $opt in
     b) P_BUILD=$OPTARG
+    ;;
+    c) P_PROPS=$OPTARG
     ;;
     h) usage
     ;;
     k) P_KEEPDIST="yes"
     ;;
     n) P_FAKEIT="yes"
-    ;;
-    p) P_PROPS=$OPTARG
     ;;
     v) P_VERBOSE="yes"
     ;;
