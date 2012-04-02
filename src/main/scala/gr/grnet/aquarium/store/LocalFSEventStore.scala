@@ -61,15 +61,6 @@ object LocalFSEventStore {
     writeToFile(file, data.getBytes("UTF-8"))
   }
 
-  private[this] def storeThem(parsedJson: String,
-                              parsedJsonTarget: File,
-                              initialPayload: Array[Byte],
-                              initialPayloadTarget: File): Unit = {
-
-    Maybe { writeToFile(parsedJsonTarget, parsedJson.getBytes("UTF-8")) }
-    Maybe { writeToFile(initialPayloadTarget, initialPayload) }
-  }
-
   def storeResourceEvent(mc: Configurator, event: ResourceEvent, initialPayload: Array[Byte]): Maybe[Unit] = Maybe {
     if(mc.hasEventsStoreFolder) {
       val occurredString = new MutableDateCalc(event.occurredMillis).toYYYYMMDDHHMMSS
