@@ -37,10 +37,10 @@ package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.Configurator
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.util.makeBytes
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
+import gr.grnet.aquarium.util.{Loggable, makeBytes}
 
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.
@@ -50,8 +50,10 @@ import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object LocalFSEventStore {
+object LocalFSEventStore extends Loggable {
   private[this] def writeToFile(file: File, data: Array[Byte]): Unit = {
+    logger.debug("Writing {} bytes to {}", data.length, file.getCanonicalPath())
+
     val out = new FileOutputStream(file)
     out.write(data)
     out.flush()
@@ -85,6 +87,8 @@ object LocalFSEventStore {
 
         Maybe { writeToFile(parsedJsonFile, event.toJson) }
       }
+    } else {
+      logger.info("Debugging local fs store disabled")
     }
   }
 
@@ -103,6 +107,8 @@ object LocalFSEventStore {
         val parsedJsonFile = new File(imEvents, "im-%s-[%s]-[%s].json".format(occurredString, event.id, event.userID))
         Maybe { writeToFile(parsedJsonFile, event.toJson) }
       }
+    } else {
+      logger.info("Debugging local fs store disabled")
     }
   }
 }

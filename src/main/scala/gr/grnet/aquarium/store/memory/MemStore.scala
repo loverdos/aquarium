@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.store.memory
 
-import gr.grnet.aquarium.Configurable
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
 import gr.grnet.aquarium.store._
@@ -46,6 +45,7 @@ import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, Po
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.simulation.uid.ConcurrentVMLocalUIDGenerator
+import gr.grnet.aquarium.{AquariumException, Configurable}
 
 /**
  * An implementation of various stores that persists data in memory.
@@ -265,11 +265,15 @@ class MemStore extends UserStateStore
   }
   //- ResourceEventStore
 
+  //+ UserEventStore
+  def storeUnparsed(json: String) = throw new AquariumException("Not implemented")
+
   def storeUserEvent(event: UserEvent) = {userEventById += (event.id -> event); Just(RecordID(event.id))}
 
   def findUserEventById(id: String) = Maybe{userEventById.getOrElse(id, null)}
 
   def findUserEventsByUserId(userId: String) = userEventById.valuesIterator.filter{v => v.userID == userId}.toList
+  //- UserEventStore
 
   def loadPolicyEntriesAfter(after: Long) =
     _policyEntries.filter(p => p.validFrom > after)

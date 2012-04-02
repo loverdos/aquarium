@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import gr.grnet.aquarium.util.{Lifecycle, Loggable, makeString}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable, makeString, failedForSure}
 
 import akka.actor._
 import akka.actor.Actor._
@@ -132,38 +132,42 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
     def receive = {
       case Delivery(payload, _, deliveryTag, isRedeliver, _, queue) =>
         val eventM = Maybe { decode(payload) }
-        val event = eventM match {
+        eventM match {
           case Just(event) ⇒
-            event
+            inFlightEvents.put(deliveryTag, event)
 
-          case failed @ Failed(e, m) ⇒
-            persistUnparsed(payload)
+            if (isRedeliver) {
+              //Message could not be processed 3 times, just ignore it
+              if (redeliveries.contains(event.id)) {
+                logger.warn("Actor[%s] - Event[%s] msg[%d] redelivered >2 times. Rejecting".format(self.getUuid(), event, deliveryTag))
+                queue ! Reject(deliveryTag, false)
+                redeliveries.remove(event.id)
+                inFlightEvents.remove(deliveryTag)
+              } else {
+                //Redeliver, but keep track of the message
+                redeliveries.add(event.id)
+                persisterManager.lb ! Persist(event, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
+              }
+            } else {
+              val eventWithReceivedMillis = event.copyWithReceivedMillis(System.currentTimeMillis()).asInstanceOf[E]
+              persisterManager.lb ! Persist(eventWithReceivedMillis, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
+            }
+
+          case maybe ⇒
             logger.error("Could not parse payload {}", makeString(payload))
-            throw e
 
-          case NoVal ⇒
-            persistUnparsed(payload)
-            val errMsg = "Unexpected NoVal. Could not parse payload %s".format(makeString(payload))
-            logger.error(errMsg)
-            throw new AquariumException(errMsg)
-        }
-        inFlightEvents.put(deliveryTag, event)
+            if(maybe.isFailed) {
+              val failed = failedForSure(maybe)
+              val exception = failed.exception
+              logger.error(exception.getMessage, exception)
+            }
 
-        if (isRedeliver) {
-          //Message could not be processed 3 times, just ignore it
-          if (redeliveries.contains(event.id)) {
-            logger.warn("Actor[%s] - Event[%s] msg[%d] redelivered >2 times. Rejecting".format(self.getUuid(), event, deliveryTag))
-            queue ! Reject(deliveryTag, false)
-            redeliveries.remove(event.id)
-            inFlightEvents.remove(deliveryTag)
-          } else {
-            //Redeliver, but keep track of the message
-            redeliveries.add(event.id)
-            persisterManager.lb ! Persist(event, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
-          }
-        } else {
-          val eventWithReceivedMillis = event.copyWithReceivedMillis(System.currentTimeMillis()).asInstanceOf[E]
-          persisterManager.lb ! Persist(eventWithReceivedMillis, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
+            // If we could not create an object from the incoming json, then we just store the message
+            // and then ignore it.
+            // TODO: Possibly the sending site should setup a queue to accept such erroneous messages?
+            persistUnparsed(initialPayload = payload)
+
+            queue ! Acknowledge(deliveryTag)
         }
 
       case PersistOK(ackData) =>
@@ -202,7 +206,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
   class Persister extends Actor {
 
     def receive = {
-      case Persist(event, initialPayload, sender, ackData) =>
+      case Persist(event, initialPayload, sender, ackData) ⇒
         logger.debug("Persister-%s attempting store".format(self.getUuid()))
         //val time = System.currentTimeMillis()
         if (exists(event))

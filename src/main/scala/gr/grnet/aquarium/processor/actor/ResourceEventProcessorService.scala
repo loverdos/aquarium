@@ -40,6 +40,7 @@ import gr.grnet.aquarium.actor.DispatcherRole
 import java.lang.ThreadLocal
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.{LocalFSEventStore, ResourceEventStore}
+import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
 
 
@@ -84,7 +85,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
 
 
   protected def persistUnparsed(initialPayload: Array[Byte]): Unit = {
-    Maybe { logger.warn("Saving unparsed\n%s".format(new String(initialPayload, "UTF-8"))) }
+    Maybe { logger.warn("Saving unparsed\n%s".format(makeString(initialPayload))) }
     LocalFSEventStore.storeResourceEvent(_configurator, null, initialPayload)
   }
 

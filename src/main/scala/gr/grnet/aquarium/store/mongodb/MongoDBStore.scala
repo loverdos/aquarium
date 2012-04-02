@@ -53,6 +53,7 @@ import gr.grnet.aquarium.logic.events._
 import com.mongodb._
 import com.ckkloverdos.maybe.{NoVal, Maybe}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, Timeslot, DSLPolicy, DSLComplexResource}
+import org.bson.types.ObjectId
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -72,12 +73,13 @@ class MongoDBStore(
   with PolicyStore
   with Loggable {
 
-  private[store] lazy val resourceEvents = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
-  private[store] lazy val userStates     = getCollection(MongoDBStore.USER_STATES_COLLECTION)
-  private[store] lazy val userEvents     = getCollection(MongoDBStore.USER_EVENTS_COLLECTION)
-  private[store] lazy val walletEntries  = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
+  private[store] lazy val resourceEvents     = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
+  private[store] lazy val userStates         = getCollection(MongoDBStore.USER_STATES_COLLECTION)
+  private[store] lazy val userEvents         = getCollection(MongoDBStore.USER_EVENTS_COLLECTION)
+  private[store] lazy val unparsedUserEvents = getCollection(MongoDBStore.UNPARSED_USER_EVENTS_COLLECTION)
+  private[store] lazy val walletEntries      = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
 //  private[store] lazy val policies       = getCollection(MongoDBStore.POLICIES_COLLECTION)
-  private[store] lazy val policyEntries  = getCollection(MongoDBStore.POLICY_ENTRIES_COLLECTION)
+  private[store] lazy val policyEntries      = getCollection(MongoDBStore.POLICY_ENTRIES_COLLECTION)
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
@@ -306,6 +308,10 @@ class MongoDBStore(
   //-WalletEntryStore
 
   //+UserEventStore
+  def storeUnparsed(json: String): Maybe[RecordID] = {
+    MongoDBStore.storeJustJson(json, unparsedUserEvents)
+  }
+
   def storeUserEvent(event: UserEvent): Maybe[RecordID] =
     MongoDBStore.storeAny[UserEvent](event, userEvents, UserEventJsonNames.userID,
       _.userID, MongoDBStore.jsonSupportToDBObject)
@@ -368,6 +374,15 @@ object MongoDBStore {
    * User events are coming from the IM module (external).
    */
   final val USER_EVENTS_COLLECTION = "userevents"
+
+  /**
+   * Collection holding [[gr.grnet.aquarium.logic.events.UserEvent]]s that could not be parsed to normal objects.
+   *
+   * We of course assume at least a valid JSON representation.
+   *
+   * User events are coming from the IM module (external).
+   */
+  final val UNPARSED_USER_EVENTS_COLLECTION = "unparsed_userevents"
 
   /**
    * Collection holding [[gr.grnet.aquarium.logic.events.WalletEntry]].
@@ -464,6 +479,17 @@ object MongoDBStore {
     storeAny[PolicyEntry](policyEntry, collection, PolicyJsonNames.id, _.id, MongoDBStore.jsonSupportToDBObject)
   }
 
+  def storeJustJson(json: String, collection: DBCollection): Maybe[RecordID] = {
+    Maybe {
+      val dbObj = jsonStringToDBObject(json)
+      val writeResult = collection insert dbObj
+      writeResult.getLastError().throwOnError()
+      val objectId = dbObj.get("_id").asInstanceOf[ObjectId]
+
+      RecordID(objectId.toString)
+    }
+  }
+
   def storeAny[A](any: A,
                   collection: DBCollection,
                   idName: String,
@@ -490,11 +516,15 @@ object MongoDBStore {
   }
 
   def jsonSupportToDBObject(any: JsonSupport): DBObject = {
-    JSON.parse(any.toJson) match {
+    jsonStringToDBObject(any.toJson)
+  }
+
+  def jsonStringToDBObject(json: String): DBObject = {
+    JSON.parse(json) match {
       case dbObject: DBObject ⇒
         dbObject
       case _ ⇒
-        throw new StoreException("Could not transform %s -> %s".format(displayableObjectInfo(any), classOf[DBObject].getName))
+        throw new StoreException("Could not transform %s -> %s".format(json.getClass, classOf[DBObject].getName))
     }
   }
 }

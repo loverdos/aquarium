@@ -44,7 +44,7 @@ import gr.grnet.aquarium.logic.events.{UserEvent}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 trait UserEventStore {
-
+  def storeUnparsed(json: String): Maybe[RecordID]
   /**
    * Store an event
    */

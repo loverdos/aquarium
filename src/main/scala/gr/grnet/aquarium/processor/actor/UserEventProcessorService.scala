@@ -39,7 +39,9 @@ import gr.grnet.aquarium.logic.events.UserEvent
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
+import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
+import gr.grnet.aquarium.util.json.JsonHelpers
 
 /**
  * An event processor service for user events coming from the IM system
@@ -69,8 +71,15 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
   }
 
   protected def persistUnparsed(initialPayload: Array[Byte]): Unit = {
-    Maybe { logger.warn("Saving unparsed\n%s".format(new String(initialPayload, "UTF-8"))) }
-    LocalFSEventStore.storeUserEvent(_configurator, null, initialPayload)
+    Maybe {
+      val json = makeString(initialPayload)
+      logger.warn("Saving unparsed\n%s".format(json))
+
+      LocalFSEventStore.storeUserEvent(_configurator, null, initialPayload)
+
+      val recordIDM = _configurator.userEventStore.storeUnparsed(json)
+      logger.info("Saved unparsed {}", recordIDM)
+    }
   }
 
   override def queueReaderThreads: Int = 1
