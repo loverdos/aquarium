@@ -53,6 +53,8 @@ import gr.grnet.aquarium.util.justForSure
 object ResourceLocator {
   /**
    * This is normally exported from the shell script that starts Aquarium.
+   *
+   * TODO: Make this searchable for resources (ie put it in the resource context)
    */
   final val AQUARIUM_HOME = SysEnv("AQUARIUM_HOME")
 
