@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import gr.grnet.aquarium.util.{Lifecycle, Loggable}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable, makeString}
 
 import akka.actor._
 import akka.actor.Actor._
@@ -138,13 +138,14 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
           case failed @ Failed(e, m) ⇒
             persistUnparsed(payload)
-            logger.error("Could not parse payload {}", new String(payload, "UTF-8"))
+            logger.error("Could not parse payload {}", makeString(payload))
             throw e
 
           case NoVal ⇒
             persistUnparsed(payload)
-            logger.error("Could not parse payload {}", new String(payload, "UTF-8"))
-            throw new AquariumException("Unexpected NoVal")
+            val errMsg = "Unexpected NoVal. Could not parse payload %s".format(makeString(payload))
+            logger.error(errMsg)
+            throw new AquariumException(errMsg)
         }
         inFlightEvents.put(deliveryTag, event)
 

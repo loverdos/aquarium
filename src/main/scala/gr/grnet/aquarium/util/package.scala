@@ -36,6 +36,7 @@
 package gr.grnet.aquarium
 
 import com.ckkloverdos.maybe.{Failed, MaybeOption, Just, NoVal, Maybe}
+import java.nio.charset.Charset
 
 
 /**
@@ -44,6 +45,8 @@ import com.ckkloverdos.maybe.{Failed, MaybeOption, Just, NoVal, Maybe}
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 package object util {
+  final val UTF_8_Charset = Charset.forName("UTF-8")
+
   def tryOption[A](f: => A): Option[A] = {
     try Some(f)
     catch {
@@ -159,5 +162,9 @@ package object util {
    */
   def justForSure[A](maybe: Maybe[A]): Just[A] = {
     maybe.asInstanceOf[Just[A]]
+  }
+
+  def makeString(bytes: Array[Byte]): String = {
+    new String(bytes, UTF_8_Charset)
   }
 }
