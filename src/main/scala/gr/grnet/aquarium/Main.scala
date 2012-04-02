@@ -63,7 +63,7 @@ object Main extends Loggable {
   )
 
   def main(args: Array[String]) = {
-    import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER}
+    import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, HERE}
     logger.info("Starting Aquarium from {}", AQUARIUM_HOME_FOLDER)
 
     val mc = Configurator.MasterConfigurator
@@ -71,9 +71,6 @@ object Main extends Loggable {
     if(mc.hasEventsStoreFolder) {
       logger.info("{} = {}", Configurator.Keys.events_store_folder, mc.eventsStoreFolder)
     }
-
-    val rl = ResourceLocator
-    val HERE = gr.grnet.aquarium.util.justForSure(rl.getResource(".")).get.url.toExternalForm
 
     for {
       prop <- PropsToShow

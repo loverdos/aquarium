@@ -40,6 +40,8 @@ import com.ckkloverdos.maybe.{Failed, Just, Maybe, NoVal}
 import com.ckkloverdos.sys.{SysEnv, SysProp}
 import java.io.File
 
+import gr.grnet.aquarium.util.justForSure
+
 /**
  * Used to locate configuration files.
  *
@@ -49,6 +51,9 @@ import java.io.File
  */
 
 object ResourceLocator {
+  /**
+   * This is normally exported from the shell script that starts Aquarium.
+   */
   final val AQUARIUM_HOME = SysEnv("AQUARIUM_HOME")
 
   lazy val AQUARIUM_HOME_FOLDER: File = {
@@ -63,6 +68,11 @@ object ResourceLocator {
         throw new Exception("%s is not set".format(AQUARIUM_HOME.name))
     }
   }
+
+  /**
+   * This exists in order to have a feeling of where we are.
+   */
+  final val HERE = justForSure(getResource(".")).get.url.toExternalForm
 
   /**
    * Current directory resource context.
