@@ -52,7 +52,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
 
   lazy val store = new ThreadLocal[ResourceEventStore]
   
-  override def decode(data: Array[Byte]) = Maybe { ResourceEvent.fromBytes(data) }
+  override def decode(data: Array[Byte]) = ResourceEvent.fromBytes(data)
 
   override def forward(event: ResourceEvent): Unit = {
     val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)

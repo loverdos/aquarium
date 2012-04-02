@@ -90,7 +90,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   protected def _configurator: Configurator = Configurator.MasterConfigurator
 
-  protected def decode(data: Array[Byte]): Maybe[E]
+  protected def decode(data: Array[Byte]): E
   protected def forward(event: E): Unit
   protected def exists(event: E): Boolean
   protected def persist(event: E, initialPayload: Array[Byte]): Boolean
@@ -131,7 +131,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
     def receive = {
       case Delivery(payload, _, deliveryTag, isRedeliver, _, queue) =>
-        val eventM = decode(payload)
+        val eventM = Maybe { decode(payload) }
         val event = eventM match {
           case Just(event) ⇒
             event

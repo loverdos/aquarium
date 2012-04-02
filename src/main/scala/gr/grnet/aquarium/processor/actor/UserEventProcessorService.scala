@@ -48,7 +48,7 @@ import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
  */
 class UserEventProcessorService extends EventProcessorService[UserEvent] {
 
-  override def decode(data: Array[Byte]) = Maybe { UserEvent.fromBytes(data) }
+  override def decode(data: Array[Byte]) = UserEvent.fromBytes(data)
 
   override def forward(event: UserEvent) =
     _configurator.actorProvider.actorForRole(DispatcherRole) ! ProcessUserEvent(event)
