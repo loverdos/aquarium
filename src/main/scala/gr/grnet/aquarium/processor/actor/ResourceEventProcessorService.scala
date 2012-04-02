@@ -35,12 +35,12 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import com.ckkloverdos.maybe.{Just, Failed, NoVal}
 import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.actor.DispatcherRole
 import java.lang.ThreadLocal
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.{LocalFSEventStore, ResourceEventStore}
+import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
 
 
 /**
@@ -52,7 +52,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
 
   lazy val store = new ThreadLocal[ResourceEventStore]
   
-  override def decode(data: Array[Byte]) = ResourceEvent.fromBytes(data)
+  override def decode(data: Array[Byte]) = Maybe { ResourceEvent.fromBytes(data) }
 
   override def forward(event: ResourceEvent): Unit = {
     val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
@@ -80,6 +80,12 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
         false
       case NoVal => false
     }
+  }
+
+
+  protected def persistUnparsed(initialPayload: Array[Byte]): Unit = {
+    Maybe { logger.warn("Saving unparsed\n%s".format(new String(initialPayload, "UTF-8"))) }
+    LocalFSEventStore.storeResourceEvent(_configurator, null, initialPayload)
   }
 
   override def queueReaderThreads: Int = 1

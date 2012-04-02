@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.processor.actor
 
-import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 
 import akka.actor._
@@ -50,6 +49,8 @@ import gr.grnet.aquarium.messaging.{AkkaAMQP}
 import akka.amqp._
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
 import gr.grnet.aquarium.logic.events.AquariumEvent
+import com.ckkloverdos.maybe.{NoVal, Just, Failed, Maybe}
+import gr.grnet.aquarium.{AquariumException, Configurator}
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,
@@ -89,10 +90,11 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   protected def _configurator: Configurator = Configurator.MasterConfigurator
 
-  protected def decode(data: Array[Byte]): E
+  protected def decode(data: Array[Byte]): Maybe[E]
   protected def forward(event: E): Unit
   protected def exists(event: E): Boolean
   protected def persist(event: E, initialPayload: Array[Byte]): Boolean
+  protected def persistUnparsed(initialPayload: Array[Byte]): Unit
 
   protected def queueReaderThreads: Int
   protected def persisterThreads: Int
@@ -129,7 +131,21 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
     def receive = {
       case Delivery(payload, _, deliveryTag, isRedeliver, _, queue) =>
-        val event = decode(payload)
+        val eventM = decode(payload)
+        val event = eventM match {
+          case Just(event) ⇒
+            event
+
+          case failed @ Failed(e, m) ⇒
+            persistUnparsed(payload)
+            logger.error("Could not parse payload {}", new String(payload, "UTF-8"))
+            throw e
+
+          case NoVal ⇒
+            persistUnparsed(payload)
+            logger.error("Could not parse payload {}", new String(payload, "UTF-8"))
+            throw new AquariumException("Unexpected NoVal")
+        }
         inFlightEvents.put(deliveryTag, event)
 
         if (isRedeliver) {

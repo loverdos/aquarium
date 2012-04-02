@@ -50,20 +50,24 @@ import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
  */
 
 object LocalFSEventStore {
+  private[this] def writeToFile(file: File, data: Array[Byte]): Unit = {
+    val out = new FileOutputStream(file)
+    out.write(data)
+    out.flush()
+    out.close()
+  }
+
+  private[this] def writeToFile(file: File, data: String): Unit = {
+    writeToFile(file, data.getBytes("UTF-8"))
+  }
+
   private[this] def storeThem(parsedJson: String,
                               parsedJsonTarget: File,
                               initialPayload: Array[Byte],
                               initialPayloadTarget: File): Unit = {
 
-    def writeTo(file: File, data: Array[Byte]): Unit = {
-      val out = new FileOutputStream(file)
-      out.write(data)
-      out.flush()
-      out.close()
-    }
-
-    Maybe { writeTo(parsedJsonTarget, parsedJson.getBytes("UTF-8")) }
-    Maybe { writeTo(initialPayloadTarget, initialPayload) }
+    Maybe { writeToFile(parsedJsonTarget, parsedJson.getBytes("UTF-8")) }
+    Maybe { writeToFile(initialPayloadTarget, initialPayload) }
   }
 
   def storeResourceEvent(mc: Configurator, event: ResourceEvent, initialPayload: Array[Byte]): Maybe[Unit] = Maybe {
@@ -71,19 +75,24 @@ object LocalFSEventStore {
       val occurredString = new MutableDateCalc(event.occurredMillis).toYYYYMMDDHHMMSS
       val root = mc.eventsStoreFolder
       val rcEvents = new File(root, "rcevents")
+      val parsed = event ne null
 
       // We save two files. One containing the initial payload and one containing the transformed object.
-      val initialPayloadFile = new File(rcEvents, "rc-%s.raw".format(occurredString))
-      val parsedJsonFile = new File(
-        rcEvents,
-        "rc-%s-[%s]-[%s]-[%s]-[%s].json".format(
-          occurredString,
-          event.id,
-          event.userId,
-          event.resource,
-          event.instanceId))
+      val initialPayloadFile = new File(rcEvents, "rc-%s.raw%s".format(occurredString, if(!parsed) "x" else ""))
+      Maybe { writeToFile(initialPayloadFile, initialPayload) }
 
-      storeThem(event.toJson, parsedJsonFile, initialPayload, initialPayloadFile)
+      if(parsed) {
+        val parsedJsonFile = new File(
+          rcEvents,
+          "rc-%s-[%s]-[%s]-[%s]-[%s].json".format(
+            occurredString,
+            event.id,
+            event.userId,
+            event.resource,
+            event.instanceId))
+
+        Maybe { writeToFile(parsedJsonFile, event.toJson) }
+      }
     }
   }
 
@@ -92,12 +101,16 @@ object LocalFSEventStore {
       val occurredString = new MutableDateCalc(event.occurredMillis).toYYYYMMDDHHMMSS
       val root = mc.eventsStoreFolder
       val imEvents = new File(root, "imevents")
+      val parsed = event ne null
 
      // We save two files. One containing the initial payload and one containing the transformed object.
-      val initialPayloadFile = new File(imEvents, "im-%s.raw".format(occurredString))
-      val parsedJsonFile = new File(imEvents, "im-%s-[%s]-[%s].json".format(occurredString, event.id, event.userID))
+      val initialPayloadFile = new File(imEvents, "im-%s.raw%s".format(occurredString, if(!parsed) "x" else ""))
+      Maybe { writeToFile(initialPayloadFile, initialPayload) }
 
-      storeThem(event.toJson, parsedJsonFile, initialPayload, initialPayloadFile)
+      if(parsed) {
+        val parsedJsonFile = new File(imEvents, "im-%s-[%s]-[%s].json".format(occurredString, event.id, event.userID))
+        Maybe { writeToFile(parsedJsonFile, event.toJson) }
+      }
     }
   }
 }

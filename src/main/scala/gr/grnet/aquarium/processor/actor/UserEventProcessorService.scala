@@ -36,10 +36,10 @@
 package gr.grnet.aquarium.processor.actor
 
 import gr.grnet.aquarium.logic.events.UserEvent
-import com.ckkloverdos.maybe.{NoVal, Failed, Just}
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
+import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
 
 /**
  * An event processor service for user events coming from the IM system
@@ -48,7 +48,7 @@ import gr.grnet.aquarium.store.LocalFSEventStore
  */
 class UserEventProcessorService extends EventProcessorService[UserEvent] {
 
-  override def decode(data: Array[Byte]) = UserEvent.fromBytes(data)
+  override def decode(data: Array[Byte]) = Maybe { UserEvent.fromBytes(data) }
 
   override def forward(event: UserEvent) =
     _configurator.actorProvider.actorForRole(DispatcherRole) ! ProcessUserEvent(event)
@@ -66,6 +66,11 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
         false
       case NoVal => false
     }
+  }
+
+  protected def persistUnparsed(initialPayload: Array[Byte]): Unit = {
+    Maybe { logger.warn("Saving unparsed\n%s".format(new String(initialPayload, "UTF-8"))) }
+    LocalFSEventStore.storeUserEvent(_configurator, null, initialPayload)
   }
 
   override def queueReaderThreads: Int = 1
