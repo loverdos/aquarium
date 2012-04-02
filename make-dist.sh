@@ -153,6 +153,10 @@ gitmark() {
 
 archive() {
   ARC=$DIST.tar.gz
+  if [ -e "$ARC" ]; then
+    echo
+    echo Removing previous $ARC
+  fi
   echo
   echo "Creating archive"
   tar zcvf $ARC $DIST/ || fail "creating archive"
