@@ -42,6 +42,7 @@ import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
 import gr.grnet.aquarium.util.json.JsonHelpers
+import gr.grnet.aquarium.Configurator
 
 /**
  * An event processor service for user events coming from the IM system
@@ -84,14 +85,15 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
   }
 
   protected def persistUnparsed(initialPayload: Array[Byte]): Unit = {
-    Maybe {
-      val json = makeString(initialPayload)
-      logger.warn("Saving unparsed\n%s".format(json))
+    val json = makeString(initialPayload)
 
-      LocalFSEventStore.storeUserEvent(_configurator, null, initialPayload)
+    LocalFSEventStore.storeUserEvent(_configurator, null, initialPayload)
 
-      val recordIDM = _configurator.userEventStore.storeUnparsed(json)
-      logger.info("Saved unparsed {}", recordIDM)
+    _configurator.props.getBoolean(Configurator.Keys.save_unparsed_event_im) match {
+      case Just(true) ⇒
+        val recordIDM = _configurator.userEventStore.storeUnparsed(json)
+        logger.info("Saved unparsed {}", recordIDM)
+      case _ ⇒
     }
   }
 

@@ -523,5 +523,11 @@ object Configurator {
      * stored.
      */
     final val events_store_folder = "events.store.folder"
+
+    /**
+     * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.logic.events.UserEvent]] is
+     * saved to the [[gr.grnet.aquarium.store.UserEventStore]].
+     */
+    final val save_unparsed_event_im = "save.unparsed.event.im"
   }
 }
