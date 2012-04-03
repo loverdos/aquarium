@@ -154,20 +154,25 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
             }
 
           case maybe ⇒
-            logger.error("Could not parse payload {}", makeString(payload))
-
             if(maybe.isFailed) {
               val failed = failedForSure(maybe)
               val exception = failed.exception
               logger.error(exception.getMessage, exception)
             }
 
+            logger.error("Offensive payload = \n{}", makeString(payload))
+
             // If we could not create an object from the incoming json, then we just store the message
             // and then ignore it.
             // TODO: Possibly the sending site should setup a queue to accept such erroneous messages?
-            persistUnparsed(initialPayload = payload)
-
-            queue ! Acknowledge(deliveryTag)
+            Maybe { persistUnparsed(initialPayload = payload) } match {
+              case Just(_) ⇒
+                logger.debug("Sending Acknowledge(deliveryTag) = {}", Acknowledge(deliveryTag))
+                queue ! Acknowledge(deliveryTag)
+              case _ ⇒
+                logger.debug("Sending Reject(deliveryTag, true) = {}", Reject(deliveryTag, true))
+                queue ! Reject(deliveryTag, true)
+            }
         }
 
       case PersistOK(ackData) =>
