@@ -36,11 +36,12 @@
 package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.Configurator
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.util.date.MutableDateCalc
 import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
 import gr.grnet.aquarium.util.{Loggable, makeBytes}
+import com.ckkloverdos.maybe.{Just, Failed, Maybe}
+import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
+import gr.grnet.aquarium.simulation.uid.{EAIOUUIDGenerator, UIDGenerator}
 
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.
@@ -51,9 +52,9 @@ import gr.grnet.aquarium.util.{Loggable, makeBytes}
  */
 
 object LocalFSEventStore extends Loggable {
-  private[this] def writeToFile(file: File, data: Array[Byte]): Unit = {
-    logger.debug("Writing {} bytes to {}", data.length, file.getCanonicalPath())
+  private[this] final val UIDGen: UIDGenerator = EAIOUUIDGenerator
 
+  private[this] def writeToFile(file: File, data: Array[Byte]): Unit = {
     val out = new FileOutputStream(file)
     out.write(data)
     out.flush()
@@ -64,51 +65,72 @@ object LocalFSEventStore extends Loggable {
     writeToFile(file, makeBytes(data))
   }
 
-  def storeResourceEvent(mc: Configurator, event: ResourceEvent, initialPayload: Array[Byte]): Maybe[Unit] = Maybe {
+  def storeResourceEvent(mc: Configurator, event: ResourceEvent, initialPayload: Array[Byte]): Unit = {
     if(mc.hasEventsStoreFolder) {
-      val occurredString = new MutableDateCalc(event.occurredMillis).toYYYYMMDDHHMMSS
+      val haveEvent = event ne null
+      val uid = UIDGen.nextUID()
+
+      val occurredMDC = if(haveEvent) {
+        new MutableDateCalc(event.occurredMillis)
+      } else {
+        new MutableDateCalc(TimeHelpers.nowMillis)
+      }
+      val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val root = mc.eventsStoreFolder
       val rcEvents = new File(root, "rcevents")
-      val parsed = event ne null
+      rcEvents.mkdirs()
 
       // We save two files. One containing the initial payload and one containing the transformed object.
-      val initialPayloadFile = new File(rcEvents, "rc-%s.raw%s".format(occurredString, if(!parsed) "x" else ""))
-      Maybe { writeToFile(initialPayloadFile, initialPayload) }
+      val initialPayloadFile = new File(rcEvents, "rc-%s.%s.json".format(occurredString, uid))
+      writeToFile(initialPayloadFile, initialPayload)
+      logger.info("Wrote to file {}", initialPayloadFile.getCanonicalPath)
 
-      if(parsed) {
+      if(haveEvent) {
         val parsedJsonFile = new File(
           rcEvents,
-          "rc-%s-[%s]-[%s]-[%s]-[%s].json".format(
+          "rc-%s-[%s]-[%s]-[%s]-[%s].%s.json".format(
             occurredString,
             event.id,
             event.userId,
             event.resource,
-            event.instanceId))
+            event.instanceId,
+            uid))
 
-        Maybe { writeToFile(parsedJsonFile, event.toJson) }
+        writeToFile(parsedJsonFile, event.toJson)
+        logger.info("Wrote to file {}", parsedJsonFile.getCanonicalPath)
       }
-    } else {
-      logger.info("Debugging local fs store disabled")
     }
   }
 
-  def storeUserEvent(mc: Configurator, event: UserEvent, initialPayload: Array[Byte]): Maybe[Unit] = Maybe {
+  def storeUserEvent(mc: Configurator, event: UserEvent, initialPayload: Array[Byte]): Unit = {
     if(mc.hasEventsStoreFolder) {
-      val occurredString = new MutableDateCalc(event.occurredMillis).toYYYYMMDDHHMMSS
+      val haveEvent = event ne null
+      val uid = UIDGen.nextUID()
+
+      val occurredMDC = if(haveEvent) {
+        new MutableDateCalc(event.occurredMillis)
+      } else {
+        new MutableDateCalc(TimeHelpers.nowMillis)
+      }
+      val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val root = mc.eventsStoreFolder
       val imEvents = new File(root, "imevents")
-      val parsed = event ne null
+      imEvents.mkdirs()
 
-     // We save two files. One containing the initial payload and one containing the transformed object.
-      val initialPayloadFile = new File(imEvents, "im-%s.raw%s".format(occurredString, if(!parsed) "x" else ""))
-      Maybe { writeToFile(initialPayloadFile, initialPayload) }
+      // We save two files. One containing the initial payload and one containing the transformed object.
+      val initialPayloadFile = new File(imEvents, "im-%s.%s.json".format(occurredString, uid))
+      writeToFile(initialPayloadFile, initialPayload)
+      logger.info("Wrote to file {}", initialPayloadFile)
 
-      if(parsed) {
-        val parsedJsonFile = new File(imEvents, "im-%s-[%s]-[%s].json".format(occurredString, event.id, event.userID))
-        Maybe { writeToFile(parsedJsonFile, event.toJson) }
+      if(haveEvent) {
+        val parsedJsonFile = new File(
+          imEvents,
+          "im-%s-[%s]-[%s].%s.json".format(occurredString, event.id, event.userID, uid)
+        )
+
+        writeToFile(parsedJsonFile, event.toJson)
+        logger.info("Wrote to file {}", parsedJsonFile.getCanonicalPath)
       }
-    } else {
-      logger.info("Debugging local fs store disabled")
     }
   }
 }
