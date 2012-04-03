@@ -54,8 +54,10 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
   override def decode(data: Array[Byte]) = ResourceEvent.fromBytes(data)
 
   override def forward(event: ResourceEvent): Unit = {
-    val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
-    businessLogicDispacther ! ProcessResourceEvent(event)
+    if(event ne null) {
+      val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
+      businessLogicDispacther ! ProcessResourceEvent(event)
+    }
   }
 
   override def exists(event: ResourceEvent): Boolean =
