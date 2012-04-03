@@ -76,7 +76,7 @@ trait RandomEventGenerator extends AkkaAMQP {
       clientID = "defclient",
       isActive = rnd.nextBoolean,
       role = Array("PROF", "STUDENT", "ADMIN").apply(rnd.nextInt(3)),
-      eventVersion = 1,
+      eventVersion = 1.toString,
       eventType = Array("ACTIVE", "SUSPENDED").apply(rnd.nextInt(2)),
       details = Map()
     )
@@ -112,7 +112,7 @@ trait RandomEventGenerator extends AkkaAMQP {
           clientID = "defclient",
           isActive = rnd.nextBoolean,
           role = Array("PROF", "STUDENT", "ADMIN").apply(rnd.nextInt(3)),
-          eventVersion = 1,
+          eventVersion = 1.toString,
           eventType = "CREATE",
           details = Map()
         )

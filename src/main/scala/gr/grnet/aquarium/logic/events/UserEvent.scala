@@ -53,7 +53,7 @@ case class  UserEvent(
     clientID: String,
     isActive: Boolean,
     role: String,
-    eventVersion: Short,
+    eventVersion: String,
     eventType: String,
     details: UserEvent.Details)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
