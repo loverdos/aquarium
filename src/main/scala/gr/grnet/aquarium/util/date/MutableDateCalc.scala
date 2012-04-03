@@ -334,8 +334,16 @@ class MutableDateCalc private(private[this] var dateTime: MutableDateTime) exten
     format("yyyy-MM-dd HH:mm:ss")
   }
 
+  def toFilename_YYYYMMDDHHMMSS: String = {
+    format("yyyyMMddHHmmss")
+  }
+
   def toYYYYMMDDHHMMSSSSS: String = {
     format("yyyy-MM-dd HH:mm:ss.SSS")
+  }
+
+  def toFilename_YYYYMMDDHHMMSSSSS: String = {
+    format("yyyyMMddHHmmssSSS")
   }
 
   override def toString = {
