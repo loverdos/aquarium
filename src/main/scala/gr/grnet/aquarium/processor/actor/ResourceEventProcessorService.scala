@@ -51,8 +51,6 @@ import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
  */
 final class ResourceEventProcessorService extends EventProcessorService[ResourceEvent] {
 
-  lazy val store = new ThreadLocal[ResourceEventStore]
-  
   override def decode(data: Array[Byte]) = ResourceEvent.fromBytes(data)
 
   override def forward(event: ResourceEvent): Unit = {
@@ -61,20 +59,12 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
   }
 
   override def exists(event: ResourceEvent): Boolean =
-    store.get match {
-      case null => store.set(_configurator.resourceEventStore); return exists(event)
-      case x => x.findResourceEventById(event.id).isJust
-    }
+    _configurator.resourceEventStore.findResourceEventById(event.id).isJust
 
   override def persist(event: ResourceEvent, initialPayload: Array[Byte]): Boolean = {
     LocalFSEventStore.storeResourceEvent(_configurator, event, initialPayload)
 
-    val st = store.get match {
-      case null => store.set(_configurator.resourceEventStore); return persist(event, initialPayload)
-      case x => x
-    }
-
-    st.storeResourceEvent(event) match {
+    _configurator.resourceEventStore.storeResourceEvent(event) match {
       case Just(x) => true
       case x: Failed =>
         logger.error("Could not save event: %s. Reason:".format(event, x.toString))
