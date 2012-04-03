@@ -63,8 +63,15 @@ object Main extends Loggable {
   )
 
   def main(args: Array[String]) = {
-    import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, HERE}
+    import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, HERE, AKKA_HOME}
     logger.info("Starting Aquarium from {}", AQUARIUM_HOME_FOLDER)
+
+    // We have AKKA builtin, so no need to mess with pre-existing installation.
+    if(AKKA_HOME.value.isJust) {
+      val error = new AquariumException("%s is set. Please unset and restart Aquarium".format(AKKA_HOME.name))
+      logger.error("%s is set".format(AKKA_HOME.name), error)
+      throw error
+    }
 
     val mc = Configurator.MasterConfigurator
 

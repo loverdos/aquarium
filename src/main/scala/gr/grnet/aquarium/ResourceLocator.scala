@@ -51,6 +51,8 @@ import gr.grnet.aquarium.util.justForSure
  */
 
 object ResourceLocator {
+  final val AKKA_HOME = SysEnv("AKKA_HOME")
+
   /**
    * This is normally exported from the shell script that starts Aquarium.
    *
