@@ -59,14 +59,24 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
     _configurator.userEventStore.findUserEventById(event.id).isJust
 
   override def persist(event: UserEvent, initialPayload: Array[Byte]) = {
-    LocalFSEventStore.storeUserEvent(_configurator, event, initialPayload)
+    Maybe {
+      LocalFSEventStore.storeUserEvent(_configurator, event, initialPayload)
+    } match {
+      case Just(_) ⇒
+        _configurator.userEventStore.storeUserEvent(event) match {
+          case Just(x) => true
+          case x: Failed =>
+            logger.error("Could not save user event: %s".format(event))
+            false
+          case NoVal => false
+        }
 
-    _configurator.userEventStore.storeUserEvent(event) match {
-      case Just(x) => true
-      case x: Failed =>
-        logger.error("Could not save user event: %s".format(event))
+      case failed @ Failed(e, m) ⇒
+        logger.error(m, e)
         false
-      case NoVal => false
+
+      case _ ⇒
+        false
     }
   }
 
