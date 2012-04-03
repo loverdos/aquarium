@@ -113,7 +113,11 @@ clean() {
 }
 
 collectdeps() {
-  mvn dependency:copy-dependencies && cp target/dependency/*.jar $DIST/lib || fail "collecting dependencies"
+  if [ "$P_BUILD" = "normal" ]; then
+    mvn dependency:copy-dependencies
+  fi
+
+  cp target/dependency/*.jar $DIST/lib || fail "collecting dependencies"
 }
 
 build() {
