@@ -87,7 +87,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
 
 
   protected def persistUnparsed(initialPayload: Array[Byte]): Unit = {
-    Maybe { logger.warn("Saving unparsed\n%s".format(makeString(initialPayload))) }
+    // TODO: Also save to DB, just like we do for UserEvents
     LocalFSEventStore.storeResourceEvent(_configurator, null, initialPayload)
   }
 
