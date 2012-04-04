@@ -88,7 +88,7 @@ object Main extends LazyLoggable {
   }
 
   def main(args: Array[String]) = {
-    import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, HERE, AKKA_HOME}
+    import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, CONF_HERE, AKKA_HOME}
 
     configureLogging()
 
@@ -119,7 +119,7 @@ object Main extends LazyLoggable {
       logger.info("{} = {}", prop.name, prop.rawValue)
     }
     logger.info("{} = {}", AQUARIUM_HOME.name, AQUARIUM_HOME_FOLDER)
-    logger.info("HERE = {}", HERE)
+    logger.info("CONF_HERE = {}", CONF_HERE)
 
     mc.startServices()
 

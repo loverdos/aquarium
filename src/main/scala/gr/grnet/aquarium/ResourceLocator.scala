@@ -84,7 +84,7 @@ object ResourceLocator {
   /**
    * This exists in order to have a feeling of where we are.
    */
-  final lazy val HERE = justForSure(getResource(".")).get.url.toExternalForm
+  final lazy val CONF_HERE = justForSure(getResource(".")).get.url.toExternalForm
 
   /**
    * AQUARIUM_HOME/conf resource context.
