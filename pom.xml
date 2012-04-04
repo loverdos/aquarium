@@ -212,26 +212,26 @@
 
     <dependency>
       <groupId>com.ckkloverdos</groupId>
-      <artifactId>streamresource_2.9.1</artifactId>
-      <version>0.2.0</version>
+      <artifactId>streamresource</artifactId>
+      <version>0.5.0-SNAPSHOT</version>
     </dependency>
 
     <dependency>
       <groupId>com.ckkloverdos</groupId>
-      <artifactId>maybe_2.9.1</artifactId>
-      <version>0.3.0</version>
+      <artifactId>maybe</artifactId>
+      <version>0.5.0-SNAPSHOT</version>
     </dependency>
 
     <dependency>
       <groupId>com.ckkloverdos</groupId>
-      <artifactId>converter_2.9.1</artifactId>
-      <version>0.3.0</version>
+      <artifactId>converter</artifactId>
+      <version>0.5.0-SNAPSHOT</version>
     </dependency>
 
     <dependency>
       <groupId>com.ckkloverdos</groupId>
-      <artifactId>sysprop_2.9.1</artifactId>
-      <version>0.1.0</version>
+      <artifactId>sysprop</artifactId>
+      <version>0.5.0-SNAPSHOT</version>
     </dependency>
 
     <dependency>
