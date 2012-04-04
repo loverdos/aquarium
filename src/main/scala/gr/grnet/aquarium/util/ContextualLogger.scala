@@ -185,7 +185,7 @@ final class ContextualLogger(val logger: Logger, fmt: String, args: Any*) {
   }
   
   def error(failed: Failed): Unit = {
-    this.error(failed.exception, "%s", failed.explanation)
+    this.error(failed.exception, "")
   }
 
   def begin(message: String = ""): Unit = {

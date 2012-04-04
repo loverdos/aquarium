@@ -75,11 +75,11 @@ object Main extends LazyLoggable {
           context.reset()
           joran.doConfigure(ResourceLocator.LOGBACK_XML_FILE)
           logger.info("Logging subsystem configured from {}", ResourceLocator.LOGBACK_XML_FILE)
-        } map { x ⇒
-          StatusPrinter.printInCaseOfErrorsOrWarnings(context)
-          x
+        } forJust {
+          case _ ⇒
+            StatusPrinter.printInCaseOfErrorsOrWarnings(context)
         } forFailed {
-          case failed @ Failed(e, m) ⇒
+          case failed @ Failed(e) ⇒
             StatusPrinter.print(context)
             throw new AquariumException(e, "Could not configure logging from %s".format(ResourceLocator.LOGBACK_XML_FILE))
         }
@@ -107,7 +107,7 @@ object Main extends LazyLoggable {
       case Just(folder) ⇒
         logger.info("{} = {}", Configurator.Keys.events_store_folder, folder)
 
-      case failed @ Failed(e, m) ⇒
+      case failed @ Failed(e) ⇒
         throw e
 
       case _ ⇒

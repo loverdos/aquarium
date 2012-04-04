@@ -76,8 +76,8 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
           case NoVal => false
         }
 
-      case failed @ Failed(e, m) ⇒
-        logger.error(m, e)
+      case failed @ Failed(e) ⇒
+        logger.error("While LocalFSEventStore.storeResourceEvent", e)
         false
 
       case NoVal ⇒

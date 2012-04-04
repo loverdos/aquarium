@@ -45,6 +45,7 @@ import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.util.{ContextualLogger, CryptoUtils, Loggable}
 import gr.grnet.aquarium.store.PolicyStore
+import gr.grnet.aquarium.AquariumException
 
 /**
  * A timeslot together with the algorithm and unit price that apply for this particular timeslot.
@@ -292,13 +293,13 @@ trait Accounting extends DSLUtils with Loggable {
 
           // We do not have a previous event
           case NoVal ⇒
-            throw new Exception(
+            throw new AquariumException(
               "Unable to charge. No previous event given for %s".
                 format(currentResourceEvent.toDebugString()))
 
           // We could not obtain a previous event
-          case failed @ Failed(e, m) ⇒
-            throw new Exception(
+          case failed @ Failed(e) ⇒
+            throw new AquariumException(
               "Unable to charge. Could not obtain previous event for %s".
                 format(currentResourceEvent.toDebugString()), e)
         }
@@ -322,9 +323,9 @@ trait Accounting extends DSLUtils with Loggable {
           case Just(relevantPolicy) ⇒
             Map(referenceTimeslot -> relevantPolicy)
           case NoVal ⇒
-            throw new Exception("No relevant policy found for %s".format(referenceTimeslot))
-          case failed @ Failed(e, _) ⇒
-            throw new Exception("No relevant policy found for %s".format(referenceTimeslot), e)
+            throw new AquariumException("No relevant policy found for %s".format(referenceTimeslot))
+          case failed @ Failed(e) ⇒
+            throw new AquariumException("No relevant policy found for %s".format(referenceTimeslot), e)
 
         }
 
@@ -345,10 +346,10 @@ trait Accounting extends DSLUtils with Loggable {
           val execAlgorithmM = algorithmCompiler.compile(algorithmDefinition)
           execAlgorithmM match {
             case NoVal ⇒
-              throw new Exception("Could not compile algorithm %s".format(algorithmDefinition))
+              throw new AquariumException("Could not compile algorithm %s".format(algorithmDefinition))
 
-            case failed @ Failed(e, m) ⇒
-              throw new Exception(m, e)
+            case failed @ Failed(e) ⇒
+              failed.throwMe
 
             case Just(execAlgorithm) ⇒
               val valueMap = costPolicy.makeValueMap(
@@ -369,12 +370,12 @@ trait Accounting extends DSLUtils with Loggable {
 
               creditsM match {
                 case NoVal ⇒
-                  throw new Exception(
+                  throw new AquariumException(
                     "Could not compute credits for resource %s during %s".
                       format(dslResource.name, Timeslot(new Date(startMillis), new Date(stopMillis))))
 
-                case failed @ Failed(e, m) ⇒
-                  throw new Exception(m, e)
+                case failed @ Failed(e) ⇒
+                  failed.throwMe
 
                 case Just(credits) ⇒
                   chargeslot.copy(computedCredits = Some(credits))
@@ -388,8 +389,8 @@ trait Accounting extends DSLUtils with Loggable {
         referenceTimeslot -> fullChargeslots
       case NoVal ⇒
         null
-      case failed @ Failed(e, m) ⇒
-        throw new Exception(m, e)
+      case failed @ Failed(e) ⇒
+        failed.throwMe
     }
 
 //    clog.end()
@@ -463,7 +464,7 @@ trait Accounting extends DSLUtils with Loggable {
           Some(x)
         ) match {
           case Just(x) => x
-          case Failed(f, e) => return Failed(f,e)
+          case Failed(f) => return Failed(f)
           case NoVal => List()
         }
         entries
@@ -523,7 +524,7 @@ trait Accounting extends DSLUtils with Loggable {
 
     val creditCalculationValueM = dslResource.costPolicy.getValueForCreditCalculation(Just(previousAmount), event.value)
     val amount = creditCalculationValueM match {
-      case failed @ Failed(_, _) ⇒
+      case failed @ Failed(_) ⇒
         return failed
       case Just(amount) ⇒
         amount
@@ -755,4 +756,4 @@ case class ChargeChunk(value: Double, algorithm: String,
 }
 
 /** An exception raised when something goes wrong with accounting */
-class AccountingException(msg: String) extends Exception(msg)
+class AccountingException(msg: String) extends AquariumException(msg)

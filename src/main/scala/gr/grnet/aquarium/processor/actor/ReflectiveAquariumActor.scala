@@ -59,9 +59,9 @@ trait ReflectiveAquariumActor extends Actor with Loggable {
           method.setAccessible(true)
           (knownMessageType, method)
         case NoVal =>
-          throw new Exception("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageType))
-        case Failed(e, m) =>
-          throw new Exception("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageType), e)
+          throw new AquariumException("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageType))
+        case Failed(e) =>
+          throw new AquariumException("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageType), e)
       }
     }
 

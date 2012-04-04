@@ -48,3 +48,15 @@ class AquariumException(cause: Throwable, message: String) extends Exception(mes
   def this(message: String)  = this(null, message)
   def this(message: String, cause: Throwable) = this(cause, message)
 }
+
+object AquariumException {
+  def rethrow(e: Exception): Nothing = {
+    e match {
+      case ae: AquariumException ⇒
+        throw ae
+
+      case _ ⇒
+        throw new AquariumException(e)
+    }
+  }
+}

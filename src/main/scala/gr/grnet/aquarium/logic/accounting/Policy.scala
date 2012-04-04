@@ -206,8 +206,8 @@ object Policy extends DSL with Loggable {
           } else {
             config.policyStore.storePolicyEntry(newPolicy)
           }
-        case Failed(e, expl) =>
-          throw e
+        case failed @ Failed(e) =>
+          failed.throwMe
       }
     }
 

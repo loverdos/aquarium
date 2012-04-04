@@ -134,8 +134,8 @@ class UserActor extends AquariumActor
     _configurator.storeProvider.userStateStore.storeUserState(this._userState) match {
       case Just(record) => record
       case NoVal => ERROR("Unknown error saving state")
-      case Failed(e, a) =>
-        ERROR("Saving state failed: %s error was: %s".format(a,e));
+      case Failed(e) =>
+        ERROR("Saving state failed: %s".format(e));
     }
   }
 
@@ -167,8 +167,8 @@ class UserActor extends AquariumActor
     usersDB.findUserStateByUserId(userId) match {
       case Just(userState) ⇒
         WARN("User already created, state = %s".format(userState))
-      case failed @ Failed(e, m) ⇒
-        ERROR("[%s][%s] %s", e.getClass.getName, e.getMessage, m)
+      case failed @ Failed(e) ⇒
+        ERROR("[%s] %s", e.getClass.getName, e.getMessage)
       case NoVal ⇒
         val agreement = RoleAgreements.agreementForRole(event.role)
         DEBUG("User %s assigned agreement %s".format(userId, agreement.name))

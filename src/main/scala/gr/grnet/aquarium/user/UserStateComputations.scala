@@ -45,6 +45,7 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResourcesMap}
 import gr.grnet.aquarium.store.{StoreProvider, PolicyStore}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
+import gr.grnet.aquarium.AquariumException
 
 /**
  *
@@ -157,7 +158,7 @@ class UserStateComputations extends Loggable {
           clog.end()
           result
 
-        case failed @ Failed(_, _) ⇒
+        case failed @ Failed(e) ⇒
           clog.warn("Failure while quering cache for user state: %s", failed)
           clog.end()
           failed
@@ -179,7 +180,7 @@ class UserStateComputations extends Loggable {
              clog.end()
              result
 
-           case failed @ Failed(_, _) ⇒
+           case failed @ Failed(_) ⇒
              clog.warn("Failure while querying for out of sync events: %s", failed)
              clog.end()
              failed
@@ -346,10 +347,10 @@ class UserStateComputations extends Loggable {
 
               case NoVal ⇒
                 // At least one chargeslot is required.
-                throw new Exception("No chargeslots computed")
+                throw new AquariumException("No chargeslots computed")
 
-              case failed@Failed(e, m) ⇒
-                throw new Exception(m, e)
+              case failed@Failed(e) ⇒
+                throw new AquariumException(e, "Error computing chargeslots")
             }
           }
         }
@@ -533,7 +534,7 @@ class UserStateComputations extends Loggable {
           _workingUserState = storedUserState
         case NoVal ⇒
           clog.warn("Could not store %s", _workingUserState)
-        case failed @ Failed(e, m) ⇒
+        case failed @ Failed(e) ⇒
           clog.error(e, "Could not store %s", _workingUserState)
       }
     }

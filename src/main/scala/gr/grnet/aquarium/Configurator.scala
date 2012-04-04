@@ -63,7 +63,7 @@ class Configurator(val props: Props) extends Loggable {
           Maybe(configurable configure props) match {
             case Just(_) ⇒
               instance
-            case Failed(e, _) ⇒
+            case Failed(e) ⇒
               throw new AquariumException("Could not configure instance of %s".format(className), e)
             case NoVal ⇒
               throw new AquariumException("Could not configure instance of %s".format(className))
@@ -71,7 +71,7 @@ class Configurator(val props: Props) extends Loggable {
         case _ ⇒
           instance
       }
-      case Failed(e, _) ⇒
+      case Failed(e) ⇒
         throw new AquariumException("Could not instantiate %s".format(className), e)
       case NoVal ⇒
         throw new AquariumException("Could not instantiate %s".format(className))
@@ -316,8 +316,8 @@ object Configurator {
         masterConfResource
       case NoVal ⇒
         throw new AquariumException("Could not find master configuration file: %s".format(MasterConfName))
-      case Failed(e, m) ⇒
-        throw new AquariumException(m, e)
+      case Failed(e) ⇒
+        throw new AquariumException(e, "Could not find master configuration file: %s".format(MasterConfName))
     }
   }
 
@@ -328,8 +328,8 @@ object Configurator {
         props
       case NoVal ⇒
         throw new AquariumException("Could not load master configuration file: %s".format(MasterConfName))
-      case Failed(e, m) ⇒
-        throw new AquariumException(m, e)
+      case Failed(e) ⇒
+        throw new AquariumException(e, "Could not load master configuration file: %s".format(MasterConfName))
     }
   }
 
@@ -339,8 +339,8 @@ object Configurator {
         masterConf
       case NoVal ⇒
         throw new AquariumException("Could not initialize master configuration file: %s".format(MasterConfName))
-      case Failed(e, m) ⇒
-        throw new AquariumException(m, e)
+      case Failed(e) ⇒
+        throw new AquariumException(e, "Could not initialize master configuration file: %s".format(MasterConfName))
     }
   }
 

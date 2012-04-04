@@ -89,7 +89,7 @@ case class  UserEvent(
           logger.warn("Inexistent user to modify. IMEvent:".format(this.toJson))
           return false
         }
-      case Failed(x,y) =>
+      case Failed(x) =>
         logger.warn("Error retrieving user state: %s".format(x))
     }
 

@@ -37,6 +37,7 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
 import gr.grnet.aquarium.logic.events.ResourceEvent
+import gr.grnet.aquarium.AquariumException
 
 /**
  * A cost policy indicates how charging for a resource will be done
@@ -356,9 +357,9 @@ case object OnOffCostPolicy
       case Just(oldAmount) ⇒
         Maybe(getValueForCreditCalculation(oldAmount, newEventValue))
       case NoVal ⇒
-        Failed(new Exception("NoVal for oldValue instead of Just"))
-      case Failed(e, m) ⇒
-        Failed(new Exception("Failed for oldValue instead of Just", e), m)
+        Failed(new AquariumException("NoVal for oldValue instead of Just"))
+      case Failed(e) ⇒
+        Failed(new AquariumException("Failed for oldValue instead of Just", e))
     }
   }
 
@@ -367,7 +368,7 @@ case object OnOffCostPolicy
     import OnOffCostPolicyValues.{ON, OFF}
 
     def exception(rs: OnOffPolicyResourceState) =
-      new Exception("Resource state transition error (%s -> %s)".format(rs, rs))
+      new AquariumException("Resource state transition error (%s -> %s)".format(rs, rs))
 
     (oldAmount, newEventValue) match {
       case (ON, ON) ⇒

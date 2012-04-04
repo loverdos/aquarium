@@ -69,7 +69,7 @@ object ResourceLocator {
       case Just(home) ⇒
         val file = new File(home)
         if(!file.isDirectory) {
-          throw new Exception("%s (%s) is not a folder".format(AQUARIUM_HOME.name, home))
+          throw new AquariumException("%s (%s) is not a folder".format(AQUARIUM_HOME.name, home))
         }
         file.getCanonicalFile()
       case _ ⇒
@@ -126,8 +126,8 @@ object ResourceLocator {
         new CompositeStreamResourceContext(Just(BasicResourceContext), new FileStreamResourceContext(value))
       case NoVal ⇒
         BasicResourceContext
-      case Failed(e, m) ⇒
-        throw new AquariumException(m , e)
+      case Failed(e) ⇒
+        throw new AquariumException(e)
     }
   }
 

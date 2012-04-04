@@ -48,8 +48,8 @@ object LogUtils {
       case Just(value) =>
         logger.debug("[%s] Found value '%s' for system property '%s'".format(msg, value, name))
         value
-      case Failed(e, m) =>
-        logger.error("[%s][%s]: %s".format(m, e.getClass.getName, e.getMessage))
+      case Failed(e) =>
+        logger.error("[%s]: %s".format(e.getClass.getName, e.getMessage))
         logger.error("[%s] Error loading system property '%s'. Using default value '%s'".format(msg, name, default))
         default
       case NoVal =>

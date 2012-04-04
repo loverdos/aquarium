@@ -109,8 +109,8 @@ trait TestMethods {
   def assertFailed[A <: Throwable, B <: Any](f: => Maybe[B])
                                   (implicit m: ClassManifest[A]): Unit = {
     f match {
-      case Failed(e,r) if (m.erasure.isAssignableFrom(e.getClass)) => return
-      case Failed(e,r) => fail("Expected exception of type " + m.erasure.getName +
+      case Failed(e) if (m.erasure.isAssignableFrom(e.getClass)) => return
+      case Failed(e) => fail("Expected exception of type " + m.erasure.getName +
         " not thrown. Instead, " + e.getClass.getName + " was thrown")
       case NoVal => fail("Operation not failed")
       case Just(x) => fail("Operation not failed")

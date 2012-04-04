@@ -75,8 +75,8 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
           case NoVal => false
         }
 
-      case failed @ Failed(e, m) ⇒
-        logger.error(m, e)
+      case failed @ Failed(e) ⇒
+        logger.error("While LocalFSEventStore.storeUserEvent", e)
         false
 
       case _ ⇒

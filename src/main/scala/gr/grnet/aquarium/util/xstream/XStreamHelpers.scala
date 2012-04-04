@@ -39,6 +39,7 @@ package xstream
 import com.thoughtworks.xstream.XStream
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import com.ckkloverdos.resource.StreamResource
+import gr.grnet.aquarium.AquariumException
 
 /**
  * Utilities for making our life easier with the XStream library.
@@ -75,9 +76,9 @@ object XStreamHelpers {
   def newXStream: XStream = prepareXStream(new XStream)
   
   def parseType[T: Manifest](xml: String, xs: XStream = DefaultXStream): Maybe[T] = {
-    try Just(xs.fromXML(xml).asInstanceOf[T])
-    catch {
-      case e: Exception => Failed(e, "XStream could not parse XML to value of type %s".format(manifest[T]))
+    Maybe(xs.fromXML(xml)).castTo[T] mapFailed {
+      case failed @ Failed(e) ⇒
+        Failed(new AquariumException(e, "XStream could not parse XML to value of type %s".format(manifest[T])))
     }
   }
   
