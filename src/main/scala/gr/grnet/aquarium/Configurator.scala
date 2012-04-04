@@ -155,21 +155,38 @@ class Configurator(val props: Props) extends Loggable {
   private[this] lazy val _eventsStoreFolder: Maybe[File] = {
     props.get(Keys.events_store_folder) map {
       folderName ⇒
-        val folder = {
+        val canonicalFolder = {
           val folder = new File(folderName)
           if(folder.isAbsolute) {
-            folder
+            folder.getCanonicalFile
           } else {
             logger.info("{} is not absolute, making it relative to AQUARIUM_HOME", Keys.events_store_folder)
-            new File(ResourceLocator.AQUARIUM_HOME_FOLDER, folderName)
+            new File(ResourceLocator.AQUARIUM_HOME_FOLDER, folderName).getCanonicalFile
           }
         }
-        folder.mkdirs()
-        if(folder.isDirectory) {
-          folder.getCanonicalFile
-        } else {
-          throw new AquariumException("%s = %s is not a folder".format(Keys.events_store_folder, folder))
+
+        val canonicalPath = canonicalFolder.getCanonicalPath
+
+        logger.info("{} = {}", Keys.events_store_folder, canonicalPath)
+
+        if(canonicalFolder.exists() && !canonicalFolder.isDirectory) {
+          throw new AquariumException("%s = %s is not a folder".format(Keys.events_store_folder, canonicalFolder))
         }
+
+        // Now, events folder must be outside AQUARIUM_HOME, since AQUARIUM_HOME can be wiped out for an upgrade but
+        // we still want to keep the events.
+        val ahCanonicalPath = ResourceLocator.AQUARIUM_HOME_FOLDER.getCanonicalPath
+        if(canonicalPath.startsWith(ahCanonicalPath)) {
+          throw new AquariumException(
+            "%s = %s is under %s = %s".format(
+              Keys.events_store_folder, canonicalFolder,
+              ResourceLocator.AQUARIUM_HOME.name, ahCanonicalPath
+            ))
+        }
+
+        canonicalFolder.mkdirs()
+
+        canonicalFolder
     }
   }
 
@@ -280,9 +297,7 @@ class Configurator(val props: Props) extends Loggable {
     props.get(name).map(_.toInt)
   }
 
-  def hasEventsStoreFolder = _eventsStoreFolder.isJust
-
-  def eventsStoreFolder = gr.grnet.aquarium.util.justForSure(_eventsStoreFolder).get
+  def eventsStoreFolder = _eventsStoreFolder
 }
 
 object Configurator {

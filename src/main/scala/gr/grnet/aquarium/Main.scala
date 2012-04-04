@@ -38,8 +38,8 @@ package gr.grnet.aquarium
 import util.Loggable
 import akka.actor.Actor
 import com.ckkloverdos.sys.{SysEnv, SysProp}
-import com.ckkloverdos.maybe.Just
 import java.io.File
+import com.ckkloverdos.maybe.{NoVal, Failed, Just}
 
 /**
  * Main method for Aquarium
@@ -75,8 +75,14 @@ object Main extends Loggable {
 
     val mc = Configurator.MasterConfigurator
 
-    if(mc.hasEventsStoreFolder) {
-      logger.info("{} = {}", Configurator.Keys.events_store_folder, mc.eventsStoreFolder)
+    mc.eventsStoreFolder match {
+      case Just(folder) ⇒
+        logger.info("{} = {}", Configurator.Keys.events_store_folder, folder)
+
+      case failed @ Failed(e, m) ⇒
+        throw e
+
+      case _ ⇒
     }
 
     for {

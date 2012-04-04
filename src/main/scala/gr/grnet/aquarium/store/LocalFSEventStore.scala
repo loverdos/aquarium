@@ -66,7 +66,7 @@ object LocalFSEventStore extends Loggable {
   }
 
   def storeResourceEvent(mc: Configurator, event: ResourceEvent, initialPayload: Array[Byte]): Unit = {
-    if(mc.hasEventsStoreFolder) {
+    for(root <- mc.eventsStoreFolder) {
       val haveEvent = event ne null
       val uid = UIDGen.nextUID()
 
@@ -76,7 +76,6 @@ object LocalFSEventStore extends Loggable {
         new MutableDateCalc(TimeHelpers.nowMillis)
       }
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
-      val root = mc.eventsStoreFolder
       val rcEvents = new File(root, "rcevents")
       rcEvents.mkdirs()
 
@@ -103,7 +102,7 @@ object LocalFSEventStore extends Loggable {
   }
 
   def storeUserEvent(mc: Configurator, event: UserEvent, initialPayload: Array[Byte]): Unit = {
-    if(mc.hasEventsStoreFolder) {
+    for(root <- mc.eventsStoreFolder) {
       val haveEvent = event ne null
       val uid = UIDGen.nextUID()
 
@@ -113,7 +112,6 @@ object LocalFSEventStore extends Loggable {
         new MutableDateCalc(TimeHelpers.nowMillis)
       }
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
-      val root = mc.eventsStoreFolder
       val imEvents = new File(root, "imevents")
       imEvents.mkdirs()
 

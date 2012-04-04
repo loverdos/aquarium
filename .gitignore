@@ -20,7 +20,6 @@ projectFilesBackup/
 project/build/target/
 project/boot/
 
-aquarium.properties
 !src/main/resources/aquarium.properties
 doc/arch/aquarium.aux
 doc/arch/aquarium.bbl
@@ -36,8 +35,9 @@ doc/arch/aquarium.synctex.gz
 doc/arch/aquarium.ent
 doc/arch/arch.texshop
 build.log
-_gitstats
+_gitstats/
 *.aquarium.properties
-sshfs
-aquarium-dist
+sshfs/
+aquarium-dist/
 aquarium-dist.tar.gz
+events-store/
