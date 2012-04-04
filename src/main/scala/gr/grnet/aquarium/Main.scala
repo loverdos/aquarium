@@ -35,11 +35,14 @@
 
 package gr.grnet.aquarium
 
-import util.Loggable
 import akka.actor.Actor
-import com.ckkloverdos.sys.{SysEnv, SysProp}
-import java.io.File
-import com.ckkloverdos.maybe.{NoVal, Failed, Just}
+import com.ckkloverdos.sys.SysProp
+import org.slf4j.LoggerFactory
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.joran.JoranConfigurator
+import ch.qos.logback.core.util.StatusPrinter
+import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
+import util.{LazyLoggable, Loggable}
 
 /**
  * Main method for Aquarium
@@ -47,7 +50,7 @@ import com.ckkloverdos.maybe.{NoVal, Failed, Just}
  * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object Main extends Loggable {
+object Main extends LazyLoggable {
   private[this] final val PropsToShow = List(
     SysProp.JavaVMName,
     SysProp.JavaVersion,
@@ -62,8 +65,33 @@ object Main extends Loggable {
     SysProp("file.encoding")
   )
 
+  private[this] def configureLogging(): Unit = {
+    // http://logback.qos.ch/manual/joran.html
+    LoggerFactory.getILoggerFactory match {
+      case context: LoggerContext ⇒
+        Maybe {
+          val joran = new JoranConfigurator
+          joran.setContext(context)
+          context.reset()
+          joran.doConfigure(ResourceLocator.LOGBACK_XML_FILE)
+          logger.info("Logging subsystem configured from {}", ResourceLocator.LOGBACK_XML_FILE)
+        } map { x ⇒
+          StatusPrinter.print(context)
+          StatusPrinter.printInCaseOfErrorsOrWarnings(context)
+          x
+        } forFailed {
+          case failed @ Failed(e, m) ⇒
+            throw new AquariumException(e, "Could not configure logging from %s".format(ResourceLocator.LOGBACK_XML_FILE))
+        }
+      case _ ⇒
+    }
+  }
+
   def main(args: Array[String]) = {
     import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, HERE, AKKA_HOME}
+
+    configureLogging()
+
     logger.info("Starting Aquarium from {}", AQUARIUM_HOME_FOLDER)
 
     // We have AKKA builtin, so no need to mess with pre-existing installation.

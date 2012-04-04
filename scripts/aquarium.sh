@@ -118,8 +118,8 @@ start() {
 
     echo "Starting Aquarium"
 
-    # load log4j from classpath
-    CLASSPATH=$AQUARIUM_CONF:$JBOOT_JAR
+    # CLASSPATH=$AQUARIUM_CONF:$JBOOT_JAR
+    CLASSPATH=$JBOOT_JAR
 
     echo "Using initial CLASSPATH $CLASSPATH"
     echo "Using AQUARIUM_HOME $AQUARIUM_HOME"

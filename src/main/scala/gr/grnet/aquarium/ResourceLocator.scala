@@ -51,6 +51,10 @@ import gr.grnet.aquarium.util.justForSure
  */
 
 object ResourceLocator {
+  final object Names {
+    final val LOGBACK_XML = "logback.xml"
+  }
+
   final val AKKA_HOME = SysEnv("AKKA_HOME")
 
   /**
@@ -74,6 +78,8 @@ object ResourceLocator {
   }
 
   final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(AQUARIUM_HOME_FOLDER, "conf")
+
+  final lazy val LOGBACK_XML_FILE = new File(AQUARIUM_HOME_CONF_FOLDER, Names.LOGBACK_XML)
 
   /**
    * This exists in order to have a feeling of where we are.
