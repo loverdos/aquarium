@@ -6,6 +6,18 @@
     </encoder>
   </appender>
 
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${AQUARIUM_HOME}/logs/aquarium.log</file>
+    <append>true</append>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>aquarium.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%-5level %d{HH:mm:ss.SSS} [%thread] %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
   <logger name="ch.qos.logback" level="DEBUG"/>
 
   <logger name="com.ckkloverdos" level="INFO"/>
@@ -13,6 +25,6 @@
   <logger name="gr.grnet" level="DEBUG"/>
 
   <root level="DEBUG">
-    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="FILE"/>
   </root>
 </configuration>
