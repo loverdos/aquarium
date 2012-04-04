@@ -286,7 +286,7 @@ case class LatestResourceEventsWorker(latestEventsMap: FullMutableResourceTypeMa
     LatestResourceEventsSnapshot(latestEventsMap.valuesIterator.toList, snapshotTime)
 
   def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
-    latestEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
+    latestEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
   }
   
   def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
@@ -405,7 +405,7 @@ case class IgnoredFirstResourceEventsWorker(ignoredFirstEventsMap: FullMutableRe
   }
 
   def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
-    ignoredFirstEventsMap((resourceEvent.resource, resourceEvent.instanceId)) = resourceEvent
+    ignoredFirstEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
   }
 
   def size = ignoredFirstEventsMap.size

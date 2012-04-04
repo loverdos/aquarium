@@ -90,13 +90,13 @@ with RandomEventGenerator with StoreConfigurator {
     }
 
     val mostUsedId = events
-      .map{x => x.userId}
+      .map{x => x.userID}
       .groupBy(identity)
       .mapValues(_.size)
       .foldLeft(("",0))((acc, kv) => if (kv._2 > acc._2) kv else acc)._1
 
     val result = store.findResourceEventsByUserId(mostUsedId)(None)
-    assertEquals(events.filter(p => p.userId.equals(mostUsedId)).size, result.size)
+    assertEquals(events.filter(p => p.userID.equals(mostUsedId)).size, result.size)
   }
 
   @Test

@@ -53,10 +53,10 @@ case class ResourceEvent(
     override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
     override val occurredMillis: Long, // When it occurred at client side (the sender)
     override val receivedMillis: Long, // When it was received by Aquarium
-    userId: String,                    // The user for which this resource is relevant
-    clientId: String,                  // The unique client identifier (usually some hash)
+    userID: String,                    // The user for which this resource is relevant
+    clientID: String,                  // The unique client identifier (usually some hash)
     resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
-    instanceId: String,                // String representation of the resource instance id
+    instanceID: String,                // String representation of the resource instance id
     eventVersion: String,
     value: Double,
     details: ResourceEvent.Details)
@@ -67,7 +67,7 @@ case class ResourceEvent(
   }
 
   def safeResource   = if(resource eq null)   "" else resource
-  def safeInstanceId = if(instanceId eq null) "" else instanceId
+  def safeInstanceId = if(instanceID eq null) "" else instanceID
 
   def hasResource   = !safeResource.isEmpty
   def hasInstanceId = !safeInstanceId.isEmpty
@@ -127,7 +127,7 @@ case class ResourceEvent(
   }
 
   def toDebugString(useOnlyInstanceId: Boolean = false): String = {
-    val instanceInfo = if(useOnlyInstanceId) instanceId else "%s::%s".format(resource, instanceId)
+    val instanceInfo = if(useOnlyInstanceId) instanceID else "%s::%s".format(resource, instanceID)
     val occurredFormatted = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSS
     if(occurredMillis == receivedMillis) {
       "%sEVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
@@ -137,8 +137,8 @@ case class ResourceEvent(
         value,
         instanceInfo,
         details,
-        userId,
-        clientId
+        userID,
+        clientID
       )
     } else {
       "%sEVENT(%s, [%s], [%s], %s, %s, %s, %s, %s)".format(
@@ -149,8 +149,8 @@ case class ResourceEvent(
         value,
         instanceInfo,
         details,
-        userId,
-        clientId
+        userID,
+        clientID
       )
     }
   }

@@ -167,7 +167,7 @@ trait RandomEventGenerator extends AkkaAMQP {
       n =>
         var event = nextResourceEvent
         publisher ! Message(event.toBytes,
-          "%s.%s.%s".format("",event.clientId, event.resource))
+          "%s.%s.%s".format("",event.clientID, event.resource))
     }
   }
 }

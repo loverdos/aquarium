@@ -90,9 +90,9 @@ object LocalFSEventStore extends Loggable {
           "rc-%s-[%s]-[%s]-[%s]-[%s].%s.json".format(
             occurredString,
             event.id,
-            event.userId,
+            event.userID,
             event.resource,
-            event.instanceId,
+            event.instanceID,
             uid))
 
         writeToFile(parsedJsonFile, event.toJson)

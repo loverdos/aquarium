@@ -101,7 +101,7 @@ class UserActorManager extends AquariumActor with Loggable {
       _forwardToUserActor(userId, m)
 
     case m @ ProcessResourceEvent(resourceEvent) ⇒
-      _forwardToUserActor(resourceEvent.userId, m)
+      _forwardToUserActor(resourceEvent.userID, m)
 
     case m @ ProcessUserEvent(userEvent) ⇒
       _forwardToUserActor(userEvent.userID, m)

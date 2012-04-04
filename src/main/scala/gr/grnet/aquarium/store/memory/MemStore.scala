@@ -206,7 +206,7 @@ class MemStore extends UserStateStore
 
   def findResourceEventsByUserId(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
-    val byUserId = _resourceEvents.filter(_.userId == userId).toArray
+    val byUserId = _resourceEvents.filter(_.userID == userId).toArray
     val sorted = sortWith match {
       case Some(sorter) ⇒
         byUserId.sortWith(sorter)
@@ -219,7 +219,7 @@ class MemStore extends UserStateStore
 
   def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
     _resourceEvents.filter { ev ⇒
-      ev.userId == userId &&
+      ev.userID == userId &&
       (ev.occurredMillis > timestamp)
     }.toList
   }
@@ -235,7 +235,7 @@ class MemStore extends UserStateStore
                                           startTimeMillis: Long,
                                           stopTimeMillis: Long): List[ResourceEvent] = {
     _resourceEvents.filter { ev ⇒
-      ev.userId == userId &&
+      ev.userID == userId &&
       ev.isReceivedWithinMillis(startTimeMillis, stopTimeMillis)
     }.toList
   }

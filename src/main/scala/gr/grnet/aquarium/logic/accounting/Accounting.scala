@@ -578,9 +578,9 @@ trait Accounting extends DSLUtils with Loggable {
           sourceEventIDs = rel,
           value = c.cost,
           reason = c.reason,
-          userId = event.userId,
+          userId = event.userID,
           resource = event.resource,
-          instanceId = event.instanceId,
+          instanceId = event.instanceID,
           finalized = isFinal
         )
     }

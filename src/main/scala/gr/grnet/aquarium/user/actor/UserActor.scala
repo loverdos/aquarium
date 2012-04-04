@@ -151,7 +151,7 @@ class UserActor extends AquariumActor
 
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
     val resourceEvent = event.rce
-    if(resourceEvent.userId != this._userId) {
+    if(resourceEvent.userID != this._userId) {
       ERROR("Received %s but my userId = %s".format(event, this._userId))
     } else {
       //ensureUserState()

@@ -71,7 +71,7 @@ case class NewWalletEntry(userId: String,
 
   def currentResourceEvent = resourceEvents.head
   def resource = currentResourceEvent.resource
-  def instanceId = currentResourceEvent.instanceId
+  def instanceId = currentResourceEvent.instanceID
   def chargslotCount = chargeslots.length
   def isOutOfSync = currentResourceEvent.isOutOfSyncForBillingMonth(yearOfBillingMonth, billingMonth)
 
