@@ -60,7 +60,7 @@ object ResourceLocator {
    */
   final val AQUARIUM_HOME = SysEnv("AQUARIUM_HOME")
 
-  lazy val AQUARIUM_HOME_FOLDER: File = {
+  final lazy val AQUARIUM_HOME_FOLDER: File = {
     AQUARIUM_HOME.value match {
       case Just(home) ⇒
         val file = new File(home)
@@ -73,20 +73,17 @@ object ResourceLocator {
     }
   }
 
+  final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(AQUARIUM_HOME_FOLDER, "conf")
+
   /**
    * This exists in order to have a feeling of where we are.
    */
   final lazy val HERE = justForSure(getResource(".")).get.url.toExternalForm
 
   /**
-   * Current directory resource context.
+   * AQUARIUM_HOME/conf resource context.
    */
-  private[this] final lazy val AppBaseResourceContext = new FileStreamResourceContext(".")
-
-  /**
-   * Default config context for Aquarium distributions
-   */
-  private[this] final lazy val LocalConfigResourceContext = new FileStreamResourceContext("conf")
+  private[this] final lazy val HomeConfResourceContext = new FileStreamResourceContext(AQUARIUM_HOME_CONF_FOLDER)
 
   /**
    * The venerable /etc resource context. Applicable in Unix environments
@@ -110,8 +107,7 @@ object ResourceLocator {
   private[this] final lazy val BasicResourceContext = new CompositeStreamResourceContext(
     NoVal,
     SlashEtcResourceContext,
-    LocalConfigResourceContext,
-    AppBaseResourceContext,
+    HomeConfResourceContext,
     ClasspathBaseResourceContext)
 
   /**
@@ -125,7 +121,7 @@ object ResourceLocator {
       case NoVal ⇒
         BasicResourceContext
       case Failed(e, m) ⇒
-        throw new RuntimeException(m , e)
+        throw new AquariumException(m , e)
     }
   }
 
