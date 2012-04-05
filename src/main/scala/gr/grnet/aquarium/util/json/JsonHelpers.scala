@@ -77,6 +77,14 @@ object JsonHelpers {
     parse(json)
   }
 
+  final def jValueToCompactString(jValue: JValue): String = {
+    Printer.compact(JsonAST.render(jValue))
+  }
+
+  final def jValueToPrettyString(jValue: JValue): String = {
+    Printer.pretty(JsonAST.render(jValue))
+  }
+
   final def anyToJson(any: Any, pretty: Boolean = true): String = {
     val jValue = anyToJValue(any)
     val jDoc = JsonAST.render(jValue)
