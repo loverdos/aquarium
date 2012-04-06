@@ -333,7 +333,7 @@ the language. An agreement is defined in full using the following template:
     extends: other            # [opt] name of inhereted agreement 
     pricelist: plname         # Name of declared pricelist
       resourse: value         # [opt] Overiding of price for resource
-    algorithm: polname           # Name of declared policy
+    algorithm: polname        # Name of declared policy
       resourse: value         # [opt] Overiding of algorithm for resourse
 
 An agreement definition can either reuse the pricelists, algorithms and creditplans 
@@ -368,9 +368,11 @@ Aquarium events share a common base format consisting of the following fields:
     receivedMillis: 12346 
   }
 
-- *id:* [``string``] A per message unique string. Should be able to identify messages of the same type uniquely across Aquarium clients. Preferably a SHA-1.
--  *occurredMillis:* [``long``] The timestamp at the event creation time. In milliseconds since the epoch.
-- *receivedMillis:* [``long``] For Aquarium internal use. Clients should not set a value. If a value is set, it will be overwritten upon receipt.
+- *id* [``string``] A per message unique string. Should be able to identify messages of the same type uniquely across
+  Aquarium clients. Preferably a SHA-1.
+- *occurredMillis* [``long``] The timestamp at the event creation time. In milliseconds since the epoch.
+- *receivedMillis* [``long``] For Aquarium internal use. Clients should not set a value. If a value is set,
+  it will be overwritten upon receipt.
 
 In the following sections, we describe the exact format of each one of the concrete messages that Aquarium can process.
 
@@ -379,7 +381,7 @@ Resource Event
 .. _resource_event:
 
 A resource event is sent by Aquarium clients to signify a change in a resource's
-state. This change is processed by Aquarium's accounting system according to 
+state. This change is processed by Aquarium's accounting and charging system according to
 the provisions of the configured policy in order to create entries to the user's
 wallet.
 
@@ -392,7 +394,7 @@ wallet.
     clientID: "platform-wide-unique-ID",
     userID: "administrator@admin.grnet.gr",
     resource: "vmtime",
-    instanceId: "vmtime-01.02.123X.Z",
+    instanceID: "vmtime-01.02.123X.Z",
     eventVersion: "1.0", 
     value: 0.3,
     details: {
@@ -403,19 +405,22 @@ wallet.
 
 The meaning of the fields is as follows:
 
-- *id:* As above.
--  *occurredMillis:* As above.
-- *receivedMillis:* As above. 
-- *clientID:* ``string`` A unique name for each message producer.
-- *userID:* ``string`` The ID of the user that will be charged for the resource usage details reported in the resource event. 
-- *resource* ``string`` The name of the resource as declared in the Aquarium DSL. See `Resources`_ for more. 
-- *instanceId* ``string`` If the resource is complex, then this field is set to a unique identifier for the specific instance of the resource. In case of a non-complex resource, Aquarium does not examine this value.
-- *eventVersion* ``string`` The event version. Currently fixed to "1". 
-- *value*: ``double`` The value of resource usage. Depends on the cost policy defined for the resource as follows:
+- *id* As above.
+- *occurredMillis* As above.
+- *receivedMillis* As above.
+- *clientID* [``string``] A unique name for each message producer.
+- *userID* [``string``] The ID of the user that will be charged for the resource usage details reported in the
+  resource event.
+- *resource* [``string``] The name of the resource as declared in the Aquarium DSL. See `Resources`_ for more.
+- *instanceID* [``string``] If the resource is complex, then this field is set to a unique identifier for the specific
+  instance of the resource. In case of a non-complex resource, Aquarium does not examine this value but it must be
+  present.
+- *eventVersion* [``string``] The event version. Currently fixed to "1.0".
+- *value* [``double``] The value of resource usage. Depends on the cost policy defined for the resource as follows:
    + For ``continuous`` resources, the value indicates the amount of resource usage since the last resource event for the specific resource.
    + For ``onoff`` resources, it is set to 1 when the resource is actively used and to 0 when the resource usage has stopped.
    + For ``discrete`` resources, the field indicates the amount of resource usage at the time of the event.
-- *details*: ``map[string, string]`` A map/dictionary indicating extra metadata for this resource event. Aquarium does not process this metadata. The field must always be present, even if it is empty.
+- *details* ``map[string, string]`` A map/dictionary indicating extra metadata for this resource event. Aquarium does not process this metadata. The field must always be present, even if it is empty.
 
 User Event
 ^^^^^^^^^^
@@ -436,37 +441,75 @@ changes in user states. The message format is the following:
     role: "STUDENT",
     eventVersion: "1", 
     eventType: "ACTIVE",
-    details: { }
+    details: {
+      keyA: "value1",
+      keyB: "value2",
+    }
   }
 
 The meaning of the fields is as follows:
 
-- *id:* As above.
--  *occurredMillis:* As above.
-- *receivedMillis:* As above. 
-- *clientID:* ``string`` A unique name for each message producer.
-- *userID:* ``string`` The ID of the user whom this event concerns 
-- *isActive* ``boolean`` Whether the user is active or not (allowed values are
-  ``true`` or ``false``)
-- *eventVersion* ``string`` The event version. Currently fixed to "1". 
-- *role* ``string`` The role of the user. If different than the role currently
-  stored, the role will be changed.
-- *eventType* ``string (ACTIVE/SUSPENDED)`` The requested change to the user
-  profile. 
-- *details*: ``map[string, string]`` A map/dictionary indicating extra metadata for this resource event. Aquarium does not process this metadata. The field must always be present, even if it is empty.
+- *id* As above.
+- *occurredMillis* As above.
+- *receivedMillis* As above.
+- *clientID* [``string``] A unique name for each message producer.
+- *userID* [``string``] The ID of the user whom this event concerns
+- *isActive* [``boolean``] Whether the user is active or not (allowed values are ``true`` or ``false``)
+- *eventVersion* [``string``] The event version. Currently fixed to "1".
+- *role* [``string``] The role of the user. If different than the role currently stored, the role will be changed.
+- *eventType* [``string (ACTIVE/SUSPENDED)``] The requested change to the user profile.
+- *details* [``map[string, string]``] A map/dictionary indicating extra metadata for this resource event. Aquarium
+  does not process this metadata. The field must always be present, even if it is empty.
 
 
 The charging algorithm
 ----------------------
 
+The charging algorithm translates resource state changes into credits. These credits are subtracted from the user's
+total credit amount until it reaches either the value of zero or some negative threshold. The threshold may be
+configured on a per-user basis. The charging algorithm can be run in two modes: near real-time and batch. The former is
+the default mode of operation for Aquarium while the latter is used to make the final bill for each billing month.
+
+Near real-time charging
+^^^^^^^^^^^^^^^^
+Every resource event that arrives in Aquarium may lead to some credit calculation.
+
+As a first step, the charging algorithm has to decide whether this event alone can
+lead to a respective credit charge or some more information is needed. For example,
+an event that designates a VM switch off cannot, by itself, lead to a credit calculation but needs a
+corresponding VM switch on event. On the other hand, an event for uploading bandwidth usage has all the necessary
+information in order to compute credit charges.
+
+The next step is to specify the time frame for which the credit charges will be applied. This is rather
+straightforward, given the outcome of the previous step, since all events record their time of occurrence via their
+`occurredMillis` attribute.
+
+Then, Aquarium must decide for the given time frame which agreements are in effect. Thus it may break the time frame
+into smaller ones. Each one is tagged with the corresponding agreement. Aquarium uses the agreement to discover
+effective price units and the applicable charging algorithms. In essence, after this step is complete,
+Aquarium has all the necessary information to proceed to a charging calculation.
+
+Aquarium combines all the time frames and their associated information regarding price units and charging algorithms
+in order to calculate the sum of charges. This is subtracted from the current credit total.
+
+Batch-mode billing
+^^^^^^^^^^^
+Aquarium uses a modification of the above algorithm, which operates on a bigger time frame (the one of a billing
+month), in order to come up with the monthly use bills. In effect, the time frame is "stretched" to one month period
+and all the relevant events that occurred within the billing period are "replayed". The difference of the credit
+total between the beginning of the billing month and the end of the billing month is the credit amount charged to the
+user for that particular billing month.
+
 
 The Aquarium REST API
 ---------------------
 
-The Aquarium REST API is used to query a 
+External systems can communicate directly with Aquarium via a REST API. As Aquarium is a backend system, clients are
+trusted and therefore no authentication is required for accessing Aquarium's API. The main function of the REST API is
+currently to serve requests about a user's credit balance. Such requests have the form of a GET HTTP method with
+a specific URL that contains the user's unique identifier. Upon successful completion of the request,
+a response is returned back, in JSON format.
 
-As Aquarium is a backend system, clients are trusted and therefore no
-authentication is required for accessing Aquarium's API.
 
 Get User Balance
 ^^^^^^^^^^^^^^^^
@@ -485,7 +528,7 @@ The operation returns the current balance for a user.
 
   {
     userId: "1234"
-    balance: "321,32"
+    balance: "321.32"
   }
 
 
@@ -498,6 +541,7 @@ Revision              Description
 0.1 (Nov 2, 2011)     Initial release. Credit and debit policy descriptions 
 0.2 (Feb 23, 2012)    Update definitions, remove company use case
 0.3 (Feb 28, 2012)    Event and resource descriptions
+0.4 (Apr 6, 2012)     Minor fixes, additions
 ==================    ================================
 
 
