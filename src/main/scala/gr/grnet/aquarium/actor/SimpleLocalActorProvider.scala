@@ -68,13 +68,9 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
     // Now that all actors have been started, send them some initialization code
     val message = ActorProviderConfigured(this)
     for(role <- RolesToBeStarted) {
-      role match {
-        case DispatcherRole ⇒
-          logger.info("Configuring %s with %s".format(DispatcherRole, message))
-          actorForRole(DispatcherRole) ! message
-        case anyOtherRole ⇒
-          logger.info("Configuring %s with %s".format(anyOtherRole, message))
-          actorForRole(anyOtherRole) ! message
+      if(role.handledConfigurationMessages.contains(classOf[ActorProviderConfigured])) {
+        logger.info("Configuring %s with %s".format(role, message))
+        actorForRole(role) ! message
       }
     }
 
