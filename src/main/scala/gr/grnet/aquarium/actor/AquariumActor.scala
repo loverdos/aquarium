@@ -37,13 +37,17 @@ package gr.grnet.aquarium
 package actor
 
 import akka.actor.Actor
+import util.{Loggable, shortClassNameOf}
+
 
 /**
  * Parent of all Aquarium actors.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait AquariumActor extends Actor {
+trait AquariumActor extends Actor with Loggable {
   def role: ActorRole
+
+  override def toString = "%s(%s@%s)".format(shortClassNameOf(this), role.role, System.identityHashCode(this))
 }
 
