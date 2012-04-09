@@ -37,12 +37,12 @@ package gr.grnet.aquarium
 
 import actor.ActorProvider
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.maybe.{Maybe, Failed, Just, NoVal}
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 import processor.actor.{UserEventProcessorService, ResourceEventProcessorService}
 import store._
 import util.{Lifecycle, Loggable}
 import java.io.File
+import com.ckkloverdos.maybe._
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -298,6 +298,11 @@ class Configurator(val props: Props) extends Loggable {
   }
 
   def eventsStoreFolder = _eventsStoreFolder
+
+  def adminCookie: MaybeOption[String] = props.get(Configurator.Keys.admin_cookie) match {
+    case just @ Just(_) ⇒ just
+    case _ ⇒ NoVal
+  }
 }
 
 object Configurator {
@@ -544,5 +549,11 @@ object Configurator {
      * saved to the [[gr.grnet.aquarium.store.UserEventStore]].
      */
     final val save_unparsed_event_im = "save.unparsed.event.im"
+
+    /**
+     * A cookie used in every administrative REST API call, so that Aquarium knows it comes from
+     * an authorised client.
+     */
+    final val admin_cookie = "admin.cookie"
   }
 }
