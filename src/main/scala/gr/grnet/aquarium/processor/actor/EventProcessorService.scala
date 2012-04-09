@@ -49,8 +49,8 @@ import gr.grnet.aquarium.messaging.{AkkaAMQP}
 import akka.amqp._
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
 import gr.grnet.aquarium.logic.events.AquariumEvent
-import com.ckkloverdos.maybe.{NoVal, Just, Failed, Maybe}
 import gr.grnet.aquarium.{AquariumException, Configurator}
+import com.ckkloverdos.maybe._
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,
@@ -94,7 +94,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
   protected def forward(event: E): Unit
   protected def exists(event: E): Boolean
   protected def persist(event: E, initialPayload: Array[Byte]): Boolean
-  protected def persistUnparsed(initialPayload: Array[Byte]): Unit
+  protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit
 
   protected def queueReaderThreads: Int
   protected def persisterThreads: Int
@@ -131,7 +131,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
     def receive = {
       case Delivery(payload, _, deliveryTag, isRedeliver, _, queue) =>
-        val eventM = Maybe { decode(payload) }
+        val eventM = MaybeEither { decode(payload) } // either decoded or error
         eventM match {
           case Just(event) ⇒
             inFlightEvents.put(deliveryTag, event)
@@ -153,23 +153,19 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
               persisterManager.lb ! Persist(eventWithReceivedMillis, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
             }
 
-          case maybe ⇒
-            if(maybe.isFailed) {
-              val failed = failedForSure(maybe)
-              val exception = failed.exception
-              logger.error(exception.getMessage, exception)
-            }
-
+          case failed @ Failed(e) ⇒
+            logger.error("While decoding payload", e)
             logger.error("Offensive payload = \n{}", makeString(payload))
 
             // If we could not create an object from the incoming json, then we just store the message
             // and then ignore it.
             // TODO: Possibly the sending site should setup a queue to accept such erroneous messages?
-            Maybe { persistUnparsed(initialPayload = payload) } match {
+            MaybeEither { persistUnparsed(payload, e) } match {
               case Just(_) ⇒
                 logger.debug("Sending Acknowledge(deliveryTag) = {}", Acknowledge(deliveryTag))
                 queue ! Acknowledge(deliveryTag)
-              case _ ⇒
+              case Failed(e) ⇒
+                logger.error("While persisting unparsed event", e)
                 logger.debug("Sending Reject(deliveryTag, true) = {}", Reject(deliveryTag, true))
                 queue ! Reject(deliveryTag, true)
             }

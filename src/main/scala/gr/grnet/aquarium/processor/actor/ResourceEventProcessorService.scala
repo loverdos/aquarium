@@ -86,9 +86,9 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
   }
 
 
-  protected def persistUnparsed(initialPayload: Array[Byte]): Unit = {
+  protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit = {
     // TODO: Also save to DB, just like we do for UserEvents
-    LocalFSEventStore.storeResourceEvent(_configurator, null, initialPayload)
+    LocalFSEventStore.storeUnparsedResourceEvent(_configurator, initialPayload, exception)
   }
 
   override def queueReaderThreads: Int = 1

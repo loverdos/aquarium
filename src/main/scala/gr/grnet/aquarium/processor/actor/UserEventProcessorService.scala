@@ -84,10 +84,10 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
     }
   }
 
-  protected def persistUnparsed(initialPayload: Array[Byte]): Unit = {
+  protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit = {
     val json = makeString(initialPayload)
 
-    LocalFSEventStore.storeUserEvent(_configurator, null, initialPayload)
+    LocalFSEventStore.storeUnparsedUserEvent(_configurator, initialPayload, exception)
 
     _configurator.props.getBoolean(Configurator.Keys.save_unparsed_event_im) match {
       case Just(true) ⇒

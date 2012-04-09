@@ -38,8 +38,7 @@ package gr.grnet.aquarium.store
 import gr.grnet.aquarium.Configurator
 import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
-import gr.grnet.aquarium.util.{Loggable, makeBytes}
-import com.ckkloverdos.maybe.{Just, Failed, Maybe}
+import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.simulation.uid.{EAIOUUIDGenerator, UIDGenerator}
 
@@ -53,82 +52,129 @@ import gr.grnet.aquarium.simulation.uid.{EAIOUUIDGenerator, UIDGenerator}
 
 object LocalFSEventStore extends Loggable {
   private[this] final val UIDGen: UIDGenerator = EAIOUUIDGenerator
+  private[this] final val NewLine  = "\n".getBytes("UTF-8")
+  private[this] final val NewLine2 = NewLine ++ NewLine
 
-  private[this] def writeToFile(file: File, data: Array[Byte]): Unit = {
+  private[this] def writeToFile(file: File, data: Array[Byte], appendString: Option[String] = None): Unit = {
     val out = new FileOutputStream(file)
     out.write(data)
+    appendString match {
+      case Some(s) ⇒
+        out.write(NewLine2)
+        out.write(s.getBytes("UTF-8"))
+      case None ⇒
+    }
     out.flush()
     out.close()
+
+    logger.debug("Wrote to file {}", file.getCanonicalPath)
   }
 
-  private[this] def writeToFile(file: File, data: String): Unit = {
-    writeToFile(file, makeBytes(data))
+  private[this] def resourceEventsFolder(root: File): File = {
+    val folder = new File(root, "rc")
+    folder.mkdirs()
+    folder
+  }
+
+  private[this] def userEventsFolder(root: File): File = {
+    val folder = new File(root, "im")
+    folder.mkdirs()
+    folder
+  }
+
+  private[this] def writeJson(tag: String,
+                              folder: File,
+                              jsonPayload: Array[Byte],
+                              occurredString: String,
+                              uid: String,
+                              extraName: Option[String],
+                              isParsed: Boolean,
+                              appendString: Option[String] = None): Unit = {
+    val file = new File(
+      folder,
+      "%s-%s%s.%s.%s.json".format(
+        tag,
+        occurredString,
+        extraName match {
+          case Some(s) ⇒ "-" + s
+          case None    ⇒ ""
+        },
+        uid,
+        if(isParsed) "p" else "u"
+      ))
+
+    writeToFile(file, jsonPayload, appendString)
+  }
+
+  def storeUnparsedResourceEvent(mc: Configurator, initialPayload: Array[Byte], exception: Throwable): Unit = {
+    for(root <- mc.eventsStoreFolder) {
+      val uid = UIDGen.nextUID()
+      val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis)
+      val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
+      val rcEventsFolder = resourceEventsFolder(root)
+      val trace = stringOfStackTrace(exception)
+
+      writeJson("rc", rcEventsFolder, initialPayload, occurredString, uid, None, false, Some(trace))
+    }
   }
 
   def storeResourceEvent(mc: Configurator, event: ResourceEvent, initialPayload: Array[Byte]): Unit = {
+    require(event ne null, "Resource event must be not null")
+
     for(root <- mc.eventsStoreFolder) {
-      val haveEvent = event ne null
       val uid = UIDGen.nextUID()
 
-      val occurredMDC = if(haveEvent) {
-        new MutableDateCalc(event.occurredMillis)
-      } else {
-        new MutableDateCalc(TimeHelpers.nowMillis)
-      }
+      val occurredMDC = new MutableDateCalc(event.occurredMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
-      val rcEvents = new File(root, "rcevents")
-      rcEvents.mkdirs()
+      val rcEventsFolder = resourceEventsFolder(root)
 
-      // We save two files. One containing the initial payload and one containing the transformed object.
-      val initialPayloadFile = new File(rcEvents, "rc-%s.%s.json".format(occurredString, uid))
-      writeToFile(initialPayloadFile, initialPayload)
-      logger.info("Wrote to file {}", initialPayloadFile.getCanonicalPath)
+      // Store parsed file
+      writeJson(
+        "rc",
+        rcEventsFolder,
+        initialPayload,
+        occurredString,
+        uid,
+        Some("[%s]-[%s]-[%s]-[%s]".format(
+          event.id,
+          event.userID,
+          event.resource,
+          event.instanceID)),
+        true
+      )
+    }
+  }
 
-      if(haveEvent) {
-        val parsedJsonFile = new File(
-          rcEvents,
-          "rc-%s-[%s]-[%s]-[%s]-[%s].%s.json".format(
-            occurredString,
-            event.id,
-            event.userID,
-            event.resource,
-            event.instanceID,
-            uid))
+  def storeUnparsedUserEvent(mc: Configurator, initialPayload: Array[Byte], exception: Throwable): Unit = {
+    for(root <- mc.eventsStoreFolder) {
+      val uid = UIDGen.nextUID()
+      val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis)
+      val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
+      val rcEventsFolder = userEventsFolder(root)
+      val trace = stringOfStackTrace(exception)
 
-        writeToFile(parsedJsonFile, event.toJson)
-        logger.info("Wrote to file {}", parsedJsonFile.getCanonicalPath)
-      }
+      writeJson("im", rcEventsFolder, initialPayload, occurredString, uid, None, false, Some(trace))
     }
   }
 
   def storeUserEvent(mc: Configurator, event: UserEvent, initialPayload: Array[Byte]): Unit = {
+    require(event ne null, "User event must be not null")
     for(root <- mc.eventsStoreFolder) {
-      val haveEvent = event ne null
       val uid = UIDGen.nextUID()
 
-      val occurredMDC = if(haveEvent) {
-        new MutableDateCalc(event.occurredMillis)
-      } else {
-        new MutableDateCalc(TimeHelpers.nowMillis)
-      }
+      val occurredMDC = new MutableDateCalc(event.occurredMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
-      val imEvents = new File(root, "imevents")
-      imEvents.mkdirs()
+      val imEventsFolder = userEventsFolder(root)
 
-      // We save two files. One containing the initial payload and one containing the transformed object.
-      val initialPayloadFile = new File(imEvents, "im-%s.%s.json".format(occurredString, uid))
-      writeToFile(initialPayloadFile, initialPayload)
-      logger.info("Wrote to file {}", initialPayloadFile)
-
-      if(haveEvent) {
-        val parsedJsonFile = new File(
-          imEvents,
-          "im-%s-[%s]-[%s].%s.json".format(occurredString, event.id, event.userID, uid)
-        )
-
-        writeToFile(parsedJsonFile, event.toJson)
-        logger.info("Wrote to file {}", parsedJsonFile.getCanonicalPath)
-      }
+      writeJson(
+        "im",
+        imEventsFolder,
+        initialPayload,
+        occurredString,
+        uid,
+        Some("[%s]-[%s]".format(event.id, event.userID)),
+        true
+      )
     }
   }
 }
