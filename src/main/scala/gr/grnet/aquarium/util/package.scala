@@ -37,6 +37,7 @@ package gr.grnet.aquarium
 
 import com.ckkloverdos.maybe.{Failed, MaybeOption, Just, NoVal, Maybe}
 import java.nio.charset.Charset
+import java.io.{PrintWriter, StringWriter}
 
 
 /**
@@ -176,5 +177,22 @@ package object util {
    */
   def makeBytes(string: String): Array[Byte] = {
     string.getBytes(UTF_8_Charset)
+  }
+
+  /**
+   * Return the stack trace of the given [[java.lang.Throwable]] in the form of [[java.lang.String]].
+   *
+   * @param t
+   * @return
+   */
+  def stringOfStackTrace(t: Throwable): String = {
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw)
+
+    t.printStackTrace(pw)
+    pw.flush()
+    pw.close()
+
+    sw.toString
   }
 }
