@@ -82,19 +82,23 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
   }
 
   private[this] def _newActor(role: ActorRole): ActorRef = {
-    akka.actor.Actor.actorOf(role.actorType).start()
+    val actorRef = akka.actor.Actor.actorOf(role.actorType).start()
+
+    if(role.canHandleConfigurationMessage(classOf[AquariumPropertiesLoaded])) {
+      actorRef ! AquariumPropertiesLoaded(this._props)
+    }
+    if(role.canHandleConfigurationMessage(classOf[ActorProviderConfigured])) {
+      actorRef ! ActorProviderConfigured(this)
+    }
+
+    actorRef
   }
 
-  private[this] def _fromCacheOrNew(role: ActorRole): ActorRef = {
+  private[this] def _fromCacheOrNew(role: ActorRole): ActorRef = synchronized {
     actorCache.get(role) match {
       case null ⇒
         val actorRef = _newActor(role)
         actorCache.put(role, actorRef)
-
-        if(role.canHandleConfigurationMessage(classOf[AquariumPropertiesLoaded])) {
-          actorRef ! AquariumPropertiesLoaded(this._props)
-        }
-
         actorRef
       case actorRef ⇒
         actorRef
@@ -102,35 +106,11 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
   }
 
   @throws(classOf[Exception])
-  def actorForRole(role: ActorRole, hints: Props = Props.empty) = {
-    // Currently, all actors are initialized to one instance
-    // and user actor are treated specially
-    role match {
-      case RESTRole ⇒
-        _fromCacheOrNew(RESTRole)
-      case DispatcherRole ⇒
-        _fromCacheOrNew(DispatcherRole)
-      case UserActorManagerRole ⇒
-        _fromCacheOrNew(UserActorManagerRole)
-      case UserActorRole ⇒
-        // NOTE: This always creates a new actor and is intended to be called only
-        // from internal API that can manage the created actors.
-        // E.g. UserActorProvider knows how to manage multiple user actors and properly initialize them.
-        //
-        // Note that the returned actor is not initialized!
-        val actorRef = _newActor(UserActorRole)
-
-        if(role.canHandleConfigurationMessage(classOf[AquariumPropertiesLoaded])) {
-          actorRef ! AquariumPropertiesLoaded(this._props)
-        }
-
-        if(role.canHandleConfigurationMessage(classOf[ActorProviderConfigured])) {
-          actorRef ! ActorProviderConfigured(this)
-        }
-
-        actorRef
-      case _ ⇒
-        throw new Exception("Cannot create actor for role %s".format(role))
+  def actorForRole(role: ActorRole, hints: Props = Props.empty) = synchronized {
+    if(role.isCacheable) {
+      _fromCacheOrNew(role)
+    } else {
+      _newActor(role)
     }
   }
 
@@ -144,6 +124,7 @@ object SimpleLocalActorProvider {
 //    ResourceProcessorRole,
     RESTRole,
     UserActorManagerRole,
+    PingerRole,
     DispatcherRole)
 
   lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =

@@ -35,9 +35,9 @@
  */
 package gr.grnet.aquarium.actor
 
-import gr.grnet.aquarium.processor.actor.{ResourceProcessorActor, DispatcherActor}
 import gr.grnet.aquarium.rest.actor.RESTActor
 import gr.grnet.aquarium.user.actor.{UserActor, UserActorManager}
+import gr.grnet.aquarium.processor.actor.{PingerActor, ResourceProcessorActor, DispatcherActor}
 
 /**
  * Each actor within Aquarium plays one role.
@@ -45,6 +45,7 @@ import gr.grnet.aquarium.user.actor.{UserActor, UserActorManager}
  * A role also dictates which configuration messages the respective actor handles.
  */
 sealed abstract class ActorRole(val role: String,
+                                val isCacheable: Boolean,
                                 val actorType: Class[_ <: AquariumActor],
                                 val handledConfigurationMessages: Set[Class[_ <: ActorConfigurationMessage]] = Set()) {
 
@@ -54,10 +55,19 @@ sealed abstract class ActorRole(val role: String,
 }
 
 /**
+ * The actor that pings several internal services
+ */
+case object PingerRole
+    extends ActorRole("PingerRole",
+                      true,
+                      classOf[PingerActor])
+
+/**
  * The generic router/dispatcher.
  */
 case object DispatcherRole
     extends ActorRole("DispatcherRole",
+                      true,
                       classOf[DispatcherActor],
                       Set(classOf[ActorProviderConfigured]))
 
@@ -65,18 +75,19 @@ case object DispatcherRole
  * Processes user-related resource events.
  */
 case object ResourceProcessorRole
-    extends ActorRole("ResourceProcessorRole", classOf[ResourceProcessorActor])
+    extends ActorRole("ResourceProcessorRole", true, classOf[ResourceProcessorActor])
 
 /**
  * REST request handler.
  */
-case object RESTRole extends ActorRole("RESTRole", classOf[RESTActor])
+case object RESTRole extends ActorRole("RESTRole", true, classOf[RESTActor])
 
 /**
  * Role for the actor that is responsible for user actor provisioning.
  */
 case object UserActorManagerRole
     extends ActorRole("UserActorManagerRole",
+                      true,
                       classOf[UserActorManager],
                       Set(classOf[ActorProviderConfigured], classOf[AquariumPropertiesLoaded]))
 
@@ -85,5 +96,6 @@ case object UserActorManagerRole
  */
 case object UserActorRole
     extends ActorRole("UserActorRole",
+                      false,
                       classOf[UserActor],
                       Set(classOf[ActorProviderConfigured], classOf[AquariumPropertiesLoaded]))
