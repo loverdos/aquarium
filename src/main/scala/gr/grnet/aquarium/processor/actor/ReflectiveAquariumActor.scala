@@ -37,8 +37,7 @@ package gr.grnet.aquarium
 package processor
 package actor
 
-import akka.actor.Actor
-import util.{Loggable, shortNameOfClass}
+import util.shortNameOfClass
 import java.lang.reflect.InvocationTargetException
 import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.actor.AquariumActor
@@ -59,7 +58,7 @@ trait ReflectiveAquariumActor extends AquariumActor {
         case Just(method) =>
           method.setAccessible(true)
           (knownMessageType, method)
-          
+
         case Failed(e) =>
           throw new AquariumException("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageType), e)
       }
@@ -72,7 +71,7 @@ trait ReflectiveAquariumActor extends AquariumActor {
 
   protected def receive: Receive  = {
     case null =>
-      receiveNull
+      onNull
     case message: AnyRef if messageMethodMap.contains(message.getClass) ⇒
       try messageMethodMap(message.getClass).invoke(this, message)
       catch {
@@ -83,5 +82,7 @@ trait ReflectiveAquariumActor extends AquariumActor {
       }
   }
 
-  def receiveNull: Unit = {}
+  def onNull: Unit = {
+    throw new NullPointerException(this.toString)
+  }
 }
