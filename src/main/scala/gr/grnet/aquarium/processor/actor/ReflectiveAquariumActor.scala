@@ -41,13 +41,14 @@ import akka.actor.Actor
 import util.{Loggable, shortNameOfClass}
 import java.lang.reflect.InvocationTargetException
 import com.ckkloverdos.maybe._
+import gr.grnet.aquarium.actor.AquariumActor
 
 /**
  * An actor who dispatches to particular methods based on the type of the received message.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait ReflectiveAquariumActor extends Actor with Loggable {
+trait ReflectiveAquariumActor extends AquariumActor {
   private val messageMethodMap: Map[Class[_], java.lang.reflect.Method] = {
     val classMethodPairs = for(knownMessageType <- knownMessageTypes) yield {
       require(knownMessageType ne null, "Null in knownMessageTypes of %s".format(this.getClass))
