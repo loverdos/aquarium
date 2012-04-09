@@ -38,9 +38,9 @@ package processor
 package actor
 
 import akka.actor.Actor
-import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import util.{Loggable, shortNameOfClass}
 import java.lang.reflect.InvocationTargetException
+import com.ckkloverdos.maybe._
 
 /**
  * An actor who dispatches to particular methods based on the type of the received message.
@@ -54,12 +54,11 @@ trait ReflectiveAquariumActor extends Actor with Loggable {
       val methodName = "on%s".format(shortNameOfClass(knownMessageType))
       // For each class MethodClass we expect a method with the following signature:
       // def onMethodClass(message: MethodClass): Unit
-      Maybe(this.getClass.getMethod(methodName, knownMessageType)) match {
+      MaybeEither(this.getClass.getMethod(methodName, knownMessageType)) match {
         case Just(method) =>
           method.setAccessible(true)
           (knownMessageType, method)
-        case NoVal =>
-          throw new AquariumException("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageType))
+          
         case Failed(e) =>
           throw new AquariumException("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageType), e)
       }
