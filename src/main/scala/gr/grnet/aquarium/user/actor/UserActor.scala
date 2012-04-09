@@ -35,17 +35,21 @@
 
 package gr.grnet.aquarium.user.actor
 
+import java.util.Date
+import com.ckkloverdos.maybe.{Failed, NoVal, Just}
+
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
-import gr.grnet.aquarium.processor.actor._
 import gr.grnet.aquarium.user._
 import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry}
-import java.util.Date
+
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.date.TimeHelpers
-import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import gr.grnet.aquarium.logic.accounting.RoleAgreements
 import gr.grnet.aquarium.messaging.AkkaAMQP
+import gr.grnet.aquarium.actor.message.config.user.UserActorInitWithUserId
+import gr.grnet.aquarium.actor.message.service.dispatcher._
+import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 
 
 /**
@@ -244,8 +248,6 @@ class UserActor extends AquariumActor
     DEBUG("Actor restarted succesfully")
   }
 
-  def knownMessageTypes = UserActor.KnownMessageTypes
-
   private[this] def DEBUG(fmt: String, args: Any*) =
     logger.debug("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
 
@@ -257,16 +259,4 @@ class UserActor extends AquariumActor
 
   private[this] def ERROR(fmt: String, args: Any*) =
     logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
-}
-
-object UserActor {
-  final val KnownMessageTypes = List(
-    classOf[AquariumPropertiesLoaded],
-    classOf[UserActorInitWithUserId],
-    classOf[ProcessResourceEvent],
-    classOf[ProcessUserEvent],
-    classOf[RequestUserBalance],
-    classOf[UserRequestGetState],
-    classOf[ActorProviderConfigured]
-  )
 }

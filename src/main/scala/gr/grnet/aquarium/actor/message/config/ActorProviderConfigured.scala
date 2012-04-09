@@ -33,10 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
+package gr.grnet.aquarium.actor.message
+package config
+
+import gr.grnet.aquarium.actor.provider.ActorProvider
 
 /**
- * Sent with the configured [[gr.grnet.aquarium.actor.ActorProvider]].
+ * Sent with the configured [[gr.grnet.aquarium.actor.provider.ActorProvider]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

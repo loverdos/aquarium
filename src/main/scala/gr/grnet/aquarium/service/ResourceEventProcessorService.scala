@@ -33,91 +33,89 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.logic.events.UserEvent
+import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
-import gr.grnet.aquarium.util.makeString
-import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
-import gr.grnet.aquarium.util.json.JsonHelpers
-import gr.grnet.aquarium.Configurator
+import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
+import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessResourceEvent
+
 
 /**
- * An event processor service for user events coming from the IM system
+ * An event processor service for resource events
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class UserEventProcessorService extends EventProcessorService[UserEvent] {
+final class ResourceEventProcessorService extends EventProcessorService[ResourceEvent] {
 
-  override def decode(data: Array[Byte]) = UserEvent.fromBytes(data)
+  override def decode(data: Array[Byte]) = ResourceEvent.fromBytes(data)
 
-  override def forward(event: UserEvent) = {
+  override def forward(event: ResourceEvent): Unit = {
     if(event ne null) {
-      _configurator.actorProvider.actorForRole(DispatcherRole) ! ProcessUserEvent(event)
+      val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
+      businessLogicDispacther ! ProcessResourceEvent(event)
     }
   }
 
-  override def exists(event: UserEvent) =
-    _configurator.userEventStore.findUserEventById(event.id).isJust
+  override def exists(event: ResourceEvent): Boolean =
+    _configurator.resourceEventStore.findResourceEventById(event.id).isJust
 
-  override def persist(event: UserEvent, initialPayload: Array[Byte]) = {
+  override def persist(event: ResourceEvent, initialPayload: Array[Byte]): Boolean = {
     Maybe {
-      LocalFSEventStore.storeUserEvent(_configurator, event, initialPayload)
+      LocalFSEventStore.storeResourceEvent(_configurator, event, initialPayload)
     } match {
       case Just(_) ⇒
-        _configurator.userEventStore.storeUserEvent(event) match {
+        _configurator.resourceEventStore.storeResourceEvent(event) match {
           case Just(x) => true
           case x: Failed =>
-            logger.error("Could not save user event: %s".format(event))
+            logger.error("Could not save event: %s. Reason:".format(event, x.toString))
             false
           case NoVal => false
         }
 
-      case failed @ Failed(e) ⇒
-        logger.error("While LocalFSEventStore.storeUserEvent", e)
+      case failed@Failed(e) ⇒
+        logger.error("While LocalFSEventStore.storeResourceEvent", e)
         false
 
-      case _ ⇒
+      case NoVal ⇒
         false
     }
   }
 
+
   protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit = {
-    val json = makeString(initialPayload)
-
-    LocalFSEventStore.storeUnparsedUserEvent(_configurator, initialPayload, exception)
-
-    _configurator.props.getBoolean(Configurator.Keys.save_unparsed_event_im) match {
-      case Just(true) ⇒
-        val recordIDM = _configurator.userEventStore.storeUnparsed(json)
-        logger.info("Saved unparsed {}", recordIDM)
-      case _ ⇒
-    }
+    // TODO: Also save to DB, just like we do for UserEvents
+    LocalFSEventStore.storeUnparsedResourceEvent(_configurator, initialPayload, exception)
   }
 
   override def queueReaderThreads: Int = 1
-  override def persisterThreads: Int = numCPUs
-  protected def numQueueActors = 2 * queueReaderThreads
-  protected def numPersisterActors = 2 * persisterThreads
-  override def name = "usrevtproc"
+
+  override def persisterThreads: Int = numCPUs + 4
+
+  override def numQueueActors: Int = 1 * queueReaderThreads
+
+  override def numPersisterActors: Int = 2 * persisterThreads
+
+  override def name = "resevtproc"
 
   lazy val persister = new PersisterManager
   lazy val queueReader = new QueueReaderManager
 
-  override def persisterManager   = persister
+  override def persisterManager = persister
+
   override def queueReaderManager = queueReader
 
   def start() {
-    logger.info("Starting user event processor service")
-    declareQueues(Keys.amqp_userevents_queues)
+    logger.info("Starting resource event processor service")
+    declareQueues(Keys.amqp_resevents_queues)
   }
 
   def stop() {
     queueReaderManager.stop()
     persisterManager.stop()
 
-    logger.info("Stopping user event processor service")
+    logger.info("Stopping resource event processor service")
   }
 }

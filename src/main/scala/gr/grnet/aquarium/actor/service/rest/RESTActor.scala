@@ -33,7 +33,9 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.rest.actor
+package gr.grnet.aquarium.actor
+package service
+package rest
 
 import cc.spray.can.HttpMethods.GET
 import cc.spray.can._
@@ -43,8 +45,9 @@ import net.liftweb.json.{JsonAST, Printer}
 import gr.grnet.aquarium.Configurator
 import akka.actor.Actor
 import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
-import RESTPaths.{UserBalancePath, UserStatePath}
-import gr.grnet.aquarium.processor.actor.{DispatcherResponseMessage, UserRequestGetState, RequestUserBalance, DispatcherMessage}
+import RESTPaths.{UserBalancePath, UserStatePath, AdminPingAll}
+import com.ckkloverdos.maybe.{NoVal, Just}
+import message.service.dispatcher._
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -60,7 +63,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
     val stringBody = Printer.pretty(JsonAST.render(body))
     stringResponse200(stringBody, "application/json")
   }
-  
+
   private def stringResponse(status: Int, stringBody: String, contentType: String = "application/json"): HttpResponse = {
     HttpResponse(
       status,
@@ -78,10 +81,11 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
       responder.complete(stringResponse200("{\"pong\": %s}".format(System.currentTimeMillis())))
 
     case RequestContext(HttpRequest(GET, "/stats", _, _, _), _, responder) ⇒ {
-      (serverActor ? GetStats).mapTo[Stats].onComplete { future =>
+      (serverActor ? GetStats).mapTo[Stats].onComplete {
+        future =>
           future.value.get match {
             case Right(stats) => responder.complete {
-              stringResponse200 (
+              stringResponse200(
                 "Uptime              : " + (stats.uptime / 1000.0) + " sec\n" +
                   "Requests dispatched : " + stats.requestsDispatched + '\n' +
                   "Requests timed out  : " + stats.requestsTimedOut + '\n' +
@@ -100,12 +104,30 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
       uri match {
         case UserBalancePath(userId) ⇒
           callDispatcher(RequestUserBalance(userId, millis), responder)
+
         case UserStatePath(userId) ⇒
           callDispatcher(UserRequestGetState(userId, millis), responder)
+
+        case AdminPingAll() ⇒
+          val mc = Configurator.MasterConfigurator
+          mc.adminCookie match {
+            case Just(adminCookie) ⇒
+              headers.find(h ⇒ h.name == "X-Aquarium-Admin-Cookie" && h.value == adminCookie) match {
+                case Some(_) ⇒
+                  callDispatcher(AdminRequestPingAll(), responder)
+
+                case None ⇒
+                  responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
+              }
+
+            case NoVal ⇒
+              responder.complete(stringResponse(403, "Forbidden!", "text/plain"))
+          }
+
         case _ ⇒
           responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
       }
-      //- Main business logic REST URIs are matched here
+    //- Main business logic REST URIs are matched here
 
     case RequestContext(HttpRequest(_, _, _, _, _), _, responder) ⇒
       responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
@@ -123,7 +145,8 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
     val dispatcher = actorProvider.actorForRole(DispatcherRole)
     val futureResponse = dispatcher ask message
 
-    futureResponse onComplete { future ⇒
+    futureResponse onComplete {
+      future ⇒
         future.value match {
           case None ⇒
           // TODO: Will this ever happen??
@@ -134,7 +157,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
           case Some(Right(actualResponse)) ⇒
             actualResponse match {
-              case dispatcherResponse: DispatcherResponseMessage if(!dispatcherResponse.isError) ⇒
+              case dispatcherResponse: DispatcherResponseMessage if (!dispatcherResponse.isError) ⇒
                 //logger.debug("Received response: %s".format(dispatcherResponse))
                 //logger.debug("Received response (JSON): %s".format(dispatcherResponse.toJson))
                 //logger.debug("Received response:body %s".format(dispatcherResponse.responseBody))
@@ -156,6 +179,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
         }
     }
   }
+
   ////////////// helpers //////////////
 
   val defaultHeaders = List(HttpHeader("Content-Type", "text/plain"))

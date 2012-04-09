@@ -38,7 +38,10 @@ package gr.grnet.aquarium.user.actor
 import gr.grnet.aquarium.util.Loggable
 import akka.actor.ActorRef
 import gr.grnet.aquarium.actor._
-import gr.grnet.aquarium.processor.actor._
+import message.config.user.UserActorInitWithUserId
+import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
+import message.service.dispatcher._
+import provider.ActorProvider
 
 
 /**

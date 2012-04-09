@@ -33,22 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.rest.actor
+package gr.grnet.aquarium.actor.message
+
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
- * Paths recognized and served by the REST API.
+ * Base trait for all messages of the aquarium actors.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object RESTPaths {
-  /**
-   * Use this URI path to query for the user balance. The parenthesized regular expression part
-   * represents the user ID.
-   */
-  final val UserBalancePath = "/user/(.+)/balance/?".r
 
-  /**
-   * Use this URI path to query for the user state.
-   */
-  final val UserStatePath = "/user/(.+)/state/?".r
-}
+trait ActorMessage extends JsonSupport

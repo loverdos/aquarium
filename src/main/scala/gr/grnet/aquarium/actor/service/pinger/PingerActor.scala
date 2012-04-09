@@ -34,13 +34,24 @@
  */
 
 package gr.grnet.aquarium.actor
+package service
+package pinger
 
-import com.ckkloverdos.props.Props
+
+import gr.grnet.aquarium.actor.{ReflectiveAquariumActor, PingerRole}
+import message.service.dispatcher.AdminRequestPingAll
+
 
 /**
- * This message is sent when the Aquarium properties are loaded.
+ * An actor that handles the REST ing requests.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class AquariumPropertiesLoaded(props: Props) extends ActorConfigurationMessage
+class PingerActor extends ReflectiveAquariumActor {
+  def role = PingerRole
+
+  def onAdminRequestPingAll(msg: AdminRequestPingAll): Unit = {
+    logger.debug("Got {}", msg)
+  }
+}

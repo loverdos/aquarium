@@ -33,31 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.actor.message
+package config
 
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.logic.events.UserEvent
+
+import com.ckkloverdos.props.Props
 
 /**
- * Store for external user events
+ * This message is sent when the Aquarium properties are loaded.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait UserEventStore {
-  def storeUnparsed(json: String): Maybe[RecordID]
 
-  /**
-   * Store an event
-   */
-  def storeUserEvent(event: UserEvent): Maybe[RecordID]
-
-  /**
-   * Find a user event by event ID
-   */
-  def findUserEventById(id: String): Maybe[UserEvent]
-
-  /**
-   * Find all user events by user ID
-   */
-  def findUserEventsByUserId(userId: String): List[UserEvent]
-}
+case class AquariumPropertiesLoaded(props: Props) extends ActorConfigurationMessage

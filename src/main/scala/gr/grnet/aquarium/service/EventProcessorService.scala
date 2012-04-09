@@ -33,9 +33,9 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.util.{Lifecycle, Loggable, makeString, failedForSure}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable, makeString}
 
 import akka.actor._
 import akka.actor.Actor._
@@ -45,11 +45,11 @@ import akka.dispatch.Dispatchers
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
 import akka.config.Supervision.SupervisorConfig
 import akka.config.Supervision.OneForOneStrategy
-import gr.grnet.aquarium.messaging.{AkkaAMQP}
+import gr.grnet.aquarium.messaging.AkkaAMQP
 import akka.amqp._
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
 import gr.grnet.aquarium.logic.events.AquariumEvent
-import gr.grnet.aquarium.{AquariumException, Configurator}
+import gr.grnet.aquarium.Configurator
 import com.ckkloverdos.maybe._
 
 /**
@@ -66,9 +66,13 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   /* Messages exchanged between the persister and the queuereader */
   case class AckData(msgId: String, deliveryTag: Long, queue: ActorRef)
+
   case class Persist(event: E, initialPayload: Array[Byte], sender: ActorRef, ackData: AckData)
+
   case class PersistOK(ackData: AckData)
+
   case class PersistFailed(ackData: AckData)
+
   case class Duplicate(ackData: AckData)
 
   /* Short term storage for delivery tags to work around AMQP
@@ -91,24 +95,34 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
   protected def _configurator: Configurator = Configurator.MasterConfigurator
 
   protected def decode(data: Array[Byte]): E
+
   protected def forward(event: E): Unit
+
   protected def exists(event: E): Boolean
+
   protected def persist(event: E, initialPayload: Array[Byte]): Boolean
+
   protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit
 
   protected def queueReaderThreads: Int
+
   protected def persisterThreads: Int
+
   protected def numQueueActors: Int
+
   protected def numPersisterActors: Int
+
   protected def name: String
 
   protected def persisterManager: PersisterManager
+
   protected def queueReaderManager: QueueReaderManager
 
   protected val numCPUs = Runtime.getRuntime.availableProcessors
 
   def start(): Unit
-  def stop() : Unit
+
+  def stop(): Unit
 
   protected def declareQueues(conf: String) = {
     val decl = _configurator.get(conf)
@@ -116,7 +130,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
       q =>
         val i = q.split(":")
 
-        if (i.size < 3)
+        if(i.size < 3)
           throw new Exception("Queue declaration \"%s\" not correct".format(q))
 
         val exchange = i(0)
@@ -131,14 +145,16 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
     def receive = {
       case Delivery(payload, _, deliveryTag, isRedeliver, _, queue) =>
-        val eventM = MaybeEither { decode(payload) } // either decoded or error
+        val eventM = MaybeEither {
+          decode(payload)
+        } // either decoded or error
         eventM match {
           case Just(event) ⇒
             inFlightEvents.put(deliveryTag, event)
 
-            if (isRedeliver) {
+            if(isRedeliver) {
               //Message could not be processed 3 times, just ignore it
-              if (redeliveries.contains(event.id)) {
+              if(redeliveries.contains(event.id)) {
                 logger.warn("Actor[%s] - Event[%s] msg[%d] redelivered >2 times. Rejecting".format(self.getUuid(), event, deliveryTag))
                 queue ! Reject(deliveryTag, false)
                 redeliveries.remove(event.id)
@@ -153,14 +169,16 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
               persisterManager.lb ! Persist(eventWithReceivedMillis, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
             }
 
-          case failed @ Failed(e) ⇒
+          case failed@Failed(e) ⇒
             logger.error("While decoding payload", e)
             logger.error("Offensive payload = \n{}", makeString(payload))
 
             // If we could not create an object from the incoming json, then we just store the message
             // and then ignore it.
             // TODO: Possibly the sending site should setup a queue to accept such erroneous messages?
-            MaybeEither { persistUnparsed(payload, e) } match {
+            MaybeEither {
+              persistUnparsed(payload, e)
+            } match {
               case Just(_) ⇒
                 logger.debug("Sending Acknowledge(deliveryTag) = {}", Acknowledge(deliveryTag))
                 queue ! Acknowledge(deliveryTag)
@@ -210,9 +228,9 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
       case Persist(event, initialPayload, sender, ackData) ⇒
         logger.debug("Persister-%s attempting store".format(self.getUuid()))
         //val time = System.currentTimeMillis()
-        if (exists(event))
+        if(exists(event))
           sender ! Duplicate(ackData)
-        else if (persist(event, initialPayload)) {
+        else if(persist(event, initialPayload)) {
           //logger.debug("Persist time: %d ms".format(System.currentTimeMillis() - time))
           sender ! PersistOK(ackData)
         } else
@@ -240,7 +258,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
         .setRejectionPolicy(new CallerRunsPolicy).build
 
     lazy val actors =
-      for (i <- 0 until numQueueActors) yield {
+      for(i <- 0 until numQueueActors) yield {
         val actor = actorOf(new QueueReader)
         supervisor.link(actor)
         actor.start()
@@ -262,7 +280,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
         .setRejectionPolicy(new CallerRunsPolicy).build
 
     lazy val actors =
-      for (i <- 0 until numPersisterActors) yield {
+      for(i <- 0 until numPersisterActors) yield {
         val actor = actorOf(new Persister)
         supervisor.link(actor)
         actor.start()
@@ -271,4 +289,5 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
     def stop() = dispatcher.stopAllAttachedActors
   }
+
 }

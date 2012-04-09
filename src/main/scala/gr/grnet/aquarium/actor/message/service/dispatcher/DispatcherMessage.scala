@@ -33,15 +33,17 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium.actor.message
+package service
+package dispatcher
 
-import gr.grnet.aquarium.actor.ActorMessage
+import gr.grnet.aquarium.logic.events.{ResourceEvent, UserEvent}
 import gr.grnet.aquarium.user.UserState
-import gr.grnet.aquarium.util.json.{JsonSupport, JsonHelpers}
-import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
+import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
+
 
 /**
- * This is the base class of the messages the Dispatcher understands.
+ * This is the base class of the messages the dispatcher understands.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
@@ -96,3 +98,5 @@ case class ProcessResourceEvent(rce: ResourceEvent) extends DispatcherMessage
  */
 case class ProcessUserEvent(ue: UserEvent) extends DispatcherMessage
 
+
+case class AdminRequestPingAll() extends DispatcherMessage

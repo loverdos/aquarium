@@ -35,14 +35,16 @@
 
 package gr.grnet.aquarium
 
-import actor.ActorProvider
+import java.io.File
+
+import com.ckkloverdos.maybe._
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
-import processor.actor.{UserEventProcessorService, ResourceEventProcessorService}
-import store._
-import util.{Lifecycle, Loggable}
-import java.io.File
-import com.ckkloverdos.maybe._
+
+import gr.grnet.aquarium.actor.provider.ActorProvider
+import gr.grnet.aquarium.service.{UserEventProcessorService, ResourceEventProcessorService}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable}
+import gr.grnet.aquarium.store._
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.

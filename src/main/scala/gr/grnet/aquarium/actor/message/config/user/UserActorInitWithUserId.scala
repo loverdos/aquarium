@@ -33,45 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
-
-import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.actor._
-import gr.grnet.aquarium.logic.events.ResourceEvent
+package gr.grnet.aquarium.actor.message
+package config
+package user
 
 /**
- * Business logic dispatcher.
+ * Special message sent to a [[gr.grnet.aquarium.user.actor.UserActor]] in order to set the
+ * user identifier.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class DispatcherActor extends AquariumActor with Loggable {
-  private[this] var _actorProvider: ActorProvider = _
-
-  def role = DispatcherRole
-
-  private[this] def _forwardToUserManager(m: DispatcherMessage): Unit = {
-    logger.debug("Received %s".format(m))
-    val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
-    // forward to the user actor manager, which in turn will
-    // forward to the appropriate user actor (and create one if it does not exist)
-    userActorManager forward m
-  }
-
-  protected def receive = {
-    case ActorProviderConfigured(actorProvider) ⇒
-      this._actorProvider = actorProvider
-      logger.info("Received actorProvider = %s".format(this._actorProvider))
-
-    case m @ RequestUserBalance(userId, timestamp) ⇒
-      _forwardToUserManager(m)
-
-    case m @ UserRequestGetState(userId, timestamp) ⇒
-      _forwardToUserManager(m)
-
-    case m @ ProcessResourceEvent(resourceEvent) ⇒
-      _forwardToUserManager(m)
-
-    case m @ ProcessUserEvent(userEvent) ⇒
-      _forwardToUserManager(m)
-  }
-}
+case class UserActorInitWithUserId(userId: String) extends ActorConfigurationMessage

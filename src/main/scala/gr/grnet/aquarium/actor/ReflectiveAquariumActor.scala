@@ -33,39 +33,55 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.rest
+package gr.grnet.aquarium
 package actor
 
-import gr.grnet.aquarium.Configurator
-import gr.grnet.aquarium.actor.RESTRole
-import _root_.akka.actor._
-import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
+import util.shortNameOfClass
+import java.lang.reflect.InvocationTargetException
+import com.ckkloverdos.maybe.{Failed, Just, MaybeEither}
 
 /**
- * REST service based on Actors and Spray.
+ * An actor who dispatches to particular methods based on the type of the received message.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RESTActorService extends Lifecycle with Loggable {
-  private[this] var _port: Int = 8080
-  private[this] var _restActor: ActorRef = _
-  private[this] var _serverActor: ActorRef = _
-  private[this] var _clientActor: ActorRef = _
+trait ReflectiveAquariumActor extends AquariumActor {
+  private val messageMethodMap: Map[Class[_], java.lang.reflect.Method] = {
+    val classMethodPairs = for(knownMessageClass <- knownMessageTypes) yield {
+      require(knownMessageClass ne null, "Null in knownMessageTypes of %s".format(this.getClass))
 
-  def start(): Unit = {
-    val mc = Configurator.MasterConfigurator
-    this._port = mc.getInt(Configurator.Keys.rest_port).getOr(
-      throw new Exception("%s was not specified in aquarium properties".format(Configurator.Keys.rest_port)))
-    logger.info("Starting on port {}", this._port)
-    this._restActor = mc.actorProvider.actorForRole(RESTRole)
-    // Start Spray subsystem
-    this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
-    this._clientActor = Actor.actorOf(new HttpClient()).start()
+      val methodName = "on%s".format(shortNameOfClass(knownMessageClass))
+      // For each class MethodClass we expect a method with the following signature:
+      // def onMethodClass(message: MethodClass): Unit
+      MaybeEither(this.getClass.getMethod(methodName, knownMessageClass)) match {
+        case Just(method) =>
+          method.setAccessible(true)
+          (knownMessageClass, method)
+
+        case Failed(e) =>
+          throw new AquariumException("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageClass), e)
+      }
+    }
+
+    Map(classMethodPairs.toSeq: _*)
   }
 
-  def stop(): Unit = {
-    this._serverActor ! PoisonPill
-    this._clientActor ! PoisonPill
+  def knownMessageTypes = role.knownMessageTypes
+
+  protected def receive: Receive = {
+    case null =>
+      onNull
+    case message: AnyRef if messageMethodMap.contains(message.getClass) ⇒
+      try messageMethodMap(message.getClass).invoke(this, message)
+      catch {
+        case e: InvocationTargetException ⇒
+          throw e.getTargetException
+        case e ⇒
+          throw e
+      }
+  }
+
+  def onNull: Unit = {
+    throw new NullPointerException(this.toString)
   }
 }

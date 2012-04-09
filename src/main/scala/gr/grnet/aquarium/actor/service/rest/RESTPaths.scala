@@ -34,11 +34,29 @@
  */
 
 package gr.grnet.aquarium.actor
+package service
+package rest
+
 
 /**
- * Actor messages that carry configuration.
+ * Paths recognized and served by the REST API.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
+object RESTPaths {
+  /**
+   * Use this URI path to query for the user balance. The parenthesized regular expression part
+   * represents the user ID.
+   */
+  final val UserBalancePath = "/user/(.+)/balance/?".r
 
-trait ActorConfigurationMessage extends ActorMessage
+  /**
+   * Use this URI path to query for the user state.
+   */
+  final val UserStatePath = "/user/(.+)/state/?".r
+
+  /**
+   * Use this administrative URI path to ping all services used by Aquarium.
+   */
+  final val AdminPingAll = "/admin/ping/all/?".r
+}

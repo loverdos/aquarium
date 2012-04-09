@@ -35,9 +35,14 @@
  */
 package gr.grnet.aquarium.actor
 
-import gr.grnet.aquarium.rest.actor.RESTActor
+import message.config.user.UserActorInitWithUserId
+import message.service.dispatcher._
+import service.dispatcher.DispatcherActor
+import service.pinger.PingerActor
+import service.rest.RESTActor
 import gr.grnet.aquarium.user.actor.{UserActor, UserActorManager}
-import gr.grnet.aquarium.processor.actor.{PingerActor, ResourceProcessorActor, DispatcherActor}
+import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured, ActorConfigurationMessage}
+import cc.spray.can.{Timeout, RequestContext}
 
 /**
  * Each actor within Aquarium plays one role.
@@ -47,10 +52,21 @@ import gr.grnet.aquarium.processor.actor.{PingerActor, ResourceProcessorActor, D
 sealed abstract class ActorRole(val role: String,
                                 val isCacheable: Boolean,
                                 val actorType: Class[_ <: AquariumActor],
+                                val handledServiceMessages: Set[Class[_]],
                                 val handledConfigurationMessages: Set[Class[_ <: ActorConfigurationMessage]] = Set()) {
+
+  val knownMessageTypes = handledServiceMessages ++ handledConfigurationMessages
 
   def canHandleConfigurationMessage[A <: ActorConfigurationMessage](cl: Class[A]): Boolean = {
     handledConfigurationMessages contains cl
+  }
+
+  def canHandleServiceMessage[A <: AnyRef](cl: Class[A]): Boolean = {
+    handledServiceMessages contains cl
+  }
+
+  def canHandleMessage[A <: AnyRef](cl: Class[A]): Boolean = {
+    knownMessageTypes contains cl
   }
 }
 
@@ -60,7 +76,8 @@ sealed abstract class ActorRole(val role: String,
 case object PingerRole
     extends ActorRole("PingerRole",
                       true,
-                      classOf[PingerActor])
+                      classOf[PingerActor],
+                      Set(classOf[AdminRequestPingAll]))
 
 /**
  * The generic router/dispatcher.
@@ -69,18 +86,22 @@ case object DispatcherRole
     extends ActorRole("DispatcherRole",
                       true,
                       classOf[DispatcherActor],
+                      Set(classOf[RequestUserBalance],
+                          classOf[UserRequestGetState],
+                          classOf[ProcessResourceEvent],
+                          classOf[ProcessUserEvent],
+                          classOf[AdminRequestPingAll]),
                       Set(classOf[ActorProviderConfigured]))
-
-/**
- * Processes user-related resource events.
- */
-case object ResourceProcessorRole
-    extends ActorRole("ResourceProcessorRole", true, classOf[ResourceProcessorActor])
 
 /**
  * REST request handler.
  */
-case object RESTRole extends ActorRole("RESTRole", true, classOf[RESTActor])
+case object RESTRole
+    extends ActorRole("RESTRole",
+                      true,
+                      classOf[RESTActor],
+                      Set(classOf[RequestContext],
+                          classOf[Timeout]))
 
 /**
  * Role for the actor that is responsible for user actor provisioning.
@@ -89,7 +110,12 @@ case object UserActorManagerRole
     extends ActorRole("UserActorManagerRole",
                       true,
                       classOf[UserActorManager],
-                      Set(classOf[ActorProviderConfigured], classOf[AquariumPropertiesLoaded]))
+                      Set(classOf[RequestUserBalance],
+                          classOf[UserRequestGetState],
+                          classOf[ProcessResourceEvent],
+                          classOf[ProcessUserEvent]),
+                      Set(classOf[ActorProviderConfigured],
+                          classOf[AquariumPropertiesLoaded]))
 
 /**
  * User-oriented business logic handler role.
@@ -98,4 +124,11 @@ case object UserActorRole
     extends ActorRole("UserActorRole",
                       false,
                       classOf[UserActor],
-                      Set(classOf[ActorProviderConfigured], classOf[AquariumPropertiesLoaded]))
+                      Set(classOf[ProcessResourceEvent],
+                          classOf[ProcessUserEvent],
+                          classOf[RequestUserBalance],
+                          classOf[UserActorInitWithUserId],
+                          classOf[UserRequestGetState]),
+                      Set(classOf[ActorProviderConfigured],
+                          classOf[AquariumPropertiesLoaded],
+                          classOf[UserActorInitWithUserId]))

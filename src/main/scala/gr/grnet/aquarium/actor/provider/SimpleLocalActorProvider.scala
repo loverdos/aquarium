@@ -34,12 +34,16 @@
  */
 
 package gr.grnet.aquarium.actor
+package provider
 
 import com.ckkloverdos.props.Props
 import akka.actor.ActorRef
 import gr.grnet.aquarium.Configurable
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.actor.ActorRole
+import gr.grnet.aquarium.actor.message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
 
 
 /**
@@ -59,16 +63,20 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
   def start(): Unit = {
     // Start all actors that need to [be started]
     val RolesToBeStarted = SimpleLocalActorProvider.RolesToBeStarted
-    logger.info("About to start actors for %s roles: %s".format(RolesToBeStarted.size, RolesToBeStarted))
+    val Size = RolesToBeStarted.size
+    logger.info("About to start actors for %s roles: %s".format(Size, RolesToBeStarted))
     for((role, index) <- RolesToBeStarted.zipWithIndex) {
+      logger.info("%s/%s. Starting actor for role %s".format(index + 1, Size, role))
+      val ms0 = TimeHelpers.nowMillis
       actorForRole(role)
-      logger.info("%s. Started actor for role %s".format(index + 1, role))
+      val ms1 = TimeHelpers.nowMillis
+      logger.info("%s/%s. Started actor for role %s in %.3f sec".format(index + 1, Size, role, (ms1 - ms0).toDouble / 1000.0))
     }
 
     // Now that all actors have been started, send them some initialization code
     val message = ActorProviderConfigured(this)
     for(role <- RolesToBeStarted) {
-      if(role.handledConfigurationMessages.contains(classOf[ActorProviderConfigured])) {
+      if(role.canHandleConfigurationMessage(classOf[ActorProviderConfigured])) {
         logger.info("Configuring %s with %s".format(role, message))
         actorForRole(role) ! message
       }
@@ -108,8 +116,10 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
   @throws(classOf[Exception])
   def actorForRole(role: ActorRole, hints: Props = Props.empty) = synchronized {
     if(role.isCacheable) {
+      logger.info("%s is cacheable".format(role.role))
       _fromCacheOrNew(role)
     } else {
+      logger.info("%s is not cacheable".format(role.role))
       _newActor(role)
     }
   }
@@ -121,19 +131,21 @@ object SimpleLocalActorProvider {
   // Always set Dispatcher at the end.
   // We could definitely use some automatic dependency sorting here (topological sorting anyone?)
   final val RolesToBeStarted = List(
-//    ResourceProcessorRole,
+    //    ResourceProcessorRole,
     RESTRole,
     UserActorManagerRole,
     PingerRole,
     DispatcherRole)
 
   lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
-    RolesToBeStarted map { role ⇒
-      (role, role.actorType)
+    RolesToBeStarted map {
+      role ⇒
+        (role, role.actorType)
     } toMap
-  
+
   lazy val ActorRefByRole: Map[ActorRole, ActorRef] =
-    ActorClassByRole map { case (role, clazz) ⇒
-    (role, akka.actor.Actor.actorOf(clazz).start())
-  }
+    ActorClassByRole map {
+      case (role, clazz) ⇒
+        (role, akka.actor.Actor.actorOf(clazz).start())
+    }
 }

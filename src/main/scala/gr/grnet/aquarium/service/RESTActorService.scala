@@ -33,23 +33,38 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.logic.events.ResourceEvent
-
-import akka.event.EventHandler
-import gr.grnet.aquarium.actor.{ResourceProcessorRole, AquariumActor}
+import gr.grnet.aquarium.Configurator
+import gr.grnet.aquarium.actor.RESTRole
+import _root_.akka.actor._
+import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
+import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 
 /**
- * 
+ * REST service based on Actors and Spray.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class ResourceProcessorActor extends AquariumActor with ReflectiveAquariumActor {
-  def role = ResourceProcessorRole
+class RESTActorService extends Lifecycle with Loggable {
+  private[this] var _port: Int = 8080
+  private[this] var _restActor: ActorRef = _
+  private[this] var _serverActor: ActorRef = _
+  private[this] var _clientActor: ActorRef = _
 
-  def knownMessageTypes = List(classOf[ResourceEvent])
+  def start(): Unit = {
+    val mc = Configurator.MasterConfigurator
+    this._port = mc.getInt(Configurator.Keys.rest_port).getOr(
+      throw new Exception("%s was not specified in aquarium properties".format(Configurator.Keys.rest_port)))
+    logger.info("Starting on port {}", this._port)
+    this._restActor = mc.actorProvider.actorForRole(RESTRole)
+    // Start Spray subsystem
+    this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
+    this._clientActor = Actor.actorOf(new HttpClient()).start()
+  }
 
-  def onResourceEvent(re: ResourceEvent): Unit = {
-    EventHandler.debug(this, "Received %s".format(re))
+  def stop(): Unit = {
+    this._serverActor ! PoisonPill
+    this._clientActor ! PoisonPill
   }
 }

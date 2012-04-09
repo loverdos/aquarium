@@ -34,13 +34,24 @@
  */
 
 package gr.grnet.aquarium.actor
+package provider
 
-import gr.grnet.aquarium.util.json.JsonSupport
+import akka.actor.ActorRef
+import com.ckkloverdos.props.Props
+import gr.grnet.aquarium.util.Lifecycle
+import gr.grnet.aquarium.actor.ActorRole
 
 /**
- * Base trait for all messages of the aquarium actors.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-
-trait ActorMessage extends JsonSupport
+trait ActorProvider extends Lifecycle {
+  /**
+   * Tries to find and provide the actor of specific `role`.
+   * Any extra info needed for the provision is given with the `hints` parameter.
+   *
+   * If no such actor is found, then this method throws an exception.
+   */
+  @throws(classOf[Exception])
+  def actorForRole(role: ActorRole, hints: Props = Props.empty): ActorRef
+}
