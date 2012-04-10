@@ -33,7 +33,9 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.actor
+package gr.grnet.aquarium.actor
+package service
+package user
 
 import gr.grnet.aquarium.util.Loggable
 import akka.actor.ActorRef
@@ -62,7 +64,7 @@ class UserActorManager extends AquariumActor with Loggable {
   // TODO: Get the constructor values from configuration
   @volatile
   private[this] var _actorProvider: ActorProvider = _
-  
+
   def role = UserActorManagerRole
 
   private[this] def _launchUserActor(userId: String): ActorRef = {
@@ -73,7 +75,7 @@ class UserActorManager extends AquariumActor with Loggable {
     logger.info("New actor for userId: %s".format(userId))
     userActor
   }
-  
+
   private[this] def _forwardToUserActor(userId: String, m: DispatcherMessage): Unit = {
     logger.debug("Received %s".format(m))
     UserActorCache.get(userId) match {
@@ -90,23 +92,23 @@ class UserActorManager extends AquariumActor with Loggable {
   }
 
   protected def receive = {
-    case m @ AquariumPropertiesLoaded(props) ⇒
+    case m@AquariumPropertiesLoaded(props) ⇒
       logger.debug("Received and ignoring %s".format(m))
 
-    case m @ ActorProviderConfigured(actorProvider) ⇒
+    case m@ActorProviderConfigured(actorProvider) ⇒
       this._actorProvider = actorProvider
       logger.info("Configured %s with %s".format(this, m))
 
-    case m @ RequestUserBalance(userId, timestamp) ⇒
+    case m@RequestUserBalance(userId, timestamp) ⇒
       _forwardToUserActor(userId, m)
 
-    case m @ UserRequestGetState(userId, timestamp) ⇒
+    case m@UserRequestGetState(userId, timestamp) ⇒
       _forwardToUserActor(userId, m)
 
-    case m @ ProcessResourceEvent(resourceEvent) ⇒
+    case m@ProcessResourceEvent(resourceEvent) ⇒
       _forwardToUserActor(resourceEvent.userID, m)
 
-    case m @ ProcessUserEvent(userEvent) ⇒
+    case m@ProcessUserEvent(userEvent) ⇒
       _forwardToUserActor(userEvent.userID, m)
   }
 

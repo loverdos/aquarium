@@ -37,6 +37,8 @@ package gr.grnet.aquarium.actor.message
 package config
 package user
 
+import gr.grnet.aquarium.actor.service.user.UserActor
+
 /**
  * Special message sent to a [[gr.grnet.aquarium.user.actor.UserActor]] in order to set the
  * user identifier.

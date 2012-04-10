@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2011-2012 GRNET S.A. All rights reserved.
  *
@@ -40,7 +39,7 @@ import message.service.dispatcher._
 import service.dispatcher.DispatcherActor
 import service.pinger.PingerActor
 import service.rest.RESTActor
-import gr.grnet.aquarium.user.actor.{UserActor, UserActorManager}
+import service.user.{UserActorManager, UserActor}
 import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured, ActorConfigurationMessage}
 import cc.spray.can.{Timeout, RequestContext}
 

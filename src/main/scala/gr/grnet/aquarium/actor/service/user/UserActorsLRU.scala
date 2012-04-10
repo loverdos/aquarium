@@ -32,7 +32,10 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
-package gr.grnet.aquarium.user.actor
+
+package gr.grnet.aquarium.actor
+package service
+package user
 
 import org.apache.solr.util.ConcurrentLRUCache
 import akka.actor.ActorRef
@@ -45,7 +48,7 @@ import collection.JavaConversions._
  * The underlying implementation is borrowed from the Apache lucene+solr project(s).
  *
  * The provided collections-like API is neither Java- nor Scala-oriented.
- * 
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
@@ -65,7 +68,7 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
 
   def get(userId: String): Option[ActorRef] = {
     _cache.get(userId) match {
-      case null     ⇒ None
+      case null ⇒ None
       case actorRef ⇒ Some(actorRef)
     }
   }
@@ -81,7 +84,8 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
     }
   }
 
-  def size: Int   = _cache.size()
+  def size: Int = _cache.size()
+
   def clear: Unit = _cache.clear()
 
   def start() = {}
@@ -89,7 +93,7 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
   def stop() = {
     _cache.destroy()
   }
-  
+
   private[this] object EvictionListener extends ConcurrentLRUCache.EvictionListener[String, ActorRef] with Loggable {
     def evictedEntry(userId: String, userActor: ActorRef): Unit = {
       logger.debug("Parking UserActor for userId = %s".format(userId))
@@ -99,5 +103,6 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
       // Hopefully no need to further track these actors as they will now cause their own death.
     }
   }
+
 }
 

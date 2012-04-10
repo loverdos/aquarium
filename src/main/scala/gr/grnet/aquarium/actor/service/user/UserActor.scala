@@ -33,7 +33,9 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.actor
+package gr.grnet.aquarium.actor
+package service
+package user
 
 import java.util.Date
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
@@ -58,9 +60,9 @@ import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
  */
 
 class UserActor extends AquariumActor
-                   with AkkaAMQP
-                   with ReflectiveAquariumActor
-                   with Loggable {
+with AkkaAMQP
+with ReflectiveAquariumActor
+with Loggable {
   @volatile
   private[this] var _userId: String = _
   @volatile
@@ -79,7 +81,7 @@ class UserActor extends AquariumActor
    */
   def rebuildState(from: Long, to: Long): Unit = {
     val start = System.currentTimeMillis()
-    if (_userState == null)
+    if(_userState == null)
       createBlankState
 
     //Rebuild state from user events
@@ -92,7 +94,7 @@ class UserActor extends AquariumActor
     val eventsDB = _configurator.storeProvider.resourceEventStore
     val resourceEvents = eventsDB.findResourceEventsByUserIdAfterTimestamp(_userId, from)
     val numResourceEvents = resourceEvents.size
-//    _userState = replayResourceEvents(_userState, resourceEvents, from, to)
+    //    _userState = replayResourceEvents(_userState, resourceEvents, from, to)
 
     //Rebuild state from wallet entries
     val wallet = _configurator.storeProvider.walletEntryStore
@@ -159,7 +161,7 @@ class UserActor extends AquariumActor
       ERROR("Received %s but my userId = %s".format(event, this._userId))
     } else {
       //ensureUserState()
-//        calcWalletEntries()
+      //        calcWalletEntries()
       //processResourceEvent(resourceEvent, true)
     }
   }
@@ -171,7 +173,7 @@ class UserActor extends AquariumActor
     usersDB.findUserStateByUserId(userId) match {
       case Just(userState) ⇒
         WARN("User already created, state = %s".format(userState))
-      case failed @ Failed(e) ⇒
+      case failed@Failed(e) ⇒
         ERROR("[%s] %s", e.getClass.getName, e.getMessage)
       case NoVal ⇒
         val agreement = RoleAgreements.agreementForRole(event.role)
@@ -212,9 +214,8 @@ class UserActor extends AquariumActor
     val userId = event.userId
     val timestamp = event.timestamp
 
-    if (System.currentTimeMillis() - _userState.newestSnapshotTime > 60 * 1000)
-    {
-//        calcWalletEntries()
+    if(System.currentTimeMillis() - _userState.newestSnapshotTime > 60 * 1000) {
+      //        calcWalletEntries()
     }
     self reply UserResponseGetBalance(userId, _userState.creditsSnapshot.creditAmount)
   }
@@ -227,7 +228,7 @@ class UserActor extends AquariumActor
     } else {
       // FIXME: implement
       ERROR("FIXME: Should have properly computed the user state")
-//      ensureUserState()
+      //      ensureUserState()
       self reply UserResponseGetState(userId, this._userState)
     }
   }
@@ -249,14 +250,14 @@ class UserActor extends AquariumActor
   }
 
   private[this] def DEBUG(fmt: String, args: Any*) =
-    logger.debug("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
+    logger.debug("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
 
   private[this] def INFO(fmt: String, args: Any*) =
-      logger.info("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
+    logger.info("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
 
   private[this] def WARN(fmt: String, args: Any*) =
-    logger.warn("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
+    logger.warn("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
 
   private[this] def ERROR(fmt: String, args: Any*) =
-    logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args:_*)))
+    logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
 }

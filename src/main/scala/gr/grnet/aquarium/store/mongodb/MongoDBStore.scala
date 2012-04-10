@@ -54,6 +54,7 @@ import com.mongodb._
 import com.ckkloverdos.maybe.{NoVal, Maybe}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, Timeslot, DSLPolicy, DSLComplexResource}
 import org.bson.types.ObjectId
+import gr.grnet.aquarium.actor.service.user.UserActor
 
 /**
  * Mongodb implementation of the various aquarium stores.

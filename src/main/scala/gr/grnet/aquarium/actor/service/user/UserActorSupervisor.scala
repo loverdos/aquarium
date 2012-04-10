@@ -33,7 +33,9 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user.actor
+package gr.grnet.aquarium.actor
+package service
+package user
 
 import akka.actor.Supervisor
 import akka.config.Supervision.SupervisorConfig
