@@ -38,8 +38,9 @@ package service
 package dispatcher
 
 import gr.grnet.aquarium.user.UserState
-import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
+import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.events.{UserEvent, ResourceEvent}
+import gr.grnet.aquarium.converter.{PrettyJsonTextFormat, StdConverters}
 
 
 /**
@@ -62,7 +63,7 @@ sealed trait DispatcherResponseMessage extends DispatcherMessage {
       case null ⇒
         throw new NullPointerException("Unexpected null response body in %s".format(this))
       case other ⇒
-        JsonHelpers.anyToJson(other)
+        StdConverters.StdConverters.convertEx[PrettyJsonTextFormat](other).value
     }
   }
 }

@@ -36,13 +36,13 @@
 package gr.grnet.aquarium
 package events
 
-import net.liftweb.json.{JsonAST, Xml}
-import gr.grnet.aquarium.util.json.JsonHelpers
+import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.logic.accounting.dsl._
-import com.ckkloverdos.maybe.{MaybeOption, Maybe}
+import com.ckkloverdos.maybe.Maybe
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import collection.SeqLike
+import converter.{CompactJsonTextFormat, StdConverters}
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -251,19 +251,11 @@ object ResourceEvent {
   type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]
 
   def fromJson(json: String): ResourceEvent = {
-    JsonHelpers.jsonToObject[ResourceEvent](json)
-  }
-
-  def fromJValue(jsonAST: JsonAST.JValue): ResourceEvent = {
-    JsonHelpers.jValueToObject[ResourceEvent](jsonAST)
+    StdConverters.StdConverters.convertEx[ResourceEvent](CompactJsonTextFormat(json))
   }
 
   def fromBytes(bytes: Array[Byte]): ResourceEvent = {
-    JsonHelpers.jsonBytesToObject[ResourceEvent](bytes)
-  }
-
-  def fromXml(xml: String): ResourceEvent = {
-    fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
+    StdConverters.StdConverters.convertEx[ResourceEvent](CompactJsonTextFormat(makeString(bytes)))
   }
 
   def setAquariumSynthetic(map: ResourceEvent.Details): ResourceEvent.Details = {

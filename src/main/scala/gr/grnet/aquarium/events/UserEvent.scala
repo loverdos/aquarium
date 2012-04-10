@@ -36,10 +36,10 @@
 package gr.grnet.aquarium
 package events
 
-import gr.grnet.aquarium.util.json.JsonHelpers
-import net.liftweb.json.{Extraction, parse => parseJson}
+import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.Configurator._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
+import converter.{StdConverters, CompactJsonTextFormat}
 
 /**
  * Represents an incoming user event.
@@ -118,13 +118,11 @@ object UserEvent {
   type Details = Map[String, String]
 
   def fromJson(json: String): UserEvent = {
-    implicit val formats = JsonHelpers.DefaultJsonFormats
-    val jsonAST = parseJson(json)
-    Extraction.extract[UserEvent](jsonAST)
+    StdConverters.StdConverters.convertEx[UserEvent](CompactJsonTextFormat(json))
   }
 
   def fromBytes(bytes: Array[Byte]): UserEvent = {
-    JsonHelpers.jsonBytesToObject[UserEvent](bytes)
+    StdConverters.StdConverters.convertEx[UserEvent](CompactJsonTextFormat(makeString(bytes)))
   }
 
   object JsonNames {

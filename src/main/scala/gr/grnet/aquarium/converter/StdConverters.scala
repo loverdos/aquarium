@@ -59,7 +59,7 @@ object StdConverters {
     builder.registerConverter(AnyToCompactJsonTextConverter)
 
     // JsonTextFormat => AnyRef
-    builder.registerConverter(JsonTextToAnyConverter)
+    builder.registerConverter(JsonTextToObjectConverter)
 
     builder
   }
@@ -103,7 +103,7 @@ object StdConverters {
     def isStrictSource = false
   }
 
-  object JsonTextToAnyConverter extends Converter {
+  object JsonTextToObjectConverter extends Converter {
     def canConvertType[S: Manifest, T: Manifest] = {
       manifest[S].erasure.isAssignableFrom(classOf[JsonTextFormat])
     }

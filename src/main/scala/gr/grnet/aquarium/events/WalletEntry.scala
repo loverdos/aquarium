@@ -36,8 +36,8 @@
 package gr.grnet.aquarium
 package events
 
-import gr.grnet.aquarium.util.json.JsonHelpers
 import java.util.Date
+import converter.{CompactJsonTextFormat, StdConverters}
 
 /**
  * A WalletEntry is a derived entity. Its data represent money/credits and are calculated based on
@@ -79,7 +79,7 @@ case class WalletEntry(
 
 object WalletEntry {
   def fromJson(json: String): WalletEntry = {
-    JsonHelpers.jsonToObject[WalletEntry](json)
+    StdConverters.StdConverters.convertEx[WalletEntry](CompactJsonTextFormat(json))
   }
 
   def zero = WalletEntry("", 1L, 1L, Nil,1,"","foo", "bar", "0", false)

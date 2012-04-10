@@ -43,9 +43,10 @@ import cc.spray.can.HttpMethods.{GET}
 import cc.spray.can.HttpClient._
 import cc.spray.can.HttpClient.{HttpDialog ⇒ SprayHttpDialog}
 import cc.spray.can.{HttpResponse, HttpHeader, HttpRequest}
-import net.liftweb.json.JsonAST.JInt
-import gr.grnet.aquarium.util.json.JsonHelpers
+import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.{LogicTestsAssumptions, Configurator}
+import gr.grnet.aquarium.converter.StdConverters
+import net.liftweb.json.JsonAST.{JValue, JInt}
 
 /**
  * 
@@ -68,11 +69,10 @@ class RESTActorTest {
       futureResp.value match {
         case Some(Right(HttpResponse(status, _, bytesBody, _))) ⇒
           assertTrue("Status 200 OK", status == 200)
-          val stringBody = new String(bytesBody, "UTF-8")
+          val stringBody = makeString(bytesBody)
+          val jValue = StdConverters.StdConverters.convertEx[JValue](stringBody)
           println("!! Got stringBody = %s".format(stringBody))
           // Note that the response is in JSON format, so must parse it
-          implicit val formats = JsonHelpers.DefaultJsonFormats
-          val jValue = net.liftweb.json.parse(stringBody)
           println("!! ==> jValue = %s".format(jValue))
           val pongValue = jValue \ "pong"
           println("!! ==> pongValue = %s".format(pongValue))

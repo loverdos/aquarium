@@ -35,12 +35,13 @@
 
 package gr.grnet.aquarium.user
 
-import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
+import gr.grnet.aquarium.util.json.{JsonSupport}
 import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.events.{UserEvent, NewWalletEntry, WalletEntry}
+import gr.grnet.aquarium.converter.{CompactJsonTextFormat, StdConverters}
 
 
 /**
@@ -243,19 +244,7 @@ case class UserState(
 
 object UserState {
   def fromJson(json: String): UserState = {
-    JsonHelpers.jsonToObject[UserState](json)
-  }
-
-  def fromJValue(jsonAST: JsonAST.JValue): UserState = {
-    JsonHelpers.jValueToObject[UserState](jsonAST)
-  }
-
-  def fromBytes(bytes: Array[Byte]): UserState = {
-    JsonHelpers.jsonBytesToObject[UserState](bytes)
-  }
-
-  def fromXml(xml: String): UserState = {
-    fromJValue(Xml.toJson(scala.xml.XML.loadString(xml)))
+    StdConverters.StdConverters.convertEx[UserState](CompactJsonTextFormat(json))
   }
 
   object JsonNames {
