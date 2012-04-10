@@ -68,10 +68,8 @@ object JsonConversions {
         jValue
       case json: String ⇒
         jsonToJValue(json)
-      case PrettyJsonTextFormat(json) ⇒
-        jsonToJValue(json)
-      case CompactJsonTextFormat(json) ⇒
-        jsonToJValue(json)
+      case jsonFormat: JsonTextFormat ⇒
+        jsonToJValue(jsonFormat.value)
       case _ ⇒
         Extraction.decompose(any)
     }

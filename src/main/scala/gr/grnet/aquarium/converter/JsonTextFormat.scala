@@ -35,16 +35,42 @@
 
 package gr.grnet.aquarium.converter
 
+import gr.grnet.aquarium.util.shortClassNameOf
+
 /**
  * Represents a string in JSON format.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-sealed trait JsonTextFormat {
-  def value: String
+sealed class JsonTextFormat(val value: String) {
+  def toCompact: CompactJsonTextFormat = {
+    StdConverters.StdConverters.convertEx[CompactJsonTextFormat](value)
+  }
+
+  def toPretty: PrettyJsonTextFormat = {
+    StdConverters.StdConverters.convertEx[PrettyJsonTextFormat](value)
+  }
+
+  override def toString = "%s(%s)".format(shortClassNameOf(this), value)
 }
 
-case class PrettyJsonTextFormat(value: String) extends JsonTextFormat
+object JsonTextFormat {
+  def apply(value: String) = new JsonTextFormat(value)
+}
 
-case class CompactJsonTextFormat(value: String) extends JsonTextFormat
+final class PrettyJsonTextFormat(override val value: String) extends JsonTextFormat(value) {
+  override def toPretty = this
+}
+
+object PrettyJsonTextFormat {
+  def apply(value: String) = new PrettyJsonTextFormat(value)
+}
+
+final class CompactJsonTextFormat(override val value: String) extends JsonTextFormat(value) {
+  override def toCompact = this
+}
+
+object CompactJsonTextFormat {
+  def apply(value: String) = new CompactJsonTextFormat(value)
+}

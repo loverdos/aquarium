@@ -39,7 +39,7 @@ package events
 import gr.grnet.aquarium.logic.accounting.Chargeslot
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLResource}
-import converter.{CompactJsonTextFormat, StdConverters}
+import converter.{JsonTextFormat, StdConverters}
 
 /**
  * The following equation must hold: `newTotalCredits = oldTotalCredits + entryCredits`.
@@ -95,7 +95,7 @@ case class NewWalletEntry(userId: String,
 
 object NewWalletEntry {
   def fromJson(json: String): NewWalletEntry = {
-    StdConverters.StdConverters.convertEx[NewWalletEntry](CompactJsonTextFormat(json))
+    StdConverters.StdConverters.convertEx[NewWalletEntry](JsonTextFormat(json))
   }
 
   object JsonNames {

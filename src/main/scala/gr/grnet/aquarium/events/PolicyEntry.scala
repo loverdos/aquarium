@@ -36,10 +36,9 @@
 package gr.grnet.aquarium
 package events
 
-import net.liftweb.json.{parse => parseJson}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import java.util.Date
-import converter.{CompactJsonTextFormat, StdConverters}
+import converter.{JsonTextFormat, StdConverters}
 
 /**
  * Store entry for serialized policy data.
@@ -68,7 +67,7 @@ extends AquariumEvent(id, occurredMillis, receivedMillis) {
 object PolicyEntry {
 
   def fromJson(json: String): PolicyEntry = {
-    StdConverters.StdConverters.convertEx[PolicyEntry](CompactJsonTextFormat(json))
+    StdConverters.StdConverters.convertEx[PolicyEntry](JsonTextFormat(json))
   }
 
   object JsonNames {

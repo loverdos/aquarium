@@ -39,7 +39,7 @@ package events
 import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.Configurator._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
-import converter.{StdConverters, CompactJsonTextFormat}
+import converter.{StdConverters, JsonTextFormat}
 
 /**
  * Represents an incoming user event.
@@ -118,11 +118,11 @@ object UserEvent {
   type Details = Map[String, String]
 
   def fromJson(json: String): UserEvent = {
-    StdConverters.StdConverters.convertEx[UserEvent](CompactJsonTextFormat(json))
+    StdConverters.StdConverters.convertEx[UserEvent](JsonTextFormat(json))
   }
 
   def fromBytes(bytes: Array[Byte]): UserEvent = {
-    StdConverters.StdConverters.convertEx[UserEvent](CompactJsonTextFormat(makeString(bytes)))
+    StdConverters.StdConverters.convertEx[UserEvent](JsonTextFormat(makeString(bytes)))
   }
 
   object JsonNames {

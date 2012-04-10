@@ -42,7 +42,7 @@ import com.ckkloverdos.maybe.Maybe
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import collection.SeqLike
-import converter.{CompactJsonTextFormat, StdConverters}
+import converter.{JsonTextFormat, StdConverters}
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -251,11 +251,11 @@ object ResourceEvent {
   type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]
 
   def fromJson(json: String): ResourceEvent = {
-    StdConverters.StdConverters.convertEx[ResourceEvent](CompactJsonTextFormat(json))
+    StdConverters.StdConverters.convertEx[ResourceEvent](JsonTextFormat(json))
   }
 
   def fromBytes(bytes: Array[Byte]): ResourceEvent = {
-    StdConverters.StdConverters.convertEx[ResourceEvent](CompactJsonTextFormat(makeString(bytes)))
+    StdConverters.StdConverters.convertEx[ResourceEvent](JsonTextFormat(makeString(bytes)))
   }
 
   def setAquariumSynthetic(map: ResourceEvent.Details): ResourceEvent.Details = {
