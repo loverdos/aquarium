@@ -35,10 +35,10 @@
 package gr.grnet.aquarium.simulation
 
 import java.util.Date
-import gr.grnet.aquarium.logic.events.ResourceEvent
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.store.{RecordID, ResourceEventStore}
+import gr.grnet.aquarium.store.RecordID
 import math.Ordering
+import gr.grnet.aquarium.events.ResourceEvent
 
 /**
  * A simulator for a user.

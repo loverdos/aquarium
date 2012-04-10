@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.logic.events.UserEvent
+import gr.grnet.aquarium.events.UserEvent
 
 /**
  * Store for external user events

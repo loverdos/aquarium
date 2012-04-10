@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.logic.events.UserEvent
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
@@ -43,6 +42,7 @@ import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessUserEvent
+import gr.grnet.aquarium.events.UserEvent
 
 /**
  * An event processor service for user events coming from the IM system

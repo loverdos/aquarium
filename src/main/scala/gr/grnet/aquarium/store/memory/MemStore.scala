@@ -41,11 +41,11 @@ import gr.grnet.aquarium.store._
 import scala.collection.JavaConversions._
 import java.util.Date
 import collection.mutable.ConcurrentMap
-import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent, UserEvent, PolicyEntry}
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.simulation.uid.ConcurrentVMLocalUIDGenerator
 import gr.grnet.aquarium.{AquariumException, Configurable}
+import gr.grnet.aquarium.events.{UserEvent, WalletEntry, ResourceEvent, PolicyEntry}
 
 /**
  * An implementation of various stores that persists data in memory.

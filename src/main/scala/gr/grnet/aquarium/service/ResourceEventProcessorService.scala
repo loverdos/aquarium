@@ -35,12 +35,12 @@
 
 package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.logic.events.ResourceEvent
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
 import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessResourceEvent
+import gr.grnet.aquarium.events.ResourceEvent
 
 
 /**

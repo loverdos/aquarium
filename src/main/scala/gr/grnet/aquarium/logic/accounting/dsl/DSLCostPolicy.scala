@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
-import gr.grnet.aquarium.logic.events.ResourceEvent
+import gr.grnet.aquarium.events.ResourceEvent
 import gr.grnet.aquarium.AquariumException
 
 /**
@@ -112,7 +112,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * in which case it is ignored.
    *
    * @param oldAmount the old accumulating amount
-   * @param newEventValue the value contained in a newly arrived [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+   * @param newEventValue the value contained in a newly arrived [[gr.grnet.aquarium.events.ResourceEvent]]
    * @return
    */
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double

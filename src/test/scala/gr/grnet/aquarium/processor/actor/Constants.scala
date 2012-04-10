@@ -36,14 +36,14 @@
 package gr.grnet.aquarium.processor.actor
 
 /**
- * 
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 object Constants {
   val RemoteHost = "localhost"
   val RemotePort = 2552
-  val LocalHost  = "localhost"
-  val LocalPort  = 2551
+  val LocalHost = "localhost"
+  val LocalPort = 2551
   val ActorNameEcho = "echo"
   val ActorNameSilent = "silent"
 }

@@ -39,9 +39,9 @@ package user
 import gr.grnet.aquarium.util.{findFromMapAsMaybe, findAndRemoveFromMap, shortClassNameOf}
 import gr.grnet.aquarium.logic.accounting.Policy
 import java.util.Date
-import com.ckkloverdos.maybe.{Failed, NoVal, Maybe, Just}
-import logic.events.ResourceEvent
-import logic.events.ResourceEvent.FullMutableResourceTypeMap
+import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
+import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.events.ResourceEvent.FullMutableResourceTypeMap
 import logic.accounting.dsl.{Timeslot, DSLAgreement}
 import collection.immutable.{TreeMap, SortedMap}
 import util.date.MutableDateCalc
@@ -132,11 +132,11 @@ case class AgreementSnapshot(agreements: List[Agreement], snapshotTime: Long) ex
  *  - If the resource is complex, the (name, instanceId) is (DSLResource.name, instance-id)
  *  - If the resource is simple,  the (name, instanceId) is (DSLResource.name, "1")
  *
- * @param resource        Same as `resource` of [[gr.grnet.aquarium.logic.events.ResourceEvent]]
- * @param instanceId      Same as `instanceId` of [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+ * @param resource        Same as `resource` of [[gr.grnet.aquarium.events.ResourceEvent]]
+ * @param instanceId      Same as `instanceId` of [[gr.grnet.aquarium.events.ResourceEvent]]
  * @param instanceAmount  This is the amount kept for the resource instance.
 *                         The general rule is that an amount saved in a [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]
- *                        represents a total value, while a value appearing in a [[gr.grnet.aquarium.logic.events.ResourceEvent]]
+ *                        represents a total value, while a value appearing in a [[gr.grnet.aquarium.events.ResourceEvent]]
  *                        represents a difference. How these two values are combined to form the new amount is dictated
  *                        by the underlying [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
  * @param snapshotTime

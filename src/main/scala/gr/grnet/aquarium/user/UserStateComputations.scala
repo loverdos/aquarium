@@ -39,13 +39,13 @@ package gr.grnet.aquarium.user
 import scala.collection.mutable
 import com.ckkloverdos.maybe.{Failed, NoVal, Just, Maybe}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable, justForSure, failedForSure}
-import gr.grnet.aquarium.logic.events.{NewWalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResourcesMap}
 import gr.grnet.aquarium.store.{StoreProvider, PolicyStore}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.events.{NewWalletEntry, ResourceEvent}
 
 /**
  *

@@ -38,7 +38,6 @@ package gr.grnet.aquarium.logic.accounting
 import gr.grnet.aquarium.util.shortClassNameOf
 import algorithm.CostPolicyAlgorithmCompiler
 import dsl._
-import gr.grnet.aquarium.logic.events.{WalletEntry, ResourceEvent}
 import collection.immutable.SortedMap
 import java.util.Date
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
@@ -46,6 +45,7 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.util.{ContextualLogger, CryptoUtils, Loggable}
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.events.{WalletEntry, ResourceEvent}
 
 /**
  * A timeslot together with the algorithm and unit price that apply for this particular timeslot.

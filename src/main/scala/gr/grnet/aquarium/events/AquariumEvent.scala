@@ -34,7 +34,7 @@
  */
 
 package gr.grnet.aquarium
-package logic.events
+package events
 
 
 import util.json.JsonSupport

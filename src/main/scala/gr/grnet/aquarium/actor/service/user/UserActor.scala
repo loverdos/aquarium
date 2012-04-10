@@ -43,7 +43,6 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.user._
-import gr.grnet.aquarium.logic.events.{UserEvent, WalletEntry}
 
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.date.TimeHelpers
@@ -52,6 +51,7 @@ import gr.grnet.aquarium.messaging.AkkaAMQP
 import gr.grnet.aquarium.actor.message.config.user.UserActorInitWithUserId
 import gr.grnet.aquarium.actor.message.service.dispatcher._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
+import gr.grnet.aquarium.events.{WalletEntry, UserEvent}
 
 
 /**

@@ -39,22 +39,19 @@ import gr.grnet.aquarium.util.Loggable
 import com.mongodb.util.JSON
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.user.UserState.{JsonNames => UserStateJsonNames}
-import gr.grnet.aquarium.util.displayableObjectInfo
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.logic.events.ResourceEvent.{JsonNames => ResourceJsonNames}
-import gr.grnet.aquarium.logic.events.UserEvent.{JsonNames => UserEventJsonNames}
-import gr.grnet.aquarium.logic.events.WalletEntry.{JsonNames => WalletJsonNames}
-import gr.grnet.aquarium.logic.events.PolicyEntry.{JsonNames => PolicyJsonNames}
+import gr.grnet.aquarium.events.ResourceEvent.{JsonNames => ResourceJsonNames}
+import gr.grnet.aquarium.events.UserEvent.{JsonNames => UserEventJsonNames}
+import gr.grnet.aquarium.events.WalletEntry.{JsonNames => WalletJsonNames}
+import gr.grnet.aquarium.events.PolicyEntry.{JsonNames => PolicyJsonNames}
 import java.util.Date
 import gr.grnet.aquarium.logic.accounting.Policy
-import gr.grnet.aquarium.logic.events._
 import com.mongodb._
 import com.ckkloverdos.maybe.{NoVal, Maybe}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLResource, Timeslot, DSLPolicy, DSLComplexResource}
 import org.bson.types.ObjectId
-import gr.grnet.aquarium.actor.service.user.UserActor
+import gr.grnet.aquarium.events._
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -356,7 +353,7 @@ object MongoDBStore {
   }
 
   /**
-   * Collection holding the [[gr.grnet.aquarium.logic.events.ResourceEvent]]s.
+   * Collection holding the [[gr.grnet.aquarium.events.ResourceEvent]]s.
    *
    * Resource events are coming from all systems handling billable resources.
    */
@@ -370,14 +367,14 @@ object MongoDBStore {
   final val USER_STATES_COLLECTION = "userstates"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.logic.events.UserEvent]]s.
+   * Collection holding [[gr.grnet.aquarium.events.UserEvent]]s.
    *
    * User events are coming from the IM module (external).
    */
   final val USER_EVENTS_COLLECTION = "userevents"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.logic.events.UserEvent]]s that could not be parsed to normal objects.
+   * Collection holding [[gr.grnet.aquarium.events.UserEvent]]s that could not be parsed to normal objects.
    *
    * We of course assume at least a valid JSON representation.
    *
@@ -386,7 +383,7 @@ object MongoDBStore {
   final val UNPARSED_USER_EVENTS_COLLECTION = "unparsed_userevents"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.logic.events.WalletEntry]].
+   * Collection holding [[gr.grnet.aquarium.events.WalletEntry]].
    *
    * Wallet entries are generated internally in Aquarium.
    */
@@ -398,7 +395,7 @@ object MongoDBStore {
 //  final val POLICIES_COLLECTION = "policies"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.logic.events.PolicyEntry]].
+   * Collection holding [[gr.grnet.aquarium.events.PolicyEntry]].
    */
   final val POLICY_ENTRIES_COLLECTION = "policyEntries"
 

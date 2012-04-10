@@ -48,9 +48,9 @@ import akka.config.Supervision.OneForOneStrategy
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import akka.amqp._
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
-import gr.grnet.aquarium.logic.events.AquariumEvent
 import gr.grnet.aquarium.Configurator
 import com.ckkloverdos.maybe._
+import gr.grnet.aquarium.events.AquariumEvent
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,

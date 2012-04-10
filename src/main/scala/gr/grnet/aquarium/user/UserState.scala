@@ -40,8 +40,7 @@ import net.liftweb.json.{JsonAST, Xml}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.store.RecordID
-import gr.grnet.aquarium.logic.events.{NewWalletEntry, UserEvent, WalletEntry}
+import gr.grnet.aquarium.events.{UserEvent, NewWalletEntry, WalletEntry}
 
 
 /**

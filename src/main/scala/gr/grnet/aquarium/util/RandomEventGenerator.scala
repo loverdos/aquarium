@@ -37,7 +37,7 @@ package gr.grnet.aquarium.util
 
 import akka.amqp._
 import util.Random
-import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
+import gr.grnet.aquarium.events.{UserEvent, ResourceEvent}
 import scopt.OptionParser
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import java.lang.StringBuffer

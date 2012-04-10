@@ -39,7 +39,7 @@ import org.junit.Assert._
 import org.junit.Assume._
 import gr.grnet.aquarium.Configurator._
 import gr.grnet.aquarium.util.{RandomEventGenerator, TestMethods}
-import gr.grnet.aquarium.logic.events.ResourceEvent
+import gr.grnet.aquarium.events.ResourceEvent
 import collection.mutable.ArrayBuffer
 import org.junit.{After, Test, Before}
 import gr.grnet.aquarium.{StoreConfigurator, LogicTestsAssumptions}

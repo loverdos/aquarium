@@ -37,10 +37,10 @@ package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.Configurator
 import java.io.{FileOutputStream, File}
-import gr.grnet.aquarium.logic.events.{UserEvent, ResourceEvent}
 import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.simulation.uid.{EAIOUUIDGenerator, UIDGenerator}
+import gr.grnet.aquarium.events.{UserEvent, ResourceEvent}
 
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.

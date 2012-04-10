@@ -33,7 +33,8 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.events
+package gr.grnet.aquarium
+package events
 
 import net.liftweb.json.{Extraction, parse => parseJson}
 import gr.grnet.aquarium.util.json.JsonHelpers

@@ -37,9 +37,9 @@ package gr.grnet.aquarium.actor.message
 package service
 package dispatcher
 
-import gr.grnet.aquarium.logic.events.{ResourceEvent, UserEvent}
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.json.{JsonHelpers, JsonSupport}
+import gr.grnet.aquarium.events.{UserEvent, ResourceEvent}
 
 
 /**
