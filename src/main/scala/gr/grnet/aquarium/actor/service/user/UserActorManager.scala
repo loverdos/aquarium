@@ -60,8 +60,7 @@ import provider.ActorProvider
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class UserActorManager extends AquariumActor with Loggable {
-  // TODO: Get the constructor values from configuration
+class UserActorManager extends ReflectiveAquariumActor {
   @volatile
   private[this] var _actorProvider: ActorProvider = _
 
@@ -91,25 +90,28 @@ class UserActorManager extends AquariumActor with Loggable {
     }
   }
 
-  protected def receive = {
-    case m@AquariumPropertiesLoaded(props) ⇒
-      logger.debug("Received and ignoring %s".format(m))
+  def onAquariumPropertiesLoaded(m: AquariumPropertiesLoaded): Unit = {
+  }
 
-    case m@ActorProviderConfigured(actorProvider) ⇒
-      this._actorProvider = actorProvider
-      logger.info("Configured %s with %s".format(this, m))
+  def onActorProviderConfigured(m: ActorProviderConfigured): Unit = {
+    this._actorProvider = m.actorProvider
+    logger.info("Configured %s with %s".format(this, m))
+  }
 
-    case m@RequestUserBalance(userId, timestamp) ⇒
-      _forwardToUserActor(userId, m)
+  def onRequestUserBalance(m: RequestUserBalance): Unit = {
+    _forwardToUserActor(m.userId, m)
+  }
 
-    case m@UserRequestGetState(userId, timestamp) ⇒
-      _forwardToUserActor(userId, m)
+  def onUserRequestGetState(m: UserRequestGetState): Unit = {
+    _forwardToUserActor(m.userId, m)
+  }
 
-    case m@ProcessResourceEvent(resourceEvent) ⇒
-      _forwardToUserActor(resourceEvent.userID, m)
+  def onProcessResourceEvent(m: ProcessResourceEvent): Unit = {
+    _forwardToUserActor(m.rce.userID, m)
+  }
 
-    case m@ProcessUserEvent(userEvent) ⇒
-      _forwardToUserActor(userEvent.userID, m)
+  def onProcessUserEvent(m: ProcessUserEvent): Unit = {
+    _forwardToUserActor(m.ue.userID, m)
   }
 
   override def postStop = {

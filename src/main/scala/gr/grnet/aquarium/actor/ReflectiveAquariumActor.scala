@@ -68,7 +68,7 @@ trait ReflectiveAquariumActor extends AquariumActor {
 
   def knownMessageTypes = role.knownMessageTypes
 
-  protected def receive: Receive = {
+  final protected def receive: Receive = {
     case null =>
       onNull
     case message: AnyRef if messageMethodMap.contains(message.getClass) ⇒

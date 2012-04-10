@@ -66,18 +66,18 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
     val Size = RolesToBeStarted.size
     logger.info("About to start actors for %s roles: %s".format(Size, RolesToBeStarted))
     for((role, index) <- RolesToBeStarted.zipWithIndex) {
-      logger.info("%s/%s. Starting actor for role %s".format(index + 1, Size, role))
+      logger.debug("%s/%s (-). Starting actor for role %s".format(index + 1, Size, role))
       val ms0 = TimeHelpers.nowMillis
       actorForRole(role)
       val ms1 = TimeHelpers.nowMillis
-      logger.info("%s/%s. Started actor for role %s in %.3f sec".format(index + 1, Size, role, (ms1 - ms0).toDouble / 1000.0))
+      logger.info("%s/%s (+). Started actor for role %s in %.3f sec".format(index + 1, Size, role, (ms1 - ms0).toDouble / 1000.0))
     }
 
     // Now that all actors have been started, send them some initialization code
     val message = ActorProviderConfigured(this)
     for(role <- RolesToBeStarted) {
       if(role.canHandleConfigurationMessage(classOf[ActorProviderConfigured])) {
-        logger.info("Configuring %s with %s".format(role, message))
+        logger.debug("Configuring %s with %s".format(role, message))
         actorForRole(role) ! message
       }
     }
@@ -116,10 +116,10 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
   @throws(classOf[Exception])
   def actorForRole(role: ActorRole, hints: Props = Props.empty) = synchronized {
     if(role.isCacheable) {
-      logger.info("%s is cacheable".format(role.role))
+      logger.debug("%s is cacheable".format(role.role))
       _fromCacheOrNew(role)
     } else {
-      logger.info("%s is not cacheable".format(role.role))
+      logger.debug("%s is not cacheable".format(role.role))
       _newActor(role)
     }
   }
