@@ -69,8 +69,8 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
       case Just(_) ⇒
         _configurator.resourceEventStore.storeResourceEvent(event) match {
           case Just(x) => true
-          case x: Failed =>
-            logger.error("Could not save event: %s. Reason:".format(event, x.toString))
+          case Failed(e) =>
+            logger.error("Could not save event: %s".format(event), e)
             false
           case NoVal => false
         }
