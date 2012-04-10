@@ -54,7 +54,7 @@ class RESTActorService extends Lifecycle with Loggable {
 
   def start(): Unit = {
     val mc = Configurator.MasterConfigurator
-    this._port = mc.getInt(Configurator.Keys.rest_port).getOr(
+    this._port = mc.props.getInt(Configurator.Keys.rest_port).getOr(
       throw new Exception("%s was not specified in aquarium properties".format(Configurator.Keys.rest_port)))
     logger.info("Starting on port {}", this._port)
     this._restActor = mc.actorProvider.actorForRole(RESTRole)
