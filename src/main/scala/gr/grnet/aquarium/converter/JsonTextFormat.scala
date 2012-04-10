@@ -33,21 +33,18 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.util.json
-
-import net.liftweb.json.JsonAST.JValue
-import gr.grnet.aquarium.converter.{PrettyJsonTextFormat}
-import gr.grnet.aquarium.converter.StdConverters.StdConverters
+package gr.grnet.aquarium.converter
 
 /**
- * Mix-in this trait when you need transformation to JSON, either in AST or String format.
- * The underlying library used is lift-json.
- * 
+ * Represents a string in JSON format.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait JsonSupport {
-  def toJValue: JValue = StdConverters.convertEx[JValue](this)
-
-  def toJson: String = StdConverters.convertEx[PrettyJsonTextFormat](this).value
+sealed trait JsonTextFormat {
+  def value: String
 }
+
+case class PrettyJsonTextFormat(value: String) extends JsonTextFormat
+
+case class CompactJsonTextFormat(value: String) extends JsonTextFormat

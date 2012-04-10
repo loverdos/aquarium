@@ -35,21 +35,111 @@
 
 package gr.grnet.aquarium.converter
 
-import org.junit.Test
-import gr.grnet.aquarium.util.json.JsonHelpers
-import java.util.Date
+import net.liftweb.json._
+import org.junit.{Assert, Test}
+import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.converter.StdConverters.{StdConverters ⇒ Converters}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class Foo(aDouble: Double, aDate: Date, map: Map[Int, Int])
+case class Foo(map: Map[Int, Int])
+
+object FooSerializer extends Serializer[Foo] {
+  val FooClass = classOf[Foo]
+
+  def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), Foo] = {
+    case (TypeInfo(FooClass, _), jValue) ⇒
+      var _map: Map[Int, Int] = Map()
+      jValue match {
+        case JObject(List(JField("map", JArray(pairs)))) ⇒
+          for(pair <- pairs) {
+            pair match {
+              case JObject(List(JField("k", JInt(k)), JField("v", JInt(v)))) ⇒
+                pair
+                _map = _map.updated(k.intValue(), v.intValue())
+              case _ ⇒
+                throw new AquariumException(
+                  "While deserializing a %s from %s".format(
+                    gr.grnet.aquarium.util.shortNameOfClass(classOf[Foo]),
+                    jValue))
+            }
+          }
+
+        case _ ⇒
+          throw new AquariumException(
+            "While deserializing a %s from %s".format(
+              gr.grnet.aquarium.util.shortNameOfClass(classOf[Foo]),
+              jValue))
+      }
+      Foo(_map)
+
+    case other ⇒
+      throw new AquariumException(
+        "While desiariling a %s from %s".format(
+          gr.grnet.aquarium.util.shortNameOfClass(classOf[Foo]),
+          other))
+  }
+
+  def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
+    case Foo(map) ⇒
+      val kvs = for {
+        (k, v) <- map
+      } yield JObject(
+        List(
+          JField("k", JInt(k)),
+          JField("v", JInt(v))
+        )
+      )
+
+      JObject(List(JField("map", JArray(kvs.toList))))
+  }
+}
 
 class ConverterTest {
-//  @Test
-//  def testJSONMapConversion: Unit = {
-//    val foo = Foo(1.0, new Date(), Map(1 -> 1, 2 -> 2, 3 -> 3))
-//    val json = JsonHelpers.anyToJson(foo)
-//  }
+  implicit val Formats = JsonConversions.Formats + FooSerializer
+
+  @Test
+  def testJSONMapConversion: Unit = {
+    val foo = Foo(Map(1 -> 1, 2 -> 2, 3 -> 3))
+    val foo2 = JsonConversions.jsonToObject[Foo](JsonConversions.anyToJson(foo))
+
+    Assert.assertEquals(foo, foo2)
+  }
+
+  @Test
+  def testJsonText2Pretty: Unit = {
+    val json = """{
+    "x" : 1,
+    "y" : { "a": true, "b": []},
+    "z" : "once upon a time in the west"
+    }"""
+
+    val pretty  = Converters.convertEx[PrettyJsonTextFormat](json)
+  }
+
+  @Test
+  def testJsonText2Compact: Unit = {
+   val json = """{
+   "x" : 1,
+   "y" : { "a": true, "b": []},
+   "z" : "once upon a time in the west"
+   }"""
+
+   val compact = Converters.convertEx[CompactJsonTextFormat](json)
+ }
+
+  @Test
+  def testJsonText: Unit = {
+    val json = """{"x":1,"y":2}"""
+
+    val pretty  = Converters.convertEx[PrettyJsonTextFormat](json)
+    val compact = Converters.convertEx[CompactJsonTextFormat](json)
+    val jValueOfPretty  = Converters.convertEx[JValue](pretty)
+    val jValueOfCompact = Converters.convertEx[JValue](compact)
+
+    Assert.assertEquals(jValueOfPretty, jValueOfCompact)
+  }
 }
