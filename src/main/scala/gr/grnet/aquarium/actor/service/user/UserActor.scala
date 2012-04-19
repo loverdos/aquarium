@@ -85,7 +85,7 @@ with Loggable {
       createBlankState
 
     //Rebuild state from user events
-    val usersDB = _configurator.storeProvider.userEventStore
+    val usersDB = _configurator.storeProvider.imEventStore
     val userEvents = usersDB.findIMEventsByUserId(_userId)
     val numUserEvents = userEvents.size
     _userState = replayIMEvents(_userState, userEvents, from, to)

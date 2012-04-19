@@ -125,7 +125,7 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
-  private[this] lazy val _userEventStoreM: Maybe[IMEventStore] = {
+  private[this] lazy val _imEventStoreM: Maybe[IMEventStore] = {
     props.get(Keys.user_event_store_class) map { className ⇒
       val instance = newInstance[IMEventStore](className)
       logger.info("Overriding IMEventStore provisioning. Implementation given by: %s".format(instance.getClass))
@@ -265,10 +265,10 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
-  def userEventStore = {
-    _userEventStoreM match {
+  def imEventStore = {
+    _imEventStoreM match {
       case Just(es) ⇒ es
-      case _        ⇒ storeProvider.userEventStore
+      case _        ⇒ storeProvider.imEventStore
     }
   }
 

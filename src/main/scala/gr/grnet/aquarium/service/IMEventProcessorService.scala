@@ -62,14 +62,14 @@ class IMEventProcessorService extends EventProcessorService[IMEvent] {
   }
 
   override def exists(event: IMEvent) =
-    _configurator.userEventStore.findIMEventById(event.id).isJust
+    _configurator.imEventStore.findIMEventById(event.id).isJust
 
   override def persist(event: IMEvent, initialPayload: Array[Byte]) = {
     Maybe {
       LocalFSEventStore.storeIMEvent(_configurator, event, initialPayload)
     } match {
       case Just(_) ⇒
-        _configurator.userEventStore.storeIMEvent(event) match {
+        _configurator.imEventStore.storeIMEvent(event) match {
           case Just(x) => true
           case x: Failed =>
             logger.error("Could not save user event: %s".format(event))
@@ -93,7 +93,7 @@ class IMEventProcessorService extends EventProcessorService[IMEvent] {
 
     _configurator.props.getBoolean(Configurator.Keys.save_unparsed_event_im) match {
       case Just(true) ⇒
-        val recordIDM = _configurator.userEventStore.storeUnparsed(json)
+        val recordIDM = _configurator.imEventStore.storeUnparsed(json)
         logger.info("Saved unparsed {}", recordIDM)
       case _ ⇒
     }

@@ -93,7 +93,7 @@ class MemStore extends UserStateStore
 
   def walletEntryStore = this
 
-  def userEventStore = this
+  def imEventStore = this
 
   def policyStore = this
   //- StoreProvider
