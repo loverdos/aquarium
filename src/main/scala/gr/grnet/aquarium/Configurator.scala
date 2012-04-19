@@ -42,9 +42,9 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 
 import gr.grnet.aquarium.actor.provider.ActorProvider
-import gr.grnet.aquarium.service.{IMEventProcessorService, ResourceEventProcessorService}
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.store._
+import service.{AkkaService, IMEventProcessorService, ResourceEventProcessorService}
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -196,7 +196,7 @@ class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _imEventProc = new IMEventProcessorService
 
-  private[this] lazy val _lifecycleServices = List(_restService, _actorProvider, _resEventProc, _imEventProc)
+  private[this] lazy val _lifecycleServices = List(AkkaService, _restService, _actorProvider, _resEventProc, _imEventProc)
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 

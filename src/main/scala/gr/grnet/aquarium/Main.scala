@@ -42,6 +42,7 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.util.StatusPrinter
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
+import util.date.TimeHelpers
 import util.{LazyLoggable, Loggable}
 
 /**
@@ -87,13 +88,8 @@ object Main extends LazyLoggable {
     }
   }
 
-  def main(args: Array[String]) = {
+  def doStart(): Unit = {
     import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, CONF_HERE, AKKA_HOME}
-
-    configureLogging()
-
-    logger.info("Starting Aquarium from {}", AQUARIUM_HOME_FOLDER)
-
     // We have AKKA builtin, so no need to mess with pre-existing installation.
     if(AKKA_HOME.value.isJust) {
       val error = new AquariumException("%s is set. Please unset and restart Aquarium".format(AKKA_HOME.name))
@@ -125,12 +121,24 @@ object Main extends LazyLoggable {
 
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       def run = {
-        logger.info("Shutting down Aquarium")
-        mc.stopServices()
-        Actor.registry.shutdownAll()
+        logStopping()
+        val (ms0, ms1, _) = TimeHelpers.timed {
+          mc.stopServices()
+        }
+        logStopped(ms0, ms1)
       }
     }))
+  }
 
-    logger.info("Started Aquarium")
+  def main(args: Array[String]) = {
+    import ResourceLocator.AQUARIUM_HOME_FOLDER
+
+    configureLogging()
+
+    logStarting("Aquarium from %s", AQUARIUM_HOME_FOLDER)
+    val (ms0, ms1, _) = TimeHelpers.timed {
+      doStart()
+    }
+    logStarted(ms0, ms1, "Aquarium")
   }
 }
