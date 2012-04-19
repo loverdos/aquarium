@@ -196,6 +196,8 @@ class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _imEventProc = new IMEventProcessorService
 
+  private[this] lazy val _lifecycleServices = List(_restService, _actorProvider, _resEventProc, _imEventProc)
+
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 
   def defaultClassLoader = Thread.currentThread().getContextClassLoader
@@ -227,18 +229,11 @@ class Configurator(val props: Props) extends Loggable {
   }
 
   def startServices(): Unit = {
-    _restService.start()
-    _actorProvider.start()
-    _resEventProc.start()
-    _imEventProc.start()
+    _lifecycleServices.foreach(_.start())
   }
 
   def stopServices(): Unit = {
-    _imEventProc.stop()
-    _resEventProc.stop()
-    _restService.stop()
-    _actorProvider.stop()
-
+    _lifecycleServices.reverse.foreach(_.stop())
 //    akka.actor.Actor.registry.shutdownAll()
   }
 
