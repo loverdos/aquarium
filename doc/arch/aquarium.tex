@@ -6,7 +6,6 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{color}
-\usepackage{coffee3}
 
 \newcommand{\cL}{{\cal L}}
 \newcommand{\TODO}{{\sl TODO \marginpar{\sl TODO}}}
@@ -52,9 +51,6 @@
 % Use the following at camera-ready time to suppress page numbers.
 % Comment it out when you first submit the paper for review.
 \thispagestyle{empty}
-
-\cofeA{0.075}{0.5}{90}
-\cofeA{1}{1.0}{0}
 
 \subsection*{Abstract}
 
@@ -143,7 +139,6 @@ Aquarium must not corrupt any billing data, while it should reach an
 operating state very fast after a service restart.
 
 \section{Resources, Events, Policies and Cost Calculation}
-\cofeC{0.9}{1}{180}
 
 A resource represents an entity that can be charged for. Aquarium does
 not assume a fixed set of resource types and is extensible to any
@@ -277,8 +272,6 @@ $\Delta U_R \cdot [ \frac{C}{U_R} ]$. For example, let $\Delta U_R =
 \MB{10}$; then the bandwidth charging unit $[ \frac{C}{U_R} ]$ is
 ``$credits$ per {\sc MB}'', since $U_R$ is measured in {\sc MB}.
 
-\cofeD{0.4}{0.5}{90}
-
 \paragraph{\textsf{diskspace}}
 We take into account the disk space $U_R^0$ occupied at $t_0$ together
 with the time passed, $\Delta T$. The credit usage computation is
@@ -319,7 +312,6 @@ whole history of events.
 \input{arch}
 
 \section{Performance}
-\cofeB{0.7}{1}{0}
 
 To evaluate the performance of Aquarium, we formulated an experiment that
 evaluated two important properties: the time required to perform the charging
@@ -386,7 +378,6 @@ was over, we observed that the actual heap memory usage was only
 
 
 \section{Related Work}
-\cofeA{0.7}{0.75}{2}
 
 Yousef et al.~\cite{Youse08} described the three pricing models that
 are used by cloud service providers for billing used resources, namely
