@@ -33,16 +33,15 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation.uid
-
-import java.util.UUID
+package gr.grnet.aquarium.uid
 
 /**
- * [[gr.grnet.aquarium.simulation.uid.UIDGenerator]] based on [[java.util.UUID]].
+ * Unique ID generator.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object UUIDGenerator extends UIDGenerator[UUID] {
-  def nextUIDObject() = UUID.randomUUID()
+trait UIDGenerator[T] {
+  def nextUIDObject(): T
+  def nextUID(): String = nextUIDObject().toString
 }

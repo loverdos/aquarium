@@ -33,7 +33,7 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation.uid
+package gr.grnet.aquarium.uid
 
 import java.rmi.server.UID
 

@@ -33,16 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation.uid
+package gr.grnet.aquarium.uid
 
-import com.eaio.uuid.UUID
+import java.util.UUID
 
 /**
- * [[gr.grnet.aquarium.simulation.uid.UIDGenerator]] based on [[com.eaio.uuid.UUID]].
+ * [[gr.grnet.aquarium.uid.UIDGenerator]] based on [[java.util.UUID]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object EAIOUUIDGenerator extends UIDGenerator[UUID] {
-  def nextUIDObject() = new UUID()
+object UUIDGenerator extends UIDGenerator[UUID] {
+  def nextUIDObject() = UUID.randomUUID()
 }

@@ -60,12 +60,24 @@ sealed abstract class ActorRole(val role: String,
     handledConfigurationMessages contains cl
   }
 
+  def canHandleConfigurationMessage[A <: ActorConfigurationMessage : Manifest](msg: A): Boolean = {
+    canHandleConfigurationMessage(msg.getClass)
+  }
+
   def canHandleServiceMessage[A <: AnyRef](cl: Class[A]): Boolean = {
     handledServiceMessages contains cl
   }
 
+  def canHandleServiceMessage[A <: AnyRef : Manifest](msg: A): Boolean = {
+    canHandleServiceMessage(msg.getClass)
+  }
+
   def canHandleMessage[A <: AnyRef](cl: Class[A]): Boolean = {
     knownMessageTypes contains cl
+  }
+
+  def canHandleMessage[A <: AnyRef: Manifest](msg: A): Boolean = {
+    canHandleMessage(msg.getClass)
   }
 }
 

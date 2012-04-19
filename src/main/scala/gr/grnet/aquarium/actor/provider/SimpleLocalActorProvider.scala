@@ -57,46 +57,46 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
 
   def configure(props: Props): Unit = {
     this._props = props
-    logger.info("Configured with props: %s".format(props))
+    logger.info("Configured with props: {}", props)
+  }
+
+  private[this] def __doStart(): Unit = {
+    // Start and configure actors
+    val RolesToBeStarted = SimpleLocalActorProvider.RolesToBeStarted
+    val message = ActorProviderConfigured(this)
+
+    for(role <- RolesToBeStarted) {
+      val actorRef = actorForRole(role)
+
+      if(role.canHandleConfigurationMessage(message)) {
+        actorRef ! message
+      }
+    }
   }
 
   def start(): Unit = {
-    // Start all actors that need to [be started]
-    val RolesToBeStarted = SimpleLocalActorProvider.RolesToBeStarted
-    val Size = RolesToBeStarted.size
-    logger.info("About to start actors for %s roles: %s".format(Size, RolesToBeStarted))
-    for((role, index) <- RolesToBeStarted.zipWithIndex) {
-      logger.debug("%s/%s (-). Starting actor for role %s".format(index + 1, Size, role))
-      val ms0 = TimeHelpers.nowMillis
-      actorForRole(role)
-      val ms1 = TimeHelpers.nowMillis
-      logger.info("%s/%s (+). Started actor for role %s in %.3f sec".format(index + 1, Size, role, TimeHelpers.secDiffOfMillis(ms0, ms1)))
+    logStarting()
+    val (ms0, ms1, _) = TimeHelpers.timed {
+      __doStart()
     }
-
-    // Now that all actors have been started, send them some initialization code
-    val message = ActorProviderConfigured(this)
-    for(role <- RolesToBeStarted) {
-      if(role.canHandleConfigurationMessage(classOf[ActorProviderConfigured])) {
-        logger.debug("Configuring %s with %s".format(role, message))
-        actorForRole(role) ! message
-      }
-    }
-
-    logger.info("Started")
+    logStarted(ms0, ms1)
   }
 
   def stop(): Unit = {
-    logger.info("Stopped")
+    logStopped(TimeHelpers.nowMillis, TimeHelpers.nowMillis)
   }
 
   private[this] def _newActor(role: ActorRole): ActorRef = {
     val actorRef = akka.actor.Actor.actorOf(role.actorType).start()
 
-    if(role.canHandleConfigurationMessage(classOf[AquariumPropertiesLoaded])) {
-      actorRef ! AquariumPropertiesLoaded(this._props)
+    val propsMsg = AquariumPropertiesLoaded(this._props)
+    if(role.canHandleConfigurationMessage(propsMsg)) {
+      actorRef ! propsMsg
     }
-    if(role.canHandleConfigurationMessage(classOf[ActorProviderConfigured])) {
-      actorRef ! ActorProviderConfigured(this)
+
+    val providerMsg = ActorProviderConfigured(this)
+    if(role.canHandleConfigurationMessage(providerMsg)) {
+      actorRef ! providerMsg
     }
 
     actorRef
@@ -116,10 +116,8 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
   @throws(classOf[Exception])
   def actorForRole(role: ActorRole, hints: Props = Props.empty) = synchronized {
     if(role.isCacheable) {
-      logger.debug("%s is cacheable".format(role.role))
       _fromCacheOrNew(role)
     } else {
-      logger.debug("%s is not cacheable".format(role.role))
       _newActor(role)
     }
   }

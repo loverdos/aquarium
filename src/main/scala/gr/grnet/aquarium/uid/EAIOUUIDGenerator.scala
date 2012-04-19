@@ -33,16 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation.uid
+package gr.grnet.aquarium.uid
 
-import org.bson.types.ObjectId
+import com.eaio.uuid.UUID
 
 /**
- * Generates `UID`s based on [[org.bson.types.ObjectId]].
+ * [[gr.grnet.aquarium.uid.UIDGenerator]] based on [[com.eaio.uuid.UUID]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object ObjectIdGenerator extends UIDGenerator[ObjectId] {
-  def nextUIDObject() = ObjectId.get()
+object EAIOUUIDGenerator extends UIDGenerator[UUID] {
+  def nextUIDObject() = new UUID()
 }

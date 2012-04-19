@@ -33,15 +33,19 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation.uid
+package gr.grnet.aquarium.uid
+
+import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Unique ID generator.
+ * A [[gr.grnet.aquarium.uid.UIDGenerator]] providing values by incrementing an
+ * [[java.util.concurrent.atomic.AtomicLong]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UIDGenerator[T] {
-  def nextUIDObject(): T
-  def nextUID(): String = nextUIDObject().toString
+class ConcurrentVMLocalUIDGenerator(initialValue: Long = 0L) extends UIDGenerator[Long] {
+  private[this] val counter = new AtomicLong(initialValue)
+
+  def nextUIDObject() = counter.getAndIncrement
 }
