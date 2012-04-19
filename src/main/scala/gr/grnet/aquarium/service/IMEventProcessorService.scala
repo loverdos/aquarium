@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.service
 
-import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
 
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
@@ -45,6 +44,7 @@ import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessUserEvent
 import gr.grnet.aquarium.events.IMEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{LogHelpers, makeString}
+import com.ckkloverdos.maybe._
 
 /**
  * An event processor service for user events coming from the IM system
@@ -65,25 +65,16 @@ class IMEventProcessorService extends EventProcessorService[IMEvent] {
     _configurator.imEventStore.findIMEventById(event.id).isJust
 
   override def persist(event: IMEvent, initialPayload: Array[Byte]) = {
-    Maybe {
-      LocalFSEventStore.storeIMEvent(_configurator, event, initialPayload)
-    } match {
-      case Just(_) ⇒
-        _configurator.imEventStore.storeIMEvent(event) match {
-          case Just(x) => true
-          case x: Failed =>
-            logger.error("Could not save user event: %s".format(event))
-            false
-          case NoVal => false
-        }
-
-      case failed@Failed(e) ⇒
-        logger.error("While LocalFSEventStore.storeUserEvent", e)
-        false
-
-      case _ ⇒
-        false
+    // 1. Store to local FS for debugging purposes.
+    //    BUT be resilient to errors, since this is not critical
+    if(_configurator.eventsStoreFolder.isJust) {
+      Maybe {
+        LocalFSEventStore.storeIMEvent(_configurator, event, initialPayload)
+      }
     }
+
+    // 2. Store to DB
+    _configurator.imEventStore.storeIMEvent(event)
   }
 
   protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit = {

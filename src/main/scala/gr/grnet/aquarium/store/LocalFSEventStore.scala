@@ -39,7 +39,7 @@ import gr.grnet.aquarium.Configurator
 import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.simulation.uid.{EAIOUUIDGenerator, UIDGenerator}
+import gr.grnet.aquarium.uid.{EAIOUUIDGenerator, UIDGenerator}
 import gr.grnet.aquarium.events.{IMEvent, ResourceEvent}
 
 /**

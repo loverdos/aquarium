@@ -268,7 +268,7 @@ class MemStore extends UserStateStore
   //+ IMEventStore
   def storeUnparsed(json: String) = throw new AquariumException("Not implemented")
 
-  def storeIMEvent(event: IMEvent) = {imEventById += (event.id -> event); Just(RecordID(event.id))}
+  def storeIMEvent(event: IMEvent) = {imEventById += (event.id -> event); RecordID(event.id)}
 
   def findIMEventById(id: String) = Maybe{imEventById.getOrElse(id, null)}
 

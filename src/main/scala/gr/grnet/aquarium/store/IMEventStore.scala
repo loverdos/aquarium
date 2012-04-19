@@ -49,7 +49,7 @@ trait IMEventStore {
   /**
    * Store an event
    */
-  def storeIMEvent(event: IMEvent): Maybe[RecordID]
+  def storeIMEvent(event: IMEvent): RecordID
 
   /**
    * Find a user event by event ID

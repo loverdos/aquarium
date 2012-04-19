@@ -52,6 +52,7 @@ import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.events.AquariumEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.{AquariumException, Configurator}
+import gr.grnet.aquarium.store.RecordID
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,
@@ -108,7 +109,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   protected def exists(event: E): Boolean
 
-  protected def persist(event: E, initialPayload: Array[Byte]): Boolean
+  protected def persist(event: E, initialPayload: Array[Byte]): Unit
 
   protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit
 
@@ -230,25 +231,25 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
     self.dispatcher = queueReaderManager.dispatcher
   }
 
-  class Persister extends Actor {
+  class Persister extends Actor with Loggable {
 
     def receive = {
       case Persist(event, initialPayload, sender, ackData) ⇒
-        logger.debug("Persister-%s attempting store".format(self.getUuid()))
-        //val time = TimeHelpers.nowMillis
         if(exists(event))
           sender ! Duplicate(ackData)
-        else if(persist(event, initialPayload)) {
-          //logger.debug("Persist time: %d ms".format(TimeHelpers.nowMillis - time))
+        else MaybeEither {
+          persist(event, initialPayload)
+        } forJust { just ⇒
           sender ! PersistOK(ackData)
-        } else
+        } forFailed { failed ⇒
           sender ! PersistFailed(ackData)
-      case _ => logger.warn("Unknown message")
+          logger.warn("While persisting {}", event)
+        }
     }
 
     override def preStart = {
-      logger.debug("Starting actor Persister-%s".format(self.getUuid()))
       super.preStart
+      logStarted(TimeHelpers.nowMillis, TimeHelpers.nowMillis)
     }
 
     self.dispatcher = persisterManager.dispatcher
