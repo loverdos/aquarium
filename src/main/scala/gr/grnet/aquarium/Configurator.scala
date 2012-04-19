@@ -192,7 +192,7 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
-  private[this] lazy val _resEventProc: ResourceEventProcessorService = new ResourceEventProcessorService
+  private[this] lazy val _resEventProc = new ResourceEventProcessorService
 
   private[this] lazy val _imEventProc = new IMEventProcessorService
 

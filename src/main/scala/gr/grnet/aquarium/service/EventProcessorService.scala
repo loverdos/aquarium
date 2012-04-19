@@ -137,7 +137,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
         val exchange = i(0)
         val route = i(1)
         val qname = i(2)
-        logger.info("Declaring queue %s (%s -> %s)".format(qname, exchange, route))
+        logger.info("Declaring queue '%s' for exchange '%s' and key '%s'".format(qname, exchange, route))
         consumer(route, qname, exchange, queueReaderManager.lb, false)
     }
   }

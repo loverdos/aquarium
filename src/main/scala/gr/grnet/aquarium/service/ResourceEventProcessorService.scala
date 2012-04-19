@@ -41,6 +41,7 @@ import gr.grnet.aquarium.store.LocalFSEventStore
 import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
 import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessResourceEvent
 import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 
 /**
@@ -108,14 +109,19 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
   override def queueReaderManager = queueReader
 
   def start() {
-    logger.info("Starting resource event processor service")
-    declareQueues(Keys.amqp_resevents_queues)
+    logStarting()
+    val (ms0, ms1, _) = TimeHelpers.timed {
+      declareQueues(Keys.amqp_resevents_queues)
+    }
+    logStarted(ms0, ms1)
   }
 
   def stop() {
-    queueReaderManager.stop()
-    persisterManager.stop()
-
-    logger.info("Stopping resource event processor service")
+    logStopping()
+    val (ms0, ms1, _) = TimeHelpers.timed {
+      queueReaderManager.stop()
+      persisterManager.stop()
+    }
+    logStopped(ms0, ms1)
   }
 }

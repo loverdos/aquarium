@@ -40,10 +40,11 @@ import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
-import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessUserEvent
 import gr.grnet.aquarium.events.IMEvent
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.util.{LogHelpers, makeString}
 
 /**
  * An event processor service for user events coming from the IM system
@@ -116,14 +117,19 @@ class IMEventProcessorService extends EventProcessorService[IMEvent] {
   override def queueReaderManager = queueReader
 
   def start() {
-    logger.info("Starting user event processor service")
-    declareQueues(Keys.amqp_userevents_queues)
+    logStarting()
+    val (ms0, ms1, _) = TimeHelpers.timed {
+      declareQueues(Keys.amqp_userevents_queues)
+    }
+    logStarted(ms0, ms1)
   }
 
   def stop() {
-    queueReaderManager.stop()
-    persisterManager.stop()
-
-    logger.info("Stopping user event processor service")
+    logStopping()
+    val (ms0, ms1, _) = TimeHelpers.timed {
+      queueReaderManager.stop()
+      persisterManager.stop()
+    }
+    logStopped(ms0, ms1)
   }
 }

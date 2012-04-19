@@ -70,7 +70,7 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
       val ms0 = TimeHelpers.nowMillis
       actorForRole(role)
       val ms1 = TimeHelpers.nowMillis
-      logger.info("%s/%s (+). Started actor for role %s in %.3f sec".format(index + 1, Size, role, (ms1 - ms0).toDouble / 1000.0))
+      logger.info("%s/%s (+). Started actor for role %s in %.3f sec".format(index + 1, Size, role, TimeHelpers.secDiffOfMillis(ms0, ms1)))
     }
 
     // Now that all actors have been started, send them some initialization code
