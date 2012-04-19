@@ -69,7 +69,7 @@ class PolicyTest extends DSLTestBase with StoreConfigurator {
 
     //Touch the file to trigger reloading with non changed state
     Thread.sleep(200)
-    f.setLastModified(System.currentTimeMillis)
+    f.setLastModified(TimeHelpers.nowMillis)
     var polNew = Policy.reloadPolicies
 
     assertEquals(pol.keys.size, polNew.keys.size)

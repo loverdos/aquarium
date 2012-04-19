@@ -51,6 +51,7 @@ import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
 import gr.grnet.aquarium.Configurator
 import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.events.AquariumEvent
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,
@@ -165,7 +166,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
                 persisterManager.lb ! Persist(event, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
               }
             } else {
-              val eventWithReceivedMillis = event.copyWithReceivedMillis(System.currentTimeMillis()).asInstanceOf[E]
+              val eventWithReceivedMillis = event.copyWithReceivedMillis(TimeHelpers.nowMillis).asInstanceOf[E]
               persisterManager.lb ! Persist(eventWithReceivedMillis, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
             }
 
@@ -227,11 +228,11 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
     def receive = {
       case Persist(event, initialPayload, sender, ackData) ⇒
         logger.debug("Persister-%s attempting store".format(self.getUuid()))
-        //val time = System.currentTimeMillis()
+        //val time = TimeHelpers.nowMillis
         if(exists(event))
           sender ! Duplicate(ackData)
         else if(persist(event, initialPayload)) {
-          //logger.debug("Persist time: %d ms".format(System.currentTimeMillis() - time))
+          //logger.debug("Persist time: %d ms".format(TimeHelpers.nowMillis - time))
           sender ! PersistOK(ackData)
         } else
           sender ! PersistFailed(ackData)

@@ -40,6 +40,7 @@ import java.util.{Date}
 import org.junit.Assume._
 import gr.grnet.aquarium.LogicTestsAssumptions
 import gr.grnet.aquarium.logic.accounting.dsl._
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 /**
  * Performance tests for various critical path functions.
@@ -53,7 +54,7 @@ class PerfTest extends DSLUtils with DSL {
     assumeTrue(LogicTestsAssumptions.EnablePerfTests)
 
     val iter = 1000
-    var start = System.currentTimeMillis()
+    var start = TimeHelpers.nowMillis
     var numResolved = 0
 
     val from = new Date(0)
@@ -85,7 +86,7 @@ class PerfTest extends DSLUtils with DSL {
         numResolved += allEffectiveTimeslots(tf, Timeslot(new Date(min), new Date(max))).size
     }
 
-    var total = System.currentTimeMillis() - start
+    var total = TimeHelpers.nowMillis - start
     print("allEffectiveTimeslots: %d calls in %s msec. (%s resolved)\n".format(iter, total, numResolved))
   }
 }

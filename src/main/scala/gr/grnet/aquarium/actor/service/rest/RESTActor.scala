@@ -48,6 +48,7 @@ import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, DispatcherRole}
 import RESTPaths.{UserBalancePath, UserStatePath, AdminPingAll}
 import com.ckkloverdos.maybe.{NoVal, Just}
 import message.service.dispatcher._
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -78,7 +79,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
   protected def receive = {
     case RequestContext(HttpRequest(GET, "/ping", _, _, _), _, responder) ⇒
-      responder.complete(stringResponse200("{\"pong\": %s}".format(System.currentTimeMillis())))
+      responder.complete(stringResponse200("{\"pong\": %s}".format(TimeHelpers.nowMillis)))
 
     case RequestContext(HttpRequest(GET, "/stats", _, _, _), _, responder) ⇒ {
       (serverActor ? GetStats).mapTo[Stats].onComplete {
@@ -100,7 +101,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
     case RequestContext(HttpRequest(GET, uri, headers, body, protocol), _, responder) ⇒
       //+ Main business logic REST URIs are matched here
-      val millis = System.currentTimeMillis()
+      val millis = TimeHelpers.nowMillis
       uri match {
         case UserBalancePath(userId) ⇒
           callDispatcher(RequestUserBalance(userId, millis), responder)

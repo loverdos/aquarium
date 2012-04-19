@@ -41,11 +41,11 @@ import dsl._
 import collection.immutable.SortedMap
 import java.util.Date
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
-import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.util.{ContextualLogger, CryptoUtils, Loggable}
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.AquariumException
 import gr.grnet.aquarium.events.{WalletEntry, ResourceEvent}
+import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 
 /**
  * A timeslot together with the algorithm and unit price that apply for this particular timeslot.
@@ -567,7 +567,7 @@ trait Accounting extends DSLUtils with Loggable {
      */
     val chargeChunks = calcChangeChunks(agr, amount, dslResource, timeslot)
 
-    val timeReceived = System.currentTimeMillis
+    val timeReceived = TimeHelpers.nowMillis
 
     val rel = event.id :: related.map{x => x.sourceEventIDs}.flatten
 
@@ -752,7 +752,7 @@ case class ChargeChunk(value: Double, algorithm: String,
 
   def id(): String =
     CryptoUtils.sha1("%f%s%f%s%s%d".format(value, algorithm, price, when.toString,
-      resource.name, System.currentTimeMillis()))
+      resource.name, TimeHelpers.nowMillis))
 }
 
 /** An exception raised when something goes wrong with accounting */
