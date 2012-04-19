@@ -37,7 +37,7 @@ package gr.grnet.aquarium.util
 
 import akka.amqp._
 import util.Random
-import gr.grnet.aquarium.events.{UserEvent, ResourceEvent}
+import gr.grnet.aquarium.events.{IMEvent, ResourceEvent}
 import scopt.OptionParser
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import java.lang.StringBuffer
@@ -65,10 +65,10 @@ trait RandomEventGenerator extends AkkaAMQP {
   /**
    * Generate a random resource event
    */
-  def nextUserEvent(): UserEvent = {
+  def nextUserEvent(): IMEvent = {
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
 
-    UserEvent(
+    IMEvent(
       id = CryptoUtils.sha1(genRndAsciiString(35)),
       occurredMillis = ts.toLong,
       receivedMillis = ts.toLong,
@@ -104,7 +104,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     userIds.filter(_ < num).foreach {
       i =>
         val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
-        val user = UserEvent(
+        val user = IMEvent(
           id = CryptoUtils.sha1(genRndAsciiString(35)),
           occurredMillis = ts.toLong,
           receivedMillis = ts.toLong,

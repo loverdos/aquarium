@@ -36,28 +36,28 @@
 package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.events.UserEvent
+import gr.grnet.aquarium.events.IMEvent
 
 /**
  * Store for external user events
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait UserEventStore {
+trait IMEventStore {
   def storeUnparsed(json: String): Maybe[RecordID]
 
   /**
    * Store an event
    */
-  def storeUserEvent(event: UserEvent): Maybe[RecordID]
+  def storeIMEvent(event: IMEvent): Maybe[RecordID]
 
   /**
    * Find a user event by event ID
    */
-  def findUserEventById(id: String): Maybe[UserEvent]
+  def findIMEventById(id: String): Maybe[IMEvent]
 
   /**
    * Find all user events by user ID
    */
-  def findUserEventsByUserId(userId: String): List[UserEvent]
+  def findIMEventsByUserId(userId: String): List[IMEvent]
 }

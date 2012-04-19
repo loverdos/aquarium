@@ -51,7 +51,7 @@ import gr.grnet.aquarium.messaging.AkkaAMQP
 import gr.grnet.aquarium.actor.message.config.user.UserActorInitWithUserId
 import gr.grnet.aquarium.actor.message.service.dispatcher._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
-import gr.grnet.aquarium.events.{WalletEntry, UserEvent}
+import gr.grnet.aquarium.events.{WalletEntry, IMEvent}
 
 
 /**
@@ -86,9 +86,9 @@ with Loggable {
 
     //Rebuild state from user events
     val usersDB = _configurator.storeProvider.userEventStore
-    val userEvents = usersDB.findUserEventsByUserId(_userId)
+    val userEvents = usersDB.findIMEventsByUserId(_userId)
     val numUserEvents = userEvents.size
-    _userState = replayUserEvents(_userState, userEvents, from, to)
+    _userState = replayIMEvents(_userState, userEvents, from, to)
 
     //Rebuild state from resource events
     val eventsDB = _configurator.storeProvider.resourceEventStore
@@ -119,7 +119,7 @@ with Loggable {
   /**
    * Replay user events on the provided user state
    */
-  def replayUserEvents(initState: UserState, events: List[UserEvent],
+  def replayIMEvents(initState: UserState, events: List[IMEvent],
                        from: Long, to: Long): UserState = {
     initState
   }
@@ -156,7 +156,7 @@ with Loggable {
   }
 
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
-    val resourceEvent = event.rce
+    val resourceEvent = event.rcEvent
     if(resourceEvent.userID != this._userId) {
       ERROR("Received %s but my userId = %s".format(event, this._userId))
     } else {
@@ -166,7 +166,7 @@ with Loggable {
     }
   }
 
-  private[this] def processCreateUser(event: UserEvent): Unit = {
+  private[this] def processCreateUser(event: IMEvent): Unit = {
     val userId = event.userID
     DEBUG("Creating user from state %s", event)
     val usersDB = _configurator.storeProvider.userStateStore
@@ -188,7 +188,7 @@ with Loggable {
     }
   }
 
-  private[this] def processModifyUser(event: UserEvent): Unit = {
+  private[this] def processModifyUser(event: IMEvent): Unit = {
     val now = TimeHelpers.nowMillis
     val newActive = ActiveStateSnapshot(event.isStateActive, now)
 
@@ -198,7 +198,7 @@ with Loggable {
   }
 
   def onProcessUserEvent(event: ProcessUserEvent): Unit = {
-    val userEvent = event.ue
+    val userEvent = event.imEvent
     if(userEvent.userID != this._userId) {
       ERROR("Received %s but my userId = %s".format(userEvent, this._userId))
     } else {

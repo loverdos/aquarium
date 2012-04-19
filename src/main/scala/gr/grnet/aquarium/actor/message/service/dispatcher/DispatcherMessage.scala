@@ -39,7 +39,7 @@ package dispatcher
 
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.events.{UserEvent, ResourceEvent}
+import gr.grnet.aquarium.events.{IMEvent, ResourceEvent}
 import gr.grnet.aquarium.converter.{PrettyJsonTextFormat, StdConverters}
 
 
@@ -90,14 +90,14 @@ case class UserResponseGetState(userId: String, state: UserState) extends Dispat
  *
  * Note that the prefix `Process` means that no reply is created or needed.
  */
-case class ProcessResourceEvent(rce: ResourceEvent) extends DispatcherMessage
+case class ProcessResourceEvent(rcEvent: ResourceEvent) extends DispatcherMessage
 
 /**
  * Dispatcher message that triggers the user event processing pipeline.
  *
  * Note that the prefix `Process` means that no reply is created or needed.
  */
-case class ProcessUserEvent(ue: UserEvent) extends DispatcherMessage
+case class ProcessUserEvent(imEvent: IMEvent) extends DispatcherMessage
 
 
 case class AdminRequestPingAll() extends DispatcherMessage

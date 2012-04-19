@@ -107,11 +107,11 @@ class UserActorManager extends ReflectiveAquariumActor {
   }
 
   def onProcessResourceEvent(m: ProcessResourceEvent): Unit = {
-    _forwardToUserActor(m.rce.userID, m)
+    _forwardToUserActor(m.rcEvent.userID, m)
   }
 
   def onProcessUserEvent(m: ProcessUserEvent): Unit = {
-    _forwardToUserActor(m.ue.userID, m)
+    _forwardToUserActor(m.imEvent.userID, m)
   }
 
   override def postStop = {

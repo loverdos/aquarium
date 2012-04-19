@@ -42,11 +42,11 @@ import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import converter.{StdConverters, JsonTextFormat}
 
 /**
- * Represents an incoming user event.
+ * Represents an event from the `Identity Management` (IM) external system.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class  UserEvent(
+case class  IMEvent(
     override val id: String,           // The id at the sender side
     override val occurredMillis: Long, // When it occurred at the sender side
     override val receivedMillis: Long, // When it was received by Aquarium
@@ -56,11 +56,11 @@ case class  UserEvent(
     role: String,
     eventVersion: String,
     eventType: String,
-    details: UserEvent.Details)
+    details: IMEvent.Details)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
-//  assert(eventType.equalsIgnoreCase(UserEvent.EventTypes.create) ||
-//    eventType.equalsIgnoreCase(UserEvent.EventTypes.modify))
+//  assert(eventType.equalsIgnoreCase(IMEvent.EventTypes.create) ||
+//    eventType.equalsIgnoreCase(IMEvent.EventTypes.modify))
 
 //  assert(!role.isEmpty)
 
@@ -81,12 +81,12 @@ case class  UserEvent(
 
     MasterConfigurator.userStateStore.findUserStateByUserId(userID) match {
       case Just(x) =>
-        if (eventType.equalsIgnoreCase(UserEvent.EventTypes.create)){
+        if (eventType.equalsIgnoreCase(IMEvent.EventTypes.create)){
           logger.warn("User to create exists: IMEvent".format(this.toJson));
           return false
         }
       case NoVal =>
-        if (!eventType.equalsIgnoreCase(UserEvent.EventTypes.modify)){
+        if (!eventType.equalsIgnoreCase(IMEvent.EventTypes.modify)){
           logger.warn("Inexistent user to modify. IMEvent:".format(this.toJson))
           return false
         }
@@ -99,16 +99,16 @@ case class  UserEvent(
 
   def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
-  def isCreateUser = eventType.equalsIgnoreCase(UserEvent.EventTypes.create)
+  def isCreateUser = eventType.equalsIgnoreCase(IMEvent.EventTypes.create)
 
-  def isModifyUser = eventType.equalsIgnoreCase(UserEvent.EventTypes.modify)
+  def isModifyUser = eventType.equalsIgnoreCase(IMEvent.EventTypes.modify)
 
   def isStateActive = isActive
 
   def isStateSuspended = !isActive
 }
 
-object UserEvent {
+object IMEvent {
 
   object EventTypes {
     val create = "create"
@@ -117,12 +117,12 @@ object UserEvent {
 
   type Details = Map[String, String]
 
-  def fromJson(json: String): UserEvent = {
-    StdConverters.StdConverters.convertEx[UserEvent](JsonTextFormat(json))
+  def fromJson(json: String): IMEvent = {
+    StdConverters.StdConverters.convertEx[IMEvent](JsonTextFormat(json))
   }
 
-  def fromBytes(bytes: Array[Byte]): UserEvent = {
-    StdConverters.StdConverters.convertEx[UserEvent](JsonTextFormat(makeString(bytes)))
+  def fromBytes(bytes: Array[Byte]): IMEvent = {
+    StdConverters.StdConverters.convertEx[IMEvent](JsonTextFormat(makeString(bytes)))
   }
 
   object JsonNames {

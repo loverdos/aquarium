@@ -43,7 +43,7 @@ import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.events.ResourceEvent.{JsonNames => ResourceJsonNames}
-import gr.grnet.aquarium.events.UserEvent.{JsonNames => UserEventJsonNames}
+import gr.grnet.aquarium.events.IMEvent.{JsonNames => UserEventJsonNames}
 import gr.grnet.aquarium.events.WalletEntry.{JsonNames => WalletJsonNames}
 import gr.grnet.aquarium.events.PolicyEntry.{JsonNames => PolicyJsonNames}
 import java.util.Date
@@ -67,7 +67,7 @@ class MongoDBStore(
   extends ResourceEventStore
   with UserStateStore
   with WalletEntryStore
-  with UserEventStore
+  with IMEventStore
   with PolicyStore
   with Loggable {
 
@@ -305,24 +305,24 @@ class MongoDBStore(
   }
   //-WalletEntryStore
 
-  //+UserEventStore
+  //+IMEventStore
   def storeUnparsed(json: String): Maybe[RecordID] = {
     MongoDBStore.storeJustJson(json, unparsedUserEvents)
   }
 
-  def storeUserEvent(event: UserEvent): Maybe[RecordID] =
-    MongoDBStore.storeAny[UserEvent](event, userEvents, UserEventJsonNames.userID,
+  def storeIMEvent(event: IMEvent): Maybe[RecordID] =
+    MongoDBStore.storeAny[IMEvent](event, userEvents, UserEventJsonNames.userID,
       _.userID, MongoDBStore.jsonSupportToDBObject)
 
 
-  def findUserEventById(id: String): Maybe[UserEvent] =
-    MongoDBStore.findById[UserEvent](id, userEvents, MongoDBStore.dbObjectToUserEvent)
+  def findIMEventById(id: String): Maybe[IMEvent] =
+    MongoDBStore.findById[IMEvent](id, userEvents, MongoDBStore.dbObjectToUserEvent)
 
-  def findUserEventsByUserId(userId: String): List[UserEvent] = {
+  def findIMEventsByUserId(userId: String): List[IMEvent] = {
     val query = new BasicDBObject(UserEventJsonNames.userID, userId)
     MongoDBStore.runQuery(query, userEvents)(MongoDBStore.dbObjectToUserEvent)(Some(_sortByTimestampAsc))
   }
-  //-UserEventStore
+  //-IMEventStore
 
   //+PolicyStore
   def loadPolicyEntriesAfter(after: Long): List[PolicyEntry] = {
@@ -367,14 +367,14 @@ object MongoDBStore {
   final val USER_STATES_COLLECTION = "userstates"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.events.UserEvent]]s.
+   * Collection holding [[gr.grnet.aquarium.events.IMEvent]]s.
    *
    * User events are coming from the IM module (external).
    */
   final val USER_EVENTS_COLLECTION = "userevents"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.events.UserEvent]]s that could not be parsed to normal objects.
+   * Collection holding [[gr.grnet.aquarium.events.IMEvent]]s that could not be parsed to normal objects.
    *
    * We of course assume at least a valid JSON representation.
    *
@@ -414,8 +414,8 @@ object MongoDBStore {
     WalletEntry.fromJson(JSON.serialize(dbObj))
   }
 
-  def dbObjectToUserEvent(dbObj: DBObject): UserEvent = {
-    UserEvent.fromJson(JSON.serialize(dbObj))
+  def dbObjectToUserEvent(dbObj: DBObject): IMEvent = {
+    IMEvent.fromJson(JSON.serialize(dbObj))
   }
 
   def dbObjectToPolicyEntry(dbObj: DBObject): PolicyEntry = {

@@ -39,7 +39,7 @@ import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.events.{UserEvent, NewWalletEntry, WalletEntry}
+import gr.grnet.aquarium.events.{IMEvent, NewWalletEntry, WalletEntry}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
 
@@ -325,7 +325,7 @@ object UserStateChangeReasonCodes {
   final val NoSpecificChangeCode   = 2
   final val MonthlyBillingCode     = 3
   final val RealtimeBillingCode    = 4
-  final val UserEventArrivalCode   = 5
+  final val IMEventArrivalCode   = 5
 }
 
 case object InitialUserStateCalculation extends UserStateChangeReason {
@@ -393,7 +393,7 @@ case class RealtimeBillingCalculation(forWhenMillis: Long) extends UserStateChan
   def code = UserStateChangeReasonCodes.RealtimeBillingCode
 }
 
-case class UserEventArrival(userEvent: UserEvent) extends UserStateChangeReason {
+case class IMEventArrival(imEvent: IMEvent) extends UserStateChangeReason {
   def shouldStoreUserState = true
 
   def shouldStoreCalculatedWalletEntries = false
@@ -402,5 +402,5 @@ case class UserEventArrival(userEvent: UserEvent) extends UserStateChangeReason 
 
   def calculateCreditsForImplicitlyTerminated = false
 
-  def code = UserStateChangeReasonCodes.UserEventArrivalCode
+  def code = UserStateChangeReasonCodes.IMEventArrivalCode
 }

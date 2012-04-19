@@ -35,39 +35,40 @@
 
 package gr.grnet.aquarium.service
 
+import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
+
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util.makeString
-import com.ckkloverdos.maybe.{Maybe, NoVal, Failed, Just}
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessUserEvent
-import gr.grnet.aquarium.events.UserEvent
+import gr.grnet.aquarium.events.IMEvent
 
 /**
  * An event processor service for user events coming from the IM system
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class UserEventProcessorService extends EventProcessorService[UserEvent] {
+class IMEventProcessorService extends EventProcessorService[IMEvent] {
 
-  override def decode(data: Array[Byte]) = UserEvent.fromBytes(data)
+  override def decode(data: Array[Byte]) = IMEvent.fromBytes(data)
 
-  override def forward(event: UserEvent) = {
+  override def forward(event: IMEvent) = {
     if(event ne null) {
       _configurator.actorProvider.actorForRole(DispatcherRole) ! ProcessUserEvent(event)
     }
   }
 
-  override def exists(event: UserEvent) =
-    _configurator.userEventStore.findUserEventById(event.id).isJust
+  override def exists(event: IMEvent) =
+    _configurator.userEventStore.findIMEventById(event.id).isJust
 
-  override def persist(event: UserEvent, initialPayload: Array[Byte]) = {
+  override def persist(event: IMEvent, initialPayload: Array[Byte]) = {
     Maybe {
-      LocalFSEventStore.storeUserEvent(_configurator, event, initialPayload)
+      LocalFSEventStore.storeIMEvent(_configurator, event, initialPayload)
     } match {
       case Just(_) ⇒
-        _configurator.userEventStore.storeUserEvent(event) match {
+        _configurator.userEventStore.storeIMEvent(event) match {
           case Just(x) => true
           case x: Failed =>
             logger.error("Could not save user event: %s".format(event))
@@ -87,7 +88,7 @@ class UserEventProcessorService extends EventProcessorService[UserEvent] {
   protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit = {
     val json = makeString(initialPayload)
 
-    LocalFSEventStore.storeUnparsedUserEvent(_configurator, initialPayload, exception)
+    LocalFSEventStore.storeUnparsedIMEvent(_configurator, initialPayload, exception)
 
     _configurator.props.getBoolean(Configurator.Keys.save_unparsed_event_im) match {
       case Just(true) ⇒

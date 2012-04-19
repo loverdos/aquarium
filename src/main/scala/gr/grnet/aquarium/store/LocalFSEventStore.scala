@@ -40,12 +40,10 @@ import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.simulation.uid.{EAIOUUIDGenerator, UIDGenerator}
-import gr.grnet.aquarium.events.{UserEvent, ResourceEvent}
+import gr.grnet.aquarium.events.{IMEvent, ResourceEvent}
 
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.
- *
- * The public methods guarantee they will not propagate any failure.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -70,13 +68,13 @@ object LocalFSEventStore extends Loggable {
     logger.debug("Wrote to file {}", file.getCanonicalPath)
   }
 
-  private[this] def resourceEventsFolder(root: File): File = {
+  private[this] def createResourceEventsFolder(root: File): File = {
     val folder = new File(root, "rc")
     folder.mkdirs()
     folder
   }
 
-  private[this] def userEventsFolder(root: File): File = {
+  private[this] def createIMEventsFolder(root: File): File = {
     val folder = new File(root, "im")
     folder.mkdirs()
     folder
@@ -111,7 +109,7 @@ object LocalFSEventStore extends Loggable {
       val uid = UIDGen.nextUID()
       val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
-      val rcEventsFolder = resourceEventsFolder(root)
+      val rcEventsFolder = createResourceEventsFolder(root)
       val trace = stringOfStackTrace(exception)
 
       writeJson("rc", rcEventsFolder, initialPayload, occurredString, uid, None, false, Some(trace))
@@ -126,7 +124,7 @@ object LocalFSEventStore extends Loggable {
 
       val occurredMDC = new MutableDateCalc(event.occurredMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
-      val rcEventsFolder = resourceEventsFolder(root)
+      val rcEventsFolder = createResourceEventsFolder(root)
 
       // Store parsed file
       writeJson(
@@ -145,26 +143,26 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeUnparsedUserEvent(mc: Configurator, initialPayload: Array[Byte], exception: Throwable): Unit = {
+  def storeUnparsedIMEvent(mc: Configurator, initialPayload: Array[Byte], exception: Throwable): Unit = {
     for(root <- mc.eventsStoreFolder) {
       val uid = UIDGen.nextUID()
       val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
-      val rcEventsFolder = userEventsFolder(root)
+      val imEventsFolder = createIMEventsFolder(root)
       val trace = stringOfStackTrace(exception)
 
-      writeJson("im", rcEventsFolder, initialPayload, occurredString, uid, None, false, Some(trace))
+      writeJson("im", imEventsFolder, initialPayload, occurredString, uid, None, false, Some(trace))
     }
   }
 
-  def storeUserEvent(mc: Configurator, event: UserEvent, initialPayload: Array[Byte]): Unit = {
-    require(event ne null, "User event must be not null")
+  def storeIMEvent(mc: Configurator, event: IMEvent, initialPayload: Array[Byte]): Unit = {
+    require(event ne null, "IM event must be not null")
     for(root <- mc.eventsStoreFolder) {
       val uid = UIDGen.nextUID()
 
       val occurredMDC = new MutableDateCalc(event.occurredMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
-      val imEventsFolder = userEventsFolder(root)
+      val imEventsFolder = createIMEventsFolder(root)
 
       writeJson(
         "im",

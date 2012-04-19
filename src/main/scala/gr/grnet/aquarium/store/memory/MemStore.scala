@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.simulation.uid.ConcurrentVMLocalUIDGenerator
 import gr.grnet.aquarium.{AquariumException, Configurable}
-import gr.grnet.aquarium.events.{UserEvent, WalletEntry, ResourceEvent, PolicyEntry}
+import gr.grnet.aquarium.events.{IMEvent, WalletEntry, ResourceEvent, PolicyEntry}
 
 /**
  * An implementation of various stores that persists data in memory.
@@ -58,7 +58,7 @@ import gr.grnet.aquarium.events.{UserEvent, WalletEntry, ResourceEvent, PolicyEn
 
 class MemStore extends UserStateStore
   with Configurable with PolicyStore
-  with ResourceEventStore with UserEventStore
+  with ResourceEventStore with IMEventStore
   with WalletEntryStore
   with StoreProvider {
 
@@ -69,7 +69,7 @@ class MemStore extends UserStateStore
   private[this] var _resourceEvents = List[ResourceEvent]()
 
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
-  private val userEventById: ConcurrentMap[String, UserEvent] = new ConcurrentHashMap[String, UserEvent]()
+  private[this] val imEventById: ConcurrentMap[String, IMEvent] = new ConcurrentHashMap[String, IMEvent]()
 
   def configure(props: Props) = {
   }
@@ -78,7 +78,7 @@ class MemStore extends UserStateStore
     val map = Map(
       "UserState"     -> _userStates.size,
       "ResourceEvent" -> _resourceEvents.size,
-      "UserEvent"     -> userEventById.size,
+      "IMEvent"     -> imEventById.size,
       "PolicyEntry"   -> _policyEntries.size,
       "WalletEntry"   -> walletEntriesById.size
     )
@@ -265,15 +265,15 @@ class MemStore extends UserStateStore
   }
   //- ResourceEventStore
 
-  //+ UserEventStore
+  //+ IMEventStore
   def storeUnparsed(json: String) = throw new AquariumException("Not implemented")
 
-  def storeUserEvent(event: UserEvent) = {userEventById += (event.id -> event); Just(RecordID(event.id))}
+  def storeIMEvent(event: IMEvent) = {imEventById += (event.id -> event); Just(RecordID(event.id))}
 
-  def findUserEventById(id: String) = Maybe{userEventById.getOrElse(id, null)}
+  def findIMEventById(id: String) = Maybe{imEventById.getOrElse(id, null)}
 
-  def findUserEventsByUserId(userId: String) = userEventById.valuesIterator.filter{v => v.userID == userId}.toList
-  //- UserEventStore
+  def findIMEventsByUserId(userId: String) = imEventById.valuesIterator.filter{v => v.userID == userId}.toList
+  //- IMEventStore
 
   def loadPolicyEntriesAfter(after: Long) =
     _policyEntries.filter(p => p.validFrom > after)

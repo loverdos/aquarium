@@ -42,7 +42,7 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 
 import gr.grnet.aquarium.actor.provider.ActorProvider
-import gr.grnet.aquarium.service.{UserEventProcessorService, ResourceEventProcessorService}
+import gr.grnet.aquarium.service.{IMEventProcessorService, ResourceEventProcessorService}
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.store._
 
@@ -125,10 +125,10 @@ class Configurator(val props: Props) extends Loggable {
     }
   }
 
-  private[this] lazy val _userEventStoreM: Maybe[UserEventStore] = {
+  private[this] lazy val _userEventStoreM: Maybe[IMEventStore] = {
     props.get(Keys.user_event_store_class) map { className ⇒
-      val instance = newInstance[UserEventStore](className)
-      logger.info("Overriding UserEventStore provisioning. Implementation given by: %s".format(instance.getClass))
+      val instance = newInstance[IMEventStore](className)
+      logger.info("Overriding IMEventStore provisioning. Implementation given by: %s".format(instance.getClass))
       instance
     }
   }
@@ -194,7 +194,7 @@ class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _resEventProc: ResourceEventProcessorService = new ResourceEventProcessorService
 
-  private[this] lazy val _imEventProc: UserEventProcessorService = new UserEventProcessorService
+  private[this] lazy val _imEventProc = new IMEventProcessorService
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 
@@ -541,8 +541,8 @@ object Configurator {
     final val events_store_folder = "events.store.folder"
 
     /**
-     * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.logic.events.UserEvent]] is
-     * saved to the [[gr.grnet.aquarium.store.UserEventStore]].
+     * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.events.IMEvent]] is
+     * saved to the [[gr.grnet.aquarium.store.IMEventStore]].
      */
     final val save_unparsed_event_im = "save.unparsed.event.im"
 
