@@ -41,6 +41,7 @@ import com.ckkloverdos.maybe.{Failed, Maybe}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.events.{IMEvent, NewWalletEntry, WalletEntry}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.AquariumException
 
 
 /**
@@ -202,7 +203,7 @@ case class UserState(
       case snapshot @ AgreementSnapshot(data, _) ⇒
         snapshot.getAgreement(at)
       case _ ⇒
-       Failed(new Exception("No agreement snapshot found for user %s".format(userId)))
+       Failed(new AquariumException("No agreement snapshot found for user %s".format(userId)))
     }
   }
 

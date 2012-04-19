@@ -35,12 +35,12 @@
 
 package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.actor.RESTRole
 import _root_.akka.actor._
 import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{LogHelpers, Loggable, Lifecycle}
+import gr.grnet.aquarium.{AquariumException, Configurator}
 
 /**
  * REST service based on Actors and Spray.
@@ -56,7 +56,7 @@ class RESTActorService extends Lifecycle with Loggable {
   def start(): Unit = {
     val mc = Configurator.MasterConfigurator
     this._port = mc.props.getInt(Configurator.Keys.rest_port).getOr(
-      throw new Exception("%s was not specified in aquarium properties".format(Configurator.Keys.rest_port)))
+      throw new AquariumException("%s was not specified in aquarium properties".format(Configurator.Keys.rest_port)))
 
     LogHelpers.logStarting(logger, "on port %s", this._port)
     val (ms0, ms1, _) = TimeHelpers.timed {

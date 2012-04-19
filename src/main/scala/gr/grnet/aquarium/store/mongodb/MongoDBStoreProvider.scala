@@ -36,10 +36,10 @@
 package gr.grnet.aquarium.store.mongodb
 
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.Configurable
 import gr.grnet.aquarium.Configurator.Keys
 import com.mongodb.{MongoException, Mongo, MongoOptions, ServerAddress}
 import gr.grnet.aquarium.store._
+import gr.grnet.aquarium.{AquariumException, Configurable}
 
 /**
  * 
@@ -69,7 +69,7 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
       this._mongo = new Mongo(addr, opt)
     } catch {
       case e: MongoException =>
-        throw new Exception("Cannot connect to mongo at %s:%s".format(host, port), e)
+        throw new AquariumException("Cannot connect to mongo at %s:%s".format(host, port), e)
     }
   }
 

@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.user
 
-import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl._
@@ -46,6 +45,7 @@ import gr.grnet.aquarium.simulation.uid.{UIDGenerator, ConcurrentVMLocalUIDGener
 import com.ckkloverdos.maybe.{Maybe, Just, NoVal}
 import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler, SimpleCostPolicyAlgorithmCompiler}
+import gr.grnet.aquarium.{AquariumException, Configurator}
 
 
 /**
@@ -181,7 +181,7 @@ aquariumpolicy:
           currentValue
 
         case name ⇒
-          throw new Exception("Unknown cost policy %s".format(name))
+          throw new AquariumException("Unknown cost policy %s".format(name))
       }
     }
 
@@ -309,7 +309,7 @@ aquariumpolicy:
   def justUserState(userStateM: Maybe[UserState]): UserState = {
     userStateM match {
       case Just(userState) ⇒ userState
-      case _ ⇒ throw new Exception("Unexpected %s".format(userStateM))
+      case _ ⇒ throw new AquariumException("Unexpected %s".format(userStateM))
     }
   }
   

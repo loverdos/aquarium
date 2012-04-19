@@ -38,6 +38,7 @@ package gr.grnet.aquarium.logic.accounting.algorithm
 
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.logic.accounting.dsl._
+import gr.grnet.aquarium.AquariumException
 
 /**
  * An executable charging algorithm with some simple implementation.
@@ -75,7 +76,7 @@ object SimpleExecutableCostPolicyAlgorithm extends ExecutableCostPolicyAlgorithm
         currentValue
 
       case name ⇒
-        throw new Exception("Unknown cost policy %s".format(name))
+        throw new AquariumException("Unknown cost policy %s".format(name))
     }
   }
 

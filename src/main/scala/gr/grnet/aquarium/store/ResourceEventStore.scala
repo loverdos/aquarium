@@ -37,6 +37,7 @@ package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.AquariumException
 
 /**
  * An abstraction for Aquarium `ResourceEvent` stores.
@@ -46,7 +47,7 @@ import gr.grnet.aquarium.events.ResourceEvent
  */
 trait ResourceEventStore {
   def clearResourceEvents(): Unit = {
-    throw new Exception("Unsupported operation")
+    throw new AquariumException("Unsupported operation")
   }
 
   def storeResourceEvent(event: ResourceEvent): Maybe[RecordID]

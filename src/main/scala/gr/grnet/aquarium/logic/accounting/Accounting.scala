@@ -184,7 +184,7 @@ trait Accounting extends DSLUtils with Loggable {
         case None ⇒
           val errMsg = "Unknown agreement %s during %s".format(agreementName, alignedTimeslot)
           clog.error("%s", errMsg)
-          throw new Exception(errMsg)
+          throw new AquariumException(errMsg)
 
         case Some(agreement) ⇒
           // TODO: Factor this out, just like we did with:
@@ -216,15 +216,15 @@ trait Accounting extends DSLUtils with Loggable {
 
             val chargeslot = (algorithmDefOpt, priceUnitOpt) match {
               case (None, None) ⇒
-                throw new Exception(
+                throw new AquariumException(
                   "Unknown algorithm and price unit for resource %s during %s".
                     format(dslResource, finegrainedTimeslot))
               case (None, _) ⇒
-                throw new Exception(
+                throw new AquariumException(
                   "Unknown algorithm for resource %s during %s".
                     format(dslResource, finegrainedTimeslot))
               case (_, None) ⇒
-                throw new Exception(
+                throw new AquariumException(
                   "Unknown price unit for resource %s during %s".
                     format(dslResource, finegrainedTimeslot))
               case (Some(algorithmDefinition), Some(priceUnit)) ⇒

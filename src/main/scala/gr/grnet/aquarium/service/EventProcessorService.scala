@@ -48,10 +48,10 @@ import akka.config.Supervision.OneForOneStrategy
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import akka.amqp._
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
-import gr.grnet.aquarium.Configurator
 import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.events.AquariumEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.{AquariumException, Configurator}
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,
@@ -132,7 +132,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
         val i = q.split(":")
 
         if(i.size < 3)
-          throw new Exception("Queue declaration \"%s\" not correct".format(q))
+          throw new AquariumException("Queue declaration \"%s\" not correct".format(q))
 
         val exchange = i(0)
         val route = i(1)

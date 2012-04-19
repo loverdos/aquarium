@@ -250,11 +250,11 @@ case object OnceCostPolicy
   def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = false
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEvent, occurredMillis: Long) = {
-    throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
+    throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
 
   def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
-    throw new Exception("constructImplicitStartEventFor() Not compliant with %s".format(this))
+    throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
 
@@ -312,7 +312,7 @@ case object ContinuousCostPolicy
   }
 
   def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
-    throw new Exception("constructImplicitStartEventFor() Not compliant with %s".format(this))
+    throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
 
@@ -418,7 +418,7 @@ case object OnOffCostPolicy
   }
 
   def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
-    throw new Exception("constructImplicitStartEventFor() Not compliant with %s".format(this))
+    throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
 
@@ -471,11 +471,11 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
   }
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEvent, occurredMillis: Long) = {
-    throw new Exception("constructImplicitEndEventFor() Not compliant with %s".format(this))
+    throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
 
   def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
-    throw new Exception("constructImplicitStartEventFor() Not compliant with %s".format(this))
+    throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
 

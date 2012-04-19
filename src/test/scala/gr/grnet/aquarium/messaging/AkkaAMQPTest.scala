@@ -43,7 +43,7 @@ import akka.amqp._
 import akka.config.Supervision.Permanent
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assume._
-import gr.grnet.aquarium.LogicTestsAssumptions
+import gr.grnet.aquarium.{AquariumException, LogicTestsAssumptions}
 
 /**
  *
@@ -71,7 +71,7 @@ class AkkaAMQPTest extends RandomEventGenerator {
         case Delivery(payload, routingKey, deliveryTag, isRedeliver, properties, sender) =>
           println(this + " Got message: %s (%d)".format(new String(payload), deliveryTag) +
             (if(isRedeliver) " - redelivered (%d)".format(deliveryTag) else ""))
-          if (msgs.incrementAndGet() == 15) throw new Exception("Messed up")
+          if (msgs.incrementAndGet() == 15) throw new AquariumException("Messed up")
           if (msgs.incrementAndGet() == 55) sender ! Reject(deliveryTag, true)
           sender ! Acknowledge(deliveryTag)
         case Acknowledged(deliveryTag) => println("Acked: " + deliveryTag)

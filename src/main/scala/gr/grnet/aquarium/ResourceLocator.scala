@@ -73,7 +73,7 @@ object ResourceLocator {
         }
         file.getCanonicalFile()
       case _ ⇒
-        throw new Exception("%s is not set".format(AQUARIUM_HOME.name))
+        throw new AquariumException("%s is not set".format(AQUARIUM_HOME.name))
     }
   }
 

@@ -176,7 +176,7 @@ class UserStateComputations extends Loggable {
            case NoVal ⇒
              val errMsg = "No counter computed for out of sync events. Should at least be zero."
              clog.warn(errMsg)
-             val result = Failed(new Exception(errMsg))
+             val result = Failed(new AquariumException(errMsg))
              clog.end()
              result
 
@@ -205,7 +205,7 @@ class UserStateComputations extends Loggable {
                case n if n < 0 ⇒
                  val errMsg = "Found %s out of sync events (%s less). DB must be inconsistent".format(actualOOSEventsCounter, n)
                  clog.warn(errMsg)
-                 val result = Failed(new Exception(errMsg))
+                 val result = Failed(new AquariumException(errMsg))
                  clog.end()
                  result
              }
@@ -306,7 +306,7 @@ class UserStateComputations extends Loggable {
               case Just((referenceTimeslot, fullChargeslots)) ⇒
                 if(fullChargeslots.length == 0) {
                   // At least one chargeslot is required.
-                  throw new Exception("No chargeslots computed for resource event %s".format(currentResourceEvent.id))
+                  throw new AquariumException("No chargeslots computed for resource event %s".format(currentResourceEvent.id))
                 }
                 clog.debugSeq("fullChargeslots", fullChargeslots, 0)
 
@@ -436,7 +436,7 @@ class UserStateComputations extends Loggable {
     )
 
     if(previousBillingMonthUserStateM.isNoVal) {
-      throw new Exception("Could not calculate initial user state for billing %s".format(billingMonthInfo))
+      throw new AquariumException("Could not calculate initial user state for billing %s".format(billingMonthInfo))
     }
     if(previousBillingMonthUserStateM.isFailed) {
       throw failedForSure(previousBillingMonthUserStateM).exception
