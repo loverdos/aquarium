@@ -60,7 +60,7 @@ class RESTActorTest {
     // Initialize configuration subsystem
     val mc = Configurator.MasterConfigurator
     mc.startServices()
-    val port = mc.getInt(Configurator.Keys.rest_port).getOr(
+    val port = mc.props.getInt(Configurator.Keys.rest_port).getOr(
       throw new AquariumException("No %s specified in aquarium properties".format(Configurator.Keys.rest_port)))
     val dialog = SprayHttpDialog("localhost", port)
 

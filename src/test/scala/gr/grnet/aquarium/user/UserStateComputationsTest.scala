@@ -209,7 +209,7 @@ aquariumpolicy:
   val BandwidthResourceSim = StdBandwidthResourceSim.fromPolicy(DefaultPolicy)
 
   // There are two client services, synnefo and pithos.
-  val TheUIDGenerator: UIDGenerator = new ConcurrentVMLocalUIDGenerator
+  val TheUIDGenerator: UIDGenerator[_] = new ConcurrentVMLocalUIDGenerator
   val Synnefo = ClientSim("synnefo")(TheUIDGenerator)
   val Pithos  = ClientSim("pithos" )(TheUIDGenerator)
 
