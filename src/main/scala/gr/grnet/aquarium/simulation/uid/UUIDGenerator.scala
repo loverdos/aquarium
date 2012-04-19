@@ -43,6 +43,6 @@ import java.util.UUID
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object UUIDGenerator extends UIDGenerator {
-  def nextUID() = UUID.randomUUID().toString
+object UUIDGenerator extends UIDGenerator[UUID] {
+  def nextUIDObject() = UUID.randomUUID()
 }

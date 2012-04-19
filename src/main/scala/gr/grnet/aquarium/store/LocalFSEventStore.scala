@@ -49,7 +49,7 @@ import gr.grnet.aquarium.events.{IMEvent, ResourceEvent}
  */
 
 object LocalFSEventStore extends Loggable {
-  private[this] final val UIDGen: UIDGenerator = EAIOUUIDGenerator
+  private[this] final val UIDGen: UIDGenerator[_] = EAIOUUIDGenerator
   private[this] final val NewLine  = "\n".getBytes("UTF-8")
   private[this] final val NewLine2 = NewLine ++ NewLine
 

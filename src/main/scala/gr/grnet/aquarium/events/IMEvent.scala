@@ -40,6 +40,7 @@ import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.Configurator._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import converter.{StdConverters, JsonTextFormat}
+import org.bson.types.ObjectId
 
 /**
  * Represents an event from the `Identity Management` (IM) external system.
@@ -56,7 +57,8 @@ case class  IMEvent(
     role: String,
     eventVersion: String,
     eventType: String,
-    details: IMEvent.Details)
+    details: IMEvent.Details,
+    _id: AnyRef = new ObjectId())
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
 //  assert(eventType.equalsIgnoreCase(IMEvent.EventTypes.create) ||

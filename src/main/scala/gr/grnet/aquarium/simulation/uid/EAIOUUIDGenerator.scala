@@ -43,6 +43,6 @@ import com.eaio.uuid.UUID
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object EAIOUUIDGenerator extends UIDGenerator {
-  def nextUID() = new UUID().toString
+object EAIOUUIDGenerator extends UIDGenerator[UUID] {
+  def nextUIDObject() = new UUID()
 }

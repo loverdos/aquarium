@@ -41,6 +41,7 @@ package gr.grnet.aquarium.simulation.uid
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UIDGenerator {
-  def nextUID(): String
+trait UIDGenerator[T] {
+  def nextUIDObject(): T
+  def nextUID(): String = nextUIDObject().toString
 }

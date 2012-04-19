@@ -43,6 +43,6 @@ import java.rmi.server.UID
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object RMIUIDGenerator extends UIDGenerator {
-  def nextUID() = new UID().toString
+object RMIUIDGenerator extends UIDGenerator[UID] {
+  def nextUIDObject() = new UID()
 }

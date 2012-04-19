@@ -43,4 +43,4 @@ import uid.UIDGenerator
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class ClientSim(clientId: String)(implicit val uidGen: UIDGenerator)
+case class ClientSim(clientId: String)(implicit val uidGen: UIDGenerator[_])
