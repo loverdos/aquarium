@@ -47,4 +47,13 @@ object TimeHelpers {
   def nowMillis = System.currentTimeMillis()
 
   def nowDate = new Date(nowMillis)
+
+  def secDiffOfMillis(ms0: Long, ms1: Long) = (ms1 - ms0).toDouble / 1000.0
+
+  def timed[U](f: ⇒U): (Long, Long, U) = {
+    val ms0 = nowMillis
+    val u = f
+    val ms1 = nowMillis
+    (ms0, ms1, f)
+  }
 }
