@@ -46,4 +46,20 @@ import org.slf4j.LoggerFactory
 trait LazyLoggable {
   @transient
   protected lazy val logger = LoggerFactory.getLogger(getClass)
+
+  protected def logStarting(): Unit = {
+    LogHelpers.logStarting(this.logger)
+  }
+
+  protected def logStarted(ms0: Long, ms1: Long): Unit = {
+    LogHelpers.logStarted(this.logger, ms0, ms1)
+  }
+
+  protected def logStopping(): Unit = {
+    LogHelpers.logStopping(this.logger)
+  }
+
+  protected def logStopped(ms0: Long, ms1: Long): Unit = {
+    LogHelpers.logStopped(this.logger, ms0, ms1)
+  }
 }
