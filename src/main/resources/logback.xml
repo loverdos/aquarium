@@ -21,7 +21,9 @@
   <logger name="ch.qos.logback" level="DEBUG"/>
 
   <logger name="com.ckkloverdos" level="INFO"/>
-  
+
+  <logger name="cc.spray.can" level="DEBUG"/>
+
   <logger name="gr.grnet" level="DEBUG"/>
 
   <root level="DEBUG">
