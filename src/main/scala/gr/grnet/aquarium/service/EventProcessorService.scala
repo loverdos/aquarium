@@ -76,12 +76,19 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   case class Duplicate(ackData: AckData)
 
-  /* Short term storage for delivery tags to work around AMQP
+  /**
+   * Short term storage for delivery tags to work around AMQP
    * limitation with redelivering rejected messages to same host.
+   *
+   * FIXME: Grow unbounded???
    */
   private val redeliveries = new ConcurrentSkipListSet[String]()
 
-  /* Temporarily keeps track of messages while being processed */
+  /**
+   *  Temporarily keeps track of messages while being processed
+   *
+   *  FIXME: Grow unbounded???
+   */
   private val inFlightEvents = new ConcurrentHashMap[Long, E](200, 0.9F, 4)
 
   /* Supervisor actor for each event processing operation */
