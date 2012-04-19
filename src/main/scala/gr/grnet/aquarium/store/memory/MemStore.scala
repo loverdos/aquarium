@@ -43,7 +43,7 @@ import java.util.Date
 import collection.mutable.ConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.user.UserState
-import gr.grnet.aquarium.simulation.uid.ConcurrentVMLocalUIDGenerator
+import gr.grnet.aquarium.uid.ConcurrentVMLocalUIDGenerator
 import gr.grnet.aquarium.{AquariumException, Configurable}
 import gr.grnet.aquarium.events.{IMEvent, WalletEntry, ResourceEvent, PolicyEntry}
 
@@ -194,7 +194,7 @@ class MemStore extends UserStateStore
 
   def storeResourceEvent(event: ResourceEvent) = {
     _resourceEvents ::= event
-    Just(RecordID(event.id))
+    RecordID(event.id)
   }
 
   def findResourceEventById(id: String) = {

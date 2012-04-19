@@ -54,7 +54,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def useBandwidth(occurredDate: Date,
                    megaBytes: Double,
                    details: ResourceEvent.Details = Map(),
-                   eventVersion: String = "1.0"): Maybe[RecordID] = {
+                   eventVersion: String = "1.0"): RecordID = {
 
     newResourceEvent(
      occurredDate.getTime,

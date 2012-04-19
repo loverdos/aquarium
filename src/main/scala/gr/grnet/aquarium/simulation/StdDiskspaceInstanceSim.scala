@@ -54,7 +54,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def consumeMB(occurredDate: Date,
                 megaBytes: Double,
                 details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-                eventVersion: String = "1.0"): Maybe[RecordID] = {
+                eventVersion: String = "1.0"): RecordID = {
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
@@ -68,7 +68,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def freeMB(occurredDate: Date,
              megaBytes: Double,
              details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-             eventVersion: String = "1.0"): Maybe[RecordID] = {
+             eventVersion: String = "1.0"): RecordID = {
 
     consumeMB(occurredDate, -megaBytes)
   }
@@ -77,7 +77,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
                           outOfSyncHours: Int,
                           megaBytes: Double,
                           details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-                          eventVersion: String = "1.0"): Maybe[RecordID] = {
+                          eventVersion: String = "1.0"): RecordID = {
 
     val occurredDateCalc = new MutableDateCalc(occurredDate)
     val occurredTime = occurredDateCalc.toMillis
@@ -96,7 +96,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
                        outOfSyncHours: Int,
                        megaBytes: Double,
                        details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-                       eventVersion: String = "1.0"): Maybe[RecordID] = {
+                       eventVersion: String = "1.0"): RecordID = {
 
     consumeMB_OutOfSync(occurredDate, outOfSyncHours, -megaBytes)
   }

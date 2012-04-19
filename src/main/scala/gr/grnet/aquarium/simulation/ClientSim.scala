@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.simulation
 
-import uid.UIDGenerator
+import gr.grnet.aquarium.uid.UIDGenerator
 
 /**
  * A simulator for an aquarium client system.

@@ -58,8 +58,6 @@ with RandomEventGenerator with StoreConfigurator {
     val event = nextResourceEvent()
     val store = config.resourceEventStore
     val result = store.storeResourceEvent(event)
-
-    assert(result.isJust)
   }
 
   @Test
@@ -69,11 +67,9 @@ with RandomEventGenerator with StoreConfigurator {
     val event = nextResourceEvent()
     val store = config.resourceEventStore
 
-    val result1 = store.storeResourceEvent(event)
-    assert(result1.isJust)
+    store.storeResourceEvent(event)
 
-    val result2 = store.findResourceEventById(event.id)
-    assertNotNone(result2)
+    store.findResourceEventById(event.id)
   }
 
   @Test

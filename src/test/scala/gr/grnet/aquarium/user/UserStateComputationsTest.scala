@@ -41,7 +41,7 @@ import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger, justForSure}
 import gr.grnet.aquarium.simulation._
-import gr.grnet.aquarium.simulation.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
+import gr.grnet.aquarium.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
 import com.ckkloverdos.maybe.{Maybe, Just, NoVal}
 import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler, SimpleCostPolicyAlgorithmCompiler}

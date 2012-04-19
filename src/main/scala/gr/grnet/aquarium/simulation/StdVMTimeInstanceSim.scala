@@ -56,7 +56,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
 
   def newON(occurredDate: Date,
             details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-            eventVersion: String = "1.0"): Maybe[RecordID] = {
+            eventVersion: String = "1.0"): RecordID = {
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
@@ -68,7 +68,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
 
   def newOFF(occurredDate: Date,
              details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-             eventVersion: String = "1.0"): Maybe[RecordID] = {
+             eventVersion: String = "1.0"): RecordID = {
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
@@ -78,7 +78,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
     )
   }
 
-  def newONOFF(occurredDateForON: Date, totalVMTimeInHours: Int): (Maybe[RecordID], Maybe[RecordID]) = {
+  def newONOFF(occurredDateForON: Date, totalVMTimeInHours: Int): (RecordID, RecordID) = {
     val onID = newON(occurredDateForON)
     val offDate = new MutableDateCalc(occurredDateForON).goPlusHours(totalVMTimeInHours).toDate
     val offID = newOFF(offDate)
@@ -89,7 +89,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def newOFF_OutOfSync(occuredDate: Date,
                        outOfSyncHours: Int,
                        details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
-                       eventVersion: String = "1.0"): Maybe[RecordID] = {
+                       eventVersion: String = "1.0"): RecordID = {
 
     val occurredDateCalc = new MutableDateCalc(occuredDate)
     val occurredTime = occurredDateCalc.toMillis

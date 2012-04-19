@@ -50,7 +50,7 @@ trait ResourceEventStore {
     throw new AquariumException("Unsupported operation")
   }
 
-  def storeResourceEvent(event: ResourceEvent): Maybe[RecordID]
+  def storeResourceEvent(event: ResourceEvent): RecordID
 
   def findResourceEventById(id: String): Maybe[ResourceEvent]
 

@@ -100,8 +100,14 @@ class MongoDBStore(
   }
 
   //+ResourceEventStore
-  def storeResourceEvent(event: ResourceEvent): Maybe[RecordID] =
-    MongoDBStore.storeAquariumEvent(event, resourceEvents)
+  def storeResourceEvent(event: ResourceEvent) = {
+    MongoDBStore.storeAny[ResourceEvent](
+      event,
+      resourceEvents,
+      ResourceJsonNames.id,
+      (e) => e.id,
+      MongoDBStore.jsonSupportToDBObject)
+  }
 
   def findResourceEventById(id: String): Maybe[ResourceEvent] =
     MongoDBStore.findById(id, resourceEvents, MongoDBStore.dbObjectToResourceEvent)
@@ -225,8 +231,16 @@ class MongoDBStore(
   //- UserStateStore
 
   //+WalletEntryStore
-  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] =
-    MongoDBStore.storeAquariumEvent(entry, walletEntries)
+  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] = {
+    Maybe {
+      MongoDBStore.storeAny[WalletEntry](
+        entry,
+        walletEntries,
+        ResourceJsonNames.id,
+        (e) => e.id,
+        MongoDBStore.jsonSupportToDBObject)
+    }
+  }
 
   def findWalletEntryById(id: String): Maybe[WalletEntry] =
     MongoDBStore.findById[WalletEntry](id, walletEntries, MongoDBStore.dbObjectToWalletEntry)
@@ -469,10 +483,6 @@ object MongoDBStore {
         case None => buff.toList
       }
     }
-  }
-
-  def storeAquariumEvent[A <: AquariumEvent](event: A, collection: DBCollection) : Maybe[RecordID] = {
-    Maybe(storeAny[A](event, collection, ResourceJsonNames.id, (e) => e.id, MongoDBStore.jsonSupportToDBObject))
   }
 
   def storeUserState(userState: UserState, collection: DBCollection): Maybe[RecordID] = {

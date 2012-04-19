@@ -35,7 +35,6 @@
 package gr.grnet.aquarium.simulation
 
 import java.util.Date
-import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.store.RecordID
 import math.Ordering
 import gr.grnet.aquarium.events.ResourceEvent
@@ -51,7 +50,7 @@ case class UserSim(userId: String, userCreationDate: Date, aquarium: AquariumSim
   def resourceEventStore = aquarium.resourceEventStore
 
   private[simulation]
-  def _addResourceEvent(resourceEvent: ResourceEvent): Maybe[RecordID] = {
+  def _addResourceEvent(resourceEvent: ResourceEvent): RecordID = {
     resourceEventStore.storeResourceEvent(resourceEvent)
   }
 
