@@ -56,6 +56,10 @@ object LogHelpers {
     logger.info("Started in %.3f sec".format(TimeHelpers.secDiffOfMillis(ms0, ms1)))
   }
 
+  def logStarted(logger: Logger, ms0: Long, ms1: Long, fmt: String, args: Any*): Unit = {
+    logger.info("Started %s in %.3f sec".format(fmt.format(args: _*), TimeHelpers.secDiffOfMillis(ms0, ms1)))
+  }
+
   def logStopping(logger: Logger): Unit = {
     logger.debug("Stopping ...")
   }

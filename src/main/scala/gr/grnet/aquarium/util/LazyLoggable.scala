@@ -51,8 +51,16 @@ trait LazyLoggable {
     LogHelpers.logStarting(this.logger)
   }
 
+  protected def logStarting(fmt: String, args: Any*): Unit = {
+    LogHelpers.logStarting(this.logger, fmt, args: _*)
+  }
+
   protected def logStarted(ms0: Long, ms1: Long): Unit = {
     LogHelpers.logStarted(this.logger, ms0, ms1)
+  }
+
+  protected def logStarted(ms0: Long, ms1: Long, fmt: String, args: Any*): Unit = {
+    LogHelpers.logStarted(this.logger, ms0, ms1, fmt, args: _*)
   }
 
   protected def logStopping(): Unit = {
