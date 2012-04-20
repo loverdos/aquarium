@@ -65,11 +65,7 @@ class SimpleLocalActorProviderService extends ActorProviderService with Configur
     val message = ActorProviderConfigured(this)
 
     for(role <- RolesToBeStarted) {
-      val actorRef = actorForRole(role)
-
-      if(role.canHandleConfigurationMessage(message)) {
-        actorRef ! message
-      }
+      actorForRole(role)
     }
   }
 
