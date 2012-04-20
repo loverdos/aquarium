@@ -53,7 +53,7 @@ case class StdBandwidthInstanceSim(override val resource: StdBandwidthResourceSi
 extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def useBandwidth(occurredDate: Date,
                    megaBytes: Double,
-                   details: ResourceEvent.Details = Map(),
+                   details: Map[String, String] = Map(),
                    eventVersion: String = "1.0"): RecordID = {
 
     newResourceEvent(

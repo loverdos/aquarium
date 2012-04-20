@@ -87,7 +87,7 @@ class MongoDBStore(
     db.getCollection(name)
   }
 
-  private[this] def _sortByTimestampAsc[A <: AquariumEvent](one: A, two: A): Boolean = {
+  private[this] def _sortByTimestampAsc[A <: AquariumEventModel](one: A, two: A): Boolean = {
     if (one.occurredMillis > two.occurredMillis) false
     else if (one.occurredMillis < two.occurredMillis) true
     else true
@@ -442,7 +442,8 @@ object MongoDBStore {
     PolicyEntry.fromJson(JSON.serialize(dbObj))
   }
 
-  def findById[A >: Null <: AquariumEvent](id: String, collection: DBCollection, deserializer: (DBObject) => A) : Maybe[A] = Maybe {
+  def findById[A >: Null <: AnyRef](id: String, collection: DBCollection, deserializer: (DBObject) => A) : Maybe[A] =
+    Maybe {
     val query = new BasicDBObject(ResourceJsonNames.id, id)
     val cursor = collection find query
 
@@ -456,7 +457,7 @@ object MongoDBStore {
     }
   }
 
-  def runQuery[A <: AquariumEvent](query: DBObject, collection: DBCollection, orderBy: DBObject = null)
+  def runQuery[A <: AquariumEventModel](query: DBObject, collection: DBCollection, orderBy: DBObject = null)
                                   (deserializer: (DBObject) => A)
                                   (sortWith: Option[(A, A) => Boolean]): List[A] = {
     val cursor0 = collection find query

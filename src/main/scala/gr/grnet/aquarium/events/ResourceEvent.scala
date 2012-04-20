@@ -58,9 +58,9 @@ case class ResourceEvent(
     clientID: String,                  // The unique client identifier (usually some hash)
     resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
     instanceID: String,                // String representation of the resource instance id
-    eventVersion: String,
+    override val eventVersion: String,
     value: Double,
-    details: ResourceEvent.Details)
+    override val details: Map[String, String])
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
 
   def validate() : Boolean = {
@@ -241,9 +241,6 @@ case class ResourceEvent(
 }
 
 object ResourceEvent {
-  type Details = Map[String, String]
-  final val EmptyDetails: Details = Map()
-
   type ResourceType = String
   type ResourceIdType = String
   type FullResourceType = (ResourceType, ResourceIdType)
@@ -258,11 +255,11 @@ object ResourceEvent {
     StdConverters.StdConverters.convertEx[ResourceEvent](JsonTextFormat(makeString(bytes)))
   }
 
-  def setAquariumSynthetic(map: ResourceEvent.Details): ResourceEvent.Details = {
+  def setAquariumSynthetic(map: Map[String, String]): Map[String, String] = {
     map.updated(JsonNames.details_aquarium_is_synthetic, "true")
   }
 
-  def setAquariumSyntheticAndImplicitEnd(map: ResourceEvent.Details): ResourceEvent.Details = {
+  def setAquariumSyntheticAndImplicitEnd(map: Map[String, String]): Map[String, String] = {
     map.
       updated(JsonNames.details_aquarium_is_synthetic, "true").
       updated(JsonNames.details_aquarium_is_implicit_end, "true")

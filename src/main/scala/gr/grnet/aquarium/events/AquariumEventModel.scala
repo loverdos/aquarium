@@ -33,48 +33,27 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation
+package gr.grnet.aquarium.events
 
-import gr.grnet.aquarium.events.ResourceEvent
-
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
- * A simulator for a resource instance.
+ * The base model for all events coming from external systems.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ResourceInstanceSim (val resource: ResourceSim,
-                           val instanceId: String,
-                           val owner: UserSim,
-                           val client: ClientSim) {
+trait AquariumEventModel extends JsonSupport {
+  def id: String
+  def occurredMillis: Long
+  def receivedMillis: Long
+//  def userID: String
+  def eventVersion: String
+  def details: Map[String, String]
 
-  def uidGen = client.uidGen
-
-  def newResourceEvent(occurredMillis: Long,
-                       receivedMillis: Long,
-                       value: Double,
-                       details: Map[String, String],
-                       eventVersion: String = "1.0") = {
-
-    val event = ResourceEvent(
-      uidGen.nextUID(),
-      occurredMillis,
-      receivedMillis,
-      owner.userId,
-      client.clientId,
-      resource.name,
-      instanceId,
-      eventVersion,
-      value,
-      details
-    )
-
-    owner._addResourceEvent(event)
-  }
-}
-
-object ResourceInstanceSim {
-  def apply(resource: ResourceSim, instanceId: String, owner: UserSim, client: ClientSim) =
-    new ResourceInstanceSim(resource, instanceId, owner, client)
+  /**
+   * The ID given to this event if/when persisted to a store.
+   * The exact type of the id is store-specific.
+   */
+  def storeID: Option[AnyRef]
 }

@@ -55,7 +55,7 @@ case class StdVMTimeInstanceSim(override val resource: StdVMTimeResourceSim,
 extends ResourceInstanceSim(resource, instanceId, owner, client) {
 
   def newON(occurredDate: Date,
-            details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
+            details: Map[String, String] = Map(),
             eventVersion: String = "1.0"): RecordID = {
     newResourceEvent(
       occurredDate.getTime,
@@ -67,7 +67,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   }
 
   def newOFF(occurredDate: Date,
-             details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
+             details: Map[String, String] = Map(),
              eventVersion: String = "1.0"): RecordID = {
     newResourceEvent(
       occurredDate.getTime,
@@ -88,7 +88,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
 
   def newOFF_OutOfSync(occuredDate: Date,
                        outOfSyncHours: Int,
-                       details: ResourceEvent.Details = ResourceEvent.EmptyDetails,
+                       details: Map[String, String] = Map(),
                        eventVersion: String = "1.0"): RecordID = {
 
     val occurredDateCalc = new MutableDateCalc(occuredDate)

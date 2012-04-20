@@ -38,6 +38,7 @@ package events
 
 import java.util.Date
 import converter.{JsonTextFormat, StdConverters}
+import util.json.JsonSupport
 
 /**
  * A WalletEntry is a derived entity. Its data represent money/credits and are calculated based on
@@ -60,6 +61,7 @@ case class WalletEntry(
     instanceId: String,
     finalized: Boolean)
   extends AquariumEvent(id, occurredMillis, receivedMillis) {
+
 
   assert(occurredMillis > 0)
   assert(value >= 0F)

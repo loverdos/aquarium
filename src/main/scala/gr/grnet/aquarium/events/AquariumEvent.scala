@@ -37,7 +37,6 @@ package gr.grnet.aquarium
 package events
 
 
-import util.json.JsonSupport
 import util.xml.XmlSupport
 import util.Loggable
 
@@ -51,7 +50,7 @@ abstract class AquariumEvent(
     val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
     val occurredMillis: Long, // When it occurred at client side (the sender)
     val receivedMillis: Long) // When it was received by Aquarium
-  extends JsonSupport
+  extends AquariumEventModel
   with    XmlSupport
   with    Loggable {
 
@@ -61,9 +60,11 @@ abstract class AquariumEvent(
     toJson.getBytes("UTF-8")
   }
 
-  /**
-   * Return a new instance with all state the same as this one except for `receivedMillis`, which
-   * acquires the new value.
-   */
+  def storeID: Option[AnyRef] = Some(id)
+
+  def details: Map[String, String] = Map()
+
+  def eventVersion = "1.0"
+
   def copyWithReceivedMillis(receivedMillis: Long): AquariumEvent
 }

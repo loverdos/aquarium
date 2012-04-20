@@ -55,16 +55,24 @@ case class  IMEvent(
     clientID: String,
     isActive: Boolean,
     role: String,
-    eventVersion: String,
+    override val eventVersion: String,
     eventType: String,
-    details: IMEvent.Details,
-    _id: AnyRef = new ObjectId())
-  extends AquariumEvent(id, occurredMillis, receivedMillis) {
+    override val details: Map[String, String],
+    _id: ObjectId = new ObjectId())
+  extends AquariumEvent(id, occurredMillis, receivedMillis) with IMEventModel {
+
 
 //  assert(eventType.equalsIgnoreCase(IMEvent.EventTypes.create) ||
 //    eventType.equalsIgnoreCase(IMEvent.EventTypes.modify))
 
 //  assert(!role.isEmpty)
+
+  override def storeID = {
+    _id match {
+      case null ⇒ None
+      case _    ⇒ Some(_id)
+    }
+  }
 
   /**
    * Validate this event according to the following rules:
@@ -116,8 +124,6 @@ object IMEvent {
     val create = "create"
     val modify = "modify"
   }
-
-  type Details = Map[String, String]
 
   def fromJson(json: String): IMEvent = {
     StdConverters.StdConverters.convertEx[IMEvent](JsonTextFormat(json))

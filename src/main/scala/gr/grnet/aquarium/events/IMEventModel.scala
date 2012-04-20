@@ -33,48 +33,19 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation
-
-import gr.grnet.aquarium.events.ResourceEvent
-
+package gr.grnet.aquarium.events
 
 /**
- * A simulator for a resource instance.
+ * The model of any event sent from the `Identity Management` (IM) external system.
+ *
+ * We use this to not reveal storage-specific stuff, like IDs.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ResourceInstanceSim (val resource: ResourceSim,
-                           val instanceId: String,
-                           val owner: UserSim,
-                           val client: ClientSim) {
-
-  def uidGen = client.uidGen
-
-  def newResourceEvent(occurredMillis: Long,
-                       receivedMillis: Long,
-                       value: Double,
-                       details: Map[String, String],
-                       eventVersion: String = "1.0") = {
-
-    val event = ResourceEvent(
-      uidGen.nextUID(),
-      occurredMillis,
-      receivedMillis,
-      owner.userId,
-      client.clientId,
-      resource.name,
-      instanceId,
-      eventVersion,
-      value,
-      details
-    )
-
-    owner._addResourceEvent(event)
-  }
-}
-
-object ResourceInstanceSim {
-  def apply(resource: ResourceSim, instanceId: String, owner: UserSim, client: ClientSim) =
-    new ResourceInstanceSim(resource, instanceId, owner, client)
+trait IMEventModel extends AquariumEventModel {
+  def clientID: String
+  def isActive: Boolean
+  def role: String
+  def eventType: String
 }
