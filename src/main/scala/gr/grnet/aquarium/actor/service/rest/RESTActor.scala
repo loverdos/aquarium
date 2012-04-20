@@ -49,6 +49,7 @@ import RESTPaths.{UserBalancePath, UserStatePath, AdminPingAll}
 import com.ckkloverdos.maybe.{NoVal, Just}
 import message.service.dispatcher._
 import gr.grnet.aquarium.util.date.TimeHelpers
+import org.joda.time.format.ISODateTimeFormat
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -79,7 +80,9 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
   protected def receive = {
     case RequestContext(HttpRequest(GET, "/ping", _, _, _), _, responder) ⇒
-      responder.complete(stringResponse200("{\"pong\": %s}".format(TimeHelpers.nowMillis())))
+      val now = TimeHelpers.nowMillis()
+      val nowFormatted = ISODateTimeFormat.dateTime().print(now)
+      responder.complete(stringResponse200("PONG\n%s\n%s".format(now, nowFormatted), "text/plain"))
 
     case RequestContext(HttpRequest(GET, "/stats", _, _, _), _, responder) ⇒ {
       (serverActor ? GetStats).mapTo[Stats].onComplete {
