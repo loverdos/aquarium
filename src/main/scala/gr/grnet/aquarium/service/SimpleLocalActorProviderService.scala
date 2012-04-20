@@ -61,7 +61,7 @@ class SimpleLocalActorProviderService extends ActorProviderService with Configur
 
   private[this] def __doStart(): Unit = {
     // Start and configure actors
-    val RolesToBeStarted = SimpleLocalActorProviderService.RolesToBeStarted
+    import SimpleLocalActorProviderService.RolesToBeStarted
     val message = ActorProviderConfigured(this)
 
     for(role <- RolesToBeStarted) {
