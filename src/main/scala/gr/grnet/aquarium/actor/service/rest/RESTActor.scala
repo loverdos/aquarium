@@ -102,7 +102,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
       }
     }
 
-    case RequestContext(HttpRequest(GET, uri, headers, body, protocol), _, responder) ⇒
+    case RequestContext(HttpRequest(GET, uri, headers, body, protocol), remoteAddress, responder) ⇒
       //+ Main business logic REST URIs are matched here
       val millis = TimeHelpers.nowMillis()
       uri match {
@@ -116,11 +116,16 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
           val mc = Configurator.MasterConfigurator
           mc.adminCookie match {
             case Just(adminCookie) ⇒
-              headers.find(h ⇒ h.name == "X-Aquarium-Admin-Cookie" && h.value == adminCookie) match {
-                case Some(_) ⇒
+              headers.find(_.name.toLowerCase == Configurator.HTTP.RESTAdminHeaderNameLowerCase) match {
+                case Some(cookieHeader) if(cookieHeader.value == adminCookie) ⇒
                   callDispatcher(AdminRequestPingAll(), responder)
 
+                case Some(cookieHeader) ⇒
+                  logger.warn("Admin request with bad cookie '{}' from {}", cookieHeader.value, remoteAddress)
+                  responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
+
                 case None ⇒
+                  logger.warn("Admin request with no cookie")
                   responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
               }
 

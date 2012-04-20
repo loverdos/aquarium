@@ -546,4 +546,9 @@ object Configurator {
      */
     final val admin_cookie = "admin.cookie"
   }
+
+  object HTTP {
+    final val RESTAdminHeaderName = "X-Aquarium-Admin-Cookie"
+    final val RESTAdminHeaderNameLowerCase = RESTAdminHeaderName.toLowerCase
+  }
 }
