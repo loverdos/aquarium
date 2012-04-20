@@ -37,8 +37,8 @@ package gr.grnet.aquarium
 
 import com.ckkloverdos.sys.SysProp
 import com.ckkloverdos.maybe.Just
-import com.ckkloverdos.props.Props
-import com.ckkloverdos.convert.Converters
+
+import gr.grnet.aquarium.converter.StdConverters.StdConverters
 
 /**
  * These are used to enable/disable several tests based on system properties.
@@ -48,33 +48,35 @@ import com.ckkloverdos.convert.Converters
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 object LogicTestsAssumptions {
-  private def testPropertyTrue(name: String): Boolean = {
-    testPropertyTrue(name, false)
-  }
-
-  private def testPropertyTrue(name: String, checkEnableAll: Boolean): Boolean = {
-
-    if(checkEnableAll == false &&
-      testPropertyTrue(PropertyNames.TestEnableAll, true)) return true
-
-    implicit val converters = Converters.DefaultConverters
-    SysProp(name).value match {
-      case Just(value) =>
-        Props((name, value)).getBoolean(name) match {
-          case Just(flag) => flag
-          case _ => false
-        }
-      case _ => false
+  private[this] def _checkValue(value: String, emptyStringIsTrue: Boolean) = {
+    value match {
+      case "" ⇒
+        emptyStringIsTrue
+      case value ⇒
+        StdConverters.convert[Boolean](value).getOr(false)
     }
   }
 
-  private def testPropertyFalse(name: String): Boolean = !testPropertyTrue(name)
+  private[this] def _testPropertyTrue(name: String): Boolean = {
+    // A property is true if it is given without a value (-Dtest.enable.spray) or it is given
+    // with a value that corresponds to true (-Dtest.enable.spray=true)
+    SysProp(name).value.map(_checkValue(_, true)).getOr(false)
+  }
 
-  val EnableRabbitMQTests = testPropertyTrue(PropertyNames.TestEnableRabbitMQ)
-  val EnableStoreTests  = testPropertyTrue(PropertyNames.TestEnableStore)
-  val EnablePerfTests = testPropertyTrue(PropertyNames.TestEnablePerf)
-  val EnableSprayTests = testPropertyTrue(PropertyNames.TestEnableSpray)
-  val EnableAllTests = testPropertyTrue(PropertyNames.TestEnableAll)
-  
+
+  private[this] def isPropertyEnabled(name: String): Boolean = {
+    SysProp(name).value match {
+      case Just(value) ⇒
+        _checkValue(value, true)
+      case _ ⇒
+        _testPropertyTrue(PropertyNames.TestEnableAll)
+    }
+  }
+
+  def EnableRabbitMQTests = isPropertyEnabled(PropertyNames.TestEnableRabbitMQ)
+  def EnableStoreTests  = isPropertyEnabled(PropertyNames.TestEnableStore)
+  def EnablePerfTests = isPropertyEnabled(PropertyNames.TestEnablePerf)
+  def EnableSprayTests = isPropertyEnabled(PropertyNames.TestEnableSpray)
+
   def propertyValue(name: String) = SysProp(name).rawValue
 }
