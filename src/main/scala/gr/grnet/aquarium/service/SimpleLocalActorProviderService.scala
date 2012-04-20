@@ -56,7 +56,7 @@ class SimpleLocalActorProviderService extends ActorProviderService with Configur
 
   def configure(props: Props): Unit = {
     this._props = props
-    logger.info("Configured with props: {}", props)
+    logger.debug("Configured with props")
   }
 
   private[this] def __doStart(): Unit = {
