@@ -83,7 +83,7 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
   }
 
   def stop(): Unit = {
-    logStopped(TimeHelpers.nowMillis, TimeHelpers.nowMillis)
+    logStopped(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
   }
 
   private[this] def _newActor(role: ActorRole): ActorRef = {

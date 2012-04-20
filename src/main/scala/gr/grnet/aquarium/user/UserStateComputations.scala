@@ -320,7 +320,7 @@ class UserStateComputations extends Loggable {
                     newCreditsDiff,
                     oldCredits,
                     newCredits,
-                    TimeHelpers.nowMillis,
+                    TimeHelpers.nowMillis(),
                     referenceTimeslot,
                     billingMonthInfo.year,
                     billingMonthInfo.month,
@@ -340,7 +340,7 @@ class UserStateComputations extends Loggable {
                 }
 
                 _workingUserState = _workingUserState.copy(
-                  creditsSnapshot = CreditSnapshot(newCredits, TimeHelpers.nowMillis),
+                  creditsSnapshot = CreditSnapshot(newCredits, TimeHelpers.nowMillis()),
                   stateChangeCounter = _workingUserState.stateChangeCounter + 1,
                   totalEventsProcessedCounter = _workingUserState.totalEventsProcessedCounter + 1
                 )
@@ -359,7 +359,7 @@ class UserStateComputations extends Loggable {
         userStateWorker.updatePrevious(currentResourceEvent)
 
         _workingUserState = _workingUserState.copy(
-          latestResourceEventsSnapshot = userStateWorker.previousResourceEvents.toImmutableSnapshot(TimeHelpers.nowMillis)
+          latestResourceEventsSnapshot = userStateWorker.previousResourceEvents.toImmutableSnapshot(TimeHelpers.nowMillis())
         )
 
       // We do not have a resource (and thus, no cost policy)
@@ -514,7 +514,7 @@ class UserStateComputations extends Loggable {
       clogJ
     )
 
-    val lastUpdateTime = TimeHelpers.nowMillis
+    val lastUpdateTime = TimeHelpers.nowMillis()
 
     _workingUserState = _workingUserState.copy(
       implicitlyIssuedSnapshot = userStateWorker.implicitlyIssuedStartEvents.toImmutableSnapshot(lastUpdateTime),

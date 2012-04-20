@@ -102,7 +102,7 @@ class PolicyTest extends DSLTestBase with StoreConfigurator {
     val copy2 = this.dsl.copy(pricelists = List())
     policies.storePolicyEntry(copy2.toPolicyEntry)
 
-    var pol = policies.loadPolicyEntriesAfter(TimeHelpers.nowMillis)
+    var pol = policies.loadPolicyEntriesAfter(TimeHelpers.nowMillis())
     assert(pol.isEmpty)
 
     pol = policies.loadPolicyEntriesAfter(0)

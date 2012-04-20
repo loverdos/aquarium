@@ -80,7 +80,7 @@ with Loggable {
    * Replay the event log for all events that affect the user state.
    */
   def rebuildState(from: Long, to: Long): Unit = {
-    val start = TimeHelpers.nowMillis
+    val start = TimeHelpers.nowMillis()
     if(_userState == null)
       createBlankState
 
@@ -106,7 +106,7 @@ with Loggable {
       "%d resource events, %d wallet entries) in %d msec").format(
       numUserEvents + numResourceEvents + numWalletEntries,
       numUserEvents, numResourceEvents, numWalletEntries,
-      TimeHelpers.nowMillis - start))
+      TimeHelpers.nowMillis() - start))
   }
 
   /**
@@ -189,7 +189,7 @@ with Loggable {
   }
 
   private[this] def processModifyUser(event: IMEvent): Unit = {
-    val now = TimeHelpers.nowMillis
+    val now = TimeHelpers.nowMillis()
     val newActive = ActiveStateSnapshot(event.isStateActive, now)
 
     DEBUG("New active status = %s".format(newActive))
@@ -214,7 +214,7 @@ with Loggable {
     val userId = event.userId
     val timestamp = event.timestamp
 
-    if(TimeHelpers.nowMillis - _userState.newestSnapshotTime > 60 * 1000) {
+    if(TimeHelpers.nowMillis() - _userState.newestSnapshotTime > 60 * 1000) {
       //        calcWalletEntries()
     }
     self reply UserResponseGetBalance(userId, _userState.creditsSnapshot.creditAmount)

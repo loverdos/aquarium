@@ -190,7 +190,7 @@ object Policy extends DSL with Loggable {
     }
 
     if (updated) {
-      val ts = TimeHelpers.nowMillis
+      val ts = TimeHelpers.nowMillis()
       val parsedNew = loadPolicyFromFile(policyf)
       val newPolicy = parsedNew.toPolicyEntry.copy(occurredMillis = ts,
         receivedMillis = ts, validFrom = ts)

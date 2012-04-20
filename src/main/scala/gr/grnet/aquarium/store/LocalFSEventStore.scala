@@ -107,7 +107,7 @@ object LocalFSEventStore extends Loggable {
   def storeUnparsedResourceEvent(mc: Configurator, initialPayload: Array[Byte], exception: Throwable): Unit = {
     for(root <- mc.eventsStoreFolder) {
       val uid = UIDGen.nextUID()
-      val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis)
+      val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis())
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val rcEventsFolder = createResourceEventsFolder(root)
       val trace = stringOfStackTrace(exception)
@@ -146,7 +146,7 @@ object LocalFSEventStore extends Loggable {
   def storeUnparsedIMEvent(mc: Configurator, initialPayload: Array[Byte], exception: Throwable): Unit = {
     for(root <- mc.eventsStoreFolder) {
       val uid = UIDGen.nextUID()
-      val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis)
+      val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis())
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val imEventsFolder = createIMEventsFolder(root)
       val trace = stringOfStackTrace(exception)

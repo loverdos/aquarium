@@ -174,7 +174,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
                 persisterManager.lb ! Persist(event, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
               }
             } else {
-              val eventWithReceivedMillis = event.copyWithReceivedMillis(TimeHelpers.nowMillis).asInstanceOf[E]
+              val eventWithReceivedMillis = event.copyWithReceivedMillis(TimeHelpers.nowMillis()).asInstanceOf[E]
               persisterManager.lb ! Persist(eventWithReceivedMillis, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
             }
 
@@ -249,7 +249,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
     override def preStart = {
       super.preStart
-      logStarted(TimeHelpers.nowMillis, TimeHelpers.nowMillis)
+      logStarted(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
     }
 
     self.dispatcher = persisterManager.dispatcher

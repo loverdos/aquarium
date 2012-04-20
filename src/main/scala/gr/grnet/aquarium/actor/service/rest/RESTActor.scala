@@ -79,7 +79,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
   protected def receive = {
     case RequestContext(HttpRequest(GET, "/ping", _, _, _), _, responder) ⇒
-      responder.complete(stringResponse200("{\"pong\": %s}".format(TimeHelpers.nowMillis)))
+      responder.complete(stringResponse200("{\"pong\": %s}".format(TimeHelpers.nowMillis())))
 
     case RequestContext(HttpRequest(GET, "/stats", _, _, _), _, responder) ⇒ {
       (serverActor ? GetStats).mapTo[Stats].onComplete {
@@ -101,7 +101,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
     case RequestContext(HttpRequest(GET, uri, headers, body, protocol), _, responder) ⇒
       //+ Main business logic REST URIs are matched here
-      val millis = TimeHelpers.nowMillis
+      val millis = TimeHelpers.nowMillis()
       uri match {
         case UserBalancePath(userId) ⇒
           callDispatcher(RequestUserBalance(userId, millis), responder)

@@ -54,7 +54,7 @@ class PerfTest extends DSLUtils with DSL {
     assumeTrue(LogicTestsAssumptions.EnablePerfTests)
 
     val iter = 1000
-    var start = TimeHelpers.nowMillis
+    var start = TimeHelpers.nowMillis()
     var numResolved = 0
 
     val from = new Date(0)
@@ -86,7 +86,7 @@ class PerfTest extends DSLUtils with DSL {
         numResolved += allEffectiveTimeslots(tf, Timeslot(new Date(min), new Date(max))).size
     }
 
-    var total = TimeHelpers.nowMillis - start
+    var total = TimeHelpers.nowMillis() - start
     print("allEffectiveTimeslots: %d calls in %s msec. (%s resolved)\n".format(iter, total, numResolved))
   }
 }
