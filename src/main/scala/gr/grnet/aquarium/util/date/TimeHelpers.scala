@@ -54,6 +54,6 @@ object TimeHelpers {
     val ms0 = nowMillis
     val u = f
     val ms1 = nowMillis
-    (ms0, ms1, f)
+    (ms0, ms1, u)
   }
 }

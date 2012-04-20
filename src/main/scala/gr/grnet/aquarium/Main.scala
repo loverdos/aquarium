@@ -131,11 +131,9 @@ object Main extends LazyLoggable {
   }
 
   def main(args: Array[String]) = {
-    import ResourceLocator.AQUARIUM_HOME_FOLDER
-
     configureLogging()
 
-    logStarting("Aquarium from %s", AQUARIUM_HOME_FOLDER)
+    logStarting("Aquarium from %s", ResourceLocator.AQUARIUM_HOME_FOLDER)
     val (ms0, ms1, _) = TimeHelpers.timed {
       doStart()
     }
