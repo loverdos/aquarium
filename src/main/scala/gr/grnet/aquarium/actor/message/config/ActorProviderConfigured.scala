@@ -36,12 +36,12 @@
 package gr.grnet.aquarium.actor.message
 package config
 
-import gr.grnet.aquarium.actor.provider.ActorProvider
+import gr.grnet.aquarium.service.ActorProviderService
 
 /**
- * Sent with the configured [[gr.grnet.aquarium.actor.provider.ActorProvider]].
+ * Sent with the configured [[gr.grnet.aquarium.service.ActorProviderService]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class ActorProviderConfigured(actorProvider: ActorProvider) extends ActorConfigurationMessage
+case class ActorProviderConfigured(actorProvider: ActorProviderService) extends ActorConfigurationMessage

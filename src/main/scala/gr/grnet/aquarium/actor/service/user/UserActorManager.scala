@@ -37,13 +37,12 @@ package gr.grnet.aquarium.actor
 package service
 package user
 
-import gr.grnet.aquarium.util.Loggable
 import akka.actor.ActorRef
 import gr.grnet.aquarium.actor._
 import message.config.user.UserActorInitWithUserId
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import message.service.dispatcher._
-import provider.ActorProvider
+import gr.grnet.aquarium.service.ActorProviderService
 
 
 /**
@@ -62,7 +61,7 @@ import provider.ActorProvider
 
 class UserActorManager extends ReflectiveAquariumActor {
   @volatile
-  private[this] var _actorProvider: ActorProvider = _
+  private[this] var _actorProvider: ActorProviderService = _
 
   def role = UserActorManagerRole
 

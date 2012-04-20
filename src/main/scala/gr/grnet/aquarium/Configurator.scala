@@ -41,10 +41,9 @@ import com.ckkloverdos.maybe._
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 
-import gr.grnet.aquarium.actor.provider.ActorProvider
+import gr.grnet.aquarium.service._
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.store._
-import service.{AkkaService, IMEventProcessorService, ResourceEventProcessorService}
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -81,9 +80,9 @@ class Configurator(val props: Props) extends Loggable {
 
   }
 
-  private[this] lazy val _actorProvider: ActorProvider = {
-    val instance = newInstance[ActorProvider](props.getEx(Keys.actor_provider_class))
-    logger.info("Loaded ActorProvider: %s".format(instance.getClass))
+  private[this] lazy val _actorProvider: ActorProviderService = {
+    val instance = newInstance[ActorProviderService](props.getEx(Keys.actor_provider_class))
+    logger.info("Loaded ActorProviderService: %s".format(instance.getClass))
     instance
   }
 
@@ -351,7 +350,7 @@ object Configurator {
     final val version = "version"
 
     /**
-     * The fully qualified name of the class that implements the `ActorProvider`.
+     * The fully qualified name of the class that implements the `ActorProviderService`.
      * Will be instantiated reflectively and should have a public default constructor.
      */
     final val actor_provider_class = "actor.provider.class"

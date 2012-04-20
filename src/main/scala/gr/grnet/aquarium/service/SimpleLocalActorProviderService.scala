@@ -33,8 +33,7 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-package provider
+package gr.grnet.aquarium.service
 
 import com.ckkloverdos.props.Props
 import akka.actor.ActorRef
@@ -42,8 +41,8 @@ import gr.grnet.aquarium.Configurable
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.actor.ActorRole
 import gr.grnet.aquarium.actor.message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
+import gr.grnet.aquarium.actor._
 
 
 /**
@@ -51,7 +50,7 @@ import gr.grnet.aquarium.actor.message.config.{AquariumPropertiesLoaded, ActorPr
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class SimpleLocalActorProvider extends ActorProvider with Configurable with Loggable {
+class SimpleLocalActorProviderService extends ActorProviderService with Configurable with Loggable {
   private[this] val actorCache = new ConcurrentHashMap[ActorRole, ActorRef]
   private[this] var _props: Props = _
 
@@ -62,7 +61,7 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
 
   private[this] def __doStart(): Unit = {
     // Start and configure actors
-    val RolesToBeStarted = SimpleLocalActorProvider.RolesToBeStarted
+    val RolesToBeStarted = SimpleLocalActorProviderService.RolesToBeStarted
     val message = ActorProviderConfigured(this)
 
     for(role <- RolesToBeStarted) {
@@ -125,7 +124,7 @@ class SimpleLocalActorProvider extends ActorProvider with Configurable with Logg
   override def toString = gr.grnet.aquarium.util.shortClassNameOf(this)
 }
 
-object SimpleLocalActorProvider {
+object SimpleLocalActorProviderService {
   // Always set Dispatcher at the end.
   // We could definitely use some automatic dependency sorting here (topological sorting anyone?)
   final val RolesToBeStarted = List(

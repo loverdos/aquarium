@@ -33,8 +33,7 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-package provider
+package gr.grnet.aquarium.service
 
 import akka.actor.ActorRef
 import com.ckkloverdos.props.Props
@@ -45,7 +44,7 @@ import gr.grnet.aquarium.actor.ActorRole
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait ActorProvider extends Lifecycle {
+trait ActorProviderService extends Lifecycle {
   /**
    * Tries to find and provide the actor of specific `role`.
    * Any extra info needed for the provision is given with the `hints` parameter.

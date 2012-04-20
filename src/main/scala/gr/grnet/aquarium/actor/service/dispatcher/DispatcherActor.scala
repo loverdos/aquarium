@@ -38,7 +38,7 @@ package service
 package dispatcher
 
 import gr.grnet.aquarium.util.Loggable
-import provider.ActorProvider
+import gr.grnet.aquarium.service.ActorProviderService
 import message.config.ActorProviderConfigured
 import message.service.dispatcher._
 
@@ -48,7 +48,7 @@ import message.service.dispatcher._
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 class DispatcherActor extends AquariumActor with Loggable {
-  private[this] var _actorProvider: ActorProvider = _
+  private[this] var _actorProvider: ActorProviderService = _
 
   def role = DispatcherRole
 
