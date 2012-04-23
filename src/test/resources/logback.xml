@@ -8,7 +8,7 @@
 
   <logger name="ch.qos.logback" level="DEBUG"/>
 
-  <logger name="com.ckkloverdos" level="INFO"/>
+  <logger name="com.ckkloverdos" level="DEBUG"/>
 
   <logger name="cc.spray.can" level="DEBUG"/>
 

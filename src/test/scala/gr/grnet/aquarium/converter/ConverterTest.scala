@@ -39,6 +39,10 @@ import net.liftweb.json._
 import org.junit.{Assert, Test}
 import gr.grnet.aquarium.AquariumException
 import gr.grnet.aquarium.converter.StdConverters.{StdConverters ⇒ Converters}
+import com.mongodb.DBObject
+import gr.grnet.aquarium.store.memory._
+import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.util.Loggable
 
 /**
  *
@@ -98,8 +102,23 @@ object FooSerializer extends Serializer[Foo] {
   }
 }
 
-class ConverterTest {
+class ConverterTest extends Loggable {
   implicit val Formats = JsonConversions.Formats + FooSerializer
+
+  final val jsonIMEvent = """
+  {
+      "clientID": 3,
+      "details": {},
+      "eventType": "modify",
+      "eventVersion": "1",
+      "id": "e6b209c23894098f9b70f08315a97c7753e29ecc",
+      "isActive": false,
+      "occurredMillis": 1333369801087,
+      "receivedMillis": 1333369801087,
+      "role": "default",
+      "userID": "spapagian@grnet.gr"
+  }
+  """
 
   @Test
   def testJSONMapConversion: Unit = {
@@ -141,5 +160,18 @@ class ConverterTest {
     val jValueOfCompact = Converters.convertEx[JValue](compact)
 
     Assert.assertEquals(jValueOfPretty, jValueOfCompact)
+  }
+
+  @Test
+  def testJsonToIMEvent: Unit = {
+    Converters.convertEx[MemIMEvent](JsonTextFormat(jsonIMEvent))
+  }
+
+  @Test
+  def testJsonSupportToDBObject: Unit = {
+    val jsonSupport: JsonSupport = Converters.convertEx[MemIMEvent](JsonTextFormat(jsonIMEvent))
+
+    logger.debug("===============")
+    Converters.convertEx[DBObject](jsonSupport)
   }
 }

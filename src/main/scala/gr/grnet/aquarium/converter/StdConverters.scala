@@ -56,7 +56,7 @@ object StdConverters {
     builder.registerConverter(AnyToJValueConverter)
 
     // Any => PrettyJsonTextFormat
-    builder.registerConverter(AnyToPrettyJsonTexConverter)
+    builder.registerConverter(AnyToPrettyJsonTextConverter)
 
     // Any => CompactJsonTextFormat
     builder.registerConverter(AnyToCompactJsonTextConverter)
@@ -80,7 +80,7 @@ object StdConverters {
     }
   }
 
-  object AnyToPrettyJsonTexConverter extends NonStrictSourceConverterSkeleton[Any, PrettyJsonTextFormat] {
+  object AnyToPrettyJsonTextConverter extends NonStrictSourceConverterSkeleton[Any, PrettyJsonTextFormat] {
     @scala.throws(classOf[ConverterException])
     def convertEx[T: Type](sourceValue: Any) = {
       PrettyJsonTextFormat(JsonConversions.anyToJson(sourceValue, true)(JsonConversions.Formats)).asInstanceOf[T]
