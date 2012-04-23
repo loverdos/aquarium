@@ -45,7 +45,10 @@ import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.uid.ConcurrentVMLocalUIDGenerator
 import gr.grnet.aquarium.{AquariumException, Configurable}
-import gr.grnet.aquarium.events.{IMEvent, WalletEntry, ResourceEvent, PolicyEntry}
+import gr.grnet.aquarium.events.{WalletEntry, ResourceEvent, PolicyEntry}
+import gr.grnet.aquarium.converter.JsonTextFormat
+import gr.grnet.aquarium.util._
+import gr.grnet.aquarium.events.im.{StdIMEvent, IMEventModel}
 
 /**
  * An implementation of various stores that persists data in memory.
@@ -62,6 +65,8 @@ class MemStore extends UserStateStore
   with WalletEntryStore
   with StoreProvider {
 
+  override type IMEvent = MemIMEvent
+
   private[this] val idGen = new ConcurrentVMLocalUIDGenerator(1000)
   
   private[this] var _userStates     = List[UserState]()
@@ -69,7 +74,7 @@ class MemStore extends UserStateStore
   private[this] var _resourceEvents = List[ResourceEvent]()
 
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
-  private[this] val imEventById: ConcurrentMap[String, IMEvent] = new ConcurrentHashMap[String, IMEvent]()
+  private[this] val imEventById: ConcurrentMap[String, MemIMEvent] = new ConcurrentHashMap[String, MemIMEvent]()
 
   def configure(props: Props) = {
   }
@@ -266,9 +271,21 @@ class MemStore extends UserStateStore
   //- ResourceEventStore
 
   //+ IMEventStore
+  def createIMEventFromJson(json: String) = {
+    MemStore.createIMEventFromJson(json)
+  }
+
+  def isLocalIMEvent(event: IMEventModel) = {
+    MemStore.isLocalIMEvent(event)
+  }
+
+  def createIMEventFromOther(event: IMEventModel) = {
+    MemStore.createIMEventFromOther(event)
+  }
+
   def storeUnparsed(json: String) = throw new AquariumException("Not implemented")
 
-  def storeIMEvent(event: IMEvent) = {imEventById += (event.id -> event); RecordID(event.id)}
+  def storeIMEvent(event: IMEventModel) = {imEventById += (event.id -> createIMEventFromOther(event)); RecordID(event.id)}
 
   def findIMEventById(id: String) = Maybe{imEventById.getOrElse(id, null)}
 
@@ -293,5 +310,37 @@ class MemStore extends UserStateStore
   def findPolicyEntry(id: String) = _policyEntries.find(p => p.id == id) match {
     case Some(x) => Just(x)
     case None => NoVal
+  }
+}
+
+object MemStore {
+  def createIMEventFromOther(event: IMEventModel) = {
+    if(event.isInstanceOf[MemIMEvent]) event.asInstanceOf[MemIMEvent]
+    else new StdIMEvent(
+      event.id,
+      event.occurredMillis,
+      event.receivedMillis,
+      event.userID,
+      event.clientID,
+      event.isActive,
+      event.role,
+      event.eventVersion,
+      event.eventType,
+      event.details
+    ): MemIMEvent
+  }
+
+  final def createIMEventFromJson(json: String) = {
+    import gr.grnet.aquarium.converter.StdConverters.StdConverters
+    StdConverters.convertEx[MemIMEvent](JsonTextFormat(json))
+  }
+
+  final def createIMEventFromJsonBytes(jsonBytes: Array[Byte]) = {
+    createIMEventFromJson(makeString(jsonBytes))
+  }
+
+  final def isLocalIMEvent(event: IMEventModel) = event match {
+    case _: MemIMEvent ⇒ true
+    case _ ⇒ false
   }
 }

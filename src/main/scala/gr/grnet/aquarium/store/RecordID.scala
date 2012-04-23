@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.store
 
 /**
- * Represents an ID given to a (JSON) document by the store.
+ * Represents an ID given by a store to a data object (document).
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-case class RecordID(id: String)
+case class RecordID(id: AnyRef)

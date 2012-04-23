@@ -35,68 +35,61 @@
 
 package gr.grnet.aquarium
 package events
+package im
 
 import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.Configurator._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import converter.{StdConverters, JsonTextFormat}
-import org.bson.types.ObjectId
 
 /**
  * Represents an event from the `Identity Management` (IM) external system.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class  IMEvent(
-    override val id: String,           // The id at the sender side
-    override val occurredMillis: Long, // When it occurred at the sender side
-    override val receivedMillis: Long, // When it was received by Aquarium
-    userID: String,
-    clientID: String,
-    isActive: Boolean,
-    role: String,
-    override val eventVersion: String,
-    eventType: String,
-    override val details: Map[String, String],
-    _id: ObjectId = new ObjectId())
-  extends AquariumEvent(id, occurredMillis, receivedMillis) with IMEventModel {
+case class _IMEvent(
+                    override val id: String, // The id at the sender side
+                    override val occurredMillis: Long, // When it occurred at the sender side
+                    override val receivedMillis: Long, // When it was received by Aquarium
+                    override val userID: String,
+                    clientID: String,
+                    isActive: Boolean,
+                    role: String,
+                    override val eventVersion: String,
+                    eventType: String,
+                    override val details: Map[String, String],
+                    _id: String = "")
+  extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, eventVersion) with IMEventModel {
 
 
-//  assert(eventType.equalsIgnoreCase(IMEvent.EventTypes.create) ||
-//    eventType.equalsIgnoreCase(IMEvent.EventTypes.modify))
+  //  assert(eventType.equalsIgnoreCase(IMEvent.EventTypes.create) ||
+  //    eventType.equalsIgnoreCase(IMEvent.EventTypes.modify))
 
-//  assert(!role.isEmpty)
-
-  override def storeID = {
-    _id match {
-      case null ⇒ None
-      case _    ⇒ Some(_id)
-    }
-  }
+  //  assert(!role.isEmpty)
 
   /**
    * Validate this event according to the following rules:
    *
    * Valid event states: `(eventType, state)`:
-   *  - `a := CREATE, ACTIVE`
-   *  - `b := MODIFY, ACTIVE`
-   *  - `c := MODIFY, SUSPENDED`
+   * - `a := CREATE, ACTIVE`
+   * - `b := MODIFY, ACTIVE`
+   * - `c := MODIFY, SUSPENDED`
    *
    * Valid transitions:
-   *  - `(non-existent) -> a`
-   *  - `a -> c`
-   *  - `c -> b`
+   * - `(non-existent) -> a`
+   * - `a -> c`
+   * - `c -> b`
    */
   def validate: Boolean = {
 
     MasterConfigurator.userStateStore.findUserStateByUserId(userID) match {
       case Just(x) =>
-        if (eventType.equalsIgnoreCase(IMEvent.EventTypes.create)){
+        if(eventType.equalsIgnoreCase(_IMEvent.EventTypes.create)) {
           logger.warn("User to create exists: IMEvent".format(this.toJson));
           return false
         }
       case NoVal =>
-        if (!eventType.equalsIgnoreCase(IMEvent.EventTypes.modify)){
+        if(!eventType.equalsIgnoreCase(_IMEvent.EventTypes.modify)) {
           logger.warn("Inexistent user to modify. IMEvent:".format(this.toJson))
           return false
         }
@@ -107,30 +100,22 @@ case class  IMEvent(
     true
   }
 
-  def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
-
-  def isCreateUser = eventType.equalsIgnoreCase(IMEvent.EventTypes.create)
-
-  def isModifyUser = eventType.equalsIgnoreCase(IMEvent.EventTypes.modify)
-
-  def isStateActive = isActive
-
-  def isStateSuspended = !isActive
+  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 }
 
-object IMEvent {
+object _IMEvent {
 
   object EventTypes {
     val create = "create"
     val modify = "modify"
   }
 
-  def fromJson(json: String): IMEvent = {
-    StdConverters.StdConverters.convertEx[IMEvent](JsonTextFormat(json))
+  def fromJson(json: String): _IMEvent = {
+    StdConverters.StdConverters.convertEx[_IMEvent](JsonTextFormat(json))
   }
 
-  def fromBytes(bytes: Array[Byte]): IMEvent = {
-    StdConverters.StdConverters.convertEx[IMEvent](JsonTextFormat(makeString(bytes)))
+  def fromBytes(bytes: Array[Byte]): _IMEvent = {
+    StdConverters.StdConverters.convertEx[_IMEvent](JsonTextFormat(makeString(bytes)))
   }
 
   object JsonNames {
@@ -147,4 +132,5 @@ object IMEvent {
     final val eventType = "eventType"
     final val details = "details"
   }
+
 }

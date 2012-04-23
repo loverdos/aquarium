@@ -35,15 +35,14 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import gr.grnet.aquarium.util.Loggable
 import com.mongodb.util.JSON
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.user.UserState.{JsonNames => UserStateJsonNames}
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
+import gr.grnet.aquarium.events.im.IMEventModel.{Names => IMEventNames}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.events.ResourceEvent.{JsonNames => ResourceJsonNames}
-import gr.grnet.aquarium.events.IMEvent.{JsonNames => UserEventJsonNames}
 import gr.grnet.aquarium.events.WalletEntry.{JsonNames => WalletJsonNames}
 import gr.grnet.aquarium.events.PolicyEntry.{JsonNames => PolicyJsonNames}
 import java.util.Date
@@ -51,7 +50,10 @@ import gr.grnet.aquarium.logic.accounting.Policy
 import com.mongodb._
 import org.bson.types.ObjectId
 import gr.grnet.aquarium.events._
-import com.ckkloverdos.maybe.{MaybeEither, NoVal, Maybe}
+import com.ckkloverdos.maybe.{NoVal, Maybe}
+import im.IMEventModel
+import gr.grnet.aquarium.util._
+import gr.grnet.aquarium.converter.StdConverters
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -71,10 +73,12 @@ class MongoDBStore(
   with PolicyStore
   with Loggable {
 
+  override type IMEvent = MongoDBIMEvent
+
   private[store] lazy val resourceEvents   = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
   private[store] lazy val userStates       = getCollection(MongoDBStore.USER_STATES_COLLECTION)
-  private[store] lazy val imEvents         = getCollection(MongoDBStore.USER_EVENTS_COLLECTION)
-  private[store] lazy val unparsedIMEvents = getCollection(MongoDBStore.UNPARSED_USER_EVENTS_COLLECTION)
+  private[store] lazy val imEvents         = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
+  private[store] lazy val unparsedIMEvents = getCollection(MongoDBStore.UNPARSED_IM_EVENTS_COLLECTION)
   private[store] lazy val walletEntries    = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
   private[store] lazy val policyEntries    = getCollection(MongoDBStore.POLICY_ENTRIES_COLLECTION)
 
@@ -93,7 +97,7 @@ class MongoDBStore(
     else true
   }
 
-  private[this] def _sortByTimestampDesc[A <: AquariumEvent](one: A, two: A): Boolean = {
+  private[this] def _sortByTimestampDesc[A <: AquariumEventSkeleton](one: A, two: A): Boolean = {
     if (one.occurredMillis < two.occurredMillis) false
     else if (one.occurredMillis > two.occurredMillis) true
     else true
@@ -319,28 +323,39 @@ class MongoDBStore(
   //-WalletEntryStore
 
   //+IMEventStore
+  def isLocalIMEvent(event: IMEventModel) = {
+    MongoDBStore.isLocalIMEvent(event)
+  }
+
+  def createIMEventFromJson(json: String) = {
+    MongoDBStore.createIMEventFromJson(json)
+  }
+
+  def createIMEventFromOther(event: IMEventModel) = {
+    MongoDBStore.createIMEventFromOther(event)
+  }
+
   def storeUnparsed(json: String): Maybe[RecordID] = {
     MongoDBStore.storeJustJson(json, unparsedIMEvents)
   }
 
-  def storeIMEvent(event: IMEvent): RecordID = {
+  def storeIMEvent(_event: IMEventModel): RecordID = {
+    val event = createIMEventFromOther(_event)
     MongoDBStore.storeAny[IMEvent](
       event,
       imEvents,
-      UserEventJsonNames.userID,
+      IMEventNames.userID,
       _.userID,
       MongoDBStore.jsonSupportToDBObject
     )
   }
 
-
-
   def findIMEventById(id: String): Maybe[IMEvent] =
-    MongoDBStore.findById[IMEvent](id, imEvents, MongoDBStore.dbObjectToUserEvent)
+    MongoDBStore.findById[IMEvent](id, imEvents, MongoDBStore.dbObjectToIMEvent)
 
   def findIMEventsByUserId(userId: String): List[IMEvent] = {
-    val query = new BasicDBObject(UserEventJsonNames.userID, userId)
-    MongoDBStore.runQuery(query, imEvents)(MongoDBStore.dbObjectToUserEvent)(Some(_sortByTimestampAsc))
+    val query = new BasicDBObject(IMEventNames.userID, userId)
+    MongoDBStore.runQuery(query, imEvents)(MongoDBStore.dbObjectToIMEvent)(Some(_sortByTimestampAsc))
   }
   //-IMEventStore
 
@@ -387,20 +402,20 @@ object MongoDBStore {
   final val USER_STATES_COLLECTION = "userstates"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.events.IMEvent]]s.
+   * Collection holding [[gr.grnet.aquarium.events.im.IMEventModel]]s.
    *
    * User events are coming from the IM module (external).
    */
-  final val USER_EVENTS_COLLECTION = "userevents"
+  final val IM_EVENTS_COLLECTION = "imevents"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.events.IMEvent]]s that could not be parsed to normal objects.
+   * Collection holding [[gr.grnet.aquarium.events.im.IMEventModel]]s that could not be parsed to normal objects.
    *
    * We of course assume at least a valid JSON representation.
    *
    * User events are coming from the IM module (external).
    */
-  final val UNPARSED_USER_EVENTS_COLLECTION = "unparsed_userevents"
+  final val UNPARSED_IM_EVENTS_COLLECTION = "unparsed_imevents"
 
   /**
    * Collection holding [[gr.grnet.aquarium.events.WalletEntry]].
@@ -434,8 +449,8 @@ object MongoDBStore {
     WalletEntry.fromJson(JSON.serialize(dbObj))
   }
 
-  def dbObjectToUserEvent(dbObj: DBObject): IMEvent = {
-    IMEvent.fromJson(JSON.serialize(dbObj))
+  def dbObjectToIMEvent(dbObj: DBObject): MongoDBIMEvent = {
+    MongoDBIMEvent.fromJson(JSON.serialize(dbObj))
   }
 
   def dbObjectToPolicyEntry(dbObj: DBObject): PolicyEntry = {
@@ -512,22 +527,36 @@ object MongoDBStore {
                   serializer: (A) => DBObject) : RecordID = {
 
     val dbObject = serializer apply any
-    val writeResult = collection insert dbObject
+    val _id = new ObjectId()
+    dbObject.put("_id", _id)
+    val writeResult = collection.insert(dbObject, WriteConcern.JOURNAL_SAFE)
     writeResult.getLastError().throwOnError()
 
     RecordID(dbObject.get("_id").toString)
   }
 
-  def jsonSupportToDBObject(any: JsonSupport): DBObject = {
-    jsonStringToDBObject(any.toJson)
+  def jsonSupportToDBObject(jsonSupport: JsonSupport): DBObject = {
+    StdConverters.StdConverters.convertEx[DBObject](jsonSupport)
   }
 
-  def jsonStringToDBObject(json: String): DBObject = {
-    JSON.parse(json) match {
-      case dbObject: DBObject ⇒
-        dbObject
-      case _ ⇒
-        throw new StoreException("Could not transform %s -> %s".format(json.getClass, classOf[DBObject].getName))
-    }
+  def jsonStringToDBObject(jsonString: String): DBObject = {
+    StdConverters.StdConverters.convertEx[DBObject](jsonString)
+  }
+
+  final def isLocalIMEvent(event: IMEventModel) = event match {
+    case _: MongoDBIMEvent ⇒ true
+    case _ ⇒ false
+  }
+
+  final def createIMEventFromJson(json: String) = {
+    MongoDBIMEvent.fromJson(json)
+  }
+
+  final def createIMEventFromOther(event: IMEventModel) = {
+    MongoDBIMEvent.fromOther(event)
+  }
+
+  final def createIMEventFromJsonBytes(jsonBytes: Array[Byte]) = {
+    MongoDBIMEvent.fromJsonBytes(jsonBytes)
   }
 }

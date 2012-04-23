@@ -74,7 +74,7 @@ class DispatcherActor extends AquariumActor with Loggable {
     case m@ProcessResourceEvent(resourceEvent) ⇒
       _forwardToUserManager(m)
 
-    case m@ProcessUserEvent(userEvent) ⇒
+    case m@ProcessIMEvent(userEvent) ⇒
       _forwardToUserManager(m)
 
     case m@AdminRequestPingAll ⇒

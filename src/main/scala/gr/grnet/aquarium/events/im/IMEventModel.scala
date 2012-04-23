@@ -33,19 +33,48 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.events
+package gr.grnet.aquarium.events.im
+
+import gr.grnet.aquarium.events.AquariumEventModel
 
 /**
  * The model of any event sent from the `Identity Management` (IM) external system.
- *
- * We use this to not reveal storage-specific stuff, like IDs.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 trait IMEventModel extends AquariumEventModel {
   def clientID: String
+
   def isActive: Boolean
+
   def role: String
+
   def eventType: String
+
+  def isStateActive = isActive
+
+  def isStateSuspended = !isActive
+
+  def isCreateUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.create)
+
+  def isModifyUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.modify)
+}
+
+object IMEventModel {
+  trait NamesT extends AquariumEventModel.NamesT {
+    final val clientID = "clientID"
+    final val isActive = "isActive"
+    final val role = "role"
+    final val eventType = "eventType"
+  }
+
+  object Names extends NamesT
+
+  trait EventTypeNamesT {
+    final val create = "create"
+    final val modify = "modify"
+  }
+
+  object EventTypeNames extends EventTypeNamesT
 }

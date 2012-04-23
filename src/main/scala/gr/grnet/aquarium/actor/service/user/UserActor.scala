@@ -51,7 +51,8 @@ import gr.grnet.aquarium.messaging.AkkaAMQP
 import gr.grnet.aquarium.actor.message.config.user.UserActorInitWithUserId
 import gr.grnet.aquarium.actor.message.service.dispatcher._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
-import gr.grnet.aquarium.events.{WalletEntry, IMEvent}
+import gr.grnet.aquarium.events.im.IMEventModel
+import gr.grnet.aquarium.events.{WalletEntry}
 
 
 /**
@@ -119,7 +120,7 @@ with Loggable {
   /**
    * Replay user events on the provided user state
    */
-  def replayIMEvents(initState: UserState, events: List[IMEvent],
+  def replayIMEvents(initState: UserState, events: List[IMEventModel],
                        from: Long, to: Long): UserState = {
     initState
   }
@@ -166,7 +167,7 @@ with Loggable {
     }
   }
 
-  private[this] def processCreateUser(event: IMEvent): Unit = {
+  private[this] def processCreateUser(event: IMEventModel): Unit = {
     val userId = event.userID
     DEBUG("Creating user from state %s", event)
     val usersDB = _configurator.storeProvider.userStateStore
@@ -188,7 +189,7 @@ with Loggable {
     }
   }
 
-  private[this] def processModifyUser(event: IMEvent): Unit = {
+  private[this] def processModifyUser(event: IMEventModel): Unit = {
     val now = TimeHelpers.nowMillis()
     val newActive = ActiveStateSnapshot(event.isStateActive, now)
 
@@ -197,7 +198,7 @@ with Loggable {
     this._userState = this._userState.copy(activeStateSnapshot = newActive)
   }
 
-  def onProcessUserEvent(event: ProcessUserEvent): Unit = {
+  def onProcessUserEvent(event: ProcessIMEvent): Unit = {
     val userEvent = event.imEvent
     if(userEvent.userID != this._userId) {
       ERROR("Received %s but my userId = %s".format(userEvent, this._userId))

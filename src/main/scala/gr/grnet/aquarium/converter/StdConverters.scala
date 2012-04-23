@@ -37,6 +37,9 @@ package gr.grnet.aquarium.converter
 
 import net.liftweb.json.JsonAST.JValue
 import com.ckkloverdos.convert._
+import gr.grnet.aquarium.util.json.JsonSupport
+import com.mongodb.util.JSON
+import com.mongodb.DBObject
 
 
 /**
@@ -61,60 +64,62 @@ object StdConverters {
     // JsonTextFormat => AnyRef
     builder.registerConverter(JsonTextToObjectConverter)
 
+    // JsonSupport => DBObject
+    builder.registerConverter(JsonSupportToDBObjectConverter)
+
+    // CharSequence => DBObject
+    builder.registerConverter(CharSequenceToDBObjectConverter)
+
     builder
   }
 
-  object AnyToJValueConverter extends Converter {
-    def canConvertType[S: Manifest, T: Manifest] = {
-      manifest[T].erasure.isAssignableFrom(classOf[JValue])
-    }
-
+  object AnyToJValueConverter extends NonStrictSourceConverterSkeleton[Any, JValue] {
     @scala.throws(classOf[ConverterException])
-    def convertEx[T: Manifest](sourceValue: Any) = {
+    def convertEx[T: Type](sourceValue: Any) = {
       JsonConversions.anyToJValue(sourceValue)(JsonConversions.Formats).asInstanceOf[T]
     }
-
-    def isStrictSource = false
   }
 
-  object AnyToPrettyJsonTexConverter extends Converter {
-    def canConvertType[S: Manifest, T: Manifest] = {
-      manifest[T].erasure == classOf[PrettyJsonTextFormat]
-    }
-
+  object AnyToPrettyJsonTexConverter extends NonStrictSourceConverterSkeleton[Any, PrettyJsonTextFormat] {
     @scala.throws(classOf[ConverterException])
-    def convertEx[T: Manifest](sourceValue: Any) = {
+    def convertEx[T: Type](sourceValue: Any) = {
       PrettyJsonTextFormat(JsonConversions.anyToJson(sourceValue, true)(JsonConversions.Formats)).asInstanceOf[T]
     }
-
-    def isStrictSource = false
   }
 
-  object AnyToCompactJsonTextConverter extends Converter {
-    def canConvertType[S: Manifest, T: Manifest] = {
-      manifest[T].erasure == classOf[CompactJsonTextFormat]
-    }
-
+  object AnyToCompactJsonTextConverter extends NonStrictSourceConverterSkeleton[Any, CompactJsonTextFormat] {
     @scala.throws(classOf[ConverterException])
-    def convertEx[T: Manifest](sourceValue: Any) = {
+    def convertEx[T: Type](sourceValue: Any) = {
       CompactJsonTextFormat(JsonConversions.anyToJson(sourceValue, false)(JsonConversions.Formats)).asInstanceOf[T]
     }
-
-    def isStrictSource = false
   }
 
   object JsonTextToObjectConverter extends Converter {
-    def canConvertType[S: Manifest, T: Manifest] = {
-      manifest[S].erasure.isAssignableFrom(classOf[JsonTextFormat])
+    def isStrictSource = false
+
+    def canConvertType[S: Type, T: Type] = {
+      erasureOf[JsonTextFormat].isAssignableFrom(erasureOf[S])
     }
 
     @scala.throws(classOf[ConverterException])
-    def convertEx[T: Manifest](sourceValue: Any) = {
+    def convertEx[T: Type](sourceValue: Any) = {
       JsonConversions.jsonToObject[T](sourceValue.asInstanceOf[JsonTextFormat].value)(manifest[T], JsonConversions.Formats)
     }
-
-    def isStrictSource = false
   }
+
+  object JsonSupportToDBObjectConverter extends NonStrictSourceConverterSkeleton[JsonTextFormat, DBObject] {
+    @scala.throws(classOf[ConverterException])
+    def convertEx[T: Type](sourceValue: Any) = {
+      JSON.parse(sourceValue.asInstanceOf[JsonSupport].toJson).asInstanceOf[T]
+    }
+  }
+
+  object CharSequenceToDBObjectConverter extends NonStrictSourceConverterSkeleton[CharSequence, DBObject] {
+    @scala.throws(classOf[ConverterException])
+    def convertEx[T: Type](sourceValue: Any) = {
+      JSON.parse(sourceValue.asInstanceOf[CharSequence].toString).asInstanceOf[T]
+    }
+ }
 
   final val StdConverters: Converters = builder.build
 }

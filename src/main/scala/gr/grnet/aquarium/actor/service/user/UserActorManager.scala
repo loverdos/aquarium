@@ -109,7 +109,7 @@ class UserActorManager extends ReflectiveAquariumActor {
     _forwardToUserActor(m.rcEvent.userID, m)
   }
 
-  def onProcessUserEvent(m: ProcessUserEvent): Unit = {
+  def onProcessIMEvent(m: ProcessIMEvent): Unit = {
     _forwardToUserActor(m.imEvent.userID, m)
   }
 

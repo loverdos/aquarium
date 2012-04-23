@@ -40,31 +40,34 @@ import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.Configurator
-import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessUserEvent
-import gr.grnet.aquarium.events.IMEvent
+import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessIMEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{LogHelpers, makeString}
 import com.ckkloverdos.maybe._
+import gr.grnet.aquarium.events.im.IMEventModel
+import gr.grnet.aquarium.store.memory.MemStore
 
 /**
  * An event processor service for user events coming from the IM system
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class IMEventProcessorService extends EventProcessorService[IMEvent] {
+class IMEventProcessorService extends EventProcessorService[IMEventModel] {
 
-  override def decode(data: Array[Byte]) = IMEvent.fromBytes(data)
+  override def parseJsonBytes(data: Array[Byte]) = {
+    MemStore.createIMEventFromJsonBytes(data)
+  }
 
-  override def forward(event: IMEvent) = {
+  override def forward(event: IMEventModel) = {
     if(event ne null) {
-      _configurator.actorProvider.actorForRole(DispatcherRole) ! ProcessUserEvent(event)
+      _configurator.actorProvider.actorForRole(DispatcherRole) ! ProcessIMEvent(event)
     }
   }
 
-  override def exists(event: IMEvent) =
+  override def exists(event: IMEventModel) =
     _configurator.imEventStore.findIMEventById(event.id).isJust
 
-  override def persist(event: IMEvent, initialPayload: Array[Byte]) = {
+  override def persist(event: IMEventModel, initialPayload: Array[Byte]) = {
     // 1. Store to local FS for debugging purposes.
     //    BUT be resilient to errors, since this is not critical
     if(_configurator.eventsStoreFolder.isJust) {

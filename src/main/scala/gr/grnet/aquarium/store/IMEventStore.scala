@@ -36,20 +36,34 @@
 package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.events.IMEvent
+import gr.grnet.aquarium.events.im.IMEventModel
+import gr.grnet.aquarium.util.makeString
 
 /**
  * Store for external user events
  *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 trait IMEventStore {
+  type IMEvent <: IMEventModel
+
+  def isLocalIMEvent(event: IMEventModel): Boolean
+
+  def createIMEventFromJson(json: String): IMEvent
+
+  def createIMEventFromJsonBytes(jsonBytes: Array[Byte]) = {
+    createIMEventFromJson(makeString(jsonBytes))
+  }
+
+  def createIMEventFromOther(event: IMEventModel): IMEvent
+
   def storeUnparsed(json: String): Maybe[RecordID]
 
   /**
    * Store an event
    */
-  def storeIMEvent(event: IMEvent): RecordID
+  def storeIMEvent(event: IMEventModel): RecordID
 
   /**
    * Find a user event by event ID

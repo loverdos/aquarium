@@ -51,7 +51,7 @@ import gr.grnet.aquarium.util.date.TimeHelpers
  */
 final class ResourceEventProcessorService extends EventProcessorService[ResourceEvent] {
 
-  override def decode(data: Array[Byte]) = ResourceEvent.fromBytes(data)
+  override def parseJsonBytes(data: Array[Byte]) = ResourceEvent.fromBytes(data)
 
   override def forward(event: ResourceEvent): Unit = {
     if(event ne null) {

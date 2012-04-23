@@ -59,8 +59,8 @@ case class WalletEntry(
     userId: String,
     resource: String,
     instanceId: String,
-    finalized: Boolean)
-  extends AquariumEvent(id, occurredMillis, receivedMillis) {
+    finalized: Boolean, userID: String = "")
+  extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, "1.0") {
 
 
   assert(occurredMillis > 0)
@@ -73,7 +73,7 @@ case class WalletEntry(
     sourceEventIDs contains rceId
   }
 
-  def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
   def occurredDate = new Date(occurredMillis)
   def receivedDate = new Date(receivedMillis)

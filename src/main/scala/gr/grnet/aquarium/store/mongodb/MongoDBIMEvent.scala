@@ -33,51 +33,70 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package events
+package gr.grnet.aquarium.store.mongodb
 
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import java.util.Date
-import converter.{JsonTextFormat, StdConverters}
+import org.bson.types.ObjectId
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.util._
+import gr.grnet.aquarium.events.im.{IMEventModel, StdIMEvent}
+
 
 /**
- * Store entry for serialized policy data.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class PolicyEntry(
-  override val id: String,           //SHA-1 of the provided policyYaml string
-  override val occurredMillis: Long, //Time this event was stored
-  override val receivedMillis: Long, //Does not make sense for local events -> not used
-  policyYAML: String,                //The serialized policy
-  validFrom: Long,                   //The timestamp since when the policy is valid
-  validTo: Long,                      //The timestamp until when the policy is valid
-  userID: String = ""
+
+case class MongoDBIMEvent(
+   override val id: String,
+   override val occurredMillis: Long,
+   override val receivedMillis: Long,
+   override val userID: String,
+   override val clientID: String,
+   override val isActive: Boolean,
+   override val role: String,
+   override val eventVersion: String,
+   override val eventType: String,
+   override val details: Map[String, String],
+   _id: ObjectId
 )
-extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, "1.0") {
+extends StdIMEvent(
+   id,
+   occurredMillis,
+   receivedMillis,
+   userID,
+   clientID,
+   isActive,
+   role,
+   eventVersion,
+   eventType,
+   details
+ ) {
 
-  assert(if(validTo != -1) validTo > validFrom else validFrom > 0)
-
-  def validate = true
-
-  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
-
-  def fromToTimeslot = Timeslot(new Date(validFrom), new Date(validTo))
+  override def withReceivedMillis(newReceivedMillis: Long) = this.copy(receivedMillis = newReceivedMillis)
 }
 
-object PolicyEntry {
-
-  def fromJson(json: String): PolicyEntry = {
-    StdConverters.StdConverters.convertEx[PolicyEntry](JsonTextFormat(json))
+object MongoDBIMEvent {
+  final def fromJson(json: String): MongoDBIMEvent = {
+    StdConverters.StdConverters.convertEx[MongoDBIMEvent](JsonTextFormat(json))
   }
 
-  object JsonNames {
-    final val _id = "_id"
-    final val id = "id"
-    final val occurredMillis = "occurredMillis"
-    final val receivedMillis = "receivedMillis"
-    final val policyYAML = "policyYAML"
-    final val validFrom = "validFrom"
-    final val validTo = "validTo"
+  final def fromJsonBytes(jsonBytes: Array[Byte]): MongoDBIMEvent = {
+    fromJson(makeString(jsonBytes))
+  }
+
+  final def fromOther(event: IMEventModel, _id: ObjectId = null): MongoDBIMEvent = {
+    MongoDBIMEvent(
+      event.id,
+      event.occurredMillis,
+      event.receivedMillis,
+      event.userID,
+      event.clientID,
+      event.isActive,
+      event.role,
+      event.eventVersion,
+      event.eventType,
+      event.details,
+      _id
+    )
   }
 }

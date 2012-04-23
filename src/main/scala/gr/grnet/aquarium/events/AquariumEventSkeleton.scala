@@ -46,25 +46,29 @@ import util.Loggable
  * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-abstract class AquariumEvent(
-    val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    val occurredMillis: Long, // When it occurred at client side (the sender)
-    val receivedMillis: Long) // When it was received by Aquarium
+abstract class AquariumEventSkeleton(
+    _id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
+    _occurredMillis: Long, // When it occurred at client side (the sender)
+    _receivedMillis: Long, // When it was received by Aquarium
+    _eventVersion: String
+)
   extends AquariumEventModel
   with    XmlSupport
   with    Loggable {
 
-  def validate: Boolean
+  def id = _id
+  def occurredMillis = _occurredMillis
+  def receivedMillis = _receivedMillis
+  def eventVersion = _eventVersion
 
   def toBytes: Array[Byte] = {
     toJson.getBytes("UTF-8")
   }
 
-  def storeID: Option[AnyRef] = Some(id)
+  def storeID: Option[AnyRef] = _id match {
+    case null ⇒ None
+    case _id  ⇒ Some(_id)
+  }
 
   def details: Map[String, String] = Map()
-
-  def eventVersion = "1.0"
-
-  def copyWithReceivedMillis(receivedMillis: Long): AquariumEvent
 }

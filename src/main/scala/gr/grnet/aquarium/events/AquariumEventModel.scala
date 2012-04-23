@@ -47,7 +47,7 @@ trait AquariumEventModel extends JsonSupport {
   def id: String
   def occurredMillis: Long
   def receivedMillis: Long
-//  def userID: String
+  def userID: String
   def eventVersion: String
   def details: Map[String, String]
 
@@ -56,4 +56,21 @@ trait AquariumEventModel extends JsonSupport {
    * The exact type of the id is store-specific.
    */
   def storeID: Option[AnyRef]
+
+  def isStoredEvent: Boolean = false
+
+  def withReceivedMillis(newReceivedMillis: Long): AquariumEventModel
+}
+
+object AquariumEventModel {
+  trait NamesT {
+    final val id = "id"
+    final val occurredMillis = "occurredMillis"
+    final val receivedMillis = "receivedMillis"
+    final val userID = "userID"
+    final val eventVersion = "eventVersion"
+    final val details = "details"
+  }
+
+  object Names extends NamesT
 }

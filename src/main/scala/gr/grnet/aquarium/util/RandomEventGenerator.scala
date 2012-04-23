@@ -37,11 +37,13 @@ package gr.grnet.aquarium.util
 
 import akka.amqp._
 import util.Random
-import gr.grnet.aquarium.events.{IMEvent, ResourceEvent}
+import gr.grnet.aquarium.events.ResourceEvent
 import scopt.OptionParser
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import java.lang.StringBuffer
 import gr.grnet.aquarium.logic.accounting.Policy
+import gr.grnet.aquarium.store.memory.MemIMEvent
+import gr.grnet.aquarium.events.im.{StdIMEvent, IMEventModel}
 
 /**
  *  Generates random resource events to use as input for testing and
@@ -65,10 +67,10 @@ trait RandomEventGenerator extends AkkaAMQP {
   /**
    * Generate a random resource event
    */
-  def nextUserEvent(): IMEvent = {
+  def nextUserEvent(): IMEventModel = {
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
 
-    IMEvent(
+    new StdIMEvent(
       id = CryptoUtils.sha1(genRndAsciiString(35)),
       occurredMillis = ts.toLong,
       receivedMillis = ts.toLong,
@@ -91,7 +93,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     (1 to num).foreach {
       n =>
         var event = nextUserEvent()
-        publisher ! Message(event.toBytes, "astakos.user")
+        publisher ! Message(event.toJson.getBytes, "astakos.user")
     }
   }
 
@@ -104,7 +106,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     userIds.filter(_ < num).foreach {
       i =>
         val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
-        val user = IMEvent(
+        val user = new StdIMEvent(
           id = CryptoUtils.sha1(genRndAsciiString(35)),
           occurredMillis = ts.toLong,
           receivedMillis = ts.toLong,
@@ -116,7 +118,7 @@ trait RandomEventGenerator extends AkkaAMQP {
           eventType = "CREATE",
           details = Map()
         )
-        publisher ! Message(user.toBytes, "astakos.user")
+        publisher ! Message(user.toJson.getBytes, "astakos.user")
     }
   }
 

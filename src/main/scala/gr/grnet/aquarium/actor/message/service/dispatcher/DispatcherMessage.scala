@@ -39,7 +39,8 @@ package dispatcher
 
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.events.{IMEvent, ResourceEvent}
+import gr.grnet.aquarium.events.im.IMEventModel
+import gr.grnet.aquarium.events.ResourceEvent
 import gr.grnet.aquarium.converter.{PrettyJsonTextFormat, StdConverters}
 
 
@@ -97,7 +98,7 @@ case class ProcessResourceEvent(rcEvent: ResourceEvent) extends DispatcherMessag
  *
  * Note that the prefix `Process` means that no reply is created or needed.
  */
-case class ProcessUserEvent(imEvent: IMEvent) extends DispatcherMessage
+case class ProcessIMEvent(imEvent: IMEventModel) extends DispatcherMessage
 
 
 case class AdminRequestPingAll() extends DispatcherMessage

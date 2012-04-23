@@ -61,7 +61,7 @@ case class ResourceEvent(
     override val eventVersion: String,
     value: Double,
     override val details: Map[String, String])
-  extends AquariumEvent(id, occurredMillis, receivedMillis) {
+  extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, eventVersion) {
 
   def validate() : Boolean = {
     !safeResource.isEmpty
@@ -195,7 +195,7 @@ case class ResourceEvent(
     }
   }
 
-  def copyWithReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
   /**
    * Find the cost policy of the resource named in this resource event.

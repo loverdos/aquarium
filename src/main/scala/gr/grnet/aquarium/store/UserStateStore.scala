@@ -58,7 +58,7 @@ trait UserStateStore {
     for {
       recordID <- storeUserState(userState)
     } yield {
-      userState.copy(id = recordID.id)
+      userState.copy(id = recordID.id.toString)
     }
   }
 

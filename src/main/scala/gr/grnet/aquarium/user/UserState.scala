@@ -39,9 +39,10 @@ import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.events.{IMEvent, NewWalletEntry, WalletEntry}
+import gr.grnet.aquarium.events.{NewWalletEntry, WalletEntry}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.events.im.IMEventModel
 
 
 /**
@@ -394,7 +395,7 @@ case class RealtimeBillingCalculation(forWhenMillis: Long) extends UserStateChan
   def code = UserStateChangeReasonCodes.RealtimeBillingCode
 }
 
-case class IMEventArrival(imEvent: IMEvent) extends UserStateChangeReason {
+case class IMEventArrival(imEvent: IMEventModel) extends UserStateChangeReason {
   def shouldStoreUserState = true
 
   def shouldStoreCalculatedWalletEntries = false

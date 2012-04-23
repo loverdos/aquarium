@@ -40,7 +40,8 @@ import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.uid.{EAIOUUIDGenerator, UIDGenerator}
-import gr.grnet.aquarium.events.{IMEvent, ResourceEvent}
+import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.events.im.IMEventModel
 
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.
@@ -155,7 +156,7 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeIMEvent(mc: Configurator, event: IMEvent, initialPayload: Array[Byte]): Unit = {
+  def storeIMEvent(mc: Configurator, event: IMEventModel, initialPayload: Array[Byte]): Unit = {
     require(event ne null, "IM event must be not null")
     for(root <- mc.eventsStoreFolder) {
       val uid = UIDGen.nextUID()

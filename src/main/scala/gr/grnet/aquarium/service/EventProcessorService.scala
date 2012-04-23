@@ -49,10 +49,10 @@ import gr.grnet.aquarium.messaging.AkkaAMQP
 import akka.amqp._
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
 import com.ckkloverdos.maybe._
-import gr.grnet.aquarium.events.AquariumEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.{AquariumException, Configurator}
 import gr.grnet.aquarium.store.RecordID
+import gr.grnet.aquarium.events.{AquariumEventModel, AquariumEventSkeleton}
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,
@@ -64,7 +64,7 @@ import gr.grnet.aquarium.store.RecordID
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with Loggable with Lifecycle {
+abstract class EventProcessorService[E <: AquariumEventModel] extends AkkaAMQP with Loggable with Lifecycle {
 
   /* Messages exchanged between the persister and the queuereader */
   case class AckData(msgId: String, deliveryTag: Long, queue: ActorRef)
@@ -103,7 +103,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
 
   protected def _configurator: Configurator = Configurator.MasterConfigurator
 
-  protected def decode(data: Array[Byte]): E
+  protected def parseJsonBytes(data: Array[Byte]): E
 
   protected def forward(event: E): Unit
 
@@ -155,7 +155,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
     def receive = {
       case Delivery(payload, _, deliveryTag, isRedeliver, _, queue) =>
         val eventM = MaybeEither {
-          decode(payload)
+          parseJsonBytes(payload)
         } // either decoded or error
         eventM match {
           case Just(event) ⇒
@@ -174,7 +174,7 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
                 persisterManager.lb ! Persist(event, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
               }
             } else {
-              val eventWithReceivedMillis = event.copyWithReceivedMillis(TimeHelpers.nowMillis()).asInstanceOf[E]
+              val eventWithReceivedMillis = event.withReceivedMillis(TimeHelpers.nowMillis()).asInstanceOf[E]
               persisterManager.lb ! Persist(eventWithReceivedMillis, payload, queueReaderManager.lb, AckData(event.id, deliveryTag, queue.get))
             }
 
@@ -192,8 +192,8 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
                 logger.debug("Sending Acknowledge(deliveryTag) = {}", Acknowledge(deliveryTag))
                 queue ! Acknowledge(deliveryTag)
               case Failed(e) ⇒
-                logger.error("While persisting unparsed event", e)
-                logger.debug("Sending Reject(deliveryTag, true) = {}", Reject(deliveryTag, true))
+                logger.error("Could not persist unparsed event", e)
+                logger.debug("Sending {}", Reject(deliveryTag, true))
                 queue ! Reject(deliveryTag, true)
             }
         }
@@ -241,9 +241,9 @@ abstract class EventProcessorService[E <: AquariumEvent] extends AkkaAMQP with L
           persist(event, initialPayload)
         } forJust { just ⇒
           sender ! PersistOK(ackData)
-        } forFailed { failed ⇒
+        } forFailed { case Failed(e) ⇒
           sender ! PersistFailed(ackData)
-          logger.warn("While persisting {}", event)
+          logger.error("While persisting event", e)
         }
     }
 

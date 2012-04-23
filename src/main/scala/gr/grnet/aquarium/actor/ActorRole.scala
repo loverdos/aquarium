@@ -100,7 +100,7 @@ case object DispatcherRole
                       Set(classOf[RequestUserBalance],
                           classOf[UserRequestGetState],
                           classOf[ProcessResourceEvent],
-                          classOf[ProcessUserEvent],
+                          classOf[ProcessIMEvent],
                           classOf[AdminRequestPingAll]),
                       Set(classOf[ActorProviderConfigured]))
 
@@ -124,7 +124,7 @@ case object UserActorManagerRole
                       Set(classOf[RequestUserBalance],
                           classOf[UserRequestGetState],
                           classOf[ProcessResourceEvent],
-                          classOf[ProcessUserEvent]),
+                          classOf[ProcessIMEvent]),
                       Set(classOf[ActorProviderConfigured],
                           classOf[AquariumPropertiesLoaded]))
 
@@ -136,7 +136,7 @@ case object UserActorRole
                       false,
                       classOf[UserActor],
                       Set(classOf[ProcessResourceEvent],
-                          classOf[ProcessUserEvent],
+                          classOf[ProcessIMEvent],
                           classOf[RequestUserBalance],
                           classOf[UserActorInitWithUserId],
                           classOf[UserRequestGetState]),

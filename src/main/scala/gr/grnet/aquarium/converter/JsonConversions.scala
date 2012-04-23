@@ -38,7 +38,7 @@ package gr.grnet.aquarium.converter
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json._
 import ext.JodaTimeSerializers
-import gr.grnet.aquarium.events.AquariumEvent
+import gr.grnet.aquarium.events.AquariumEventSkeleton
 
 
 /**
@@ -54,7 +54,7 @@ object JsonConversions {
    * The application-wide JSON formats used from the underlying lift-json library.
    */
   implicit val Formats = (DefaultFormats ++ JodaTimeSerializers.all) +
-    FieldSerializer[AquariumEvent]()
+    FieldSerializer[AquariumEventSkeleton]()
 
   /**
    * Converts a value to JSON AST (Abstract Syntax Tree) by acting a bit intelligently, depending on the actual type

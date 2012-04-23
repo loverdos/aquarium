@@ -14,13 +14,13 @@
       <maxHistory>30</maxHistory>
     </rollingPolicy>
     <encoder>
-      <pattern>%-5level %d{HH:mm:ss.SSS} [%thread] %logger{36} - %msg%n</pattern>
+      <pattern>%-5level %d{HH:mm:ss.SSS} %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
 
   <logger name="ch.qos.logback" level="DEBUG"/>
 
-  <logger name="com.ckkloverdos" level="INFO"/>
+  <logger name="com.ckkloverdos" level="DEBUG"/>
 
   <logger name="cc.spray.can" level="DEBUG"/>
 
