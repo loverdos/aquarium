@@ -35,8 +35,9 @@
 
 package gr.grnet.aquarium.util.xml
 
-import net.liftweb.json.Xml
 import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.converter.StdConverters
+import xml.NodeSeq
 
 /**
  * Mix-in this trait when you need transformation to XML.
@@ -50,5 +51,5 @@ import gr.grnet.aquarium.util.json.JsonSupport
  */
 
 trait XmlSupport { this: JsonSupport =>
-  def toXml = Xml.toXml(toJValue).toString()
+  def toXml = StdConverters.StdConverters.convertEx[NodeSeq](toJValue)
 }
