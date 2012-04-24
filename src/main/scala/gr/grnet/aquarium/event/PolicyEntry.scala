@@ -46,15 +46,16 @@ import converter.{JsonTextFormat, StdConverters}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class PolicyEntry(
-  override val id: String,           //SHA-1 of the provided policyYaml string
-  override val occurredMillis: Long, //Time this event was stored
-  override val receivedMillis: Long, //Does not make sense for local events -> not used
-  policyYAML: String,                //The serialized policy
-  validFrom: Long,                   //The timestamp since when the policy is valid
-  validTo: Long,                      //The timestamp until when the policy is valid
-  userID: String = ""
-)
-extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, "1.0") {
+    id: String,           //SHA-1 of the provided policyYaml string
+    occurredMillis: Long, //Time this event was stored
+    receivedMillis: Long, //Does not make sense for local events -> not used
+    policyYAML: String,                //The serialized policy
+    validFrom: Long,                   //The timestamp since when the policy is valid
+    validTo: Long,                      //The timestamp until when the policy is valid
+    eventVersion: String = "1.0",
+    userID: String = "",
+    details: Map[String, String] = Map()
+ ) extends AquariumEventModel {
 
   assert(if(validTo != -1) validTo > validFrom else validFrom > 0)
 
@@ -68,7 +69,7 @@ extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, "1.0") {
 object PolicyEntry {
 
   def fromJson(json: String): PolicyEntry = {
-    StdConverters.StdConverters.convertEx[PolicyEntry](JsonTextFormat(json))
+    StdConverters.AllConverters.convertEx[PolicyEntry](JsonTextFormat(json))
   }
 
   object JsonNames {

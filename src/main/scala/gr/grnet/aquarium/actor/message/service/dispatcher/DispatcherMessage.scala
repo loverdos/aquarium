@@ -64,7 +64,7 @@ sealed trait DispatcherResponseMessage extends DispatcherMessage {
       case null ⇒
         throw new NullPointerException("Unexpected null response body in %s".format(this))
       case other ⇒
-        StdConverters.StdConverters.convertEx[PrettyJsonTextFormat](other).value
+        StdConverters.AllConverters.convertEx[PrettyJsonTextFormat](other).value
     }
   }
 }

@@ -45,11 +45,11 @@ import gr.grnet.aquarium.util.shortClassNameOf
 
 sealed class JsonTextFormat private[converter](val value: String) {
   def toCompact: CompactJsonTextFormat = {
-    StdConverters.StdConverters.convertEx[CompactJsonTextFormat](value)
+    StdConverters.AllConverters.convertEx[CompactJsonTextFormat](value)
   }
 
   def toPretty: PrettyJsonTextFormat = {
-    StdConverters.StdConverters.convertEx[PrettyJsonTextFormat](value)
+    StdConverters.AllConverters.convertEx[PrettyJsonTextFormat](value)
   }
 
   override def toString = "%s(%s)".format(shortClassNameOf(this), value)

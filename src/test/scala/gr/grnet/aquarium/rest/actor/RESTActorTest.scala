@@ -70,7 +70,7 @@ class RESTActorTest {
         case Some(Right(HttpResponse(status, _, bytesBody, _))) ⇒
           assertTrue("Status 200 OK", status == 200)
           val stringBody = makeString(bytesBody)
-          val jValue = StdConverters.StdConverters.convertEx[JValue](stringBody)
+          val jValue = StdConverters.AllConverters.convertEx[JValue](stringBody)
           println("!! Got stringBody = %s".format(stringBody))
           // Note that the response is in JSON format, so must parse it
           println("!! ==> jValue = %s".format(jValue))

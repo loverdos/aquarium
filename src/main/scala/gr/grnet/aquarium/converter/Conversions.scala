@@ -33,50 +33,20 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-
-import com.ckkloverdos.sys.SysProp
-import com.ckkloverdos.maybe.Just
-
-import gr.grnet.aquarium.converter.StdConverters.AllConverters
+package gr.grnet.aquarium.converter
+import StdConverters.AllConverters
+import gr.grnet.aquarium.util.json.JsonSupport
+import com.mongodb.DBObject
 
 /**
- * These are used to enable/disable several tests based on system properties.
+ * All the aquarium conversion should be done via appropriate methods here.
  *
- * Very handy when a test is based upon an external system which sometimes we may not control.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object LogicTestsAssumptions {
-  private[this] def _checkValue(value: String, emptyStringIsTrue: Boolean) = {
-    value match {
-      case "" ⇒
-        emptyStringIsTrue
-      case value ⇒
-        AllConverters.convert[Boolean](value).getOr(false)
-    }
-  }
 
-  private[this] def _testPropertyTrue(name: String): Boolean = {
-    // A property is true if it is given without a value (-Dtest.enable.spray) or it is given
-    // with a value that corresponds to true (-Dtest.enable.spray=true)
-    SysProp(name).value.map(_checkValue(_, true)).getOr(false)
-  }
+object Conversions {
+  def jsonSupportToDBObject(jsonSupport: JsonSupport) =
+    AllConverters.convertEx[DBObject](jsonSupport)
 
 
-  private[this] def isPropertyEnabled(name: String): Boolean = {
-    SysProp(name).value match {
-      case Just(value) ⇒
-        _checkValue(value, true)
-      case _ ⇒
-        _testPropertyTrue(PropertyNames.TestEnableAll)
-    }
-  }
-
-  def EnableRabbitMQTests = isPropertyEnabled(PropertyNames.TestEnableRabbitMQ)
-  def EnableStoreTests  = isPropertyEnabled(PropertyNames.TestEnableStore)
-  def EnablePerfTests = isPropertyEnabled(PropertyNames.TestEnablePerf)
-  def EnableSprayTests = isPropertyEnabled(PropertyNames.TestEnableSpray)
-
-  def propertyValue(name: String) = SysProp(name).rawValue
 }

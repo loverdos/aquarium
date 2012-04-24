@@ -35,7 +35,8 @@
 
 package gr.grnet.aquarium.event.im
 
-import gr.grnet.aquarium.event.AquariumEventSkeleton
+import gr.grnet.aquarium.event.{AquariumEventModel, AquariumEventSkeleton}
+
 
 /**
  *
@@ -43,17 +44,17 @@ import gr.grnet.aquarium.event.AquariumEventSkeleton
  */
 
 class StdIMEvent(
-    override val id: String, // The id at the sender side
-    override val occurredMillis: Long, // When it occurred at the sender side
-    override val receivedMillis: Long, // When it was received by Aquarium
-    override val userID: String,
-    override val clientID: String,
-    override val isActive: Boolean,
-    override val role: String,
-    override val eventVersion: String,
-    override val eventType: String,
-    override val details: Map[String, String])
-extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, eventVersion) with IMEventModel {
+    val id: String, // The id at the sender side
+    val occurredMillis: Long, // When it occurred at the sender side
+    val receivedMillis: Long, // When it was received by Aquarium
+    val userID: String,
+    val clientID: String,
+    val isActive: Boolean,
+    val role: String,
+    val eventVersion: String,
+    val eventType: String,
+    val details: Map[String, String])
+extends AquariumEventModel with IMEventModel {
   def withReceivedMillis(newReceivedMillis: Long) = new StdIMEvent(
     id,
     occurredMillis,

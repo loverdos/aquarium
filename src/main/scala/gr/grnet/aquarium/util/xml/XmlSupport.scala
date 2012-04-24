@@ -51,5 +51,5 @@ import xml.NodeSeq
  */
 
 trait XmlSupport { this: JsonSupport =>
-  def toXml = StdConverters.StdConverters.convertEx[NodeSeq](toJValue)
+  def toXml = StdConverters.AllConverters.convertEx[NodeSeq](toJValue)
 }

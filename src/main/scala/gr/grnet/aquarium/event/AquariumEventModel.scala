@@ -36,6 +36,8 @@
 package gr.grnet.aquarium.event
 
 import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.util.makeBytes
+import gr.grnet.aquarium.util.xml.XmlSupport
 
 /**
  * The base model for all events coming from external systems.
@@ -43,9 +45,20 @@ import gr.grnet.aquarium.util.json.JsonSupport
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait AquariumEventModel extends JsonSupport {
+trait AquariumEventModel extends JsonSupport with XmlSupport {
+  /**
+   * The id at the sender side
+   */
   def id: String
+
+  /**
+   * When it occurred at the sender side
+   */
   def occurredMillis: Long
+
+  /**
+   * When it was received by Aquarium
+   */
   def receivedMillis: Long
   def userID: String
   def eventVersion: String
@@ -55,9 +68,9 @@ trait AquariumEventModel extends JsonSupport {
    * The ID given to this event if/when persisted to a store.
    * The exact type of the id is store-specific.
    */
-  def storeID: Option[AnyRef]
+  def storeID: Option[AnyRef] = None
 
-  def isStoredEvent: Boolean = false
+  def toBytes: Array[Byte] = makeBytes(toJsonString)
 
   def withReceivedMillis(newReceivedMillis: Long): AquariumEventModel
 }

@@ -37,7 +37,7 @@ package gr.grnet.aquarium.util.json
 
 import net.liftweb.json.JsonAST.JValue
 import gr.grnet.aquarium.converter.{PrettyJsonTextFormat}
-import gr.grnet.aquarium.converter.StdConverters.StdConverters
+import gr.grnet.aquarium.converter.StdConverters.AllConverters
 
 /**
  * Mix-in this trait when you need transformation to JSON, either in AST or String format.
@@ -47,7 +47,7 @@ import gr.grnet.aquarium.converter.StdConverters.StdConverters
  */
 
 trait JsonSupport {
-  def toJValue: JValue = StdConverters.convertEx[JValue](this)
+  def toJValue: JValue = AllConverters.convertEx[JValue](this)
 
-  def toJson: String = StdConverters.convertEx[PrettyJsonTextFormat](this).value
+  def toJsonString: String = AllConverters.convertEx[PrettyJsonTextFormat](this).value
 }

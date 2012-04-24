@@ -60,10 +60,10 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
     }
   }
 
-  override def exists(event: ResourceEvent): Boolean =
+  override def existsInStore(event: ResourceEvent): Boolean =
     _configurator.resourceEventStore.findResourceEventById(event.id).isJust
 
-  override def persist(event: ResourceEvent, initialPayload: Array[Byte]): Unit = {
+  override def storeParsedEvent(event: ResourceEvent, initialPayload: Array[Byte]): Unit = {
     // 1. Store to local FS for debugging purposes.
     //    BUT be resilient to errors, since this is not critical
     if(_configurator.eventsStoreFolder.isJust) {
@@ -77,7 +77,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
   }
 
 
-  protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit = {
+  protected def storeUnparsedEvent(initialPayload: Array[Byte], exception: Throwable): Unit = {
     // TODO: Also save to DB, just like we do for UserEvents
     LocalFSEventStore.storeUnparsedResourceEvent(_configurator, initialPayload, exception)
   }

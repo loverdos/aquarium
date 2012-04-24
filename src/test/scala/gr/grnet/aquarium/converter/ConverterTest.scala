@@ -38,7 +38,7 @@ package gr.grnet.aquarium.converter
 import net.liftweb.json._
 import org.junit.{Assert, Test}
 import gr.grnet.aquarium.AquariumException
-import gr.grnet.aquarium.converter.StdConverters.{StdConverters ⇒ Converters}
+import gr.grnet.aquarium.converter.StdConverters.{AllConverters ⇒ Converters}
 import com.mongodb.DBObject
 import gr.grnet.aquarium.store.memory._
 import gr.grnet.aquarium.util.json.JsonSupport

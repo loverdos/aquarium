@@ -39,10 +39,9 @@ package gr.grnet.aquarium.service
 import gr.grnet.aquarium.actor.DispatcherRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
-import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessIMEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.util.{LogHelpers, makeString}
+import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.event.im.IMEventModel
 import gr.grnet.aquarium.store.memory.MemStore
@@ -64,10 +63,10 @@ class IMEventProcessorService extends EventProcessorService[IMEventModel] {
     }
   }
 
-  override def exists(event: IMEventModel) =
+  override def existsInStore(event: IMEventModel) =
     _configurator.imEventStore.findIMEventById(event.id).isJust
 
-  override def persist(event: IMEventModel, initialPayload: Array[Byte]) = {
+  override def storeParsedEvent(event: IMEventModel, initialPayload: Array[Byte]) = {
     // 1. Store to local FS for debugging purposes.
     //    BUT be resilient to errors, since this is not critical
     if(_configurator.eventsStoreFolder.isJust) {
@@ -77,20 +76,13 @@ class IMEventProcessorService extends EventProcessorService[IMEventModel] {
     }
 
     // 2. Store to DB
-    _configurator.imEventStore.storeIMEvent(event)
+    _configurator.imEventStore.insertIMEvent(event)
   }
 
-  protected def persistUnparsed(initialPayload: Array[Byte], exception: Throwable): Unit = {
+  protected def storeUnparsedEvent(initialPayload: Array[Byte], exception: Throwable): Unit = {
     val json = makeString(initialPayload)
 
     LocalFSEventStore.storeUnparsedIMEvent(_configurator, initialPayload, exception)
-
-    _configurator.props.getBoolean(Configurator.Keys.save_unparsed_event_im) match {
-      case Just(true) ⇒
-        val recordIDM = _configurator.imEventStore.storeUnparsed(json)
-        logger.info("Saved unparsed {}", recordIDM)
-      case _ ⇒
-    }
   }
 
   override def queueReaderThreads: Int = 1

@@ -95,7 +95,7 @@ case class NewWalletEntry(userId: String,
 
 object NewWalletEntry {
   def fromJson(json: String): NewWalletEntry = {
-    StdConverters.StdConverters.convertEx[NewWalletEntry](JsonTextFormat(json))
+    StdConverters.AllConverters.convertEx[NewWalletEntry](JsonTextFormat(json))
   }
 
   object JsonNames {

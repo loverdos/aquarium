@@ -198,7 +198,7 @@ with Loggable {
     this._userState = this._userState.copy(activeStateSnapshot = newActive)
   }
 
-  def onProcessUserEvent(event: ProcessIMEvent): Unit = {
+  def onProcessIMEvent(event: ProcessIMEvent): Unit = {
     val userEvent = event.imEvent
     if(userEvent.userID != this._userId) {
       ERROR("Received %s but my userId = %s".format(userEvent, this._userId))
@@ -238,16 +238,16 @@ with Loggable {
   }
 
   override def postStop {
-    DEBUG("Stopping, saving state")
+    DEBUG("Actor[%s] stopping, saving state", self.uuid)
     saveUserState
   }
 
   override def preRestart(reason: Throwable) {
-    DEBUG("Actor failed, restarting")
+    ERROR(reason, "preRestart: Actor[%s]", self.uuid)
   }
 
   override def postRestart(reason: Throwable) {
-    DEBUG("Actor restarted succesfully")
+    ERROR(reason, "postRestart: Actor[%s]", self.uuid)
   }
 
   private[this] def DEBUG(fmt: String, args: Any*) =
@@ -261,4 +261,7 @@ with Loggable {
 
   private[this] def ERROR(fmt: String, args: Any*) =
     logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
+
+  private[this] def ERROR(t: Throwable, fmt: String, args: Any*) =
+      logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)), t)
 }

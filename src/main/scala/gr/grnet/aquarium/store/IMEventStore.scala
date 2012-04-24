@@ -58,12 +58,12 @@ trait IMEventStore {
 
   def createIMEventFromOther(event: IMEventModel): IMEvent
 
-  def storeUnparsed(json: String): Maybe[RecordID]
+//  def storeUnparsed(json: String): Maybe[RecordID]
 
   /**
-   * Store an event
+   * Insert a new event into the store.
    */
-  def storeIMEvent(event: IMEventModel): RecordID
+  def insertIMEvent(event: IMEventModel): IMEvent
 
   /**
    * Find a user event by event ID

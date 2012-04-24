@@ -285,7 +285,11 @@ class MemStore extends UserStateStore
 
   def storeUnparsed(json: String) = throw new AquariumException("Not implemented")
 
-  def storeIMEvent(event: IMEventModel) = {imEventById += (event.id -> createIMEventFromOther(event)); RecordID(event.id)}
+  def insertIMEvent(event: IMEventModel) = {
+    val localEvent = createIMEventFromOther(event)
+    imEventById += (event.id -> localEvent)
+    localEvent
+  }
 
   def findIMEventById(id: String) = Maybe{imEventById.getOrElse(id, null)}
 
@@ -331,8 +335,8 @@ object MemStore {
   }
 
   final def createIMEventFromJson(json: String) = {
-    import gr.grnet.aquarium.converter.StdConverters.StdConverters
-    StdConverters.convertEx[MemIMEvent](JsonTextFormat(json))
+    import gr.grnet.aquarium.converter.StdConverters.AllConverters
+    AllConverters.convertEx[MemIMEvent](JsonTextFormat(json))
   }
 
   final def createIMEventFromJsonBytes(jsonBytes: Array[Byte]) = {

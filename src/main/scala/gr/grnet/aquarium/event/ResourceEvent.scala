@@ -51,17 +51,17 @@ import converter.{JsonTextFormat, StdConverters}
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
 case class ResourceEvent(
-    override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    override val occurredMillis: Long, // When it occurred at client side (the sender)
-    override val receivedMillis: Long, // When it was received by Aquarium
+    id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
+    occurredMillis: Long, // When it occurred at client side (the sender)
+    receivedMillis: Long, // When it was received by Aquarium
     userID: String,                    // The user for which this resource is relevant
     clientID: String,                  // The unique client identifier (usually some hash)
     resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
     instanceID: String,                // String representation of the resource instance id
-    override val eventVersion: String,
+    eventVersion: String,
     value: Double,
-    override val details: Map[String, String])
-  extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, eventVersion) {
+    details: Map[String, String])
+extends AquariumEventModel {
 
   def validate() : Boolean = {
     !safeResource.isEmpty
@@ -248,11 +248,11 @@ object ResourceEvent {
   type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]
 
   def fromJson(json: String): ResourceEvent = {
-    StdConverters.StdConverters.convertEx[ResourceEvent](JsonTextFormat(json))
+    StdConverters.AllConverters.convertEx[ResourceEvent](JsonTextFormat(json))
   }
 
   def fromBytes(bytes: Array[Byte]): ResourceEvent = {
-    StdConverters.StdConverters.convertEx[ResourceEvent](JsonTextFormat(makeString(bytes)))
+    StdConverters.AllConverters.convertEx[ResourceEvent](JsonTextFormat(makeString(bytes)))
   }
 
   def setAquariumSynthetic(map: Map[String, String]): Map[String, String] = {

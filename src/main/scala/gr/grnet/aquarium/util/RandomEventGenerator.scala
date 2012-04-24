@@ -93,7 +93,7 @@ trait RandomEventGenerator extends AkkaAMQP {
     (1 to num).foreach {
       n =>
         var event = nextUserEvent()
-        publisher ! Message(event.toJson.getBytes, "astakos.user")
+        publisher ! Message(event.toJsonString.getBytes, "astakos.user")
     }
   }
 
@@ -118,7 +118,7 @@ trait RandomEventGenerator extends AkkaAMQP {
           eventType = "CREATE",
           details = Map()
         )
-        publisher ! Message(user.toJson.getBytes, "astakos.user")
+        publisher ! Message(user.toJsonString.getBytes, "astakos.user")
     }
   }
 

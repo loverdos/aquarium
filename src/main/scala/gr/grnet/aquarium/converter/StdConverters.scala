@@ -133,6 +133,6 @@ object StdConverters {
     }
   }
 
-  final val StdConverters: Converters = builder.build
+  final val AllConverters: Converters = builder.build
 }
 

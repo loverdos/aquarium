@@ -50,17 +50,20 @@ import util.json.JsonSupport
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 case class WalletEntry(
-    override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    override val occurredMillis: Long, // The time of oldest matching resource event
-    override val receivedMillis: Long, // The time the cost calculation was done
+    id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
+    occurredMillis: Long, // The time of oldest matching resource event
+    receivedMillis: Long, // The time the cost calculation was done
     sourceEventIDs: List[String],      // The events that triggered this WalletEntry
     value: Double,
     reason: String,
     userId: String,
     resource: String,
     instanceId: String,
-    finalized: Boolean, userID: String = "")
-  extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, "1.0") {
+    finalized: Boolean,
+    eventVersion: String = "1.0",
+    userID: String = "",
+    details: Map[String, String] = Map()
+) extends AquariumEventModel {
 
 
   assert(occurredMillis > 0)
@@ -81,7 +84,7 @@ case class WalletEntry(
 
 object WalletEntry {
   def fromJson(json: String): WalletEntry = {
-    StdConverters.StdConverters.convertEx[WalletEntry](JsonTextFormat(json))
+    StdConverters.AllConverters.convertEx[WalletEntry](JsonTextFormat(json))
   }
 
   def zero = WalletEntry("", 1L, 1L, Nil,1,"","foo", "bar", "0", false)

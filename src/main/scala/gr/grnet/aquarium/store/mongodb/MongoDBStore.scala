@@ -53,7 +53,7 @@ import gr.grnet.aquarium.event._
 import com.ckkloverdos.maybe.{NoVal, Maybe}
 import im.IMEventModel
 import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.converter.StdConverters
+import gr.grnet.aquarium.converter.{Conversions, StdConverters}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -335,19 +335,14 @@ class MongoDBStore(
     MongoDBStore.createIMEventFromOther(event)
   }
 
-  def storeUnparsed(json: String): Maybe[RecordID] = {
-    MongoDBStore.storeJustJson(json, unparsedIMEvents)
-  }
+//  def storeUnparsed(json: String): Maybe[RecordID] = {
+//    MongoDBStore.storeJustJson(json, unparsedIMEvents)
+//  }
 
-  def storeIMEvent(_event: IMEventModel): RecordID = {
-    val event = createIMEventFromOther(_event)
-    MongoDBStore.storeAny[IMEvent](
-      event,
-      imEvents,
-      IMEventNames.userID,
-      _.userID,
-      MongoDBStore.jsonSupportToDBObject
-    )
+  def insertIMEvent(event: IMEventModel): IMEvent = {
+    val localEvent = MongoDBIMEvent.fromOther(event, new ObjectId())
+    MongoDBStore.insertObject(localEvent, imEvents, MongoDBStore.jsonSupportToDBObject)
+    localEvent
   }
 
   def findIMEventById(id: String): Maybe[IMEvent] =
@@ -509,17 +504,6 @@ object MongoDBStore {
     Maybe(storeAny[PolicyEntry](policyEntry, collection, PolicyJsonNames.id, _.id, MongoDBStore.jsonSupportToDBObject))
   }
 
-  def storeJustJson(json: String, collection: DBCollection): Maybe[RecordID] = {
-    Maybe {
-      val dbObj = jsonStringToDBObject(json)
-      val writeResult = collection insert dbObj
-      writeResult.getLastError().throwOnError()
-      val objectId = dbObj.get("_id").asInstanceOf[ObjectId]
-
-      RecordID(objectId.toString)
-    }
-  }
-
   def storeAny[A](any: A,
                   collection: DBCollection,
                   idName: String,
@@ -535,12 +519,28 @@ object MongoDBStore {
     RecordID(dbObject.get("_id").toString)
   }
 
-  def jsonSupportToDBObject(jsonSupport: JsonSupport): DBObject = {
-    StdConverters.StdConverters.convertEx[DBObject](jsonSupport)
+  def insertObject[A <: MongoDBEventModel](obj: A, collection: DBCollection, serializer: (A) => DBObject) : ObjectId = {
+    val dbObject = serializer apply obj
+    val objectId = obj._id  match {
+      case null ⇒
+        val _id = new ObjectId()
+        dbObject.put("_id", _id)
+        _id
+
+      case _id ⇒
+        _id
+    }
+
+    dbObject.put(JsonNames._id, objectId)
+
+    val writeResult = collection.insert(dbObject, WriteConcern.JOURNAL_SAFE)
+    writeResult.getLastError().throwOnError()
+
+    objectId
   }
 
-  def jsonStringToDBObject(jsonString: String): DBObject = {
-    StdConverters.StdConverters.convertEx[DBObject](jsonString)
+  def jsonSupportToDBObject(jsonSupport: JsonSupport) = {
+    Conversions.jsonSupportToDBObject(jsonSupport)
   }
 
   final def isLocalIMEvent(event: IMEventModel) = event match {

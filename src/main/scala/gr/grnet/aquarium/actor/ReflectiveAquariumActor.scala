@@ -59,7 +59,9 @@ trait ReflectiveAquariumActor extends AquariumActor {
           (knownMessageClass, method)
 
         case Failed(e) =>
-          throw new AquariumException("Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageClass), e)
+          val errMsg = "Reflective actor %s does not know how to process message %s".format(this.getClass, knownMessageClass)
+          logger.error(errMsg, e)
+          throw new AquariumException(errMsg, e)
       }
     }
 

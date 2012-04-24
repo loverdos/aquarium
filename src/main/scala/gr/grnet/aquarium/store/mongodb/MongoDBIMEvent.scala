@@ -39,6 +39,7 @@ import org.bson.types.ObjectId
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.event.im.{IMEventModel, StdIMEvent}
+import gr.grnet.aquarium.event.AquariumEventModel
 
 
 /**
@@ -47,37 +48,25 @@ import gr.grnet.aquarium.event.im.{IMEventModel, StdIMEvent}
  */
 
 case class MongoDBIMEvent(
-   override val id: String,
-   override val occurredMillis: Long,
-   override val receivedMillis: Long,
-   override val userID: String,
-   override val clientID: String,
-   override val isActive: Boolean,
-   override val role: String,
-   override val eventVersion: String,
-   override val eventType: String,
-   override val details: Map[String, String],
+   id: String,
+   occurredMillis: Long,
+   receivedMillis: Long,
+   userID: String,
+   clientID: String,
+   isActive: Boolean,
+   role: String,
+   eventVersion: String,
+   eventType: String,
+   details: Map[String, String],
    _id: ObjectId
-)
-extends StdIMEvent(
-   id,
-   occurredMillis,
-   receivedMillis,
-   userID,
-   clientID,
-   isActive,
-   role,
-   eventVersion,
-   eventType,
-   details
- ) {
+ ) extends AquariumEventModel with IMEventModel with MongoDBEventModel {
 
   override def withReceivedMillis(newReceivedMillis: Long) = this.copy(receivedMillis = newReceivedMillis)
 }
 
 object MongoDBIMEvent {
   final def fromJson(json: String): MongoDBIMEvent = {
-    StdConverters.StdConverters.convertEx[MongoDBIMEvent](JsonTextFormat(json))
+    StdConverters.AllConverters.convertEx[MongoDBIMEvent](JsonTextFormat(json))
   }
 
   final def fromJsonBytes(jsonBytes: Array[Byte]): MongoDBIMEvent = {

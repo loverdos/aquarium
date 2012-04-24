@@ -245,7 +245,7 @@ case class UserState(
 
 object UserState {
   def fromJson(json: String): UserState = {
-    StdConverters.StdConverters.convertEx[UserState](JsonTextFormat(json))
+    StdConverters.AllConverters.convertEx[UserState](JsonTextFormat(json))
   }
 
   object JsonNames {

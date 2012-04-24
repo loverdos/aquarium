@@ -48,6 +48,6 @@ import util.{Loggable, shortClassNameOf}
 trait AquariumActor extends Actor with Loggable {
   def role: ActorRole
 
-  override def toString = "%s(%s@%s)".format(shortClassNameOf(this), role.role, System.identityHashCode(this))
+  override def toString = "%s@%s(%s)".format(shortClassNameOf(this), System.identityHashCode(this), role.role)
 }
 

@@ -37,10 +37,10 @@ package gr.grnet.aquarium
 package event
 package im
 
-import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.Configurator._
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import converter.{StdConverters, JsonTextFormat}
+import util.{Loggable, makeString}
 
 /**
  * Represents an event from the `Identity Management` (IM) external system.
@@ -48,18 +48,18 @@ import converter.{StdConverters, JsonTextFormat}
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 case class _IMEvent(
-                    override val id: String, // The id at the sender side
-                    override val occurredMillis: Long, // When it occurred at the sender side
-                    override val receivedMillis: Long, // When it was received by Aquarium
-                    override val userID: String,
+                    id: String, // The id at the sender side
+                    occurredMillis: Long, // When it occurred at the sender side
+                    receivedMillis: Long, // When it was received by Aquarium
+                    userID: String,
                     clientID: String,
                     isActive: Boolean,
                     role: String,
-                    override val eventVersion: String,
+                    eventVersion: String,
                     eventType: String,
-                    override val details: Map[String, String],
+                    details: Map[String, String],
                     _id: String = "")
-  extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, eventVersion) with IMEventModel {
+  extends AquariumEventModel with IMEventModel with Loggable {
 
 
   //  assert(eventType.equalsIgnoreCase(IMEvent.EventTypes.create) ||
@@ -85,12 +85,12 @@ case class _IMEvent(
     MasterConfigurator.userStateStore.findUserStateByUserId(userID) match {
       case Just(x) =>
         if(eventType.equalsIgnoreCase(_IMEvent.EventTypes.create)) {
-          logger.warn("User to create exists: IMEvent".format(this.toJson));
+          logger.warn("User to create exists: IMEvent".format(this.toJsonString));
           return false
         }
       case NoVal =>
         if(!eventType.equalsIgnoreCase(_IMEvent.EventTypes.modify)) {
-          logger.warn("Inexistent user to modify. IMEvent:".format(this.toJson))
+          logger.warn("Inexistent user to modify. IMEvent:".format(this.toJsonString))
           return false
         }
       case Failed(x) =>
@@ -111,11 +111,11 @@ object _IMEvent {
   }
 
   def fromJson(json: String): _IMEvent = {
-    StdConverters.StdConverters.convertEx[_IMEvent](JsonTextFormat(json))
+    StdConverters.AllConverters.convertEx[_IMEvent](JsonTextFormat(json))
   }
 
   def fromBytes(bytes: Array[Byte]): _IMEvent = {
-    StdConverters.StdConverters.convertEx[_IMEvent](JsonTextFormat(makeString(bytes)))
+    StdConverters.AllConverters.convertEx[_IMEvent](JsonTextFormat(makeString(bytes)))
   }
 
   object JsonNames {

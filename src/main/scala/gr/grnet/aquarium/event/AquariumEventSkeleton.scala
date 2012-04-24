@@ -61,14 +61,5 @@ abstract class AquariumEventSkeleton(
   def receivedMillis = _receivedMillis
   def eventVersion = _eventVersion
 
-  def toBytes: Array[Byte] = {
-    toJson.getBytes("UTF-8")
-  }
-
-  def storeID: Option[AnyRef] = _id match {
-    case null ⇒ None
-    case _id  ⇒ Some(_id)
-  }
-
   def details: Map[String, String] = Map()
 }
