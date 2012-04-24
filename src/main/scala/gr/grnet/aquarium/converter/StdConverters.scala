@@ -40,6 +40,8 @@ import com.ckkloverdos.convert._
 import gr.grnet.aquarium.util.json.JsonSupport
 import com.mongodb.util.JSON
 import com.mongodb.DBObject
+import xml.NodeSeq
+import net.liftweb.json.Xml
 
 
 /**
@@ -69,6 +71,9 @@ object StdConverters {
 
     // CharSequence => DBObject
     builder.registerConverter(CharSequenceToDBObjectConverter)
+
+    // JValue => NodeSeq
+    builder.registerConverter(JValueToNodeSeqConverter)
 
     builder
   }
@@ -110,7 +115,7 @@ object StdConverters {
   object JsonSupportToDBObjectConverter extends NonStrictSourceConverterSkeleton[JsonSupport, DBObject] {
     @scala.throws(classOf[ConverterException])
     def convertEx[T: Type](sourceValue: Any) = {
-      JSON.parse(sourceValue.asInstanceOf[JsonSupport].toJson).asInstanceOf[T]
+      JSON.parse(sourceValue.asInstanceOf[JsonSupport].toJsonString).asInstanceOf[T]
     }
   }
 
@@ -119,7 +124,14 @@ object StdConverters {
     def convertEx[T: Type](sourceValue: Any) = {
       JSON.parse(sourceValue.asInstanceOf[CharSequence].toString).asInstanceOf[T]
     }
- }
+  }
+
+  object JValueToNodeSeqConverter extends NonStrictSourceConverterSkeleton[JValue, NodeSeq] {
+    @scala.throws(classOf[ConverterException])
+    def convertEx[T: Type](sourceValue: Any) = {
+      Xml.toXml(sourceValue.asInstanceOf[JValue]).asInstanceOf[T]
+    }
+  }
 
   final val StdConverters: Converters = builder.build
 }
