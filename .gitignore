@@ -35,10 +35,9 @@ doc/arch/aquarium.synctex.gz
 doc/arch/aquarium.ent
 doc/arch/arch.texshop
 build.log
-_gitstats/
-_localrest
 *.aquarium.properties
 sshfs/
 aquarium-dist/
 aquarium-dist.tar.gz
 events-store/
+__*

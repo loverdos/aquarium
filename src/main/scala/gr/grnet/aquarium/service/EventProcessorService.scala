@@ -239,11 +239,6 @@ abstract class EventProcessorService[E <: AquariumEventModel] extends AkkaAMQP w
         }
     }
 
-    override def preStart = {
-      super.preStart
-      logStarted(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
-    }
-
     self.dispatcher = persisterManager.dispatcher
   }
 
