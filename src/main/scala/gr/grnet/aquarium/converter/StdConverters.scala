@@ -107,7 +107,7 @@ object StdConverters {
     }
   }
 
-  object JsonSupportToDBObjectConverter extends NonStrictSourceConverterSkeleton[JsonTextFormat, DBObject] {
+  object JsonSupportToDBObjectConverter extends NonStrictSourceConverterSkeleton[JsonSupport, DBObject] {
     @scala.throws(classOf[ConverterException])
     def convertEx[T: Type](sourceValue: Any) = {
       JSON.parse(sourceValue.asInstanceOf[JsonSupport].toJson).asInstanceOf[T]
