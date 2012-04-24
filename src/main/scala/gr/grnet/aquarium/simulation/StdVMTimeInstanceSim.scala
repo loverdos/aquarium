@@ -40,7 +40,7 @@ import gr.grnet.aquarium.store.RecordID
 import com.ckkloverdos.maybe.Maybe
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.event.ResourceEvent
 
 /**
  * A simulator for an instance of the standard `vmtime` resource.

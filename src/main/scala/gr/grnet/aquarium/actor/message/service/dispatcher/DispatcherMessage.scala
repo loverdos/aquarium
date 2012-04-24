@@ -39,8 +39,8 @@ package dispatcher
 
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.events.im.IMEventModel
-import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.event.im.IMEventModel
+import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.converter.{PrettyJsonTextFormat, StdConverters}
 
 

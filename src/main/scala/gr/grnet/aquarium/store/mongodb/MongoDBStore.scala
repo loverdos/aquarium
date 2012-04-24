@@ -40,16 +40,16 @@ import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.user.UserState.{JsonNames => UserStateJsonNames}
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
-import gr.grnet.aquarium.events.im.IMEventModel.{Names => IMEventNames}
+import gr.grnet.aquarium.event.im.IMEventModel.{Names => IMEventNames}
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.events.ResourceEvent.{JsonNames => ResourceJsonNames}
-import gr.grnet.aquarium.events.WalletEntry.{JsonNames => WalletJsonNames}
-import gr.grnet.aquarium.events.PolicyEntry.{JsonNames => PolicyJsonNames}
+import gr.grnet.aquarium.event.ResourceEvent.{JsonNames => ResourceJsonNames}
+import gr.grnet.aquarium.event.WalletEntry.{JsonNames => WalletJsonNames}
+import gr.grnet.aquarium.event.PolicyEntry.{JsonNames => PolicyJsonNames}
 import java.util.Date
 import gr.grnet.aquarium.logic.accounting.Policy
 import com.mongodb._
 import org.bson.types.ObjectId
-import gr.grnet.aquarium.events._
+import gr.grnet.aquarium.event._
 import com.ckkloverdos.maybe.{NoVal, Maybe}
 import im.IMEventModel
 import gr.grnet.aquarium.util._
@@ -388,7 +388,7 @@ object MongoDBStore {
   }
 
   /**
-   * Collection holding the [[gr.grnet.aquarium.events.ResourceEvent]]s.
+   * Collection holding the [[gr.grnet.aquarium.event.ResourceEvent]]s.
    *
    * Resource events are coming from all systems handling billable resources.
    */
@@ -402,14 +402,14 @@ object MongoDBStore {
   final val USER_STATES_COLLECTION = "userstates"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.events.im.IMEventModel]]s.
+   * Collection holding [[gr.grnet.aquarium.event.im.IMEventModel]]s.
    *
    * User events are coming from the IM module (external).
    */
   final val IM_EVENTS_COLLECTION = "imevents"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.events.im.IMEventModel]]s that could not be parsed to normal objects.
+   * Collection holding [[gr.grnet.aquarium.event.im.IMEventModel]]s that could not be parsed to normal objects.
    *
    * We of course assume at least a valid JSON representation.
    *
@@ -418,7 +418,7 @@ object MongoDBStore {
   final val UNPARSED_IM_EVENTS_COLLECTION = "unparsed_imevents"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.events.WalletEntry]].
+   * Collection holding [[gr.grnet.aquarium.event.WalletEntry]].
    *
    * Wallet entries are generated internally in Aquarium.
    */
@@ -430,7 +430,7 @@ object MongoDBStore {
 //  final val POLICIES_COLLECTION = "policies"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.events.PolicyEntry]].
+   * Collection holding [[gr.grnet.aquarium.event.PolicyEntry]].
    */
   final val POLICY_ENTRIES_COLLECTION = "policyEntries"
 

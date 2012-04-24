@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium
 
-import events.im.IMEventModel
+import event.im.IMEventModel
 import java.io.File
 
 import com.ckkloverdos.maybe._
@@ -536,7 +536,7 @@ object Configurator {
     final val events_store_folder = "events.store.folder"
 
     /**
-     * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.events.im.IMEventModel]] is
+     * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.event.im.IMEventModel]] is
      * saved to the [[gr.grnet.aquarium.store.IMEventStore]].
      */
     final val save_unparsed_event_im = "save.unparsed.event.im"

@@ -51,8 +51,8 @@ import gr.grnet.aquarium.messaging.AkkaAMQP
 import gr.grnet.aquarium.actor.message.config.user.UserActorInitWithUserId
 import gr.grnet.aquarium.actor.message.service.dispatcher._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
-import gr.grnet.aquarium.events.im.IMEventModel
-import gr.grnet.aquarium.events.{WalletEntry}
+import gr.grnet.aquarium.event.im.IMEventModel
+import gr.grnet.aquarium.event.{WalletEntry}
 
 
 /**

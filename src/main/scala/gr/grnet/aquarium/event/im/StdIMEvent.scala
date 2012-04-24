@@ -33,42 +33,37 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package events
+package gr.grnet.aquarium.event.im
 
-
-import util.xml.XmlSupport
-import util.Loggable
+import gr.grnet.aquarium.event.AquariumEventSkeleton
 
 /**
- * Generic base class for all Aquarium events
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-abstract class AquariumEventSkeleton(
-    _id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    _occurredMillis: Long, // When it occurred at client side (the sender)
-    _receivedMillis: Long, // When it was received by Aquarium
-    _eventVersion: String
-)
-  extends AquariumEventModel
-  with    XmlSupport
-  with    Loggable {
 
-  def id = _id
-  def occurredMillis = _occurredMillis
-  def receivedMillis = _receivedMillis
-  def eventVersion = _eventVersion
-
-  def toBytes: Array[Byte] = {
-    toJson.getBytes("UTF-8")
-  }
-
-  def storeID: Option[AnyRef] = _id match {
-    case null ⇒ None
-    case _id  ⇒ Some(_id)
-  }
-
-  def details: Map[String, String] = Map()
+class StdIMEvent(
+    override val id: String, // The id at the sender side
+    override val occurredMillis: Long, // When it occurred at the sender side
+    override val receivedMillis: Long, // When it was received by Aquarium
+    override val userID: String,
+    override val clientID: String,
+    override val isActive: Boolean,
+    override val role: String,
+    override val eventVersion: String,
+    override val eventType: String,
+    override val details: Map[String, String])
+extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, eventVersion) with IMEventModel {
+  def withReceivedMillis(newReceivedMillis: Long) = new StdIMEvent(
+    id,
+    occurredMillis,
+    newReceivedMillis,
+    userID,
+    clientID,
+    isActive,
+    role,
+    eventVersion,
+    eventType,
+    details
+  )
 }

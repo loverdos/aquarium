@@ -49,6 +49,8 @@ P_BUILD="normal"
 P_KEEPDIST="no"
 P_FAKEIT="no"
 P_ARCHIVE=""
+P_OFFLINE="no"
+MVN_OPTS=""
 
 verbose() {
   if [ "$P_VERBOSE" = "yes" ]; then
@@ -62,6 +64,7 @@ verbose_p() {
   verbose "Keep dist/ folder   :" $P_KEEPDIST
   verbose "Custom achive name  :" $P_ARCHIVE
   verbose "Fake it             :" $P_FAKEIT
+  verbose "maven offline mode  :" $P_OFFLINE
 }
 
 fail() {
@@ -101,7 +104,8 @@ clean() {
     echo "=== mvn clean ================="
     echo "==============================="
     echo
-    mvn clean || fail "cleaning compilation artifacts"
+    echo mvn ${MVN_OPTS} clean
+    mvn ${MVN_OPTS} clean || fail "cleaning compilation artifacts"
     echo
   elif [ "$P_BUILD"="fast" ]; then
     echo
@@ -114,7 +118,8 @@ clean() {
 
 collectdeps() {
   if [ "$P_BUILD" = "normal" ]; then
-    mvn dependency:copy-dependencies
+    echo mvn ${MVN_OPTS} dependency:copy-dependencies
+    mvn ${MVN_OPTS} dependency:copy-dependencies
   fi
 
   cp target/dependency/*.jar $DIST/lib || fail "collecting dependencies"
@@ -126,7 +131,8 @@ build() {
   echo "=== mvn package ==============="
   echo "==============================="
   echo
-  mvn package -DskipTests && {
+  echo mvn ${MVN_OPTS} package -DskipTests
+  mvn ${MVN_OPTS} package -DskipTests && {
     echo
     echo "Copying Aquarium classes"
     aquariumjar=`find target -type f|egrep "aquarium-[0-9\.]+(-SNAPSHOT)?\.jar"`
@@ -192,12 +198,13 @@ usage() {
   echo "  -k        Keep generated dist folder."
   echo "  -h        Show this message."
   echo "  -n        As in make -n."
+  echo "  -o        Use mvn in offline mode (--offline, -o)"
   echo "  -v        Be verbose."
 
   exit 0
 }
 
-while getopts ":a:b:hkc:nv" opt
+while getopts ":a:b:hkc:nov" opt
 do
   case $opt in
     a) P_ARCHIVE=$OPTARG
@@ -211,6 +218,8 @@ do
     k) P_KEEPDIST="yes"
     ;;
     n) P_FAKEIT="yes"
+    ;;
+    o) P_OFFLINE="yes"; MVN_OPTS="-o"
     ;;
     v) P_VERBOSE="yes"
     ;;

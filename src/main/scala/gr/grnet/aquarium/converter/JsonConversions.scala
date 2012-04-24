@@ -38,7 +38,7 @@ package gr.grnet.aquarium.converter
 import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json._
 import ext.JodaTimeSerializers
-import gr.grnet.aquarium.events.AquariumEventSkeleton
+import gr.grnet.aquarium.event.AquariumEventSkeleton
 
 
 /**

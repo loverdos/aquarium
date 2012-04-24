@@ -33,37 +33,51 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.events.im
+package gr.grnet.aquarium
+package event
 
-import gr.grnet.aquarium.events.AquariumEventSkeleton
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import java.util.Date
+import converter.{JsonTextFormat, StdConverters}
 
 /**
+ * Store entry for serialized policy data.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Georgios Gousios <gousiosg@gmail.com>
  */
+case class PolicyEntry(
+  override val id: String,           //SHA-1 of the provided policyYaml string
+  override val occurredMillis: Long, //Time this event was stored
+  override val receivedMillis: Long, //Does not make sense for local events -> not used
+  policyYAML: String,                //The serialized policy
+  validFrom: Long,                   //The timestamp since when the policy is valid
+  validTo: Long,                      //The timestamp until when the policy is valid
+  userID: String = ""
+)
+extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, "1.0") {
 
-class StdIMEvent(
-    override val id: String, // The id at the sender side
-    override val occurredMillis: Long, // When it occurred at the sender side
-    override val receivedMillis: Long, // When it was received by Aquarium
-    override val userID: String,
-    override val clientID: String,
-    override val isActive: Boolean,
-    override val role: String,
-    override val eventVersion: String,
-    override val eventType: String,
-    override val details: Map[String, String])
-extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, eventVersion) with IMEventModel {
-  def withReceivedMillis(newReceivedMillis: Long) = new StdIMEvent(
-    id,
-    occurredMillis,
-    newReceivedMillis,
-    userID,
-    clientID,
-    isActive,
-    role,
-    eventVersion,
-    eventType,
-    details
-  )
+  assert(if(validTo != -1) validTo > validFrom else validFrom > 0)
+
+  def validate = true
+
+  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+
+  def fromToTimeslot = Timeslot(new Date(validFrom), new Date(validTo))
+}
+
+object PolicyEntry {
+
+  def fromJson(json: String): PolicyEntry = {
+    StdConverters.StdConverters.convertEx[PolicyEntry](JsonTextFormat(json))
+  }
+
+  object JsonNames {
+    final val _id = "_id"
+    final val id = "id"
+    final val occurredMillis = "occurredMillis"
+    final val receivedMillis = "receivedMillis"
+    final val policyYAML = "policyYAML"
+    final val validFrom = "validFrom"
+    final val validTo = "validTo"
+  }
 }

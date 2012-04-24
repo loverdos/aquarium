@@ -39,10 +39,10 @@ import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import com.ckkloverdos.maybe.{Failed, Maybe}
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.events.{NewWalletEntry, WalletEntry}
+import gr.grnet.aquarium.event.{NewWalletEntry, WalletEntry}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.AquariumException
-import gr.grnet.aquarium.events.im.IMEventModel
+import gr.grnet.aquarium.event.im.IMEventModel
 
 
 /**

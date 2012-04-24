@@ -37,7 +37,7 @@ package gr.grnet.aquarium.simulation
 import java.util.Date
 import gr.grnet.aquarium.store.RecordID
 import math.Ordering
-import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.event.ResourceEvent
 
 /**
  * A simulator for a user.

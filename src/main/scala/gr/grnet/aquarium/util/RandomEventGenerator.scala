@@ -37,13 +37,13 @@ package gr.grnet.aquarium.util
 
 import akka.amqp._
 import util.Random
-import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.event.ResourceEvent
 import scopt.OptionParser
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import java.lang.StringBuffer
 import gr.grnet.aquarium.logic.accounting.Policy
 import gr.grnet.aquarium.store.memory.MemIMEvent
-import gr.grnet.aquarium.events.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
 
 /**
  *  Generates random resource events to use as input for testing and

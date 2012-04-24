@@ -33,44 +33,42 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.events
+package gr.grnet.aquarium
+package event
 
-import gr.grnet.aquarium.util.json.JsonSupport
+
+import util.xml.XmlSupport
+import util.Loggable
 
 /**
- * The base model for all events coming from external systems.
+ * Generic base class for all Aquarium events
  *
+ * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+abstract class AquariumEventSkeleton(
+    _id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
+    _occurredMillis: Long, // When it occurred at client side (the sender)
+    _receivedMillis: Long, // When it was received by Aquarium
+    _eventVersion: String
+)
+  extends AquariumEventModel
+  with    XmlSupport
+  with    Loggable {
 
-trait AquariumEventModel extends JsonSupport {
-  def id: String
-  def occurredMillis: Long
-  def receivedMillis: Long
-  def userID: String
-  def eventVersion: String
-  def details: Map[String, String]
+  def id = _id
+  def occurredMillis = _occurredMillis
+  def receivedMillis = _receivedMillis
+  def eventVersion = _eventVersion
 
-  /**
-   * The ID given to this event if/when persisted to a store.
-   * The exact type of the id is store-specific.
-   */
-  def storeID: Option[AnyRef]
-
-  def isStoredEvent: Boolean = false
-
-  def withReceivedMillis(newReceivedMillis: Long): AquariumEventModel
-}
-
-object AquariumEventModel {
-  trait NamesT {
-    final val id = "id"
-    final val occurredMillis = "occurredMillis"
-    final val receivedMillis = "receivedMillis"
-    final val userID = "userID"
-    final val eventVersion = "eventVersion"
-    final val details = "details"
+  def toBytes: Array[Byte] = {
+    toJson.getBytes("UTF-8")
   }
 
-  object Names extends NamesT
+  def storeID: Option[AnyRef] = _id match {
+    case null ⇒ None
+    case _id  ⇒ Some(_id)
+  }
+
+  def details: Map[String, String] = Map()
 }

@@ -38,7 +38,7 @@ package gr.grnet.aquarium.simulation
 import java.util.Date
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.store.RecordID
-import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.event.ResourceEvent
 
 /**
  * A simulator for an instance of the standard `bandwidth` resource.

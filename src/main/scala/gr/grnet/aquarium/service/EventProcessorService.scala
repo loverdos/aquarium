@@ -52,7 +52,7 @@ import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.{AquariumException, Configurator}
 import gr.grnet.aquarium.store.RecordID
-import gr.grnet.aquarium.events.{AquariumEventModel, AquariumEventSkeleton}
+import gr.grnet.aquarium.event.{AquariumEventModel, AquariumEventSkeleton}
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,

@@ -34,7 +34,7 @@
  */
 
 package gr.grnet.aquarium
-package events
+package event
 
 import gr.grnet.aquarium.logic.accounting.Chargeslot
 import gr.grnet.aquarium.util.date.MutableDateCalc

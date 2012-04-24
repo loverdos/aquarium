@@ -33,70 +33,44 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
+package gr.grnet.aquarium.event
 
-import org.bson.types.ObjectId
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.event.im.{IMEventModel, StdIMEvent}
-
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
+ * The base model for all events coming from external systems.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class MongoDBIMEvent(
-   override val id: String,
-   override val occurredMillis: Long,
-   override val receivedMillis: Long,
-   override val userID: String,
-   override val clientID: String,
-   override val isActive: Boolean,
-   override val role: String,
-   override val eventVersion: String,
-   override val eventType: String,
-   override val details: Map[String, String],
-   _id: ObjectId
-)
-extends StdIMEvent(
-   id,
-   occurredMillis,
-   receivedMillis,
-   userID,
-   clientID,
-   isActive,
-   role,
-   eventVersion,
-   eventType,
-   details
- ) {
+trait AquariumEventModel extends JsonSupport {
+  def id: String
+  def occurredMillis: Long
+  def receivedMillis: Long
+  def userID: String
+  def eventVersion: String
+  def details: Map[String, String]
 
-  override def withReceivedMillis(newReceivedMillis: Long) = this.copy(receivedMillis = newReceivedMillis)
+  /**
+   * The ID given to this event if/when persisted to a store.
+   * The exact type of the id is store-specific.
+   */
+  def storeID: Option[AnyRef]
+
+  def isStoredEvent: Boolean = false
+
+  def withReceivedMillis(newReceivedMillis: Long): AquariumEventModel
 }
 
-object MongoDBIMEvent {
-  final def fromJson(json: String): MongoDBIMEvent = {
-    StdConverters.StdConverters.convertEx[MongoDBIMEvent](JsonTextFormat(json))
+object AquariumEventModel {
+  trait NamesT {
+    final val id = "id"
+    final val occurredMillis = "occurredMillis"
+    final val receivedMillis = "receivedMillis"
+    final val userID = "userID"
+    final val eventVersion = "eventVersion"
+    final val details = "details"
   }
 
-  final def fromJsonBytes(jsonBytes: Array[Byte]): MongoDBIMEvent = {
-    fromJson(makeString(jsonBytes))
-  }
-
-  final def fromOther(event: IMEventModel, _id: ObjectId = null): MongoDBIMEvent = {
-    MongoDBIMEvent(
-      event.id,
-      event.occurredMillis,
-      event.receivedMillis,
-      event.userID,
-      event.clientID,
-      event.isActive,
-      event.role,
-      event.eventVersion,
-      event.eventType,
-      event.details,
-      _id
-    )
-  }
+  object Names extends NamesT
 }

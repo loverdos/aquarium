@@ -45,10 +45,10 @@ import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.uid.ConcurrentVMLocalUIDGenerator
 import gr.grnet.aquarium.{AquariumException, Configurable}
-import gr.grnet.aquarium.events.{WalletEntry, ResourceEvent, PolicyEntry}
+import gr.grnet.aquarium.event.{WalletEntry, ResourceEvent, PolicyEntry}
 import gr.grnet.aquarium.converter.JsonTextFormat
 import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.events.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
 
 /**
  * An implementation of various stores that persists data in memory.

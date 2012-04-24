@@ -34,7 +34,7 @@
  */
 
 package gr.grnet.aquarium
-package events
+package event
 package im
 
 import gr.grnet.aquarium.util.makeString

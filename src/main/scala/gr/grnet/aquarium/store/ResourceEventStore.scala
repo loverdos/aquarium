@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.AquariumException
 
 /**

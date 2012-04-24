@@ -44,7 +44,7 @@ import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessIMEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{LogHelpers, makeString}
 import com.ckkloverdos.maybe._
-import gr.grnet.aquarium.events.im.IMEventModel
+import gr.grnet.aquarium.event.im.IMEventModel
 import gr.grnet.aquarium.store.memory.MemStore
 
 /**

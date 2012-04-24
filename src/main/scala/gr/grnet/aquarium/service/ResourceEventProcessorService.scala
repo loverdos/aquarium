@@ -40,7 +40,7 @@ import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
 import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessResourceEvent
-import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 
 

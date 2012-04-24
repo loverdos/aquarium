@@ -34,50 +34,69 @@
  */
 
 package gr.grnet.aquarium
-package events
+package event
 
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import java.util.Date
 import converter.{JsonTextFormat, StdConverters}
+import util.json.JsonSupport
 
 /**
- * Store entry for serialized policy data.
+ * A WalletEntry is a derived entity. Its data represent money/credits and are calculated based on
+ * resource events.
+ *
+ * Wallet entries give us a picture of when credits are calculated from resource events.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class PolicyEntry(
-  override val id: String,           //SHA-1 of the provided policyYaml string
-  override val occurredMillis: Long, //Time this event was stored
-  override val receivedMillis: Long, //Does not make sense for local events -> not used
-  policyYAML: String,                //The serialized policy
-  validFrom: Long,                   //The timestamp since when the policy is valid
-  validTo: Long,                      //The timestamp until when the policy is valid
-  userID: String = ""
-)
-extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, "1.0") {
+case class WalletEntry(
+    override val id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
+    override val occurredMillis: Long, // The time of oldest matching resource event
+    override val receivedMillis: Long, // The time the cost calculation was done
+    sourceEventIDs: List[String],      // The events that triggered this WalletEntry
+    value: Double,
+    reason: String,
+    userId: String,
+    resource: String,
+    instanceId: String,
+    finalized: Boolean, userID: String = "")
+  extends AquariumEventSkeleton(id, occurredMillis, receivedMillis, "1.0") {
 
-  assert(if(validTo != -1) validTo > validFrom else validFrom > 0)
+
+  assert(occurredMillis > 0)
+  assert(value >= 0F)
+  assert(!userId.isEmpty)
 
   def validate = true
+  
+  def fromResourceEvent(rceId: String): Boolean = {
+    sourceEventIDs contains rceId
+  }
 
   def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
-  def fromToTimeslot = Timeslot(new Date(validFrom), new Date(validTo))
+  def occurredDate = new Date(occurredMillis)
+  def receivedDate = new Date(receivedMillis)
 }
 
-object PolicyEntry {
-
-  def fromJson(json: String): PolicyEntry = {
-    StdConverters.StdConverters.convertEx[PolicyEntry](JsonTextFormat(json))
+object WalletEntry {
+  def fromJson(json: String): WalletEntry = {
+    StdConverters.StdConverters.convertEx[WalletEntry](JsonTextFormat(json))
   }
+
+  def zero = WalletEntry("", 1L, 1L, Nil,1,"","foo", "bar", "0", false)
 
   object JsonNames {
     final val _id = "_id"
     final val id = "id"
     final val occurredMillis = "occurredMillis"
     final val receivedMillis = "receivedMillis"
-    final val policyYAML = "policyYAML"
-    final val validFrom = "validFrom"
-    final val validTo = "validTo"
+    final val sourceEventIDs = "sourceEventIDs"
+    final val value = "value"
+    final val reason = "reason"
+    final val userId = "userId"
+    final val resource = "resource"
+    final val instanceId = "instanceId"
+    final val finalized = "finalized"
   }
 }

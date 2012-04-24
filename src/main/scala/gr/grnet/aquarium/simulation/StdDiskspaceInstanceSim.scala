@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.events.ResourceEvent
+import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.store.RecordID
 import com.ckkloverdos.maybe.Maybe
 import java.util.Date

@@ -44,7 +44,7 @@ import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
 import gr.grnet.aquarium.util.{ContextualLogger, CryptoUtils, Loggable}
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.AquariumException
-import gr.grnet.aquarium.events.{WalletEntry, ResourceEvent}
+import gr.grnet.aquarium.event.{WalletEntry, ResourceEvent}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 
 /**

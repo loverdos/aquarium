@@ -33,12 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.events.im
+package gr.grnet.aquarium.event.im
 
-import gr.grnet.aquarium.events.AquariumEventModel
+import gr.grnet.aquarium.event.AquariumEventModel
 
 /**
  * The model of any event sent from the `Identity Management` (IM) external system.
+ *
+ * By definition, this is the model agreed upon between Aquarium and IM.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

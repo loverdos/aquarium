@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.events.im.IMEventModel
+import gr.grnet.aquarium.event.im.IMEventModel
 import gr.grnet.aquarium.util.makeString
 
 /**

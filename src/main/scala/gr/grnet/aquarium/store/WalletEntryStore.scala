@@ -37,7 +37,7 @@ package gr.grnet.aquarium.store
 
 import java.util.Date
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.events.WalletEntry
+import gr.grnet.aquarium.event.WalletEntry
 
 /**
  * A store for Wallet entries.
