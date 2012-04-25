@@ -37,18 +37,18 @@ package gr.grnet.aquarium.actor
 package service
 package user
 
-import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 
 import gr.grnet.aquarium.actor._
-import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.user._
 
 import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.logic.accounting.RoleAgreements
 import gr.grnet.aquarium.actor.message.service.router._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.event.im.IMEventModel
+import akka.config.Supervision.Temporary
+import akka.actor.PoisonPill
+import gr.grnet.aquarium.{AquariumException, Configurator}
 
 
 /**
@@ -57,7 +57,17 @@ import gr.grnet.aquarium.event.im.IMEventModel
  */
 
 class UserActor extends ReflectiveAquariumActor {
+  private[this] var _userID: String = _
   private[this] var _userState: UserState = _
+
+  self.lifeCycle = Temporary
+
+  override protected def onThrowable(t: Throwable) = {
+    logger.error("Terminating due to: %s".format(t.getMessage), t)
+    UserActorCache.invalidate(this._userID)
+
+    self ! PoisonPill
+  }
 
   def role = UserActorRole
 
@@ -81,6 +91,8 @@ class UserActor extends ReflectiveAquariumActor {
 
   private[this] def processCreateUser(imEvent: IMEventModel): Unit = {
     val userID = imEvent.userID
+    this._userID = userID
+
     val store = _configurator.storeProvider.userStateStore
     // try find user state. normally should ot exist
     val latestUserStateOpt = store.findLatestUserStateByUserID(userID)
@@ -123,6 +135,8 @@ class UserActor extends ReflectiveAquariumActor {
       processCreateUser(imEvent)
     } else if(imEvent.isModifyUser) {
       processModifyUser(imEvent)
+    } else {
+      throw new AquariumException("Cannot interpret %s".format(imEvent))
     }
   }
 

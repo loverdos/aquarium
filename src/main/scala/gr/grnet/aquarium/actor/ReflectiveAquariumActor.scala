@@ -68,18 +68,22 @@ trait ReflectiveAquariumActor extends AquariumActor {
     Map(classMethodPairs.toSeq: _*)
   }
 
+  protected def onThrowable(t: Throwable): Unit = {
+    throw t
+  }
+
   def knownMessageTypes = role.knownMessageTypes
 
   final protected def receive: Receive = {
     case null =>
-      onNull
+      onThrowable(new NullPointerException("Received null message"))
     case message: AnyRef if messageMethodMap.contains(message.getClass) ⇒
       try messageMethodMap(message.getClass).invoke(this, message)
       catch {
         case e: InvocationTargetException ⇒
-          throw e.getTargetException
+          onThrowable(e.getTargetException)
         case e ⇒
-          throw e
+          onThrowable(e)
       }
   }
 

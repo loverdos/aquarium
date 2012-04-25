@@ -78,9 +78,13 @@ object UserActorCache extends Lifecycle {
   def put(userId: String, userActor: ActorRef): Unit =
     cache.put(userId, userActor)
 
-  def get(userId: String): Option[ActorRef] =
-    cache.getIfPresent(userId) match {
+  def get(userID: String): Option[ActorRef] =
+    cache.getIfPresent(userID) match {
       case null ⇒ None
       case actorRef ⇒ Some(actorRef)
     }
+
+  def invalidate(userID: String): Unit = {
+    cache.invalidate(userID)
+  }
 }
