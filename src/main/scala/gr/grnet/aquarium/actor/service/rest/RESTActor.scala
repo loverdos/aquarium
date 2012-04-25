@@ -151,8 +151,8 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
   def callDispatcher(message: RouterMessage, responder: RequestResponder): Unit = {
     val configurator = Configurator.MasterConfigurator
     val actorProvider = configurator.actorProvider
-    val dispatcher = actorProvider.actorForRole(DispatcherRole)
-    val futureResponse = dispatcher ask message
+    val router = actorProvider.actorForRole(RouterRole)
+    val futureResponse = router ask message
 
     futureResponse onComplete {
       future ⇒

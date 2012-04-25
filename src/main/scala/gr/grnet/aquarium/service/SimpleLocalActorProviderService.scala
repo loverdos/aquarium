@@ -126,7 +126,6 @@ object SimpleLocalActorProviderService {
   final val RolesToBeStarted = List(
     //    ResourceProcessorRole,
     RESTRole,
-    UserActorManagerRole,
     PingerRole,
     RouterRole)
 
