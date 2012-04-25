@@ -55,6 +55,14 @@ package object util {
     }
   }
 
+  def withCloseable[C <: { def close(): Unit}, A](c: C)(f: C => A): A = {
+    try {
+      f(c)
+    } finally {
+      c.close()
+    }
+  }
+
   /**
    * Compute the class name excluding any leading packages.
    *
