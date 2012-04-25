@@ -37,11 +37,10 @@ package gr.grnet.aquarium.actor
 package service
 package router
 
-import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.service.ActorProviderService
 import message.service.router._
 import akka.actor.ActorRef
-import message.config.user.UserActorInitWithUserId
 import user.{UserActorCache, UserActorSupervisor}
 import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
 
@@ -56,52 +55,59 @@ class RouterActor extends ReflectiveAquariumActor {
 
   def role = RouterRole
 
-  private[this] def _launchUserActor(userId: String): ActorRef = {
+  private[this] def _launchUserActor(userID: String): ActorRef = {
     // create a fresh instance
     val userActor = _actorProvider.actorForRole(UserActorRole)
+    UserActorCache.put(userID, userActor)
     UserActorSupervisor.supervisor.link(userActor)
-    userActor ! UserActorInitWithUserId(userId)
-    logger.info("New actor for userId: %s".format(userId))
+
+    logger.info("New actor for userId: {}", userID)
     userActor
   }
 
-  private[this] def _forwardToUserActor(userId: String, m: RouterMessage): Unit = {
-    logger.debug("Received %s".format(m))
-    UserActorCache.get(userId) match {
-      case Some(userActor) ⇒
-        logger.debug("Found user actor and forwarding request %s".format(m))
-        userActor forward m
+  private[this] def _findOrCreateUserActor(userID: String): ActorRef = {
+    UserActorCache.get(userID) match {
+      case Some(userActorRef) ⇒
+        userActorRef
       case None ⇒
-        logger.debug("Not found user actor for request %s. Launching new actor".format(m))
-        val userActor = _launchUserActor(userId)
-        UserActorCache.put(userId, userActor)
-        logger.debug("Launched new user actor and forwarding request %s".format(m))
-        userActor forward m
+        _launchUserActor(userID)
+    }
+  }
+
+  private[this] def _forwardToUserActor(userID: String, m: RouterMessage): Unit = {
+    try {
+      _findOrCreateUserActor(userID) forward m
+
+    } catch { case t: Throwable ⇒
+      logger.error("While forwarding to user actor for userID = %s".format(userID), t)
+      // FIXME: We have a message that never gets to the user actor.
+      // FIXME: We should probably shut the user actor down.
     }
   }
 
   def onAquariumPropertiesLoaded(m: AquariumPropertiesLoaded): Unit = {
+    logger.info("Configured with {}", shortClassNameOf(m))
   }
 
   def onActorProviderConfigured(m: ActorProviderConfigured): Unit = {
     this._actorProvider = m.actorProvider
-    logger.info("Configured %s with %s".format(this, m))
+    logger.info("Configured with {}", shortClassNameOf(m))
+  }
+
+  def onProcessIMEvent(m: ProcessIMEvent): Unit = {
+     _forwardToUserActor(m.imEvent.userID, m)
   }
 
   def onRequestUserBalance(m: RequestUserBalance): Unit = {
-    _forwardToUserActor(m.userId, m)
+    _forwardToUserActor(m.userID, m)
   }
 
   def onUserRequestGetState(m: UserRequestGetState): Unit = {
-    _forwardToUserActor(m.userId, m)
+    _forwardToUserActor(m.userID, m)
   }
 
   def onProcessResourceEvent(m: ProcessResourceEvent): Unit = {
     _forwardToUserActor(m.rcEvent.userID, m)
-  }
-
-  def onProcessIMEvent(m: ProcessIMEvent): Unit = {
-    _forwardToUserActor(m.imEvent.userID, m)
   }
 
   def onAdminRequestPingAll(m: AdminRequestPingAll): Unit = {

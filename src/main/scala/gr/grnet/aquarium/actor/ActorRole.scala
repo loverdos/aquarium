@@ -34,7 +34,6 @@
  */
 package gr.grnet.aquarium.actor
 
-import message.config.user.UserActorInitWithUserId
 import message.service.router._
 import service.router.RouterActor
 import service.pinger.PingerActor
@@ -125,8 +124,6 @@ case object UserActorRole
                       Set(classOf[ProcessResourceEvent],
                           classOf[ProcessIMEvent],
                           classOf[RequestUserBalance],
-                          classOf[UserActorInitWithUserId],
                           classOf[UserRequestGetState]),
                       Set(classOf[ActorProviderConfigured],
-                          classOf[AquariumPropertiesLoaded],
-                          classOf[UserActorInitWithUserId]))
+                          classOf[AquariumPropertiesLoaded]))

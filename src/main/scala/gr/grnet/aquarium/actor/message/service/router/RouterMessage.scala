@@ -69,9 +69,9 @@ sealed trait RouterResponseMessage extends RouterMessage {
   }
 }
 
-case class RequestUserBalance(userId: String, timestamp: Long) extends RouterMessage
+case class RequestUserBalance(userID: String, timestamp: Long) extends RouterMessage
 case class BalanceValue(balance: Double) extends JsonSupport
-case class ResponseUserBalance(userId: String, balance: Double, error: Option[String]) extends RouterResponseMessage {
+case class ResponseUserBalance(userID: String, balance: Double, error: Option[String]) extends RouterResponseMessage {
   def responseBody = BalanceValue(balance)
 }
 
@@ -80,8 +80,8 @@ case class UserResponseGetBalance(userId: String, balance: Double) extends Route
   def error = None
 }
 
-case class UserRequestGetState(userId: String, timestamp: Long) extends RouterMessage
-case class UserResponseGetState(userId: String, state: UserState) extends RouterResponseMessage {
+case class UserRequestGetState(userID: String, timestamp: Long) extends RouterMessage
+case class UserResponseGetState(userID: String, state: UserState) extends RouterResponseMessage {
   def responseBody = state
   val error = None
 }

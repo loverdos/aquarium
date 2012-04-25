@@ -47,12 +47,10 @@ import gr.grnet.aquarium.user._
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.logic.accounting.RoleAgreements
-import gr.grnet.aquarium.messaging.AkkaAMQP
-import gr.grnet.aquarium.actor.message.config.user.UserActorInitWithUserId
 import gr.grnet.aquarium.actor.message.service.router._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.event.im.IMEventModel
-import gr.grnet.aquarium.event.{WalletEntry}
+import gr.grnet.aquarium.event.WalletEntry
 
 
 /**
@@ -60,22 +58,16 @@ import gr.grnet.aquarium.event.{WalletEntry}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class UserActor extends AquariumActor
-with AkkaAMQP
-with ReflectiveAquariumActor
-with Loggable {
-  @volatile
-  private[this] var _userId: String = _
+class UserActor extends ReflectiveAquariumActor {
   @volatile
   private[this] var _userState: UserState = _
   @volatile
   private[this] var _timestampTheshold: Long = _
 
-  private[this] lazy val messenger = producer("aquarium") // FIXME: Read this from configuration
-
   def role = UserActorRole
 
   private[this] def _configurator: Configurator = Configurator.MasterConfigurator
+  private[this] def _userId = _userState.userId
 
   /**
    * Replay the event log for all events that affect the user state.
@@ -151,11 +143,6 @@ with Loggable {
     INFO("Setup my timestampTheshold = %s", this._timestampTheshold)
   }
 
-  def onUserActorInitWithUserId(event: UserActorInitWithUserId): Unit = {
-    this._userId = event.userId
-    DEBUG("Actor starting, loading state")
-  }
-
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
     val resourceEvent = event.rcEvent
     if(resourceEvent.userID != this._userId) {
@@ -212,7 +199,7 @@ with Loggable {
   }
 
   def onRequestUserBalance(event: RequestUserBalance): Unit = {
-    val userId = event.userId
+    val userId = event.userID
     val timestamp = event.timestamp
 
     if(TimeHelpers.nowMillis() - _userState.newestSnapshotTime > 60 * 1000) {
@@ -222,7 +209,7 @@ with Loggable {
   }
 
   def onUserRequestGetState(event: UserRequestGetState): Unit = {
-    val userId = event.userId
+    val userId = event.userID
     if(this._userId != userId) {
       ERROR("Received %s but my userId = %s".format(event, this._userId))
       // TODO: throw an exception here
