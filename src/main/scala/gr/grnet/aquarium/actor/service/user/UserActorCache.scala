@@ -72,8 +72,10 @@ object UserActorCache extends Lifecycle {
 
   def start() {}
 
-  def stop() = cache.invalidateAll;
-  cache.cleanUp
+  def stop() = {
+    cache.invalidateAll
+    cache.cleanUp
+  };
 
   def put(userId: String, userActor: ActorRef): Unit =
     cache.put(userId, userActor)
