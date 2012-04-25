@@ -137,7 +137,7 @@ class UserStateComputations extends Loggable {
 
       // NOTE: Reason here will be: InitialUserStateCalculation
       val initialUserState0 = createInitialUserStateFrom(currentUserState)
-      val initialUserStateM = userStateStore.storeUserState2(initialUserState0)
+      val initialUserStateM = userStateStore.insertUserState2(initialUserState0)
 
       clog.debug("Returning ZERO state [_idM=%s] %s".format(initialUserStateM.map(_._id), initialUserStateM))
       clog.end()
@@ -145,10 +145,16 @@ class UserStateComputations extends Loggable {
       initialUserStateM
     } else {
       // Ask DB cache for the latest known user state for this billing period
-      val latestUserStateM = userStateStore.findLatestUserStateForEndOfBillingMonth(
+      val latestUserStateM = Maybe { userStateStore.findLatestUserStateForEndOfBillingMonth(
         userId,
         billingMonthInfo.year,
-        billingMonthInfo.month)
+        billingMonthInfo.month) match {
+
+        case Some(latestUserState) ⇒
+          latestUserState
+        case None ⇒
+          null
+      }}
 
       latestUserStateM match {
         case NoVal ⇒
@@ -527,7 +533,7 @@ class UserStateComputations extends Loggable {
     clog.debug("calculationReason = %s", calculationReason)
 
     if(calculationReason.shouldStoreUserState) {
-      val storedUserStateM = userStateStore.storeUserState2(_workingUserState)
+      val storedUserStateM = userStateStore.insertUserState2(_workingUserState)
       storedUserStateM match {
         case Just(storedUserState) ⇒
           clog.info("Saved [_id=%s] %s", storedUserState._id, storedUserState)

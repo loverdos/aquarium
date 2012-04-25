@@ -258,7 +258,7 @@ aquariumpolicy:
 
   private[this]
   def showUserState(clog: ContextualLogger, userState: UserState) {
-    val id = userState.id
+    val id = userState._id
     val parentId = userState.parentUserStateId
     val credits = userState.creditsSnapshot.creditAmount
     val newWalletEntries = userState.newWalletEntries.map(_.toDebugString)

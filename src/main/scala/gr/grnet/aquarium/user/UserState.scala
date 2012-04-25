@@ -43,6 +43,7 @@ import gr.grnet.aquarium.event.{NewWalletEntry, WalletEntry}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.AquariumException
 import gr.grnet.aquarium.event.im.IMEventModel
+import org.bson.types.ObjectId
 
 
 /**
@@ -171,7 +172,7 @@ case class UserState(
     // The user state we used to compute this one. Normally the (cached)
     // state at the beginning of the billing period.
     parentUserStateId: Option[String] = None,
-    id: String = ""
+    _id: ObjectId = new ObjectId()
 ) extends JsonSupport {
 
   private[this] def _allSnapshots: List[Long] = {
@@ -188,11 +189,9 @@ case class UserState(
 
   def newestSnapshotTime: Long  = _allSnapshots max
 
-  def _id = id
   def idOpt: Option[String] = _id match {
     case null ⇒ None
-    case ""   ⇒ None
-    case _id  ⇒ Some(_id)
+    case _id  ⇒ Some(_id.toString)
   }
 
 //  def userCreationDate = new Date(userCreationMillis)
@@ -250,7 +249,7 @@ object UserState {
 
   object JsonNames {
     final val _id = "_id"
-    final val userId = "userId"
+    final val userID = "userID"
   }
 }
 

@@ -43,6 +43,7 @@ import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.user._
 
+import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.logic.accounting.RoleAgreements
 import gr.grnet.aquarium.actor.message.service.router._
@@ -66,25 +67,6 @@ class UserActor extends ReflectiveAquariumActor {
   private[this] def _timestampTheshold =
     _configurator.props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
 
-  /**
-   * Create an empty state for a user
-   */
-  def createInitialState(userID: String) = {
-    this._userState = DefaultUserStateComputations.createInitialUserState(userID, 0L, true, 0.0)
-  }
-
-
-  /**
-   * Persist current user state
-   */
-  private[this] def saveUserState(): Unit = {
-    _configurator.storeProvider.userStateStore.storeUserState(this._userState) match {
-      case Just(record) => record
-      case NoVal => ERROR("Unknown error saving state")
-      case Failed(e) =>
-        ERROR("Saving state failed: %s".format(e));
-    }
-  }
 
   def onAquariumPropertiesLoaded(event: AquariumPropertiesLoaded): Unit = {
   }
@@ -92,26 +74,38 @@ class UserActor extends ReflectiveAquariumActor {
   def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
   }
 
-  private[this] def processCreateUser(event: IMEventModel): Unit = {
-    val userId = event.userID
-    DEBUG("Creating user from state %s", event)
-    val usersDB = _configurator.storeProvider.userStateStore
-    usersDB.findUserStateByUserId(userId) match {
-      case Just(userState) ⇒
-        WARN("User already created, state = %s".format(userState))
-      case failed@Failed(e) ⇒
-        ERROR("[%s] %s", e.getClass.getName, e.getMessage)
-      case NoVal ⇒
-        val agreement = RoleAgreements.agreementForRole(event.role)
-        DEBUG("User %s assigned agreement %s".format(userId, agreement.name))
+  private[this] def _computeAgreementForNewUser(imEvent: IMEventModel): String = {
+    // FIXME: Implement based on the role
+    "default"
+  }
 
-        this._userState = DefaultUserStateComputations.createInitialUserState(
-          userId,
-          event.occurredMillis,
-          event.isActive, 0.0, List(event.role), agreement.name)
-        saveUserState
-        DEBUG("Created and stored %s", this._userState)
+  private[this] def processCreateUser(imEvent: IMEventModel): Unit = {
+    val userID = imEvent.userID
+    val store = _configurator.storeProvider.userStateStore
+    // try find user state. normally should ot exist
+    val latestUserStateOpt = store.findLatestUserStateByUserID(userID)
+    if(latestUserStateOpt.isDefined) {
+      logger.error("Got %s(%s, %s) but user already exists. Ingoring".format(
+        userID,
+        shortClassNameOf(imEvent),
+        imEvent.eventType))
+
+      return
     }
+
+    val initialAgreementName = _computeAgreementForNewUser(imEvent)
+    val newUserState    = DefaultUserStateComputations.createInitialUserState(
+      userID,
+      imEvent.occurredMillis,
+      imEvent.isActive,
+      0.0,
+      List(imEvent.role),
+      initialAgreementName)
+
+    this._userState = newUserState
+
+    // FIXME: If this fails, then the actor must be shut down.
+    store.insertUserState(newUserState)
   }
 
   private[this] def processModifyUser(event: IMEventModel): Unit = {
@@ -147,18 +141,6 @@ class UserActor extends ReflectiveAquariumActor {
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
   }
 
-  override def postStop {
-    DEBUG("Actor[%s] stopping, saving state", self.uuid)
-    saveUserState
-  }
-
-  override def preRestart(reason: Throwable) {
-    ERROR(reason, "preRestart: Actor[%s]", self.uuid)
-  }
-
-  override def postRestart(reason: Throwable) {
-    ERROR(reason, "postRestart: Actor[%s]", self.uuid)
-  }
 
   private[this] def D_userID = {
     this._userState match {

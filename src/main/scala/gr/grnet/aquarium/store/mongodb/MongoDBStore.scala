@@ -202,34 +202,36 @@ class MongoDBStore(
   //-ResourceEventStore
 
   //+ UserStateStore
-  def storeUserState(userState: UserState): Maybe[RecordID] = {
-    MongoDBStore.storeUserState(userState, userStates)
+  def insertUserState(userState: UserState) = {
+    MongoDBStore.insertUserState(userState, userStates, MongoDBStore.jsonSupportToDBObject)
   }
 
-  def findUserStateByUserId(userId: String): Maybe[UserState] = {
-    Maybe {
-      val query = new BasicDBObject(UserStateJsonNames.userId, userId)
-      val cursor = userStates find query
+  def findUserStateByUserID(userID: String): Option[UserState] = {
+    val query = new BasicDBObject(UserStateJsonNames.userID, userID)
+    val cursor = userStates find query
 
-      try {
-        if(cursor.hasNext)
-          MongoDBStore.dbObjectToUserState(cursor.next())
-        else
-          null
-      } finally {
-        cursor.close()
-      }
+    withCloseable(cursor) { cursor ⇒
+      if(cursor.hasNext)
+        Some(MongoDBStore.dbObjectToUserState(cursor.next()))
+      else
+        None
     }
+  }
+
+
+  def findLatestUserStateByUserID(userID: String) = {
+    // FIXME: implement
+    null
   }
 
   def findLatestUserStateForEndOfBillingMonth(userId: String,
                                               yearOfBillingMonth: Int,
-                                              billingMonth: Int): Maybe[UserState] = {
-    NoVal // FIXME: implement
+                                              billingMonth: Int): Option[UserState] = {
+    None // FIXME: implement
   }
 
   def deleteUserState(userId: String) = {
-    val query = new BasicDBObject(UserStateJsonNames.userId, userId)
+    val query = new BasicDBObject(UserStateJsonNames.userID, userId)
     userStates.findAndRemove(query)
   }
   //- UserStateStore
@@ -334,10 +336,6 @@ class MongoDBStore(
   def createIMEventFromOther(event: IMEventModel) = {
     MongoDBStore.createIMEventFromOther(event)
   }
-
-//  def storeUnparsed(json: String): Maybe[RecordID] = {
-//    MongoDBStore.storeJustJson(json, unparsedIMEvents)
-//  }
 
   def insertIMEvent(event: IMEventModel): IMEvent = {
     val localEvent = MongoDBIMEvent.fromOther(event, new ObjectId())
@@ -496,8 +494,8 @@ object MongoDBStore {
     }
   }
 
-  def storeUserState(userState: UserState, collection: DBCollection): Maybe[RecordID] = {
-    Maybe(storeAny[UserState](userState, collection, ResourceJsonNames.userId, _.userID, MongoDBStore.jsonSupportToDBObject))
+  def storeUserState(userState: UserState, collection: DBCollection) = {
+    storeAny[UserState](userState, collection, ResourceJsonNames.userId, _.userID, MongoDBStore.jsonSupportToDBObject)
   }
   
   def storePolicyEntry(policyEntry: PolicyEntry, collection: DBCollection): Maybe[RecordID] = {
@@ -517,6 +515,26 @@ object MongoDBStore {
     writeResult.getLastError().throwOnError()
 
     RecordID(dbObject.get("_id").toString)
+  }
+
+  // FIXME: consolidate
+  def insertUserState[A <: UserState](obj: A, collection: DBCollection, serializer: A ⇒ DBObject) = {
+    val dbObject = serializer apply obj
+    val objectId = obj._id  match {
+      case null ⇒
+        val _id = new ObjectId()
+        dbObject.put("_id", _id)
+        _id
+
+      case _id ⇒
+        _id
+    }
+
+    dbObject.put(JsonNames._id, objectId)
+
+    collection.insert(dbObject, WriteConcern.JOURNAL_SAFE)
+
+    obj
   }
 
   def insertObject[A <: MongoDBEventModel](obj: A, collection: DBCollection, serializer: (A) => DBObject) : ObjectId = {

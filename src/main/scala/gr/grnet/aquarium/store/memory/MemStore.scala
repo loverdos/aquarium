@@ -49,6 +49,7 @@ import gr.grnet.aquarium.event.{WalletEntry, ResourceEvent, PolicyEntry}
 import gr.grnet.aquarium.converter.JsonTextFormat
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
+import org.bson.types.ObjectId
 
 /**
  * An implementation of various stores that persists data in memory.
@@ -105,25 +106,34 @@ class MemStore extends UserStateStore
 
 
   //+ UserStateStore
-  def storeUserState(userState: UserState): Maybe[RecordID] = {
-    _userStates = userState.copy(id = idGen.nextUID()) :: _userStates
-    Just(RecordID(_userStates.head._id))
+  def insertUserState(userState: UserState): UserState = {
+    _userStates = userState.copy(_id = new ObjectId()) :: _userStates
+    userState
   }
 
-  def findUserStateByUserId(userId: String) = {
-    _userStates.find(_.userID == userId) match {
-      case Some(userState) ⇒
-        Just(userState)
-      case None ⇒
-        NoVal
+  def findUserStateByUserID(userID: String) = {
+    _userStates.find(_.userID == userID)
+  }
+
+  def findLatestUserStateByUserID(userID: String) = {
+    val goodOnes = _userStates.filter(_.userID == userID)
+
+    goodOnes.sortWith {
+      case (us1, us2) ⇒
+        us1.oldestSnapshotTime > us2.oldestSnapshotTime
+    } match {
+      case head :: _ ⇒
+        Some(head)
+      case _ ⇒
+        None
     }
   }
 
-  def findLatestUserStateForEndOfBillingMonth(userId: String,
+  def findLatestUserStateForEndOfBillingMonth(userID: String,
                                               yearOfBillingMonth: Int,
-                                              billingMonth: Int): Maybe[UserState] = {
+                                              billingMonth: Int): Option[UserState] = {
     val goodOnes = _userStates.filter { userState ⇒
-        val f1 = userState.userID == userId
+        val f1 = userState.userID == userID
         val f2 = userState.isFullBillingMonthState
         val bm = userState.theFullBillingMonth
         val f3 = (bm ne null) && {
@@ -138,9 +148,9 @@ class MemStore extends UserStateStore
         us1.oldestSnapshotTime > us2.oldestSnapshotTime
     } match {
       case head :: _ ⇒
-        Just(head)
+        Some(head)
       case _ ⇒
-        NoVal
+        None
     }
   }
 

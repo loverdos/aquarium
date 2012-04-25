@@ -49,28 +49,25 @@ import com.ckkloverdos.maybe.Maybe
 trait UserStateStore {
 
   /**
-   * Store a user state
+   * Store a user state.
    */
-  def storeUserState(userState: UserState): Maybe[RecordID]
+  def insertUserState(userState: UserState): UserState
 
-
-  def storeUserState2(userState: UserState): Maybe[UserState] = {
-    for {
-      recordID <- storeUserState(userState)
-    } yield {
-      userState.copy(id = recordID.id.toString)
-    }
+  def insertUserState2(userState: UserState): Maybe[UserState] = {
+    Maybe { insertUserState(userState) }
   }
 
   /**
    * Find a state by user ID
    */
-  def findUserStateByUserId(userId: String): Maybe[UserState]
+  def findUserStateByUserID(userID: String): Option[UserState]
+
+  def findLatestUserStateByUserID(userID: String): Option[UserState]
 
   /**
    * Find the most up-to-date user state for the particular billing period.
    */
-  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Maybe[UserState]
+  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
 
   /**
    * Delete a state for a user
