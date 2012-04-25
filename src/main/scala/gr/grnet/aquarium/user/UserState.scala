@@ -59,7 +59,7 @@ import gr.grnet.aquarium.event.im.IMEventModel
  *          This is communicated to Aquarium from the `IM` system.
  *
  *
- * @param userId
+ * @param userID
  *          The user ID. $communicatedByIM
  * @param userCreationMillis
  *          When the user was created.
@@ -96,7 +96,7 @@ import gr.grnet.aquarium.event.im.IMEventModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 case class UserState(
-    userId: String,
+    userID: String,
 
     userCreationMillis: Long,
 
@@ -204,7 +204,7 @@ case class UserState(
       case snapshot @ AgreementSnapshot(data, _) ⇒
         snapshot.getAgreement(at)
       case _ ⇒
-       Failed(new AquariumException("No agreement snapshot found for user %s".format(userId)))
+       Failed(new AquariumException("No agreement snapshot found for user %s".format(userID)))
     }
   }
 

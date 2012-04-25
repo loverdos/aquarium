@@ -111,7 +111,7 @@ class MemStore extends UserStateStore
   }
 
   def findUserStateByUserId(userId: String) = {
-    _userStates.find(_.userId == userId) match {
+    _userStates.find(_.userID == userId) match {
       case Some(userState) ⇒
         Just(userState)
       case None ⇒
@@ -123,7 +123,7 @@ class MemStore extends UserStateStore
                                               yearOfBillingMonth: Int,
                                               billingMonth: Int): Maybe[UserState] = {
     val goodOnes = _userStates.filter { userState ⇒
-        val f1 = userState.userId == userId
+        val f1 = userState.userID == userId
         val f2 = userState.isFullBillingMonthState
         val bm = userState.theFullBillingMonth
         val f3 = (bm ne null) && {
@@ -145,7 +145,7 @@ class MemStore extends UserStateStore
   }
 
   def deleteUserState(userId: String) {
-    _userStates.filterNot(_.userId == userId)
+    _userStates.filterNot(_.userID == userId)
   }
   //- UserStateStore
 

@@ -37,20 +37,17 @@ package gr.grnet.aquarium.actor
 package service
 package user
 
-import java.util.Date
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.user._
 
-import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.logic.accounting.RoleAgreements
 import gr.grnet.aquarium.actor.message.service.router._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.event.im.IMEventModel
-import gr.grnet.aquarium.event.WalletEntry
 
 
 /**
@@ -59,72 +56,23 @@ import gr.grnet.aquarium.event.WalletEntry
  */
 
 class UserActor extends ReflectiveAquariumActor {
-  @volatile
   private[this] var _userState: UserState = _
-  @volatile
-  private[this] var _timestampTheshold: Long = _
 
   def role = UserActorRole
 
   private[this] def _configurator: Configurator = Configurator.MasterConfigurator
-  private[this] def _userId = _userState.userId
+//  private[this] def _userId = _userState.userId
 
-  /**
-   * Replay the event log for all events that affect the user state.
-   */
-  def rebuildState(from: Long, to: Long): Unit = {
-    val start = TimeHelpers.nowMillis()
-    if(_userState == null)
-      createBlankState
-
-    //Rebuild state from user events
-    val usersDB = _configurator.storeProvider.imEventStore
-    val userEvents = usersDB.findIMEventsByUserId(_userId)
-    val numUserEvents = userEvents.size
-    _userState = replayIMEvents(_userState, userEvents, from, to)
-
-    //Rebuild state from resource events
-    val eventsDB = _configurator.storeProvider.resourceEventStore
-    val resourceEvents = eventsDB.findResourceEventsByUserIdAfterTimestamp(_userId, from)
-    val numResourceEvents = resourceEvents.size
-    //    _userState = replayResourceEvents(_userState, resourceEvents, from, to)
-
-    //Rebuild state from wallet entries
-    val wallet = _configurator.storeProvider.walletEntryStore
-    val walletEnties = wallet.findWalletEntriesAfter(_userId, new Date(from))
-    val numWalletEntries = walletEnties.size
-    _userState = replayWalletEntries(_userState, walletEnties, from, to)
-
-    INFO(("Rebuilt state from %d events (%d user events, " +
-      "%d resource events, %d wallet entries) in %d msec").format(
-      numUserEvents + numResourceEvents + numWalletEntries,
-      numUserEvents, numResourceEvents, numWalletEntries,
-      TimeHelpers.nowMillis() - start))
-  }
+  private[this] def _timestampTheshold =
+    _configurator.props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
 
   /**
    * Create an empty state for a user
    */
-  def createBlankState = {
-    this._userState = DefaultUserStateComputations.createInitialUserState(this._userId, 0L, true, 0.0)
+  def createInitialState(userID: String) = {
+    this._userState = DefaultUserStateComputations.createInitialUserState(userID, 0L, true, 0.0)
   }
 
-  /**
-   * Replay user events on the provided user state
-   */
-  def replayIMEvents(initState: UserState, events: List[IMEventModel],
-                       from: Long, to: Long): UserState = {
-    initState
-  }
-
-
-  /**
-   * Replay wallet entries on the provided user state
-   */
-  def replayWalletEntries(initState: UserState, events: List[WalletEntry],
-                          from: Long, to: Long): UserState = {
-    initState
-  }
 
   /**
    * Persist current user state
@@ -139,19 +87,9 @@ class UserActor extends ReflectiveAquariumActor {
   }
 
   def onAquariumPropertiesLoaded(event: AquariumPropertiesLoaded): Unit = {
-    this._timestampTheshold = event.props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
-    INFO("Setup my timestampTheshold = %s", this._timestampTheshold)
   }
 
-  def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
-    val resourceEvent = event.rcEvent
-    if(resourceEvent.userID != this._userId) {
-      ERROR("Received %s but my userId = %s".format(event, this._userId))
-    } else {
-      //ensureUserState()
-      //        calcWalletEntries()
-      //processResourceEvent(resourceEvent, true)
-    }
+  def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
   }
 
   private[this] def processCreateUser(event: IMEventModel): Unit = {
@@ -186,42 +124,27 @@ class UserActor extends ReflectiveAquariumActor {
   }
 
   def onProcessIMEvent(event: ProcessIMEvent): Unit = {
-    val userEvent = event.imEvent
-    if(userEvent.userID != this._userId) {
-      ERROR("Received %s but my userId = %s".format(userEvent, this._userId))
-    } else {
-      if(userEvent.isCreateUser) {
-        processCreateUser(userEvent)
-      } else if(userEvent.isModifyUser) {
-        processModifyUser(userEvent)
-      }
+    val imEvent = event.imEvent
+    if(imEvent.isCreateUser) {
+      processCreateUser(imEvent)
+    } else if(imEvent.isModifyUser) {
+      processModifyUser(imEvent)
     }
   }
 
   def onRequestUserBalance(event: RequestUserBalance): Unit = {
     val userId = event.userID
-    val timestamp = event.timestamp
-
-    if(TimeHelpers.nowMillis() - _userState.newestSnapshotTime > 60 * 1000) {
-      //        calcWalletEntries()
-    }
+    // FIXME: Implement threshold
     self reply UserResponseGetBalance(userId, _userState.creditsSnapshot.creditAmount)
   }
 
   def onUserRequestGetState(event: UserRequestGetState): Unit = {
     val userId = event.userID
-    if(this._userId != userId) {
-      ERROR("Received %s but my userId = %s".format(event, this._userId))
-      // TODO: throw an exception here
-    } else {
-      // FIXME: implement
-      ERROR("FIXME: Should have properly computed the user state")
-      //      ensureUserState()
-      self reply UserResponseGetState(userId, this._userState)
-    }
+   // FIXME: implement
+    self reply UserResponseGetState(userId, this._userState)
   }
 
-  def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
+  def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
   }
 
   override def postStop {
@@ -237,18 +160,27 @@ class UserActor extends ReflectiveAquariumActor {
     ERROR(reason, "postRestart: Actor[%s]", self.uuid)
   }
 
+  private[this] def D_userID = {
+    this._userState match {
+      case null ⇒
+        "???"
+
+      case userState ⇒
+        userState.userID
+    }
+  }
   private[this] def DEBUG(fmt: String, args: Any*) =
-    logger.debug("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
+    logger.debug("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
 
   private[this] def INFO(fmt: String, args: Any*) =
-    logger.info("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
+    logger.info("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
 
   private[this] def WARN(fmt: String, args: Any*) =
-    logger.warn("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
+    logger.warn("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
 
   private[this] def ERROR(fmt: String, args: Any*) =
-    logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)))
+    logger.error("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
 
   private[this] def ERROR(t: Throwable, fmt: String, args: Any*) =
-      logger.error("UserActor[%s]: %s".format(_userId, fmt.format(args: _*)), t)
+      logger.error("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)), t)
 }

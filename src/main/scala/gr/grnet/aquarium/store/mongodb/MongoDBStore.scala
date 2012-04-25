@@ -497,7 +497,7 @@ object MongoDBStore {
   }
 
   def storeUserState(userState: UserState, collection: DBCollection): Maybe[RecordID] = {
-    Maybe(storeAny[UserState](userState, collection, ResourceJsonNames.userId, _.userId, MongoDBStore.jsonSupportToDBObject))
+    Maybe(storeAny[UserState](userState, collection, ResourceJsonNames.userId, _.userID, MongoDBStore.jsonSupportToDBObject))
   }
   
   def storePolicyEntry(policyEntry: PolicyEntry, collection: DBCollection): Maybe[RecordID] = {

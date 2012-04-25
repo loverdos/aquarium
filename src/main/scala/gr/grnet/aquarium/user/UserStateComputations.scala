@@ -85,7 +85,7 @@ class UserStateComputations extends Loggable {
 
   def createInitialUserStateFrom(us: UserState): UserState = {
     createInitialUserState(
-      us.userId,
+      us.userID,
       us.userCreationMillis,
       us.activeStateSnapshot.isActive,
       us.creditsSnapshot.creditAmount,
@@ -676,7 +676,7 @@ case class UserStateWorker(userId: String,
 object UserStateWorker {
   def fromUserState(userState: UserState, accounting: Accounting, resourcesMap: DSLResourcesMap): UserStateWorker = {
     UserStateWorker(
-      userState.userId,
+      userState.userID,
       userState.latestResourceEventsSnapshot.toMutableWorker,
       userState.implicitlyIssuedSnapshot.toMutableWorker,
       IgnoredFirstResourceEventsWorker.Empty,
