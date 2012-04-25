@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium
 
-import actor.DispatcherRole
+import actor.RouterRole
 import org.junit.Test
 import org.junit.Assert._
 
@@ -65,7 +65,7 @@ class ConfiguratorTest {
   def testGetDispatcherActor: Unit = {
     val mc = Configurator.MasterConfigurator
     val ap = mc.actorProvider
-    val dispatcher = ap.actorForRole(DispatcherRole)
+    val dispatcher = ap.actorForRole(RouterRole)
   }
 
   @Test

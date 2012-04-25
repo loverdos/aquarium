@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.actor.DispatcherRole
+import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
@@ -55,7 +55,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
 
   override def forward(event: ResourceEvent): Unit = {
     if(event ne null) {
-      val businessLogicDispacther = _configurator.actorProvider.actorForRole(DispatcherRole)
+      val businessLogicDispacther = _configurator.actorProvider.actorForRole(RouterRole)
       businessLogicDispacther ! ProcessResourceEvent(event)
     }
   }

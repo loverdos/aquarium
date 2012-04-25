@@ -41,16 +41,19 @@ import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.service.ActorProviderService
 import message.config.ActorProviderConfigured
 import message.service.dispatcher._
+import akka.actor.ActorRef
+import message.config.user.UserActorInitWithUserId
+import user.{UserActorCache, UserActorSupervisor}
 
 /**
- * Business logic dispatcher.
+ * Business logic dispatcher. Incoming messages are dispatched to appropriate destinations.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class DispatcherActor extends AquariumActor with Loggable {
+class RouterActor extends AquariumActor with Loggable {
   private[this] var _actorProvider: ActorProviderService = _
 
-  def role = DispatcherRole
+  def role = RouterRole
 
   private[this] def _forwardToUserManager(m: DispatcherMessage): Unit = {
     logger.debug("Received %s".format(m))
@@ -58,6 +61,30 @@ class DispatcherActor extends AquariumActor with Loggable {
     // forward to the user actor manager, which in turn will
     // forward to the appropriate user actor (and create one if it does not exist)
     userActorManager forward m
+  }
+
+  private[this] def _launchUserActor(userId: String): ActorRef = {
+    // create a fresh instance
+    val userActor = _actorProvider.actorForRole(UserActorRole)
+    UserActorSupervisor.supervisor.link(userActor)
+    userActor ! UserActorInitWithUserId(userId)
+    logger.info("New actor for userId: %s".format(userId))
+    userActor
+  }
+
+  private[this] def _forwardToUserActor(userId: String, m: DispatcherMessage): Unit = {
+    logger.debug("Received %s".format(m))
+    UserActorCache.get(userId) match {
+      case Some(userActor) ⇒
+        logger.debug("Found user actor and forwarding request %s".format(m))
+        userActor forward m
+      case None ⇒
+        logger.debug("Not found user actor for request %s. Launching new actor".format(m))
+        val userActor = _launchUserActor(userId)
+        UserActorCache.put(userId, userActor)
+        logger.debug("Launched new user actor and forwarding request %s".format(m))
+        userActor forward m
+    }
   }
 
   protected def receive = {

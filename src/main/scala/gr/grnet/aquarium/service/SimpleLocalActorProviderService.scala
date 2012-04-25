@@ -128,7 +128,7 @@ object SimpleLocalActorProviderService {
     RESTRole,
     UserActorManagerRole,
     PingerRole,
-    DispatcherRole)
+    RouterRole)
 
   lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
     RolesToBeStarted map {

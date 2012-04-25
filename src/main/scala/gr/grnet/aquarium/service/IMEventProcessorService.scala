@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.service
 
 
-import gr.grnet.aquarium.actor.DispatcherRole
+import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessIMEvent
@@ -59,7 +59,7 @@ class IMEventProcessorService extends EventProcessorService[IMEventModel] {
 
   override def forward(event: IMEventModel) = {
     if(event ne null) {
-      _configurator.actorProvider.actorForRole(DispatcherRole) ! ProcessIMEvent(event)
+      _configurator.actorProvider.actorForRole(RouterRole) ! ProcessIMEvent(event)
     }
   }
 
