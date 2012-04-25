@@ -534,7 +534,6 @@ object MongoDBStore {
     dbObject.put(JsonNames._id, objectId)
 
     val writeResult = collection.insert(dbObject, WriteConcern.JOURNAL_SAFE)
-    writeResult.getLastError().throwOnError()
 
     objectId
   }
