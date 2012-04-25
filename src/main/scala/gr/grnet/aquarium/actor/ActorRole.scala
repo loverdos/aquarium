@@ -35,8 +35,8 @@
 package gr.grnet.aquarium.actor
 
 import message.config.user.UserActorInitWithUserId
-import message.service.dispatcher._
-import service.dispatcher.RouterActor
+import message.service.router._
+import service.router.RouterActor
 import service.pinger.PingerActor
 import service.rest.RESTActor
 import service.user.{UserActorManager, UserActor}
@@ -91,7 +91,7 @@ case object PingerRole
                       Set(classOf[AdminRequestPingAll]))
 
 /**
- * The generic router/dispatcher.
+ * The generic router.
  */
 case object RouterRole
     extends ActorRole("RouterRole",

@@ -39,7 +39,7 @@ import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
-import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessResourceEvent
+import gr.grnet.aquarium.actor.message.service.router.ProcessResourceEvent
 import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 

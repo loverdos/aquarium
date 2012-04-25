@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.actor.message
 package service
-package dispatcher
+package router
 
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.json.JsonSupport
@@ -45,15 +45,15 @@ import gr.grnet.aquarium.converter.{PrettyJsonTextFormat, StdConverters}
 
 
 /**
- * This is the base class of the messages the dispatcher understands.
+ * This is the base class of the messages the [[gr.grnet.aquarium.actor.service.router.RouterActor]] understands.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-sealed trait DispatcherMessage extends ActorMessage {
+sealed trait RouterMessage extends ActorMessage {
   def isError: Boolean = false
 }
 
-sealed trait DispatcherResponseMessage extends DispatcherMessage {
+sealed trait RouterResponseMessage extends RouterMessage {
   def error: Option[String]
 
   override def isError = error.isDefined
@@ -69,19 +69,19 @@ sealed trait DispatcherResponseMessage extends DispatcherMessage {
   }
 }
 
-case class RequestUserBalance(userId: String, timestamp: Long) extends DispatcherMessage
+case class RequestUserBalance(userId: String, timestamp: Long) extends RouterMessage
 case class BalanceValue(balance: Double) extends JsonSupport
-case class ResponseUserBalance(userId: String, balance: Double, error: Option[String]) extends DispatcherResponseMessage {
+case class ResponseUserBalance(userId: String, balance: Double, error: Option[String]) extends RouterResponseMessage {
   def responseBody = BalanceValue(balance)
 }
 
-case class UserResponseGetBalance(userId: String, balance: Double) extends DispatcherResponseMessage {
+case class UserResponseGetBalance(userId: String, balance: Double) extends RouterResponseMessage {
   def responseBody = BalanceValue(balance)
   def error = None
 }
 
-case class UserRequestGetState(userId: String, timestamp: Long) extends DispatcherMessage
-case class UserResponseGetState(userId: String, state: UserState) extends DispatcherResponseMessage {
+case class UserRequestGetState(userId: String, timestamp: Long) extends RouterMessage
+case class UserResponseGetState(userId: String, state: UserState) extends RouterResponseMessage {
   def responseBody = state
   val error = None
 }
@@ -91,14 +91,14 @@ case class UserResponseGetState(userId: String, state: UserState) extends Dispat
  *
  * Note that the prefix `Process` means that no reply is created or needed.
  */
-case class ProcessResourceEvent(rcEvent: ResourceEvent) extends DispatcherMessage
+case class ProcessResourceEvent(rcEvent: ResourceEvent) extends RouterMessage
 
 /**
  * Dispatcher message that triggers the user event processing pipeline.
  *
  * Note that the prefix `Process` means that no reply is created or needed.
  */
-case class ProcessIMEvent(imEvent: IMEventModel) extends DispatcherMessage
+case class ProcessIMEvent(imEvent: IMEventModel) extends RouterMessage
 
 
-case class AdminRequestPingAll() extends DispatcherMessage
+case class AdminRequestPingAll() extends RouterMessage

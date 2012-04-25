@@ -49,7 +49,7 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.logic.accounting.RoleAgreements
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import gr.grnet.aquarium.actor.message.config.user.UserActorInitWithUserId
-import gr.grnet.aquarium.actor.message.service.dispatcher._
+import gr.grnet.aquarium.actor.message.service.router._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.event.im.IMEventModel
 import gr.grnet.aquarium.event.{WalletEntry}

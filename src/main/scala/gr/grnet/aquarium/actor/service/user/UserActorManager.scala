@@ -41,7 +41,7 @@ import akka.actor.ActorRef
 import gr.grnet.aquarium.actor._
 import message.config.user.UserActorInitWithUserId
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
-import message.service.dispatcher._
+import message.service.router._
 import gr.grnet.aquarium.service.ActorProviderService
 
 
@@ -74,7 +74,7 @@ class UserActorManager extends ReflectiveAquariumActor {
     userActor
   }
 
-  private[this] def _forwardToUserActor(userId: String, m: DispatcherMessage): Unit = {
+  private[this] def _forwardToUserActor(userId: String, m: RouterMessage): Unit = {
     logger.debug("Received %s".format(m))
     UserActorCache.get(userId) match {
       case Some(userActor) ⇒

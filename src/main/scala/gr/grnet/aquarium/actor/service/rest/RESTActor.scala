@@ -47,7 +47,7 @@ import akka.actor.Actor
 import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, RouterRole}
 import RESTPaths.{UserBalancePath, UserStatePath, AdminPingAll}
 import com.ckkloverdos.maybe.{NoVal, Just}
-import message.service.dispatcher._
+import message.service.router._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
 
@@ -148,7 +148,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
 
   private[this]
-  def callDispatcher(message: DispatcherMessage, responder: RequestResponder): Unit = {
+  def callDispatcher(message: RouterMessage, responder: RequestResponder): Unit = {
     val configurator = Configurator.MasterConfigurator
     val actorProvider = configurator.actorProvider
     val dispatcher = actorProvider.actorForRole(DispatcherRole)
@@ -166,7 +166,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
 
           case Some(Right(actualResponse)) ⇒
             actualResponse match {
-              case dispatcherResponse: DispatcherResponseMessage if (!dispatcherResponse.isError) ⇒
+              case dispatcherResponse: RouterResponseMessage if (!dispatcherResponse.isError) ⇒
                 //logger.debug("Received response: %s".format(dispatcherResponse))
                 //logger.debug("Received response (JSON): %s".format(dispatcherResponse.toJson))
                 //logger.debug("Received response:body %s".format(dispatcherResponse.responseBody))
@@ -177,7 +177,7 @@ class RESTActor(_id: String) extends AquariumActor with Loggable {
                     body = dispatcherResponse.responseBodyToJson.getBytes("UTF-8"),
                     headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
 
-              case dispatcherResponse: DispatcherResponseMessage ⇒
+              case dispatcherResponse: RouterResponseMessage ⇒
                 logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
                 responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
 

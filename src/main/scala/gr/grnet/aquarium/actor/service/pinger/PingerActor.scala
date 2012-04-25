@@ -39,7 +39,7 @@ package pinger
 
 
 import gr.grnet.aquarium.actor.{ReflectiveAquariumActor, PingerRole}
-import message.service.dispatcher.AdminRequestPingAll
+import message.service.router.AdminRequestPingAll
 
 
 /**

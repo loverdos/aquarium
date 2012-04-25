@@ -39,7 +39,7 @@ package gr.grnet.aquarium.service
 import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
-import gr.grnet.aquarium.actor.message.service.dispatcher.ProcessIMEvent
+import gr.grnet.aquarium.actor.message.service.router.ProcessIMEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe._

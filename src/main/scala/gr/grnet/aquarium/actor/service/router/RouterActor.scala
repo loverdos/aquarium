@@ -35,27 +35,28 @@
 
 package gr.grnet.aquarium.actor
 package service
-package dispatcher
+package router
 
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.service.ActorProviderService
-import message.config.ActorProviderConfigured
-import message.service.dispatcher._
+import message.service.router._
 import akka.actor.ActorRef
 import message.config.user.UserActorInitWithUserId
 import user.{UserActorCache, UserActorSupervisor}
+import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
 
 /**
- * Business logic dispatcher. Incoming messages are dispatched to appropriate destinations.
+ * Business logic router. Incoming messages are routed to appropriate destinations. Replies are routed back
+ * appropriately.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RouterActor extends AquariumActor with Loggable {
+class RouterActor extends ReflectiveAquariumActor {
   private[this] var _actorProvider: ActorProviderService = _
 
   def role = RouterRole
 
-  private[this] def _forwardToUserManager(m: DispatcherMessage): Unit = {
+  private[this] def _forwardToUserManager(m: RouterMessage): Unit = {
     logger.debug("Received %s".format(m))
     val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
     // forward to the user actor manager, which in turn will
@@ -72,7 +73,7 @@ class RouterActor extends AquariumActor with Loggable {
     userActor
   }
 
-  private[this] def _forwardToUserActor(userId: String, m: DispatcherMessage): Unit = {
+  private[this] def _forwardToUserActor(userId: String, m: RouterMessage): Unit = {
     logger.debug("Received %s".format(m))
     UserActorCache.get(userId) match {
       case Some(userActor) ⇒
@@ -87,23 +88,35 @@ class RouterActor extends AquariumActor with Loggable {
     }
   }
 
-  protected def receive = {
-    case ActorProviderConfigured(actorProvider) ⇒
-      this._actorProvider = actorProvider
-      logger.info("Received actorProvider = %s".format(this._actorProvider))
+  def onAquariumPropertiesLoaded(m: AquariumPropertiesLoaded): Unit = {
+  }
 
-    case m@RequestUserBalance(userId, timestamp) ⇒
-      _forwardToUserManager(m)
+  def onActorProviderConfigured(m: ActorProviderConfigured): Unit = {
+    this._actorProvider = m.actorProvider
+    logger.info("Configured %s with %s".format(this, m))
+  }
 
-    case m@UserRequestGetState(userId, timestamp) ⇒
-      _forwardToUserManager(m)
+  def onRequestUserBalance(m: RequestUserBalance): Unit = {
+    _forwardToUserActor(m.userId, m)
+  }
 
-    case m@ProcessResourceEvent(resourceEvent) ⇒
-      _forwardToUserManager(m)
+  def onUserRequestGetState(m: UserRequestGetState): Unit = {
+    _forwardToUserActor(m.userId, m)
+  }
 
-    case m@ProcessIMEvent(userEvent) ⇒
-      _forwardToUserManager(m)
+  def onProcessResourceEvent(m: ProcessResourceEvent): Unit = {
+    _forwardToUserActor(m.rcEvent.userID, m)
+  }
 
-    case m@AdminRequestPingAll ⇒
+  def onProcessIMEvent(m: ProcessIMEvent): Unit = {
+    _forwardToUserActor(m.imEvent.userID, m)
+  }
+
+  def onAdminRequestPingAll(m: AdminRequestPingAll): Unit = {
+
+  }
+
+  override def postStop = {
+    UserActorCache.stop
   }
 }
