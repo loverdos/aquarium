@@ -56,14 +56,6 @@ class RouterActor extends ReflectiveAquariumActor {
 
   def role = RouterRole
 
-  private[this] def _forwardToUserManager(m: RouterMessage): Unit = {
-    logger.debug("Received %s".format(m))
-    val userActorManager = _actorProvider.actorForRole(UserActorManagerRole)
-    // forward to the user actor manager, which in turn will
-    // forward to the appropriate user actor (and create one if it does not exist)
-    userActorManager forward m
-  }
-
   private[this] def _launchUserActor(userId: String): ActorRef = {
     // create a fresh instance
     val userActor = _actorProvider.actorForRole(UserActorRole)
