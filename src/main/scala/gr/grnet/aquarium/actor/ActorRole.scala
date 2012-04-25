@@ -39,7 +39,7 @@ import message.service.router._
 import service.router.RouterActor
 import service.pinger.PingerActor
 import service.rest.RESTActor
-import service.user.{UserActorManager, UserActor}
+import service.user.{UserActor}
 import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured, ActorConfigurationMessage}
 import cc.spray.can.{Timeout, RequestContext}
 
@@ -102,7 +102,8 @@ case object RouterRole
                           classOf[ProcessResourceEvent],
                           classOf[ProcessIMEvent],
                           classOf[AdminRequestPingAll]),
-                      Set(classOf[ActorProviderConfigured]))
+                      Set(classOf[ActorProviderConfigured],
+                          classOf[AquariumPropertiesLoaded]))
 
 /**
  * REST request handler.
@@ -113,20 +114,6 @@ case object RESTRole
                       classOf[RESTActor],
                       Set(classOf[RequestContext],
                           classOf[Timeout]))
-
-/**
- * Role for the actor that is responsible for user actor provisioning.
- */
-case object UserActorManagerRole
-    extends ActorRole("UserActorManagerRole",
-                      true,
-                      classOf[UserActorManager],
-                      Set(classOf[RequestUserBalance],
-                          classOf[UserRequestGetState],
-                          classOf[ProcessResourceEvent],
-                          classOf[ProcessIMEvent]),
-                      Set(classOf[ActorProviderConfigured],
-                          classOf[AquariumPropertiesLoaded]))
 
 /**
  * User-oriented business logic handler role.

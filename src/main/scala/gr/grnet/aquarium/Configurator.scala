@@ -393,7 +393,7 @@ object Configurator {
     final val policy_store_class = "policy.store.class"
 
 
-    /** The lower mark for the UserActors' LRU, managed by UserActorManager.
+    /** The lower mark for the UserActors' LRU.
      *
      * The terminology is borrowed from the (also borrowed) Apache-lucene-solr-based implementation.
      *
@@ -401,7 +401,7 @@ object Configurator {
     final val user_actors_lru_lower_mark = "user.actors.LRU.lower.mark"
 
     /**
-     * The upper mark for the UserActors' LRU, managed by UserActorManager.
+     * The upper mark for the UserActors' LRU.
      *
      * The terminology is borrowed from the (also borrowed) Apache-lucene-solr-based implementation.
      */
