@@ -68,7 +68,17 @@ trait ReflectiveAquariumActor extends AquariumActor {
     Map(classMethodPairs.toSeq: _*)
   }
 
-  protected def onThrowable(t: Throwable): Unit = {
+  /**
+   * Handles an exception that occurred while servicing a message.
+   *
+   * @param t
+   *          The exception.
+   * @param servicingMessage
+   *          The message that was being served while the exception happened.
+   *          Note that the message can be `null`, in which case the exception
+   *          is an NPE.
+   */
+  protected def onThrowable(t: Throwable, servicingMessage: AnyRef): Unit = {
     throw t
   }
 
@@ -76,18 +86,16 @@ trait ReflectiveAquariumActor extends AquariumActor {
 
   final protected def receive: Receive = {
     case null =>
-      onThrowable(new NullPointerException("Received null message"))
+      onThrowable(new NullPointerException("Received null message"), null)
+
     case message: AnyRef if messageMethodMap.contains(message.getClass) ⇒
       try messageMethodMap(message.getClass).invoke(this, message)
       catch {
         case e: InvocationTargetException ⇒
-          onThrowable(e.getTargetException)
-        case e ⇒
-          onThrowable(e)
-      }
-  }
+          onThrowable(e.getTargetException, message)
 
-  def onNull: Unit = {
-    throw new NullPointerException(this.toString)
+        case e ⇒
+          onThrowable(e, message)
+      }
   }
 }
