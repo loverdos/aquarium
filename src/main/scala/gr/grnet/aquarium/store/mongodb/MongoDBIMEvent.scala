@@ -39,7 +39,9 @@ import org.bson.types.ObjectId
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.event.im.{IMEventModel, StdIMEvent}
-import gr.grnet.aquarium.event.AquariumEventModel
+import gr.grnet.aquarium.event.ExternalEventModel
+import com.mongodb.DBObject
+import com.mongodb.util.JSON
 
 
 /**
@@ -59,21 +61,29 @@ case class MongoDBIMEvent(
    eventType: String,
    details: Map[String, String],
    _id: ObjectId
- ) extends AquariumEventModel with IMEventModel with MongoDBEventModel {
+) extends IMEventModel with MongoDBEventModel {
 
-  override def withReceivedMillis(newReceivedMillis: Long) = this.copy(receivedMillis = newReceivedMillis)
+  def withReceivedMillis(newReceivedMillis: Long) =
+    this.copy(receivedMillis = newReceivedMillis)
+
+  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
+    this.copy(details = newDetails, occurredMillis = newOccurredMillis)
 }
 
 object MongoDBIMEvent {
-  final def fromJson(json: String): MongoDBIMEvent = {
+  final def fromJsonString(json: String): MongoDBIMEvent = {
     StdConverters.AllConverters.convertEx[MongoDBIMEvent](JsonTextFormat(json))
   }
 
   final def fromJsonBytes(jsonBytes: Array[Byte]): MongoDBIMEvent = {
-    fromJson(makeString(jsonBytes))
+    fromJsonString(makeString(jsonBytes))
   }
 
-  final def fromOther(event: IMEventModel, _id: ObjectId = null): MongoDBIMEvent = {
+  final def fromDBObject(dbObject: DBObject): MongoDBIMEvent = {
+    fromJsonString(JSON.serialize(dbObject))
+  }
+
+  final def fromOther(event: IMEventModel, _id: ObjectId): MongoDBIMEvent = {
     MongoDBIMEvent(
       event.id,
       event.occurredMillis,

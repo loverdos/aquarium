@@ -63,7 +63,7 @@ case class WalletEntry(
     eventVersion: String = "1.0",
     userID: String = "",
     details: Map[String, String] = Map()
-) extends AquariumEventModel {
+) extends ExternalEventModel {
 
 
   assert(occurredMillis > 0)
@@ -77,6 +77,9 @@ case class WalletEntry(
   }
 
   def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+
+  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
+    this.copy(details = newDetails, occurredMillis = newOccurredMillis)
 
   def occurredDate = new Date(occurredMillis)
   def receivedDate = new Date(receivedMillis)

@@ -40,11 +40,11 @@ import gr.grnet.aquarium.util.{findFromMapAsMaybe, findAndRemoveFromMap, shortCl
 import gr.grnet.aquarium.logic.accounting.Policy
 import java.util.Date
 import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
-import gr.grnet.aquarium.event.ResourceEvent
-import gr.grnet.aquarium.event.ResourceEvent.FullMutableResourceTypeMap
+import gr.grnet.aquarium.event.resource.ResourceEventModel.FullMutableResourceTypeMap
 import logic.accounting.dsl.{Timeslot, DSLAgreement}
 import collection.immutable.{TreeMap, SortedMap}
 import util.date.MutableDateCalc
+import event.resource.ResourceEventModel
 
 /**
  * Snapshot of data that are user-related.
@@ -250,7 +250,7 @@ case class ActiveStateSnapshot(isActive: Boolean, snapshotTime: Long) extends Da
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEvent],
+case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEventModel],
                                         snapshotTime: Long) extends DataSnapshot {
 
   /**
@@ -259,7 +259,7 @@ case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEvent],
    * @return A fresh instance of [[gr.grnet.aquarium.user.LatestResourceEventsWorker]].
    */
   def toMutableWorker = {
-    val map = scala.collection.mutable.Map[ResourceEvent.FullResourceType, ResourceEvent]()
+    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
     for(latestEvent <- resourceEvents) {
       map(latestEvent.fullResourceInfo) = latestEvent
     }
@@ -285,21 +285,21 @@ case class LatestResourceEventsWorker(latestEventsMap: FullMutableResourceTypeMa
   def toImmutableSnapshot(snapshotTime: Long) =
     LatestResourceEventsSnapshot(latestEventsMap.valuesIterator.toList, snapshotTime)
 
-  def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
+  def updateResourceEvent(resourceEvent: ResourceEventModel): Unit = {
     latestEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
   }
   
-  def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+  def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEventModel] = {
     findFromMapAsMaybe(latestEventsMap, (resource, instanceId))
   }
 
-  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEventModel] = {
     findAndRemoveFromMap(latestEventsMap, (resource, instanceId))
   }
 
   def size = latestEventsMap.size
 
-  def foreach[U](f: ResourceEvent => U): Unit = {
+  def foreach[U](f: ResourceEventModel => U): Unit = {
     latestEventsMap.valuesIterator.foreach(f)
   }
 }
@@ -310,7 +310,7 @@ object LatestResourceEventsWorker {
   /**
    * Helper factory to construct a worker from a list of events.
    */
-  def fromList(latestEventsList: List[ResourceEvent]): LatestResourceEventsWorker = {
+  def fromList(latestEventsList: List[ResourceEventModel]): LatestResourceEventsWorker = {
     LatestResourceEventsSnapshot(latestEventsList, 0L).toMutableWorker
   }
 }
@@ -324,7 +324,7 @@ object LatestResourceEventsWorker {
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[ResourceEvent],
+case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[ResourceEventModel],
                                                   snapshotTime: Long) extends DataSnapshot {
   /**
    * The gateway to playing with mutable state.
@@ -332,7 +332,7 @@ case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[R
    * @return A fresh instance of [[gr.grnet.aquarium.user.ImplicitlyIssuedResourceEventsWorker]].
    */
   def toMutableWorker = {
-    val map = scala.collection.mutable.Map[ResourceEvent.FullResourceType, ResourceEvent]()
+    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
     for(implicitEvent <- implicitlyIssuedEvents) {
       map(implicitEvent.fullResourceInfo) = implicitEvent
     }
@@ -350,20 +350,20 @@ case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[R
  */
 case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullMutableResourceTypeMap) {
 
-  def toList: scala.List[ResourceEvent] = {
+  def toList: scala.List[ResourceEventModel] = {
     implicitlyIssuedEventsMap.valuesIterator.toList
   }
 
   def toImmutableSnapshot(snapshotTime: Long) =
     ImplicitlyIssuedResourceEventsSnapshot(toList, snapshotTime)
 
-  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEventModel] = {
     findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))
   }
 
   def size = implicitlyIssuedEventsMap.size
 
-  def foreach[U](f: ResourceEvent => U): Unit = {
+  def foreach[U](f: ResourceEventModel => U): Unit = {
     implicitlyIssuedEventsMap.valuesIterator.foreach(f)
   }
 }
@@ -379,10 +379,10 @@ object ImplicitlyIssuedResourceEventsWorker {
  * @param ignoredFirstEvents
  * @param snapshotTime
  */
-case class IgnoredFirstResourceEventsSnapshot(ignoredFirstEvents: List[ResourceEvent],
+case class IgnoredFirstResourceEventsSnapshot(ignoredFirstEvents: List[ResourceEventModel],
                                               snapshotTime: Long) extends DataSnapshot {
   def toMutableWorker = {
-    val map = scala.collection.mutable.Map[ResourceEvent.FullResourceType, ResourceEvent]()
+    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
     for(ignoredFirstEvent <- ignoredFirstEvents) {
       map(ignoredFirstEvent.fullResourceInfo) = ignoredFirstEvent
     }
@@ -400,17 +400,17 @@ case class IgnoredFirstResourceEventsWorker(ignoredFirstEventsMap: FullMutableRe
   def toImmutableSnapshot(snapshotTime: Long) =
     IgnoredFirstResourceEventsSnapshot(ignoredFirstEventsMap.valuesIterator.toList, snapshotTime)
 
-  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEventModel] = {
     findAndRemoveFromMap(ignoredFirstEventsMap, (resource, instanceId))
   }
 
-  def updateResourceEvent(resourceEvent: ResourceEvent): Unit = {
+  def updateResourceEvent(resourceEvent: ResourceEventModel): Unit = {
     ignoredFirstEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
   }
 
   def size = ignoredFirstEventsMap.size
 
-  def foreach[U](f: ResourceEvent => U): Unit = {
+  def foreach[U](f: ResourceEventModel => U): Unit = {
     ignoredFirstEventsMap.valuesIterator.foreach(f)
   }
 }

@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
-import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 /**
  * A cost policy indicates how charging for a resource will be done
@@ -112,7 +112,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * in which case it is ignored.
    *
    * @param oldAmount the old accumulating amount
-   * @param newEventValue the value contained in a newly arrived [[gr.grnet.aquarium.event.ResourceEvent]]
+   * @param newEventValue the value contained in a newly arrived [[gr.grnet.aquarium.event.resource.ResourceEventModel]]
    * @return
    */
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double
@@ -168,13 +168,13 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    */
   def supportsImplicitEvents: Boolean
 
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent): Boolean
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel): Boolean
 
   @throws(classOf[Exception])
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, newOccurredMillis: Long): ResourceEvent
+  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long): ResourceEventModel
 
   @throws(classOf[Exception])
-  def constructImplicitStartEventFor(resourceEvent: ResourceEvent): ResourceEvent
+  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel): ResourceEventModel
 }
 
 object DSLCostPolicyNames {
@@ -247,13 +247,13 @@ case object OnceCostPolicy
 
   def supportsImplicitEvents = false
 
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = false
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = false
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, occurredMillis: Long) = {
+  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
     throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
 
-  def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
+  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
     throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
@@ -293,25 +293,20 @@ case object ContinuousCostPolicy
     true
   }
 
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
     true
   }
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, newOccurredMillis: Long) = {
+  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long) = {
     assert(supportsImplicitEvents && mustConstructImplicitEndEventFor(resourceEvent))
 
     val details = resourceEvent.details
-    val newDetails = ResourceEvent.setAquariumSyntheticAndImplicitEnd(details)
-    val newValue   = resourceEvent.value
+    val newDetails = ResourceEventModel.setAquariumSyntheticAndImplicitEnd(details)
 
-    resourceEvent.copy(
-      occurredMillis = newOccurredMillis,
-      details = newDetails,
-      value = newValue
-    )
+    resourceEvent.withDetails(newDetails, newOccurredMillis)
   }
 
-  def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
+  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
     throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
@@ -396,28 +391,24 @@ case object OnOffCostPolicy
   }
 
 
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
     // If we have ON events with no OFF companions at the end of the billing period,
     // then we must generate implicit OFF events.
     OnOffCostPolicyValues.isONValue(resourceEvent.value)
   }
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, newOccurredMillis: Long) = {
+  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long) = {
     assert(supportsImplicitEvents && mustConstructImplicitEndEventFor(resourceEvent))
     assert(OnOffCostPolicyValues.isONValue(resourceEvent.value))
 
     val details = resourceEvent.details
-    val newDetails = ResourceEvent.setAquariumSyntheticAndImplicitEnd(details)
+    val newDetails = ResourceEventModel.setAquariumSyntheticAndImplicitEnd(details)
     val newValue   = OnOffCostPolicyValues.OFF
 
-    resourceEvent.copy(
-      occurredMillis = newOccurredMillis,
-      details = newDetails,
-      value = newValue
-    )
+    resourceEvent.withDetailsAndValue(newDetails, newValue, newOccurredMillis)
   }
 
-  def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
+  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
     throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
@@ -466,15 +457,15 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
     false
   }
 
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEvent) = {
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
     false
   }
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEvent, occurredMillis: Long) = {
+  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
     throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
 
-  def constructImplicitStartEventFor(resourceEvent: ResourceEvent) = {
+  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
     throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }

@@ -51,7 +51,7 @@ import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
 import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.{AquariumException, Configurator}
-import gr.grnet.aquarium.event.AquariumEventModel
+import gr.grnet.aquarium.event.ExternalEventModel
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,
@@ -63,7 +63,7 @@ import gr.grnet.aquarium.event.AquariumEventModel
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-abstract class EventProcessorService[E <: AquariumEventModel] extends AkkaAMQP with Loggable with Lifecycle {
+abstract class EventProcessorService[E <: ExternalEventModel] extends AkkaAMQP with Loggable with Lifecycle {
 
   /* Messages exchanged between the persister and the queuereader */
   case class AckData(msgId: String, deliveryTag: Long, queue: ActorRef)

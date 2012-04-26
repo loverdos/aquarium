@@ -33,59 +33,74 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.event.im
+package gr.grnet.aquarium.store.mongodb
+
+import org.bson.types.ObjectId
+import com.mongodb.DBObject
 
 import gr.grnet.aquarium.util.makeString
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-
+import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.converter.{StdConverters, JsonTextFormat}
+import com.mongodb.util.JSON
 
 /**
+ * A [[gr.grnet.aquarium.event.resource.ResourceEventModel]] as represented for MongoDB.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdIMEvent(
-    id: String, // The id at the sender side
-    occurredMillis: Long, // When it occurred at the sender side
-    receivedMillis: Long, // When it was received by Aquarium
-    userID: String,
-    clientID: String,
-    isActive: Boolean,
-    role: String,
-    eventVersion: String,
-    eventType: String,
-    details: Map[String, String])
-extends IMEventModel {
+case class MongoDBResourceEvent(
+  id: String,
+  occurredMillis: Long,
+  receivedMillis: Long,
+  userID: String,
+  clientID: String,
+  resource: String,
+  instanceID: String,
+  value: Double,
+  eventVersion: String,
+  details: Map[String, String],
+  _id: ObjectId
+) extends ResourceEventModel with MongoDBEventModel {
+
   def withReceivedMillis(newReceivedMillis: Long) =
     this.copy(receivedMillis = newReceivedMillis)
 
   def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
     this.copy(details = newDetails, occurredMillis = newOccurredMillis)
+
+  def withDetailsAndValue(newDetails: Map[String, String], newValue: Double, newOccurredMillis: Long) =
+    this.copy(details = newDetails, value = newValue, occurredMillis = newOccurredMillis)
 }
 
-object StdIMEvent {
-  final def fromJsonString(json: String): StdIMEvent = {
-    StdConverters.AllConverters.convertEx[StdIMEvent](JsonTextFormat(json))
+object MongoDBResourceEvent {
+  final def fromJsonString(json: String): MongoDBResourceEvent = {
+    StdConverters.AllConverters.convertEx[MongoDBResourceEvent](JsonTextFormat(json))
   }
 
-  final def fromJsonBytes(jsonBytes: Array[Byte]): StdIMEvent = {
-    fromJsonString(makeString(jsonBytes))
+  final def fromJsonBytes(bytes: Array[Byte]): MongoDBResourceEvent = {
+    fromJsonString(makeString(bytes))
   }
 
-  final def fromOther(event: IMEventModel): StdIMEvent = {
-    if(event.isInstanceOf[StdIMEvent]) event.asInstanceOf[StdIMEvent]
-    else new StdIMEvent(
-      event.id,
-      event.occurredMillis,
-      event.receivedMillis,
-      event.userID,
-      event.clientID,
-      event.isActive,
-      event.role,
-      event.eventVersion,
-      event.eventType,
-      event.details
+  final def fromDBObject(dbObject: DBObject): MongoDBResourceEvent = {
+    fromJsonString(JSON.serialize(dbObject))
+  }
+
+
+  final def fromOther(rcEvent: ResourceEventModel, _id: ObjectId): MongoDBResourceEvent = {
+    import rcEvent._
+    MongoDBResourceEvent(
+      id,
+      occurredMillis,
+      receivedMillis,
+      userID,
+      clientID,
+      resource,
+      instanceID,
+      value,
+      eventVersion,
+      details,
+      _id
     )
   }
-
 }

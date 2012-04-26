@@ -36,7 +36,9 @@
 package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.event.im.StdIMEvent
+import gr.grnet.aquarium.event.resource.StdResourceEvent
 
 package object memory {
   type MemIMEvent = StdIMEvent
+  type MemResourceEvent = StdResourceEvent
 }

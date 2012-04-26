@@ -43,8 +43,8 @@ import gr.grnet.aquarium.actor.message.service.router.ProcessIMEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe._
-import gr.grnet.aquarium.event.im.IMEventModel
 import gr.grnet.aquarium.store.memory.MemStore
+import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
 
 /**
  * An event processor service for user events coming from the IM system
@@ -54,7 +54,7 @@ import gr.grnet.aquarium.store.memory.MemStore
 class IMEventProcessorService extends EventProcessorService[IMEventModel] {
 
   override def parseJsonBytes(data: Array[Byte]) = {
-    MemStore.createIMEventFromJsonBytes(data)
+    StdIMEvent.fromJsonBytes(data)
   }
 
   override def forward(event: IMEventModel) = {

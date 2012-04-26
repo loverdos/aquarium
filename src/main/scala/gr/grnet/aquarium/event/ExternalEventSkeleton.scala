@@ -36,52 +36,30 @@
 package gr.grnet.aquarium
 package event
 
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import java.util.Date
-import converter.{JsonTextFormat, StdConverters}
+
+import util.xml.XmlSupport
+import util.Loggable
 
 /**
- * Store entry for serialized policy data.
+ * Generic base class for all Aquarium events
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class PolicyEntry(
-    id: String,           //SHA-1 of the provided policyYaml string
-    occurredMillis: Long, //Time this event was stored
-    receivedMillis: Long, //Does not make sense for local events -> not used
-    policyYAML: String,                //The serialized policy
-    validFrom: Long,                   //The timestamp since when the policy is valid
-    validTo: Long,                      //The timestamp until when the policy is valid
-    eventVersion: String = "1.0",
-    userID: String = "",
-    details: Map[String, String] = Map()
- ) extends ExternalEventModel {
+abstract class ExternalEventSkeleton(
+    _id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
+    _occurredMillis: Long, // When it occurred at client side (the sender)
+    _receivedMillis: Long, // When it was received by Aquarium
+    _eventVersion: String
+)
+  extends ExternalEventModel
+  with    XmlSupport
+  with    Loggable {
 
-  assert(if(validTo != -1) validTo > validFrom else validFrom > 0)
+  def id = _id
+  def occurredMillis = _occurredMillis
+  def receivedMillis = _receivedMillis
+  def eventVersion = _eventVersion
 
-  def validate = true
-
-  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
-
-  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
-    this.copy(details = newDetails, occurredMillis = newOccurredMillis)
-
-  def fromToTimeslot = Timeslot(new Date(validFrom), new Date(validTo))
-}
-
-object PolicyEntry {
-
-  def fromJson(json: String): PolicyEntry = {
-    StdConverters.AllConverters.convertEx[PolicyEntry](JsonTextFormat(json))
-  }
-
-  object JsonNames {
-    final val _id = "_id"
-    final val id = "id"
-    final val occurredMillis = "occurredMillis"
-    final val receivedMillis = "receivedMillis"
-    final val policyYAML = "policyYAML"
-    final val validFrom = "validFrom"
-    final val validTo = "validTo"
-  }
+  def details: Map[String, String] = Map()
 }

@@ -39,11 +39,11 @@ import org.junit.Assert._
 import org.junit.Assume._
 import gr.grnet.aquarium.Configurator._
 import gr.grnet.aquarium.util.{RandomEventGenerator, TestMethods}
-import gr.grnet.aquarium.event.ResourceEvent
 import collection.mutable.ArrayBuffer
 import org.junit.{After, Test, Before}
 import gr.grnet.aquarium.{StoreConfigurator, LogicTestsAssumptions}
 import gr.grnet.aquarium.store.memory.MemStore
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 /**
  * @author Georgios Gousios <gousiosg@gmail.com>
@@ -57,7 +57,7 @@ with RandomEventGenerator with StoreConfigurator {
 
     val event = nextResourceEvent()
     val store = config.resourceEventStore
-    val result = store.storeResourceEvent(event)
+    val result = store.insertResourceEvent(event)
   }
 
   @Test
@@ -67,7 +67,7 @@ with RandomEventGenerator with StoreConfigurator {
     val event = nextResourceEvent()
     val store = config.resourceEventStore
 
-    store.storeResourceEvent(event)
+    store.insertResourceEvent(event)
 
     store.findResourceEventById(event.id)
   }
@@ -75,14 +75,14 @@ with RandomEventGenerator with StoreConfigurator {
   @Test
   def testfindEventsByUserId(): Unit = {
     assumeTrue(LogicTestsAssumptions.EnableStoreTests)
-    val events = new ArrayBuffer[ResourceEvent]()
+    val events = new ArrayBuffer[ResourceEventModel]()
     val store = config.resourceEventStore
 
     (1 to 100).foreach {
       n =>
         val e = nextResourceEvent
         events += e
-        store.storeResourceEvent(e)
+        store.insertResourceEvent(e)
     }
 
     val mostUsedId = events

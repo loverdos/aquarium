@@ -45,7 +45,8 @@ import gr.grnet.aquarium.store.{StoreProvider, PolicyStore}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.AquariumException
-import gr.grnet.aquarium.event.{NewWalletEntry, ResourceEvent}
+import gr.grnet.aquarium.event.{NewWalletEntry}
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 /**
  *
@@ -221,14 +222,14 @@ class UserStateComputations extends Loggable {
   }
 
   //+ Utility methods
-  def rcDebugInfo(rcEvent: ResourceEvent) = {
+  def rcDebugInfo(rcEvent: ResourceEventModel) = {
     rcEvent.toDebugString(false)
   }
   //- Utility methods
 
   def processResourceEvent(startingUserState: UserState,
                            userStateWorker: UserStateWorker,
-                           currentResourceEvent: ResourceEvent,
+                           currentResourceEvent: ResourceEventModel,
                            policyStore: PolicyStore,
                            stateChangeReason: UserStateChangeReason,
                            billingMonthInfo: BillingMonthInfo,
@@ -379,7 +380,7 @@ class UserStateComputations extends Loggable {
     _workingUserState
   }
 
-  def processResourceEvents(resourceEvents: Traversable[ResourceEvent],
+  def processResourceEvents(resourceEvents: Traversable[ResourceEventModel],
                             startingUserState: UserState,
                             userStateWorker: UserStateWorker,
                             policyStore: PolicyStore,
@@ -586,7 +587,7 @@ case class UserStateWorker(userId: String,
    * @param instanceId
    * @return
    */
-  def findAndRemovePreviousResourceEvent(resource: String, instanceId: String): Maybe[ResourceEvent] = {
+  def findAndRemovePreviousResourceEvent(resource: String, instanceId: String): Maybe[ResourceEventModel] = {
     // implicitly issued events are checked first
     implicitlyIssuedStartEvents.findAndRemoveResourceEvent(resource, instanceId) match {
       case just @ Just(_) ⇒
@@ -604,15 +605,15 @@ case class UserStateWorker(userId: String,
     }
   }
 
-  def updateIgnored(resourceEvent: ResourceEvent): Unit = {
+  def updateIgnored(resourceEvent: ResourceEventModel): Unit = {
     ignoredFirstResourceEvents.updateResourceEvent(resourceEvent)
   }
 
-  def updatePrevious(resourceEvent: ResourceEvent): Unit = {
+  def updatePrevious(resourceEvent: ResourceEventModel): Unit = {
     previousResourceEvents.updateResourceEvent(resourceEvent)
   }
 
-  def debugTheMaps(clog: ContextualLogger)(rcDebugInfo: ResourceEvent ⇒ String): Unit = {
+  def debugTheMaps(clog: ContextualLogger)(rcDebugInfo: ResourceEventModel ⇒ String): Unit = {
     if(previousResourceEvents.size > 0) {
       val map = previousResourceEvents.latestEventsMap.map { case (k, v) => (k, rcDebugInfo(v)) }
       clog.debugMap("previousResourceEvents", map, 0)
@@ -645,11 +646,11 @@ case class UserStateWorker(userId: String,
    * @see [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
    */
   def findAndRemoveGeneratorsOfImplicitEndEvents(newOccuredMillis: Long
-                                                ): (List[ResourceEvent], List[ResourceEvent]) = {
-    val buffer = mutable.ListBuffer[(ResourceEvent, ResourceEvent)]()
-    val checkSet = mutable.Set[ResourceEvent]()
+                                                ): (List[ResourceEventModel], List[ResourceEventModel]) = {
+    val buffer = mutable.ListBuffer[(ResourceEventModel, ResourceEventModel)]()
+    val checkSet = mutable.Set[ResourceEventModel]()
 
-    def doItFor(map: ResourceEvent.FullMutableResourceTypeMap): Unit = {
+    def doItFor(map: ResourceEventModel.FullMutableResourceTypeMap): Unit = {
       val resourceEvents = map.valuesIterator
       for {
         resourceEvent <- resourceEvents

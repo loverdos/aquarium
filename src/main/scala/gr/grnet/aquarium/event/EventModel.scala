@@ -33,55 +33,51 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package event
-
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import java.util.Date
-import converter.{JsonTextFormat, StdConverters}
+package gr.grnet.aquarium.event
 
 /**
- * Store entry for serialized policy data.
+ * Basic properties for all events.
+ * An event represents some state change, where state is specific to the use-case.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ *@author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class PolicyEntry(
-    id: String,           //SHA-1 of the provided policyYaml string
-    occurredMillis: Long, //Time this event was stored
-    receivedMillis: Long, //Does not make sense for local events -> not used
-    policyYAML: String,                //The serialized policy
-    validFrom: Long,                   //The timestamp since when the policy is valid
-    validTo: Long,                      //The timestamp until when the policy is valid
-    eventVersion: String = "1.0",
-    userID: String = "",
-    details: Map[String, String] = Map()
- ) extends ExternalEventModel {
 
-  assert(if(validTo != -1) validTo > validFrom else validFrom > 0)
+trait EventModel {
+  /**
+   * The unique event id. The responsibility for the id generation is to the event generator.
+   */
+  def id: String
 
-  def validate = true
+  /**
+   * The Unix time of the state change occurrence that this event represents.
+   */
+  def occurredMillis: Long
 
-  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+  /**
+   * The ID given to this event if/when persisted to a store.
+   * The exact type of the id is store-specific.
+   */
+  def storeID: Option[AnyRef] = None
 
-  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
-    this.copy(details = newDetails, occurredMillis = newOccurredMillis)
+  def eventVersion: String
 
-  def fromToTimeslot = Timeslot(new Date(validFrom), new Date(validTo))
+  /**
+   * An extension point that provides even more properties.
+   */
+  def details: Map[String, String]
+
+  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long): EventModel
 }
 
-object PolicyEntry {
 
-  def fromJson(json: String): PolicyEntry = {
-    StdConverters.AllConverters.convertEx[PolicyEntry](JsonTextFormat(json))
-  }
-
-  object JsonNames {
-    final val _id = "_id"
+object EventModel {
+  trait NamesT {
     final val id = "id"
     final val occurredMillis = "occurredMillis"
-    final val receivedMillis = "receivedMillis"
-    final val policyYAML = "policyYAML"
-    final val validFrom = "validFrom"
-    final val validTo = "validTo"
+    final val storeID = "storeID"
+    final val eventVersion = "eventVersion"
+    final val details = "details"
   }
+
+  object Names extends NamesT
 }

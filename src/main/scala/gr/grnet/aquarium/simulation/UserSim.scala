@@ -37,7 +37,7 @@ package gr.grnet.aquarium.simulation
 import java.util.Date
 import gr.grnet.aquarium.store.RecordID
 import math.Ordering
-import gr.grnet.aquarium.event.ResourceEvent
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 /**
  * A simulator for a user.
@@ -50,17 +50,17 @@ case class UserSim(userId: String, userCreationDate: Date, aquarium: AquariumSim
   def resourceEventStore = aquarium.resourceEventStore
 
   private[simulation]
-  def _addResourceEvent(resourceEvent: ResourceEvent): RecordID = {
-    resourceEventStore.storeResourceEvent(resourceEvent)
+  def _addResourceEvent(resourceEvent: ResourceEventModel): ResourceEventModel = {
+    resourceEventStore.insertResourceEvent(resourceEvent)
   }
 
-  def myResourceEvents: List[ResourceEvent] = {
+  def myResourceEvents: List[ResourceEventModel] = {
     resourceEventStore.findResourceEventsByUserId(userId)(None)
   }
 
-  def myResourceEventsByReceivedDate: List[ResourceEvent] = {
-    myResourceEvents.sorted(new Ordering[ResourceEvent] {
-      def compare(x: ResourceEvent, y: ResourceEvent) = {
+  def myResourceEventsByReceivedDate: List[ResourceEventModel] = {
+    myResourceEvents.sorted(new Ordering[ResourceEventModel] {
+      def compare(x: ResourceEventModel, y: ResourceEventModel) = {
         if(x.receivedMillis < y.receivedMillis)
           -1
         else if(x.receivedMillis == y.receivedMillis)
@@ -71,9 +71,9 @@ case class UserSim(userId: String, userCreationDate: Date, aquarium: AquariumSim
     })
   }
 
-  def myResourceEventsByOccurredDate: List[ResourceEvent] = {
-    myResourceEvents.sorted(new Ordering[ResourceEvent] {
-      def compare(x: ResourceEvent, y: ResourceEvent) = {
+  def myResourceEventsByOccurredDate: List[ResourceEventModel] = {
+    myResourceEvents.sorted(new Ordering[ResourceEventModel] {
+      def compare(x: ResourceEventModel, y: ResourceEventModel) = {
         if(x.occurredMillis < y.occurredMillis)
           -1
         else if(x.occurredMillis == y.occurredMillis)

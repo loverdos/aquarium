@@ -37,10 +37,9 @@ package gr.grnet.aquarium.simulation
 
 import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicyValues
 import gr.grnet.aquarium.store.RecordID
-import com.ckkloverdos.maybe.Maybe
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.event.ResourceEvent
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 /**
  * A simulator for an instance of the standard `vmtime` resource.
@@ -56,7 +55,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
 
   def newON(occurredDate: Date,
             details: Map[String, String] = Map(),
-            eventVersion: String = "1.0"): RecordID = {
+            eventVersion: String = "1.0") = {
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
@@ -68,7 +67,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
 
   def newOFF(occurredDate: Date,
              details: Map[String, String] = Map(),
-             eventVersion: String = "1.0"): RecordID = {
+             eventVersion: String = "1.0") = {
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
@@ -78,7 +77,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
     )
   }
 
-  def newONOFF(occurredDateForON: Date, totalVMTimeInHours: Int): (RecordID, RecordID) = {
+  def newONOFF(occurredDateForON: Date, totalVMTimeInHours: Int): (ResourceEventModel, ResourceEventModel) = {
     val onID = newON(occurredDateForON)
     val offDate = new MutableDateCalc(occurredDateForON).goPlusHours(totalVMTimeInHours).toDate
     val offID = newOFF(offDate)
@@ -89,7 +88,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def newOFF_OutOfSync(occuredDate: Date,
                        outOfSyncHours: Int,
                        details: Map[String, String] = Map(),
-                       eventVersion: String = "1.0"): RecordID = {
+                       eventVersion: String = "1.0") = {
 
     val occurredDateCalc = new MutableDateCalc(occuredDate)
     val occurredTime = occurredDateCalc.toMillis

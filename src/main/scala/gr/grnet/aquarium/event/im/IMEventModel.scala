@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.event.im
 
-import gr.grnet.aquarium.event.AquariumEventModel
+import gr.grnet.aquarium.event.ExternalEventModel
 
 /**
  * The model of any event sent from the `Identity Management` (IM) external system.
@@ -45,7 +45,7 @@ import gr.grnet.aquarium.event.AquariumEventModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait IMEventModel extends AquariumEventModel {
+trait IMEventModel extends ExternalEventModel {
   def clientID: String
 
   def isActive: Boolean
@@ -64,7 +64,7 @@ trait IMEventModel extends AquariumEventModel {
 }
 
 object IMEventModel {
-  trait NamesT extends AquariumEventModel.NamesT {
+  trait NamesT extends ExternalEventModel.NamesT {
     final val clientID = "clientID"
     final val isActive = "isActive"
     final val role = "role"

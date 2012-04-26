@@ -33,33 +33,65 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package event
+package gr.grnet.aquarium.event
+package resource
 
+import gr.grnet.aquarium.util.makeString
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
-import util.xml.XmlSupport
-import util.Loggable
 
 /**
- * Generic base class for all Aquarium events
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-abstract class AquariumEventSkeleton(
-    _id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    _occurredMillis: Long, // When it occurred at client side (the sender)
-    _receivedMillis: Long, // When it was received by Aquarium
-    _eventVersion: String
-)
-  extends AquariumEventModel
-  with    XmlSupport
-  with    Loggable {
 
-  def id = _id
-  def occurredMillis = _occurredMillis
-  def receivedMillis = _receivedMillis
-  def eventVersion = _eventVersion
+case class StdResourceEvent(
+    id: String,
+    occurredMillis: Long,
+    receivedMillis: Long,
+    userID: String,
+    clientID: String,
+    resource: String,
+    instanceID: String,
+    value: Double,
+    eventVersion: String,
+    details: Map[String, String]
+) extends ResourceEventModel {
+  def withReceivedMillis(newReceivedMillis: Long) =
+    this.copy(receivedMillis = newReceivedMillis)
 
-  def details: Map[String, String] = Map()
+  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
+    this.copy(details = newDetails, occurredMillis = newOccurredMillis)
+
+  def withDetailsAndValue(newDetails: Map[String, String], newValue: Double, newOccurredMillis: Long) =
+    this.copy(details = newDetails, value = newValue, occurredMillis = newOccurredMillis)
+}
+
+object StdResourceEvent {
+  final def fromJsonString(json: String): StdResourceEvent = {
+    StdConverters.AllConverters.convertEx[StdResourceEvent](JsonTextFormat(json))
+  }
+
+  final def fromJsonBytes(jsonBytes: Array[Byte]): StdResourceEvent = {
+    fromJsonString(makeString(jsonBytes))
+  }
+
+  final def fromOther(event: ResourceEventModel): StdResourceEvent = {
+    if(event.isInstanceOf[StdResourceEvent]) event.asInstanceOf[StdResourceEvent]
+    else {
+      import event._
+      new StdResourceEvent(
+        id,
+        occurredMillis,
+        receivedMillis,
+        userID,
+        clientID,
+        resource,
+        instanceID,
+        value,
+        event.eventVersion,
+        event.details
+      )
+    }
+}
 }

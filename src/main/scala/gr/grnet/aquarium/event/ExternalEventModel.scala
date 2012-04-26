@@ -45,44 +45,24 @@ import gr.grnet.aquarium.util.xml.XmlSupport
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait AquariumEventModel extends JsonSupport with XmlSupport {
-  /**
-   * The id at the sender side
-   */
-  def id: String
-
-  /**
-   * When it occurred at the sender side
-   */
-  def occurredMillis: Long
-
+trait ExternalEventModel extends EventModel with JsonSupport with XmlSupport {
   /**
    * When it was received by Aquarium
    */
   def receivedMillis: Long
-  def userID: String
-  def eventVersion: String
-  def details: Map[String, String]
 
-  /**
-   * The ID given to this event if/when persisted to a store.
-   * The exact type of the id is store-specific.
-   */
-  def storeID: Option[AnyRef] = None
+  def userID: String
+
 
   def toBytes: Array[Byte] = makeBytes(toJsonString)
 
-  def withReceivedMillis(newReceivedMillis: Long): AquariumEventModel
+  def withReceivedMillis(newReceivedMillis: Long): ExternalEventModel
 }
 
-object AquariumEventModel {
-  trait NamesT {
-    final val id = "id"
-    final val occurredMillis = "occurredMillis"
+object ExternalEventModel {
+  trait NamesT extends EventModel.NamesT {
     final val receivedMillis = "receivedMillis"
     final val userID = "userID"
-    final val eventVersion = "eventVersion"
-    final val details = "details"
   }
 
   object Names extends NamesT

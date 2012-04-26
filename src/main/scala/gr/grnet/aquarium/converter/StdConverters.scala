@@ -108,6 +108,7 @@ object StdConverters {
 
     @scala.throws(classOf[ConverterException])
     def convertEx[T: Type](sourceValue: Any) = {
+      // Generic deserializer from json string to a business logic model
       JsonConversions.jsonToObject[T](sourceValue.asInstanceOf[JsonTextFormat].value)(manifest[T], JsonConversions.Formats)
     }
   }

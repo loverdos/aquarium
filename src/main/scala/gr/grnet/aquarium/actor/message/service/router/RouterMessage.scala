@@ -40,8 +40,8 @@ package router
 import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.event.im.IMEventModel
-import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.converter.{PrettyJsonTextFormat, StdConverters}
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 
 /**
@@ -91,7 +91,7 @@ case class UserResponseGetState(userID: String, state: UserState) extends Router
  *
  * Note that the prefix `Process` means that no reply is created or needed.
  */
-case class ProcessResourceEvent(rcEvent: ResourceEvent) extends RouterMessage
+case class ProcessResourceEvent(rcEvent: ResourceEventModel) extends RouterMessage
 
 /**
  * Dispatcher message that triggers the user event processing pipeline.

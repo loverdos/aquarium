@@ -37,13 +37,12 @@ package gr.grnet.aquarium.util
 
 import akka.amqp._
 import util.Random
-import gr.grnet.aquarium.event.ResourceEvent
 import scopt.OptionParser
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import java.lang.StringBuffer
 import gr.grnet.aquarium.logic.accounting.Policy
-import gr.grnet.aquarium.store.memory.MemIMEvent
 import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.event.resource.{StdResourceEvent, ResourceEventModel}
 
 /**
  *  Generates random resource events to use as input for testing and
@@ -125,7 +124,7 @@ trait RandomEventGenerator extends AkkaAMQP {
   /**
    * Get the next random resource event
    */
-  def nextResourceEvent() : ResourceEvent = {
+  def nextResourceEvent() : ResourceEventModel = {
     val res = rnd.shuffle(resources).head
 
     val extra = res match {
@@ -141,12 +140,12 @@ trait RandomEventGenerator extends AkkaAMQP {
     val ts = tsFrom + (scala.math.random * ((tsTo - tsFrom) + 1)).asInstanceOf[Long]
     val str = genRndAsciiString(35)
 
-    ResourceEvent(
+    new StdResourceEvent(
       CryptoUtils.sha1(str),
       ts, ts,
       rnd.nextInt(userIds.max).toString,
       rnd.nextInt(clientIds.max).toString,
-      res, "1", 1.toString, value, extra)
+      res, "1", value, 1.toString, extra)
   }
 
   def genRndAsciiString(size: Int): String = {

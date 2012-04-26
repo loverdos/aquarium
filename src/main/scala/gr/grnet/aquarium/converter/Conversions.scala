@@ -48,5 +48,4 @@ object Conversions {
   def jsonSupportToDBObject(jsonSupport: JsonSupport) =
     AllConverters.convertEx[DBObject](jsonSupport)
 
-
 }

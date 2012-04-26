@@ -36,9 +36,7 @@
 package gr.grnet.aquarium.simulation
 
 import java.util.Date
-import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.store.RecordID
-import gr.grnet.aquarium.event.ResourceEvent
 
 /**
  * A simulator for an instance of the standard `bandwidth` resource.
@@ -54,7 +52,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def useBandwidth(occurredDate: Date,
                    megaBytes: Double,
                    details: Map[String, String] = Map(),
-                   eventVersion: String = "1.0"): RecordID = {
+                   eventVersion: String = "1.0") = {
 
     newResourceEvent(
      occurredDate.getTime,

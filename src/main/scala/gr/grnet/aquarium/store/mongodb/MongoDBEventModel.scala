@@ -36,14 +36,14 @@
 package gr.grnet.aquarium.store.mongodb
 
 import org.bson.types.ObjectId
-import gr.grnet.aquarium.event.AquariumEventModel
+import gr.grnet.aquarium.event.ExternalEventModel
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait MongoDBEventModel extends AquariumEventModel {
+trait MongoDBEventModel extends ExternalEventModel {
   def _id: ObjectId
 
   override def storeID: Option[ObjectId] = Option(_id)

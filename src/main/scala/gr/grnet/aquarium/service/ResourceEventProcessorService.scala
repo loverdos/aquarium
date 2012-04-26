@@ -38,10 +38,10 @@ package gr.grnet.aquarium.service
 import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
-import com.ckkloverdos.maybe.{Maybe, Just, Failed, NoVal}
+import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.actor.message.service.router.ProcessResourceEvent
-import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.event.resource.{StdResourceEvent, ResourceEventModel}
 
 
 /**
@@ -49,21 +49,23 @@ import gr.grnet.aquarium.util.date.TimeHelpers
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-final class ResourceEventProcessorService extends EventProcessorService[ResourceEvent] {
+final class ResourceEventProcessorService extends EventProcessorService[ResourceEventModel] {
 
-  override def parseJsonBytes(data: Array[Byte]) = ResourceEvent.fromBytes(data)
+  override def parseJsonBytes(data: Array[Byte]) = {
+    StdResourceEvent.fromJsonBytes(data)
+  }
 
-  override def forward(event: ResourceEvent): Unit = {
+  override def forward(event: ResourceEventModel): Unit = {
     if(event ne null) {
       val businessLogicDispacther = _configurator.actorProvider.actorForRole(RouterRole)
       businessLogicDispacther ! ProcessResourceEvent(event)
     }
   }
 
-  override def existsInStore(event: ResourceEvent): Boolean =
-    _configurator.resourceEventStore.findResourceEventById(event.id).isJust
+  override def existsInStore(event: ResourceEventModel): Boolean =
+    _configurator.resourceEventStore.findResourceEventById(event.id).isDefined
 
-  override def storeParsedEvent(event: ResourceEvent, initialPayload: Array[Byte]): Unit = {
+  override def storeParsedEvent(event: ResourceEventModel, initialPayload: Array[Byte]): Unit = {
     // 1. Store to local FS for debugging purposes.
     //    BUT be resilient to errors, since this is not critical
     if(_configurator.eventsStoreFolder.isJust) {
@@ -73,7 +75,7 @@ final class ResourceEventProcessorService extends EventProcessorService[Resource
     }
 
     // 2. Store to DB
-    _configurator.resourceEventStore.storeResourceEvent(event)
+    _configurator.resourceEventStore.insertResourceEvent(event)
   }
 
 

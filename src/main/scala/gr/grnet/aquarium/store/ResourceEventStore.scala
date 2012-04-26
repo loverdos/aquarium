@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.store
 
 import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 /**
  * An abstraction for Aquarium `ResourceEvent` stores.
@@ -46,13 +46,17 @@ import gr.grnet.aquarium.AquariumException
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
 trait ResourceEventStore {
+  type ResourceEvent <: ResourceEventModel
+
+  def createResourceEventFromOther(event: ResourceEventModel): ResourceEvent
+
   def clearResourceEvents(): Unit = {
     throw new AquariumException("Unsupported operation")
   }
 
-  def storeResourceEvent(event: ResourceEvent): RecordID
+  def insertResourceEvent(event: ResourceEventModel): ResourceEvent
 
-  def findResourceEventById(id: String): Maybe[ResourceEvent]
+  def findResourceEventById(id: String): Option[ResourceEvent]
 
   def findResourceEventsByUserId(userId: String)(sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent]
 

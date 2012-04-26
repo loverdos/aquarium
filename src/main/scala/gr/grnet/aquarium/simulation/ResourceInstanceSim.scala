@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.event.ResourceEvent
+import gr.grnet.aquarium.event.resource.StdResourceEvent
 
 
 /**
@@ -57,7 +57,7 @@ class ResourceInstanceSim (val resource: ResourceSim,
                        details: Map[String, String],
                        eventVersion: String = "1.0") = {
 
-    val event = ResourceEvent(
+    val event = StdResourceEvent(
       uidGen.nextUID(),
       occurredMillis,
       receivedMillis,
@@ -65,8 +65,8 @@ class ResourceInstanceSim (val resource: ResourceSim,
       client.clientId,
       resource.name,
       instanceId,
-      eventVersion,
       value,
+      eventVersion,
       details
     )
 

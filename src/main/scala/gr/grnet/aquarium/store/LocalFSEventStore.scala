@@ -39,8 +39,8 @@ import gr.grnet.aquarium.Configurator
 import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.event.im.IMEventModel
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.
@@ -112,7 +112,7 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeResourceEvent(mc: Configurator, event: ResourceEvent, initialPayload: Array[Byte]): Unit = {
+  def storeResourceEvent(mc: Configurator, event: ResourceEventModel, initialPayload: Array[Byte]): Unit = {
     require(event ne null, "Resource event must be not null")
 
     for(root <- mc.eventsStoreFolder) {

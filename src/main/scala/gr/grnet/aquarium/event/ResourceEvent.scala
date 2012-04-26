@@ -33,16 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package event
-
-import gr.grnet.aquarium.util.makeString
-import gr.grnet.aquarium.logic.accounting.dsl._
-import com.ckkloverdos.maybe.Maybe
-import java.util.Date
-import gr.grnet.aquarium.util.date.MutableDateCalc
-import collection.SeqLike
-import converter.{JsonTextFormat, StdConverters}
+//package gr.grnet.aquarium
+//package event
+//
+//import gr.grnet.aquarium.util.makeString
+//import gr.grnet.aquarium.logic.accounting.dsl._
+//import com.ckkloverdos.maybe.Maybe
+//import java.util.Date
+//import gr.grnet.aquarium.util.date.MutableDateCalc
+//import collection.SeqLike
+//import converter.{JsonTextFormat, StdConverters}
 
 /**
  * Event sent to Aquarium by clients for resource accounting.
@@ -50,152 +50,89 @@ import converter.{JsonTextFormat, StdConverters}
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
-case class ResourceEvent(
-    id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    occurredMillis: Long, // When it occurred at client side (the sender)
-    receivedMillis: Long, // When it was received by Aquarium
-    userID: String,                    // The user for which this resource is relevant
-    clientID: String,                  // The unique client identifier (usually some hash)
-    resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
-    instanceID: String,                // String representation of the resource instance id
-    eventVersion: String,
-    value: Double,
-    details: Map[String, String])
-extends AquariumEventModel {
-
-  def validate() : Boolean = {
-    !safeResource.isEmpty
-  }
-
-  def safeResource   = if(resource eq null)   "" else resource
-  def safeInstanceId = if(instanceID eq null) "" else instanceID
-
-  def hasResource   = !safeResource.isEmpty
-  def hasInstanceId = !safeInstanceId.isEmpty
-
-  def fullResourceInfo = (safeResource, safeInstanceId)
-
-  def occurredDate = new Date(occurredMillis)
-
-  def occurredDeltaFrom(that: ResourceEvent): Long = {
-    this.occurredMillis - that.occurredMillis
-  }
-
-  def isOccurredWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
-    require(fromMillis <= toMillis, "fromMillis <= toMillis")
-    fromMillis <= occurredMillis && occurredMillis <= toMillis
-  }
-
-  def isOccurredWithinDates(fromDate: Date, toDate: Date): Boolean = {
-    isOccurredWithinMillis(fromDate.getTime, toDate.getTime)
-  }
-
-  def isReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
-    require(fromMillis <= toMillis, "fromMillis <= toMillis")
-    fromMillis <= receivedMillis && receivedMillis <= toMillis
-  }
-  
-  def isReceivedWithinDates(fromDate: Date, toDate: Date): Boolean = {
-    isReceivedWithinMillis(fromDate.getTime, toDate.getTime)
-  }
-
-  def isReceivedWithinDateCalcs(fromDate: MutableDateCalc, toDate: MutableDateCalc): Boolean = {
-    isReceivedWithinMillis(fromDate.getMillis, toDate.getMillis)
-  }
-
-  def isOccurredOrReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
-    isOccurredWithinMillis(fromMillis, toMillis) ||
-    isReceivedWithinMillis(fromMillis, toMillis)
-  }
-
-  def isOccurredOrReceivedWithinDates(fromDate: Date, toDate: Date): Boolean = {
-    isOccurredWithinDates(fromDate, toDate) ||
-    isReceivedWithinDates(fromDate, toDate)
-  }
-  
-  def isOutOfSyncForBillingMonth(yearOfBillingMonth: Int, billingMonth: Int) = {
-    val billingStartDateCalc = new MutableDateCalc(yearOfBillingMonth, billingMonth)
-    val billingStartMillis = billingStartDateCalc.toMillis
-    // NOTE: no need to `copy` the mutable `billingStartDateCalc` here because we use it once
-    val billingStopMillis  = billingStartDateCalc.goEndOfThisMonth.toMillis
-
-    isOutOfSyncForBillingPeriod(billingStartMillis, billingStopMillis)
-  }
-  
-  def isOutOfSyncForBillingPeriod(billingStartMillis: Long, billingStopMillis: Long): Boolean = {
-    isReceivedWithinMillis(billingStartMillis, billingStopMillis) &&
-    (occurredMillis < billingStartMillis || occurredMillis > billingStopMillis)
-  }
-
-  def toDebugString(useOnlyInstanceId: Boolean = false): String = {
-    val instanceInfo = if(useOnlyInstanceId) instanceID else "%s::%s".format(resource, instanceID)
-    val occurredFormatted = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSS
-    if(occurredMillis == receivedMillis) {
-      "%sEVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
-        if(isSynthetic) "*" else "",
-        id,
-        occurredFormatted,
-        value,
-        instanceInfo,
-        details,
-        userID,
-        clientID
-      )
-    } else {
-      "%sEVENT(%s, [%s], [%s], %s, %s, %s, %s, %s)".format(
-        if(isSynthetic) "*" else "",
-        id,
-        occurredFormatted,
-        new MutableDateCalc(receivedMillis),
-        value,
-        instanceInfo,
-        details,
-        userID,
-        clientID
-      )
-    }
-  }
-
-  /**
-   * Return `true` iff this is an event regarding a resource with an
-   * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
-   */
-  def isOnOffEvent(policy: DSLPolicy): Boolean = {
-    policy.findResource(this.resource).map(_.costPolicy) match {
-      case Some(OnOffCostPolicy) ⇒ true
-      case _ ⇒ false
-    }
-  }
-
-  /**
-   * Return `true` iff this is an event regarding a resource with an
-   * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]] and a
-   * `value` of `"on"`.
-   */
-  def isOnEvent(policy: DSLPolicy): Boolean = {
-    policy.findResource(this.resource) match {
-      case Some(DSLResource(_, _, OnOffCostPolicy, _, _)) ⇒
-        OnOffPolicyResourceState(this.value).isOn
-      case _ ⇒
-        false
-    }
-  }
-
-  /**
-   * Return `true` iff this is an event regarding a resource with an
-   * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]] and a
-   * `value` of `"off"`.
-   */
-  def isOffEvent(policy: DSLPolicy): Boolean = {
-    policy.findResource(this.resource) match {
-      case Some(DSLResource(_, _, OnOffCostPolicy, _, _)) ⇒
-        OnOffPolicyResourceState(this.value).isOff
-      case _ ⇒
-        false
-    }
-  }
-
-  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+//case class ResourceEvent(
+//    id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
+//    occurredMillis: Long, // When it occurred at client side (the sender)
+//    receivedMillis: Long, // When it was received by Aquarium
+//    userID: String,                    // The user for which this resource is relevant
+//    clientID: String,                  // The unique client identifier (usually some hash)
+//    resource: String,                  // String representation of the resource type (e.g. "bndup", "vmtime").
+//    instanceID: String,                // String representation of the resource instance id
+//    eventVersion: String,
+//    value: Double,
+//    details: Map[String, String])
+//extends ExternalEventModel {
+//
+//  def validate() : Boolean = {
+//    !safeResource.isEmpty
+//  }
+//
+//  def safeResource   = if(resource eq null)   "" else resource
+//  def safeInstanceId = if(instanceID eq null) "" else instanceID
+//
+//  def fullResourceInfo = (safeResource, safeInstanceId)
+//
+//  def occurredDate = new Date(occurredMillis)
+//
+//  def isOccurredWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+//    require(fromMillis <= toMillis, "fromMillis <= toMillis")
+//    fromMillis <= occurredMillis && occurredMillis <= toMillis
+//  }
+//
+//  def isReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+//    require(fromMillis <= toMillis, "fromMillis <= toMillis")
+//    fromMillis <= receivedMillis && receivedMillis <= toMillis
+//  }
+//
+//  def isOccurredOrReceivedWithinMillis(fromMillis: Long, toMillis: Long): Boolean = {
+//    isOccurredWithinMillis(fromMillis, toMillis) ||
+//    isReceivedWithinMillis(fromMillis, toMillis)
+//  }
+//
+//  def isOutOfSyncForBillingMonth(yearOfBillingMonth: Int, billingMonth: Int) = {
+//    val billingStartDateCalc = new MutableDateCalc(yearOfBillingMonth, billingMonth)
+//    val billingStartMillis = billingStartDateCalc.toMillis
+//    // NOTE: no need to `copy` the mutable `billingStartDateCalc` here because we use it once
+//    val billingStopMillis  = billingStartDateCalc.goEndOfThisMonth.toMillis
+//
+//    isOutOfSyncForBillingPeriod(billingStartMillis, billingStopMillis)
+//  }
+//
+//  def isOutOfSyncForBillingPeriod(billingStartMillis: Long, billingStopMillis: Long): Boolean = {
+//    isReceivedWithinMillis(billingStartMillis, billingStopMillis) &&
+//    (occurredMillis < billingStartMillis || occurredMillis > billingStopMillis)
+//  }
+//
+//  def toDebugString(useOnlyInstanceId: Boolean = false): String = {
+//    val instanceInfo = if(useOnlyInstanceId) instanceID else "%s::%s".format(resource, instanceID)
+//    val occurredFormatted = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSS
+//    if(occurredMillis == receivedMillis) {
+//      "%sEVENT(%s, [%s], %s, %s, %s, %s, %s)".format(
+//        if(isSynthetic) "*" else "",
+//        id,
+//        occurredFormatted,
+//        value,
+//        instanceInfo,
+//        details,
+//        userID,
+//        clientID
+//      )
+//    } else {
+//      "%sEVENT(%s, [%s], [%s], %s, %s, %s, %s, %s)".format(
+//        if(isSynthetic) "*" else "",
+//        id,
+//        occurredFormatted,
+//        new MutableDateCalc(receivedMillis),
+//        value,
+//        instanceInfo,
+//        details,
+//        userID,
+//        clientID
+//      )
+//    }
+//  }
+//
+//  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
 
   /**
    * Find the cost policy of the resource named in this resource event.
@@ -207,9 +144,9 @@ extends AquariumEventModel {
    * Should the need arises to change the cost policy for a resource, this is a good enough
    * reason to consider creating another type of resource.
    */
-  def findCostPolicyM(defaultPolicy: DSLPolicy): Maybe[DSLCostPolicy] = {
-    defaultPolicy.findResource(this.safeResource).map(_.costPolicy): Maybe[DSLCostPolicy]
-  }
+//  def findCostPolicyM(defaultPolicy: DSLPolicy): Maybe[DSLCostPolicy] = {
+//    defaultPolicy.findResource(this.safeResource).map(_.costPolicy): Maybe[DSLCostPolicy]
+//  }
 
   /**
    * Find the cost policy of the resource named in this resource event.
@@ -221,13 +158,13 @@ extends AquariumEventModel {
    * Should the need arises to change the cost policy for a resource, this is a good enough
    * reason to consider creating another type of resource.
    */
-  def findCostPolicyM(resourcesMap: DSLResourcesMap): Maybe[DSLCostPolicy] = {
-    for {
-      rc <- resourcesMap.findResource(this.safeResource)
-    } yield {
-      rc.costPolicy
-    }
-  }
+//  def findCostPolicyM(resourcesMap: DSLResourcesMap): Maybe[DSLCostPolicy] = {
+//    for {
+//      rc <- resourcesMap.findResource(this.safeResource)
+//    } yield {
+//      rc.costPolicy
+//    }
+//  }
 
   /**
    * `Synthetic` means that Aquarium has manufactured this resource event for some purpose. For example, the implicitly
@@ -235,58 +172,58 @@ extends AquariumEventModel {
    *
    * @return `true` iff this resource event is synthetic.
    */
-  def isSynthetic = {
-    details contains ResourceEvent.JsonNames.details_aquarium_is_synthetic
-  }
-}
+//  def isSynthetic = {
+//    details contains ResourceEvent.JsonNames.details_aquarium_is_synthetic
+//  }
+//}
 
 object ResourceEvent {
-  type ResourceType = String
-  type ResourceIdType = String
-  type FullResourceType = (ResourceType, ResourceIdType)
-  type FullResourceTypeMap = Map[FullResourceType, ResourceEvent]
-  type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]
+//  type ResourceType = String
+//  type ResourceIdType = String
+//  type FullResourceType = (ResourceType, ResourceIdType)
+//  type FullResourceTypeMap = Map[FullResourceType, ResourceEvent]
+//  type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]
 
-  def fromJson(json: String): ResourceEvent = {
-    StdConverters.AllConverters.convertEx[ResourceEvent](JsonTextFormat(json))
-  }
+//  def fromJson(json: String): ResourceEvent = {
+//    StdConverters.AllConverters.convertEx[ResourceEvent](JsonTextFormat(json))
+//  }
+//
+//  def fromBytes(bytes: Array[Byte]): ResourceEvent = {
+//    StdConverters.AllConverters.convertEx[ResourceEvent](JsonTextFormat(makeString(bytes)))
+//  }
+//
+//  def setAquariumSynthetic(map: Map[String, String]): Map[String, String] = {
+//    map.updated(JsonNames.details_aquarium_is_synthetic, "true")
+//  }
 
-  def fromBytes(bytes: Array[Byte]): ResourceEvent = {
-    StdConverters.AllConverters.convertEx[ResourceEvent](JsonTextFormat(makeString(bytes)))
-  }
-
-  def setAquariumSynthetic(map: Map[String, String]): Map[String, String] = {
-    map.updated(JsonNames.details_aquarium_is_synthetic, "true")
-  }
-
-  def setAquariumSyntheticAndImplicitEnd(map: Map[String, String]): Map[String, String] = {
-    map.
-      updated(JsonNames.details_aquarium_is_synthetic, "true").
-      updated(JsonNames.details_aquarium_is_implicit_end, "true")
-  }
-  
-  def sortByOccurred[S <: Seq[ResourceEvent]](events: S with SeqLike[ResourceEvent, S]): S = {
-    events.sortWith(_.occurredMillis <= _.occurredMillis)
-  }
-
-  object JsonNames {
-    final val _id = "_id"
-    final val id = "id"
-    final val userId = "userId"
-    final val occurredMillis = "occurredMillis"
-    final val receivedMillis = "receivedMillis"
-    final val clientId = "clientId"
-    final val resource = "resource"
-    final val resourceId = "resourceId"
-    final val eventVersion = "eventVersion"
-    final val value = "value"
-    final val details = "details"
+//  def setAquariumSyntheticAndImplicitEnd(map: Map[String, String]): Map[String, String] = {
+//    map.
+//      updated(JsonNames.details_aquarium_is_synthetic, "true").
+//      updated(JsonNames.details_aquarium_is_implicit_end, "true")
+//  }
+//
+//  def sortByOccurred[S <: Seq[ResourceEvent]](events: S with SeqLike[ResourceEvent, S]): S = {
+//    events.sortWith(_.occurredMillis <= _.occurredMillis)
+//  }
+//
+//  object JsonNames {
+//    final val _id = "_id"
+//    final val id = "id"
+//    final val userId = "userId"
+//    final val occurredMillis = "occurredMillis"
+//    final val receivedMillis = "receivedMillis"
+//    final val clientId = "clientId"
+//    final val resource = "resource"
+//    final val resourceId = "resourceId"
+//    final val eventVersion = "eventVersion"
+//    final val value = "value"
+//    final val details = "details"
 
     // This is set in the details map to indicate a synthetic resource event (ie not a real one).
     // Examples of synthetic resource events are those that are implicitly generated at the
     // end of the billing period (e.g. `OFF`s).
-    final val details_aquarium_is_synthetic    = "__aquarium_is_synthetic__"
-
-    final val details_aquarium_is_implicit_end = "__aquarium_is_implicit_end__"
-  }
+//    final val details_aquarium_is_synthetic    = "__aquarium_is_synthetic__"
+//
+//    final val details_aquarium_is_implicit_end = "__aquarium_is_implicit_end__"
+//  }
 }

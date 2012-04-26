@@ -62,7 +62,7 @@ class UserActor extends ReflectiveAquariumActor {
 
   self.lifeCycle = Temporary
 
-  override protected def onThrowable(t: Throwable) = {
+  override protected def onThrowable(t: Throwable, message: AnyRef) = {
     logger.error("Terminating due to: %s".format(t.getMessage), t)
     UserActorCache.invalidate(this._userID)
 

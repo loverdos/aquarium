@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.event.ResourceEvent
 import gr.grnet.aquarium.store.RecordID
 import com.ckkloverdos.maybe.Maybe
 import java.util.Date
@@ -54,7 +53,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def consumeMB(occurredDate: Date,
                 megaBytes: Double,
                 details: Map[String, String] = Map(),
-                eventVersion: String = "1.0"): RecordID = {
+                eventVersion: String = "1.0") = {
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
@@ -68,7 +67,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
   def freeMB(occurredDate: Date,
              megaBytes: Double,
              details: Map[String, String] = Map(),
-             eventVersion: String = "1.0"): RecordID = {
+             eventVersion: String = "1.0") = {
 
     consumeMB(occurredDate, -megaBytes)
   }
@@ -77,7 +76,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
                           outOfSyncHours: Int,
                           megaBytes: Double,
                           details: Map[String, String] = Map(),
-                          eventVersion: String = "1.0"): RecordID = {
+                          eventVersion: String = "1.0") = {
 
     val occurredDateCalc = new MutableDateCalc(occurredDate)
     val occurredTime = occurredDateCalc.toMillis
@@ -96,7 +95,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
                        outOfSyncHours: Int,
                        megaBytes: Double,
                        details: Map[String, String] = Map(),
-                       eventVersion: String = "1.0"): RecordID = {
+                       eventVersion: String = "1.0") = {
 
     consumeMB_OutOfSync(occurredDate, outOfSyncHours, -megaBytes)
   }
