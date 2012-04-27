@@ -64,14 +64,25 @@ package object util {
     }
   }
 
+  def afterLastIndexOf(separator: String, input: String) = {
+    input.substring(input.lastIndexOf(separator) + 1)
+  }
   /**
    * Compute the class name excluding any leading packages.
    *
    * This is basically the name after the last dot.
    */
   def shortNameOfClass(theClass: Class[_]): String = {
-    val cname = theClass.getName
-    cname.substring(cname.lastIndexOf(".") + 1)
+    afterLastIndexOf(".", theClass.getName)
+  }
+
+  /**
+   * Compute the class name excluding any leading packages and any `$` prefixes.
+   *
+   * This is basically the name after the last dot and after any dollar sign.
+   */
+  def simpleNameOfClass(theClass: Class[_]): String = {
+    afterLastIndexOf("$", simpleNameOfClass(theClass))
   }
 
   /**
@@ -90,6 +101,15 @@ package object util {
       case obj =>
         shortNameOfClass(obj.getClass)
     }
+  }
+
+  /**
+   * Compute the class name excluding any leading packages and any `$` prefixes.
+   *
+   * This is basically the name after the last dot and after any dollar sign.
+   */
+  def simpleClassNameOf(anyRef: AnyRef) = {
+    afterLastIndexOf("$", shortClassNameOf(anyRef))
   }
 
   def safeToStringOrNull(obj: AnyRef): String = obj match {
