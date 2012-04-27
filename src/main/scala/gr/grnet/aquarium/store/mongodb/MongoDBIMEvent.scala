@@ -60,7 +60,7 @@ case class MongoDBIMEvent(
    eventVersion: String,
    eventType: String,
    details: Map[String, String],
-   _id: ObjectId
+   _id: String
 ) extends IMEventModel with MongoDBEventModel {
 
   def withReceivedMillis(newReceivedMillis: Long) =
@@ -83,7 +83,7 @@ object MongoDBIMEvent {
     fromJsonString(JSON.serialize(dbObject))
   }
 
-  final def fromOther(event: IMEventModel, _id: ObjectId): MongoDBIMEvent = {
+  final def fromOther(event: IMEventModel, _id: String): MongoDBIMEvent = {
     MongoDBIMEvent(
       event.id,
       event.occurredMillis,

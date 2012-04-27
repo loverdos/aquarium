@@ -60,8 +60,8 @@ class RouterActor extends ReflectiveAquariumActor {
     val userActor = _actorProvider.actorForRole(UserActorRole)
     UserActorCache.put(userID, userActor)
     UserActorSupervisor.supervisor.link(userActor)
+    userActor ! ProcessSetUserID(userID)
 
-    logger.info("New actor for userId: {}", userID)
     userActor
   }
 

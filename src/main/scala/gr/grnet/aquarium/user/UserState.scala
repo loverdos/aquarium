@@ -233,6 +233,13 @@ case class UserState(
 
   def resourcesMap = ownedResourcesSnapshot.toResourcesMap
 
+  def modifyFromIMEvent(imEvent: IMEventModel, snapshotMillis: Long): UserState = {
+    this.copy(
+      activeStateSnapshot = ActiveStateSnapshot(imEvent.isActive, snapshotMillis),
+      rolesSnapshot = RolesSnapshot(List(imEvent.role), snapshotMillis)
+    )
+  }
+
 //  def toShortString = "UserState(%s, %s, %s, %s, %s)".format(
 //    userId,
 //    _id,

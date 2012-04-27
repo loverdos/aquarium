@@ -105,7 +105,7 @@ class MongoDBStore(
   }
 
   def insertResourceEvent(event: ResourceEventModel) = {
-    val localEvent = MongoDBResourceEvent.fromOther(event, new ObjectId())
+    val localEvent = MongoDBResourceEvent.fromOther(event, new ObjectId().toStringMongod)
     MongoDBStore.insertObject(localEvent, resourceEvents, MongoDBStore.jsonSupportToDBObject)
     localEvent
   }
@@ -333,7 +333,7 @@ class MongoDBStore(
   }
 
   def insertIMEvent(event: IMEventModel): IMEvent = {
-    val localEvent = MongoDBIMEvent.fromOther(event, new ObjectId())
+    val localEvent = MongoDBIMEvent.fromOther(event, new ObjectId().toStringMongod)
     MongoDBStore.insertObject(localEvent, imEvents, MongoDBStore.jsonSupportToDBObject)
     localEvent
   }
@@ -373,7 +373,7 @@ object MongoDBStore {
   }
 
   /**
-   * Collection holding the [[gr.grnet.aquarium.event.ResourceEvent]]s.
+   * Collection holding the [[gr.grnet.aquarium.event.resource.ResourceEventModel]]s.
    *
    * Resource events are coming from all systems handling billable resources.
    */
@@ -518,7 +518,7 @@ object MongoDBStore {
     obj
   }
 
-  def insertObject[A <: MongoDBEventModel](obj: A, collection: DBCollection, serializer: (A) => DBObject) : ObjectId = {
+  def insertObject[A <: MongoDBEventModel](obj: A, collection: DBCollection, serializer: (A) => DBObject) : Unit = {
     val dbObject = serializer apply obj
     val objectId = obj._id  match {
       case null ⇒
@@ -533,8 +533,6 @@ object MongoDBStore {
     dbObject.put(JsonNames._id, objectId)
 
     collection.insert(dbObject, WriteConcern.JOURNAL_SAFE)
-
-    objectId
   }
 
   def jsonSupportToDBObject(jsonSupport: JsonSupport) = {

@@ -38,10 +38,11 @@ package gr.grnet.aquarium
 import com.ckkloverdos.maybe.{Failed, MaybeOption, Just, NoVal, Maybe}
 import java.nio.charset.Charset
 import java.io.{PrintWriter, StringWriter}
+import annotation.tailrec
 
 
 /**
- * Utility definitions.
+ * Utility functions.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
@@ -202,5 +203,23 @@ package object util {
     pw.close()
 
     sw.toString
+  }
+
+
+  def chainOfCauses(t: Throwable): List[String] = {
+    import scala.collection.mutable.ListBuffer
+    @tailrec
+    def loop(t: Throwable, buffer: ListBuffer[String]): List[String] = {
+      t match {
+        case null ⇒
+          buffer.toList
+
+        case _ ⇒
+          buffer.append("%s(%s)".format(shortClassNameOf(t), t.getMessage))
+          loop(t.getCause, buffer)
+      }
+    }
+
+    loop(t, new ListBuffer[String])
   }
 }

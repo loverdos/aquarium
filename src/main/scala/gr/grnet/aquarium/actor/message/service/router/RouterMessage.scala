@@ -47,6 +47,8 @@ import gr.grnet.aquarium.event.resource.ResourceEventModel
 /**
  * This is the base class of the messages the [[gr.grnet.aquarium.actor.service.router.RouterActor]] understands.
  *
+ * FIXME: re-organize messages
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 sealed trait RouterMessage extends ActorMessage {
@@ -100,5 +102,6 @@ case class ProcessResourceEvent(rcEvent: ResourceEventModel) extends RouterMessa
  */
 case class ProcessIMEvent(imEvent: IMEventModel) extends RouterMessage
 
+case class ProcessSetUserID(userID: String) extends RouterMessage
 
 case class AdminRequestPingAll() extends RouterMessage

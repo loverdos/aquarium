@@ -60,7 +60,7 @@ case class MongoDBResourceEvent(
   value: Double,
   eventVersion: String,
   details: Map[String, String],
-  _id: ObjectId
+  _id: String
 ) extends ResourceEventModel with MongoDBEventModel {
 
   def withReceivedMillis(newReceivedMillis: Long) =
@@ -87,7 +87,7 @@ object MongoDBResourceEvent {
   }
 
 
-  final def fromOther(rcEvent: ResourceEventModel, _id: ObjectId): MongoDBResourceEvent = {
+  final def fromOther(rcEvent: ResourceEventModel, _id: String): MongoDBResourceEvent = {
     import rcEvent._
     MongoDBResourceEvent(
       id,

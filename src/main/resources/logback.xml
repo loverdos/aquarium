@@ -18,13 +18,13 @@
     </encoder>
   </appender>
 
-  <logger name="ch.qos.logback" level="DEBUG"/>
+  <logger name="ch.qos.logback" level="INFO"/>
 
-  <logger name="com.ckkloverdos" level="DEBUG"/>
+  <logger name="com.ckkloverdos" level="WARN"/>
 
-  <logger name="cc.spray.can" level="DEBUG"/>
+  <logger name="cc.spray.can" level="INFO"/>
 
-  <logger name="gr.grnet" level="DEBUG"/>
+  <logger name="gr.grnet" level="INFO"/>
 
   <root level="DEBUG">
     <appender-ref ref="FILE"/>

@@ -37,11 +37,11 @@ package gr.grnet.aquarium.actor
 package service
 package user
 
-
 import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.user._
 
 import gr.grnet.aquarium.util.shortClassNameOf
+import gr.grnet.aquarium.util.chainOfCauses
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.actor.message.service.router._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
@@ -49,6 +49,7 @@ import gr.grnet.aquarium.event.im.IMEventModel
 import akka.config.Supervision.Temporary
 import akka.actor.PoisonPill
 import gr.grnet.aquarium.{AquariumException, Configurator}
+import com.ckkloverdos.convert.ConverterException
 
 
 /**
@@ -62,11 +63,19 @@ class UserActor extends ReflectiveAquariumActor {
 
   self.lifeCycle = Temporary
 
-  override protected def onThrowable(t: Throwable, message: AnyRef) = {
-    logger.error("Terminating due to: %s".format(t.getMessage), t)
-    UserActorCache.invalidate(this._userID)
+  private[this] def _shutmedown(): Unit = {
+    if(_haveFullState) {
+      UserActorCache.invalidate(this._userID)
+    }
 
     self ! PoisonPill
+  }
+
+  override protected def onThrowable(t: Throwable, message: AnyRef) = {
+    ERROR("Oops!\n", chainOfCauses(t).map("!! " + _) mkString "\n")
+    ERROR(t, "Terminating due to: %s(%s)", shortClassNameOf(t), t.getMessage)
+
+    _shutmedown()
   }
 
   def role = UserActorRole
@@ -77,6 +86,10 @@ class UserActor extends ReflectiveAquariumActor {
   private[this] def _timestampTheshold =
     _configurator.props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
 
+
+  private[this] def _haveFullState = {
+    (this._userID ne null) && (this._userState ne null)
+  }
 
   def onAquariumPropertiesLoaded(event: AquariumPropertiesLoaded): Unit = {
   }
@@ -120,13 +133,20 @@ class UserActor extends ReflectiveAquariumActor {
     store.insertUserState(newUserState)
   }
 
-  private[this] def processModifyUser(event: IMEventModel): Unit = {
+  private[this] def processModifyUser(imEvent: IMEventModel): Unit = {
     val now = TimeHelpers.nowMillis()
-    val newActive = ActiveStateSnapshot(event.isStateActive, now)
 
-    DEBUG("New active status = %s".format(newActive))
+    if(!_haveFullState) {
+      ERROR("Got %s(%s) but have no state. Shutting down", shortClassNameOf(imEvent), imEvent.eventType)
+      _shutmedown()
+      return
+    }
 
-    this._userState = this._userState.copy(activeStateSnapshot = newActive)
+    this._userState = this._userState.modifyFromIMEvent(imEvent, now)
+  }
+
+  def onProcessSetUserID(event: ProcessSetUserID): Unit = {
+    this._userID = event.userID
   }
 
   def onProcessIMEvent(event: ProcessIMEvent): Unit = {
@@ -157,14 +177,15 @@ class UserActor extends ReflectiveAquariumActor {
 
 
   private[this] def D_userID = {
-    this._userState match {
-      case null ⇒
-        "???"
-
-      case userState ⇒
-        userState.userID
-    }
+    if(this._userID eq null)
+      "<NOT INITIALIZED>" // We always get a userID first
+    else
+      if(this._userState eq null)
+        "%s, NO STATE".format(this._userID)
+      else
+        "%s".format(this._userID)
   }
+
   private[this] def DEBUG(fmt: String, args: Any*) =
     logger.debug("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
 
