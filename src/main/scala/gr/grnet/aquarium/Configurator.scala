@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium
 
-import event.im.IMEventModel
 import java.io.File
 
 import com.ckkloverdos.maybe._
@@ -43,7 +42,7 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 
 import gr.grnet.aquarium.service._
-import gr.grnet.aquarium.util.{Lifecycle, Loggable}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
 import gr.grnet.aquarium.store._
 
 /**
@@ -81,9 +80,9 @@ class Configurator(val props: Props) extends Loggable {
 
   }
 
-  private[this] lazy val _actorProvider: ActorProviderService = {
-    val instance = newInstance[ActorProviderService](props.getEx(Keys.actor_provider_class))
-    logger.info("Loaded ActorProviderService: %s".format(instance.getClass))
+  private[this] lazy val _actorProvider: RoleableActorProviderService = {
+    val instance = newInstance[RoleableActorProviderService](props.getEx(Keys.actor_provider_class))
+    logger.info("Loaded %s: %s".format(shortNameOfClass(classOf[RoleableActorProviderService]), instance.getClass))
     instance
   }
 
@@ -93,7 +92,7 @@ class Configurator(val props: Props) extends Loggable {
    */
   private[this] lazy val _storeProvider: StoreProvider = {
     val instance = newInstance[StoreProvider](props.getEx(Keys.store_provider_class))
-    logger.info("Loaded StoreProvider: %s".format(instance.getClass))
+    logger.info("Loaded %s: %s".format(shortNameOfClass(classOf[StoreProvider]), instance.getClass))
     instance
   }
   
@@ -109,7 +108,9 @@ class Configurator(val props: Props) extends Loggable {
     // `StoreProvider`.
     props.get(Keys.user_state_store_class) map { className ⇒
       val instance = newInstance[UserStateStore](className)
-      logger.info("Overriding UserStateStore provisioning. Implementation given by: %s".format(instance.getClass))
+      logger.info("Overriding %s provisioning. Implementation given by: %s".format(
+        shortNameOfClass(classOf[UserStateStore]),
+        instance.getClass))
       instance
     }
   }
@@ -351,7 +352,7 @@ object Configurator {
     final val version = "version"
 
     /**
-     * The fully qualified name of the class that implements the `ActorProviderService`.
+     * The fully qualified name of the class that implements the `RoleableActorProviderService`.
      * Will be instantiated reflectively and should have a public default constructor.
      */
     final val actor_provider_class = "actor.provider.class"

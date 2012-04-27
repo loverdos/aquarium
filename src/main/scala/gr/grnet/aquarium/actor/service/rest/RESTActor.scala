@@ -44,7 +44,7 @@ import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json.{JsonAST, Printer}
 import gr.grnet.aquarium.Configurator
 import akka.actor.Actor
-import gr.grnet.aquarium.actor.{RESTRole, AquariumActor, RouterRole}
+import gr.grnet.aquarium.actor.{RESTRole, RoleableActor, RouterRole}
 import RESTPaths.{UserBalancePath, UserStatePath, AdminPingAll}
 import com.ckkloverdos.maybe.{NoVal, Just}
 import message.service.router._
@@ -56,7 +56,7 @@ import org.joda.time.format.ISODateTimeFormat
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RESTActor(_id: String) extends AquariumActor with Loggable {
+class RESTActor(_id: String) extends RoleableActor with Loggable {
   def this() = this("spray-root-service")
 
   self.id = _id

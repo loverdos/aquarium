@@ -57,7 +57,7 @@ import com.ckkloverdos.convert.ConverterException
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class UserActor extends ReflectiveAquariumActor {
+class UserActor extends ReflectiveRoleableActor {
   private[this] var _userID: String = _
   private[this] var _userState: UserState = _
 

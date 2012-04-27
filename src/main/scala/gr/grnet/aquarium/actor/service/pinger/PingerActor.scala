@@ -38,7 +38,7 @@ package service
 package pinger
 
 
-import gr.grnet.aquarium.actor.{ReflectiveAquariumActor, PingerRole}
+import gr.grnet.aquarium.actor.{ReflectiveActor, PingerRole}
 import message.service.router.AdminRequestPingAll
 
 
@@ -48,7 +48,7 @@ import message.service.router.AdminRequestPingAll
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class PingerActor extends ReflectiveAquariumActor {
+class PingerActor extends ReflectiveRoleableActor {
   def role = PingerRole
 
   def onAdminRequestPingAll(msg: AdminRequestPingAll): Unit = {

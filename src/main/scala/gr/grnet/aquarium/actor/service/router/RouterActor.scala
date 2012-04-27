@@ -38,7 +38,7 @@ package service
 package router
 
 import gr.grnet.aquarium.util.shortClassNameOf
-import gr.grnet.aquarium.service.ActorProviderService
+import gr.grnet.aquarium.service.RoleableActorProviderService
 import message.service.router._
 import akka.actor.ActorRef
 import user.{UserActorCache, UserActorSupervisor}
@@ -50,8 +50,8 @@ import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RouterActor extends ReflectiveAquariumActor {
-  private[this] var _actorProvider: ActorProviderService = _
+class RouterActor extends ReflectiveRoleableActor {
+  private[this] var _actorProvider: RoleableActorProviderService = _
 
   def role = RouterRole
 

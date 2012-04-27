@@ -33,24 +33,21 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.service
+package gr.grnet.aquarium
+package actor
 
-import akka.actor.ActorRef
-import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.util.Lifecycle
-import gr.grnet.aquarium.actor.ActorRole
+import akka.actor.Actor
+import util.{Loggable, shortClassNameOf}
+
 
 /**
+ * Parent of all Aquarium actors.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait ActorProviderService extends Lifecycle {
-  /**
-   * Tries to find and provide the actor of specific `role`.
-   * Any extra info needed for the provision is given with the `hints` parameter.
-   *
-   * If no such actor is found, then this method throws an exception.
-   */
-  @throws(classOf[Exception])
-  def actorForRole(role: ActorRole, hints: Props = Props.empty): ActorRef
+trait RoleableActor extends Actor with Loggable {
+  def role: ActorRole
+
+  override def toString = "%s@%s(%s)".format(shortClassNameOf(this), System.identityHashCode(this), role.role)
 }
+

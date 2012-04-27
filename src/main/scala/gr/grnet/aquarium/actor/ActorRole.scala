@@ -49,7 +49,7 @@ import cc.spray.can.{Timeout, RequestContext}
  */
 sealed abstract class ActorRole(val role: String,
                                 val isCacheable: Boolean,
-                                val actorType: Class[_ <: AquariumActor],
+                                val actorType: Class[_ <: RoleableActor],
                                 val handledServiceMessages: Set[Class[_]],
                                 val handledConfigurationMessages: Set[Class[_ <: ActorConfigurationMessage]] = Set()) {
 

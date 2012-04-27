@@ -33,15 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor.message
-package config
-
-import gr.grnet.aquarium.service.RoleableActorProviderService
+package gr.grnet.aquarium.actor
 
 /**
- * Sent with the configured [[gr.grnet.aquarium.service.RoleableActorProviderService]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class ActorProviderConfigured(actorProvider: RoleableActorProviderService) extends ActorConfigurationMessage
+trait ReflectiveRoleableActor extends RoleableActor with ReflectiveActor {
+  final def knownMessageTypes = role.knownMessageTypes
+}

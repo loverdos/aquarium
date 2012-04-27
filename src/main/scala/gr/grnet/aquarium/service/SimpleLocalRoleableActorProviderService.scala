@@ -50,7 +50,7 @@ import gr.grnet.aquarium.actor._
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class SimpleLocalActorProviderService extends ActorProviderService with Configurable with Loggable {
+class SimpleLocalRoleableActorProviderService extends RoleableActorProviderService with Configurable with Loggable {
   private[this] val actorCache = new ConcurrentHashMap[ActorRole, ActorRef]
   private[this] var _props: Props = _
 
@@ -61,7 +61,7 @@ class SimpleLocalActorProviderService extends ActorProviderService with Configur
 
   private[this] def __doStart(): Unit = {
     // Start and configure actors
-    import SimpleLocalActorProviderService.RolesToBeStarted
+    import SimpleLocalRoleableActorProviderService.RolesToBeStarted
     val message = ActorProviderConfigured(this)
 
     for(role <- RolesToBeStarted) {
@@ -120,7 +120,7 @@ class SimpleLocalActorProviderService extends ActorProviderService with Configur
   override def toString = gr.grnet.aquarium.util.shortClassNameOf(this)
 }
 
-object SimpleLocalActorProviderService {
+object SimpleLocalRoleableActorProviderService {
   // Always set Dispatcher at the end.
   // We could definitely use some automatic dependency sorting here (topological sorting anyone?)
   final val RolesToBeStarted = List(
@@ -129,7 +129,7 @@ object SimpleLocalActorProviderService {
     PingerRole,
     RouterRole)
 
-  lazy val ActorClassByRole: Map[ActorRole, Class[_ <: AquariumActor]] =
+  lazy val ActorClassByRole: Map[ActorRole, Class[_ <: RoleableActor]] =
     RolesToBeStarted map {
       role ⇒
         (role, role.actorType)

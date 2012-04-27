@@ -36,16 +36,17 @@
 package gr.grnet.aquarium
 package actor
 
-import util.shortNameOfClass
 import java.lang.reflect.InvocationTargetException
 import com.ckkloverdos.maybe.{Failed, Just, MaybeEither}
+import akka.actor.Actor
+import gr.grnet.aquarium.util.{Loggable, shortNameOfClass}
 
 /**
  * An actor who dispatches to particular methods based on the type of the received message.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait ReflectiveAquariumActor extends AquariumActor {
+trait ReflectiveActor extends Actor with Loggable {
   private val messageMethodMap: Map[Class[_], java.lang.reflect.Method] = {
     val classMethodPairs = for(knownMessageClass <- knownMessageTypes) yield {
       require(knownMessageClass ne null, "Null in knownMessageTypes of %s".format(this.getClass))
@@ -82,7 +83,7 @@ trait ReflectiveAquariumActor extends AquariumActor {
     throw t
   }
 
-  def knownMessageTypes = role.knownMessageTypes
+  def knownMessageTypes: Set[Class[_]]// = role.knownMessageTypes
 
   final protected def receive: Receive = {
     case null =>
