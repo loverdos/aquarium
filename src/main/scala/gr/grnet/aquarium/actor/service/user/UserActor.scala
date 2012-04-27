@@ -49,7 +49,6 @@ import gr.grnet.aquarium.event.im.IMEventModel
 import akka.config.Supervision.Temporary
 import akka.actor.PoisonPill
 import gr.grnet.aquarium.{AquariumException, Configurator}
-import com.ckkloverdos.convert.ConverterException
 
 
 /**
