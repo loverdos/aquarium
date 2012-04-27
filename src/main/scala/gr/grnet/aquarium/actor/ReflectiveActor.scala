@@ -39,10 +39,12 @@ package actor
 import java.lang.reflect.InvocationTargetException
 import com.ckkloverdos.maybe.{Failed, Just, MaybeEither}
 import akka.actor.Actor
-import gr.grnet.aquarium.util.{Loggable, shortNameOfClass}
+import gr.grnet.aquarium.util.{Loggable, simpleNameOfClass}
 
 /**
  * An actor who dispatches to particular methods based on the type of the received message.
+ *
+ * Do not overload message class names in different packages or else it will not recognize them!
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
@@ -51,7 +53,7 @@ trait ReflectiveActor extends Actor with Loggable {
     val classMethodPairs = for(knownMessageClass <- knownMessageTypes) yield {
       require(knownMessageClass ne null, "Null in knownMessageTypes of %s".format(this.getClass))
 
-      val methodName = "on%s".format(shortNameOfClass(knownMessageClass))
+      val methodName = "on%s".format(simpleNameOfClass(knownMessageClass))
       // For each class MethodClass we expect a method with the following signature:
       // def onMethodClass(message: MethodClass): Unit
       MaybeEither(this.getClass.getMethod(methodName, knownMessageClass)) match {
