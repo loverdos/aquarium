@@ -75,6 +75,6 @@ trait Loggable {
   }
 
   protected def logChainOfCauses(t: Throwable): Unit = {
-    logger.error("Oops!\n{}", chainOfCauses(t).map("!! " + _) mkString "\n")
+    logger.error("Oops!\n{}", chainOfCausesForLogging(t))
   }
 }

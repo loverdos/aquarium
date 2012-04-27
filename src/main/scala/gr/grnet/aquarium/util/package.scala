@@ -35,7 +35,8 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.maybe.{Failed, MaybeOption, Just, NoVal, Maybe}
+import scala.collection.mutable.ListBuffer
+import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import java.nio.charset.Charset
 import java.io.{PrintWriter, StringWriter}
 import annotation.tailrec
@@ -225,21 +226,49 @@ package object util {
     sw.toString
   }
 
-
-  def chainOfCauses(t: Throwable): List[String] = {
-    import scala.collection.mutable.ListBuffer
+  private[this]
+  def chainOfCausesBuffer(t: Throwable): ListBuffer[String] = {
     @tailrec
-    def loop(t: Throwable, buffer: ListBuffer[String]): List[String] = {
+    def loop(t: Throwable, buffer: ListBuffer[String]): ListBuffer[String] = {
       t match {
         case null ⇒
-          buffer.toList
+          buffer
 
         case _ ⇒
-          buffer.append("%s(%s)".format(shortClassNameOf(t), t.getMessage))
+          buffer.append("%s: %s".format(shortClassNameOf(t), t.getMessage))
           loop(t.getCause, buffer)
       }
     }
 
     loop(t, new ListBuffer[String])
+  }
+
+  def chainOfCauses(t: Throwable): List[String] = {
+    chainOfCausesBuffer(t).toList
+  }
+
+  def chainOfCausesForLogging(t: Throwable) = {
+    val buf = chainOfCausesBuffer(t)
+    val st = t.getStackTrace()(0)
+
+    val source = tryOption {
+      val path = Class.forName(st.getClassName).getProtectionDomain.getCodeSource.getLocation.getPath
+      val file = new java.io.File(path)
+      file.getName
+    }
+
+    buf.prepend("%s.%s(%s:%s)%s".format(
+      st.getClassName,
+      st.getMethodName,
+      st.getFileName,
+      st.getLineNumber,
+      if(source.isDefined) " [%s]".format(source.get) else ""
+    ))
+
+    val noNL = buf.map { line ⇒
+      "!! " + line.replaceAll("""[\n\r]+""", ", ")
+    }
+
+    noNL mkString "\n"
   }
 }
