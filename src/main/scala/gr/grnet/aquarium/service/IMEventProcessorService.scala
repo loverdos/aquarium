@@ -64,7 +64,7 @@ class IMEventProcessorService extends EventProcessorService[IMEventModel] {
   }
 
   override def existsInStore(event: IMEventModel) =
-    _configurator.imEventStore.findIMEventById(event.id).isJust
+    _configurator.imEventStore.findIMEventById(event.id).isDefined
 
   override def storeParsedEvent(event: IMEventModel, initialPayload: Array[Byte]) = {
     // 1. Store to local FS for debugging purposes.
