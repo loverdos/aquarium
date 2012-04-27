@@ -247,23 +247,32 @@ package object util {
     chainOfCausesBuffer(t).toList
   }
 
-  def chainOfCausesForLogging(t: Throwable) = {
-    val buf = chainOfCausesBuffer(t)
-    val st = t.getStackTrace()(0)
-
-    val source = tryOption {
+  def sourceOfTraceElement(st: StackTraceElement): Option[String] = {
+    tryOption {
       val path = Class.forName(st.getClassName).getProtectionDomain.getCodeSource.getLocation.getPath
       val file = new java.io.File(path)
       file.getName
     }
+  }
 
-    buf.prepend("%s.%s(%s:%s)%s".format(
+  def formatTraceElement(st: StackTraceElement): String = {
+    val source = sourceOfTraceElement(st)
+    "%s.%s(%s:%s)%s".format(
       st.getClassName,
       st.getMethodName,
       st.getFileName,
       st.getLineNumber,
       if(source.isDefined) " [%s]".format(source.get) else ""
-    ))
+    )
+  }
+
+  def chainOfCausesForLogging(t: Throwable) = {
+    val buf = chainOfCausesBuffer(t)
+    val happenedTrace = t.getStackTrace()(0)
+    val caughtTrace = new Exception().getStackTrace()(3)
+
+    buf.prepend("[Happened @] %s".format(formatTraceElement(happenedTrace)))
+    buf.prepend("[Caught   @] %s".format(formatTraceElement(caughtTrace)))
 
     val noNL = buf.map { line ⇒
       "!! " + line.replaceAll("""[\n\r]+""", ", ")
