@@ -38,7 +38,7 @@ package gr.grnet.aquarium.util
 import org.slf4j.LoggerFactory
 
 /**
- * Like [[gr.grnet.aquarium.util.Loggable]] but the underlying logger is lazily evaluated.
+ * Like [[gr.grnet.aquarium.util.Loggable]] but the underlying logger is created lazily.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -73,5 +73,9 @@ trait LazyLoggable {
 
   protected def logStopped(ms0: Long, ms1: Long, fmt: String, args: Any*): Unit = {
     LogHelpers.logStopped(this.logger, ms0, ms1, fmt, args: _*)
+  }
+
+  protected def logChainOfCauses(t: Throwable): Unit = {
+    logger.error("Oops!\n{}", chainOfCauses(t).map("!! " + _) mkString "\n")
   }
 }
