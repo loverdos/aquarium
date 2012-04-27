@@ -52,6 +52,7 @@ import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.{AquariumException, Configurator}
 import gr.grnet.aquarium.event.ExternalEventModel
+import gr.grnet.aquarium.actor.ReflectiveActor
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,
@@ -223,20 +224,30 @@ abstract class EventProcessorService[E <: ExternalEventModel] extends AkkaAMQP w
     self.dispatcher = queueReaderManager.dispatcher
   }
 
-  class Persister extends Actor with Loggable {
+  class Persister extends ReflectiveActor {
 
-    def receive = {
-      case Persist(event, initialPayload, sender, ackData) ⇒
-        if(existsInStore(event))
-          sender ! Duplicate(ackData)
-        else MaybeEither {
-          storeParsedEvent(event, initialPayload)
-        } forJust { just ⇒
-          sender ! PersistOK(ackData)
-        } forFailed { case Failed(e) ⇒
+    def knownMessageTypes = Set(classOf[Persist])
+
+    override protected def onThrowable(t: Throwable, servicingMessage: AnyRef) {
+      logChainOfCauses(t)
+      servicingMessage match {
+        case Persist(event, initialPayload, sender, ackData) ⇒
           sender ! PersistFailed(ackData)
-          logger.error("While persisting event", e)
-        }
+          logger.error("While persisting", t)
+      }
+    }
+
+    def onPersist(persist: Persist): Unit = {
+      persist match {
+        case Persist(event, initialPayload, sender, ackData) ⇒
+          if(existsInStore(event)) {
+            sender ! Duplicate(ackData)
+          }
+          else {
+            storeParsedEvent(event, initialPayload)
+            sender ! PersistOK(ackData)
+          }
+      }
     }
 
     self.dispatcher = persisterManager.dispatcher
