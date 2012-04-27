@@ -82,7 +82,7 @@ package object util {
    * This is basically the name after the last dot and after any dollar sign.
    */
   def simpleNameOfClass(theClass: Class[_]): String = {
-    afterLastIndexOf("$", simpleNameOfClass(theClass))
+    afterLastIndexOf("$", shortNameOfClass(theClass))
   }
 
   /**
