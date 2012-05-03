@@ -56,7 +56,7 @@ import org.joda.time.format.ISODateTimeFormat
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RESTActor(_id: String) extends RoleableActor with Loggable {
+class RESTActor private(_id: String) extends RoleableActor with Loggable {
   def this() = this("spray-root-service")
 
   self.id = _id
