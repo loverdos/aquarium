@@ -33,25 +33,26 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-package service
-package pinger
+package gr.grnet.aquarium.actor.message
 
-
-import gr.grnet.aquarium.actor.{PingerRole}
-import gr.grnet.aquarium.actor.message.admin.PingAllRequest
-
+import gr.grnet.aquarium.converter.{StdConverters, PrettyJsonTextFormat}
 
 /**
- * An actor that handles the REST ing requests.
+ * Response message sent as a reply by [[gr.grnet.aquarium.actor.service.router.RouterActor]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class PingerActor extends ReflectiveRoleableActor {
-  def role = PingerRole
+abstract class RouterResponseMessage[T](val response: Either[String, T]) extends ActorMessage {
+  def isError = response.isRight
 
-  def onPingAllRequest(msg: PingAllRequest): Unit = {
-    logger.debug("Got {}", msg)
+  def responseToJsonString: String = {
+    response match {
+      case Left(error) ⇒
+        "{}"
+
+      case Right(data) ⇒
+        StdConverters.AllConverters.convertEx[PrettyJsonTextFormat](data).value
+    }
   }
 }

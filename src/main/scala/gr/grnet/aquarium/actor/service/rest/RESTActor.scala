@@ -40,16 +40,15 @@ package rest
 import cc.spray.can.HttpMethods.GET
 import cc.spray.can._
 import gr.grnet.aquarium.util.Loggable
-import net.liftweb.json.JsonAST.JValue
-import net.liftweb.json.{JsonAST, Printer}
 import gr.grnet.aquarium.Configurator
 import akka.actor.Actor
 import gr.grnet.aquarium.actor.{RESTRole, RoleableActor, RouterRole}
 import RESTPaths.{UserBalancePath, UserStatePath, AdminPingAll}
 import com.ckkloverdos.maybe.{NoVal, Just}
-import message.service.router._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
+import gr.grnet.aquarium.actor.message.admin.PingAllRequest
+import gr.grnet.aquarium.actor.message.{RouterResponseMessage, GetUserStateRequest, RouterRequestMessage, ActorMessage, GetUserBalanceRequest}
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -60,11 +59,6 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
   def this() = this("spray-root-service")
 
   self.id = _id
-
-  private def jsonResponse200(body: JValue, pretty: Boolean = false): HttpResponse = {
-    val stringBody = Printer.pretty(JsonAST.render(body))
-    stringResponse200(stringBody, "application/json")
-  }
 
   private def stringResponse(status: Int, stringBody: String, contentType: String = "application/json"): HttpResponse = {
     HttpResponse(
@@ -106,11 +100,11 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
       //+ Main business logic REST URIs are matched here
       val millis = TimeHelpers.nowMillis()
       uri match {
-        case UserBalancePath(userId) ⇒
-          callDispatcher(RequestUserBalance(userId, millis), responder)
+        case UserBalancePath(userID) ⇒
+          callRouter(GetUserBalanceRequest(userID, millis), responder)
 
         case UserStatePath(userId) ⇒
-          callDispatcher(UserRequestGetState(userId, millis), responder)
+          callRouter(GetUserStateRequest(userId, millis), responder)
 
         case AdminPingAll() ⇒
           val mc = Configurator.MasterConfigurator
@@ -118,7 +112,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
             case Just(adminCookie) ⇒
               headers.find(_.name.toLowerCase == Configurator.HTTP.RESTAdminHeaderNameLowerCase) match {
                 case Some(cookieHeader) if(cookieHeader.value == adminCookie) ⇒
-                  callDispatcher(AdminRequestPingAll(), responder)
+                  callRouter(PingAllRequest(), responder)
 
                 case Some(cookieHeader) ⇒
                   logger.warn("Admin request with bad cookie '{}' from {}", cookieHeader.value, remoteAddress)
@@ -148,7 +142,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
 
   private[this]
-  def callDispatcher(message: RouterMessage, responder: RequestResponder): Unit = {
+  def callRouter(message: RouterRequestMessage, responder: RequestResponder): Unit = {
     val configurator = Configurator.MasterConfigurator
     val actorProvider = configurator.actorProvider
     val router = actorProvider.actorForRole(RouterRole)
@@ -166,23 +160,22 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
           case Some(Right(actualResponse)) ⇒
             actualResponse match {
-              case dispatcherResponse: RouterResponseMessage if (!dispatcherResponse.isError) ⇒
-                //logger.debug("Received response: %s".format(dispatcherResponse))
-                //logger.debug("Received response (JSON): %s".format(dispatcherResponse.toJson))
-                //logger.debug("Received response:body %s".format(dispatcherResponse.responseBody))
-                //logger.debug("Received response:body (JSON): %s".format(dispatcherResponse.responseBodyToJson))
-                responder.complete(
-                  HttpResponse(
-                    status = 200,
-                    body = dispatcherResponse.responseBodyToJson.getBytes("UTF-8"),
-                    headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
+              case routerResponse: RouterResponseMessage[_] ⇒
+                routerResponse.response match {
+                  case Left(error) ⇒
+                    logger.error("Error %s serving %s: Response is: %s".format(error, message, actualResponse))
+                    responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
 
-              case dispatcherResponse: RouterResponseMessage ⇒
-                logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
-                responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+                  case Right(response) ⇒
+                    responder.complete(
+                      HttpResponse(
+                        status = 200,
+                        body = routerResponse.responseToJsonString.getBytes("UTF-8"),
+                        headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
+                }
 
               case _ ⇒
-                logger.error("Error serving %s: Dispatcher response is: %s".format(message, actualResponse))
+                logger.error("Error serving %s: Response is: %s".format(message, actualResponse))
                 responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
             }
         }

@@ -41,13 +41,13 @@ import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.user._
 
 import gr.grnet.aquarium.util.shortClassNameOf
-import gr.grnet.aquarium.actor.message.service.router._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.event.im.IMEventModel
 import akka.config.Supervision.Temporary
-import gr.grnet.aquarium.{AquariumInternalError, AquariumException, Configurator}
-import gr.grnet.aquarium.util.date.{MutableDateCalc, TimeHelpers}
-
+import gr.grnet.aquarium.Configurator
+import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
+import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
+import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 
 /**
  *
@@ -129,16 +129,16 @@ class UserActor extends ReflectiveRoleableActor {
     DEBUG("%s %s", if(isUpdate) "Update" else "Set", shortClassNameOf(this._imState))
   }
 
-  def onRequestUserBalance(event: RequestUserBalance): Unit = {
+  def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
     val userId = event.userID
-    // FIXME: Implement threshold
-    self reply UserResponseGetBalance(userId, _userState.creditsSnapshot.creditAmount)
+    // FIXME: Implement
+    self reply GetUserBalanceResponse(userId, Right(_userState.creditsSnapshot.creditAmount))
   }
 
-  def onUserRequestGetState(event: UserRequestGetState): Unit = {
+  def onGetUserStateRequest(event: GetUserStateRequest): Unit = {
     val userId = event.userID
-   // FIXME: implement
-    self reply UserResponseGetState(userId, this._userState)
+   // FIXME: Implement
+    self reply GetUserStateResponse(userId, Right(this._userState))
   }
 
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {

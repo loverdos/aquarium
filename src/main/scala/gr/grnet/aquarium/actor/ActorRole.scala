@@ -34,13 +34,15 @@
  */
 package gr.grnet.aquarium.actor
 
-import message.service.router._
 import service.router.RouterActor
 import service.pinger.PingerActor
 import service.rest.RESTActor
 import service.user.{UserActor}
 import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured, ActorConfigurationMessage}
 import cc.spray.can.{Timeout, RequestContext}
+import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
+import gr.grnet.aquarium.actor.message.admin.PingAllRequest
+import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
 
 /**
  * Each actor within Aquarium plays one role.
@@ -87,7 +89,7 @@ case object PingerRole
     extends ActorRole("PingerRole",
                       true,
                       classOf[PingerActor],
-                      Set(classOf[AdminRequestPingAll]))
+                      Set(classOf[PingAllRequest]))
 
 /**
  * The generic router.
@@ -96,11 +98,11 @@ case object RouterRole
     extends ActorRole("RouterRole",
                       true,
                       classOf[RouterActor],
-                      Set(classOf[RequestUserBalance],
-                          classOf[UserRequestGetState],
+                      Set(classOf[GetUserBalanceRequest],
+                          classOf[GetUserStateRequest],
                           classOf[ProcessResourceEvent],
                           classOf[ProcessIMEvent],
-                          classOf[AdminRequestPingAll]),
+                          classOf[PingAllRequest]),
                       Set(classOf[ActorProviderConfigured],
                           classOf[AquariumPropertiesLoaded]))
 
@@ -123,7 +125,7 @@ case object UserActorRole
                       classOf[UserActor],
                       Set(classOf[ProcessResourceEvent],
                           classOf[ProcessIMEvent],
-                          classOf[RequestUserBalance],
-                          classOf[UserRequestGetState]),
+                          classOf[GetUserBalanceRequest],
+                          classOf[GetUserStateRequest]),
                       Set(classOf[ActorProviderConfigured],
                           classOf[AquariumPropertiesLoaded]))

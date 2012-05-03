@@ -39,12 +39,11 @@ package gr.grnet.aquarium.service
 import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
-import gr.grnet.aquarium.actor.message.service.router.ProcessIMEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe._
-import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
 
 /**
  * An event processor service for user events coming from the IM system

@@ -39,10 +39,12 @@ package router
 
 import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.service.RoleableActorProviderService
-import message.service.router._
 import akka.actor.ActorRef
 import user.{UserActorCache, UserActorSupervisor}
 import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
+import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
+import gr.grnet.aquarium.actor.message.admin.PingAllRequest
+import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, GetUserStateRequest, GetUserBalanceRequest}
 
 /**
  * Business logic router. Incoming messages are routed to appropriate destinations. Replies are routed back
@@ -73,7 +75,7 @@ class RouterActor extends ReflectiveRoleableActor {
     }
   }
 
-  private[this] def _forwardToUserActor(userID: String, m: RouterMessage): Unit = {
+  private[this] def _forwardToUserActor(userID: String, m: UserActorRequestMessage): Unit = {
     try {
       _findOrCreateUserActor(userID) forward m
 
@@ -97,11 +99,11 @@ class RouterActor extends ReflectiveRoleableActor {
      _forwardToUserActor(m.imEvent.userID, m)
   }
 
-  def onRequestUserBalance(m: RequestUserBalance): Unit = {
+  def onGetUserBalanceRequest(m: GetUserBalanceRequest): Unit = {
     _forwardToUserActor(m.userID, m)
   }
 
-  def onUserRequestGetState(m: UserRequestGetState): Unit = {
+  def onGetUserStateRequest(m: GetUserStateRequest): Unit = {
     _forwardToUserActor(m.userID, m)
   }
 
@@ -109,8 +111,7 @@ class RouterActor extends ReflectiveRoleableActor {
     _forwardToUserActor(m.rcEvent.userID, m)
   }
 
-  def onAdminRequestPingAll(m: AdminRequestPingAll): Unit = {
-
+  def onPingAllRequest(m: PingAllRequest): Unit = {
   }
 
   override def postStop = {

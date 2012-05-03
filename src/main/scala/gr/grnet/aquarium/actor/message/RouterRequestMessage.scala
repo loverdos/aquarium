@@ -33,25 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-package service
-package pinger
-
-
-import gr.grnet.aquarium.actor.{PingerRole}
-import gr.grnet.aquarium.actor.message.admin.PingAllRequest
-
+package gr.grnet.aquarium.actor.message
 
 /**
- * An actor that handles the REST ing requests.
+ * Request message sent to [[gr.grnet.aquarium.actor.service.router.RouterActor]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class PingerActor extends ReflectiveRoleableActor {
-  def role = PingerRole
 
-  def onPingAllRequest(msg: PingAllRequest): Unit = {
-    logger.debug("Got {}", msg)
-  }
-}
+trait RouterRequestMessage extends ActorMessage
