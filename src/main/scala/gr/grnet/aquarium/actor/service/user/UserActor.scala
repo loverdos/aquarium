@@ -41,13 +41,12 @@ import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.user._
 
 import gr.grnet.aquarium.util.shortClassNameOf
-import gr.grnet.aquarium.util.chainOfCauses
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.actor.message.service.router._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.event.im.IMEventModel
 import akka.config.Supervision.Temporary
-import gr.grnet.aquarium.{AquariumException, Configurator}
+import gr.grnet.aquarium.{AquariumInternalError, AquariumException, Configurator}
 
 
 /**
@@ -157,7 +156,8 @@ class UserActor extends ReflectiveRoleableActor {
     val imEvent = event.imEvent
     // If we already have a userID but it does not match the incoming userID, then this is an internal error
     if(_havePartialState && (this._userID != imEvent.userID)) {
-      throw new AquariumException("Got userID = %s but already have userID = %s".format(imEvent.userID, this._userID))
+      throw new AquariumInternalError(
+        "Got userID = %s but already have userID = %s".format(imEvent.userID, this._userID))
     }
 
     // If we get an IMEvent without having a user state, then we query for the latest user state.
