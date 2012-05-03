@@ -44,26 +44,30 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResourcesMap}
 import gr.grnet.aquarium.store.{StoreProvider, PolicyStore}
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
-import gr.grnet.aquarium.AquariumException
 import gr.grnet.aquarium.event.{NewWalletEntry}
 import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.im.{IMEventModel, StdIMEvent}
+import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIConversion.User
+import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 class UserStateComputations extends Loggable {
-  def createInitialUserState(userId: String,
-                             userCreationMillis: Long,
-                             isActive: Boolean,
-                             credits: Double,
-                             roleNames: List[String] = List(),
-                             agreementName: String = DSLAgreement.DefaultAgreementName) = {
-    val now = userCreationMillis
+  def createInitialUserState(imEvent: IMEventModel, credits: Double, agreementName: String) = {
+    if(!imEvent.isCreateUser) {
+      throw new AquariumInternalError(
+        "Got '%s' instead of '%s'".format(imEvent.eventType, IMEventModel.EventTypeNames.create))
+    }
+
+    val userID = imEvent.userID
+    val userCreationMillis = imEvent.occurredMillis
+    val now = TimeHelpers.nowMillis()
 
     UserState(
       true,
-      userId,
+      userID,
       userCreationMillis,
       0L,
       false,
@@ -74,10 +78,48 @@ class UserStateComputations extends Loggable {
       LatestResourceEventsSnapshot(List(), now),
       0L,
       0L,
-      ActiveStateSnapshot(isActive, now),
+      IMStateSnapshot(imEvent, now),
       CreditSnapshot(credits, now),
       AgreementSnapshot(List(Agreement(agreementName, userCreationMillis)), now),
-      RolesSnapshot(roleNames, now),
+      OwnedResourcesSnapshot(Nil, now),
+      Nil,
+      InitialUserStateSetup
+    )
+  }
+
+  def createInitialUserState(userID: String,
+                             userCreationMillis: Long,
+                             isActive: Boolean,
+                             credits: Double,
+                             roleNames: List[String] = List(),
+                             agreementName: String = DSLAgreement.DefaultAgreementName) = {
+    val now = userCreationMillis
+
+    UserState(
+      true,
+      userID,
+      userCreationMillis,
+      0L,
+      false,
+      null,
+      ImplicitlyIssuedResourceEventsSnapshot(List(), now),
+      Nil,
+      Nil,
+      LatestResourceEventsSnapshot(List(), now),
+      0L,
+      0L,
+      IMStateSnapshot(
+        StdIMEvent(
+          "",
+          now, now, userID,
+          "",
+          isActive, roleNames.headOption.getOrElse("default"),
+          "1.0",
+          IMEventModel.EventTypeNames.create, Map()),
+        now
+      ),
+      CreditSnapshot(credits, now),
+      AgreementSnapshot(List(Agreement(agreementName, userCreationMillis)), now),
       OwnedResourcesSnapshot(Nil, now),
       Nil,
       InitialUserStateSetup
@@ -86,13 +128,9 @@ class UserStateComputations extends Loggable {
 
   def createInitialUserStateFrom(us: UserState): UserState = {
     createInitialUserState(
-      us.userID,
-      us.userCreationMillis,
-      us.activeStateSnapshot.isActive,
+      us.imStateSnapshot.imEvent,
       us.creditsSnapshot.creditAmount,
-      us.rolesSnapshot.roles,
-      us.agreementsSnapshot.agreementsByTimeslot.valuesIterator.toList.last
-    )
+      us.agreementsSnapshot.agreementsByTimeslot.valuesIterator.toList.last)
   }
 
   def findUserStateAtEndOfBillingMonth(userId: String,

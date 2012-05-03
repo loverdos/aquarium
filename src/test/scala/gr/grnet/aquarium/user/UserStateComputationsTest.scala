@@ -241,7 +241,7 @@ aquariumpolicy:
   val UserCKKL  = Aquarium.newUser("CKKL", UserCreationDate)
 
   val InitialUserState = Computations.createInitialUserState(
-    userId = UserCKKL.userId,
+    userID = UserCKKL.userId,
     userCreationMillis = UserCreationDate.getTime,
     isActive = true,
     credits = 0.0,

@@ -60,7 +60,6 @@ class RouterActor extends ReflectiveRoleableActor {
     val userActor = _actorProvider.actorForRole(UserActorRole)
     UserActorCache.put(userID, userActor)
     UserActorSupervisor.supervisor.link(userActor)
-    userActor ! ProcessSetUserID(userID)
 
     userActor
   }

@@ -75,10 +75,8 @@ import org.bson.types.ObjectId
  * @param latestResourceEventsSnapshot
  * @param billingPeriodResourceEventsCounter
  * @param billingPeriodOutOfSyncResourceEventsCounter
- * @param activeStateSnapshot
  * @param creditsSnapshot
  * @param agreementsSnapshot
- * @param rolesSnapshot
  * @param ownedResourcesSnapshot
  * @param newWalletEntries
  *          The wallet entries computed. Not all user states need to holds wallet entries,
@@ -157,11 +155,9 @@ case class UserState(
      * the billing period recorded by `billingPeriodSnapshot`
      */
     billingPeriodOutOfSyncResourceEventsCounter: Long,
-
-    activeStateSnapshot: ActiveStateSnapshot,
+    imStateSnapshot: IMStateSnapshot,
     creditsSnapshot: CreditSnapshot,
     agreementsSnapshot: AgreementSnapshot,
-    rolesSnapshot: RolesSnapshot,
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
     newWalletEntries: List[NewWalletEntry],
     // The last known change reason for this userState
@@ -175,8 +171,8 @@ case class UserState(
 
   private[this] def _allSnapshots: List[Long] = {
     List(
-      activeStateSnapshot.snapshotTime,
-      creditsSnapshot.snapshotTime, agreementsSnapshot.snapshotTime, rolesSnapshot.snapshotTime,
+      imStateSnapshot.snapshotTime,
+      creditsSnapshot.snapshotTime, agreementsSnapshot.snapshotTime,
       ownedResourcesSnapshot.snapshotTime,
       implicitlyIssuedSnapshot.snapshotTime,
       latestResourceEventsSnapshot.snapshotTime
@@ -232,12 +228,10 @@ case class UserState(
   def resourcesMap = ownedResourcesSnapshot.toResourcesMap
 
   def modifyFromIMEvent(imEvent: IMEventModel, snapshotMillis: Long): UserState = {
-    val changeReason = IMEventArrival(imEvent)
     this.copy(
       isInitial = false,
-      activeStateSnapshot = ActiveStateSnapshot(imEvent.isActive, snapshotMillis),
-      rolesSnapshot = RolesSnapshot(List(imEvent.role), snapshotMillis),
-      lastChangeReason = changeReason
+      imStateSnapshot = IMStateSnapshot(imEvent, snapshotMillis),
+      lastChangeReason = IMEventArrival(imEvent)
     )
   }
 

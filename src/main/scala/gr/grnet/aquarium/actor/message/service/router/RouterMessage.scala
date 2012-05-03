@@ -102,6 +102,4 @@ case class ProcessResourceEvent(rcEvent: ResourceEventModel) extends RouterMessa
  */
 case class ProcessIMEvent(imEvent: IMEventModel) extends RouterMessage
 
-case class ProcessSetUserID(userID: String) extends RouterMessage
-
 case class AdminRequestPingAll() extends RouterMessage

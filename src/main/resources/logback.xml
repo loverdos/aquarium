@@ -24,7 +24,7 @@
 
   <logger name="cc.spray.can" level="INFO"/>
 
-  <logger name="gr.grnet" level="INFO"/>
+  <logger name="gr.grnet" level="DEBUG"/>
 
   <root level="DEBUG">
     <appender-ref ref="FILE"/>

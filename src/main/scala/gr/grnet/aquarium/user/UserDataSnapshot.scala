@@ -45,6 +45,7 @@ import logic.accounting.dsl.{Timeslot, DSLAgreement}
 import collection.immutable.{TreeMap, SortedMap}
 import util.date.MutableDateCalc
 import event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.im.IMEventModel
 
 /**
  * Snapshot of data that are user-related.
@@ -54,7 +55,9 @@ import event.resource.ResourceEventModel
 
 case class CreditSnapshot(creditAmount: Double, snapshotTime: Long) extends DataSnapshot
 
-case class RolesSnapshot(roles: List[String], snapshotTime: Long) extends DataSnapshot
+case class IMStateSnapshot(imEvent: IMEventModel, snapshotTime: Long) extends DataSnapshot
+
+//case class RolesSnapshot(roles: List[String], snapshotTime: Long) extends DataSnapshot
 
 /**
  * Represents an agreement valid for a specific amount of time. By convention,
@@ -132,11 +135,11 @@ case class AgreementSnapshot(agreements: List[Agreement], snapshotTime: Long) ex
  *  - If the resource is complex, the (name, instanceId) is (DSLResource.name, instance-id)
  *  - If the resource is simple,  the (name, instanceId) is (DSLResource.name, "1")
  *
- * @param resource        Same as `resource` of [[gr.grnet.aquarium.event.ResourceEvent]]
- * @param instanceId      Same as `instanceId` of [[gr.grnet.aquarium.event.ResourceEvent]]
+ * @param resource        Same as `resource` of [[gr.grnet.aquarium.event.resource.ResourceEventModel]]
+ * @param instanceId      Same as `instanceId` of [[gr.grnet.aquarium.event.resource.ResourceEventModel]]
  * @param instanceAmount  This is the amount kept for the resource instance.
 *                         The general rule is that an amount saved in a [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]
- *                        represents a total value, while a value appearing in a [[gr.grnet.aquarium.event.ResourceEvent]]
+ *                        represents a total value, while a value appearing in a [[gr.grnet.aquarium.event.resource.ResourceEventModel]]
  *                        represents a difference. How these two values are combined to form the new amount is dictated
  *                        by the underlying [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
  * @param snapshotTime
@@ -240,7 +243,7 @@ class DataSnapshotException(msg: String) extends Exception(msg)
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ActiveStateSnapshot(isActive: Boolean, snapshotTime: Long) extends DataSnapshot
+//case class ActiveStateSnapshot(isActive: Boolean, snapshotTime: Long) extends DataSnapshot
 
 /**
  * Keeps the latest resource event per resource instance.
