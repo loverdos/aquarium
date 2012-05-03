@@ -56,29 +56,28 @@ object UserActorCache extends Lifecycle {
       .removalListener(EvictionListener)
       .build()
 
-  private[this] object EvictionListener
-    extends RemovalListener[String, ActorRef] with Loggable {
+  private[this] object EvictionListener extends RemovalListener[String, ActorRef] with Loggable {
 
-    def onRemoval(p1: RemovalNotification[String, ActorRef]) {
-      val userId = p1.getKey
-      val userActor = p1.getValue
+    def onRemoval(rn: RemovalNotification[String, ActorRef]) {
+      val userID = rn.getKey
+      val userActor = rn.getValue
 
-      logger.debug("Parking UserActor for userId = %s".format(userId))
+      logger.debug("Parking UserActor for userID = %s".format(userID))
       UserActorSupervisor.supervisor.unlink(userActor)
       // Check this is received after any currently servicing business logic message.
       userActor.stop()
     }
   }
 
-  def start() {}
+  def start() = {}
 
   def stop() = {
     cache.invalidateAll
     cache.cleanUp
-  };
+  }
 
-  def put(userId: String, userActor: ActorRef): Unit =
-    cache.put(userId, userActor)
+  def put(userID: String, userActor: ActorRef): Unit =
+    cache.put(userID, userActor)
 
   def get(userID: String): Option[ActorRef] =
     cache.getIfPresent(userID) match {

@@ -47,7 +47,6 @@ import gr.grnet.aquarium.actor.message.service.router._
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.event.im.IMEventModel
 import akka.config.Supervision.Temporary
-import akka.actor.PoisonPill
 import gr.grnet.aquarium.{AquariumException, Configurator}
 
 
@@ -67,7 +66,7 @@ class UserActor extends ReflectiveRoleableActor {
       UserActorCache.invalidate(this._userID)
     }
 
-    self ! PoisonPill
+    self.stop()
   }
 
   override protected def onThrowable(t: Throwable, message: AnyRef) = {

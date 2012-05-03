@@ -43,7 +43,7 @@ import gr.grnet.aquarium.util.Loggable
 import org.junit.Assume._
 import gr.grnet.aquarium.LogicTestsAssumptions
 import cc.spray.can._
-import akka.actor.{Actor, PoisonPill}
+import akka.actor.Actor
 import org.slf4j.LoggerFactory
 import akka.config.{Config ⇒ AkkaConfig}
 
@@ -143,9 +143,9 @@ class SprayPingServiceTest extends Loggable {
           logger.error("Error: %s".format(other))
       }
 
-      server  ! PoisonPill
-      client  ! PoisonPill
-      service ! PoisonPill
+      server.stop()
+      client.stop()
+      service.stop()
     }
 
     Thread sleep 100

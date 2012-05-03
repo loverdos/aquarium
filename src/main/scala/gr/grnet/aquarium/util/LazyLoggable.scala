@@ -75,7 +75,7 @@ trait LazyLoggable {
     LogHelpers.logStopped(this.logger, ms0, ms1, fmt, args: _*)
   }
 
-  protected def logChainOfCauses(t: Throwable): Unit = {
-    logger.error("Oops!\n{}", chainOfCausesForLogging(t))
+  protected def logChainOfCauses(t: Throwable, caughtTraceIndex: Int = 2): Unit = {
+    logger.error("Oops!\n{}", chainOfCausesForLogging(t, caughtTraceIndex + 1))
   }
 }

@@ -71,8 +71,8 @@ class RESTActorService extends Lifecycle with Loggable {
   def stop(): Unit = {
     LogHelpers.logStopping(logger)
     val (ms0, ms1, _) = TimeHelpers.timed {
-      this._serverActor ! PoisonPill
-      this._clientActor ! PoisonPill
+      this._serverActor.stop()
+      this._clientActor.stop()
     }
     LogHelpers.logStopped(logger, ms0, ms1)
   }
