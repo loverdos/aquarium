@@ -266,10 +266,10 @@ package object util {
     )
   }
 
-  def chainOfCausesForLogging(t: Throwable) = {
+  def chainOfCausesForLogging(t: Throwable, caughtTraceIndex: Int = 3) = {
     val buf = chainOfCausesBuffer(t)
     val happenedTrace = t.getStackTrace()(0)
-    val caughtTrace = new Exception().getStackTrace()(3)
+    val caughtTrace = new Exception().getStackTrace()(caughtTraceIndex)
 
     buf.prepend("[Happened @] %s".format(formatTraceElement(happenedTrace)))
     buf.prepend("[Caught   @] %s".format(formatTraceElement(caughtTrace)))
