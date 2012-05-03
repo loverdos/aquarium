@@ -70,7 +70,7 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   override protected def onThrowable(t: Throwable, message: AnyRef) = {
-    ERROR("Oops!\n", chainOfCauses(t).map("!! " + _) mkString "\n")
+    logChainOfCauses(t)
     ERROR(t, "Terminating due to: %s(%s)", shortClassNameOf(t), t.getMessage)
 
     _shutmedown()
@@ -89,36 +89,40 @@ class UserActor extends ReflectiveRoleableActor {
     (this._userID ne null) && (this._userState ne null)
   }
 
+  private[this] def _havePartialState = {
+    (this._userID ne null) && (this._userState eq null)
+  }
+
+
   def onAquariumPropertiesLoaded(event: AquariumPropertiesLoaded): Unit = {
   }
 
   def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
   }
 
-  private[this] def _computeAgreementForNewUser(imEvent: IMEventModel): String = {
+  private[this] def _getAgreementNameForNewUser(imEvent: IMEventModel): String = {
     // FIXME: Implement based on the role
     "default"
   }
 
   private[this] def processCreateUser(imEvent: IMEventModel): Unit = {
-    val userID = imEvent.userID
-    this._userID = userID
+    this._userID = imEvent.userID
 
     val store = _configurator.storeProvider.userStateStore
     // try find user state. normally should ot exist
-    val latestUserStateOpt = store.findLatestUserStateByUserID(userID)
+    val latestUserStateOpt = store.findLatestUserStateByUserID(this._userID)
     if(latestUserStateOpt.isDefined) {
       logger.error("Got %s(%s, %s) but user already exists. Ingoring".format(
-        userID,
+        this._userID,
         shortClassNameOf(imEvent),
         imEvent.eventType))
 
       return
     }
 
-    val initialAgreementName = _computeAgreementForNewUser(imEvent)
+    val initialAgreementName = _getAgreementNameForNewUser(imEvent)
     val newUserState    = DefaultUserStateComputations.createInitialUserState(
-      userID,
+      this._userID,
       imEvent.occurredMillis,
       imEvent.isActive,
       0.0,
@@ -148,7 +152,48 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onProcessIMEvent(event: ProcessIMEvent): Unit = {
+    val now = TimeHelpers.nowMillis()
+
     val imEvent = event.imEvent
+    // If we already have a userID but it does not match the incoming userID, then this is an internal error
+    if(_havePartialState && (this._userID != imEvent.userID)) {
+      throw new AquariumException("Got userID = %s but already have userID = %s".format(imEvent.userID, this._userID))
+    }
+
+    // If we get an IMEvent without having a user state, then we query for the latest user state.
+    if(!_haveFullState) {
+      val userStateOpt = _configurator.userStateStore.findLatestUserStateByUserID(this._userID)
+      this._userState = userStateOpt match {
+        case Some(userState) ⇒
+          userState
+
+        case None ⇒
+          val initialAgreementName = _getAgreementNameForNewUser(imEvent)
+          val initialUserState = DefaultUserStateComputations.createInitialUserState(
+            this._userID,
+            imEvent.occurredMillis,
+            imEvent.isActive,
+            0.0,
+            List(imEvent.role),
+            initialAgreementName)
+
+          DEBUG("Got initial state")
+          initialUserState
+      }
+    }
+
+    if(imEvent.isModifyUser && this._userState.isInitial) {
+      INFO("Got a '%s' but have not received '%s' yet", imEvent.eventType, IMEventModel.EventTypeNames.create)
+      return
+    }
+
+    if(imEvent.isCreateUser && !this._userState.isInitial) {
+      INFO("Got a '%s' but my state is not initial", imEvent.eventType)
+      return
+    }
+
+    this._userState = this._userState.modifyFromIMEvent(imEvent, now)
+
     if(imEvent.isCreateUser) {
       processCreateUser(imEvent)
     } else if(imEvent.isModifyUser) {

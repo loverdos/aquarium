@@ -83,9 +83,7 @@ import org.bson.types.ObjectId
  * @param newWalletEntries
  *          The wallet entries computed. Not all user states need to holds wallet entries,
  *          only those that refer to billing periods (end of billing period).
- * @param lastChangeReasonCode
- *          The code for the `lastChangeReason`.
- * @param lastChangeReason
+  * @param lastChangeReason
  *          The [[gr.grnet.aquarium.user.UserStateChangeReason]] for which the usr state has changed.
  * @param totalEventsProcessedCounter
  * @param parentUserStateId
@@ -97,6 +95,7 @@ import org.bson.types.ObjectId
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 case class UserState(
+    isInitial: Boolean,
     userID: String,
 
     userCreationMillis: Long,
@@ -165,7 +164,6 @@ case class UserState(
     rolesSnapshot: RolesSnapshot,
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
     newWalletEntries: List[NewWalletEntry],
-    lastChangeReasonCode: UserStateChangeReasonCodes.ChangeReasonCode,
     // The last known change reason for this userState
     lastChangeReason: UserStateChangeReason = NoSpecificChangeReason,
     totalEventsProcessedCounter: Long = 0L,
@@ -228,15 +226,18 @@ case class UserState(
   }
   
   def copyForChangeReason(changeReason: UserStateChangeReason) = {
-    this.copy(lastChangeReasonCode = changeReason.code, lastChangeReason = changeReason)
+    this.copy(lastChangeReason = changeReason)
   }
 
   def resourcesMap = ownedResourcesSnapshot.toResourcesMap
 
   def modifyFromIMEvent(imEvent: IMEventModel, snapshotMillis: Long): UserState = {
+    val changeReason = IMEventArrival(imEvent)
     this.copy(
+      isInitial = false,
       activeStateSnapshot = ActiveStateSnapshot(imEvent.isActive, snapshotMillis),
-      rolesSnapshot = RolesSnapshot(List(imEvent.role), snapshotMillis)
+      rolesSnapshot = RolesSnapshot(List(imEvent.role), snapshotMillis),
+      lastChangeReason = changeReason
     )
   }
 
@@ -329,14 +330,14 @@ sealed trait UserStateChangeReason {
 object UserStateChangeReasonCodes {
   type ChangeReasonCode = Int
 
-  final val InitialCalculationCode = 1
+  final val InitialSetupCode       = 1
   final val NoSpecificChangeCode   = 2
   final val MonthlyBillingCode     = 3
   final val RealtimeBillingCode    = 4
-  final val IMEventArrivalCode   = 5
+  final val IMEventArrivalCode     = 5
 }
 
-case object InitialUserStateCalculation extends UserStateChangeReason {
+case object InitialUserStateSetup extends UserStateChangeReason {
   def shouldStoreUserState = true
 
   def shouldStoreCalculatedWalletEntries = false
@@ -345,7 +346,7 @@ case object InitialUserStateCalculation extends UserStateChangeReason {
 
   def calculateCreditsForImplicitlyTerminated = false
 
-  def code = UserStateChangeReasonCodes.InitialCalculationCode
+  def code = UserStateChangeReasonCodes.InitialSetupCode
 }
 /**
  * A calculation made for no specific reason. Can be for testing, for example.

@@ -262,7 +262,6 @@ aquariumpolicy:
     val parentId = userState.parentUserStateId
     val credits = userState.creditsSnapshot.creditAmount
     val newWalletEntries = userState.newWalletEntries.map(_.toDebugString)
-    val changeReasonCode = userState.lastChangeReasonCode
     val changeReason = userState.lastChangeReason
     val implicitlyIssued = userState.implicitlyIssuedSnapshot.implicitlyIssuedEvents.map(_.toDebugString())
     val latestResourceEvents = userState.latestResourceEventsSnapshot.resourceEvents.map(_.toDebugString())
@@ -270,7 +269,6 @@ aquariumpolicy:
     clog.debug("_id = %s", id)
     clog.debug("parentId = %s", parentId)
     clog.debug("credits = %s", credits)
-    clog.debug("changeReasonCode = %s", changeReasonCode)
     clog.debug("changeReason = %s", changeReason)
     clog.debugSeq("implicitlyIssued", implicitlyIssued, 0)
     clog.debugSeq("latestResourceEvents", latestResourceEvents, 0)

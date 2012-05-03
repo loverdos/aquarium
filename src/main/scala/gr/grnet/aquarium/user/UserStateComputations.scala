@@ -62,6 +62,7 @@ class UserStateComputations extends Loggable {
     val now = userCreationMillis
 
     UserState(
+      true,
       userId,
       userCreationMillis,
       0L,
@@ -79,8 +80,7 @@ class UserStateComputations extends Loggable {
       RolesSnapshot(roleNames, now),
       OwnedResourcesSnapshot(Nil, now),
       Nil,
-      UserStateChangeReasonCodes.InitialCalculationCode,
-      InitialUserStateCalculation
+      InitialUserStateSetup
     )
   }
 
@@ -136,7 +136,7 @@ class UserStateComputations extends Loggable {
       // If the user did not exist for this billing month, piece of cake
       clog.debug("User did not exist before %s", userCreationDateCalc)
 
-      // NOTE: Reason here will be: InitialUserStateCalculation
+      // NOTE: Reason here will be: InitialUserStateSetup$
       val initialUserState0 = createInitialUserStateFrom(currentUserState)
       val initialUserStateM = userStateStore.insertUserState2(initialUserState0)
 
