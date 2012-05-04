@@ -177,8 +177,11 @@ case "$1" in
         stop
         start
         ;;
+    ps)
+        ps -ef | grep java | grep gr.grnet.aquarium.Main
+        ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status}"
+        echo "Usage: $0 {start|stop|restart|status|ps}"
         exit 1
 esac
 
