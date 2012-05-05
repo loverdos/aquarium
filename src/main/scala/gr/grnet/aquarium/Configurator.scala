@@ -65,17 +65,17 @@ class Configurator(val props: Props) extends Loggable {
             case Just(_) ⇒
               instance
             case Failed(e) ⇒
-              throw new AquariumException("Could not configure instance of %s".format(className), e)
+              throw new AquariumInternalError("Could not configure instance of %s".format(className), e)
             case NoVal ⇒
-              throw new AquariumException("Could not configure instance of %s".format(className))
+              throw new AquariumInternalError("Could not configure instance of %s".format(className))
           }
         case _ ⇒
           instance
       }
       case Failed(e) ⇒
-        throw new AquariumException("Could not instantiate %s".format(className), e)
+        throw new AquariumInternalError("Could not instantiate %s".format(className), e)
       case NoVal ⇒
-        throw new AquariumException("Could not instantiate %s".format(className))
+        throw new AquariumInternalError("Could not instantiate %s".format(className))
     }
 
   }
@@ -312,9 +312,9 @@ object Configurator {
       case Just(masterConfResource) ⇒
         masterConfResource
       case NoVal ⇒
-        throw new AquariumException("Could not find master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError("Could not find master configuration file: %s".format(MasterConfName))
       case Failed(e) ⇒
-        throw new AquariumException(e, "Could not find master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError(e, "Could not find master configuration file: %s".format(MasterConfName))
     }
   }
 
@@ -324,9 +324,9 @@ object Configurator {
       case Just(props) ⇒
         props
       case NoVal ⇒
-        throw new AquariumException("Could not load master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError("Could not load master configuration file: %s".format(MasterConfName))
       case Failed(e) ⇒
-        throw new AquariumException(e, "Could not load master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError(e, "Could not load master configuration file: %s".format(MasterConfName))
     }
   }
 
@@ -335,9 +335,9 @@ object Configurator {
       case Just(masterConf) ⇒
         masterConf
       case NoVal ⇒
-        throw new AquariumException("Could not initialize master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError("Could not initialize master configuration file: %s".format(MasterConfName))
       case Failed(e) ⇒
-        throw new AquariumException(e, "Could not initialize master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError(e, "Could not initialize master configuration file: %s".format(MasterConfName))
     }
   }
 
