@@ -68,11 +68,9 @@ PRGDIR=`dirname "$PRG"`
 
 # Only set supported environment variables if not already set
 [ -z "$AQUARIUM_HOME" ] && AQUARIUM_HOME=`cd "$PRGDIR/.." >/dev/null; pwd`
-[ -z "$AQUARIUM_PROP" ] && AQUARIUM_PROP="-Dlog4j.debug=true"
+[ -z "$AQUARIUM_PROP" ] && AQUARIUM_PROP=""
 [ -z "$AQUARIUM_OPTS" ] && AQUARIUM_OPTS=""
 [ -z "$JAVA_OPTS" ]     && JAVA_OPTS="-Xms1024M -Xmx4096M"
-
-JAVA_OPTS="$JAVA_OPTS -DAQUARIUM_HOME=$AQUARIUM_HOME"
 
 export AQUARIUM_HOME
 

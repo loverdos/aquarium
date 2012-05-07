@@ -55,25 +55,38 @@ object ResourceLocator {
     final val LOGBACK_XML = "logback.xml"
   }
 
-  final val AKKA_HOME = SysEnv("AKKA_HOME")
+  final val NAME_AKKA_HOME     = "AKKA_HOME"
+  final val NAME_AQUARIUM_HOME = "AQUARIUM_HOME"
+
+  final val AKKA_HOME = SysEnv(NAME_AKKA_HOME)
 
   /**
    * This is normally exported from the shell script that starts Aquarium.
    *
    * TODO: Make this searchable for resources (ie put it in the resource context)
    */
-  final val AQUARIUM_HOME = SysEnv("AQUARIUM_HOME")
+  final lazy val AQUARIUM_HOME = {
+    val Home = SysEnv(NAME_AQUARIUM_HOME)
+
+    // Set or update the system property of the same name
+    for(value ← Home.value) {
+      SysProp(NAME_AQUARIUM_HOME).update(value)
+    }
+
+    Home
+  }
 
   final lazy val AQUARIUM_HOME_FOLDER: File = {
     AQUARIUM_HOME.value match {
       case Just(home) ⇒
         val file = new File(home)
         if(!file.isDirectory) {
-          throw new AquariumException("%s (%s) is not a folder".format(AQUARIUM_HOME.name, home))
+          throw new AquariumInternalError("%s (%s) is not a folder".format(AQUARIUM_HOME.name, home))
         }
         file.getCanonicalFile()
+
       case _ ⇒
-        throw new AquariumException("%s is not set".format(AQUARIUM_HOME.name))
+        throw new AquariumInternalError("%s is not set".format(AQUARIUM_HOME.name))
     }
   }
 
@@ -124,10 +137,12 @@ object ResourceLocator {
       case Just(value) ⇒
         // We have a system override for the configuration location
         new CompositeStreamResourceContext(Just(BasicResourceContext), new FileStreamResourceContext(value))
+
       case NoVal ⇒
         BasicResourceContext
+
       case Failed(e) ⇒
-        throw new AquariumException(e)
+        throw new AquariumInternalError(e)
     }
   }
 
