@@ -41,9 +41,9 @@ import org.slf4j.LoggerFactory
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.util.StatusPrinter
-import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
 import util.date.TimeHelpers
 import util.{LazyLoggable, Loggable}
+import com.ckkloverdos.maybe.{MaybeEither, NoVal, Maybe, Failed, Just}
 
 /**
  * Main method for Aquarium
@@ -70,20 +70,21 @@ object Main extends LazyLoggable {
     // http://logback.qos.ch/manual/joran.html
     LoggerFactory.getILoggerFactory match {
       case context: LoggerContext ⇒
-        Maybe {
+        MaybeEither {
           val joran = new JoranConfigurator
           joran.setContext(context)
           context.reset()
           joran.doConfigure(ResourceLocator.LOGBACK_XML_FILE)
           logger.info("Logging subsystem configured from {}", ResourceLocator.LOGBACK_XML_FILE)
-        } forJust {
-          case _ ⇒
+        } match {
+          case Just(_) ⇒
             StatusPrinter.printInCaseOfErrorsOrWarnings(context)
-        } forFailed {
-          case failed @ Failed(e) ⇒
+
+          case Failed(e) ⇒
             StatusPrinter.print(context)
             throw new AquariumException(e, "Could not configure logging from %s".format(ResourceLocator.LOGBACK_XML_FILE))
         }
+
       case _ ⇒
     }
   }
