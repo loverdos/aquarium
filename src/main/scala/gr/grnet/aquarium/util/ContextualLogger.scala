@@ -268,11 +268,12 @@ object ContextualLogger {
     }
   }
   
-  def fromOther(clogM: Maybe[ContextualLogger], logger: Logger,  fmt: String, args: Any*): ContextualLogger = {
-    clogM match {
-      case Just(clog) ⇒
+  def fromOther(clogOpt: Option[ContextualLogger], logger: Logger,  fmt: String, args: Any*): ContextualLogger = {
+    clogOpt match {
+      case Some(clog) ⇒
         new ContextualLogger(clog.logger, fmt, args:_*).indentAs(clog)
-      case _ ⇒
+
+      case None ⇒
         new ContextualLogger(logger, fmt, args:_*)
     }
   }

@@ -119,9 +119,10 @@ trait Accounting extends DSLUtils with Loggable {
   protected
   def resolveEffectiveAlgorithmsAndPriceLists(alignedTimeslot: Timeslot,
                                               agreement: DSLAgreement,
-                                              clogM: Maybe[ContextualLogger] = NoVal): (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
+                                              clogOpt: Option[ContextualLogger] = None):
+          (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
 
-    val clog = ContextualLogger.fromOther(clogM, logger, "resolveEffectiveAlgorithmsAndPriceLists()")
+    val clog = ContextualLogger.fromOther(clogOpt, logger, "resolveEffectiveAlgorithmsAndPriceLists()")
 
     // Note that most of the code is taken from calcChangeChunks()
     val alg = resolveEffectiveAlgorithmsForTimeslot(alignedTimeslot, agreement)
@@ -140,9 +141,9 @@ trait Accounting extends DSLUtils with Loggable {
                                 dslResource: DSLResource,
                                 policiesByTimeslot: Map[Timeslot, DSLPolicy],
                                 agreementNamesByTimeslot: Map[Timeslot, String],
-                                contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[List[Chargeslot]] = Maybe {
+                                clogOpt: Option[ContextualLogger] = None): Maybe[List[Chargeslot]] = Maybe {
 
-    val clog = ContextualLogger.fromOther(contextualLogger, logger, "computeInitialChargeslots()")
+    val clog = ContextualLogger.fromOther(clogOpt, logger, "computeInitialChargeslots()")
 //    clog.begin()
 
     val policyTimeslots = policiesByTimeslot.keySet
@@ -191,7 +192,7 @@ trait Accounting extends DSLUtils with Loggable {
           // TODO: Factor this out, just like we did with:
           // TODO:  val alignedTimeslots = splitTimeslotByPoliciesAndAgreements
           // Note that most of the code is already taken from calcChangeChunks()
-          val r = resolveEffectiveAlgorithmsAndPriceLists(alignedTimeslot, agreement, Just(clog))
+          val r = resolveEffectiveAlgorithmsAndPriceLists(alignedTimeslot, agreement, Some(clog))
           val algorithmByTimeslot: Map[Timeslot, DSLAlgorithm] = r._1
           val pricelistByTimeslot: Map[Timeslot, DSLPriceList] = r._2
 
@@ -263,9 +264,9 @@ trait Accounting extends DSLUtils with Loggable {
                              agreementNamesByTimeslot: Map[Timeslot, String],
                              algorithmCompiler: CostPolicyAlgorithmCompiler,
                              policyStore: PolicyStore,
-                             contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[(Timeslot, List[Chargeslot])] = Maybe {
+                             clogOpt: Option[ContextualLogger] = None): Maybe[(Timeslot, List[Chargeslot])] = Maybe {
 
-    val clog = ContextualLogger.fromOther(contextualLogger, logger, "computeFullChargeslots()")
+    val clog = ContextualLogger.fromOther(clogOpt, logger, "computeFullChargeslots()")
 //    clog.begin()
 
     val occurredDate = currentResourceEvent.occurredDate
@@ -338,7 +339,7 @@ trait Accounting extends DSLUtils with Loggable {
       dslResource,
       relevantPolicies,
       agreementNamesByTimeslot,
-      Just(clog)
+      Some(clog)
     )
 
     val fullChargeslotsM = initialChargeslotsM.map { chargeslots ⇒

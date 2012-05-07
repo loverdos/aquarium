@@ -299,7 +299,7 @@ aquariumpolicy:
       DefaultAccounting,
       DefaultCompiler,
       MonthlyBillingCalculation(billingMonthInfo),
-      Just(clog)
+      Some(clog)
     )
   }
   
@@ -333,7 +333,7 @@ aquariumpolicy:
   @Ignore
   @Test
   def testFullOnOff: Unit = {
-    val clog = ContextualLogger.fromOther(NoVal, logger, "testFullOnOff()")
+    val clog = ContextualLogger.fromOther(None, logger, "testFullOnOff()")
     clog.begin()
 
     ResourceEventStore.clearResourceEvents()
@@ -362,7 +362,7 @@ aquariumpolicy:
   @Ignore
   @Test
   def testLonelyON: Unit = {
-    val clog = ContextualLogger.fromOther(NoVal, logger, "testLonelyON()")
+    val clog = ContextualLogger.fromOther(None, logger, "testLonelyON()")
     clog.begin()
 
     ResourceEventStore.clearResourceEvents()
@@ -392,7 +392,7 @@ aquariumpolicy:
 //  @Ignore
   @Test
   def testOrphanOFF: Unit = {
-    val clog = ContextualLogger.fromOther(NoVal, logger, "testOrphanOFF()")
+    val clog = ContextualLogger.fromOther(None, logger, "testOrphanOFF()")
     clog.begin()
 
     ResourceEventStore.clearResourceEvents()
@@ -423,7 +423,7 @@ aquariumpolicy:
   @Ignore
   @Test
   def testOne: Unit = {
-    val clog = ContextualLogger.fromOther(NoVal, logger, "testOne()")
+    val clog = ContextualLogger.fromOther(None, logger, "testOne()")
     clog.begin()
 
     // Let's create our dates of interest

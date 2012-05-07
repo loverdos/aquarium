@@ -141,10 +141,10 @@ class UserStateComputations extends Loggable {
                                        accounting: Accounting,
                                        algorithmCompiler: CostPolicyAlgorithmCompiler,
                                        calculationReason: UserStateChangeReason,
-                                       contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = {
+                                       clogOpt: Option[ContextualLogger] = None): Maybe[UserState] = {
 
     val clog = ContextualLogger.fromOther(
-      contextualLogger,
+      clogOpt,
       logger,
       "findUserStateAtEndOfBillingMonth(%s)", billingMonthInfo)
     clog.begin()
@@ -159,7 +159,7 @@ class UserStateComputations extends Loggable {
         accounting,
         algorithmCompiler,
         calculationReason,
-        Just(clog))
+        Some(clog))
     }
 
     val userStateStore = storeProvider.userStateStore
@@ -273,9 +273,9 @@ class UserStateComputations extends Loggable {
                            billingMonthInfo: BillingMonthInfo,
                            walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
                            algorithmCompiler: CostPolicyAlgorithmCompiler,
-                           clogM: Maybe[ContextualLogger] = NoVal): UserState = {
+                           clogOpt: Option[ContextualLogger] = None): UserState = {
 
-    val clog = ContextualLogger.fromOther(clogM, logger, "walletEntriesForResourceEvent(%s)", currentResourceEvent.id)
+    val clog = ContextualLogger.fromOther(clogOpt, logger, "walletEntriesForResourceEvent(%s)", currentResourceEvent.id)
 
     var _workingUserState = startingUserState
 
@@ -343,7 +343,7 @@ class UserStateComputations extends Loggable {
               alltimeAgreements,
               algorithmCompiler,
               policyStore,
-              Just(clog)
+              Some(clog)
             )
 
             // We have the chargeslots, let's associate them with the current event
@@ -426,7 +426,7 @@ class UserStateComputations extends Loggable {
                             billingMonthInfo: BillingMonthInfo,
                             walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
                             algorithmCompiler: CostPolicyAlgorithmCompiler,
-                            clogM: Maybe[ContextualLogger] = NoVal): UserState = {
+                            clogOpt: Option[ContextualLogger] = None): UserState = {
 
     var _workingUserState = startingUserState
 
@@ -441,7 +441,7 @@ class UserStateComputations extends Loggable {
         billingMonthInfo,
         walletEntriesBuffer,
         algorithmCompiler,
-        clogM
+        clogOpt
       )
     }
 
@@ -457,16 +457,16 @@ class UserStateComputations extends Loggable {
                            accounting: Accounting,
                            algorithmCompiler: CostPolicyAlgorithmCompiler,
                            calculationReason: UserStateChangeReason = NoSpecificChangeReason,
-                           contextualLogger: Maybe[ContextualLogger] = NoVal): Maybe[UserState] = Maybe {
+                           clogOpt: Option[ContextualLogger] = None): Maybe[UserState] = Maybe {
 
 
     val clog = ContextualLogger.fromOther(
-      contextualLogger,
+      clogOpt,
       logger,
       "doFullMonthlyBilling(%s)", billingMonthInfo)
     clog.begin()
 
-    val clogJ = Just(clog)
+    val clogSome = Some(clog)
 
     val previousBillingMonthUserStateM = findUserStateAtEndOfBillingMonth(
       userId,
@@ -477,7 +477,7 @@ class UserStateComputations extends Loggable {
       accounting,
       algorithmCompiler,
       calculationReason.forPreviousBillingMonth,
-      clogJ
+      clogSome
     )
 
     if(previousBillingMonthUserStateM.isNoVal) {
@@ -522,7 +522,7 @@ class UserStateComputations extends Loggable {
       billingMonthInfo,
       newWalletEntries,
       algorithmCompiler,
-      clogJ
+      clogSome
     )
 
     // Second, for the remaining events which must contribute an implicit OFF, we collect those OFFs
@@ -556,7 +556,7 @@ class UserStateComputations extends Loggable {
       billingMonthInfo,
       newWalletEntries,
       algorithmCompiler,
-      clogJ
+      clogSome
     )
 
     val lastUpdateTime = TimeHelpers.nowMillis()
