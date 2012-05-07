@@ -63,7 +63,7 @@ object Main extends LazyLoggable {
     SysProp.UserName,
     SysProp.UserHome,
     SysProp.UserDir,
-    SysProp("file.encoding")
+    SysProp.FileEncoding
   )
 
   private[this] def configureLogging(): Unit = {
