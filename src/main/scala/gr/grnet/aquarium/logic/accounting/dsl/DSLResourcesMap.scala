@@ -35,8 +35,6 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.util
 
 /**
  * Enumerates known resources by name.
@@ -47,7 +45,7 @@ import gr.grnet.aquarium.util
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class DSLResourcesMap(underlying: Map[String, DSLResource]) {
+final class DSLResourcesMap(underlying: Map[String, DSLResource]) {
   def this(list: List[DSLResource]) = this(Map(list.map(r ⇒ (r.name, r)): _*))
 
   def map   = underlying
