@@ -41,6 +41,7 @@ import com.ckkloverdos.sys.{SysEnv, SysProp}
 import java.io.File
 
 import gr.grnet.aquarium.util.justForSure
+import gr.grnet.aquarium.util.isRunningTests
 
 /**
  * Used to locate configuration files.
@@ -65,7 +66,7 @@ object ResourceLocator {
    *
    * TODO: Make this searchable for resources (ie put it in the resource context)
    */
-  final lazy val AQUARIUM_HOME = {
+  final val AQUARIUM_HOME = {
     val Home = SysEnv(NAME_AQUARIUM_HOME)
 
     // Set or update the system property of the same name
@@ -86,7 +87,11 @@ object ResourceLocator {
         file.getCanonicalFile()
 
       case _ ⇒
-        throw new AquariumInternalError("%s is not set".format(AQUARIUM_HOME.name))
+        if(isRunningTests()) {
+          new File(".")
+        } else {
+          throw new AquariumInternalError("%s is not set".format(AQUARIUM_HOME.name))
+        }
     }
   }
 

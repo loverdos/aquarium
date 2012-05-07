@@ -280,4 +280,9 @@ package object util {
 
     noNL mkString "\n"
   }
+
+  private[this] lazy val _isRunningTests =
+    new Exception().getStackTrace().find(_.getClassName.startsWith("org.junit")).isDefined
+
+  def isRunningTests() = _isRunningTests
 }
