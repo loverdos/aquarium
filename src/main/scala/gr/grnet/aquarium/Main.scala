@@ -35,15 +35,15 @@
 
 package gr.grnet.aquarium
 
-import akka.actor.Actor
 import com.ckkloverdos.sys.SysProp
 import org.slf4j.LoggerFactory
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.util.StatusPrinter
-import util.date.TimeHelpers
-import util.{LazyLoggable, Loggable}
-import com.ckkloverdos.maybe.{MaybeEither, NoVal, Maybe, Failed, Just}
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.util.LazyLoggable
+import gr.grnet.aquarium.util.isRunningTests
+import com.ckkloverdos.maybe.{MaybeEither, Failed, Just}
 
 /**
  * Main method for Aquarium
@@ -93,7 +93,7 @@ object Main extends LazyLoggable {
     import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, CONF_HERE, AKKA_HOME}
     // We have AKKA builtin, so no need to mess with pre-existing installation.
     if(AKKA_HOME.value.isJust) {
-      val error = new AquariumException("%s is set. Please unset and restart Aquarium".format(AKKA_HOME.name))
+      val error = new AquariumInternalError("%s is set. Please unset and restart Aquarium".format(AKKA_HOME.name))
       logger.error("%s is set".format(AKKA_HOME.name), error)
       throw error
     }
