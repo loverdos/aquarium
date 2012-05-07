@@ -33,39 +33,35 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.util.findAndRemoveFromMap
+import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.resource.ResourceEventModel.FullMutableResourceTypeMap
 
 /**
- * A store for user state snapshots.
- *
- * This is used to hold snapshots of [[gr.grnet.aquarium.computation.UserState]]
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+case class IgnoredFirstResourceEventsWorker(ignoredFirstEventsMap: FullMutableResourceTypeMap) {
+  def toImmutableSnapshot(snapshotTime: Long) =
+    IgnoredFirstResourceEventsSnapshot(ignoredFirstEventsMap.valuesIterator.toList)
 
-trait UserStateStore {
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
+    findAndRemoveFromMap(ignoredFirstEventsMap, (resource, instanceId))
+  }
 
-  /**
-   * Store a user state.
-   */
-  def insertUserState(userState: UserState): UserState
+  def updateResourceEvent(resourceEvent: ResourceEventModel): Unit = {
+    ignoredFirstEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
+  }
 
-  /**
-   * Find a state by user ID
-   */
-  def findUserStateByUserID(userID: String): Option[UserState]
+  def size = ignoredFirstEventsMap.size
 
-  def findLatestUserStateByUserID(userID: String): Option[UserState]
+  def foreach[U](f: ResourceEventModel => U): Unit = {
+    ignoredFirstEventsMap.valuesIterator.foreach(f)
+  }
+}
 
-  /**
-   * Find the most up-to-date user state for the particular billing period.
-   */
-  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
-
-  /**
-   * Delete a state for a user
-   */
-  def deleteUserState(userId: String): Unit
+object IgnoredFirstResourceEventsWorker {
+  final val Empty = IgnoredFirstResourceEventsWorker(scala.collection.mutable.Map())
 }

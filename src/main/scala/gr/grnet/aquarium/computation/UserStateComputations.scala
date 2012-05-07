@@ -33,8 +33,7 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user
-
+package gr.grnet.aquarium.computation
 
 import scala.collection.mutable
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
@@ -47,89 +46,14 @@ import gr.grnet.aquarium.event.NewWalletEntry
 import gr.grnet.aquarium.event.resource.ResourceEventModel
 import gr.grnet.aquarium.event.im.{IMEventModel, StdIMEvent}
 import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
+import gr.grnet.aquarium.computation.data._
+import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 class UserStateComputations extends Loggable {
-  def createInitialUserState(imEvent: IMEventModel, credits: Double, agreementName: String) = {
-    if(!imEvent.isCreateUser) {
-      throw new AquariumInternalError(
-        "Got '%s' instead of '%s'".format(imEvent.eventType, IMEventModel.EventTypeNames.create))
-    }
-
-    val userID = imEvent.userID
-    val userCreationMillis = imEvent.occurredMillis
-    val now = TimeHelpers.nowMillis()
-
-    UserState(
-      true,
-      userID,
-      userCreationMillis,
-      0L,
-      false,
-      null,
-      ImplicitlyIssuedResourceEventsSnapshot(List(), now),
-      Nil,
-      Nil,
-      LatestResourceEventsSnapshot(List(), now),
-      0L,
-      0L,
-      IMStateSnapshot(imEvent, now),
-      CreditSnapshot(credits, now),
-      AgreementSnapshot(List(Agreement(agreementName, userCreationMillis)), now),
-      OwnedResourcesSnapshot(Nil, now),
-      Nil,
-      InitialUserStateSetup
-    )
-  }
-
-  def createInitialUserState(userID: String,
-                             userCreationMillis: Long,
-                             isActive: Boolean,
-                             credits: Double,
-                             roleNames: List[String] = List(),
-                             agreementName: String = DSLAgreement.DefaultAgreementName) = {
-    val now = userCreationMillis
-
-    UserState(
-      true,
-      userID,
-      userCreationMillis,
-      0L,
-      false,
-      null,
-      ImplicitlyIssuedResourceEventsSnapshot(List(), now),
-      Nil,
-      Nil,
-      LatestResourceEventsSnapshot(List(), now),
-      0L,
-      0L,
-      IMStateSnapshot(
-        StdIMEvent(
-          "",
-          now, now, userID,
-          "",
-          isActive, roleNames.headOption.getOrElse("default"),
-          "1.0",
-          IMEventModel.EventTypeNames.create, Map()),
-        now
-      ),
-      CreditSnapshot(credits, now),
-      AgreementSnapshot(List(Agreement(agreementName, userCreationMillis)), now),
-      OwnedResourcesSnapshot(Nil, now),
-      Nil,
-      InitialUserStateSetup
-    )
-  }
-
-  def createInitialUserStateFrom(us: UserState): UserState = {
-    createInitialUserState(
-      us.imStateSnapshot.imEvent,
-      us.creditsSnapshot.creditAmount,
-      us.agreementsSnapshot.agreementsByTimeslot.valuesIterator.toList.last)
-  }
 
   def findUserStateAtEndOfBillingMonth(userId: String,
                                        billingMonthInfo: BillingMonthInfo,
@@ -166,14 +90,14 @@ class UserStateComputations extends Loggable {
     val userCreationMillis = currentUserState.userCreationMillis
     val userCreationDateCalc = new MutableDateCalc(userCreationMillis)
     val billingMonthStartMillis = billingMonthInfo.startMillis
-    val billingMonthStopMillis  = billingMonthInfo.stopMillis
+    val billingMonthStopMillis = billingMonthInfo.stopMillis
 
     if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
       clog.debug("User did not exist before %s", userCreationDateCalc)
 
       // NOTE: Reason here will be: InitialUserStateSetup$
-      val initialUserState0 = createInitialUserStateFrom(currentUserState)
+      val initialUserState0 = UserState.createInitialUserStateFrom(currentUserState)
       val initialUserState1 = userStateStore.insertUserState(initialUserState0)
 
       clog.debug("Returning INITIAL state [_id=%s] %s".format(initialUserState1._id, initialUserState1))
@@ -198,33 +122,33 @@ class UserStateComputations extends Loggable {
         case Some(latestUserState) ⇒
           // Found a "latest" user state but need to see if it is indeed the true and one latest.
           // For this reason, we must count the events again.
-         val latestStateOOSEventsCounter = latestUserState.billingPeriodOutOfSyncResourceEventsCounter
-         val actualOOSEventsCounter = resourceEventStore.countOutOfSyncEventsForBillingPeriod(
-           userId,
-           billingMonthStartMillis,
-           billingMonthStopMillis)
+          val latestStateOOSEventsCounter = latestUserState.billingPeriodOutOfSyncResourceEventsCounter
+          val actualOOSEventsCounter = resourceEventStore.countOutOfSyncEventsForBillingPeriod(
+            userId,
+            billingMonthStartMillis,
+            billingMonthStopMillis)
 
-         val counterDiff = actualOOSEventsCounter - latestStateOOSEventsCounter
-         counterDiff match {
-           // ZERO, we are OK!
-           case 0 ⇒
-             // NOTE: Keep the caller's calculation reason
-             latestUserState.copyForChangeReason(calculationReason)
+          val counterDiff = actualOOSEventsCounter - latestStateOOSEventsCounter
+          counterDiff match {
+            // ZERO, we are OK!
+            case 0 ⇒
+              // NOTE: Keep the caller's calculation reason
+              latestUserState.copyForChangeReason(calculationReason)
 
-           // We had more, so must recompute
-           case n if n > 0 ⇒
-             clog.debug(
-               "Found %s out of sync events (%s more), will have to (re)compute user state", actualOOSEventsCounter, n)
-             val result = doCompute
-             clog.end()
-             result
+            // We had more, so must recompute
+            case n if n > 0 ⇒
+              clog.debug(
+                "Found %s out of sync events (%s more), will have to (re)compute user state", actualOOSEventsCounter, n)
+              val result = doCompute
+              clog.end()
+              result
 
-           // We had less????
-           case n if n < 0 ⇒
-             val errMsg = "Found %s out of sync events (%s less). DB must be inconsistent".format(actualOOSEventsCounter, n)
-             clog.warn(errMsg)
-             throw new AquariumException(errMsg)
-         }
+            // We had less????
+            case n if n < 0 ⇒
+              val errMsg = "Found %s out of sync events (%s less). DB must be inconsistent".format(actualOOSEventsCounter, n)
+              clog.warn(errMsg)
+              throw new AquariumException(errMsg)
+          }
       }
     }
   }
@@ -233,6 +157,7 @@ class UserStateComputations extends Loggable {
   def rcDebugInfo(rcEvent: ResourceEventModel) = {
     rcEvent.toDebugString(false)
   }
+
   //- Utility methods
 
   def processResourceEvent(startingUserState: UserState,
@@ -329,7 +254,7 @@ class UserStateComputations extends Loggable {
 
             if(stateChangeReason.shouldStoreCalculatedWalletEntries) {
               val newWalletEntry = NewWalletEntry(
-                userStateWorker.userId,
+                userStateWorker.userID,
                 newCreditsDiff,
                 oldCredits,
                 newCredits,
@@ -353,7 +278,7 @@ class UserStateComputations extends Loggable {
             }
 
             _workingUserState = _workingUserState.copy(
-              creditsSnapshot = CreditSnapshot(newCredits, TimeHelpers.nowMillis()),
+              creditsSnapshot = CreditSnapshot(newCredits),
               stateChangeCounter = _workingUserState.stateChangeCounter + 1,
               totalEventsProcessedCounter = _workingUserState.totalEventsProcessedCounter + 1
             )
@@ -492,7 +417,7 @@ class UserStateComputations extends Loggable {
     // Now, the previous and implicitly started must be our base for the following computation, so we create an
     // appropriate worker
     val specialUserStateWorker = UserStateWorker(
-      userStateWorker.userId,
+      userStateWorker.userID,
       LatestResourceEventsWorker.fromList(specialEvents),
       ImplicitlyIssuedResourceEventsWorker.Empty,
       IgnoredFirstResourceEventsWorker.Empty,
@@ -533,144 +458,5 @@ class UserStateComputations extends Loggable {
     clog.debug("RETURN %s", _workingUserState)
     clog.end()
     _workingUserState
-  }
-}
-
-/**
- * A helper object holding intermediate state/results during resource event processing.
- *
- * @param previousResourceEvents
- *          This is a collection of all the latest resource events.
- *          We want these in order to correlate incoming resource events with their previous (in `occurredMillis` time)
- *          ones. Will be updated on processing the next resource event.
- *
- * @param implicitlyIssuedStartEvents
- *          The implicitly issued resource events at the beginning of the billing period.
- *
- * @param ignoredFirstResourceEvents
- *          The resource events that were first (and unused) of their kind.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- */
-case class UserStateWorker(userId: String,
-                           previousResourceEvents: LatestResourceEventsWorker,
-                           implicitlyIssuedStartEvents: ImplicitlyIssuedResourceEventsWorker,
-                           ignoredFirstResourceEvents: IgnoredFirstResourceEventsWorker,
-                           accounting: Accounting,
-                           resourcesMap: DSLResourcesMap) {
-
-  /**
-   * Finds the previous resource event by checking two possible sources: a) The implicitly terminated resource
-   * events and b) the explicit previous resource events. If the event is found, it is removed from the
-   * respective source.
-   *
-   * If the event is not found, then this must be for a new resource instance.
-   * (and probably then some `zero` resource event must be implied as the previous one)
-   *
-   * @param resource
-   * @param instanceId
-   * @return
-   */
-  def findAndRemovePreviousResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
-    // implicitly issued events are checked first
-    implicitlyIssuedStartEvents.findAndRemoveResourceEvent(resource, instanceId) match {
-      case some @ Some(_) ⇒
-        some
-      case None ⇒
-        // explicit previous resource events are checked second
-        previousResourceEvents.findAndRemoveResourceEvent(resource, instanceId) match {
-          case some @ Some(_) ⇒
-            some
-          case _ ⇒
-            None
-        }
-    }
-  }
-
-  def updateIgnored(resourceEvent: ResourceEventModel): Unit = {
-    ignoredFirstResourceEvents.updateResourceEvent(resourceEvent)
-  }
-
-  def updatePrevious(resourceEvent: ResourceEventModel): Unit = {
-    previousResourceEvents.updateResourceEvent(resourceEvent)
-  }
-
-  def debugTheMaps(clog: ContextualLogger)(rcDebugInfo: ResourceEventModel ⇒ String): Unit = {
-    if(previousResourceEvents.size > 0) {
-      val map = previousResourceEvents.latestEventsMap.map { case (k, v) => (k, rcDebugInfo(v)) }
-      clog.debugMap("previousResourceEvents", map, 0)
-    }
-    if(implicitlyIssuedStartEvents.size > 0) {
-      val map = implicitlyIssuedStartEvents.implicitlyIssuedEventsMap.map { case (k, v) => (k, rcDebugInfo(v)) }
-      clog.debugMap("implicitlyTerminatedResourceEvents", map, 0)
-    }
-    if(ignoredFirstResourceEvents.size > 0) {
-      val map = ignoredFirstResourceEvents.ignoredFirstEventsMap.map { case (k, v) => (k, rcDebugInfo(v)) }
-      clog.debugMap("ignoredFirstResourceEvents", map, 0)
-    }
-  }
-
-//  private[this]
-//  def allPreviousAndAllImplicitlyStarted: List[ResourceEvent] = {
-//    val buffer: FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEvent]()
-//
-//    buffer ++= implicitlyIssuedStartEvents.implicitlyIssuedEventsMap
-//    buffer ++= previousResourceEvents.latestEventsMap
-//
-//    buffer.valuesIterator.toList
-//  }
-
-  /**
-   * Find those events from `implicitlyIssuedStartEvents` and `previousResourceEvents` that will generate implicit
-   * end events along with those implicitly issued events. Before returning, remove the events that generated the
-   * implicit ends from the internal state of this instance.
-   *
-   * @see [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
-   */
-  def findAndRemoveGeneratorsOfImplicitEndEvents(newOccuredMillis: Long
-                                                ): (List[ResourceEventModel], List[ResourceEventModel]) = {
-    val buffer = mutable.ListBuffer[(ResourceEventModel, ResourceEventModel)]()
-    val checkSet = mutable.Set[ResourceEventModel]()
-
-    def doItFor(map: ResourceEventModel.FullMutableResourceTypeMap): Unit = {
-      val resourceEvents = map.valuesIterator
-      for {
-        resourceEvent ← resourceEvents
-        dslResource   ← resourcesMap.findResource(resourceEvent.safeResource)
-        costPolicy    =  dslResource.costPolicy
-      } {
-        if(costPolicy.supportsImplicitEvents) {
-          if(costPolicy.mustConstructImplicitEndEventFor(resourceEvent)) {
-            val implicitEnd = costPolicy.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
-
-            if(!checkSet.contains(resourceEvent)) {
-              checkSet.add(resourceEvent)
-              buffer append ((resourceEvent, implicitEnd))
-            }
-
-            // remove it anyway
-            map.remove((resourceEvent.safeResource, resourceEvent.safeInstanceId))
-          }
-        }
-      }
-    }
-
-    doItFor(previousResourceEvents.latestEventsMap)                // we give priority for previous
-    doItFor(implicitlyIssuedStartEvents.implicitlyIssuedEventsMap) // ... over implicitly issued...
-
-    (buffer.view.map(_._1).toList, buffer.view.map(_._2).toList)
-  }
-}
-
-object UserStateWorker {
-  def fromUserState(userState: UserState, accounting: Accounting, resourcesMap: DSLResourcesMap): UserStateWorker = {
-    UserStateWorker(
-      userState.userID,
-      userState.latestResourceEventsSnapshot.toMutableWorker,
-      userState.implicitlyIssuedSnapshot.toMutableWorker,
-      IgnoredFirstResourceEventsWorker.Empty,
-      accounting,
-      resourcesMap
-    )
   }
 }

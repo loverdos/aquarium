@@ -36,8 +36,7 @@
 package gr.grnet.aquarium.store.mongodb
 
 import com.mongodb.util.JSON
-import gr.grnet.aquarium.user.UserState
-import gr.grnet.aquarium.user.UserState.{JsonNames ⇒ UserStateJsonNames}
+import gr.grnet.aquarium.computation.UserState.{JsonNames ⇒ UserStateJsonNames}
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
 import gr.grnet.aquarium.event._
@@ -55,6 +54,7 @@ import org.bson.types.ObjectId
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.converter.Conversions
+import gr.grnet.aquarium.computation.UserState
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -378,9 +378,9 @@ object MongoDBStore {
   final val RESOURCE_EVENTS_COLLECTION = "resevents"
 
   /**
-   * Collection holding the snapshots of [[gr.grnet.aquarium.user.UserState]].
+   * Collection holding the snapshots of [[gr.grnet.aquarium.computation.UserState]].
    *
-   * [[gr.grnet.aquarium.user.UserState]] is held internally within [[gr.grnet.aquarium.actor.service.user .UserActor]]s.
+   * [[gr.grnet.aquarium.computation.UserState]] is held internally within [[gr.grnet.aquarium.actor.service.user.UserActor]]s.
    */
   final val USER_STATES_COLLECTION = "userstates"
 

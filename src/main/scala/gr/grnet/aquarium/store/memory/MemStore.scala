@@ -42,15 +42,13 @@ import scala.collection.JavaConversions._
 import java.util.Date
 import collection.mutable.ConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
-import gr.grnet.aquarium.user.UserState
 import gr.grnet.aquarium.uid.ConcurrentVMLocalUIDGenerator
-import gr.grnet.aquarium.{AquariumException, Configurable}
+import gr.grnet.aquarium.Configurable
 import gr.grnet.aquarium.event.{WalletEntry, PolicyEntry}
-import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
 import org.bson.types.ObjectId
 import gr.grnet.aquarium.event.resource.{StdResourceEvent, ResourceEventModel}
+import gr.grnet.aquarium.computation.UserState
 
 /**
  * An implementation of various stores that persists data in memory.
@@ -122,7 +120,7 @@ class MemStore extends UserStateStore
 
     goodOnes.sortWith {
       case (us1, us2) ⇒
-        us1.oldestSnapshotTime > us2.oldestSnapshotTime
+        us1.occurredMillis > us2.occurredMillis
     } match {
       case head :: _ ⇒
         Some(head)
@@ -147,7 +145,7 @@ class MemStore extends UserStateStore
     
     goodOnes.sortWith {
       case (us1, us2) ⇒
-        us1.oldestSnapshotTime > us2.oldestSnapshotTime
+        us1.occurredMillis > us2.occurredMillis
     } match {
       case head :: _ ⇒
         Some(head)

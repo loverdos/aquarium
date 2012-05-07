@@ -39,13 +39,15 @@ import gr.grnet.aquarium.store.memory.MemStore
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
-import gr.grnet.aquarium.util.{Loggable, ContextualLogger, justForSure}
+import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
 import gr.grnet.aquarium.simulation._
 import gr.grnet.aquarium.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
-import com.ckkloverdos.maybe.{Maybe, Just, NoVal}
+import com.ckkloverdos.maybe.{Maybe, Just}
 import org.junit.{Assert, Ignore, Test}
-import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler, SimpleCostPolicyAlgorithmCompiler}
+import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler}
 import gr.grnet.aquarium.{AquariumException, Configurator}
+import gr.grnet.aquarium.computation.{UserState, BillingMonthInfo, UserStateComputations}
+import gr.grnet.aquarium.computation.reason.MonthlyBillingCalculation
 
 
 /**
@@ -240,7 +242,7 @@ aquariumpolicy:
 
   val UserCKKL  = Aquarium.newUser("CKKL", UserCreationDate)
 
-  val InitialUserState = Computations.createInitialUserState(
+  val InitialUserState = UserState.createInitialUserState(
     userID = UserCKKL.userId,
     userCreationMillis = UserCreationDate.getTime,
     isActive = true,

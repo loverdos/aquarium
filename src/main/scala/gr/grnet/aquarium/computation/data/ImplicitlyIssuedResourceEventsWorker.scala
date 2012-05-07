@@ -33,11 +33,40 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.user
+package gr.grnet.aquarium.computation.data
+
+import gr.grnet.aquarium.util.findAndRemoveFromMap
+import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.resource.ResourceEventModel.FullMutableResourceTypeMap
+
 
 /**
- * Default implementation for [[gr.grnet.aquarium.user.UserStateComputations]].
+ * This is the mutable cousin of [[gr.grnet.aquarium.computation.data.ImplicitlyIssuedResourceEventsSnapshot]].
+ *
+ * @param implicitlyIssuedEventsMap
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object DefaultUserStateComputations extends UserStateComputations
+case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullMutableResourceTypeMap) {
+
+  def toList: scala.List[ResourceEventModel] = {
+    implicitlyIssuedEventsMap.valuesIterator.toList
+  }
+
+  def toImmutableSnapshot(snapshotTime: Long) =
+    ImplicitlyIssuedResourceEventsSnapshot(toList)
+
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
+    findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))
+  }
+
+  def size = implicitlyIssuedEventsMap.size
+
+  def foreach[U](f: ResourceEventModel => U): Unit = {
+    implicitlyIssuedEventsMap.valuesIterator.foreach(f)
+  }
+}
+
+object ImplicitlyIssuedResourceEventsWorker {
+  final val Empty = ImplicitlyIssuedResourceEventsWorker(scala.collection.mutable.Map())
+}

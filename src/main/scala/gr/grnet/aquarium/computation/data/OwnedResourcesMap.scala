@@ -33,39 +33,22 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
-
-import gr.grnet.aquarium.computation.UserState
+package gr.grnet.aquarium.computation.data
 
 /**
- * A store for user state snapshots.
+ * A map from (resourceName, resourceInstanceId) to value.
  *
- * This is used to hold snapshots of [[gr.grnet.aquarium.computation.UserState]]
+ * This representation is convenient for computations and updating, while the
+ * [[gr.grnet.aquarium.computation.data.OwnedResourcesSnapshot]] representation is convenient for JSON serialization.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UserStateStore {
-
-  /**
-   * Store a user state.
-   */
-  def insertUserState(userState: UserState): UserState
-
-  /**
-   * Find a state by user ID
-   */
-  def findUserStateByUserID(userID: String): Option[UserState]
-
-  def findLatestUserStateByUserID(userID: String): Option[UserState]
-
-  /**
-   * Find the most up-to-date user state for the particular billing period.
-   */
-  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
-
-  /**
-   * Delete a state for a user
-   */
-  def deleteUserState(userId: String): Unit
+class OwnedResourcesMap(resourcesMap: Map[(String, String), Double]) {
+  def toResourcesSnapshot(snapshotTime: Long): OwnedResourcesSnapshot =
+    OwnedResourcesSnapshot(
+      resourcesMap map {
+        case ((name, instanceId), value) ⇒
+          ResourceInstanceSnapshot(name, instanceId, value) } toList
+    )
 }

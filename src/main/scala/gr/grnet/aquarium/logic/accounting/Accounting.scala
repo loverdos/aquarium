@@ -261,7 +261,7 @@ trait Accounting extends DSLUtils with Loggable {
                              newTotalAmount: Double,
                              dslResource: DSLResource,
                              defaultResourceMap: DSLResourcesMap,
-                             agreementNamesByTimeslot: Map[Timeslot, String],
+                             agreementNamesByTimeslot: SortedMap[Timeslot, String],
                              algorithmCompiler: CostPolicyAlgorithmCompiler,
                              policyStore: PolicyStore,
                              clogOpt: Option[ContextualLogger] = None): (Timeslot, List[Chargeslot]) = {
@@ -480,7 +480,7 @@ trait Accounting extends DSLUtils with Loggable {
     if (previousOccurred.getTime == event.occurredMillis) {
       dslResource.costPolicy match {
         case DiscreteCostPolicy => //Ok
-        case _ => return Some(List())
+        case _ => return Just(List())
       }
     }
 

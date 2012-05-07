@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.util
 
 import org.slf4j.Logger
-import com.ckkloverdos.maybe.{Failed, Just, Maybe}
+import com.ckkloverdos.maybe.Failed
 
 /**
  * A logger that keeps track of working context and indentation level.
@@ -46,58 +46,50 @@ import com.ckkloverdos.maybe.{Failed, Just, Maybe}
   * A sample output follows:
   *
   * {{{
- [DEBUG] 2012-02-13 12:54:53,653 main -                 doFullMonthlyBilling(2012-01) BEGIN
- [DEBUG] 2012-02-13 12:54:53,653 main -     findUserStateAtEndOfBillingMonth(2011-12)   BEGIN
- [DEBUG] 2012-02-13 12:54:53,661 main -     findUserStateAtEndOfBillingMonth(2011-12)     Found 0 out of sync events, will have to (re)compute user state
- [DEBUG] 2012-02-13 12:54:53,661 main -     findUserStateAtEndOfBillingMonth(2011-12)     Computing full month billing
- [DEBUG] 2012-02-13 12:54:53,662 main -                 doFullMonthlyBilling(2011-12)     BEGIN
- [DEBUG] 2012-02-13 12:54:53,662 main -     findUserStateAtEndOfBillingMonth(2011-11)       BEGIN
- [DEBUG] 2012-02-13 12:54:53,663 main -     findUserStateAtEndOfBillingMonth(2011-11)         Found 0 out of sync events, will have to (re)compute user state
- [DEBUG] 2012-02-13 12:54:53,663 main -     findUserStateAtEndOfBillingMonth(2011-11)         Computing full month billing
- [DEBUG] 2012-02-13 12:54:53,664 main -                 doFullMonthlyBilling(2011-11)         BEGIN
- [DEBUG] 2012-02-13 12:54:53,664 main -     findUserStateAtEndOfBillingMonth(2011-10)           BEGIN
- [DEBUG] 2012-02-13 12:54:53,667 main -     findUserStateAtEndOfBillingMonth(2011-10)             User did not exist before 2011-11-01 00:00:00.000. Returning UserState(Christos,0,0,false,null,ImplicitlyIssuedResourceEventsSnapshot(Map(),0),List(),List(),LatestResourceEventsSnapshot(Map(),0),0,ActiveStateSnapshot(false,0),CreditSnapshot(0.0,0),AgreementSnapshot(List(Agreement(default,0,-1)),0),RolesSnapshot(List(),0),OwnedResourcesSnapshot(List(),0))
- [DEBUG] 2012-02-13 12:54:53,668 main -     findUserStateAtEndOfBillingMonth(2011-10)           END
- [DEBUG] 2012-02-13 12:54:53,672 main -                 doFullMonthlyBilling(2011-11)           previousResourceEvents = LatestResourceEventsWorker(Map())
- [DEBUG] 2012-02-13 12:54:53,673 main -                 doFullMonthlyBilling(2011-11)           theImplicitOFFs = ImplicitlyIssuedResourceEventsWorker(Map())
- [DEBUG] 2012-02-13 12:54:53,680 main -                 doFullMonthlyBilling(2011-11)           resourceEventStore = MemStore(Map(UserState -> 0, WalletEntry -> 0, ResourceEvent -> 5, PolicyEntry -> 0, IMEvent -> 0))
- [DEBUG] 2012-02-13 12:54:53,681 main -                 doFullMonthlyBilling(2011-11)           Found 0 resource events, starting processing...
- [DEBUG] 2012-02-13 12:54:53,683 main -                 doFullMonthlyBilling(2011-11)         END
- [DEBUG] 2012-02-13 12:54:53,683 main -     findUserStateAtEndOfBillingMonth(2011-11)       END
- [DEBUG] 2012-02-13 12:54:53,684 main -                 doFullMonthlyBilling(2011-12)       previousResourceEvents = LatestResourceEventsWorker(Map())
- [DEBUG] 2012-02-13 12:54:53,684 main -                 doFullMonthlyBilling(2011-12)       theImplicitOFFs = ImplicitlyIssuedResourceEventsWorker(Map())
- [DEBUG] 2012-02-13 12:54:53,685 main -                 doFullMonthlyBilling(2011-12)       resourceEventStore = MemStore(Map(UserState -> 0, WalletEntry -> 0, ResourceEvent -> 5, PolicyEntry -> 0, IMEvent -> 0))
- [DEBUG] 2012-02-13 12:54:53,686 main -                 doFullMonthlyBilling(2011-12)       Found 0 resource events, starting processing...
- [DEBUG] 2012-02-13 12:54:53,686 main -                 doFullMonthlyBilling(2011-12)     END
- [DEBUG] 2012-02-13 12:54:53,687 main -     findUserStateAtEndOfBillingMonth(2011-12)   END
- [DEBUG] 2012-02-13 12:54:53,687 main -                 doFullMonthlyBilling(2012-01)   previousResourceEvents = LatestResourceEventsWorker(Map())
- [DEBUG] 2012-02-13 12:54:53,688 main -                 doFullMonthlyBilling(2012-01)   theImplicitOFFs = ImplicitlyIssuedResourceEventsWorker(Map())
- [DEBUG] 2012-02-13 12:54:53,688 main -                 doFullMonthlyBilling(2012-01)   resourceEventStore = MemStore(Map(UserState -> 0, WalletEntry -> 0, ResourceEvent -> 5, PolicyEntry -> 0, IMEvent -> 0))
- [DEBUG] 2012-02-13 12:54:53,689 main -                 doFullMonthlyBilling(2012-01)   Found 4 resource events, starting processing...
- [DEBUG] 2012-02-13 12:54:53,690 main -                 doFullMonthlyBilling(2012-01)     Processing EVENT(2, [2012-01-01 03:00:00.000], 99.0 [MB/Hr], diskspace::pithos/diskspace/DISK.1, Map(), Christos, pithos)
- [DEBUG] 2012-02-13 12:54:53,691 main -                 doFullMonthlyBilling(2012-01)       0 previousResourceEvents
- [DEBUG] 2012-02-13 12:54:53,691 main -                 doFullMonthlyBilling(2012-01)       0 theImplicitOFFs
- [DEBUG] 2012-02-13 12:54:53,694 main -                 doFullMonthlyBilling(2012-01)       Processing: ResourceEvent(2,1325379600000,1325379600000,Christos,pithos,diskspace,pithos/diskspace/DISK.1,1.0,99.0,Map())
- [DEBUG] 2012-02-13 12:54:53,704 main -                 doFullMonthlyBilling(2012-01)     Processing EVENT(0, [2012-01-02 01:00:00.000], ON, vmtime::synnefo/vmtime/VM.1, Map(), Christos, synnefo)
- [DEBUG] 2012-02-13 12:54:53,705 main -                 doFullMonthlyBilling(2012-01)       1 previousResourceEvents
- [DEBUG] 2012-02-13 12:54:53,708 main -                 doFullMonthlyBilling(2012-01)         EVENT(2, [2012-01-01 03:00:00.000], 99.0 [MB/Hr], diskspace::pithos/diskspace/DISK.1, Map(), Christos, pithos)
- [DEBUG] 2012-02-13 12:54:53,709 main -                 doFullMonthlyBilling(2012-01)       0 theImplicitOFFs
- [DEBUG] 2012-02-13 12:54:53,709 main -                 doFullMonthlyBilling(2012-01)       Ignoring not billable EVENT(0, [2012-01-02 01:00:00.000], ON, vmtime::synnefo/vmtime/VM.1, Map(), Christos, synnefo)
- [DEBUG] 2012-02-13 12:54:53,711 main -                 doFullMonthlyBilling(2012-01)     Processing EVENT(3, [2012-01-02 04:00:00.000], 23.0 [MB/Hr], diskspace::pithos/diskspace/DISK.1, Map(), Christos, pithos)
- [DEBUG] 2012-02-13 12:54:53,712 main -                 doFullMonthlyBilling(2012-01)       2 previousResourceEvents
- [DEBUG] 2012-02-13 12:54:53,713 main -                 doFullMonthlyBilling(2012-01)         EVENT(0, [2012-01-02 01:00:00.000], ON, vmtime::synnefo/vmtime/VM.1, Map(), Christos, synnefo)
- [DEBUG] 2012-02-13 12:54:53,714 main -                 doFullMonthlyBilling(2012-01)         EVENT(2, [2012-01-01 03:00:00.000], 99.0 [MB/Hr], diskspace::pithos/diskspace/DISK.1, Map(), Christos, pithos)
- [DEBUG] 2012-02-13 12:54:53,714 main -                 doFullMonthlyBilling(2012-01)       0 theImplicitOFFs
- [DEBUG] 2012-02-13 12:54:53,715 main -                 doFullMonthlyBilling(2012-01)       Processing: ResourceEvent(3,1325469600000,1325469600000,Christos,pithos,diskspace,pithos/diskspace/DISK.1,1.0,23.0,Map())
- [DEBUG] 2012-02-13 12:54:53,716 main -                 doFullMonthlyBilling(2012-01)       Previous  : ResourceEvent(2,1325379600000,1325379600000,Christos,pithos,diskspace,pithos/diskspace/DISK.1,1.0,99.0,Map())
- [DEBUG] 2012-02-13 12:54:53,718 main -                 doFullMonthlyBilling(2012-01)     Processing EVENT(1, [2012-01-02 10:00:00.000], OFF, vmtime::synnefo/vmtime/VM.1, Map(), Christos, synnefo)
- [DEBUG] 2012-02-13 12:54:53,719 main -                 doFullMonthlyBilling(2012-01)       2 previousResourceEvents
- [DEBUG] 2012-02-13 12:54:53,719 main -                 doFullMonthlyBilling(2012-01)         EVENT(0, [2012-01-02 01:00:00.000], ON, vmtime::synnefo/vmtime/VM.1, Map(), Christos, synnefo)
- [DEBUG] 2012-02-13 12:54:53,721 main -                 doFullMonthlyBilling(2012-01)         EVENT(3, [2012-01-02 04:00:00.000], 23.0 [MB/Hr], diskspace::pithos/diskspace/DISK.1, Map(), Christos, pithos)
- [DEBUG] 2012-02-13 12:54:53,721 main -                 doFullMonthlyBilling(2012-01)       0 theImplicitOFFs
- [DEBUG] 2012-02-13 12:54:53,722 main -                 doFullMonthlyBilling(2012-01)       Processing: ResourceEvent(1,1325491200000,1325491200000,Christos,synnefo,vmtime,synnefo/vmtime/VM.1,1.0,0.0,Map())
- [DEBUG] 2012-02-13 12:54:53,735 main -                 doFullMonthlyBilling(2012-01)       Previous  : ResourceEvent(0,1325458800000,1325458800000,Christos,synnefo,vmtime,synnefo/vmtime/VM.1,1.0,1.0,Map())
- [DEBUG] 2012-02-13 12:54:53,736 main -                 doFullMonthlyBilling(2012-01) END
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF() BEGIN
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   +++ [Events by OccurredMillis] +++
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()       EVENT(0, [2012-01-01 00:00:00], 0.0, vmtime::VM.1, Map(), CKKL, synnefo)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   --- [Events by OccurredMillis] ---
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2012-01)   BEGIN
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-12)     BEGIN
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-12)       No user state found from cache, will have to (re)compute
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-12)       BEGIN
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-11)         BEGIN
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-11)           No user state found from cache, will have to (re)compute
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-11)           BEGIN
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-10)             BEGIN
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-10)               User did not exist before 2011-11-01 00:00:00.000
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-10)               Returning INITIAL state [_id=4fa7e12ba0eee3db73fbe8d0] UserState(true,CKKL,1320098400000,0,false,null,ImplicitlyIssuedResourceEventsSnapshot(List()),List(),List(),LatestResourceEventsSnapshot(List()),0,0,IMStateSnapshot(StdIMEvent(,1320098400000,1320098400000,CKKL,,true,user,1.0,create,Map())),CreditSnapshot(0.0),AgreementsSnapshot(List(AgreementSnapshot(default, 2011-11-01 00:00:00.000, 292278994-08-17 07:12:55.807))),OwnedResourcesSnapshot(List()),List(),1320098400000,InitialUserStateSetup,0,None,4fa7e12ba0eee3db73fbe8d0)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-10)             END
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-11)             calculationReason = MonthlyBillingCalculation(2011-11)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-11)             Saved [_id=4fa7e12ba0eee3db73fbe8d0] UserState(true,CKKL,1320098400000,1,false,null,ImplicitlyIssuedResourceEventsSnapshot(List()),List(),List(),LatestResourceEventsSnapshot(List()),0,0,IMStateSnapshot(StdIMEvent(,1320098400000,1320098400000,CKKL,,true,user,1.0,create,Map())),CreditSnapshot(0.0),AgreementsSnapshot(List(AgreementSnapshot(default, 2011-11-01 00:00:00.000, 292278994-08-17 07:12:55.807))),OwnedResourcesSnapshot(List()),List(),1320098400000,MonthlyBillingCalculation(2011-11),0,Some(4fa7e12ba0eee3db73fbe8d0),4fa7e12ba0eee3db73fbe8d0)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-11)             RETURN UserState(true,CKKL,1320098400000,1,false,null,ImplicitlyIssuedResourceEventsSnapshot(List()),List(),List(),LatestResourceEventsSnapshot(List()),0,0,IMStateSnapshot(StdIMEvent(,1320098400000,1320098400000,CKKL,,true,user,1.0,create,Map())),CreditSnapshot(0.0),AgreementsSnapshot(List(AgreementSnapshot(default, 2011-11-01 00:00:00.000, 292278994-08-17 07:12:55.807))),OwnedResourcesSnapshot(List()),List(),1320098400000,MonthlyBillingCalculation(2011-11),0,Some(4fa7e12ba0eee3db73fbe8d0),4fa7e12ba0eee3db73fbe8d0)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-11)           END
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-11)         END
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-12)         calculationReason = MonthlyBillingCalculation(2011-12)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-12)         Saved [_id=4fa7e12ba0eee3db73fbe8d0] UserState(true,CKKL,1320098400000,2,false,null,ImplicitlyIssuedResourceEventsSnapshot(List()),List(),List(),LatestResourceEventsSnapshot(List()),0,0,IMStateSnapshot(StdIMEvent(,1320098400000,1320098400000,CKKL,,true,user,1.0,create,Map())),CreditSnapshot(0.0),AgreementsSnapshot(List(AgreementSnapshot(default, 2011-11-01 00:00:00.000, 292278994-08-17 07:12:55.807))),OwnedResourcesSnapshot(List()),List(),1320098400000,MonthlyBillingCalculation(2011-12),0,Some(4fa7e12ba0eee3db73fbe8d0),4fa7e12ba0eee3db73fbe8d0)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-12)         RETURN UserState(true,CKKL,1320098400000,2,false,null,ImplicitlyIssuedResourceEventsSnapshot(List()),List(),List(),LatestResourceEventsSnapshot(List()),0,0,IMStateSnapshot(StdIMEvent(,1320098400000,1320098400000,CKKL,,true,user,1.0,create,Map())),CreditSnapshot(0.0),AgreementsSnapshot(List(AgreementSnapshot(default, 2011-11-01 00:00:00.000, 292278994-08-17 07:12:55.807))),OwnedResourcesSnapshot(List()),List(),1320098400000,MonthlyBillingCalculation(2011-12),0,Some(4fa7e12ba0eee3db73fbe8d0),4fa7e12ba0eee3db73fbe8d0)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2011-12)       END
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest - …ndUserStateAtEndOfBillingMonth(2011-12)     END
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -         walletEntriesForResourceEvent(0)     +++ [EVENT(0, [2012-01-01 00:00:00], 0.0, vmtime::VM.1, Map(), CKKL, synnefo)] +++
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -         walletEntriesForResourceEvent(0)       Cost policy OnOffCostPolicy for DSLResource(vmtime,Hr,OnOffCostPolicy,true,instanceId)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -         walletEntriesForResourceEvent(0)       PreviousM None
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -         walletEntriesForResourceEvent(0)       Ignoring first event of its kind EVENT(0, [2012-01-01 00:00:00], 0.0, vmtime::VM.1, Map(), CKKL, synnefo)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -         walletEntriesForResourceEvent(0)     --- [EVENT(0, [2012-01-01 00:00:00], 0.0, vmtime::VM.1, Map(), CKKL, synnefo)] ---
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2012-01)     calculationReason = MonthlyBillingCalculation(2012-01)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2012-01)     Saved [_id=4fa7e12ba0eee3db73fbe8d0] UserState(true,CKKL,1320098400000,3,false,null,ImplicitlyIssuedResourceEventsSnapshot(List()),List(),List(),LatestResourceEventsSnapshot(List(StdResourceEvent(0,1325368800000,1325368800000,CKKL,synnefo,vmtime,VM.1,0.0,1.0,Map()))),0,0,IMStateSnapshot(StdIMEvent(,1320098400000,1320098400000,CKKL,,true,user,1.0,create,Map())),CreditSnapshot(0.0),AgreementsSnapshot(List(AgreementSnapshot(default, 2011-11-01 00:00:00.000, 292278994-08-17 07:12:55.807))),OwnedResourcesSnapshot(List()),List(),1320098400000,MonthlyBillingCalculation(2012-01),0,Some(4fa7e12ba0eee3db73fbe8d0),4fa7e12ba0eee3db73fbe8d0)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2012-01)     RETURN UserState(true,CKKL,1320098400000,3,false,null,ImplicitlyIssuedResourceEventsSnapshot(List()),List(),List(),LatestResourceEventsSnapshot(List(StdResourceEvent(0,1325368800000,1325368800000,CKKL,synnefo,vmtime,VM.1,0.0,1.0,Map()))),0,0,IMStateSnapshot(StdIMEvent(,1320098400000,1320098400000,CKKL,,true,user,1.0,create,Map())),CreditSnapshot(0.0),AgreementsSnapshot(List(AgreementSnapshot(default, 2011-11-01 00:00:00.000, 292278994-08-17 07:12:55.807))),OwnedResourcesSnapshot(List()),List(),1320098400000,MonthlyBillingCalculation(2012-01),0,Some(4fa7e12ba0eee3db73fbe8d0),4fa7e12ba0eee3db73fbe8d0)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -            doFullMonthlyBilling(2012-01)   END
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   _id = 4fa7e12ba0eee3db73fbe8d0
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   parentId = Some(4fa7e12ba0eee3db73fbe8d0)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   credits = 0.0
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   changeReason = MonthlyBillingCalculation(2012-01)
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   implicitlyIssued [#=0] = List()
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   latestResourceEvents [#=1]:
+DEBUG 17:50:19 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()     EVENT(0, [2012-01-01 00:00:00], 0.0, vmtime::VM.1, Map(), CKKL, synnefo)
+DEBUG 17:50:20 g.g.a.user.UserStateComputationsTest -                          testOrphanOFF()   newWalletEntries [#=0] = List()
  * }}}
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>

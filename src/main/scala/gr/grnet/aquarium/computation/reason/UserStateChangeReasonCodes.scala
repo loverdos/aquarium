@@ -33,39 +33,19 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
-
-import gr.grnet.aquarium.computation.UserState
+package gr.grnet.aquarium.computation.reason
 
 /**
- * A store for user state snapshots.
- *
- * This is used to hold snapshots of [[gr.grnet.aquarium.computation.UserState]]
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UserStateStore {
+object UserStateChangeReasonCodes {
+  type ChangeReasonCode = Int
 
-  /**
-   * Store a user state.
-   */
-  def insertUserState(userState: UserState): UserState
-
-  /**
-   * Find a state by user ID
-   */
-  def findUserStateByUserID(userID: String): Option[UserState]
-
-  def findLatestUserStateByUserID(userID: String): Option[UserState]
-
-  /**
-   * Find the most up-to-date user state for the particular billing period.
-   */
-  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
-
-  /**
-   * Delete a state for a user
-   */
-  def deleteUserState(userId: String): Unit
+  final val InitialSetupCode = 1
+  final val NoSpecificChangeCode = 2
+  final val MonthlyBillingCode = 3
+  final val RealtimeBillingCode = 4
+  final val IMEventArrivalCode = 5
 }

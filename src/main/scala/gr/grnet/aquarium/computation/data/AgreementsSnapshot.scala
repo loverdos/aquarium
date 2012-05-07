@@ -33,39 +33,48 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.computation.UserState
+import java.util.Date
+
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, Timeslot}
+import gr.grnet.aquarium.logic.accounting.Policy
+import scala.collection.immutable.{SortedMap, TreeMap}
 
 /**
- * A store for user state snapshots.
+ * User agreement data that will be part of UserState.
+ * The provided list of agreements cannot have time gaps. This is checked at object creation type.
  *
- * This is used to hold snapshots of [[gr.grnet.aquarium.computation.UserState]]
+ * Note: This is copied from UserDataSnapshot.scala/AgreementSnapshot.
+ * TODO: Review
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UserStateStore {
+case class AgreementsSnapshot(agreements: List[AgreementSnapshot]) {
+  ensureNoGaps(agreements.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
+
+  def ensureNoGaps(agreements: List[AgreementSnapshot]): Unit = agreements match {
+    case ha :: (t @ (hb :: tail)) =>
+      assert(ha.validTo - hb.validFrom == 1);
+      ensureNoGaps(t)
+    case h :: Nil =>
+      assert(h.validTo == Long.MaxValue)
+    case Nil => ()
+  }
+
+  def agreementsByTimeslot: SortedMap[Timeslot, String] = {
+    TreeMap(agreements.map(ag => (ag.timeslot, ag.name)): _*)
+  }
 
   /**
-   * Store a user state.
+   * Get the user agreement at the specified timestamp
    */
-  def insertUserState(userState: UserState): UserState
-
-  /**
-   * Find a state by user ID
-   */
-  def findUserStateByUserID(userID: String): Option[UserState]
-
-  def findLatestUserStateByUserID(userID: String): Option[UserState]
-
-  /**
-   * Find the most up-to-date user state for the particular billing period.
-   */
-  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
-
-  /**
-   * Delete a state for a user
-   */
-  def deleteUserState(userId: String): Unit
+  def findForTime(at: Long): Option[DSLAgreement] = {
+    // FIXME: Refactor and do not make this static call to Policy
+    agreements.find{ x => x.validFrom < at && x.validTo > at} match {
+      case Some(x) => Policy.policy(new Date(at)).findAgreement(x.name)
+      case None => None
+    }
+  }
 }

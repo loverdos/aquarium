@@ -38,7 +38,6 @@ package service
 package user
 
 import gr.grnet.aquarium.actor._
-import gr.grnet.aquarium.user._
 
 import gr.grnet.aquarium.util.shortClassNameOf
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
@@ -48,6 +47,8 @@ import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
+import gr.grnet.aquarium.computation.data.IMStateSnapshot
+import gr.grnet.aquarium.computation.UserState
 
 /**
  *
@@ -123,7 +124,7 @@ class UserActor extends ReflectiveRoleableActor {
       }
     }
 
-    this._imState = IMStateSnapshot(imEvent, now)
+    this._imState = IMStateSnapshot(imEvent)
     DEBUG("%s %s", if(hadIMState) "Update" else "Set", shortClassNameOf(this._imState))
   }
 

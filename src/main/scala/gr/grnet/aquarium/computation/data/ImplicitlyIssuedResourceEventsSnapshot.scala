@@ -33,39 +33,29 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.event.resource.ResourceEventModel
 
 /**
- * A store for user state snapshots.
- *
- * This is used to hold snapshots of [[gr.grnet.aquarium.computation.UserState]]
+ * Keeps the implicit OFF events when a billing period ends.
+ * This is normally recorded in the [[gr.grnet.aquarium.user.UserState]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-trait UserStateStore {
-
+case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[ResourceEventModel]) {
   /**
-   * Store a user state.
+   * The gateway to playing with mutable state.
+   *
+   * @return A fresh instance of [[gr.grnet.aquarium.computation.data.ImplicitlyIssuedResourceEventsWorker]].
    */
-  def insertUserState(userState: UserState): UserState
+  def toMutableWorker = {
+    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
+    for(implicitEvent <- implicitlyIssuedEvents) {
+      map(implicitEvent.fullResourceInfo) = implicitEvent
+    }
 
-  /**
-   * Find a state by user ID
-   */
-  def findUserStateByUserID(userID: String): Option[UserState]
-
-  def findLatestUserStateByUserID(userID: String): Option[UserState]
-
-  /**
-   * Find the most up-to-date user state for the particular billing period.
-   */
-  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
-
-  /**
-   * Delete a state for a user
-   */
-  def deleteUserState(userId: String): Unit
+    ImplicitlyIssuedResourceEventsWorker(map)
+  }
 }
+

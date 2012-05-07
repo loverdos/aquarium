@@ -33,39 +33,25 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.util.date.MutableDateCalc
+import java.util.Date
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
- * A store for user state snapshots.
- *
- * This is used to hold snapshots of [[gr.grnet.aquarium.computation.UserState]]
+ * Represents an agreement valid for a specific amount of time. By convention,
+ * if an agreement is currently valid, then the validTo field is equal to `Long.MaxValue`.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+case class AgreementSnapshot(name: String, validFrom: Long, validTo: Long = Long.MaxValue) {
+  require(validTo > validFrom)
+  require(!name.isEmpty)
 
-trait UserStateStore {
+  def timeslot = Timeslot(new Date(validFrom), new Date(validTo))
 
-  /**
-   * Store a user state.
-   */
-  def insertUserState(userState: UserState): UserState
-
-  /**
-   * Find a state by user ID
-   */
-  def findUserStateByUserID(userID: String): Option[UserState]
-
-  def findLatestUserStateByUserID(userID: String): Option[UserState]
-
-  /**
-   * Find the most up-to-date user state for the particular billing period.
-   */
-  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
-
-  /**
-   * Delete a state for a user
-   */
-  def deleteUserState(userId: String): Unit
+  override def toString =
+    "AgreementSnapshot(%s, %s, %s)".
+      format(name, new MutableDateCalc(validFrom), new MutableDateCalc(validTo))
 }
