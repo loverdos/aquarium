@@ -75,7 +75,7 @@ trait ResourceEventStore {
   /**
    * Count and return the number of "out of sync" events for a billing month.
    */
-  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Maybe[Long]
+  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Long
 
   /**
    * Finds all relevant resource events for the billing period.

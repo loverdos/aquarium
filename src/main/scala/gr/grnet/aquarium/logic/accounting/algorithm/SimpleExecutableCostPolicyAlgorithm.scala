@@ -50,7 +50,7 @@ object SimpleExecutableCostPolicyAlgorithm extends ExecutableCostPolicyAlgorithm
   @inline private[this]
   def hrs(millis: Double) = millis / 1000 / 60 / 60
 
-  def apply(vars: Map[DSLCostPolicyVar, Any]): Maybe[Double] = Maybe {
+  def apply(vars: Map[DSLCostPolicyVar, Any]): Double = {
     vars.apply(DSLCostPolicyNameVar) match {
       case DSLCostPolicyNames.continuous ⇒
         val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]

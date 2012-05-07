@@ -51,7 +51,7 @@ object SimpleCostPolicyAlgorithmCompiler extends CostPolicyAlgorithmCompiler {
    * @param definition the textual representation of the algorithm
    * @return the executable form of the algorithm
    */
-  def compile(definition: String): Maybe[ExecutableCostPolicyAlgorithm] = {
-    Just(SimpleExecutableCostPolicyAlgorithm)
+  def compile(definition: String): ExecutableCostPolicyAlgorithm = {
+    SimpleExecutableCostPolicyAlgorithm
   }
 }

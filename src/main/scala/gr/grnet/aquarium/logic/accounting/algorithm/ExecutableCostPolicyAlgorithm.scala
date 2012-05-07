@@ -44,4 +44,4 @@ import gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait ExecutableCostPolicyAlgorithm extends (Map[DSLCostPolicyVar, Any] => Maybe[Double])
+trait ExecutableCostPolicyAlgorithm extends (Map[DSLCostPolicyVar, Any] ⇒ Double)

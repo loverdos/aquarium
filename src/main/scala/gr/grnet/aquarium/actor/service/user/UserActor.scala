@@ -107,7 +107,9 @@ class UserActor extends ReflectiveRoleableActor {
     val now = TimeHelpers.nowMillis()
 
     val imEvent = event.imEvent
-    val isUpdate = if(_haveIMState) {
+    val hadIMState = _haveIMState
+
+    if(hadIMState) {
       val newOccurredMillis = imEvent.occurredMillis
       val currentOccurredMillis = this._imState.imEvent.occurredMillis
 
@@ -119,14 +121,10 @@ class UserActor extends ReflectiveRoleableActor {
 
         return
       }
-
-      true
-    } else {
-      false
     }
 
     this._imState = IMStateSnapshot(imEvent, now)
-    DEBUG("%s %s", if(isUpdate) "Update" else "Set", shortClassNameOf(this._imState))
+    DEBUG("%s %s", if(hadIMState) "Update" else "Set", shortClassNameOf(this._imState))
   }
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
@@ -142,6 +140,9 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
+    val rcEvent = event.rcEvent
+
+    logger.info("Got\n{}", rcEvent.toJsonString)
   }
 
 

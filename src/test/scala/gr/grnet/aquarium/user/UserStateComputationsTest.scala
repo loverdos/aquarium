@@ -149,7 +149,7 @@ aquariumpolicy:
     @inline private[this]
     def hrs(millis: Double) = millis / 1000 / 60 / 60
 
-    def apply(vars: Map[DSLCostPolicyVar, Any]): Maybe[Double] = Maybe {
+    def apply(vars: Map[DSLCostPolicyVar, Any]): Double = {
       vars.apply(DSLCostPolicyNameVar) match {
         case DSLCostPolicyNames.continuous ⇒
           val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
@@ -194,8 +194,8 @@ aquariumpolicy:
   }
 
   val DefaultCompiler  = new CostPolicyAlgorithmCompiler {
-    def compile(definition: String): Maybe[ExecutableCostPolicyAlgorithm] = {
-      Just(DefaultAlgorithm)
+    def compile(definition: String): ExecutableCostPolicyAlgorithm = {
+      DefaultAlgorithm
     }
   }
   //val DefaultAlgorithm = justForSure(DefaultCompiler.compile("")).get // hardcoded since we know exactly what this is
@@ -349,9 +349,8 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userStateM = doFullMonthlyBilling(clog, BillingMonthInfoJan)
-    val userState = justUserState(userStateM)
-    
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan)
+
     showUserState(clog, userState)
 
     expectCredits(clog, credits, userState)
@@ -379,8 +378,7 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userStateM = doFullMonthlyBilling(clog, BillingMonthInfoJan)
-    val userState = justUserState(userStateM)
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan)
 
     showUserState(clog, userState)
 
@@ -410,8 +408,7 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userStateM = doFullMonthlyBilling(clog, BillingMonthInfoJan)
-    val userState = justUserState(userStateM)
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan)
 
     showUserState(clog, userState)
 
@@ -462,8 +459,8 @@ aquariumpolicy:
 
     clog.debugMap("DefaultResourcesMap", DefaultResourcesMap.map, 1)
 
-    val userStateM = doFullMonthlyBilling(clog, BillingMonthInfoJan)
-    val userState = justUserState(userStateM)
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan)
+
     showUserState(clog, userState)
 
     clog.end()

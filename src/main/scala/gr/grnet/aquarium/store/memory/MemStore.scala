@@ -273,7 +273,7 @@ class MemStore extends UserStateStore
     }.toList
   }
 
-  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Maybe[Long] = Maybe {
+  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Long = {
     _resourceEvents.filter { case ev ⇒
       // out of sync events are those that were received in the billing month but occurred in previous (or next?)
       // months

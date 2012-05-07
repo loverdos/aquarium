@@ -53,10 +53,6 @@ trait UserStateStore {
    */
   def insertUserState(userState: UserState): UserState
 
-  def insertUserState2(userState: UserState): Maybe[UserState] = {
-    Maybe { insertUserState(userState) }
-  }
-
   /**
    * Find a state by user ID
    */

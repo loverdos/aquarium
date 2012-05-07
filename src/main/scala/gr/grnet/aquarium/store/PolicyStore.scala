@@ -71,18 +71,13 @@ trait PolicyStore {
       yield (timeslot, dsl.parse(policyEntry.policyYAML))
   }
   
-  def loadValidPolicyEntryAt(atMillis: Long): Maybe[PolicyEntry] = Maybe {
+  def loadValidPolicyEntryAt(atMillis: Long): Option[PolicyEntry] = {
     loadPolicyEntriesAfter(0L).find { policyEntry ⇒
       policyEntry.fromToTimeslot.containsTimeInMillis(atMillis)
-    } match {
-      case Some(policyEntry) ⇒
-        policyEntry
-      case None ⇒
-        null // Do not worry, this will be transformed to a NoVal by the Maybe polymorphic constructor
     }
   }
   
-  def loadValidPolicyAt(atMillis: Long, dsl: DSL): Maybe[DSLPolicy] = {
+  def loadValidPolicyAt(atMillis: Long, dsl: DSL): Option[DSLPolicy] = {
     loadValidPolicyEntryAt(atMillis).map(policyEntry ⇒ dsl.parse(policyEntry.policyYAML))
   }
 

@@ -292,11 +292,11 @@ case class LatestResourceEventsWorker(latestEventsMap: FullMutableResourceTypeMa
     latestEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
   }
   
-  def findResourceEvent(resource: String, instanceId: String): Maybe[ResourceEventModel] = {
-    findFromMapAsMaybe(latestEventsMap, (resource, instanceId))
+  def findResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
+    latestEventsMap.get((resource, instanceId))
   }
 
-  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEventModel] = {
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
     findAndRemoveFromMap(latestEventsMap, (resource, instanceId))
   }
 
@@ -360,7 +360,7 @@ case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullM
   def toImmutableSnapshot(snapshotTime: Long) =
     ImplicitlyIssuedResourceEventsSnapshot(toList, snapshotTime)
 
-  def findAndRemoveResourceEvent(resource: String, instanceId: String): Maybe[ResourceEventModel] = {
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
     findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))
   }
 

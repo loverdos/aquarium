@@ -146,14 +146,8 @@ package object util {
   }
 
   @inline
-  def findAndRemoveFromMap[A, B <: AnyRef](map: scala.collection.mutable.Map[A, B], key: A): Maybe[B] = Maybe {
-    map.get(key) match {
-      case Some(value) ⇒
-        map -= key
-        value
-      case None ⇒
-        null.asInstanceOf[B]
-    }
+  def findAndRemoveFromMap[A, B <: AnyRef](map: scala.collection.mutable.Map[A, B], key: A): Option[B] = {
+    map.remove(key)
   }
 
   // Dear scalac. Optimize this.

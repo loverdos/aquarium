@@ -184,11 +184,9 @@ class MongoDBStore(
     MongoDBStore.runQuery[ResourceEvent](query, resourceEvents, orderBy)(MongoDBResourceEvent.fromDBObject)(None)
   }
   
-  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Maybe[Long] = {
-    Maybe {
-      // FIXME: Implement
-      0L
-    }
+  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Long = {
+    // FIXME: Implement
+    0L
   }
 
   def findAllRelevantResourceEventsForBillingPeriod(userId: String,
