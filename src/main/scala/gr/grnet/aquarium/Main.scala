@@ -42,8 +42,7 @@ import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.util.StatusPrinter
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.LazyLoggable
-import gr.grnet.aquarium.util.isRunningTests
-import com.ckkloverdos.maybe.{MaybeEither, Failed, Just}
+import com.ckkloverdos.maybe.{Failed, Just}
 
 /**
  * Main method for Aquarium
@@ -67,30 +66,13 @@ object Main extends LazyLoggable {
   )
 
   private[this] def configureLogging(): Unit = {
-    // http://logback.qos.ch/manual/joran.html
-    LoggerFactory.getILoggerFactory match {
-      case context: LoggerContext ⇒
-        MaybeEither {
-          val joran = new JoranConfigurator
-          joran.setContext(context)
-          context.reset()
-          joran.doConfigure(ResourceLocator.LOGBACK_XML_FILE)
-          logger.info("Logging subsystem configured from {}", ResourceLocator.LOGBACK_XML_FILE)
-        } match {
-          case Just(_) ⇒
-            StatusPrinter.printInCaseOfErrorsOrWarnings(context)
-
-          case Failed(e) ⇒
-            StatusPrinter.print(context)
-            throw new AquariumException(e, "Could not configure logging from %s".format(ResourceLocator.LOGBACK_XML_FILE))
-        }
-
-      case _ ⇒
-    }
+    // Make sure AQUARIUM_HOME is configured, since it is used in logback.xml
+    assert(ResourceLocator.AQUARIUM_HOME_FOLDER.isDirectory)
   }
 
   def doStart(): Unit = {
     import ResourceLocator.{AQUARIUM_HOME, AQUARIUM_HOME_FOLDER, CONF_HERE, AKKA_HOME}
+
     // We have AKKA builtin, so no need to mess with pre-existing installation.
     if(AKKA_HOME.value.isJust) {
       val error = new AquariumInternalError("%s is set. Please unset and restart Aquarium".format(AKKA_HOME.name))
@@ -100,21 +82,15 @@ object Main extends LazyLoggable {
 
     val mc = Configurator.MasterConfigurator
 
-    mc.eventsStoreFolder match {
-      case Just(folder) ⇒
-        logger.info("{} = {}", Configurator.Keys.events_store_folder, folder)
-
-      case failed @ Failed(e) ⇒
-        throw e
-
-      case _ ⇒
+    for(folder ← mc.eventsStoreFolder) {
+      logger.info("{} = {}", Configurator.Keys.events_store_folder, folder)
     }
+    mc.eventsStoreFolder.throwMe // on error
 
-    for {
-      prop <- PropsToShow
-    } {
+    for(prop ← PropsToShow) {
       logger.info("{} = {}", prop.name, prop.rawValue)
     }
+
     logger.info("{} = {}", AQUARIUM_HOME.name, AQUARIUM_HOME_FOLDER)
     logger.info("CONF_HERE = {}", CONF_HERE)
 
@@ -134,7 +110,7 @@ object Main extends LazyLoggable {
   def main(args: Array[String]) = {
     configureLogging()
 
-    logStarting("Aquarium from %s", ResourceLocator.AQUARIUM_HOME_FOLDER)
+    logStarting("Aquarium")
     val (ms0, ms1, _) = TimeHelpers.timed {
       doStart()
     }

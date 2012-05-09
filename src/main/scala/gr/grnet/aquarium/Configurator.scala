@@ -173,7 +173,7 @@ class Configurator(val props: Props) extends Loggable {
         logger.info("{} = {}", Keys.events_store_folder, canonicalPath)
 
         if(canonicalFolder.exists() && !canonicalFolder.isDirectory) {
-          throw new AquariumException("%s = %s is not a folder".format(Keys.events_store_folder, canonicalFolder))
+          throw new AquariumInternalError("%s = %s is not a folder".format(Keys.events_store_folder, canonicalFolder))
         }
 
         // Now, events folder must be outside AQUARIUM_HOME, since AQUARIUM_HOME can be wiped out for an upgrade but

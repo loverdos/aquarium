@@ -44,7 +44,7 @@ import gr.grnet.aquarium.util.justForSure
 import gr.grnet.aquarium.util.isRunningTests
 
 /**
- * Used to locate configuration files.
+ * Locates resources.
  *
  * This code was initially in [[gr.grnet.aquarium.Configurator]].
  *
