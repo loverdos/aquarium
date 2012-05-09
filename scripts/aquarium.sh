@@ -120,16 +120,16 @@ start() {
 
     CLASSPATH=$JBOOT_JAR
 
-    echo "Using initial CLASSPATH $CLASSPATH"
-    echo "Using AQUARIUM_HOME $AQUARIUM_HOME"
-    echo "Using MAIN $AQUARIUM_MAIN_CLASS"
-    echo "Using AQUARIUM_PROP $AQUARIUM_PROP"
-    echo "Using JAVA_OPTS $JAVA_OPTS"
+    echo "Using CLASSPATH=$CLASSPATH"
+    echo "Using AQUARIUM_HOME=$AQUARIUM_HOME"
+    echo "Using AQUARIUM_MAIN_CLASS=$AQUARIUM_MAIN_CLASS"
+    echo "Using AQUARIUM_PROP=$AQUARIUM_PROP"
+    echo "Using JAVA_OPTS=$JAVA_OPTS"
     echo "nohup java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $JBOOT_MAIN_CLASS -lib $AQUARIUM_LIB $AQUARIUM_MAIN_CLASS > $AQUARIUM_LOGFILE"
 
     nohup java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $JBOOT_MAIN_CLASS -lib $AQUARIUM_LIB $AQUARIUM_MAIN_CLASS > $AQUARIUM_LOGFILE 2>&1 &
     echo $! > $PID_FILE
-    echo "OK [pid = "`cat $PID_FILE`"]"
+    echo "PID="`cat $PID_FILE`
 }
 
 # Stops the application
