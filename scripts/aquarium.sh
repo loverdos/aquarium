@@ -160,29 +160,43 @@ status() {
     fi
 }
 
+ps_aquarium() {
+  ps -ef | grep java | grep gr.grnet.aquarium.Main
+}
+
+forcekill() {
+  local PIDS=`ps_aquarium | awk '{print $2}'`
+  for pid in $PIDS; do
+    echo Killing $pid
+    kill -9 $pid
+  done
+}
+
 # Main logic, a simple case to call functions
 case "$1" in
-    start)
-        start
-        ;;
-    stop)
-        stop
-        ;;
-    status)
-        status
-        ;;
-    restart)
-        stop
-        start
-        ;;
-    ps)
-        ps -ef | grep java | grep gr.grnet.aquarium.Main
-        ;;
-    *)
-        echo "Usage: $0 {start|stop|restart|status|ps}"
-        exit 1
-esac
-
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    status
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  ps)
+    ps_aquarium
+    ;;
+  forcekill)
+    forcekill
+    ;;
+  *)
+      echo "Usage: $0 {start|stop|restart|status|ps|forcekill}"
+      exit 1
+    esac
 exit 0
 
 # vim: set sta sts=4 shiftwidth=4 sw=4 et ai :
