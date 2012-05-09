@@ -74,7 +74,7 @@ PRGDIR=`dirname "$PRG"`
 
 export AQUARIUM_HOME
 
-PID=$AQUARIUM_HOME/bin/aquarium.pid
+PID_FILE=$AQUARIUM_HOME/bin/aquarium.pid
 
 AQUARIUM_LIB=$AQUARIUM_HOME/lib
 AQUARIUM_CONF=$AQUARIUM_HOME/conf
@@ -89,9 +89,9 @@ JBOOT_MAIN_CLASS=com.ckkloverdos.jbootstrap.Main
 
 # Check the application status
 check_status() {
-    if [ -f $PID ]
+    if [ -f $PID_FILE ]
     then
-        aqrunning=`ps -ef|grep java|grep aquarium`
+        aqrunning=`ps -ef|grep java|grep $AQUARIUM_MAIN_CLASS`
         if [ -z "$aqrunning" ]
         then
             return 0
@@ -118,7 +118,6 @@ start() {
 
     echo "Starting Aquarium"
 
-    # CLASSPATH=$AQUARIUM_CONF:$JBOOT_JAR
     CLASSPATH=$JBOOT_JAR
 
     echo "Using initial CLASSPATH $CLASSPATH"
@@ -129,8 +128,8 @@ start() {
     echo "nohup java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $JBOOT_MAIN_CLASS -lib $AQUARIUM_LIB $AQUARIUM_MAIN_CLASS > $AQUARIUM_LOGFILE"
 
     nohup java $JAVA_OPTS -cp $CLASSPATH $AQUARIUM_PROP $JBOOT_MAIN_CLASS -lib $AQUARIUM_LIB $AQUARIUM_MAIN_CLASS > $AQUARIUM_LOGFILE 2>&1 &
-    echo $! > $PID
-    echo "OK [pid = "`cat $PID`"]"
+    echo $! > $PID_FILE
+    echo "OK [pid = "`cat $PID_FILE`"]"
 }
 
 # Stops the application
@@ -144,8 +143,8 @@ stop() {
 
     # Kills the application process
     echo -n "Stopping Aquarium: "
-    kill `cat $PID`
-    rm $PID
+    kill `cat $PID_FILE`
+    rm $PID_FILE
     echo "OK"
 }
 
@@ -154,7 +153,7 @@ status() {
     check_status
     if [ $? -ne 0 ]
     then
-        echo "Aquarium is running (pid=$pid)"
+        echo "Aquarium is running (pid="`cat $PID_FILE`")"
     else
         echo "Aquarium is stopped"
     fi
