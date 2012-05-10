@@ -41,8 +41,8 @@ import scopt.OptionParser
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import java.lang.StringBuffer
 import gr.grnet.aquarium.logic.accounting.Policy
-import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
-import gr.grnet.aquarium.event.resource.{StdResourceEvent, ResourceEventModel}
+import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 
 /**
  *  Generates random resource events to use as input for testing and

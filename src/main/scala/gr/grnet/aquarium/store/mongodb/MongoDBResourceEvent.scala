@@ -35,16 +35,15 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import org.bson.types.ObjectId
 import com.mongodb.DBObject
 
 import gr.grnet.aquarium.util.makeString
-import gr.grnet.aquarium.event.resource.ResourceEventModel
 import gr.grnet.aquarium.converter.{StdConverters, JsonTextFormat}
 import com.mongodb.util.JSON
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
- * A [[gr.grnet.aquarium.event.resource.ResourceEventModel]] as represented for MongoDB.
+ * A [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]] as represented for MongoDB.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -89,6 +88,7 @@ object MongoDBResourceEvent {
 
   final def fromOther(rcEvent: ResourceEventModel, _id: String): MongoDBResourceEvent = {
     import rcEvent._
+
     MongoDBResourceEvent(
       id,
       occurredMillis,

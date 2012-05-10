@@ -48,11 +48,10 @@ import akka.config.Supervision.OneForOneStrategy
 import gr.grnet.aquarium.messaging.AkkaAMQP
 import akka.amqp._
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentSkipListSet}
-import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.{AquariumException, Configurator}
-import gr.grnet.aquarium.event.ExternalEventModel
 import gr.grnet.aquarium.actor.ReflectiveActor
+import gr.grnet.aquarium.event.model.ExternalEventModel
 
 /**
  * An abstract service that retrieves Aquarium events from a queue,

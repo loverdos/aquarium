@@ -36,18 +36,17 @@
 package gr.grnet.aquarium.computation
 
 import scala.collection.mutable
+import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, DSLResourcesMap}
-import gr.grnet.aquarium.store.{StoreProvider, PolicyStore}
+import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
-import gr.grnet.aquarium.event.NewWalletEntry
-import gr.grnet.aquarium.event.resource.ResourceEventModel
-import gr.grnet.aquarium.event.im.{IMEventModel, StdIMEvent}
-import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
+import gr.grnet.aquarium.store.{StoreProvider, PolicyStore}
 import gr.grnet.aquarium.computation.data._
-import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup}
+import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason}
+import gr.grnet.aquarium.event.model.NewWalletEntry
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  *

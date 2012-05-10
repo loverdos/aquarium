@@ -33,11 +33,12 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.event
+package gr.grnet.aquarium.event.model
 package resource
 
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.event.model.ExternalEventModel
 
 /**
  * The model of any resource event.

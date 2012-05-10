@@ -33,12 +33,10 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package event
+package gr.grnet.aquarium.event.model
 
 import java.util.Date
-import converter.{JsonTextFormat, StdConverters}
-import util.json.JsonSupport
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
 /**
  * A WalletEntry is a derived entity. Its data represent money/credits and are calculated based on
@@ -50,20 +48,20 @@ import util.json.JsonSupport
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 case class WalletEntry(
-    id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    occurredMillis: Long, // The time of oldest matching resource event
-    receivedMillis: Long, // The time the cost calculation was done
-    sourceEventIDs: List[String],      // The events that triggered this WalletEntry
-    value: Double,
-    reason: String,
-    userId: String,
-    resource: String,
-    instanceId: String,
-    finalized: Boolean,
-    eventVersion: String = "1.0",
-    userID: String = "",
-    details: Map[String, String] = Map()
-) extends ExternalEventModel {
+                        id: String, // The id at the client side (the sender) TODO: Rename to remoteId or something...
+                        occurredMillis: Long, // The time of oldest matching resource event
+                        receivedMillis: Long, // The time the cost calculation was done
+                        sourceEventIDs: List[String], // The events that triggered this WalletEntry
+                        value: Double,
+                        reason: String,
+                        userId: String,
+                        resource: String,
+                        instanceId: String,
+                        finalized: Boolean,
+                        eventVersion: String = "1.0",
+                        userID: String = "",
+                        details: Map[String, String] = Map()
+                        ) extends ExternalEventModel {
 
 
   assert(occurredMillis > 0)
@@ -71,7 +69,7 @@ case class WalletEntry(
   assert(!userId.isEmpty)
 
   def validate = true
-  
+
   def fromResourceEvent(rceId: String): Boolean = {
     sourceEventIDs contains rceId
   }
@@ -82,6 +80,7 @@ case class WalletEntry(
     this.copy(details = newDetails, occurredMillis = newOccurredMillis)
 
   def occurredDate = new Date(occurredMillis)
+
   def receivedDate = new Date(receivedMillis)
 }
 
@@ -90,7 +89,7 @@ object WalletEntry {
     StdConverters.AllConverters.convertEx[WalletEntry](JsonTextFormat(json))
   }
 
-  def zero = WalletEntry("", 1L, 1L, Nil,1,"","foo", "bar", "0", false)
+  def zero = WalletEntry("", 1L, 1L, Nil, 1, "", "foo", "bar", "0", false)
 
   object JsonNames {
     final val _id = "_id"
@@ -105,4 +104,5 @@ object WalletEntry {
     final val instanceId = "instanceId"
     final val finalized = "finalized"
   }
+
 }

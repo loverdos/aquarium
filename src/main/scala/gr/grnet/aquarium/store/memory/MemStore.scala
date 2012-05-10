@@ -44,10 +44,10 @@ import collection.mutable.ConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.uid.ConcurrentVMLocalUIDGenerator
 import gr.grnet.aquarium.Configurable
-import gr.grnet.aquarium.event.{WalletEntry, PolicyEntry}
-import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.event.model.{WalletEntry, PolicyEntry}
+import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 import org.bson.types.ObjectId
-import gr.grnet.aquarium.event.resource.{StdResourceEvent, ResourceEventModel}
+import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.computation.UserState
 
 /**

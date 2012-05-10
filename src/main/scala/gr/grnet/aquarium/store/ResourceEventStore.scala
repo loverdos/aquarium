@@ -35,9 +35,8 @@
 
 package gr.grnet.aquarium.store
 
-import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.AquariumException
-import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * An abstraction for Aquarium `ResourceEvent` stores.

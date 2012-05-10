@@ -40,7 +40,7 @@ import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.event.resource.{StdResourceEvent, ResourceEventModel}
+import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.actor.message.event.ProcessResourceEvent
 
 

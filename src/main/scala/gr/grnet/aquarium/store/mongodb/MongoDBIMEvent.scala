@@ -35,13 +35,11 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import org.bson.types.ObjectId
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.event.im.{IMEventModel, StdIMEvent}
-import gr.grnet.aquarium.event.ExternalEventModel
 import com.mongodb.DBObject
 import com.mongodb.util.JSON
+import gr.grnet.aquarium.event.model.im.IMEventModel
 
 
 /**

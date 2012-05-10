@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * Keeps the latest resource event per resource instance.

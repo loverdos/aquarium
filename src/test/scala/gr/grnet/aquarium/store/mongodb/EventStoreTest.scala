@@ -40,10 +40,10 @@ import org.junit.Assume._
 import gr.grnet.aquarium.Configurator._
 import gr.grnet.aquarium.util.{RandomEventGenerator, TestMethods}
 import collection.mutable.ArrayBuffer
-import org.junit.{After, Test, Before}
+import org.junit.{After, Test}
 import gr.grnet.aquarium.{StoreConfigurator, LogicTestsAssumptions}
 import gr.grnet.aquarium.store.memory.MemStore
-import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * @author Georgios Gousios <gousiosg@gmail.com>

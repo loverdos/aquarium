@@ -43,10 +43,10 @@ import java.util.Date
 import com.ckkloverdos.maybe.{NoVal, Maybe, Failed, Just}
 import gr.grnet.aquarium.util.{ContextualLogger, CryptoUtils, Loggable}
 import gr.grnet.aquarium.store.PolicyStore
-import gr.grnet.aquarium.event.{WalletEntry}
+import gr.grnet.aquarium.event.model.WalletEntry
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.event.resource.ResourceEventModel
 import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * A timeslot together with the algorithm and unit price that apply for this particular timeslot.

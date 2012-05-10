@@ -33,36 +33,49 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.event
-
-import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.util.makeBytes
-import gr.grnet.aquarium.util.xml.XmlSupport
+package gr.grnet.aquarium.event.model
 
 /**
- * The base model for all events coming from external systems.
+ * Basic properties for all events.
+ * An event represents some state change, where state is specific to the use-case.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait ExternalEventModel extends EventModel with JsonSupport with XmlSupport {
+trait EventModel {
   /**
-   * When it was received by Aquarium
+   * The unique event id. The responsibility for the id generation is to the event generator.
    */
-  def receivedMillis: Long
+  def id: String
 
-  def userID: String
+  /**
+   * The Unix time of the state change occurrence that this event represents.
+   */
+  def occurredMillis: Long
 
+  /**
+   * The ID given to this event if/when persisted to a store.
+   * The exact type of the id is store-specific.
+   */
+  def storeID: Option[AnyRef] = None
 
-  def toBytes: Array[Byte] = makeBytes(toJsonString)
+  def eventVersion: String
 
-  def withReceivedMillis(newReceivedMillis: Long): ExternalEventModel
+  /**
+   * An extension point that provides even more properties.
+   */
+  def details: Map[String, String]
+
+  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long): EventModel
 }
 
-object ExternalEventModel {
-  trait NamesT extends EventModel.NamesT {
-    final val receivedMillis = "receivedMillis"
-    final val userID = "userID"
+object EventModel {
+  trait NamesT {
+    final val id = "id"
+    final val occurredMillis = "occurredMillis"
+    final val storeID = "storeID"
+    final val eventVersion = "eventVersion"
+    final val details = "details"
   }
 
   object Names extends NamesT

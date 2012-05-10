@@ -35,11 +35,11 @@
 
 package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * Keeps the implicit OFF events when a billing period ends.
- * This is normally recorded in the [[gr.grnet.aquarium.user.UserState]].
+ * This is normally recorded in the [[gr.grnet.aquarium.computation.UserState]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

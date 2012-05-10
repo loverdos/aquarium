@@ -41,9 +41,9 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import java.util.Date
 import junit.framework.Assert._
 import gr.grnet.aquarium.logic.accounting.{Accounting}
-import gr.grnet.aquarium.event.{WalletEntry}
+import gr.grnet.aquarium.event.model.WalletEntry
 import com.ckkloverdos.maybe.Just
-import gr.grnet.aquarium.event.resource.StdResourceEvent
+import gr.grnet.aquarium.event.model.resource.StdResourceEvent
 
 /**
  * Tests for the methods that do accounting

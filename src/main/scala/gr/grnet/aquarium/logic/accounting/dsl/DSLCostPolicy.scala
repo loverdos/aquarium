@@ -37,7 +37,7 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
 import gr.grnet.aquarium.AquariumException
-import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * A cost policy indicates how charging for a resource will be done
@@ -105,14 +105,14 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   }
 
   /**
-   * Given the old amount of a resource instance (see [[gr.grnet.aquarium.user.ResourceInstanceSnapshot]]) and the
+   * Given the old amount of a resource instance (see [[gr.grnet.aquarium.computation.data.ResourceInstanceSnapshot]]) and the
    * value arriving in a new resource event, compute the new instance amount.
    *
    * Note that the `oldAmount` does not make sense for all types of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]],
    * in which case it is ignored.
    *
    * @param oldAmount the old accumulating amount
-   * @param newEventValue the value contained in a newly arrived [[gr.grnet.aquarium.event.resource.ResourceEventModel]]
+   * @param newEventValue the value contained in a newly arrived [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]
    * @return
    */
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double

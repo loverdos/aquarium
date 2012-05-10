@@ -35,16 +35,16 @@
 
 package gr.grnet.aquarium.computation
 
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-import gr.grnet.aquarium.event.{NewWalletEntry, WalletEntry}
 import org.bson.types.ObjectId
+
+import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.event.model.{WalletEntry, NewWalletEntry}
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
-import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup, IMEventArrival}
-import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.computation.data.{AgreementSnapshot, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementsSnapshot, CreditSnapshot, LatestResourceEventsSnapshot, ImplicitlyIssuedResourceEventsSnapshot, IMStateSnapshot}
-import gr.grnet.aquarium.event.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 
 /**
  * A comprehensive representation of the User's state.

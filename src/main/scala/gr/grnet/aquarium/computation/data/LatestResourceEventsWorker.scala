@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.computation.data
 
 import gr.grnet.aquarium.util.findAndRemoveFromMap
-import gr.grnet.aquarium.event.resource.ResourceEventModel
-import gr.grnet.aquarium.event.resource.ResourceEventModel.FullMutableResourceTypeMap
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel.FullMutableResourceTypeMap
 
 /**
  * This is the mutable cousin of [[gr.grnet.aquarium.computation.data.LatestResourceEventsSnapshot]].

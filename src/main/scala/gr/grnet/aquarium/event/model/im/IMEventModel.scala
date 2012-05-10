@@ -33,59 +33,49 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.event.im
-
-import gr.grnet.aquarium.util.makeString
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-
+package gr.grnet.aquarium.event.model
+package im
 
 /**
+ * The model of any event sent from the `Identity Management` (IM) external system.
+ *
+ * By definition, this is the model agreed upon between Aquarium and IM.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdIMEvent(
-    id: String, // The id at the sender side
-    occurredMillis: Long, // When it occurred at the sender side
-    receivedMillis: Long, // When it was received by Aquarium
-    userID: String,
-    clientID: String,
-    isActive: Boolean,
-    role: String,
-    eventVersion: String,
-    eventType: String,
-    details: Map[String, String])
-extends IMEventModel {
-  def withReceivedMillis(newReceivedMillis: Long) =
-    this.copy(receivedMillis = newReceivedMillis)
+trait IMEventModel extends ExternalEventModel {
+  def clientID: String
 
-  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
-    this.copy(details = newDetails, occurredMillis = newOccurredMillis)
+  def isActive: Boolean
+
+  def role: String
+
+  def eventType: String
+
+  def isStateActive = isActive
+
+  def isStateSuspended = !isActive
+
+  def isCreateUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.create)
+
+  def isModifyUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.modify)
 }
 
-object StdIMEvent {
-  final def fromJsonString(json: String): StdIMEvent = {
-    StdConverters.AllConverters.convertEx[StdIMEvent](JsonTextFormat(json))
+object IMEventModel {
+  trait NamesT extends ExternalEventModel.NamesT {
+    final val clientID = "clientID"
+    final val isActive = "isActive"
+    final val role = "role"
+    final val eventType = "eventType"
   }
 
-  final def fromJsonBytes(jsonBytes: Array[Byte]): StdIMEvent = {
-    fromJsonString(makeString(jsonBytes))
+  object Names extends NamesT
+
+  trait EventTypeNamesT {
+    final val create = "create"
+    final val modify = "modify"
   }
 
-  final def fromOther(event: IMEventModel): StdIMEvent = {
-    if(event.isInstanceOf[StdIMEvent]) event.asInstanceOf[StdIMEvent]
-    else new StdIMEvent(
-      event.id,
-      event.occurredMillis,
-      event.receivedMillis,
-      event.userID,
-      event.clientID,
-      event.isActive,
-      event.role,
-      event.eventVersion,
-      event.eventType,
-      event.details
-    )
-  }
-
+  object EventTypeNames extends EventTypeNamesT
 }

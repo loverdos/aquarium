@@ -36,15 +36,15 @@
 package gr.grnet.aquarium.computation.reason
 
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.im.IMEventModel
+import gr.grnet.aquarium.event.model.im.IMEventModel
 
 sealed trait UserStateChangeReason {
   /**
-      * Return `true` if the result of the calculation should be stored back to the
-      * [[gr.grnet.aquarium.store.UserStateStore]].
-      *
-      */
-     def shouldStoreUserState: Boolean
+    * Return `true` if the result of the calculation should be stored back to the
+    * [[gr.grnet.aquarium.store.UserStateStore]].
+    *
+    */
+  def shouldStoreUserState: Boolean
 
   def shouldStoreCalculatedWalletEntries: Boolean
 

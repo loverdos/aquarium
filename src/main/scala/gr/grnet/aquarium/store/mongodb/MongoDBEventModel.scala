@@ -35,8 +35,7 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import org.bson.types.ObjectId
-import gr.grnet.aquarium.event.ExternalEventModel
+import gr.grnet.aquarium.event.model.ExternalEventModel
 
 /**
  *

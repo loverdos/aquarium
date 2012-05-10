@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.event.im.IMEventModel
+import gr.grnet.aquarium.event.model.im.IMEventModel
 
 /**
  *

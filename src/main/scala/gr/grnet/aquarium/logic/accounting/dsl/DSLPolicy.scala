@@ -37,7 +37,7 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import gr.grnet.aquarium.util.CryptoUtils
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.event.PolicyEntry
+import gr.grnet.aquarium.event.model.PolicyEntry
 
 /**
  * Root object for the Aquarium policy configuration tree.

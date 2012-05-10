@@ -41,7 +41,6 @@ import gr.grnet.aquarium.actor._
 
 import gr.grnet.aquarium.util.shortClassNameOf
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
-import gr.grnet.aquarium.event.im.IMEventModel
 import akka.config.Supervision.Temporary
 import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
@@ -49,6 +48,7 @@ import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEve
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.computation.data.IMStateSnapshot
 import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.event.model.im.IMEventModel
 
 /**
  *

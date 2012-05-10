@@ -35,9 +35,9 @@
 
 package gr.grnet.aquarium.store
 
-import gr.grnet.aquarium.event.im.IMEventModel
 import gr.grnet.aquarium.util.makeString
-import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.im.IMEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * Store for external user events

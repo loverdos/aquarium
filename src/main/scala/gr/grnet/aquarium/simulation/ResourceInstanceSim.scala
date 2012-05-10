@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.event.resource.StdResourceEvent
+import gr.grnet.aquarium.event.model.resource.StdResourceEvent
 
 
 /**

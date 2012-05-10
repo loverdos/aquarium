@@ -38,8 +38,8 @@ package gr.grnet.aquarium.store
 import scala.collection.immutable
 import collection.immutable.SortedMap
 import gr.grnet.aquarium.logic.accounting.dsl.{DSL, DSLPolicy, Timeslot}
-import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
-import gr.grnet.aquarium.event.PolicyEntry
+import com.ckkloverdos.maybe.Maybe
+import gr.grnet.aquarium.event.model.PolicyEntry
 
 /**
  * A store for serialized policy entries.

@@ -33,14 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package event
+package gr.grnet.aquarium.event.model
 
 import gr.grnet.aquarium.logic.accounting.Chargeslot
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLResource}
-import converter.{JsonTextFormat, StdConverters}
 import resource.ResourceEventModel
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
 /**
  * The following equation must hold: `newTotalCredits = oldTotalCredits + entryCredits`.
@@ -72,9 +71,13 @@ case class NewWalletEntry(userId: String,
                           isSynthetic: Boolean) {
 
   def currentResourceEvent = resourceEvents.head
+
   def resource = currentResourceEvent.resource
+
   def instanceId = currentResourceEvent.instanceID
+
   def chargslotCount = chargeslots.length
+
   def isOutOfSync = currentResourceEvent.isOutOfSyncForBillingMonth(yearOfBillingMonth, billingMonth)
 
   def toDebugString = "%s%s(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(
@@ -113,4 +116,5 @@ object NewWalletEntry {
     final val chargeslots = "chargeslots"
     final val resourceDef = "resourceDef"
   }
+
 }

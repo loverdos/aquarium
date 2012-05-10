@@ -33,55 +33,65 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package event
+package gr.grnet.aquarium.event.model
+package resource
 
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import java.util.Date
-import converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.util.makeString
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+
 
 /**
- * Store entry for serialized policy data.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class PolicyEntry(
-    id: String,           //SHA-1 of the provided policyYaml string
-    occurredMillis: Long, //Time this event was stored
-    receivedMillis: Long, //Does not make sense for local events -> not used
-    policyYAML: String,                //The serialized policy
-    validFrom: Long,                   //The timestamp since when the policy is valid
-    validTo: Long,                      //The timestamp until when the policy is valid
-    eventVersion: String = "1.0",
-    userID: String = "",
-    details: Map[String, String] = Map()
- ) extends ExternalEventModel {
 
-  assert(if(validTo != -1) validTo > validFrom else validFrom > 0)
-
-  def validate = true
-
-  def withReceivedMillis(millis: Long) = copy(receivedMillis = millis)
+case class StdResourceEvent(
+    id: String,
+    occurredMillis: Long,
+    receivedMillis: Long,
+    userID: String,
+    clientID: String,
+    resource: String,
+    instanceID: String,
+    value: Double,
+    eventVersion: String,
+    details: Map[String, String]
+) extends ResourceEventModel {
+  def withReceivedMillis(newReceivedMillis: Long) =
+    this.copy(receivedMillis = newReceivedMillis)
 
   def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
     this.copy(details = newDetails, occurredMillis = newOccurredMillis)
 
-  def fromToTimeslot = Timeslot(new Date(validFrom), new Date(validTo))
+  def withDetailsAndValue(newDetails: Map[String, String], newValue: Double, newOccurredMillis: Long) =
+    this.copy(details = newDetails, value = newValue, occurredMillis = newOccurredMillis)
 }
 
-object PolicyEntry {
-
-  def fromJson(json: String): PolicyEntry = {
-    StdConverters.AllConverters.convertEx[PolicyEntry](JsonTextFormat(json))
+object StdResourceEvent {
+  final def fromJsonString(json: String): StdResourceEvent = {
+    StdConverters.AllConverters.convertEx[StdResourceEvent](JsonTextFormat(json))
   }
 
-  object JsonNames {
-    final val _id = "_id"
-    final val id = "id"
-    final val occurredMillis = "occurredMillis"
-    final val receivedMillis = "receivedMillis"
-    final val policyYAML = "policyYAML"
-    final val validFrom = "validFrom"
-    final val validTo = "validTo"
+  final def fromJsonBytes(jsonBytes: Array[Byte]): StdResourceEvent = {
+    fromJsonString(makeString(jsonBytes))
   }
+
+  final def fromOther(event: ResourceEventModel): StdResourceEvent = {
+    if(event.isInstanceOf[StdResourceEvent]) event.asInstanceOf[StdResourceEvent]
+    else {
+      import event._
+      new StdResourceEvent(
+        id,
+        occurredMillis,
+        receivedMillis,
+        userID,
+        clientID,
+        resource,
+        instanceID,
+        value,
+        event.eventVersion,
+        event.details
+      )
+    }
+}
 }

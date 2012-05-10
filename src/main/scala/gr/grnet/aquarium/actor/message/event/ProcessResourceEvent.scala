@@ -35,8 +35,8 @@
 
 package gr.grnet.aquarium.actor.message.event
 
-import gr.grnet.aquarium.event.resource.ResourceEventModel
 import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, ActorMessage}
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * [[gr.grnet.aquarium.actor.service.router.RouterActor]] message

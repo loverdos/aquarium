@@ -36,10 +36,9 @@
 package gr.grnet.aquarium.simulation
 
 import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicyValues
-import gr.grnet.aquarium.store.RecordID
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.event.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * A simulator for an instance of the standard `vmtime` resource.

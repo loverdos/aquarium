@@ -33,33 +33,37 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
-package event
+package gr.grnet.aquarium.event.model
 
-
-import util.xml.XmlSupport
-import util.Loggable
+import gr.grnet.aquarium.util.makeBytes
+import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.util.xml.XmlSupport
 
 /**
- * Generic base class for all Aquarium events
+ * The base model for all events coming from external systems.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-abstract class ExternalEventSkeleton(
-    _id: String,           // The id at the client side (the sender) TODO: Rename to remoteId or something...
-    _occurredMillis: Long, // When it occurred at client side (the sender)
-    _receivedMillis: Long, // When it was received by Aquarium
-    _eventVersion: String
-)
-  extends ExternalEventModel
-  with    XmlSupport
-  with    Loggable {
 
-  def id = _id
-  def occurredMillis = _occurredMillis
-  def receivedMillis = _receivedMillis
-  def eventVersion = _eventVersion
+trait ExternalEventModel extends EventModel with JsonSupport with XmlSupport {
+  /**
+   * When it was received by Aquarium
+   */
+  def receivedMillis: Long
 
-  def details: Map[String, String] = Map()
+  def userID: String
+
+
+  def toBytes: Array[Byte] = makeBytes(toJsonString)
+
+  def withReceivedMillis(newReceivedMillis: Long): ExternalEventModel
+}
+
+object ExternalEventModel {
+  trait NamesT extends EventModel.NamesT {
+    final val receivedMillis = "receivedMillis"
+    final val userID = "userID"
+  }
+
+  object Names extends NamesT
 }
