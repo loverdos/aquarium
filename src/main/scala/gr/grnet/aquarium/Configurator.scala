@@ -50,7 +50,7 @@ import gr.grnet.aquarium.store._
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class Configurator(val props: Props) extends Loggable {
+final class Configurator(val props: Props) extends Loggable {
   import Configurator.Keys
 
   /**
@@ -462,11 +462,6 @@ object Configurator {
      * Default is 8080.
      */
     final val rest_port = "rest.port"
-
-    /*
-     * Provider for persistence services
-     */
-    final val persistence_provider = "persistence.provider"
 
     /**
      * Hostname for the persistence service
