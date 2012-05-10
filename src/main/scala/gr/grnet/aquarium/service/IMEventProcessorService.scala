@@ -37,13 +37,14 @@ package gr.grnet.aquarium.service
 
 
 import gr.grnet.aquarium.actor.RouterRole
-import gr.grnet.aquarium.Configurator.Keys
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.makeString
 import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.Configurator.Keys
+import gr.grnet.aquarium.event.amqp.AMQPService
 
 /**
  * An event processor service for user events coming from the IM system
@@ -104,7 +105,7 @@ class IMEventProcessorService extends EventProcessorService[IMEventModel] {
   def start() {
     logStarting()
     val (ms0, ms1, _) = TimeHelpers.timed {
-      declareQueues(Keys.amqp_userevents_queues)
+      declareQueues(AMQPService.AMQPKeys.amqp_userevents_queues)
     }
     logStarted(ms0, ms1)
   }

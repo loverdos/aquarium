@@ -41,6 +41,7 @@ import akka.amqp.AMQP._
 import gr.grnet.aquarium.Configurator
 import com.rabbitmq.client.Address
 import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.event.amqp.AMQPService.{AMQPKeys ⇒ Keys}
 
 /**
  * Functionality for working with queues.
@@ -51,7 +52,7 @@ trait AkkaAMQP extends Loggable {
 
   class AMQPConnection {
     private[messaging] lazy val connection = {
-      import Configurator.Keys
+
       val mc = Configurator.MasterConfigurator
 
       val servers = mc.get(Keys.amqp_servers)
@@ -74,12 +75,12 @@ trait AkkaAMQP extends Loggable {
   }
 
   lazy val im_exchanges =
-    Configurator.MasterConfigurator.get(Configurator.Keys.amqp_userevents_queues).split(';').map(e => e.split(':')(0))
+    Configurator.MasterConfigurator.get(Keys.amqp_userevents_queues).split(';').map(e => e.split(':')(0))
 
-  lazy val aquarium_exchnage = Configurator.MasterConfigurator.get(Configurator.Keys.amqp_exchange)
+  lazy val aquarium_exchnage = Configurator.MasterConfigurator.get(Keys.amqp_exchange)
 
   lazy val resevent_exchanges =
-    Configurator.MasterConfigurator.get(Configurator.Keys.amqp_resevents_queues).split(';').map(e => e.split(':')(0))
+    Configurator.MasterConfigurator.get(Keys.amqp_resevents_queues).split(';').map(e => e.split(':')(0))
 
   //Queues and exchnages are by default durable and persistent
   val decl = ActiveDeclaration(durable = true, autoDelete = false)

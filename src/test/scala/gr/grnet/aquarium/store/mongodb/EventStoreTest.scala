@@ -110,7 +110,7 @@ with RandomEventGenerator with StoreConfigurator {
     val a = getMongo
 
     val col = a.mongo.getDB(
-      MasterConfigurator.get(Keys.persistence_db)
+      MasterConfigurator.get(MongoDBStoreProvider.MongoDBKeys.dbschema)
     ).getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
 
     //val res = col.find

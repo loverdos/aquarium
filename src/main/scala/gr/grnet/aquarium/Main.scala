@@ -36,13 +36,8 @@
 package gr.grnet.aquarium
 
 import com.ckkloverdos.sys.SysProp
-import org.slf4j.LoggerFactory
-import ch.qos.logback.classic.LoggerContext
-import ch.qos.logback.classic.joran.JoranConfigurator
-import ch.qos.logback.core.util.StatusPrinter
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.LazyLoggable
-import com.ckkloverdos.maybe.{Failed, Just}
 
 /**
  * Main method for Aquarium

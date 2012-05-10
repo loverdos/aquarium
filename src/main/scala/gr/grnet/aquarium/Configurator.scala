@@ -44,6 +44,7 @@ import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConver
 import gr.grnet.aquarium.service._
 import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
 import gr.grnet.aquarium.store._
+import gr.grnet.aquarium.event.amqp.AMQPService
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -204,7 +205,13 @@ final class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _imEventProc = new IMEventProcessorService
 
-  private[this] lazy val _lifecycleServices = List(AkkaService, _restService, _actorProvider, _resEventProc, _imEventProc)
+  private[this] lazy val _lifecycleServices = List(
+    AkkaService,
+    _restService,
+    _actorProvider,
+    _resEventProc,
+    new AMQPService,
+    _imEventProc)
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 
@@ -414,54 +421,6 @@ object Configurator {
      * The terminology is borrowed from the (also borrowed) Apache-lucene-solr-based implementation.
      */
     final val user_actors_lru_upper_mark = "user.actors.LRU.upper.mark"
-
-    /**
-     * Comma separated list of amqp servers running in active-active
-     * configuration.
-     */
-    final val amqp_servers = "amqp.servers"
-
-    /**
-     * Comma separated list of amqp servers running in active-active
-     * configuration.
-     */
-    final val amqp_port = "amqp.port"
-
-    /**
-     * User name for connecting with the AMQP server
-     */
-    final val amqp_username = "amqp.username"
-
-    /**
-     * Passwd for connecting with the AMQP server
-     */
-    final val amqp_password = "amqp.passwd"
-
-    /**
-     * Virtual host on the AMQP server
-     */
-    final val amqp_vhost = "amqp.vhost"
-
-    /**
-     * Comma separated list of exchanges known to aquarium
-     */
-    final val amqp_exchange = "amqp.exchange"
-
-    /**
-     * Queues for retrieving resource events from. Multiple queues can be
-     * declared, seperated by semicolon
-     *
-     * Format is `exchange:routing.key:queue-name;<exchnage2:routing.key2:queue-name>;...`
-     */
-    final val amqp_resevents_queues = "amqp.resevents.queues"
-
-    /**
-     * Queues for retrieving user events from. Multiple queues can be
-     * declared, seperated by semicolon
-     *
-     * Format is `exchange:routing.key:queue-name;<exchnage2:routing.key2:queue-name>;...`
-     */
-    final val amqp_userevents_queues="amqp.userevents.queues"
 
     /**
      * REST service listening port.

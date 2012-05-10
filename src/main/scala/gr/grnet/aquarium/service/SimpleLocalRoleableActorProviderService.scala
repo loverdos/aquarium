@@ -54,6 +54,8 @@ class SimpleLocalRoleableActorProviderService extends RoleableActorProviderServi
   private[this] val actorCache = new ConcurrentHashMap[ActorRole, ActorRef]
   private[this] var _props: Props = _
 
+  def propertyPrefix = None
+
   def configure(props: Props): Unit = {
     this._props = props
     logger.debug("Configured with props")
