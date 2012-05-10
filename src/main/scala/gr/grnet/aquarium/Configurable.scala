@@ -38,9 +38,17 @@ package gr.grnet.aquarium
 import com.ckkloverdos.props.Props
 
 /**
- * 
+ * Something that needs configuration properties.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 trait Configurable {
+  def propertyPrefix: Option[String]
+
+  /**
+   * Configure this instance with the provided properties.
+   *
+   * If `propertyPrefix` is defined, then `props` contains only keys that start with the given prefix.
+   */
   def configure(props: Props): Unit
 }

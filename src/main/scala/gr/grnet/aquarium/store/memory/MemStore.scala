@@ -77,6 +77,9 @@ class MemStore extends UserStateStore
   private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
   private[this] val imEventById: ConcurrentMap[String, MemIMEvent] = new ConcurrentHashMap[String, MemIMEvent]()
 
+
+  def propertyPrefix = None
+
   def configure(props: Props) = {
   }
 

@@ -57,25 +57,32 @@ final class Configurator(val props: Props) extends Loggable {
    * Reflectively provide a new instance of a class and configure it appropriately.
    */
   private[this] def newInstance[C : Manifest](className: String): C = {
-    val instanceM = Maybe(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
+    val instanceM = MaybeEither(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
     instanceM match {
       case Just(instance) ⇒ instance match {
         case configurable: Configurable ⇒
-          Maybe(configurable configure props) match {
+          val localProps = configurable.propertyPrefix match {
+            case Some(prefix) ⇒
+              props.subsetForKeyPrefix(prefix)
+
+            case None ⇒
+              props
+          }
+
+          MaybeEither(configurable configure localProps) match {
             case Just(_) ⇒
               instance
+
             case Failed(e) ⇒
               throw new AquariumInternalError("Could not configure instance of %s".format(className), e)
-            case NoVal ⇒
-              throw new AquariumInternalError("Could not configure instance of %s".format(className))
           }
+
         case _ ⇒
           instance
       }
+
       case Failed(e) ⇒
         throw new AquariumInternalError("Could not instantiate %s".format(className), e)
-      case NoVal ⇒
-        throw new AquariumInternalError("Could not instantiate %s".format(className))
     }
 
   }
@@ -462,36 +469,6 @@ object Configurator {
      * Default is 8080.
      */
     final val rest_port = "rest.port"
-
-    /**
-     * Hostname for the persistence service
-     */
-    final val persistence_host = "persistence.host"
-
-    /**
-     * Username for connecting to the persistence service
-     */
-    final val persistence_username = "persistence.username"
-
-    /**
-     *  Password for connecting to the persistence service
-     */
-    final val persistence_password = "persistence.password"
-
-    /**
-     *  Password for connecting to the persistence service
-     */
-    final val persistence_port = "persistence.port"
-
-    /**
-     *  The DB schema to use
-     */
-    final val persistence_db = "persistence.db"
-
-    /**
-     * Maximum number of open connections to MongoDB
-     */
-    final val mongo_connection_pool_size = "mongo.connection.pool.size"
 
     /**
      * Location of the Aquarium accounting policy config file

@@ -36,13 +36,12 @@
 package gr.grnet.aquarium.store.mongodb
 
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.Configurator.Keys
 import com.mongodb.{MongoException, Mongo, MongoOptions, ServerAddress}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.{AquariumException, Configurable}
 
 /**
- * 
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
@@ -52,18 +51,22 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   private[this] var _username: String = _
   private[this] var _password: String = _
 
+  def propertyPrefix = Some(MongoDBStoreProvider.MongoDBKeys.Prefix)
+
   def configure(props: Props) = {
-    this._database = props.getEx(Keys.persistence_db)
-    this._username = props.getEx(Keys.persistence_username)
-    this._password = props.getEx(Keys.persistence_password)
-    val host = props.getEx(Keys.persistence_host)
-    val port = props.getEx(Keys.persistence_port).toInt
+    import MongoDBStoreProvider.MongoDBKeys
+
+    this._database = props.getEx(MongoDBKeys.dbschema)
+    this._username = props.getEx(MongoDBKeys.username)
+    this._password = props.getEx(MongoDBKeys.password)
+    val host = props.getEx(MongoDBKeys.host)
+    val port = props.getEx(MongoDBKeys.port).toInt
 
     try {
       val addr = new ServerAddress(host, port)
 
       val opt = new MongoOptions()
-      opt.connectionsPerHost = props.getEx(Keys.mongo_connection_pool_size).toInt
+      opt.connectionsPerHost = props.getEx(MongoDBKeys.connection_pool_size).toInt
       opt.threadsAllowedToBlockForConnectionMultiplier = 8
 
       this._mongo = new Mongo(addr, opt)
@@ -78,4 +81,55 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   def walletEntryStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
   def imEventStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
   def policyStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
+}
+
+/**
+ * Provides configuration keys.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
+ */
+object MongoDBStoreProvider {
+
+  /**
+   * Note that these keys must be prefixed by `mongodb` in the configuration file
+   *
+   * @author Christos KK Loverdos <loverdos@gmail.com>
+   */
+  object MongoDBKeys {
+    final val Prefix = "mongodb"
+    final val PrefixAndDot = Prefix + "."
+
+    private[this] def p(name: String) = PrefixAndDot + name
+
+    /**
+     * Hostname for the MongoDB
+     */
+    final val host = p("host")
+
+    /**
+     * Username for connecting to the MongoDB
+     */
+    final val username = p("username")
+
+    /**
+     *  Password for connecting to the MongoDB
+     */
+    final val password = p("password")
+
+    /**
+     *  Password for connecting to the MongoDB
+     */
+    final val port = p("port")
+
+    /**
+     *  The DB schema to use
+     */
+    final val dbschema = p("dbschema")
+
+    /**
+     * Maximum number of open connections to MongoDB
+     */
+    final val connection_pool_size = p("connection.pool.size")
+
+  }
 }
