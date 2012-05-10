@@ -209,9 +209,10 @@ final class Configurator(val props: Props) extends Loggable {
     AkkaService,
     _restService,
     _actorProvider,
+    newInstance[AMQPService](classOf[AMQPService].getName)
+    )/*,
     _resEventProc,
-    new AMQPService,
-    _imEventProc)
+    _imEventProc)*/
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 

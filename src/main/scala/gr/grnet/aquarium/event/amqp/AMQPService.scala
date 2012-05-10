@@ -36,9 +36,11 @@
 package gr.grnet.aquarium.event.amqp
 
 import gr.grnet.aquarium.Configurable
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.event.amqp.AMQPService.AMQPKeys
+import gr.grnet.aquarium.util.{ReflectHelpers, Loggable, Lifecycle}
+import com.rabbitmq.client.{ConnectionFactory, Address}
 
 /**
  *
@@ -46,7 +48,14 @@ import gr.grnet.aquarium.util.date.TimeHelpers
  */
 
 class AMQPService extends Loggable with Lifecycle with Configurable {
-  def propertyPrefix = Some(AMQPService.AMQPKeys.Prefix)
+  private[this] val props: Props = Props()
+  private[this] val amqpAddresses: Array[Address] = Array()
+  private[this] val amqpUsername = ""
+  private[this] val amqpPassword = ""
+  private[this] val amqpVHost    = ""
+  private[this] val amqpCF = new ConnectionFactory()
+
+  def propertyPrefix = Some(AMQPKeys.Prefix)
 
   /**
    * Configure this instance with the provided properties.
@@ -54,16 +63,52 @@ class AMQPService extends Loggable with Lifecycle with Configurable {
    * If `propertyPrefix` is defined, then `props` contains only keys that start with the given prefix.
    */
   def configure(props: Props)  = {
+    ReflectHelpers.setField(this, "props", props)
+    doConfigure()
+    logger.info("Configured with {}", this.props)
+  }
 
+  private[this] def doConfigure(): Unit = {
+    val servers = props.getTrimmedList(AMQPKeys.servers)
+    val port    = props.getIntEx(AMQPKeys.port)
+    val amqpAddresses = servers.map(new Address(_, port)).toArray
+    ReflectHelpers.setField(this, "amqpAddresses", amqpAddresses)
+
+    val amqpUsername = props.getEx(AMQPKeys.username)
+    ReflectHelpers.setField(this, "amqpUsername", amqpUsername)
+
+    val amqpPassword = props.getEx(AMQPKeys.password)
+    ReflectHelpers.setField(this, "amqpPassword", amqpPassword)
+
+    val amqpVHost = props.getEx(AMQPKeys.vhost)
+    ReflectHelpers.setField(this, "amqpVHost", amqpVHost)
+
+    val amqpExchange = props.getEx(AMQPKeys.exchange)
+
+    // (e)xchange:(r)outing key:(q)
+    val erq_res = props.getTrimmedList(AMQPKeys.resevents_queues)
+    val resConsumerConfs = for(erq ← erq_res) yield {
+      val (exchange, routingKey, queue) = erq.split(':')
+      ConsumerConf(exchange, routingKey, queue)
+    }
+    val erq_im = props.getTrimmedList(AMQPKeys.userevents_queues)
+    val imConsumerConfs = for(erq ← erq_im) yield {
+      val (exchange, routingKey, queue) = erq.split(':')
+      ConsumerConf(exchange, routingKey, queue)
+    }
   }
 
   def start() = {
     logStarted(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
+    System.exit(1)
   }
 
   def stop() = {
     logStopped(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
   }
+
+  case class ConsumerConf(exchange: String, routingKey: String, queue: String)
+  case class ProducerConf(exchange: String, routingKey: String)
 }
 
 object AMQPService {
