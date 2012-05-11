@@ -68,8 +68,12 @@ case class StdResourceEvent(
 }
 
 object StdResourceEvent {
+  final def fromJsonTextFormat(jsonTextFormat: JsonTextFormat): StdResourceEvent = {
+    StdConverters.AllConverters.convertEx[StdResourceEvent](jsonTextFormat)
+  }
+
   final def fromJsonString(json: String): StdResourceEvent = {
-    StdConverters.AllConverters.convertEx[StdResourceEvent](JsonTextFormat(json))
+    fromJsonTextFormat(JsonTextFormat(json))
   }
 
   final def fromJsonBytes(jsonBytes: Array[Byte]): StdResourceEvent = {

@@ -45,7 +45,9 @@ import gr.grnet.aquarium.connector.rabbitmq.conf.{TopicExchange, RabbitMQConsume
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConfKeys
 import com.ckkloverdos.key.{ArrayKey, IntKey, TypedKeySkeleton, BooleanKey, StringKey}
 import com.ckkloverdos.env.{EnvKey, Env}
-import gr.grnet.aquarium.converter.StdConverters
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
+import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 
 /**
  *
@@ -77,6 +79,18 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   }
 
   private[this] def doConfigure(): Unit = {
+    val jsonParser: (Array[Byte] ⇒ JsonTextFormat) = { payload ⇒
+      StdConverters.AllConverters.convertEx[JsonTextFormat](payload)
+    }
+
+    val rcEventParser: (JsonTextFormat ⇒ ResourceEventModel) = { jsonTextFormat ⇒
+      StdResourceEvent.fromJsonTextFormat(jsonTextFormat)
+    }
+
+    val imEventParser: (JsonTextFormat ⇒ IMEventModel) = { jsonTextFormat ⇒
+      StdIMEvent.fromJsonTextFormat(jsonTextFormat)
+    }
+
     // (e)xchange:(r)outing key:(q)
     val all_rc_ERQs = props.getTrimmedList(RabbitMQConfKeys.rcevents_queues)
     val rcConsumerConfs = for(oneERQ ← all_rc_ERQs) yield {
@@ -87,8 +101,6 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
     val imConsumerConfs = for(oneERQ ← all_im_ERQs) yield {
       RabbitMQService.makeRabbitMQConsumerConf(props, oneERQ)
     }
-
-
   }
 
   def start() = {

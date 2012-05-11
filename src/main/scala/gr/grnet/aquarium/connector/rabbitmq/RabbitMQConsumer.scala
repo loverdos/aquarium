@@ -42,13 +42,14 @@ import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.{RabbitMQQue
 import java.util.concurrent.atomic.AtomicBoolean
 import com.rabbitmq.client.{Envelope, Consumer, ShutdownSignalException, ShutdownListener, ConnectionFactory, Channel, Connection}
 import com.rabbitmq.client.AMQP.BasicProperties
+import gr.grnet.aquarium.connector.EventPayloadHandler
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class RabbitMQConsumer(val conf: RabbitMQConsumerConf) extends Loggable with Lifecycle {
+class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: EventPayloadHandler) extends Loggable with Lifecycle {
   private[this] var _factory: ConnectionFactory = _
   private[this] var _connection: Connection = _
   private[this] var _channel: Channel = _
@@ -133,7 +134,12 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf) extends Loggable with Lif
     }
 
     def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) = {
-
+      try {
+        handler.handlePayload(body)
+      } catch {
+        case e: Exception ⇒
+          // TODO do stuff here
+      }
     }
   }
 

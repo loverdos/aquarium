@@ -33,64 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.event.model
-package im
-
-import gr.grnet.aquarium.util.makeString
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-
+package gr.grnet.aquarium.connector
 
 /**
+ * Handles the raw event payload bytes.
+ *
+ * All the event-specific business logic goes here.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdIMEvent(
-    id: String, // The id at the sender side
-    occurredMillis: Long, // When it occurred at the sender side
-    receivedMillis: Long, // When it was received by Aquarium
-    userID: String,
-    clientID: String,
-    isActive: Boolean,
-    role: String,
-    eventVersion: String,
-    eventType: String,
-    details: Map[String, String])
-extends IMEventModel {
-  def withReceivedMillis(newReceivedMillis: Long) =
-    this.copy(receivedMillis = newReceivedMillis)
-
-  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
-    this.copy(details = newDetails, occurredMillis = newOccurredMillis)
-}
-
-object StdIMEvent {
-  final def fromJsonTextFormat(jsonTextFormat: JsonTextFormat): StdIMEvent = {
-    StdConverters.AllConverters.convertEx[StdIMEvent](jsonTextFormat)
-  }
-
-  final def fromJsonString(json: String): StdIMEvent = {
-    fromJsonTextFormat(JsonTextFormat(json))
-  }
-
-  final def fromJsonBytes(jsonBytes: Array[Byte]): StdIMEvent = {
-    fromJsonString(makeString(jsonBytes))
-  }
-
-  final def fromOther(event: IMEventModel): StdIMEvent = {
-    if(event.isInstanceOf[StdIMEvent]) event.asInstanceOf[StdIMEvent]
-    else new StdIMEvent(
-      event.id,
-      event.occurredMillis,
-      event.receivedMillis,
-      event.userID,
-      event.clientID,
-      event.isActive,
-      event.role,
-      event.eventVersion,
-      event.eventType,
-      event.details
-    )
-  }
-
+trait EventPayloadHandler {
+  def handlePayload(payload: Array[Byte]): Unit
 }
