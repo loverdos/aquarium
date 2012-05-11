@@ -50,10 +50,14 @@ import annotation.tailrec
 package object util {
   final val UTF_8_Charset = Charset.forName("UTF-8")
 
-  def tryOption[A](f: => A): Option[A] = {
+  def tryUnit[A](f: ⇒ A): Unit = {
+    try f
+  }
+
+  def tryOption[A](f: ⇒ A): Option[A] = {
     try Some(f)
     catch {
-      case _: Exception => None
+      case _: Exception ⇒ None
     }
   }
 

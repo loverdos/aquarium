@@ -106,12 +106,12 @@ class Aquarium(info: ProjectInfo) extends DefaultProject(info) {
   val lib_akka_actor  = Deps.akka("actor")            withSources()
   val lib_akka_remote = Deps.akka("remote")           withSources()
   val lib_akka_test   = Deps.akka("testkit") % "test" withSources()
-  val lib_akka_amqp   = Deps.akka("amqp")             withSources()
+  val lib_akka_amqp   = Deps.akka("rabbitmq")             withSources()
 
   val lib_yaml = "org.yaml" % "snakeyaml" % "1.9" withSources()
   val lib_jcrontab = "com.kenai.crontab-parser" % "crontab-parser" % "1.0.1" withSources()
   val lib_xstream = "com.thoughtworks.xstream" % "xstream" % "1.4.1" withSources()
-  val lib_rabbit = "com.rabbitmq" % "amqp-client" % "2.5.0" withSources()
+  val lib_rabbit = "com.rabbitmq" % "rabbitmq-client" % "2.5.0" withSources()
   val lib_mongo = "org.mongodb" % "mongo-java-driver" % "2.7.2" withSources()
 
 

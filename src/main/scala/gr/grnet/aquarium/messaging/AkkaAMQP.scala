@@ -41,7 +41,8 @@ import akka.amqp.AMQP._
 import gr.grnet.aquarium.Configurator
 import com.rabbitmq.client.Address
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.event.amqp.AMQPService.{AMQPKeys ⇒ Keys}
+
+import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConfKeys
 
 /**
  * Functionality for working with queues.
@@ -55,8 +56,8 @@ trait AkkaAMQP extends Loggable {
 
       val mc = Configurator.MasterConfigurator
 
-      val servers = mc.get(Keys.amqp_servers)
-      val port = mc.get(Keys.amqp_port).toInt
+      val servers = mc.get(RabbitMQConfKeys.amqp_servers)
+      val port = mc.get(RabbitMQConfKeys.amqp_port).toInt
 
       // INFO: Can connect to more than one rabbitmq nodes
       val addresses = servers.split(",").foldLeft(Array[Address]()) {
@@ -66,21 +67,21 @@ trait AkkaAMQP extends Loggable {
       AMQP.newConnection(
         ConnectionParameters(
           addresses,
-          mc.get(Keys.amqp_username),
-          mc.get(Keys.amqp_password),
-          mc.get(Keys.amqp_vhost),
+          mc.get(RabbitMQConfKeys.amqp_username),
+          mc.get(RabbitMQConfKeys.amqp_password),
+          mc.get(RabbitMQConfKeys.amqp_vhost),
           1000,
           None))
     }
   }
 
   lazy val im_exchanges =
-    Configurator.MasterConfigurator.get(Keys.amqp_userevents_queues).split(';').map(e => e.split(':')(0))
+    Configurator.MasterConfigurator.get(RabbitMQConfKeys.amqp_imevents_queues).split(';').map(e => e.split(':')(0))
 
-  lazy val aquarium_exchnage = Configurator.MasterConfigurator.get(Keys.amqp_exchange)
+  lazy val aquarium_exchnage = Configurator.MasterConfigurator.get(RabbitMQConfKeys.amqp_exchange)
 
   lazy val resevent_exchanges =
-    Configurator.MasterConfigurator.get(Keys.amqp_resevents_queues).split(';').map(e => e.split(':')(0))
+    Configurator.MasterConfigurator.get(RabbitMQConfKeys.amqp_rcevents_queues).split(';').map(e => e.split(':')(0))
 
   //Queues and exchnages are by default durable and persistent
   val decl = ActiveDeclaration(durable = true, autoDelete = false)

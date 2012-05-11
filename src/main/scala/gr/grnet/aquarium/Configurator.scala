@@ -44,7 +44,7 @@ import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConver
 import gr.grnet.aquarium.service._
 import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.event.amqp.AMQPService
+import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -205,11 +205,14 @@ final class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _imEventProc = new IMEventProcessorService
 
+  private[this] lazy val _eventBus = newInstance[EventBusService](classOf[EventBusService].getName)
+
   private[this] lazy val _lifecycleServices = List(
     AkkaService,
+    _eventBus,
     _restService,
     _actorProvider,
-    newInstance[AMQPService](classOf[AMQPService].getName)
+    newInstance[RabbitMQService](classOf[RabbitMQService].getName)
     )/*,
     _resEventProc,
     _imEventProc)*/
@@ -259,6 +262,8 @@ final class Configurator(val props: Props) extends Loggable {
   }
   
   def actorProvider = _actorProvider
+
+  def eventBus = _eventBus
 
   def userStateStore = {
     _userStateStoreM match {

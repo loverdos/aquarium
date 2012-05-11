@@ -87,7 +87,7 @@ class AkkaAMQPTest extends RandomEventGenerator {
       }
     }
 
-    consumer("foo.#", "aquarium-amqp-test",
+    consumer("foo.#", "aquarium-rabbitmq-test",
       aquarium_exchnage, Actor.actorOf(new Consumer), false)
     Thread.sleep(2000)
 
