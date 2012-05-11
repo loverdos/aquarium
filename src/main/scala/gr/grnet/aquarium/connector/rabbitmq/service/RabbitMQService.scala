@@ -127,7 +127,9 @@ object RabbitMQService {
     (RabbitMQQueueKeys.arguments,  DefaultQueueConfArguments)
 
   final val DefaultChannelConf = Env() +
-    (RabbitMQChannelKeys.prefetchSize, 1)
+    (RabbitMQChannelKeys.qosPrefetchCount, 1) +
+    (RabbitMQChannelKeys.qosPrefetchSize,  0) +
+    (RabbitMQChannelKeys.qosGlobal,        false)
 
   def makeConnectionConf(props: Props) = {
     val servers = props.getTrimmedList(RabbitMQConfKeys.servers)
@@ -206,7 +208,9 @@ object RabbitMQService {
    * @author Christos KK Loverdos <loverdos@gmail.com>
    */
   object RabbitMQChannelKeys {
-    final val prefetchSize = IntKey(p("prefetchSize"))
+    final val qosPrefetchCount = IntKey(p("qosPrefetchCount"))
+    final val qosPrefetchSize  = IntKey(p("qosPrefetchSize"))
+    final val qosGlobal        = BooleanKey(p("qosGlobal"))
   }
 
   object RabbitMQConfKeys {

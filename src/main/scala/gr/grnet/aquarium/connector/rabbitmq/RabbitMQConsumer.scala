@@ -37,10 +37,11 @@ package gr.grnet.aquarium.connector.rabbitmq
 
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQConsumerConf
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
+import gr.grnet.aquarium.util.tryUnit
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.{RabbitMQQueueKeys, RabbitMQExchangeKeys}
-import com.rabbitmq.client.{ShutdownSignalException, ShutdownListener, ConnectionFactory, Channel, Connection}
 import java.util.concurrent.atomic.AtomicBoolean
-import com.ckkloverdos.maybe.Maybe
+import com.rabbitmq.client.{Envelope, Consumer, ShutdownSignalException, ShutdownListener, ConnectionFactory, Channel, Connection}
+import com.rabbitmq.client.AMQP.BasicProperties
 
 /**
  *
@@ -59,6 +60,7 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf) extends Loggable with Lif
 
   def start() = {
     import service.RabbitMQService.RabbitMQConKeys
+    import service.RabbitMQService.RabbitMQChannelKeys
     import conf._
 
     val factory = new ConnectionFactory
@@ -69,6 +71,12 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf) extends Loggable with Lif
     val connection = factory.newConnection(connectionConf(RabbitMQConKeys.servers))
 
     val channel = connection.createChannel()
+
+    channel.basicQos(
+      channelConf(RabbitMQChannelKeys.qosPrefetchSize),
+      channelConf(RabbitMQChannelKeys.qosPrefetchCount),
+      channelConf(RabbitMQChannelKeys.qosGlobal)
+    )
 
     channel.exchangeDeclare(
       exchangeName,
@@ -93,20 +101,54 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf) extends Loggable with Lif
     logger.info("Queue declaration: {}", declareOK)
 
     val bindOK = channel.queueBind(queueName, exchangeName, routingKey)
+    channel.addShutdownListener(RabbitMQShutdownListener)
 
     if(_channel.isOpen) {
       _isAlive.getAndSet(true)
     }
 
+    _channel.basicConsume(
+      queueName,
+      false, // We send explicit acknowledgements to RabbitMQ
+      RabbitMQMessageConsumer
+    )
+
     logger.info("Queue binding {}", bindOK)
   }
 
-  object EventListener extends ShutdownListener {
+  object RabbitMQMessageConsumer extends Consumer {
+    def handleConsumeOk(consumerTag: String) = {
+    }
+
+    def handleCancelOk(consumerTag: String) = {
+    }
+
+    def handleCancel(consumerTag: String) = {
+    }
+
+    def handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException) = {
+    }
+
+    def handleRecoverOk() = {
+    }
+
+    def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) = {
+
+    }
+  }
+
+  object RabbitMQShutdownListener extends ShutdownListener {
+    @inline def isConnectionError(cause: ShutdownSignalException) = cause.isHardError
+    @inline def isChannelError(cause: ShutdownSignalException) = !cause.isHardError
+
     def shutdownCompleted(cause: ShutdownSignalException) = {
-      Maybe {
-        _channel.close()
-      }
+      tryUnit { _channel.close() }
       _isAlive.getAndSet(false)
+
+      // Now, let's see what happened
+      if(isConnectionError(cause)) {
+      } else if(isChannelError(cause)) {
+      }
     }
   }
 
