@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.util
 
 import org.slf4j.LoggerFactory
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 /**
  * Mix this trait in your class to automatically get a Logger instance.
@@ -45,6 +46,30 @@ import org.slf4j.LoggerFactory
 trait Loggable {
   @transient
   protected val logger = LoggerFactory.getLogger(getClass)
+
+  protected def logStartingF(fmt: String, args: Any*)(f: ⇒ Unit)(onException: ⇒ Unit = {}): Unit = {
+    LogHelpers.logStarting(this.logger)
+    val ms0 = TimeHelpers.nowMillis()
+    try {
+      locally(f)
+
+      val ms1 = TimeHelpers.nowMillis()
+      LogHelpers.logStarted(this.logger, ms0, ms1, fmt, args: _*)
+    }
+    catch (StartStopErrorHandler(logger, "While starting [%s]".format(fmt.format(args)), onException))
+  }
+
+  protected def logStoppingF(fmt: String, args: Any*)(f: ⇒ Unit)(onException: ⇒ Unit = {}): Unit = {
+    LogHelpers.logStopping(this.logger)
+    val ms0 = TimeHelpers.nowMillis()
+    try {
+      locally(f)
+
+      val ms1 = TimeHelpers.nowMillis()
+      LogHelpers.logStopped(this.logger, ms0, ms1, fmt, args: _*)
+    }
+    catch (StartStopErrorHandler(logger, "While stopping [%s]".format(fmt.format(args)), onException))
+  }
 
   protected def logStarting(): Unit = {
     LogHelpers.logStarting(this.logger)

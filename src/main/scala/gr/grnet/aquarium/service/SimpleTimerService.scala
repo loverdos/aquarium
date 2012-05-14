@@ -66,10 +66,10 @@ class SimpleTimerService extends TimerService {
   }
 
   def start() = {
-    logStarted(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
+    logStartingF(""){}{}
   }
 
   def stop() = {
-    logStopped(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
+    logStoppingF(""){}{}
   }
 }

@@ -70,15 +70,13 @@ class SimpleLocalRoleableActorProviderService extends RoleableActorProviderServi
   }
 
   def start(): Unit = {
-    logStarting()
-    val (ms0, ms1, _) = TimeHelpers.timed {
+    logStartingF("") {
       __doStart()
-    }
-    logStarted(ms0, ms1)
+    } {}
   }
 
   def stop(): Unit = {
-    logStopped(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
+    logStoppingF(""){}{}
   }
 
   private[this] def _newActor(role: ActorRole): ActorRef = {

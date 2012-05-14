@@ -40,6 +40,8 @@ import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import java.nio.charset.Charset
 import java.io.{PrintWriter, StringWriter}
 import annotation.tailrec
+import scala.PartialFunction
+import org.slf4j.Logger
 
 
 /**
@@ -51,8 +53,28 @@ package object util {
   final val UTF_8_Charset = Charset.forName("UTF-8")
 
   @inline
+  def StartStopErrorHandler[S](logger: Logger,
+                               message: String,
+                               onException: ⇒ Unit = {}): PartialFunction[Throwable, Unit] = {
+
+    case e: Throwable ⇒
+      safeUnit(onException)
+      logger.error(message, e)
+      throw e.getClass.cast(e)
+  }
+
+  @inline
   def safeUnit[A](f: ⇒ A): Unit = {
     com.ckkloverdos.maybe.safeUnit(f)
+  }
+
+  @inline
+  def safeReportingUnit[A](logger: Logger, message: String)(f: ⇒ A): Unit = {
+    try f
+    catch {
+      case e: Throwable ⇒
+        logger.error(message, e)
+    }
   }
 
   def tryOption[A](f: ⇒ A): Option[A] = {

@@ -38,6 +38,7 @@ package gr.grnet.aquarium.connector.rabbitmq.service
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
+import gr.grnet.aquarium.util.safeUnit
 import com.rabbitmq.client.Address
 import gr.grnet.aquarium.{Configurator, Configurable}
 import gr.grnet.aquarium.connector.rabbitmq.conf.{TopicExchange, RabbitMQConsumerConf, RabbitMQExchangeType}
@@ -196,7 +197,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   }
 
   def start() = {
-    val (ms0, ms1, _) = TimeHelpers.timed {
+    logStoppingF("") {
       this._consumers.foreach(_.start())
 
       for(consumer ← this._consumers) {
@@ -204,18 +205,16 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
           logger.warn("Consumer not started yet {}", consumer.toDebugString)
         }
       }
-    }
-    logStarted(ms0, ms1)
+    } {}
   }
 
   def stop() = {
-    val (ms0, ms1, _) = TimeHelpers.timed {
-      this._consumers.foreach(_.stop())
-    }
-
-    logStopped(ms0, ms1)
+    logStoppingF("") {
+      for(consumer ← this._consumers) {
+        safeUnit(consumer.stop())
+      }
+    } {}
   }
-
 }
 
 object RabbitMQService {

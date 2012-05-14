@@ -46,7 +46,7 @@ import com.google.common.cache._
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-object UserActorCache extends Lifecycle {
+object UserActorCache extends Lifecycle with Loggable {
 
   private lazy val cache: Cache[String, ActorRef] =
     CacheBuilder.newBuilder()
@@ -69,15 +69,20 @@ object UserActorCache extends Lifecycle {
     }
   }
 
-  def start() = {}
-
-  def stop() = {
-    cache.invalidateAll
-    cache.cleanUp
+  def start() = {
+    logStartingF(""){}{}
   }
 
-  def put(userID: String, userActor: ActorRef): Unit =
+  def stop() = {
+    logStoppingF("") {
+      cache.invalidateAll
+      cache.cleanUp
+    } {}
+  }
+
+  def put(userID: String, userActor: ActorRef): Unit = {
     cache.put(userID, userActor)
+  }
 
   def get(userID: String): Option[ActorRef] =
     cache.getIfPresent(userID) match {

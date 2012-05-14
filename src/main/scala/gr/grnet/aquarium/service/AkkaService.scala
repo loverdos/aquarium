@@ -51,10 +51,8 @@ final class AkkaService extends Lifecycle with Loggable {
   }
 
   def stop()= {
-    logStopping()
-    val (ms0, ms1, _) = TimeHelpers.timed {
+    logStoppingF("") {
       Actor.registry.shutdownAll()
-    }
-    logStopped(ms0, ms1)
+    } {}
   }
 }

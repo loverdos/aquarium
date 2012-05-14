@@ -40,7 +40,7 @@ import _root_.akka.actor._
 import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{LogHelpers, Loggable, Lifecycle}
-import gr.grnet.aquarium.{AquariumException, Configurator}
+import gr.grnet.aquarium.{AquariumInternalError, AquariumException, Configurator}
 
 /**
  * REST service based on Actors and Spray.
@@ -56,24 +56,21 @@ class RESTActorService extends Lifecycle with Loggable {
   def start(): Unit = {
     val mc = Configurator.MasterConfigurator
     this._port = mc.props.getInt(Configurator.Keys.rest_port).getOr(
-      throw new AquariumException("%s was not specified in aquarium properties".format(Configurator.Keys.rest_port)))
+      throw new AquariumInternalError(
+        "%s was not specified in Aquarium properties".format(Configurator.Keys.rest_port)))
 
-    LogHelpers.logStarting(logger, "on port %s", this._port)
-    val (ms0, ms1, _) = TimeHelpers.timed {
+    logStoppingF("on port %s", this._port) {
       this._restActor = mc.actorProvider.actorForRole(RESTRole)
       // Start Spray subsystem
       this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
       this._clientActor = Actor.actorOf(new HttpClient()).start()
-    }
-    LogHelpers.logStarted(logger, ms0, ms1)
+    } {}
   }
 
   def stop(): Unit = {
-    LogHelpers.logStopping(logger)
-    val (ms0, ms1, _) = TimeHelpers.timed {
+    logStoppingF("") {
       this._serverActor.stop()
       this._clientActor.stop()
-    }
-    LogHelpers.logStopped(logger, ms0, ms1)
+    } {}
   }
 }

@@ -66,17 +66,17 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
   }
 
   def start() = {
-    val (ms0, ms1, _) = TimeHelpers.timed {
+    logStartingF("") {
       this addSubsciber this // Wow!
 
       this._poster = Actor actorOf AsyncPoster
-    }
-    logStarted(ms0, ms1)
+    } {}
   }
 
   def stop() = {
-    val (ms0, ms1, _) = TimeHelpers.timed(safeUnit(_poster.stop()))
-    logStopped(ms0, ms1)
+    logStoppingF("") {
+      safeUnit(_poster.stop())
+    }
   }
 
   @inline

@@ -152,27 +152,20 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
   }
 
   def start(): Unit = {
-    try {
-      logStarting()
-      val (ms0, ms1, _) = TimeHelpers.timed {
-        doFullStartupSequence()
-        _state.set(Started)
-      }
-      logStarted(ms0, ms1, toDebugString)
-    } catch {
-      case e: Exception ⇒
-        doSafeFullShutdownSequence(true)
-        logger.error("While starting", e)
-
-      case e: Throwable ⇒
-        throw e
+    logStartingF(toDebugString) {
+      // The actual starting steps
+      doFullStartupSequence()
+      _state.set(Started)
+    } {
+      // If an exception was thrown during startup, run this before logging the error
+      doSafeFullShutdownSequence(true)
     }
   }
 
   def stop() = {
-    logStopping()
-    val (ms0, ms1,  _) = TimeHelpers.timed(doSafeFullShutdownSequence(false))
-    logStopped(ms0, ms1, toDebugString)
+    logStoppingF(toDebugString) {
+      doSafeFullShutdownSequence(false)
+    } {}
   }
 
   private[this] def postBusError(event: BusEvent): Unit = {
