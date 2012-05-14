@@ -41,7 +41,8 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.service.event.BusEvent
 import com.google.common.eventbus.{DeadEvent, Subscribe, EventBus}
 import akka.actor.{ActorRef, Actor}
-import gr.grnet.aquarium.util.{ReflectHelpers, Lifecycle, Loggable}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable}
+import gr.grnet.aquarium.util.safeUnit
 
 
 /**
@@ -52,7 +53,7 @@ import gr.grnet.aquarium.util.{ReflectHelpers, Lifecycle, Loggable}
 
 class EventBusService extends Loggable with Lifecycle with Configurable {
   private[this] val theBus = new EventBus(classOf[EventBusService].getName)
-  private[this] val poster: ActorRef = null
+  private[this] var _poster: ActorRef = null
 
   def propertyPrefix = None
 
@@ -62,21 +63,20 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
    * If `propertyPrefix` is defined, then `props` contains only keys that start with the given prefix.
    */
   def configure(props: Props) = {
-
   }
 
   def start() = {
     val (ms0, ms1, _) = TimeHelpers.timed {
       this addSubsciber this // Wow!
 
-      val poster = Actor actorOf AsyncPoster
-      ReflectHelpers.setField(this, "poster", poster)
+      this._poster = Actor actorOf AsyncPoster
     }
     logStarted(ms0, ms1)
   }
 
   def stop() = {
-    logStopped(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
+    val (ms0, ms1, _) = TimeHelpers.timed(safeUnit(_poster.stop()))
+    logStopped(ms0, ms1)
   }
 
   @inline
@@ -85,7 +85,7 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
   }
 
   def ![A <: BusEvent](event: A): Unit = {
-    poster ! event
+    _poster ! event
   }
 
   def addSubsciber[A <: AnyRef](subscriber: A): Unit = {

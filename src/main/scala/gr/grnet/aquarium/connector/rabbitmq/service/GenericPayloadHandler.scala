@@ -43,6 +43,15 @@ import gr.grnet.aquarium.event.model.ExternalEventModel
 import gr.grnet.aquarium.util.safeUnit
 
 /**
+ * Generic handler of events arriving to Aquarium.
+ *
+ * We first parse them to JSON ([[gr.grnet.aquarium.converter.JsonTextFormat]]) and an appropriate event model
+ * (`E <:` [[gr.grnet.aquarium.event.model.ExternalEventModel]]),
+ * then store them to DB
+ * (`S <:` [[gr.grnet.aquarium.event.model.ExternalEventModel]])
+ * and then forward them to business logic.
+ *
+ * All the above actions are given polymorphically via appropriate functions.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

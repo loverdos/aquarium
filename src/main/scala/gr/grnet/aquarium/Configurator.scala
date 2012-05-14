@@ -58,7 +58,15 @@ final class Configurator(val props: Props) extends Loggable {
   /**
    * Reflectively provide a new instance of a class and configure it appropriately.
    */
-  private[this] def newInstance[C : Manifest](className: String): C = {
+  private[this] def newInstance[C : Manifest](_className: String = ""): C = {
+    val className = _className match {
+      case "" ⇒
+        manifest[C].erasure.getName
+
+      case name ⇒
+        name
+    }
+
     val instanceM = MaybeEither(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
     instanceM match {
       case Just(instance) ⇒ instance match {
@@ -73,6 +81,7 @@ final class Configurator(val props: Props) extends Loggable {
 
           MaybeEither(configurable configure localProps) match {
             case Just(_) ⇒
+              logger.debug("Configured {} with props", configurable.getClass.getName)
               instance
 
             case Failed(e) ⇒
@@ -89,27 +98,15 @@ final class Configurator(val props: Props) extends Loggable {
 
   }
 
-  private[this] lazy val _actorProvider: RoleableActorProviderService = {
-    val instance = newInstance[RoleableActorProviderService](props.getEx(Keys.actor_provider_class))
-    logger.info("Loaded %s: %s".format(shortNameOfClass(classOf[RoleableActorProviderService]), instance.getClass))
-    instance
-  }
+  private[this] lazy val _actorProvider = newInstance[RoleableActorProviderService](props(Keys.actor_provider_class))
 
   /**
    * Initializes a store provider, according to the value configured
    * in the configuration file. The
    */
-  private[this] lazy val _storeProvider: StoreProvider = {
-    val instance = newInstance[StoreProvider](props.getEx(Keys.store_provider_class))
-    logger.info("Loaded %s: %s".format(shortNameOfClass(classOf[StoreProvider]), instance.getClass))
-    instance
-  }
+  private[this] lazy val _storeProvider = newInstance[StoreProvider](props(Keys.store_provider_class))
   
-  private[this] lazy val _restService: Lifecycle = {
-    val instance = newInstance[Lifecycle](props.getEx(Keys.rest_service_class))
-    logger.info("Loaded RESTService: %s".format(instance.getClass))
-    instance
-  }
+  private[this] lazy val _restService = newInstance[Lifecycle](props(Keys.rest_service_class))
 
   private[this] lazy val _userStateStoreM: Maybe[UserStateStore] = {
     // If there is a specific `UserStateStore` implementation specified in the
@@ -204,21 +201,19 @@ final class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _converters = StdConverters.AllConverters
 
-  private[this] lazy val _resEventProc = new ResourceEventProcessorService
+  private[this] lazy val _akka = newInstance[AkkaService]()
 
-  private[this] lazy val _imEventProc = new IMEventProcessorService
+  private[this] lazy val _eventBus = newInstance[EventBusService]()
 
-  private[this] lazy val _eventBus = newInstance[EventBusService](classOf[EventBusService].getName)
+  private[this] lazy val _rabbitmqService = newInstance[RabbitMQService]()
 
-  private[this] lazy val _lifecycleServices = List(
-    AkkaService,
+  private[this] lazy val _allServices = List(
+    _akka,
+    _actorProvider,
     _eventBus,
     _restService,
-    _actorProvider,
-    newInstance[RabbitMQService](classOf[RabbitMQService].getName)
-    )/*,
-    _resEventProc,
-    _imEventProc)*/
+    _rabbitmqService
+  )
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
 
@@ -251,12 +246,13 @@ final class Configurator(val props: Props) extends Loggable {
   }
 
   def startServices(): Unit = {
-    _lifecycleServices.foreach(_.start())
+    for(service ← _allServices) {
+      service.start()
+    }
   }
 
   def stopServices(): Unit = {
-    _lifecycleServices.reverse.foreach(_.stop())
-//    akka.actor.Actor.registry.shutdownAll()
+    _allServices.reverse.foreach(service ⇒ safeUnit(service.stop()))
   }
 
   def stopServicesWithDelay(millis: Long) {
@@ -479,7 +475,7 @@ object Configurator {
     final val events_store_folder = "events.store.folder"
 
     /**
-     * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.event.im.IMEventModel]] is
+     * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.event.model.im.IMEventModel]] is
      * saved to the [[gr.grnet.aquarium.store.IMEventStore]].
      */
     final val save_unparsed_event_im = "save.unparsed.event.im"

@@ -33,38 +33,34 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.util
+package gr.grnet.aquarium.connector.rabbitmq.service
+
+import akka.dispatch.Future
+import gr.grnet.aquarium.connector.handler.{PayloadHandler, HandlerResult, PayloadHandlerExecutor}
+
 
 /**
+ * An [[gr.grnet.aquarium.connector.handler.PayloadHandlerExecutor]] that uses `Akka` futures.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object ReflectHelpers {
-  def setField[C <: AnyRef, A : Manifest](container: C,
-                                          fieldName: String,
-                                          value: A,
-                                          synchronizeOnContainer: Boolean = true): Unit = {
-    require(container ne null, "container is null")
-    require(fieldName ne null, "fieldName is null")
-    require(fieldName.length > 0, "fieldName is empty")
+final class PayloadHandlerFutureExecutor extends PayloadHandlerExecutor {
 
-    val field = container.getClass.getDeclaredField(fieldName)
-    field.setAccessible(true)
+  def exec(payload: Array[Byte], handler: PayloadHandler)
+          (onSuccess: HandlerResult ⇒ Unit)
+          (onError: Throwable ⇒ Unit): Unit = {
 
-    def doSet(): Unit = {
-      manifest[A] match {
-        case Manifest.Byte ⇒ field.setBoolean(container, value.asInstanceOf[Boolean])
-        case Manifest.Int  ⇒ field.setInt(container, value.asInstanceOf[Int])
-        case Manifest.Long ⇒ field.setLong(container, value.asInstanceOf[Long])
-        case _             ⇒ field.set(container, value)
+    val result = Future { handler.handlePayload(payload) }
+
+    result.onComplete { futureHandlerResult ⇒
+      futureHandlerResult.value.get match {
+        case Left(e) ⇒
+          onError(e)
+
+        case Right(handlerResult) ⇒
+          onSuccess(handlerResult)
       }
-    }
-
-    if(synchronizeOnContainer) {
-      container synchronized doSet()
-    } else {
-      doSet()
     }
   }
 }

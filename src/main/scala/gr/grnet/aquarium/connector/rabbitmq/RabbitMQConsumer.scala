@@ -37,7 +37,7 @@ package gr.grnet.aquarium.connector.rabbitmq
 
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQConsumerConf
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
-import gr.grnet.aquarium.util.safeUnit
+import gr.grnet.aquarium.util.{safeUnit, shortClassNameOf}
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.{RabbitMQQueueKeys, RabbitMQExchangeKeys}
 import com.rabbitmq.client.{Envelope, Consumer, ShutdownSignalException, ShutdownListener, ConnectionFactory, Channel, Connection}
 import com.rabbitmq.client.AMQP.BasicProperties
@@ -45,22 +45,27 @@ import gr.grnet.aquarium.Configurator
 import gr.grnet.aquarium.connector.rabbitmq.eventbus.RabbitMQError
 import java.util.concurrent.atomic.{AtomicReference, AtomicBoolean}
 import gr.grnet.aquarium.service.event.BusEvent
-import gr.grnet.aquarium.connector.handler.{HandlerResultPanic, HandlerResultRequeue, HandlerResultReject, HandlerResultSuccess, PayloadHandler}
+import gr.grnet.aquarium.connector.handler.{PayloadHandlerExecutor, HandlerResultPanic, HandlerResultRequeue, HandlerResultReject, HandlerResultSuccess, PayloadHandler}
+import com.ckkloverdos.maybe.MaybeEither
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 /**
+ * A basic `RabbitMQ` consumer. Sufficiently generalized, sufficiently tied to Aquarium.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: PayloadHandler) extends Loggable with Lifecycle {
+class RabbitMQConsumer(conf: RabbitMQConsumerConf,
+                       handler: PayloadHandler,
+                       executor: PayloadHandlerExecutor) extends Loggable with Lifecycle {
   private[this] var _factory: ConnectionFactory = _
   private[this] var _connection: Connection = _
   private[this] var _channel: Channel = _
-  private[this] val _isAlive = new AtomicBoolean(false)
+//  private[this] val _isAlive = new AtomicBoolean(false)
   private[this] val _state = new AtomicReference[State](Shutdown)
 
-  def isAlive() = {
-    _isAlive.get() && _state.get().isStarted
+  def isStarted() = {
+    _state.get().isStarted && MaybeEither(_channel.isOpen).getOr(false)
   }
 
   sealed trait State {
@@ -76,7 +81,6 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: PayloadHandler) 
     _state.set(ShutdownSequence)
     safeUnit(_channel.close())
     safeUnit(_connection.close())
-    _isAlive.set(false)
     _state.set(Shutdown)
   }
 
@@ -138,10 +142,6 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: PayloadHandler) 
 
     channel.addShutdownListener(RabbitMQShutdownListener)
 
-    if(_channel.isOpen) {
-      _isAlive.getAndSet(true)
-    }
-
     _channel.basicConsume(
       queueName,
       false, // We send explicit acknowledgements to RabbitMQ
@@ -151,12 +151,23 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: PayloadHandler) 
 
   def start(): Unit = {
     try {
-      doFullStartupSequence()
-      _state.set(Started)
+      logStarting()
+      val (ms0, ms1, _) = TimeHelpers.timed {
+        doFullStartupSequence()
+        _state.set(Started)
+      }
+      logStarted(ms0, ms1, toDebugString)
     } catch {
       case e: Exception ⇒
         doSafeFullShutdownSequence(true)
+        logger.error("While starting", e)
     }
+  }
+
+  def stop() = {
+    logStopping()
+    val (ms0, ms1,  _) = TimeHelpers.timed(doSafeFullShutdownSequence(false))
+    logStopped(ms0, ms1, toDebugString)
   }
 
   private[this] def postBusError(event: BusEvent): Unit = {
@@ -192,10 +203,18 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: PayloadHandler) 
     }
 
     def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) = {
+      def doError: PartialFunction[Throwable, Unit] = {
+        case e: Exception ⇒
+          logger.warn("Unexpected error", e)
+
+        case e: Throwable ⇒
+          throw e
+      }
+
       try {
         val deliveryTag = envelope.getDeliveryTag
-        val hresult = handler.handlePayload(body)
-        hresult match {
+
+        executor.exec(body, handler) {
           case HandlerResultSuccess ⇒
             doWithChannel(_.basicAck(deliveryTag, false))
 
@@ -209,11 +228,8 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: PayloadHandler) 
             // The other end is crucial to the overall operation and it is in panic mode,
             // so we stop delivering messages until further notice
             doSafeFullShutdownSequence(true)
-        }
-      } catch {
-        case e: Exception ⇒
-          logger.warn("Unexpected error", e)
-      }
+        } (doError)
+      } catch (doError)
     }
   }
 
@@ -223,7 +239,6 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: PayloadHandler) 
 
     def shutdownCompleted(cause: ShutdownSignalException) = {
       safeUnit { _channel.close() }
-      _isAlive.getAndSet(false)
 
       // Now, let's see what happened
       if(isConnectionError(cause)) {
@@ -232,7 +247,12 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf, handler: PayloadHandler) 
     }
   }
 
-  def stop() = {
+  def toDebugString = {
+    import conf._
+    "(exchange=%s, routingKey=%s, queue=%s)".format(exchangeName, routingKey, queueName)
+  }
 
+  override def toString = {
+    "%s%s".format(shortClassNameOf(this), toDebugString)
   }
 }

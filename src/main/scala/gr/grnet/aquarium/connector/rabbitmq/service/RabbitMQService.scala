@@ -37,10 +37,9 @@ package gr.grnet.aquarium.connector.rabbitmq.service
 
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.util.{ReflectHelpers, Loggable, Lifecycle}
-import com.rabbitmq.client.{ConnectionFactory, Address}
+import gr.grnet.aquarium.util.{Loggable, Lifecycle}
+import com.rabbitmq.client.Address
 import gr.grnet.aquarium.{Configurator, Configurable}
-import gr.grnet.aquarium.connector.rabbitmq.eventbus.RabbitMQError
 import gr.grnet.aquarium.connector.rabbitmq.conf.{TopicExchange, RabbitMQConsumerConf, RabbitMQExchangeType}
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConfKeys
 import com.ckkloverdos.key.{ArrayKey, IntKey, TypedKeySkeleton, BooleanKey, StringKey}
@@ -48,8 +47,7 @@ import com.ckkloverdos.env.{EnvKey, Env}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
-import com.ckkloverdos.maybe.{MaybeEither, Failed, Just, Maybe}
-import gr.grnet.aquarium.connector.handler.{HandlerResultSuccess, HandlerResultPanic, HandlerResultReject, HandlerResult, PayloadHandler}
+import com.ckkloverdos.maybe.MaybeEither
 import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
 import gr.grnet.aquarium.store.{LocalFSEventStore, IMEventStore, ResourceEventStore}
@@ -61,7 +59,8 @@ import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
  */
 
 class RabbitMQService extends Loggable with Lifecycle with Configurable {
-  private[this] val props: Props = Props()(StdConverters.AllConverters)
+  @volatile private[this] var _props: Props = Props()(StdConverters.AllConverters)
+  @volatile private[this] var _consumers = List[RabbitMQConsumer]()
 
   def propertyPrefix = Some(RabbitMQService.PropertiesPrefix)
 
@@ -83,17 +82,9 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
    * If `propertyPrefix` is defined, then `props` contains only keys that start with the given prefix.
    */
   def configure(props: Props) = {
-    ReflectHelpers.setField(this, "props", props)
+    this._props = props
 
-    try {
-      doConfigure()
-      logger.info("Configured with {}", this.props)
-    } catch {
-      case e: Exception ⇒
-      // If we have no internal error, then something is bad with RabbitMQ
-      eventBus ! RabbitMQError(e)
-      throw e
-    }
+    doConfigure()
   }
 
   private[this] def doConfigure(): Unit = {
@@ -109,12 +100,28 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
       StdIMEvent.fromJsonTextFormat(jsonTextFormat)
     }
 
+    val rcForwardAction: (ResourceEventStore#ResourceEvent ⇒ Unit) = { rcEvent ⇒
+      router ! ProcessResourceEvent(rcEvent)
+    }
+
+    val rcDebugForwardAction: (ResourceEventStore#ResourceEvent ⇒ Unit) = { rcEvent ⇒
+      logger.info("Forwarding {}", rcEvent)
+    }
+
+    val imForwardAction: (IMEventStore#IMEvent ⇒ Unit) = { imEvent ⇒
+      router ! ProcessIMEvent(imEvent)
+    }
+
+    val imDebugForwardAction: (IMEventStore#IMEvent ⇒ Unit) = { imEvent ⇒
+      logger.info("Forwarding {}", imEvent)
+    }
+
     val rcHandler = new GenericPayloadHandler[ResourceEventModel, ResourceEventStore#ResourceEvent](
       jsonParser,
       (payload, error) ⇒ LocalFSEventStore.storeUnparsedResourceEvent(configurator, payload, error),
       rcEventParser,
       rcEvent ⇒ resourceEventStore.insertResourceEvent(rcEvent),
-      rcEvent ⇒ router ! ProcessResourceEvent(rcEvent)
+      rcDebugForwardAction
     )
 
     val imHandler = new GenericPayloadHandler[IMEventModel, IMEventStore#IMEvent](
@@ -122,36 +129,88 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
       (payload, error) ⇒ LocalFSEventStore.storeUnparsedIMEvent(configurator, payload, error),
       imEventParser,
       imEvent ⇒ imEventStore.insertIMEvent(imEvent),
-      imEvent ⇒ router ! ProcessIMEvent(imEvent)
+      imDebugForwardAction
     )
 
+    val futureExecutor = new PayloadHandlerFutureExecutor
+
     // (e)xchange:(r)outing key:(q)
-    val all_rc_ERQs = props.getTrimmedList(RabbitMQConfKeys.rcevents_queues)
-    val rcConsumerConfs = for(oneERQ ← all_rc_ERQs) yield {
-      RabbitMQService.makeRabbitMQConsumerConf(props, oneERQ)
+    logger.debug("%s=%s".format(RabbitMQConfKeys.rcevents_queues, _props(RabbitMQConfKeys.rcevents_queues)))
+    val all_rc_ERQs = _props.getTrimmedList(RabbitMQConfKeys.rcevents_queues)
+    logger.debug("all_rc_ERQs = %s".format(all_rc_ERQs))
+
+    val rcConsumerConfs_ = for(oneERQ ← all_rc_ERQs) yield {
+      RabbitMQService.makeRabbitMQConsumerConf(_props, oneERQ)
+    }
+    val rcConsumerConfs = rcConsumerConfs_.toSet.toList
+    if(rcConsumerConfs.size != rcConsumerConfs_.size) {
+      logger.warn(
+        "Duplicate %s consumer info in %s=%s".format(
+        RabbitMQService.PropertiesPrefix,
+        RabbitMQConfKeys.rcevents_queues,
+        _props(RabbitMQConfKeys.rcevents_queues)))
     }
 
-    val all_im_ERQs = props.getTrimmedList(RabbitMQConfKeys.imevents_queues)
-    val imConsumerConfs = for(oneERQ ← all_im_ERQs) yield {
-      RabbitMQService.makeRabbitMQConsumerConf(props, oneERQ)
+    val all_im_ERQs = _props.getTrimmedList(RabbitMQConfKeys.imevents_queues)
+    val imConsumerConfs_ = for(oneERQ ← all_im_ERQs) yield {
+      RabbitMQService.makeRabbitMQConsumerConf(_props, oneERQ)
+    }
+    val imConsumerConfs = imConsumerConfs_.toSet.toList
+    if(imConsumerConfs.size != imConsumerConfs_.size) {
+      logger.warn(
+        "Duplicate %s consumer info in %s=%s".format(
+        RabbitMQService.PropertiesPrefix,
+        RabbitMQConfKeys.imevents_queues,
+        _props(RabbitMQConfKeys.imevents_queues)))
     }
 
     val rcConsumers = for(rccc ← rcConsumerConfs) yield {
-      new RabbitMQConsumer(rccc, rcHandler)
+      logger.info("Declaring %s consumer {exchange=%s, routingKey=%s, queue=%s}".format(
+        RabbitMQService.PropertiesPrefix,
+        rccc.exchangeName,
+        rccc.routingKey,
+        rccc.queueName
+      ))
+      new RabbitMQConsumer(rccc, rcHandler, futureExecutor)
     }
 
     val imConsumers = for(imcc ← imConsumerConfs) yield {
-      new RabbitMQConsumer(imcc, imHandler)
+      logger.info("Declaring %s consumer {exchange=%s, routingKey=%s, queue=%s}".format(
+        RabbitMQService.PropertiesPrefix,
+        imcc.exchangeName,
+        imcc.routingKey,
+        imcc.queueName
+      ))
+      new RabbitMQConsumer(imcc, imHandler, futureExecutor)
     }
+
+    this._consumers = rcConsumers ++ imConsumers
+
+    val lg: (String ⇒ Unit) = if(this._consumers.size == 0) logger.warn(_) else logger.debug(_)
+    lg("Got %s consumers".format(this._consumers.size))
+
+    this._consumers.foreach(logger.debug("Configured {}", _))
   }
 
   def start() = {
-    logStarted(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
-    System.exit(1)
+    val (ms0, ms1, _) = TimeHelpers.timed {
+      this._consumers.foreach(_.start())
+
+      for(consumer ← this._consumers) {
+        if(!consumer.isStarted()) {
+          logger.warn("Not started yet {}", consumer.toDebugString)
+        }
+      }
+    }
+    logStarted(ms0, ms1)
   }
 
   def stop() = {
-    logStopped(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
+    val (ms0, ms1, _) = TimeHelpers.timed {
+      this._consumers.foreach(_.stop())
+    }
+
+    logStopped(ms0, ms1)
   }
 
 }
@@ -160,7 +219,7 @@ object RabbitMQService {
   final val PropertiesPrefix       = "rabbitmq"
   final val PropertiesPrefixAndDot = PropertiesPrefix + "."
 
-  @inline private[this] def p(name: String) = PropertiesPrefix + name
+  @inline private[this] def p(name: String) = PropertiesPrefixAndDot + name
 
   final val DefaultExchangeConfArguments = Env()
 
@@ -273,39 +332,33 @@ object RabbitMQService {
      * configuration.
      */
     final val servers = p("servers")
-    final val amqp_servers = servers
 
     /**
      * Comma separated list of AMQP servers running in active-active
      * configuration.
      */
     final val port = p("port")
-    final val amqp_port = port
 
     /**
      * User name for connecting with the AMQP server
      */
     final val username = p("username")
-    final val amqp_username = username
 
     /**
      * Password for connecting with the AMQP server
      */
     final val password = p("passwd")
-    final val amqp_password = password
 
     /**
      * Virtual host on the AMQP server
      */
     final val vhost = p("vhost")
-    final val amqp_vhost = vhost
 
     /**
      * Comma separated list of exchanges known to aquarium
      * FIXME: What is this??
      */
     final val exchange = p("exchange")
-    final val amqp_exchange = exchange
 
     /**
      * Queues for retrieving resource events from. Multiple queues can be
@@ -314,7 +367,6 @@ object RabbitMQService {
      * Format is `exchange:routing.key:queue-name,...`
      */
     final val rcevents_queues = p("rcevents.queues")
-    final val amqp_rcevents_queues = rcevents_queues
 
     /**
      * Queues for retrieving user events from. Multiple queues can be
@@ -323,7 +375,5 @@ object RabbitMQService {
      * Format is `exchange:routing.key:queue-name,...`
      */
     final val imevents_queues = p("imevents.queues")
-    final val amqp_imevents_queues = imevents_queues
   }
-
 }

@@ -58,7 +58,6 @@ class SimpleLocalRoleableActorProviderService extends RoleableActorProviderServi
 
   def configure(props: Props): Unit = {
     this._props = props
-    logger.debug("Configured with props")
   }
 
   private[this] def __doStart(): Unit = {
@@ -122,7 +121,7 @@ class SimpleLocalRoleableActorProviderService extends RoleableActorProviderServi
 }
 
 object SimpleLocalRoleableActorProviderService {
-  // Always set Dispatcher at the end.
+  // Always set Router at the end.
   // We could definitely use some automatic dependency sorting here (topological sorting anyone?)
   final val RolesToBeStarted = List(
     //    ResourceProcessorRole,

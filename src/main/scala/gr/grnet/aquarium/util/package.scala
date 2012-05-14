@@ -62,6 +62,9 @@ package object util {
     }
   }
 
+  /**
+   * Runs function `f` on `c` and finally calls `c.close()` regardless of any exception.
+   */
   def withCloseable[C <: { def close(): Unit}, A](c: C)(f: C => A): A = {
     try {
       f(c)
