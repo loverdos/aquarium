@@ -38,7 +38,6 @@ package gr.grnet.aquarium.connector.rabbitmq
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQConsumerConf
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.util.{safeUnit, shortClassNameOf}
-import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.{RabbitMQQueueKeys, RabbitMQExchangeKeys}
 import com.rabbitmq.client.{Envelope, Consumer, ShutdownSignalException, ShutdownListener, ConnectionFactory, Channel, Connection}
 import com.rabbitmq.client.AMQP.BasicProperties
 import gr.grnet.aquarium.Configurator
@@ -48,6 +47,7 @@ import gr.grnet.aquarium.service.event.BusEvent
 import gr.grnet.aquarium.connector.handler.{PayloadHandlerExecutor, HandlerResultPanic, HandlerResultRequeue, HandlerResultReject, HandlerResultSuccess, PayloadHandler}
 import com.ckkloverdos.maybe.MaybeEither
 import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.{RabbitMQConKeys, RabbitMQQueueKeys, RabbitMQExchangeKeys, RabbitMQChannelKeys}
 
 /**
  * A basic `RabbitMQ` consumer. Sufficiently generalized, sufficiently tied to Aquarium.
@@ -92,10 +92,16 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
     }
   }
 
+  private[this] def servers = {
+    conf.connectionConf(RabbitMQConKeys.servers)
+  }
+
+  private[this] def serversToDebugStrings = {
+    servers.map(address ⇒ "%s:%s".format(address.getHost, address.getPort))
+  }
+
   private[this] def doFullStartupSequence() = {
-    import service.RabbitMQService.RabbitMQConKeys
-    import service.RabbitMQService.RabbitMQChannelKeys
-    import conf._
+    import this.conf._
 
     _state.set(StartupSequence)
 
@@ -104,7 +110,7 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
     factory.setPassword(connectionConf(RabbitMQConKeys.password))
     factory.setVirtualHost(connectionConf(RabbitMQConKeys.vhost))
 
-    val connection = factory.newConnection(connectionConf(RabbitMQConKeys.servers))
+    val connection = factory.newConnection(servers)
 
     val channel = connection.createChannel()
 
@@ -134,11 +140,7 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
       queueConf(RabbitMQQueueKeys.arguments).toJavaMap
     )
 
-    logger.info("Queue declaration: {}", declareOK)
-
     val bindOK = channel.queueBind(queueName, exchangeName, routingKey)
-
-    logger.info("Queue binding {}", bindOK)
 
     channel.addShutdownListener(RabbitMQShutdownListener)
 
@@ -161,6 +163,9 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
       case e: Exception ⇒
         doSafeFullShutdownSequence(true)
         logger.error("While starting", e)
+
+      case e: Throwable ⇒
+        throw e
     }
   }
 
@@ -248,8 +253,11 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
   }
 
   def toDebugString = {
-    import conf._
-    "(exchange=%s, routingKey=%s, queue=%s)".format(exchangeName, routingKey, queueName)
+    "(servers=%s, exchange=%s, routingKey=%s, queue=%s)".format(
+      serversToDebugStrings.mkString("[", ", ", "]"),
+      conf.exchangeName,
+      conf.routingKey,
+      conf.queueName)
   }
 
   override def toString = {

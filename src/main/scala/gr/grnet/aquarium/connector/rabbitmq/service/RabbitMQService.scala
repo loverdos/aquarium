@@ -135,9 +135,12 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
     val futureExecutor = new PayloadHandlerFutureExecutor
 
     // (e)xchange:(r)outing key:(q)
-    logger.debug("%s=%s".format(RabbitMQConfKeys.rcevents_queues, _props(RabbitMQConfKeys.rcevents_queues)))
+
+    // These two are to trigger an error if the property does not exist
+    locally(_props(RabbitMQConfKeys.rcevents_queues))
+    locally(_props(RabbitMQConfKeys.imevents_queues))
+
     val all_rc_ERQs = _props.getTrimmedList(RabbitMQConfKeys.rcevents_queues)
-    logger.debug("all_rc_ERQs = %s".format(all_rc_ERQs))
 
     val rcConsumerConfs_ = for(oneERQ ← all_rc_ERQs) yield {
       RabbitMQService.makeRabbitMQConsumerConf(_props, oneERQ)
@@ -198,7 +201,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
       for(consumer ← this._consumers) {
         if(!consumer.isStarted()) {
-          logger.warn("Not started yet {}", consumer.toDebugString)
+          logger.warn("Consumer not started yet {}", consumer.toDebugString)
         }
       }
     }

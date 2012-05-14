@@ -45,11 +45,11 @@ import org.slf4j.Logger
 
 object LogHelpers {
   def logStarting(logger: Logger): Unit = {
-    logger.debug("StartupSequence$ ...")
+    logger.debug("Starting ...")
   }
 
   def logStarting(logger: Logger, fmt: String, args: Any*): Unit = {
-    logger.debug("StartupSequence$ %s ...".format(fmt.format(args: _*)))
+    logger.debug("Starting %s ...".format(fmt.format(args: _*)))
   }
 
   def logStarted(logger: Logger, ms0: Long, ms1: Long): Unit = {
