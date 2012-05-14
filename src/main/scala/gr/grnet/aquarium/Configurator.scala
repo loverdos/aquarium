@@ -201,6 +201,8 @@ final class Configurator(val props: Props) extends Loggable {
 
   private[this] lazy val _converters = StdConverters.AllConverters
 
+  private[this] lazy val _timerService: TimerService = newInstance[SimpleTimerService]()
+
   private[this] lazy val _akka = newInstance[AkkaService]()
 
   private[this] lazy val _eventBus = newInstance[EventBusService]()
@@ -208,6 +210,7 @@ final class Configurator(val props: Props) extends Loggable {
   private[this] lazy val _rabbitmqService = newInstance[RabbitMQService]()
 
   private[this] lazy val _allServices = List(
+    _timerService,
     _akka,
     _actorProvider,
     _eventBus,
@@ -265,6 +268,8 @@ final class Configurator(val props: Props) extends Loggable {
   def actorProvider = _actorProvider
 
   def eventBus = _eventBus
+
+  def timerService = _timerService
 
   def userStateStore = {
     _userStateStoreM match {

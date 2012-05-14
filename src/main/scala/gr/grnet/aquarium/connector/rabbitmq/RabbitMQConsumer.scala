@@ -180,6 +180,8 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
   }
 
   private[this] def doRescheduleStartup(): Unit = {
+    val timerService = Configurator.MasterConfigurator.timerService
+    timerService.scheduleOnce(start(), 1000L * 1)
   }
 
   private[this] def doWithChannel[A](f: Channel ⇒ A): Unit = {
