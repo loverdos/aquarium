@@ -45,6 +45,7 @@ import gr.grnet.aquarium.service._
 import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService
+import gr.grnet.aquarium.converter.StdConverters
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -201,6 +202,8 @@ final class Configurator(val props: Props) extends Loggable {
     }
   }
 
+  private[this] lazy val _converters = StdConverters.AllConverters
+
   private[this] lazy val _resEventProc = new ResourceEventProcessorService
 
   private[this] lazy val _imEventProc = new IMEventProcessorService
@@ -260,6 +263,8 @@ final class Configurator(val props: Props) extends Loggable {
     Thread sleep millis
     stopServices()
   }
+
+  def converters = _converters
   
   def actorProvider = _actorProvider
 

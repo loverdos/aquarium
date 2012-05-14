@@ -33,42 +33,55 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.util
+package gr.grnet.aquarium.connector.rabbitmq.service
 
-import date.TimeHelpers
-import org.slf4j.Logger
+import com.ckkloverdos.maybe.{Just, Failed, MaybeEither}
+
+import gr.grnet.aquarium.converter.JsonTextFormat
+import gr.grnet.aquarium.connector.handler._
+import gr.grnet.aquarium.event.model.ExternalEventModel
+import gr.grnet.aquarium.util.safeUnit
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object LogHelpers {
-  def logStarting(logger: Logger): Unit = {
-    logger.debug("StartupSequence$ ...")
-  }
+class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
+    (jsonParser: Array[Byte] ⇒ MaybeEither[JsonTextFormat],
+     jsonParserErrorAction: (Array[Byte], Throwable) ⇒ Unit,
+     eventParser: JsonTextFormat ⇒ E,
+     saveAction: E ⇒ S,
+     forwardAction: S ⇒ Unit) extends PayloadHandler {
 
-  def logStarting(logger: Logger, fmt: String, args: Any*): Unit = {
-    logger.debug("StartupSequence$ %s ...".format(fmt.format(args: _*)))
-  }
+  def handlePayload(payload: Array[Byte]): HandlerResult = {
+    // 1. try to parse as json
+    jsonParser(payload) match {
+      case Failed(e) ⇒
+        jsonParserErrorAction(payload, e)
 
-  def logStarted(logger: Logger, ms0: Long, ms1: Long): Unit = {
-    logger.info("Started in %.3f sec".format(TimeHelpers.secDiffOfMillis(ms0, ms1)))
-  }
+        HandlerResultReject(e.getMessage)
 
-  def logStarted(logger: Logger, ms0: Long, ms1: Long, fmt: String, args: Any*): Unit = {
-    logger.info("Started %s in %.3f sec".format(fmt.format(args: _*), TimeHelpers.secDiffOfMillis(ms0, ms1)))
-  }
+      case Just(jsonTextFormat) ⇒
+        // 2. try to parse as model
+        MaybeEither { eventParser(jsonTextFormat) } match {
+          case Failed(e) ⇒
+            HandlerResultReject(e.getMessage)
 
-  def logStopping(logger: Logger): Unit = {
-    logger.debug("Stopping ...")
-  }
+          case Just(event) ⇒
+            // 3. try to save to DB
+            MaybeEither { saveAction(event) } match {
+              case Failed(e) ⇒
+                HandlerResultPanic
 
-  def logStopped(logger: Logger, ms0: Long, ms1: Long): Unit = {
-    logger.info("Stopped in %.3f sec".format(TimeHelpers.secDiffOfMillis(ms0, ms1)))
-  }
+              case Just(s) ⇒
+                // 4. try forward but it's OK if something bad happens here.
+                safeUnit { forwardAction(s) }
 
-  def logStopped(logger: Logger, ms0: Long, ms1: Long, fmt: String, args: Any*): Unit = {
-    logger.info("Stopped %s in %.3f sec".format(fmt.format(args: _*), TimeHelpers.secDiffOfMillis(ms0, ms1)))
+                HandlerResultSuccess
+            }
+
+        }
+    }
   }
 }

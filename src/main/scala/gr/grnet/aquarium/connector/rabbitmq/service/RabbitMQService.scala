@@ -48,6 +48,12 @@ import com.ckkloverdos.env.{EnvKey, Env}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
+import com.ckkloverdos.maybe.{MaybeEither, Failed, Just, Maybe}
+import gr.grnet.aquarium.connector.handler.{HandlerResultSuccess, HandlerResultPanic, HandlerResultReject, HandlerResult, PayloadHandler}
+import gr.grnet.aquarium.actor.RouterRole
+import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
+import gr.grnet.aquarium.store.{LocalFSEventStore, IMEventStore, ResourceEventStore}
+import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
 
 /**
  *
@@ -58,6 +64,18 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   private[this] val props: Props = Props()(StdConverters.AllConverters)
 
   def propertyPrefix = Some(RabbitMQService.PropertiesPrefix)
+
+  def configurator = Configurator.MasterConfigurator
+
+  def eventBus = configurator.eventBus
+
+  def resourceEventStore = configurator.resourceEventStore
+
+  def imEventStore = configurator.imEventStore
+
+  def converters = configurator.converters
+
+  def router = configurator.actorProvider.actorForRole(RouterRole)
 
   /**
    * Configure this instance with the provided properties.
@@ -73,14 +91,14 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
     } catch {
       case e: Exception ⇒
       // If we have no internal error, then something is bad with RabbitMQ
-      Configurator.MasterConfigurator.eventBus ! RabbitMQError(e)
+      eventBus ! RabbitMQError(e)
       throw e
     }
   }
 
   private[this] def doConfigure(): Unit = {
-    val jsonParser: (Array[Byte] ⇒ JsonTextFormat) = { payload ⇒
-      StdConverters.AllConverters.convertEx[JsonTextFormat](payload)
+    val jsonParser: (Array[Byte] ⇒ MaybeEither[JsonTextFormat]) = { payload ⇒
+      converters.convert[JsonTextFormat](payload)
     }
 
     val rcEventParser: (JsonTextFormat ⇒ ResourceEventModel) = { jsonTextFormat ⇒
@@ -91,6 +109,22 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
       StdIMEvent.fromJsonTextFormat(jsonTextFormat)
     }
 
+    val rcHandler = new GenericPayloadHandler[ResourceEventModel, ResourceEventStore#ResourceEvent](
+      jsonParser,
+      (payload, error) ⇒ LocalFSEventStore.storeUnparsedResourceEvent(configurator, payload, error),
+      rcEventParser,
+      rcEvent ⇒ resourceEventStore.insertResourceEvent(rcEvent),
+      rcEvent ⇒ router ! ProcessResourceEvent(rcEvent)
+    )
+
+    val imHandler = new GenericPayloadHandler[IMEventModel, IMEventStore#IMEvent](
+      jsonParser,
+      (payload, error) ⇒ LocalFSEventStore.storeUnparsedIMEvent(configurator, payload, error),
+      imEventParser,
+      imEvent ⇒ imEventStore.insertIMEvent(imEvent),
+      imEvent ⇒ router ! ProcessIMEvent(imEvent)
+    )
+
     // (e)xchange:(r)outing key:(q)
     val all_rc_ERQs = props.getTrimmedList(RabbitMQConfKeys.rcevents_queues)
     val rcConsumerConfs = for(oneERQ ← all_rc_ERQs) yield {
@@ -100,6 +134,14 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
     val all_im_ERQs = props.getTrimmedList(RabbitMQConfKeys.imevents_queues)
     val imConsumerConfs = for(oneERQ ← all_im_ERQs) yield {
       RabbitMQService.makeRabbitMQConsumerConf(props, oneERQ)
+    }
+
+    val rcConsumers = for(rccc ← rcConsumerConfs) yield {
+      new RabbitMQConsumer(rccc, rcHandler)
+    }
+
+    val imConsumers = for(imcc ← imConsumerConfs) yield {
+      new RabbitMQConsumer(imcc, imHandler)
     }
   }
 
@@ -150,11 +192,11 @@ object RabbitMQService {
 
     // TODO: Integrate the below RabbitMQConKeys and RabbitMQConfKeys
     // TODO:  Normally this means to get rid of Props and use Env everywhere.
-    // TODO:  More type-safe anyway.
+    // TODO:  [Will be more type-safe anyway.]
     Env() +
-      (RabbitMQConKeys.username, props.getEx(RabbitMQConfKeys.username)) +
-      (RabbitMQConKeys.password, props.getEx(RabbitMQConfKeys.password)) +
-      (RabbitMQConKeys.vhost,    props.getEx(RabbitMQConfKeys.vhost))    +
+      (RabbitMQConKeys.username, props(RabbitMQConfKeys.username)) +
+      (RabbitMQConKeys.password, props(RabbitMQConfKeys.password)) +
+      (RabbitMQConKeys.vhost,    props(RabbitMQConfKeys.vhost))    +
       (RabbitMQConKeys.servers,  addresses)
   }
 

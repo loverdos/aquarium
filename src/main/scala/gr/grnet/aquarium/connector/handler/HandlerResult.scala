@@ -33,42 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.util
-
-import date.TimeHelpers
-import org.slf4j.Logger
+package gr.grnet.aquarium.connector.handler
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object LogHelpers {
-  def logStarting(logger: Logger): Unit = {
-    logger.debug("StartupSequence$ ...")
-  }
-
-  def logStarting(logger: Logger, fmt: String, args: Any*): Unit = {
-    logger.debug("StartupSequence$ %s ...".format(fmt.format(args: _*)))
-  }
-
-  def logStarted(logger: Logger, ms0: Long, ms1: Long): Unit = {
-    logger.info("Started in %.3f sec".format(TimeHelpers.secDiffOfMillis(ms0, ms1)))
-  }
-
-  def logStarted(logger: Logger, ms0: Long, ms1: Long, fmt: String, args: Any*): Unit = {
-    logger.info("Started %s in %.3f sec".format(fmt.format(args: _*), TimeHelpers.secDiffOfMillis(ms0, ms1)))
-  }
-
-  def logStopping(logger: Logger): Unit = {
-    logger.debug("Stopping ...")
-  }
-
-  def logStopped(logger: Logger, ms0: Long, ms1: Long): Unit = {
-    logger.info("Stopped in %.3f sec".format(TimeHelpers.secDiffOfMillis(ms0, ms1)))
-  }
-
-  def logStopped(logger: Logger, ms0: Long, ms1: Long, fmt: String, args: Any*): Unit = {
-    logger.info("Stopped %s in %.3f sec".format(fmt.format(args: _*), TimeHelpers.secDiffOfMillis(ms0, ms1)))
-  }
+trait HandlerResult {
+  def isSuccess: Boolean = false
 }

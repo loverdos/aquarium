@@ -33,16 +33,11 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.connector
+package gr.grnet.aquarium.connector.handler
 
 /**
- * Handles the raw event payload bytes.
- *
- * All the event-specific business logic goes here.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait EventPayloadHandler {
-  def handlePayload(payload: Array[Byte]): Unit
-}
+case class HandlerResultReject(reason: String) extends HandlerResult

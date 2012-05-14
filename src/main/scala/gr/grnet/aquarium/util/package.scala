@@ -50,8 +50,9 @@ import annotation.tailrec
 package object util {
   final val UTF_8_Charset = Charset.forName("UTF-8")
 
-  def tryUnit[A](f: ⇒ A): Unit = {
-    try f
+  @inline
+  def safeUnit[A](f: ⇒ A): Unit = {
+    com.ckkloverdos.maybe.safeUnit(f)
   }
 
   def tryOption[A](f: ⇒ A): Option[A] = {
