@@ -197,7 +197,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   }
 
   def start() = {
-    logStoppingF("") {
+    logStartingF("") {
       this._consumers.foreach(_.start())
 
       for(consumer ← this._consumers) {
