@@ -76,7 +76,7 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
   def stop() = {
     logStoppingF("") {
       safeUnit(_poster.stop())
-    }
+    } {}
   }
 
   @inline
