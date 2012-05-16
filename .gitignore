@@ -42,3 +42,4 @@ aquarium-dist.tar.gz
 events-store/
 __*
 AQUARIUM_HOME_IS_UNDEFINED
+aquarium.home_IS_UNDEFINED
