@@ -35,10 +35,9 @@
 
 package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import gr.grnet.aquarium.util.date.TimeHelpers
 import java.util.{TimerTask, Timer}
 import gr.grnet.aquarium.uid.{UUIDGenerator, UIDGenerator}
+import gr.grnet.aquarium.util.chainOfCausesForLogging
 
 
 /**
@@ -50,14 +49,14 @@ class SimpleTimerService extends TimerService {
   private[this] val timer = new Timer()
   private[this] val uidGen: UIDGenerator[_] = UUIDGenerator
 
-  def scheduleOnce[T](f: ⇒ T, delayMillis: Long): String = {
+  def scheduleOnce[T](infoString: String, f: ⇒ T, delayMillis: Long, reportException: Boolean = true): String = {
     val uid = uidGen.nextUID()
     val timerTask = new TimerTask {
       def run() = {
         try f
         catch {
           case e: Exception ⇒
-            logger.warn("While running task %s".format(uid))
+            logger.warn("While running task %s(%s)\n%s".format(infoString, uid, chainOfCausesForLogging(e, 1)))
         }
       }
     }

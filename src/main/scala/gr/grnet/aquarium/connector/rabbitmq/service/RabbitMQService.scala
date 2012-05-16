@@ -43,7 +43,6 @@ import com.rabbitmq.client.Address
 import gr.grnet.aquarium.{Configurator, Configurable}
 import gr.grnet.aquarium.connector.rabbitmq.conf.{TopicExchange, RabbitMQConsumerConf, RabbitMQExchangeType}
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConfKeys
-import com.ckkloverdos.key.{ArrayKey, IntKey, TypedKeySkeleton, BooleanKey, StringKey}
 import com.ckkloverdos.env.{EnvKey, Env}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
@@ -53,6 +52,7 @@ import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
 import gr.grnet.aquarium.store.{LocalFSEventStore, IMEventStore, ResourceEventStore}
 import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
+import com.ckkloverdos.key.{LongKey, ArrayKey, IntKey, TypedKeySkeleton, BooleanKey, StringKey}
 
 /**
  *
@@ -201,7 +201,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
       this._consumers.foreach(_.start())
 
       for(consumer ← this._consumers) {
-        if(!consumer.isStarted()) {
+        if(!consumer.isAlive()) {
           logger.warn("Consumer not started yet {}", consumer.toDebugString)
         }
       }
@@ -258,7 +258,8 @@ object RabbitMQService {
       (RabbitMQConKeys.username, props(RabbitMQConfKeys.username)) +
       (RabbitMQConKeys.password, props(RabbitMQConfKeys.password)) +
       (RabbitMQConKeys.vhost,    props(RabbitMQConfKeys.vhost))    +
-      (RabbitMQConKeys.servers,  addresses)
+      (RabbitMQConKeys.servers,  addresses) +
+      (RabbitMQConKeys.reconnect_period_millis, props.getLongEx(RabbitMQConfKeys.reconnect_period_millis))
   }
 
   def makeRabbitMQConsumerConf(props: Props, oneERQ: String) = {
@@ -280,6 +281,8 @@ object RabbitMQService {
     final val password  = StringKey(p("password"))
     final val vhost     = StringKey(p("vhost"))
     final val servers   = ArrayKey[Address](p("servers"))
+
+    final val reconnect_period_millis = LongKey(p("reconnect.period.millis"))
   }
 
   /**
@@ -329,6 +332,11 @@ object RabbitMQService {
   }
 
   object RabbitMQConfKeys {
+    /**
+     * How often do we attemot a reconnection?
+     */
+    final val reconnect_period_millis = p("reconnect.period.millis")
+
     /**
      * Comma separated list of AMQP servers running in active-active
      * configuration.
