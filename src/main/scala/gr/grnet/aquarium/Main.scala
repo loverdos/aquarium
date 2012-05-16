@@ -62,14 +62,13 @@ object Main extends LazyLoggable {
 
   private[this] def configureLogging(): Unit = {
     // Make sure AQUARIUM_HOME is configured, since it is used in logback.xml
-    assert(ResourceLocator.Homes.Folders.AQUARIUM_HOME.isDirectory)
+    assert(ResourceLocator.Homes.Folders.AquariumHome.isDirectory)
   }
 
   def doStart(): Unit = {
     import ResourceLocator.CONF_HERE
     import ResourceLocator.Homes
     import ResourceLocator.SysEnvs
-    import ResourceLocator.SysProps
 
     // We have AKKA builtin, so no need to mess with pre-existing installation.
     if(SysEnvs.AKKA_HOME.value.isJust) {
@@ -89,7 +88,13 @@ object Main extends LazyLoggable {
       logger.info("{} = {}", prop.name, prop.rawValue)
     }
 
-    logger.info("Aquarium Home = {}", Homes.Folders.AQUARIUM_HOME)
+    logger.info("Aquarium Home = %s".format(
+      if(Homes.Folders.AquariumHome.isAbsolute)
+        Homes.Folders.AquariumHome
+      else
+        "%s [=%s]".format(Homes.Folders.AquariumHome, Homes.Folders.AquariumHome.getCanonicalPath)
+    ))
+
     logger.info("CONF_HERE = {}", CONF_HERE)
 
     mc.startServices()

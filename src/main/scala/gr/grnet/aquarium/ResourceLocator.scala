@@ -65,7 +65,7 @@ object ResourceLocator {
   final object Homes {
     final object Names {
       final val AKKA_HOME     = "AKKA_HOME"
-      final val AQUARIUM_HOME = "AQUARIUM_HOME"
+//      final val AQUARIUM_HOME = "AQUARIUM_HOME"
     }
 
     final object Folders {
@@ -90,7 +90,7 @@ object ResourceLocator {
        *
        * TODO: Make this searchable for resources (ie put it in the resource context)
        */
-      final lazy val AQUARIUM_HOME = {
+      final lazy val AquariumHome = {
         SysProps.AquariumHome.value match {
           case Just(aquariumHome) ⇒
             checkFolder(SysProps.Names.AquariumHome, new File(aquariumHome))
@@ -110,7 +110,9 @@ object ResourceLocator {
                 throw new AquariumInternalError("Error regarding %s".format(SysEnvs.Names.AQUARIUM_HOME), e)
 
               case NoVal ⇒
-                new File(".")
+                val folder = new File(".")
+                SysProps.AquariumHome.update(folder.getPath) // needed for logback configuration
+                folder
             }
         }
       }
@@ -120,7 +122,7 @@ object ResourceLocator {
   final object SysEnvs {
     final object Names {
       final val AKKA_HOME     = Homes.Names.AKKA_HOME
-      final val AQUARIUM_HOME = Homes.Names.AQUARIUM_HOME
+      final val AQUARIUM_HOME = "AQUARIUM_HOME"
     }
 
     final val AKKA_HOME     = SysEnv(Names.AKKA_HOME)
@@ -194,7 +196,7 @@ object ResourceLocator {
     }
   }
 
-  final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(Homes.Folders.AQUARIUM_HOME, ResourceNames.CONF_FODLER)
+  final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(Homes.Folders.AquariumHome, ResourceNames.CONF_FODLER)
 
   final lazy val LOGBACK_XML_FILE = new File(AQUARIUM_HOME_CONF_FOLDER, ResourceNames.LOGBACK_XML)
 
