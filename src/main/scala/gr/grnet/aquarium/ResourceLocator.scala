@@ -62,68 +62,92 @@ object ResourceLocator {
     final val ROLE_AGREEMENTS_MAP = "roles-agreements.map"
   }
 
-  final object HomeNames {
-    final val NAME_AKKA_HOME     = "AKKA_HOME"
-    final val NAME_AQUARIUM_HOME = "AQUARIUM_HOME"
-  }
-
   final object Homes {
-    final val AKKA_HOME = SysEnv(HomeNames.NAME_AKKA_HOME)
-
-    /**
-     * This is normally exported from the shell script that starts Aquarium.
-     *
-     * TODO: Make this searchable for resources (ie put it in the resource context)
-     */
-    final val AQUARIUM_HOME = {
-      val Home = SysEnv(HomeNames.NAME_AQUARIUM_HOME)
-
-      // Set or update the system property of the same name
-      for(value ← Home.value) {
-        SysProp(HomeNames.NAME_AQUARIUM_HOME).update(value)
-      }
-
-      Home
+    final object Names {
+      final val AKKA_HOME     = "AKKA_HOME"
+      final val AQUARIUM_HOME = "AQUARIUM_HOME"
     }
 
-    final lazy val AQUARIUM_HOME_FOLDER: File = {
-      Homes.AQUARIUM_HOME.value match {
-        case Just(home) ⇒
-          val file = new File(home)
-          if(!file.isDirectory) {
-            throw new AquariumInternalError("%s (%s) is not a folder".format(Homes.AQUARIUM_HOME.name, home))
-          }
-          file.getCanonicalFile()
+    final object Folders {
+      private[this] def checkFolder(name: String, file: File): File = {
+        if(!file.isDirectory) {
+          throw new AquariumInternalError(
+            "%s=%s is not a folder".format(
+              name,
+              if(file.isAbsolute)
+                file.getAbsolutePath
+              else
+                "%s [=%s]".format(file, file.getCanonicalFile)
+            )
+          )
+        }
+        file
+      }
 
-        case _ ⇒
-          if(isRunningTests()) {
-            new File(".")
-          } else {
-            throw new AquariumInternalError("%s is not set".format(Homes.AQUARIUM_HOME.name))
-          }
+      /**
+       * This is normally exported from the shell script (AQUARIUM_HOME) that starts Aquarium or given in the command
+       * line (aquarium.home).
+       *
+       * TODO: Make this searchable for resources (ie put it in the resource context)
+       */
+      final lazy val AQUARIUM_HOME = {
+        SysProps.AquariumHome.value match {
+          case Just(aquariumHome) ⇒
+            checkFolder(SysProps.Names.AquariumHome, new File(aquariumHome))
+
+          case Failed(e) ⇒
+            throw new AquariumInternalError("Error regarding %s".format(SysProps.Names.AquariumHome), e)
+
+          case NoVal ⇒
+            SysEnvs.AQUARIUM_HOME.value match {
+              case Just(aquarium_home) ⇒
+                val folder = new File(aquarium_home)
+                checkFolder(SysEnvs.Names.AQUARIUM_HOME, folder)
+                SysProps.AquariumHome.update(folder.getPath) // needed for logback configuration
+                folder
+
+              case Failed(e) ⇒
+                throw new AquariumInternalError("Error regarding %s".format(SysEnvs.Names.AQUARIUM_HOME), e)
+
+              case NoVal ⇒
+                new File(".")
+            }
+        }
       }
     }
-
   }
 
-  final object SysPropsNames {
-    final val NameAquariumPropertiesPath = "aquarium.properties.path"
-    final val NameAquariumConfFolder     = "aquarium.conf.folder"
+  final object SysEnvs {
+    final object Names {
+      final val AKKA_HOME     = Homes.Names.AKKA_HOME
+      final val AQUARIUM_HOME = Homes.Names.AQUARIUM_HOME
+    }
+
+    final val AKKA_HOME     = SysEnv(Names.AKKA_HOME)
+    final val AQUARIUM_HOME = SysEnv(Names.AQUARIUM_HOME)
   }
 
   final object SysProps {
+    final object Names {
+      final val AquariumHome           = "aquarium.home"
+      final val AquariumPropertiesPath = "aquarium.properties.path"
+      final val AquariumConfFolder     = "aquarium.conf.folder"
+    }
+
+    final val AquariumHome = SysProp(Names.AquariumHome)
+
     /**
      * Use this property to override the place of aquarium.properties.
      * If this is set, then it override any other way to specify the aquarium.properties location.
      */
-    final lazy val AquariumPropertiesPath = SysProp(SysPropsNames.NameAquariumPropertiesPath)
+    final val AquariumPropertiesPath = SysProp(Names.AquariumPropertiesPath)
 
     /**
      * Use this property to override the place where aquarium configuration resides.
      *
      * The value of this property is a folder that defines the highest-priority resource context.
      */
-    final lazy val AquariumConfFolder = SysProp(SysPropsNames.NameAquariumConfFolder)
+    final val AquariumConfFolder = SysProp(Names.AquariumConfFolder)
   }
 
   final object ResourceContexts {
@@ -170,7 +194,7 @@ object ResourceLocator {
     }
   }
 
-  final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(Homes.AQUARIUM_HOME_FOLDER, ResourceNames.CONF_FODLER)
+  final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(Homes.Folders.AQUARIUM_HOME, ResourceNames.CONF_FODLER)
 
   final lazy val LOGBACK_XML_FILE = new File(AQUARIUM_HOME_CONF_FOLDER, ResourceNames.LOGBACK_XML)
 
@@ -190,8 +214,8 @@ object ResourceLocator {
           // On error, fail
           throw new AquariumInternalError(
             "Could not find %s=%s".format(
-              ResourceLocator.SysPropsNames.NameAquariumPropertiesPath,
-              ResourceLocator.SysProps.AquariumPropertiesPath),
+              ResourceLocator.SysProps.Names.AquariumPropertiesPath,
+              ResourceLocator.SysProps.Names.AquariumPropertiesPath),
             e)
 
         case NoVal ⇒

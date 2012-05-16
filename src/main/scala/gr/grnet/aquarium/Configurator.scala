@@ -171,7 +171,7 @@ final class Configurator(val props: Props) extends Loggable {
             folder.getCanonicalFile
           } else {
             logger.info("{} is not absolute, making it relative to AQUARIUM_HOME", Keys.events_store_folder)
-            new File(ResourceLocator.Homes.AQUARIUM_HOME_FOLDER, folderName).getCanonicalFile
+            new File(ResourceLocator.Homes.Folders.AQUARIUM_HOME, folderName).getCanonicalFile
           }
         }
 
@@ -185,12 +185,12 @@ final class Configurator(val props: Props) extends Loggable {
 
         // Now, events folder must be outside AQUARIUM_HOME, since AQUARIUM_HOME can be wiped out for an upgrade but
         // we still want to keep the events.
-        val ahCanonicalPath = ResourceLocator.Homes.AQUARIUM_HOME_FOLDER.getCanonicalPath
+        val ahCanonicalPath = ResourceLocator.Homes.Folders.AQUARIUM_HOME.getCanonicalPath
         if(canonicalPath.startsWith(ahCanonicalPath)) {
           throw new AquariumException(
             "%s = %s is under %s = %s".format(
               Keys.events_store_folder, canonicalFolder,
-              ResourceLocator.Homes.AQUARIUM_HOME.name, ahCanonicalPath
+              ResourceLocator.Homes.Names.AQUARIUM_HOME, ahCanonicalPath
             ))
         }
 

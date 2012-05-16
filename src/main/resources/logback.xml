@@ -7,10 +7,10 @@
   </appender>
 
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${AQUARIUM_HOME}/logs/aquarium.log</file>
+    <file>${aquarium.home}/logs/aquarium.log</file>
     <append>true</append>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${AQUARIUM_HOME}/logs/aquarium.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <fileNamePattern>${aquarium.home}/logs/aquarium.%d{yyyy-MM-dd}.log</fileNamePattern>
       <maxHistory>30</maxHistory>
     </rollingPolicy>
     <encoder>
