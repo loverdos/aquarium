@@ -35,13 +35,13 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.resource.{StreamResource, CompositeStreamResourceContext, ClassLoaderStreamResourceContext, FileStreamResourceContext}
 import com.ckkloverdos.maybe.{Failed, Just, Maybe, NoVal}
 import com.ckkloverdos.sys.{SysEnv, SysProp}
 import java.io.File
 
 import gr.grnet.aquarium.util.justForSure
 import gr.grnet.aquarium.util.isRunningTests
+import com.ckkloverdos.resource.{FileStreamResource, StreamResource, CompositeStreamResourceContext, ClassLoaderStreamResourceContext, FileStreamResourceContext}
 
 /**
  * Locates resources.
@@ -52,105 +52,171 @@ import gr.grnet.aquarium.util.isRunningTests
  */
 
 object ResourceLocator {
-  final object Names {
-    final val LOGBACK_XML = "logback.xml"
+  final object ResourceNames {
+    final val CONF_FODLER               = "conf"
+    final val SLASH_ETC_AQUARIUM_FOLDER = "/etc/aquarium"
+
+    final val LOGBACK_XML         = "logback.xml"
+    final val AQUARIUM_PROPERTIES = "aquarium.properties"
+    final val POLICY_YAML         = "policy.yaml"
+    final val ROLE_AGREEMENTS_MAP = "roles-agreements.map"
   }
 
-  final val NAME_AKKA_HOME     = "AKKA_HOME"
-  final val NAME_AQUARIUM_HOME = "AQUARIUM_HOME"
+  final object HomeNames {
+    final val NAME_AKKA_HOME     = "AKKA_HOME"
+    final val NAME_AQUARIUM_HOME = "AQUARIUM_HOME"
+  }
 
-  final val AKKA_HOME = SysEnv(NAME_AKKA_HOME)
+  final object Homes {
+    final val AKKA_HOME = SysEnv(HomeNames.NAME_AKKA_HOME)
 
-  /**
-   * This is normally exported from the shell script that starts Aquarium.
-   *
-   * TODO: Make this searchable for resources (ie put it in the resource context)
-   */
-  final val AQUARIUM_HOME = {
-    val Home = SysEnv(NAME_AQUARIUM_HOME)
+    /**
+     * This is normally exported from the shell script that starts Aquarium.
+     *
+     * TODO: Make this searchable for resources (ie put it in the resource context)
+     */
+    final val AQUARIUM_HOME = {
+      val Home = SysEnv(HomeNames.NAME_AQUARIUM_HOME)
 
-    // Set or update the system property of the same name
-    for(value ← Home.value) {
-      SysProp(NAME_AQUARIUM_HOME).update(value)
+      // Set or update the system property of the same name
+      for(value ← Home.value) {
+        SysProp(HomeNames.NAME_AQUARIUM_HOME).update(value)
+      }
+
+      Home
     }
 
-    Home
+    final lazy val AQUARIUM_HOME_FOLDER: File = {
+      Homes.AQUARIUM_HOME.value match {
+        case Just(home) ⇒
+          val file = new File(home)
+          if(!file.isDirectory) {
+            throw new AquariumInternalError("%s (%s) is not a folder".format(Homes.AQUARIUM_HOME.name, home))
+          }
+          file.getCanonicalFile()
+
+        case _ ⇒
+          if(isRunningTests()) {
+            new File(".")
+          } else {
+            throw new AquariumInternalError("%s is not set".format(Homes.AQUARIUM_HOME.name))
+          }
+      }
+    }
+
   }
 
-  final lazy val AQUARIUM_HOME_FOLDER: File = {
-    AQUARIUM_HOME.value match {
-      case Just(home) ⇒
-        val file = new File(home)
-        if(!file.isDirectory) {
-          throw new AquariumInternalError("%s (%s) is not a folder".format(AQUARIUM_HOME.name, home))
-        }
-        file.getCanonicalFile()
+  final object SysPropsNames {
+    final val NameAquariumPropertiesPath = "aquarium.properties.path"
+    final val NameAquariumConfFolder     = "aquarium.conf.folder"
+  }
 
-      case _ ⇒
-        if(isRunningTests()) {
-          new File(".")
-        } else {
-          throw new AquariumInternalError("%s is not set".format(AQUARIUM_HOME.name))
-        }
+  final object SysProps {
+    /**
+     * Use this property to override the place of aquarium.properties.
+     * If this is set, then it override any other way to specify the aquarium.properties location.
+     */
+    final lazy val AquariumPropertiesPath = SysProp(SysPropsNames.NameAquariumPropertiesPath)
+
+    /**
+     * Use this property to override the place where aquarium configuration resides.
+     *
+     * The value of this property is a folder that defines the highest-priority resource context.
+     */
+    final lazy val AquariumConfFolder = SysProp(SysPropsNames.NameAquariumConfFolder)
+  }
+
+  final object ResourceContexts {
+    /**
+     * AQUARIUM_HOME/conf resource context.
+     */
+    private[this] final lazy val HomeConfResourceContext = new FileStreamResourceContext(AQUARIUM_HOME_CONF_FOLDER)
+
+    /**
+     * The venerable /etc resource context. Applicable in Unix environments
+     */
+    private[this] final lazy val SlashEtcResourceContext = new FileStreamResourceContext(ResourceNames.SLASH_ETC_AQUARIUM_FOLDER)
+
+    /**
+     * Class loader resource context.
+     * This has the lowest priority.
+     */
+    private[this] final lazy val ClasspathBaseResourceContext = new ClassLoaderStreamResourceContext(
+      Thread.currentThread().getContextClassLoader)
+
+    private[this] final lazy val BasicResourceContext = new CompositeStreamResourceContext(
+      NoVal,
+      SlashEtcResourceContext,
+      HomeConfResourceContext,
+      ClasspathBaseResourceContext)
+
+    /**
+     * The resource context used in the application.
+     */
+    final lazy val MasterResourceContext = {
+      SysProps.AquariumConfFolder.value match {
+        case Just(value) ⇒
+          // We have a system override for the configuration location
+          new CompositeStreamResourceContext(
+            Just(BasicResourceContext),
+            new FileStreamResourceContext(value))
+
+        case NoVal ⇒
+          BasicResourceContext
+
+        case Failed(e) ⇒
+          throw new AquariumInternalError(e)
+      }
     }
   }
 
-  final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(AQUARIUM_HOME_FOLDER, "conf")
+  final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(Homes.AQUARIUM_HOME_FOLDER, ResourceNames.CONF_FODLER)
 
-  final lazy val LOGBACK_XML_FILE = new File(AQUARIUM_HOME_CONF_FOLDER, Names.LOGBACK_XML)
+  final lazy val LOGBACK_XML_FILE = new File(AQUARIUM_HOME_CONF_FOLDER, ResourceNames.LOGBACK_XML)
 
   /**
    * This exists in order to have a feeling of where we are.
    */
   final lazy val CONF_HERE = justForSure(getResource(".")).get.url.toExternalForm
 
-  /**
-   * AQUARIUM_HOME/conf resource context.
-   */
-  private[this] final lazy val HomeConfResourceContext = new FileStreamResourceContext(AQUARIUM_HOME_CONF_FOLDER)
+  final object Resources {
+    final lazy val AquariumPropertiesResource = {
+      ResourceLocator.SysProps.AquariumPropertiesPath.value match {
+        case Just(aquariumPropertiesPath) ⇒
+          // If we have a command-line override, prefer that
+          new FileStreamResource(new File(aquariumPropertiesPath))
 
-  /**
-   * The venerable /etc resource context. Applicable in Unix environments
-   */
-  private[this] final lazy val SlashEtcResourceContext = new FileStreamResourceContext("/etc/aquarium")
+        case Failed(e) ⇒
+          // On error, fail
+          throw new AquariumInternalError(
+            "Could not find %s=%s".format(
+              ResourceLocator.SysPropsNames.NameAquariumPropertiesPath,
+              ResourceLocator.SysProps.AquariumPropertiesPath),
+            e)
 
-  /**
-   * Class loader resource context.
-   * This has the lowest priority.
-   */
-  private[this] final lazy val ClasspathBaseResourceContext = new ClassLoaderStreamResourceContext(Thread
-    .currentThread().getContextClassLoader)
+        case NoVal ⇒
+          // Otherwise try other locations
+          val aquariumPropertiesRCM = ResourceLocator getResource ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES
+          aquariumPropertiesRCM match {
+            case Just(aquariumProperties) ⇒
+              aquariumProperties
 
-  /**
-   * Use this property to override the place where aquarium configuration resides.
-   *
-   * The value of this property is a folder that defines the highest-priority resource context.
-   */
-  private[this] final lazy val ConfBaseFolderSysProp = SysProp("aquarium.conf.base.folder")
+            case NoVal ⇒
+              // No luck
+              throw new AquariumInternalError(
+                "Could not find %s".format(ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES))
 
-  private[this] final lazy val BasicResourceContext = new CompositeStreamResourceContext(
-    NoVal,
-    SlashEtcResourceContext,
-    HomeConfResourceContext,
-    ClasspathBaseResourceContext)
-
-  /**
-   * The resource context used in the application.
-   */
-  private[this] final lazy val MasterResourceContext = {
-    ConfBaseFolderSysProp.value match {
-      case Just(value) ⇒
-        // We have a system override for the configuration location
-        new CompositeStreamResourceContext(Just(BasicResourceContext), new FileStreamResourceContext(value))
-
-      case NoVal ⇒
-        BasicResourceContext
-
-      case Failed(e) ⇒
-        throw new AquariumInternalError(e)
+            case Failed(e) ⇒
+              // Bad luck
+              throw new AquariumInternalError(
+                "Could not find %s".format(ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES), e)
+          }
+      }
     }
   }
 
-  def getResource(what: String): Maybe[StreamResource] =
-    MasterResourceContext.getResource(what)
+
+  def getResource(what: String): Maybe[StreamResource] = {
+    ResourceContexts.MasterResourceContext.getResource(what)
+  }
 }

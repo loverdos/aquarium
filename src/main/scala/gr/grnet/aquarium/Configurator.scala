@@ -46,6 +46,7 @@ import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService
 import gr.grnet.aquarium.converter.StdConverters
+import com.ckkloverdos.resource.FileStreamResource
 
 /**
  * The master configurator. Responsible to load all of application configuration and provide the relevant services.
@@ -170,7 +171,7 @@ final class Configurator(val props: Props) extends Loggable {
             folder.getCanonicalFile
           } else {
             logger.info("{} is not absolute, making it relative to AQUARIUM_HOME", Keys.events_store_folder)
-            new File(ResourceLocator.AQUARIUM_HOME_FOLDER, folderName).getCanonicalFile
+            new File(ResourceLocator.Homes.AQUARIUM_HOME_FOLDER, folderName).getCanonicalFile
           }
         }
 
@@ -184,12 +185,12 @@ final class Configurator(val props: Props) extends Loggable {
 
         // Now, events folder must be outside AQUARIUM_HOME, since AQUARIUM_HOME can be wiped out for an upgrade but
         // we still want to keep the events.
-        val ahCanonicalPath = ResourceLocator.AQUARIUM_HOME_FOLDER.getCanonicalPath
+        val ahCanonicalPath = ResourceLocator.Homes.AQUARIUM_HOME_FOLDER.getCanonicalPath
         if(canonicalPath.startsWith(ahCanonicalPath)) {
           throw new AquariumException(
             "%s = %s is under %s = %s".format(
               Keys.events_store_folder, canonicalFolder,
-              ResourceLocator.AQUARIUM_HOME.name, ahCanonicalPath
+              ResourceLocator.Homes.AQUARIUM_HOME.name, ahCanonicalPath
             ))
         }
 
@@ -326,44 +327,51 @@ final class Configurator(val props: Props) extends Loggable {
 object Configurator {
   implicit val DefaultConverters = TheDefaultConverters
 
-  val MasterConfName = "aquarium.properties"
+  final val PolicyConfName = ResourceLocator.ResourceNames.POLICY_YAML
 
-  val PolicyConfName = "policy.yaml"
+  final val RolesAgreementsName = ResourceLocator.ResourceNames.ROLE_AGREEMENTS_MAP
 
-  val RolesAgreementsName = "roles-agreements.map"
+  final lazy val AquariumPropertiesResource = ResourceLocator.Resources.AquariumPropertiesResource
 
-  lazy val MasterConfResource = {
-    val maybeMCResource = ResourceLocator getResource MasterConfName
-    maybeMCResource match {
-      case Just(masterConfResource) ⇒
-        masterConfResource
-      case NoVal ⇒
-        throw new AquariumInternalError("Could not find master configuration file: %s".format(MasterConfName))
-      case Failed(e) ⇒
-        throw new AquariumInternalError(e, "Could not find master configuration file: %s".format(MasterConfName))
-    }
-  }
-
-  lazy val MasterConfProps = {
-    val maybeProps = Props apply MasterConfResource
+  final lazy val AquariumProperties = {
+    val maybeProps = Props(AquariumPropertiesResource)
     maybeProps match {
       case Just(props) ⇒
         props
+
       case NoVal ⇒
-        throw new AquariumInternalError("Could not load master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError(
+          "Could not load %s from %s".format(
+            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+            AquariumPropertiesResource))
+
+
       case Failed(e) ⇒
-        throw new AquariumInternalError(e, "Could not load master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError(
+          "Could not load %s from %s".format(
+            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+            AquariumPropertiesResource),
+          e)
     }
   }
 
   lazy val MasterConfigurator = {
-    Maybe(new Configurator(MasterConfProps)) match {
+    Maybe(new Configurator(AquariumProperties)) match {
       case Just(masterConf) ⇒
         masterConf
+
       case NoVal ⇒
-        throw new AquariumInternalError("Could not initialize master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError(
+          "Could not load %s from %s".format(
+            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+            AquariumPropertiesResource))
+
       case Failed(e) ⇒
-        throw new AquariumInternalError(e, "Could not initialize master configuration file: %s".format(MasterConfName))
+        throw new AquariumInternalError(
+          "Could not load %s from %s".format(
+            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+            AquariumPropertiesResource),
+          e)
     }
   }
 
