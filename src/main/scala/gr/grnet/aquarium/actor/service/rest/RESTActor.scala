@@ -40,7 +40,7 @@ package rest
 import cc.spray.can.HttpMethods.GET
 import cc.spray.can._
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.Configurator
+import gr.grnet.aquarium.Aquarium
 import akka.actor.Actor
 import gr.grnet.aquarium.actor.{RESTRole, RoleableActor, RouterRole}
 import RESTPaths.{UserBalancePath, UserStatePath, AdminPingAll}
@@ -107,10 +107,10 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
           callRouter(GetUserStateRequest(userId, millis), responder)
 
         case AdminPingAll() ⇒
-          val mc = Configurator.MasterConfigurator
+          val mc = Aquarium.Instance
           mc.adminCookie match {
             case Just(adminCookie) ⇒
-              headers.find(_.name.toLowerCase == Configurator.HTTP.RESTAdminHeaderNameLowerCase) match {
+              headers.find(_.name.toLowerCase == Aquarium.HTTP.RESTAdminHeaderNameLowerCase) match {
                 case Some(cookieHeader) if(cookieHeader.value == adminCookie) ⇒
                   callRouter(PingAllRequest(), responder)
 
@@ -143,7 +143,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
   private[this]
   def callRouter(message: RouterRequestMessage, responder: RequestResponder): Unit = {
-    val configurator = Configurator.MasterConfigurator
+    val configurator = Aquarium.Instance
     val actorProvider = configurator.actorProvider
     val router = actorProvider.actorForRole(RouterRole)
     val futureResponse = router ask message

@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.store
 
-import gr.grnet.aquarium.Configurator
+import gr.grnet.aquarium.Aquarium
 import java.io.{FileOutputStream, File}
 import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
@@ -101,7 +101,7 @@ object LocalFSEventStore extends Loggable {
     writeToFile(file, jsonPayload, appendString)
   }
 
-  def storeUnparsedResourceEvent(mc: Configurator, initialPayload: Array[Byte], exception: Throwable): Unit = {
+  def storeUnparsedResourceEvent(mc: Aquarium, initialPayload: Array[Byte], exception: Throwable): Unit = {
     for(root <- mc.eventsStoreFolder) {
       val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis())
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
@@ -112,7 +112,7 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeResourceEvent(mc: Configurator, event: ResourceEventModel, initialPayload: Array[Byte]): Unit = {
+  def storeResourceEvent(mc: Aquarium, event: ResourceEventModel, initialPayload: Array[Byte]): Unit = {
     require(event ne null, "Resource event must be not null")
 
     for(root <- mc.eventsStoreFolder) {
@@ -137,7 +137,7 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeUnparsedIMEvent(mc: Configurator, initialPayload: Array[Byte], exception: Throwable): Unit = {
+  def storeUnparsedIMEvent(mc: Aquarium, initialPayload: Array[Byte], exception: Throwable): Unit = {
     for(root <- mc.eventsStoreFolder) {
       val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis())
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
@@ -148,7 +148,7 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeIMEvent(mc: Configurator, event: IMEventModel, initialPayload: Array[Byte]): Unit = {
+  def storeIMEvent(mc: Aquarium, event: IMEventModel, initialPayload: Array[Byte]): Unit = {
     require(event ne null, "IM event must be not null")
     for(root <- mc.eventsStoreFolder) {
       val occurredMDC = new MutableDateCalc(event.occurredMillis)

@@ -38,9 +38,8 @@ package gr.grnet.aquarium.service
 import gr.grnet.aquarium.actor.RESTRole
 import _root_.akka.actor._
 import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
-import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.util.{LogHelpers, Loggable, Lifecycle}
-import gr.grnet.aquarium.{AquariumInternalError, AquariumException, Configurator}
+import gr.grnet.aquarium.util.{Loggable, Lifecycle}
+import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
 
 /**
  * REST service based on Actors and Spray.
@@ -54,13 +53,13 @@ class RESTActorService extends Lifecycle with Loggable {
   private[this] var _clientActor: ActorRef = _
 
   def start(): Unit = {
-    val mc = Configurator.MasterConfigurator
-    this._port = mc.props.getInt(Configurator.Keys.rest_port).getOr(
+    val aquarium = Aquarium.Instance
+    this._port = aquarium.props.getInt(Aquarium.Keys.rest_port).getOr(
       throw new AquariumInternalError(
-        "%s was not specified in Aquarium properties".format(Configurator.Keys.rest_port)))
+        "%s was not specified in Aquarium properties".format(Aquarium.Keys.rest_port)))
 
     logStoppingF("on port %s", this._port) {
-      this._restActor = mc.actorProvider.actorForRole(RESTRole)
+      this._restActor = aquarium.actorProvider.actorForRole(RESTRole)
       // Start Spray subsystem
       this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
       this._clientActor = Actor.actorOf(new HttpClient()).start()

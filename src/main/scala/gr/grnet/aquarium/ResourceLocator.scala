@@ -46,7 +46,7 @@ import com.ckkloverdos.resource.{FileStreamResource, StreamResource, CompositeSt
 /**
  * Locates resources.
  *
- * This code was initially in [[gr.grnet.aquarium.Configurator]].
+ * This code was initially in [[gr.grnet.aquarium.Aquarium]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

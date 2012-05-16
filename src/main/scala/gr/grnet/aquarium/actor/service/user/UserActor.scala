@@ -42,7 +42,7 @@ import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.util.shortClassNameOf
 import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import akka.config.Supervision.Temporary
-import gr.grnet.aquarium.Configurator
+import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
@@ -79,10 +79,10 @@ class UserActor extends ReflectiveRoleableActor {
 
   def role = UserActorRole
 
-  private[this] def _configurator: Configurator = Configurator.MasterConfigurator
+  private[this] def _configurator: Aquarium = Aquarium.Instance
 
   private[this] def _timestampTheshold =
-    _configurator.props.getLong(Configurator.Keys.user_state_timestamp_threshold).getOr(10000)
+    _configurator.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(10000)
 
 
   private[this] def _haveUserState = {

@@ -46,7 +46,8 @@ import cc.spray.can.{HttpResponse, HttpHeader, HttpRequest}
 import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.converter.StdConverters
 import net.liftweb.json.JsonAST.{JValue, JInt}
-import gr.grnet.aquarium.{AquariumException, LogicTestsAssumptions, Configurator}
+import gr.grnet.aquarium.{AquariumException, LogicTestsAssumptions, Aquarium}
+import org.apache.ivy.util.Configurator
 
 /**
  * 
@@ -58,10 +59,10 @@ class RESTActorTest {
     assumeTrue(LogicTestsAssumptions.EnableSprayTests)
     
     // Initialize configuration subsystem
-    val mc = Configurator.MasterConfigurator
-    mc.startServices()
-    val port = mc.props.getInt(Configurator.Keys.rest_port).getOr(
-      throw new AquariumException("No %s specified in aquarium properties".format(Configurator.Keys.rest_port)))
+    val aquarium = Aquarium.Instance
+    aquarium.startServices()
+    val port = aquarium.props.getInt(Aquarium.Keys.rest_port).getOr(
+      throw new AquariumException("No %s specified in aquarium properties".format(Aquarium.Keys.rest_port)))
     val dialog = SprayHttpDialog("localhost", port)
 
     val pingReq = HttpRequest(method = GET, uri = "/ping", headers = HttpHeader("Content-Type", "text/plain; charset=UTF-8")::Nil)
@@ -84,6 +85,6 @@ class RESTActorTest {
       }
     }
 
-    mc.stopServicesWithDelay(1000)
+    aquarium.stopServicesWithDelay(1000)
   }
 }

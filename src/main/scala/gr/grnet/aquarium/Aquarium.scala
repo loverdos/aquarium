@@ -46,15 +46,16 @@ import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService
 import gr.grnet.aquarium.converter.StdConverters
-import com.ckkloverdos.resource.FileStreamResource
 
 /**
- * The master configurator. Responsible to load all of application configuration and provide the relevant services.
+ * This is the Aquarium entry point.
+ *
+ * Responsible to load all of application configuration and provide the relevant services.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-final class Configurator(val props: Props) extends Loggable {
-  import Configurator.Keys
+final class Aquarium(val props: Props) extends Loggable {
+  import Aquarium.Keys
 
   /**
    * Reflectively provide a new instance of a class and configure it appropriately.
@@ -310,22 +311,22 @@ final class Configurator(val props: Props) extends Loggable {
 
   def storeProvider = _storeProvider
   
-  def withStoreProviderClass[C <: StoreProvider](spc: Class[C]): Configurator = {
+  def withStoreProviderClass[C <: StoreProvider](spc: Class[C]): Aquarium = {
     val map = this.props.map
     val newMap = map.updated(Keys.store_provider_class, spc.getName)
     val newProps = new Props(newMap)
-    new Configurator(newProps)
+    new Aquarium(newProps)
   }
 
   def eventsStoreFolder = _eventsStoreFolder
 
-  def adminCookie: MaybeOption[String] = props.get(Configurator.Keys.admin_cookie) match {
+  def adminCookie: MaybeOption[String] = props.get(Aquarium.Keys.admin_cookie) match {
     case just @ Just(_) ⇒ just
     case _ ⇒ NoVal
   }
 }
 
-object Configurator {
+object Aquarium {
   implicit val DefaultConverters = TheDefaultConverters
 
   final val PolicyConfName = ResourceLocator.ResourceNames.POLICY_YAML
@@ -356,8 +357,11 @@ object Configurator {
     }
   }
 
-  lazy val MasterConfigurator = {
-    Maybe(new Configurator(AquariumProperties)) match {
+  /**
+   * The main [[gr.grnet.aquarium.Aquarium]] instance.
+   */
+  final lazy val Instance = {
+    Maybe(new Aquarium(AquariumProperties)) match {
       case Just(masterConf) ⇒
         masterConf
 

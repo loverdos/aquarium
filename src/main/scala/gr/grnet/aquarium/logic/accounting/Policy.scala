@@ -36,14 +36,14 @@
 package gr.grnet.aquarium.logic.accounting
 
 import dsl.{Timeslot, DSLPolicy, DSL}
-import gr.grnet.aquarium.Configurator._
+import gr.grnet.aquarium.Aquarium._
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
-import gr.grnet.aquarium.Configurator
-import gr.grnet.aquarium.Configurator.Keys
+import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.Aquarium.Keys
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import collection.immutable.{TreeMap, SortedMap}
 
@@ -62,8 +62,8 @@ object Policy extends DSL with Loggable {
   /* Pointer to the latest policy */
   private lazy val currentPolicy = {new AtomicReference[DSLPolicy](latestPolicy)}
 
-  /* Configurator to use for loading information about the policy store */
-  private var config: Configurator = _
+  /* Aquarium to use for loading information about the policy store */
+  private var config: Aquarium = _
 
   /**
    * Get the latest defined policy.
@@ -153,7 +153,7 @@ object Policy extends DSL with Loggable {
    * Set the configurator to use for loading policy stores. Should only
    * used for unit testing.
    */
-  def withConfigurator(config: Configurator): Unit =
+  def withConfigurator(config: Aquarium): Unit =
     this.config = config
 
   /**
@@ -163,18 +163,18 @@ object Policy extends DSL with Loggable {
    */
   private[logic] def reloadPolicies: SortedMap[Timeslot, DSLPolicy] =
     if (config == null)
-      reloadPolicies(MasterConfigurator)
+      reloadPolicies(Instance)
     else
       reloadPolicies(config)
 
-  private def reloadPolicies(config: Configurator):
+  private def reloadPolicies(config: Aquarium):
   SortedMap[Timeslot, DSLPolicy] = {
     //1. Load policies from db
     val pol = config.policyStore.loadPolicyEntriesAfter(0)
 
     //2. Check whether policy file has been updated
     val latestPolicyChange = if (pol.isEmpty) 0 else pol.last.validFrom
-    val policyf = MasterConfigurator.findConfigFile(PolicyConfName, Keys.aquarium_policy, PolicyConfName)
+    val policyf = Instance.findConfigFile(PolicyConfName, Keys.aquarium_policy, PolicyConfName)
     var updated = false
 
     if (policyf.exists) {

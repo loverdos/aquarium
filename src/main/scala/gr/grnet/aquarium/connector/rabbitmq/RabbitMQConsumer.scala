@@ -40,7 +40,7 @@ import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.util.{safeUnit, shortClassNameOf}
 import com.rabbitmq.client.{Envelope, Consumer, ShutdownSignalException, ShutdownListener, ConnectionFactory, Channel, Connection}
 import com.rabbitmq.client.AMQP.BasicProperties
-import gr.grnet.aquarium.Configurator
+import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.connector.rabbitmq.eventbus.RabbitMQError
 import gr.grnet.aquarium.service.event.BusEvent
 import gr.grnet.aquarium.connector.handler.{PayloadHandlerExecutor, HandlerResultPanic, HandlerResultRequeue, HandlerResultReject, HandlerResultSuccess, PayloadHandler}
@@ -104,7 +104,7 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
   case object ReconnectStartReason extends StartReason
   case object PingStartReason extends StartReason
 
-  private[this] def timerService = Configurator.MasterConfigurator.timerService
+  private[this] def timerService = Aquarium.Instance.timerService
 
   private[this] def doSafeShutdownSequence(): Unit = {
     _state.set(ShutdownSequence)
@@ -234,7 +234,7 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
   }
 
   private[this] def postBusError(event: BusEvent): Unit = {
-    Configurator.MasterConfigurator.eventBus ! event
+    Aquarium.Instance.eventBus ! event
   }
 
   private[this] def doSchedulePing(): Unit = {

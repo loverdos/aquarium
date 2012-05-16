@@ -77,10 +77,10 @@ object Main extends LazyLoggable {
       throw error
     }
 
-    val mc = Configurator.MasterConfigurator
+    val mc = Aquarium.Instance
 
     for(folder ← mc.eventsStoreFolder) {
-      logger.info("{} = {}", Configurator.Keys.events_store_folder, folder)
+      logger.info("{} = {}", Aquarium.Keys.events_store_folder, folder)
     }
     mc.eventsStoreFolder.throwMe // on error
 

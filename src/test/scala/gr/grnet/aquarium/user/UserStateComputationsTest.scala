@@ -45,9 +45,11 @@ import gr.grnet.aquarium.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
 import com.ckkloverdos.maybe.{Maybe, Just}
 import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler}
-import gr.grnet.aquarium.{AquariumException, Configurator}
+import gr.grnet.aquarium.{AquariumException}
+import gr.grnet.aquarium.Aquarium.{Instance ⇒ AquariumInstance}
 import gr.grnet.aquarium.computation.{UserState, BillingMonthInfo, UserStateComputations}
 import gr.grnet.aquarium.computation.reason.MonthlyBillingCalculation
+import org.apache.ivy.util.Configurator
 
 
 /**
@@ -215,9 +217,9 @@ aquariumpolicy:
   val Synnefo = ClientSim("synnefo")(TheUIDGenerator)
   val Pithos  = ClientSim("pithos" )(TheUIDGenerator)
 
-  val mc = Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
-  Policy.withConfigurator(mc)
-  val StoreProvider = mc.storeProvider
+  val aquarium = AquariumInstance.withStoreProviderClass(classOf[MemStore])
+  Policy.withConfigurator(aquarium)
+  val StoreProvider = aquarium.storeProvider
   val ResourceEventStore = StoreProvider.resourceEventStore
 
   val StartOfBillingYearDateCalc = new MutableDateCalc(2012,  1, 1)

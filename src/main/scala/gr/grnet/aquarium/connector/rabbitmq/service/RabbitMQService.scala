@@ -36,11 +36,10 @@
 package gr.grnet.aquarium.connector.rabbitmq.service
 
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 import gr.grnet.aquarium.util.safeUnit
 import com.rabbitmq.client.Address
-import gr.grnet.aquarium.{Configurator, Configurable}
+import gr.grnet.aquarium.{Aquarium, Configurable}
 import gr.grnet.aquarium.connector.rabbitmq.conf.{TopicExchange, RabbitMQConsumerConf, RabbitMQExchangeType}
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConfKeys
 import com.ckkloverdos.env.{EnvKey, Env}
@@ -65,17 +64,17 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
   def propertyPrefix = Some(RabbitMQService.PropertiesPrefix)
 
-  def configurator = Configurator.MasterConfigurator
+  def aquarium = Aquarium.Instance
 
-  def eventBus = configurator.eventBus
+  def eventBus = aquarium.eventBus
 
-  def resourceEventStore = configurator.resourceEventStore
+  def resourceEventStore = aquarium.resourceEventStore
 
-  def imEventStore = configurator.imEventStore
+  def imEventStore = aquarium.imEventStore
 
-  def converters = configurator.converters
+  def converters = aquarium.converters
 
-  def router = configurator.actorProvider.actorForRole(RouterRole)
+  def router = aquarium.actorProvider.actorForRole(RouterRole)
 
   /**
    * Configure this instance with the provided properties.
@@ -119,7 +118,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val rcHandler = new GenericPayloadHandler[ResourceEventModel, ResourceEventStore#ResourceEvent](
       jsonParser,
-      (payload, error) ⇒ LocalFSEventStore.storeUnparsedResourceEvent(configurator, payload, error),
+      (payload, error) ⇒ LocalFSEventStore.storeUnparsedResourceEvent(aquarium, payload, error),
       rcEventParser,
       rcEvent ⇒ resourceEventStore.insertResourceEvent(rcEvent),
       rcDebugForwardAction
@@ -127,7 +126,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val imHandler = new GenericPayloadHandler[IMEventModel, IMEventStore#IMEvent](
       jsonParser,
-      (payload, error) ⇒ LocalFSEventStore.storeUnparsedIMEvent(configurator, payload, error),
+      (payload, error) ⇒ LocalFSEventStore.storeUnparsedIMEvent(aquarium, payload, error),
       imEventParser,
       imEvent ⇒ imEventStore.insertIMEvent(imEvent),
       imDebugForwardAction

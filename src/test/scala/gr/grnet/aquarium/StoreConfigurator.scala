@@ -47,12 +47,12 @@ import util.Loggable
  */
 trait StoreConfigurator extends Loggable {
 
-  def configurator: Configurator =
+  def configurator: Aquarium =
     LogicTestsAssumptions.propertyValue(PropertyNames.TestStore) match {
-      case "mem" => Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
-      case "mongo" => Configurator.MasterConfigurator.withStoreProviderClass(classOf[MongoDBStoreProvider])
+      case "mem" => Aquarium.Instance.withStoreProviderClass(classOf[MemStore])
+      case "mongo" => Aquarium.Instance.withStoreProviderClass(classOf[MongoDBStoreProvider])
       case _ =>
         logger.warn("Unknown store type, defaulting to \"mem\"")
-        Configurator.MasterConfigurator.withStoreProviderClass(classOf[MemStore])
+        Aquarium.Instance.withStoreProviderClass(classOf[MemStore])
   }
 }
