@@ -37,7 +37,7 @@ package gr.grnet.aquarium
 
 import com.ckkloverdos.sys.SysProp
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.util.LazyLoggable
+import gr.grnet.aquarium.util.{LogHelpers, LazyLoggable}
 
 /**
  * Main method for Aquarium
@@ -114,9 +114,16 @@ object Main extends LazyLoggable {
     configureLogging()
 
     logStarting("Aquarium")
-    val (ms0, ms1, _) = TimeHelpers.timed {
+    val ms0 = TimeHelpers.nowMillis()
+    try {
       doStart()
+      val ms1 = TimeHelpers.nowMillis()
+      logStarted(ms0, ms1, "Aquarium")
+    } catch {
+      case e: Throwable ⇒
+      logger.error("Aquarium not started\n%s".format(gr.grnet.aquarium.util.chainOfCausesForLogging(e, 1)), e)
+      throw e
     }
-    logStarted(ms0, ms1, "Aquarium")
+
   }
 }

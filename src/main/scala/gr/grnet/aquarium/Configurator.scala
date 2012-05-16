@@ -363,14 +363,12 @@ object Configurator {
 
       case NoVal ⇒
         throw new AquariumInternalError(
-          "Could not load %s from %s".format(
-            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+          "Could not create Aquarium configuration from %s".format(
             AquariumPropertiesResource))
 
       case Failed(e) ⇒
         throw new AquariumInternalError(
-          "Could not load %s from %s".format(
-            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+          "Could not create Aquarium configuration from %s".format(
             AquariumPropertiesResource),
           e)
     }
