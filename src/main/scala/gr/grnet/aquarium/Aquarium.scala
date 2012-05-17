@@ -274,7 +274,7 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
     stop()
   }
 
-  def start() = {
+  private[this] def configure(): Unit = {
     for(folder ← this.eventsStoreFolder) {
       logger.info("{} = {}", Aquarium.Keys.events_store_folder, folder)
     }
@@ -292,9 +292,9 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
     ))
 
     logger.info("CONF_HERE = {}", CONF_HERE)
+  }
 
-    startServices()
-
+  private[this] def addShutdownHooks(): Unit = {
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       def run = {
         logStopping()
@@ -304,6 +304,12 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
         logStopped(ms0, ms1)
       }
     }))
+  }
+
+  def start() = {
+    configure()
+    startServices()
+    addShutdownHooks()
   }
 
   def stop() = {
