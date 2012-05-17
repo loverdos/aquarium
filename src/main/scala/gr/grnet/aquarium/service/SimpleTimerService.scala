@@ -49,7 +49,7 @@ class SimpleTimerService extends TimerService {
   private[this] val timer = new Timer()
   private[this] val uidGen: UIDGenerator[_] = UUIDGenerator
 
-  def scheduleOnce[T](infoString: String, f: ⇒ T, delayMillis: Long, reportException: Boolean = true): String = {
+  def scheduleOnce[T](infoString: String, f: ⇒ T, delayMillis: Long, reportException: Boolean): String = {
     val uid = uidGen.nextUID()
     val timerTask = new TimerTask {
       def run() = {
@@ -69,6 +69,8 @@ class SimpleTimerService extends TimerService {
   }
 
   def stop() = {
-    logStoppingF(""){}{}
+    logStoppingF(""){
+      timer.cancel()
+    }{}
   }
 }
