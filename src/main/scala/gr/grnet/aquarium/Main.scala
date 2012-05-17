@@ -46,28 +46,12 @@ import gr.grnet.aquarium.util.{LogHelpers, LazyLoggable}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object Main extends LazyLoggable {
-  private[this] final val PropsToShow = List(
-    SysProp.JavaVMName,
-    SysProp.JavaVersion,
-    SysProp.JavaHome,
-    SysProp.JavaClassVersion,
-    SysProp.JavaLibraryPath,
-    SysProp.JavaClassPath,
-    SysProp.JavaIOTmpDir,
-    SysProp.UserName,
-    SysProp.UserHome,
-    SysProp.UserDir,
-    SysProp.FileEncoding
-  )
-
   private[this] def configureLogging(): Unit = {
     // Make sure AQUARIUM_HOME is configured, since it is used in logback.xml
     assert(ResourceLocator.Homes.Folders.AquariumHome.isDirectory)
   }
 
   def doStart(): Unit = {
-    import ResourceLocator.CONF_HERE
-    import ResourceLocator.Homes
     import ResourceLocator.SysEnvs
 
     // We have AKKA builtin, so no need to mess with pre-existing installation.
@@ -77,37 +61,7 @@ object Main extends LazyLoggable {
       throw error
     }
 
-    val mc = Aquarium.Instance
-
-    for(folder ← mc.eventsStoreFolder) {
-      logger.info("{} = {}", Aquarium.Keys.events_store_folder, folder)
-    }
-    mc.eventsStoreFolder.throwMe // on error
-
-    for(prop ← PropsToShow) {
-      logger.info("{} = {}", prop.name, prop.rawValue)
-    }
-
-    logger.info("Aquarium Home = %s".format(
-      if(Homes.Folders.AquariumHome.isAbsolute)
-        Homes.Folders.AquariumHome
-      else
-        "%s [=%s]".format(Homes.Folders.AquariumHome, Homes.Folders.AquariumHome.getCanonicalPath)
-    ))
-
-    logger.info("CONF_HERE = {}", CONF_HERE)
-
-    mc.startServices()
-
-    Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
-      def run = {
-        logStopping()
-        val (ms0, ms1, _) = TimeHelpers.timed {
-          mc.stopServices()
-        }
-        logStopped(ms0, ms1)
-      }
-    }))
+    Aquarium.Instance.start()
   }
 
   def main(args: Array[String]) = {

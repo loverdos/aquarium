@@ -46,6 +46,10 @@ import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService
 import gr.grnet.aquarium.converter.StdConverters
+import gr.grnet.aquarium.util.date.TimeHelpers
+import java.util.concurrent.atomic.AtomicBoolean
+import gr.grnet.aquarium.ResourceLocator._
+import com.ckkloverdos.sys.SysProp
 
 /**
  * This is the Aquarium entry point.
@@ -54,8 +58,12 @@ import gr.grnet.aquarium.converter.StdConverters
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-final class Aquarium(val props: Props) extends Loggable {
+final class Aquarium(val props: Props) extends Lifecycle with Loggable {
   import Aquarium.Keys
+
+  private[this] val _isStopping = new AtomicBoolean(false)
+
+  def isStopping() = _isStopping.get()
 
   /**
    * Reflectively provide a new instance of a class and configure it appropriately.
@@ -251,18 +259,55 @@ final class Aquarium(val props: Props) extends Loggable {
     }
   }
 
-  def startServices(): Unit = {
+  private[this] def startServices(): Unit = {
     for(service ← _allServices) {
       service.start()
     }
   }
 
-  def stopServices(): Unit = {
+  private[this] def stopServices(): Unit = {
     _allServices.reverse.foreach(service ⇒ safeUnit(service.stop()))
   }
 
-  def stopServicesWithDelay(millis: Long) {
+  def stopWithDelay(millis: Long) {
     Thread sleep millis
+    stop()
+  }
+
+  def start() = {
+    for(folder ← this.eventsStoreFolder) {
+      logger.info("{} = {}", Aquarium.Keys.events_store_folder, folder)
+    }
+    this.eventsStoreFolder.throwMe // on error
+
+    for(prop ← Aquarium.PropsToShow) {
+      logger.info("{} = {}", prop.name, prop.rawValue)
+    }
+
+    logger.info("Aquarium Home = %s".format(
+      if(Homes.Folders.AquariumHome.isAbsolute)
+        Homes.Folders.AquariumHome
+      else
+        "%s [=%s]".format(Homes.Folders.AquariumHome, Homes.Folders.AquariumHome.getCanonicalPath)
+    ))
+
+    logger.info("CONF_HERE = {}", CONF_HERE)
+
+    startServices()
+
+    Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
+      def run = {
+        logStopping()
+        val (ms0, ms1, _) = TimeHelpers.timed {
+          stopServices()
+        }
+        logStopped(ms0, ms1)
+      }
+    }))
+  }
+
+  def stop() = {
+    this._isStopping.set(true)
     stopServices()
   }
 
@@ -327,6 +372,20 @@ final class Aquarium(val props: Props) extends Loggable {
 }
 
 object Aquarium {
+  final val PropsToShow = List(
+    SysProp.JavaVMName,
+    SysProp.JavaVersion,
+    SysProp.JavaHome,
+    SysProp.JavaClassVersion,
+    SysProp.JavaLibraryPath,
+    SysProp.JavaClassPath,
+    SysProp.JavaIOTmpDir,
+    SysProp.UserName,
+    SysProp.UserHome,
+    SysProp.UserDir,
+    SysProp.FileEncoding
+  )
+
   implicit val DefaultConverters = TheDefaultConverters
 
   final val PolicyConfName = ResourceLocator.ResourceNames.POLICY_YAML

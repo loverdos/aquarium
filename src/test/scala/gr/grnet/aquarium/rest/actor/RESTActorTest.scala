@@ -60,7 +60,7 @@ class RESTActorTest {
     
     // Initialize configuration subsystem
     val aquarium = Aquarium.Instance
-    aquarium.startServices()
+    aquarium.start()
     val port = aquarium.props.getInt(Aquarium.Keys.rest_port).getOr(
       throw new AquariumException("No %s specified in aquarium properties".format(Aquarium.Keys.rest_port)))
     val dialog = SprayHttpDialog("localhost", port)
@@ -85,6 +85,6 @@ class RESTActorTest {
       }
     }
 
-    aquarium.stopServicesWithDelay(1000)
+    aquarium.stopWithDelay(1000)
   }
 }
