@@ -48,7 +48,7 @@ trait Loggable {
   protected val logger = LoggerFactory.getLogger(getClass)
 
   protected def logStartingF(fmt: String, args: Any*)(f: ⇒ Unit)(onException: ⇒ Unit = {}): Unit = {
-    LogHelpers.logStarting(this.logger)
+    LogHelpers.logStarting(this.logger, fmt, args: _*)
     val ms0 = TimeHelpers.nowMillis()
     try {
       locally(f)
@@ -60,7 +60,7 @@ trait Loggable {
   }
 
   protected def logStoppingF(fmt: String, args: Any*)(f: ⇒ Unit)(onException: ⇒ Unit = {}): Unit = {
-    LogHelpers.logStopping(this.logger)
+    LogHelpers.logStopping(this.logger, fmt, args: _*)
     val ms0 = TimeHelpers.nowMillis()
     try {
       locally(f)
