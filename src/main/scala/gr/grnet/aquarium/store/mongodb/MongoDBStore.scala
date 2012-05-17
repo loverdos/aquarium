@@ -104,6 +104,10 @@ class MongoDBStore(
     MongoDBResourceEvent.fromOther(event, null)
   }
 
+  def pingResourceEventStore(): Unit = {
+    MongoDBStore.ping(mongo)
+  }
+
   def insertResourceEvent(event: ResourceEventModel) = {
     val localEvent = MongoDBResourceEvent.fromOther(event, new ObjectId().toStringMongod)
     MongoDBStore.insertObject(localEvent, resourceEvents, MongoDBStore.jsonSupportToDBObject)
@@ -330,6 +334,10 @@ class MongoDBStore(
     MongoDBStore.createIMEventFromOther(event)
   }
 
+  def pingIMEventStore(): Unit = {
+    MongoDBStore.ping(mongo)
+  }
+
   def insertIMEvent(event: IMEventModel): IMEvent = {
     val localEvent = MongoDBIMEvent.fromOther(event, new ObjectId().toStringMongod)
     MongoDBStore.insertObject(localEvent, imEvents, MongoDBStore.jsonSupportToDBObject)
@@ -427,6 +435,11 @@ object MongoDBStore {
 
   def dbObjectToPolicyEntry(dbObj: DBObject): PolicyEntry = {
     PolicyEntry.fromJson(JSON.serialize(dbObj))
+  }
+
+  def ping(mongo: Mongo): Unit = {
+    // This requires a network roundtrip
+    mongo.isLocked
   }
 
   def findBy[A >: Null <: AnyRef](name: String,

@@ -53,6 +53,8 @@ trait ResourceEventStore {
     throw new AquariumException("Unsupported operation")
   }
 
+  def pingResourceEventStore(): Unit
+
   def insertResourceEvent(event: ResourceEventModel): ResourceEvent
 
   def findResourceEventById(id: String): Option[ResourceEvent]

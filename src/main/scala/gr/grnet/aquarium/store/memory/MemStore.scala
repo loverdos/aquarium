@@ -228,6 +228,10 @@ class MemStore extends UserStateStore
     _resourceEvents = Nil
   }
 
+  def pingResourceEventStore(): Unit = {
+    // We are always live and kicking...
+  }
+
   def insertResourceEvent(event: ResourceEventModel) = {
     val localEvent = createResourceEventFromOther(event)
     _resourceEvents ::= localEvent
@@ -307,6 +311,10 @@ class MemStore extends UserStateStore
   def createIMEventFromOther(event: IMEventModel) = {
     StdIMEvent.fromOther(event)
   }
+
+  def pingIMEventStore(): Unit = {
+  }
+
 
   def insertIMEvent(event: IMEventModel) = {
     val localEvent = createIMEventFromOther(event)

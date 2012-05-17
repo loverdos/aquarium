@@ -57,6 +57,8 @@ trait IMEventStore {
 
   def createIMEventFromOther(event: IMEventModel): IMEvent
 
+  def pingIMEventStore(): Unit
+
   /**
    * Insert a new event into the store.
    */
