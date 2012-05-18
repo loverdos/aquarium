@@ -35,9 +35,8 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.sys.SysProp
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.util.{LogHelpers, LazyLoggable}
+import gr.grnet.aquarium.util.LazyLoggable
 
 /**
  * Main method for Aquarium
@@ -76,8 +75,7 @@ object Main extends LazyLoggable {
     } catch {
       case e: Throwable ⇒
       logger.error("Aquarium not started\n%s".format(gr.grnet.aquarium.util.chainOfCausesForLogging(e, 1)), e)
-      throw e
+      System.exit(1)
     }
-
   }
 }
