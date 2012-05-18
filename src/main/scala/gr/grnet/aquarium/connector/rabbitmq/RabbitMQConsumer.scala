@@ -38,7 +38,6 @@ package gr.grnet.aquarium.connector.rabbitmq
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQConsumerConf
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.util.{safeUnit, shortClassNameOf}
-import gr.grnet.aquarium.util.makeRecurringTask
 import com.rabbitmq.client.{Envelope, Consumer, ShutdownSignalException, ShutdownListener, ConnectionFactory, Channel, Connection}
 import com.rabbitmq.client.AMQP.BasicProperties
 import gr.grnet.aquarium.Aquarium

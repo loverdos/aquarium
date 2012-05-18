@@ -49,7 +49,6 @@ import gr.grnet.aquarium.{AquariumException}
 import gr.grnet.aquarium.Aquarium.{Instance ⇒ AquariumInstance}
 import gr.grnet.aquarium.computation.{UserState, BillingMonthInfo, UserStateComputations}
 import gr.grnet.aquarium.computation.reason.MonthlyBillingCalculation
-import org.apache.ivy.util.Configurator
 
 
 /**

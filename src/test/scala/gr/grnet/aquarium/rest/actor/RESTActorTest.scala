@@ -47,7 +47,6 @@ import gr.grnet.aquarium.util.makeString
 import gr.grnet.aquarium.converter.StdConverters
 import net.liftweb.json.JsonAST.{JValue, JInt}
 import gr.grnet.aquarium.{AquariumException, LogicTestsAssumptions, Aquarium}
-import org.apache.ivy.util.Configurator
 
 /**
  * 
