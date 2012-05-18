@@ -407,7 +407,7 @@ object RabbitMQService {
 
   object RabbitMQConfKeys {
     /**
-     * How often do we attemot a reconnection?
+     * How often do we attempt a reconnection?
      */
     final val reconnect_period_millis = p("reconnect.period.millis")
 
