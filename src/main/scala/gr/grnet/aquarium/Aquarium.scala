@@ -46,7 +46,6 @@ import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService
 import gr.grnet.aquarium.converter.StdConverters
-import gr.grnet.aquarium.util.date.TimeHelpers
 import java.util.concurrent.atomic.AtomicBoolean
 import gr.grnet.aquarium.ResourceLocator._
 import com.ckkloverdos.sys.SysProp
@@ -89,9 +88,10 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
               props
           }
 
+          logger.debug("Configuring {} with props", configurable.getClass.getName)
           MaybeEither(configurable configure localProps) match {
             case Just(_) ⇒
-              logger.debug("Configured {} with props", configurable.getClass.getName)
+              logger.info("Configured {} with props", configurable.getClass.getName)
               instance
 
             case Failed(e) ⇒
@@ -308,19 +308,20 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
   private[this] def addShutdownHooks(): Unit = {
     Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
       def run = {
-        logStopping()
-        val (ms0, ms1, _) = TimeHelpers.timed {
-          stopServices()
+        if(!_isStopping.get()) {
+          logStoppingF("Aquarium") {
+            stop()
+          } {}
         }
-        logStopped(ms0, ms1)
       }
     }))
   }
 
   def start() = {
+    this._isStopping.set(false)
     configure()
-    startServices()
     addShutdownHooks()
+    startServices()
   }
 
   def stop() = {

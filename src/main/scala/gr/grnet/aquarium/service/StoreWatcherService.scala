@@ -35,11 +35,14 @@
 
 package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle, Tag}
 import gr.grnet.aquarium.util.safeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEvent}
+import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConKeys
+import gr.grnet.aquarium.{Configurable, Aquarium}
+import com.ckkloverdos.props.Props
+import gr.grnet.aquarium.store.StoreProvider
 
 /**
  * Watches for liveliness of stores.
@@ -47,14 +50,27 @@ import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEven
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final class StoreWatcherService extends Lifecycle with Loggable {
+final class StoreWatcherService extends Lifecycle with Configurable with Loggable {
+  private[this] var _reconnectPeriodMillis = 1000L
+
   private[this] val _pingIsScheduled = new AtomicBoolean(false)
   private[this] val _stopped = new AtomicBoolean(false)
   private[this] val _rcIsAlive = new AtomicBoolean(true)
   private[this] val _imIsAlive = new AtomicBoolean(true)
 
-
   def aquarium = Aquarium.Instance
+
+
+  def propertyPrefix = Some(StoreProvider.Prefix)
+
+  /**
+   * Configure this instance with the provided properties.
+   *
+   * If `propertyPrefix` is defined, then `props` contains only keys that start with the given prefix.
+   */
+  def configure(props: Props) = {
+    this._reconnectPeriodMillis = props.getLongEx(StoreProvider.Keys.reconnect_period_millis)
+  }
 
   private[this] def safePingStore(tag: Tag,
                                   pinger: () ⇒ Any,
@@ -93,7 +109,7 @@ final class StoreWatcherService extends Lifecycle with Loggable {
           doSchedulePing(tag, info, pinger, getStatus, setStatus)
         }
       },
-      1000, // TODO: Get value from configuration
+      this._reconnectPeriodMillis,
       true
     )
   }

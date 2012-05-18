@@ -47,3 +47,17 @@ trait StoreProvider {
   def imEventStore: IMEventStore
   def policyStore: PolicyStore
 }
+
+object StoreProvider {
+  final val Prefix = "anystore"
+  final val PrefixAndDot = Prefix + "."
+
+  private[this] def p(name: String) = PrefixAndDot + name
+
+  final object Keys {
+    /**
+      * How often do we attempt a reconnection?
+      */
+    final val reconnect_period_millis = p("reconnect.period.millis")
+  }
+}
