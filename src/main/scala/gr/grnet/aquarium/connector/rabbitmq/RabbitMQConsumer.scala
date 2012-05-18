@@ -67,7 +67,7 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
                        executor: PayloadHandlerExecutor,
 
                        /**
-                        * After the payload is processed, we notify this object.
+                        * After the payload is processed, we call this function with ourselves and the result.
                         */
                        notifier: (RabbitMQConsumer, Maybe[HandlerResult]) ⇒ Unit
 ) extends Loggable with Lifecycle { consumerSelf ⇒
