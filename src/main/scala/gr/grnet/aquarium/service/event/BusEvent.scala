@@ -37,8 +37,9 @@ package gr.grnet.aquarium.service
 package event
 
 /**
+ * The base type of all events passed to Aquarium [[gr.grnet.aquarium.service.EventBusService]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait BusEvent
+trait BusEvent extends AnyRef

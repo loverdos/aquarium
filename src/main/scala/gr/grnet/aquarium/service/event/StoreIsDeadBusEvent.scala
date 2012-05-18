@@ -33,61 +33,17 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-package service
-package user
+package gr.grnet.aquarium.service.event
 
-import akka.actor.ActorRef
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import com.google.common.cache._
+import gr.grnet.aquarium.util.Tag
 
 /**
- * An actor cache implementation using Guava.
+ * Event sent to the Bus when one of Aquarium's store is down.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * Normally, this is picked up by the queue connector service, so that no more messages are
+ * delivered to Aquarium until the store that created this event is up again.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object UserActorCache extends Lifecycle with Loggable {
 
-  private lazy val cache: Cache[String, ActorRef] =
-    CacheBuilder.newBuilder()
-      .maximumSize(1000)
-      .initialCapacity(100)
-      .concurrencyLevel(20)
-      .removalListener(EvictionListener)
-      .build()
-
-  private[this] object EvictionListener extends RemovalListener[String, ActorRef] with Loggable {
-
-    def onRemoval(rn: RemovalNotification[String, ActorRef]) {
-      val userID = rn.getKey
-      val userActor = rn.getValue
-
-      logger.debug("Parking UserActor for userID = %s".format(userID))
-      UserActorSupervisor.supervisor.unlink(userActor)
-      // Check this is received after any currently servicing business logic message.
-      userActor.stop()
-    }
-  }
-
-  def start() = {
-  }
-
-  def stop() = {
-    cache.invalidateAll
-    cache.cleanUp
-  }
-
-  def put(userID: String, userActor: ActorRef): Unit = {
-    cache.put(userID, userActor)
-  }
-
-  def get(userID: String): Option[ActorRef] =
-    cache.getIfPresent(userID) match {
-      case null ⇒ None
-      case actorRef ⇒ Some(actorRef)
-    }
-
-  def invalidate(userID: String): Unit = {
-    cache.invalidate(userID)
-  }
-}
+case class StoreIsDeadBusEvent(tag: Tag) extends BusEvent

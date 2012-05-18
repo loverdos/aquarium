@@ -47,12 +47,9 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 
 final class AkkaService extends Lifecycle with Loggable {
   def start() = {
-    logStarted(TimeHelpers.nowMillis(), TimeHelpers.nowMillis())
   }
 
   def stop()= {
-    logStoppingF("") {
-      Actor.registry.shutdownAll()
-    } {}
+    Actor.registry.shutdownAll()
   }
 }

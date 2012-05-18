@@ -36,22 +36,26 @@
 package gr.grnet.aquarium.connector.rabbitmq.service
 
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import gr.grnet.aquarium.util.safeUnit
+import com.ckkloverdos.env.{EnvKey, Env}
+import com.ckkloverdos.key.{LongKey, ArrayKey, IntKey, TypedKeySkeleton, BooleanKey, StringKey}
+import com.google.common.eventbus.Subscribe
 import com.rabbitmq.client.Address
 import gr.grnet.aquarium.{Aquarium, Configurable}
 import gr.grnet.aquarium.connector.rabbitmq.conf.{TopicExchange, RabbitMQConsumerConf, RabbitMQExchangeType}
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConfKeys
-import com.ckkloverdos.env.{EnvKey, Env}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
-import com.ckkloverdos.maybe.MaybeEither
 import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
 import gr.grnet.aquarium.store.{LocalFSEventStore, IMEventStore, ResourceEventStore}
 import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
-import com.ckkloverdos.key.{LongKey, ArrayKey, IntKey, TypedKeySkeleton, BooleanKey, StringKey}
+import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle, Tag}
+import gr.grnet.aquarium.util.shortInfoOf
+import gr.grnet.aquarium.util.sameTags
+import gr.grnet.aquarium.connector.handler.{HandlerResultPanic, HandlerResult}
+import com.ckkloverdos.maybe.{Failed, Just, Maybe, MaybeEither}
+import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEvent}
 
 /**
  *
@@ -116,6 +120,24 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
       logger.info("Forwarding {}", imEvent)
     }
 
+    val postNotifier = (consumer: RabbitMQConsumer, maybeResult: Maybe[HandlerResult]) ⇒ {
+      maybeResult match {
+        case Just(hr @ HandlerResultPanic) ⇒
+          // The other end is crucial to the overall operation and it is in panic mode,
+          // so we stop delivering messages until further notice
+          logger.warn("Shutting down %s due to [%s]".format(consumer.toString, hr))
+          consumer.setAllowReconnects(false)
+          consumer.safeStop()
+
+        case Failed(e) ⇒
+          logger.warn("Shutting down %s due to [%s]".format(consumer.toString, shortInfoOf(e)))
+          consumer.setAllowReconnects(false)
+          consumer.safeStop()
+
+        case _ ⇒
+      }
+    }
+
     val rcHandler = new GenericPayloadHandler[ResourceEventModel, ResourceEventStore#ResourceEvent](
       jsonParser,
       (payload, error) ⇒ LocalFSEventStore.storeUnparsedResourceEvent(aquarium, payload, error),
@@ -143,7 +165,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
     val all_rc_ERQs = _props.getTrimmedList(RabbitMQConfKeys.rcevents_queues)
 
     val rcConsumerConfs_ = for(oneERQ ← all_rc_ERQs) yield {
-      RabbitMQService.makeRabbitMQConsumerConf(_props, oneERQ)
+      RabbitMQService.makeRabbitMQConsumerConf(Tags.ResourceEventTag, _props, oneERQ)
     }
     val rcConsumerConfs = rcConsumerConfs_.toSet.toList
     if(rcConsumerConfs.size != rcConsumerConfs_.size) {
@@ -156,7 +178,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val all_im_ERQs = _props.getTrimmedList(RabbitMQConfKeys.imevents_queues)
     val imConsumerConfs_ = for(oneERQ ← all_im_ERQs) yield {
-      RabbitMQService.makeRabbitMQConsumerConf(_props, oneERQ)
+      RabbitMQService.makeRabbitMQConsumerConf(Tags.IMEventTag, _props, oneERQ)
     }
     val imConsumerConfs = imConsumerConfs_.toSet.toList
     if(imConsumerConfs.size != imConsumerConfs_.size) {
@@ -174,7 +196,12 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
         rccc.routingKey,
         rccc.queueName
       ))
-      new RabbitMQConsumer(rccc, rcHandler, futureExecutor)
+      new RabbitMQConsumer(
+        rccc,
+        rcHandler,
+        futureExecutor,
+        postNotifier
+      )
     }
 
     val imConsumers = for(imcc ← imConsumerConfs) yield {
@@ -184,7 +211,12 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
         imcc.routingKey,
         imcc.queueName
       ))
-      new RabbitMQConsumer(imcc, imHandler, futureExecutor)
+      new RabbitMQConsumer(
+        imcc,
+        imHandler,
+        futureExecutor,
+        postNotifier
+      )
     }
 
     this._consumers = rcConsumers ++ imConsumers
@@ -196,23 +228,65 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   }
 
   def start() = {
-    logStartingF("") {
-      this._consumers.foreach(_.start())
+    aquarium.eventBus.addSubsciber(this)
 
-      for(consumer ← this._consumers) {
-        if(!consumer.isAlive()) {
-          logger.warn("Consumer not started yet {}", consumer.toDebugString)
-        }
+    safeStart()
+  }
+
+  def safeStart() = {
+    for(consumer ← this._consumers) {
+      logStartingF(consumer.toString) {
+        consumer.safeStart()
+      } {}
+    }
+
+    for(consumer ← this._consumers) {
+      if(!consumer.isAlive()) {
+        logger.warn("Consumer not started yet %s".format(consumer))
       }
-    } {}
+    }
   }
 
   def stop() = {
-    logStoppingF("") {
-      for(consumer ← this._consumers) {
-        safeUnit(consumer.stop())
+    safeStop()
+  }
+
+  def safeStop() = {
+    for(consumer ← this._consumers) {
+      logStoppingF(consumer.toString) {
+        consumer.safeStop()
+      } {}
+    }
+  }
+
+  @Subscribe
+  def handleStoreFailure(event: StoreIsDeadBusEvent): Unit = {
+    val eventTag = event.tag
+
+    val consumersForTag = this._consumers.filter(consumer ⇒ sameTags(consumer.conf.tag, eventTag))
+    for(consumer ← consumersForTag) {
+      if(consumer.isAlive()) {
+        // Our store is down, so we cannot accept messages anymore
+        logger.info("Shutting down %s, since store for %s is down".format(consumer, eventTag))
+        consumer.setAllowReconnects(false)
+        consumer.safeStop()
       }
-    } {}
+    }
+  }
+
+  @Subscribe
+  def handleStoreRevival(event: StoreIsAliveBusEvent): Unit = {
+    val eventTag = event.tag
+
+    val consumersForTag = this._consumers.filter(consumer ⇒ sameTags(consumer.conf.tag, eventTag))
+    for(consumer ← consumersForTag) {
+      if(!consumer.isAlive() && !aquarium.isStopping()) {
+        // out store is up, so we can again accept messages
+        logger.info("Starting up %s, since store for %s is alive".format(consumer, eventTag))
+        consumer.setAllowReconnects(true)
+        consumer.safeStart()
+      }
+    }
   }
 }
 
@@ -261,10 +335,11 @@ object RabbitMQService {
       (RabbitMQConKeys.reconnect_period_millis, props.getLongEx(RabbitMQConfKeys.reconnect_period_millis))
   }
 
-  def makeRabbitMQConsumerConf(props: Props, oneERQ: String) = {
+  def makeRabbitMQConsumerConf(tag: Tag, props: Props, oneERQ: String) = {
     val Array(exchange, routing, queue) = oneERQ.split(':')
 
     RabbitMQConsumerConf(
+      tag         = tag,
       exchangeName   = exchange,
       routingKey     = routing,
       queueName      = queue,

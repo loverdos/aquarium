@@ -220,13 +220,16 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
 
   private[this] lazy val _rabbitmqService = newInstance[RabbitMQService]()
 
+  private[this] lazy val _storeWatcherService = newInstance[StoreWatcherService]()
+
   private[this] lazy val _allServices = List(
     _timerService,
     _akka,
     _actorProvider,
     _eventBus,
     _restService,
-    _rabbitmqService
+    _rabbitmqService,
+    _storeWatcherService
   )
 
   def get(key: String, default: String = ""): String = props.getOr(key, default)
@@ -261,12 +264,20 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
 
   private[this] def startServices(): Unit = {
     for(service ← _allServices) {
-      service.start()
+      logStartingF(service.toString) {
+        service.start()
+      } {}
     }
   }
 
   private[this] def stopServices(): Unit = {
-    _allServices.reverse.foreach(service ⇒ safeUnit(service.stop()))
+    val services = _allServices.reverse
+
+    for(service ← services) {
+      logStoppingF(service.toString) {
+        safeUnit(service.stop())
+      } {}
+    }
   }
 
   def stopWithDelay(millis: Long) {

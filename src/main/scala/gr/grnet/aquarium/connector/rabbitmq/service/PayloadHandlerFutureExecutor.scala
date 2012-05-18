@@ -38,7 +38,6 @@ package gr.grnet.aquarium.connector.rabbitmq.service
 import akka.dispatch.Future
 import gr.grnet.aquarium.connector.handler.{PayloadHandler, HandlerResult, PayloadHandlerExecutor}
 
-
 /**
  * An [[gr.grnet.aquarium.connector.handler.PayloadHandlerExecutor]] that uses `Akka` futures.
  *

@@ -60,7 +60,7 @@ class SimpleLocalRoleableActorProviderService extends RoleableActorProviderServi
     this._props = props
   }
 
-  private[this] def __doStart(): Unit = {
+  def start(): Unit = {
     // Start and configure actors
     import SimpleLocalRoleableActorProviderService.RolesToBeStarted
 
@@ -69,14 +69,7 @@ class SimpleLocalRoleableActorProviderService extends RoleableActorProviderServi
     }
   }
 
-  def start(): Unit = {
-    logStartingF("") {
-      __doStart()
-    } {}
-  }
-
   def stop(): Unit = {
-    logStoppingF(""){}{}
   }
 
   private[this] def _newActor(role: ActorRole): ActorRef = {

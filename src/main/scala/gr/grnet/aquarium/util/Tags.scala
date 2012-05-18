@@ -33,61 +33,15 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-package service
-package user
-
-import akka.actor.ActorRef
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import com.google.common.cache._
+package gr.grnet.aquarium.util
 
 /**
- * An actor cache implementation using Guava.
+ * We use tags to identify things in common... Yes, I know, a bit cryptic. Stay tuned (but not in this repo).
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object UserActorCache extends Lifecycle with Loggable {
 
-  private lazy val cache: Cache[String, ActorRef] =
-    CacheBuilder.newBuilder()
-      .maximumSize(1000)
-      .initialCapacity(100)
-      .concurrencyLevel(20)
-      .removalListener(EvictionListener)
-      .build()
-
-  private[this] object EvictionListener extends RemovalListener[String, ActorRef] with Loggable {
-
-    def onRemoval(rn: RemovalNotification[String, ActorRef]) {
-      val userID = rn.getKey
-      val userActor = rn.getValue
-
-      logger.debug("Parking UserActor for userID = %s".format(userID))
-      UserActorSupervisor.supervisor.unlink(userActor)
-      // Check this is received after any currently servicing business logic message.
-      userActor.stop()
-    }
-  }
-
-  def start() = {
-  }
-
-  def stop() = {
-    cache.invalidateAll
-    cache.cleanUp
-  }
-
-  def put(userID: String, userActor: ActorRef): Unit = {
-    cache.put(userID, userActor)
-  }
-
-  def get(userID: String): Option[ActorRef] =
-    cache.getIfPresent(userID) match {
-      case null ⇒ None
-      case actorRef ⇒ Some(actorRef)
-    }
-
-  def invalidate(userID: String): Unit = {
-    cache.invalidate(userID)
-  }
+object Tags {
+  final val ResourceEventTag = newTag("ResourceEvent")
+  final val IMEventTag       = newTag("IMEvent")
 }

@@ -57,6 +57,7 @@ class SimpleTimerService extends TimerService {
         catch {
           case e: Exception ⇒
             logger.warn("While running task %s(%s)\n%s".format(infoString, uid, chainOfCausesForLogging(e, 1)))
+            logger.error("", e)
         }
       }
     }
@@ -65,12 +66,9 @@ class SimpleTimerService extends TimerService {
   }
 
   def start() = {
-    logStartingF(""){}{}
   }
 
   def stop() = {
-    logStoppingF(""){
-      timer.cancel()
-    }{}
+    timer.cancel()
   }
 }

@@ -58,18 +58,16 @@ class RESTActorService extends Lifecycle with Loggable {
       throw new AquariumInternalError(
         "%s was not specified in Aquarium properties".format(Aquarium.Keys.rest_port)))
 
-    logStoppingF("on port %s", this._port) {
-      this._restActor = aquarium.actorProvider.actorForRole(RESTRole)
-      // Start Spray subsystem
-      this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
-      this._clientActor = Actor.actorOf(new HttpClient()).start()
-    } {}
+    logger.debug("Starting on port %s".format(this._port))
+
+    this._restActor = aquarium.actorProvider.actorForRole(RESTRole)
+    // Start Spray subsystem
+    this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
+    this._clientActor = Actor.actorOf(new HttpClient()).start()
   }
 
   def stop(): Unit = {
-    logStoppingF("") {
-      this._serverActor.stop()
-      this._clientActor.stop()
-    } {}
+    this._serverActor.stop()
+    this._clientActor.stop()
   }
 }

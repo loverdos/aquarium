@@ -44,5 +44,5 @@ import gr.grnet.aquarium.util.{Loggable, Lifecycle}
  */
 
 trait TimerService extends Lifecycle with Loggable {
-  def scheduleOnce[T](infoString: String, f: ⇒ T, delayMillis: Long, reportException: Boolean = true): String
+  def scheduleOnce[T](infoString: String, f: ⇒ T, delayMillis: Long, reportException: Boolean): String
 }

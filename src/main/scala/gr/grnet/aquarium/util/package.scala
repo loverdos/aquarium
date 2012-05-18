@@ -42,6 +42,7 @@ import java.io.{PrintWriter, StringWriter}
 import annotation.tailrec
 import scala.PartialFunction
 import org.slf4j.Logger
+import java.util.concurrent.atomic.AtomicReference
 
 
 /**
@@ -50,7 +51,30 @@ import org.slf4j.Logger
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 package object util {
+  type Tag = String
+
+  @volatile private[this] var _tagmap = Map[String, Tag]()
+
   final val UTF_8_Charset = Charset.forName("UTF-8")
+
+  @inline
+  def sameTags(a: Tag, b: Tag): Boolean = {
+    a eq b
+  }
+
+  @inline
+  def newTag(s: String): Tag = {
+    _tagmap synchronized {
+      _tagmap.get(s) match {
+        case Some(tag) ⇒
+          tag
+
+        case None ⇒
+          _tagmap = _tagmap.updated(s, s)
+          s
+      }
+    }
+  }
 
   @inline
   def StartStopErrorHandler[S](logger: Logger,
@@ -60,7 +84,7 @@ package object util {
     case e: Throwable ⇒
       safeUnit(onException)
       logger.error(message, e)
-      throw e.getClass.cast(e)
+      throw e
   }
 
   @inline
@@ -303,6 +327,10 @@ package object util {
     }
 
     noNL mkString "\n"
+  }
+
+  def shortInfoOf(t: Throwable): String = {
+    "%s: %s".format(t.getClass.getName, t.getMessage)
   }
 
   private[this] lazy val _isRunningTests =

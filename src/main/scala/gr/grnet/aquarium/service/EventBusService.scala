@@ -66,17 +66,13 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
   }
 
   def start() = {
-    logStartingF("") {
-      this addSubsciber this // Wow!
+    this addSubsciber this // Wow!
 
-      this._poster = Actor actorOf AsyncPoster
-    } {}
+    this._poster = Actor.actorOf(AsyncPoster).start()
   }
 
   def stop() = {
-    logStoppingF("") {
-      safeUnit(_poster.stop())
-    } {}
+    safeUnit(_poster.stop())
   }
 
   @inline
@@ -94,7 +90,8 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
 
   @Subscribe
   def handleDeadEvent(event: DeadEvent): Unit = {
-    logger.warn("Unhandled {}", event)
+    event.getSource
+    logger.warn("DeadEvent %s".format(event.getEvent))
   }
 
   /**

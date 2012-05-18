@@ -38,16 +38,16 @@ package gr.grnet.aquarium.connector.rabbitmq
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQConsumerConf
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.util.{safeUnit, shortClassNameOf}
+import gr.grnet.aquarium.util.makeRecurringTask
 import com.rabbitmq.client.{Envelope, Consumer, ShutdownSignalException, ShutdownListener, ConnectionFactory, Channel, Connection}
 import com.rabbitmq.client.AMQP.BasicProperties
 import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.connector.rabbitmq.eventbus.RabbitMQError
 import gr.grnet.aquarium.service.event.BusEvent
-import gr.grnet.aquarium.connector.handler.{PayloadHandlerExecutor, HandlerResultPanic, HandlerResultRequeue, HandlerResultReject, HandlerResultSuccess, PayloadHandler}
-import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.{RabbitMQConKeys, RabbitMQQueueKeys, RabbitMQExchangeKeys, RabbitMQChannelKeys}
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference, AtomicBoolean}
-import com.ckkloverdos.maybe.{Just, Failed, MaybeEither}
+import java.util.concurrent.atomic.{AtomicReference, AtomicBoolean}
+import gr.grnet.aquarium.connector.handler.{HandlerResult, PayloadHandlerExecutor, HandlerResultPanic, HandlerResultRequeue, HandlerResultReject, HandlerResultSuccess, PayloadHandler}
+import com.ckkloverdos.maybe.{Maybe, Just, Failed, MaybeEither}
 
 /**
  * A basic `RabbitMQ` consumer. Sufficiently generalized, sufficiently tied to Aquarium.
@@ -55,16 +55,41 @@ import com.ckkloverdos.maybe.{Just, Failed, MaybeEither}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class RabbitMQConsumer(conf: RabbitMQConsumerConf,
+class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
+
+                       /**
+                        * Specifies what we do with the message payload.
+                        */
                        handler: PayloadHandler,
-                       executor: PayloadHandlerExecutor) extends Loggable with Lifecycle { consumerSelf ⇒
+
+                       /**
+                        * Specifies how we execute the handler
+                        */
+                       executor: PayloadHandlerExecutor,
+
+                       /**
+                        * After the payload is processed, we notify this object.
+                        */
+                       notifier: (RabbitMQConsumer, Maybe[HandlerResult]) ⇒ Unit
+) extends Loggable with Lifecycle { consumerSelf ⇒
+
   private[this] var _factory: ConnectionFactory = _
   private[this] var _connection: Connection = _
   private[this] var _channel: Channel = _
-//  private[this] val _isAlive = new AtomicBoolean(false)
   private[this] val _state = new AtomicReference[State](Shutdown)
-  private[this] var _lastStartFailureMillis = -1L
   private[this] val _pingIsScheduled = new AtomicBoolean(false)
+
+  /**
+   * Reconnects are allowed unless some very specific condition within the application prohibits so.
+   */
+  @volatile private[this] var _allowReconnects = true
+
+  def isAllowingReconnects(): Boolean = _allowReconnects
+
+  def setAllowReconnects(allowReconnects: Boolean) = {
+    _allowReconnects = allowReconnects
+    doSchedulePing()
+  }
 
   def isAlive() = {
     val isChannelOpen = MaybeEither((_channel ne null) && _channel.isOpen) match {
@@ -92,7 +117,6 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
     def isStarted: Boolean = false
   }
   case object StartupSequence extends State
-  case class  BadStart(e: Exception) extends State
   case object Started  extends State {
     override def isStarted = true
   }
@@ -101,17 +125,9 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
 
   sealed trait StartReason
   case object LifecycleStartReason extends StartReason
-  case object ReconnectStartReason extends StartReason
   case object PingStartReason extends StartReason
 
   private[this] def timerService = Aquarium.Instance.timerService
-
-  private[this] def doSafeShutdownSequence(): Unit = {
-    _state.set(ShutdownSequence)
-    safeUnit(_channel.close())
-    safeUnit(_connection.close())
-    _state.set(Shutdown)
-  }
 
   private[this] lazy val servers = {
     conf.connectionConf(RabbitMQConKeys.servers)
@@ -125,8 +141,11 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
     servers.map(address ⇒ "%s:%s".format(address.getHost, address.getPort)).toList
   }
 
-  private[this] def infoList(what: String): List[String] = {
-    List(what) ++
+  private[this] def infoList(what: String = ""): List[String] = {
+    (what match {
+      case "" ⇒ List()
+      case _  ⇒ List(what)
+    }) ++
     List(serversToDebugStrings.mkString("(", ", ", ")")) ++
     List("%s:%s:%s".format(
       conf.exchangeName,
@@ -140,7 +159,8 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
   private[this] def doSafeStartupSequence(startReason: StartReason): Unit = {
     import this.conf._
 
-    if(isAlive()) {
+    if(isAlive() || !isAllowingReconnects() || aquarium.isStopping()) {
+      // In case of re-entrance
       return
     }
 
@@ -204,16 +224,12 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
           case LifecycleStartReason ⇒
             logger.error("While connecting %s".format(info), e)
 
-          case ReconnectStartReason | PingStartReason ⇒
-            val now = TimeHelpers.nowMillis()
-            if(true/*_lastStartFailureMillis - now > 5*/) {
-              logger.warn("Could not reconnect %s".format(info))
-            }
-            _lastStartFailureMillis = now
+          case PingStartReason ⇒
+            logger.warn("Could not reconnect %s".format(info))
         }
 
         // Shutdown on failure
-        doSafeShutdownSequence()
+        safeStop()
     }
     finally {
       if(!_pingIsScheduled.get()) {
@@ -226,15 +242,28 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
   }
 
   def start(): Unit = {
+    safeStart()
+  }
+
+  def safeStart(): Unit = {
     doSafeStartupSequence(LifecycleStartReason)
   }
 
-  def stop() = {
-    doSafeShutdownSequence()
+  def safeStop() = {
+    _state.set(ShutdownSequence)
+    safeUnit(_channel.close())
+    safeUnit(_connection.close())
+    _state.set(Shutdown)
   }
 
+  def stop() = {
+    safeStop()
+  }
+
+  private[this] def aquarium = Aquarium.Instance
+
   private[this] def postBusError(event: BusEvent): Unit = {
-    Aquarium.Instance.eventBus ! event
+    aquarium.eventBus ! event
   }
 
   private[this] def doSchedulePing(): Unit = {
@@ -243,18 +272,19 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
     timerService.scheduleOnce(
       info,
       {
-        val isAlive = consumerSelf.isAlive()
-//        logger.info("Ping state is %s (isAlive=%s) for %s".format(_state.get(), isAlive, info))
-
-        if(!isAlive) {
-          doSafeShutdownSequence()
-          doSafeStartupSequence(PingStartReason)
+        if(!aquarium.isStopping()) {
+          if(isAllowingReconnects()) {
+            if(!isAlive()) {
+              safeStop()
+              doSafeStartupSequence(PingStartReason)
+            }
+            // Reschedule the ping
+            doSchedulePing()
+          }
         }
-
-        // Reschedule the ping
-        doSchedulePing()
       },
-      reconnectPeriodMillis
+      reconnectPeriodMillis,
+      true
     )
   }
 
@@ -263,7 +293,7 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
     catch {
       case e: Exception ⇒
         postBusError(RabbitMQError(e))
-        doSafeShutdownSequence()
+        safeStop()
     }
   }
 
@@ -284,18 +314,21 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
     }
 
     def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) = {
-      def doError: PartialFunction[Throwable, Unit] = {
-        case e: Exception ⇒
-          logger.warn("Unexpected error", e)
-
-        case e: Throwable ⇒
-          throw e
+      val onErrorF: PartialFunction[Throwable, Unit] = {
+        case error: Throwable ⇒
+          safeUnit(notifier(consumerSelf, Failed(error)))
       }
 
       try {
         val deliveryTag = envelope.getDeliveryTag
 
-        executor.exec(body, handler) {
+        // nice little composeable functions
+        val notifierF = (handlerResult: HandlerResult) ⇒ {
+          safeUnit(notifier(consumerSelf, Just(handlerResult)))
+          handlerResult
+        }
+
+        val onSuccessBasicStepF: (HandlerResult ⇒ Unit) = {
           case HandlerResultSuccess ⇒
             doWithChannel(_.basicAck(deliveryTag, false))
 
@@ -306,38 +339,34 @@ class RabbitMQConsumer(conf: RabbitMQConsumerConf,
             doWithChannel(_.basicReject(deliveryTag, true))
 
           case HandlerResultPanic ⇒
-            // The other end is crucial to the overall operation and it is in panic mode,
-            // so we stop delivering messages until further notice
-            doSafeShutdownSequence()
-        } (doError)
-      } catch (doError)
+            // We do not handle panic here. It will be handled by the notifier.
+        }
+
+        val onSuccessF = notifierF andThen onSuccessBasicStepF
+
+        executor.exec(body, handler) (onSuccessF) (onErrorF)
+      }
+      catch (onErrorF)
     }
   }
 
   object RabbitMQShutdownListener extends ShutdownListener {
     def shutdownCompleted(cause: ShutdownSignalException) = {
-      logger.info("Got shutdown %s".format(cause))
+      cause.getReason
+      logger.info("Got shutdown (%sisHardError) %s".format(
+        if(cause.isHardError) "" else "!",
+        cause.toString))
 
       // Now, let's see what happened
       if(cause.isHardError) {
-        logger.info("Channel shutdown isHardError")
       } else {
-        logger.info("Channel shutdown !isHardError")
       }
 
-      doSafeShutdownSequence()
+      safeStop()
     }
   }
 
-  def toDebugString = {
-    "(servers=%s, exchange=%s, routingKey=%s, queue=%s)".format(
-      serversToDebugStrings.mkString("[", ", ", "]"),
-      conf.exchangeName,
-      conf.routingKey,
-      conf.queueName)
-  }
-
   override def toString = {
-    "%s%s".format(shortClassNameOf(this), toDebugString)
+    "%s%s".format(shortClassNameOf(this), infoString(""))
   }
 }

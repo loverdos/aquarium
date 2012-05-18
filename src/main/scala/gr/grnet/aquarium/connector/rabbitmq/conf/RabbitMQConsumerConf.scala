@@ -37,13 +37,15 @@ package gr.grnet.aquarium.connector.rabbitmq
 package conf
 
 import com.ckkloverdos.env.Env
+import gr.grnet.aquarium.util.Tag
 
 /**
- *
+ * Provides all the necessary configuration option
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class RabbitMQConsumerConf(exchangeName: String,
+case class RabbitMQConsumerConf(tag: Tag,
+                                exchangeName: String,
                                 routingKey: String,
                                 queueName: String,
                                 connectionConf: Env,

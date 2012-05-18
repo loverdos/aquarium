@@ -41,6 +41,8 @@ import gr.grnet.aquarium.converter.JsonTextFormat
 import gr.grnet.aquarium.connector.handler._
 import gr.grnet.aquarium.event.model.ExternalEventModel
 import gr.grnet.aquarium.util.safeUnit
+import gr.grnet.aquarium.service.EventBusService
+import gr.grnet.aquarium.Aquarium
 
 /**
  * Generic handler of events arriving to Aquarium.
