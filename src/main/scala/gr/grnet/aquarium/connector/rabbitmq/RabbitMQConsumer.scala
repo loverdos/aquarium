@@ -292,7 +292,9 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
     try f(_channel)
     catch {
       case e: Exception ⇒
+        // FIXME: What is this?
         postBusError(RabbitMQError(e))
+
         safeStop()
     }
   }
