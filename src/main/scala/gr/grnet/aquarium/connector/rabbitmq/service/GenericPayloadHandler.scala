@@ -62,6 +62,7 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
     (jsonParser: Array[Byte] ⇒ MaybeEither[JsonTextFormat],
      jsonParserErrorAction: (Array[Byte], Throwable) ⇒ Unit,
      eventParser: JsonTextFormat ⇒ E,
+     eventParserErrorAction: (Array[Byte], Throwable) ⇒ Unit,
      saveAction: E ⇒ S,
      forwardAction: S ⇒ Unit) extends PayloadHandler {
 
@@ -69,7 +70,7 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
     // 1. try to parse as json
     jsonParser(payload) match {
       case Failed(e) ⇒
-        jsonParserErrorAction(payload, e)
+        safeUnit(jsonParserErrorAction(payload, e))
 
         HandlerResultReject(e.getMessage)
 
@@ -77,6 +78,8 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
         // 2. try to parse as model
         MaybeEither { eventParser(jsonTextFormat) } match {
           case Failed(e) ⇒
+            safeUnit(eventParserErrorAction(payload, e))
+
             HandlerResultReject(e.getMessage)
 
           case Just(event) ⇒

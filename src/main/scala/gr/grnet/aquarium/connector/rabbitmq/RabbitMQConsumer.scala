@@ -329,26 +329,31 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
           handlerResult
         }
 
-        val onSuccessBasicStepF: (HandlerResult ⇒ Unit) = {
-          case HandlerResultSuccess ⇒
+        val onSuccessBasicStepF: (HandlerResult ⇒ HandlerResult) = {
+          case result @ HandlerResultSuccess ⇒
             doWithChannel(_.basicAck(deliveryTag, false))
+            result
 
-          case HandlerResultResend ⇒
+          case result @ HandlerResultResend ⇒
             doWithChannel(_.basicNack(deliveryTag, false, true))
+            result
 
-          case HandlerResultReject(_) ⇒
+          case result @ HandlerResultReject(_) ⇒
             doWithChannel(_.basicReject(deliveryTag, false))
+            result
 
-          case HandlerResultRequeue(_) ⇒
+          case result @ HandlerResultRequeue(_) ⇒
             doWithChannel(_.basicReject(deliveryTag, true))
+            result
 
-          case HandlerResultPanic ⇒
+          case result @ HandlerResultPanic ⇒
             // Just inform RabbitMQ and subsequent actions will be made by the notifier.
             // So, this is a `HandlerResultResend` with extra semantics.
             doWithChannel(_.basicNack(deliveryTag, false, true))
+            result
         }
 
-        val onSuccessF = notifierF andThen onSuccessBasicStepF
+        val onSuccessF = onSuccessBasicStepF andThen notifierF
 
         executor.exec(body, handler) (onSuccessF) (onErrorF)
       }
