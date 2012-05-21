@@ -140,11 +140,16 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val rcHandler = new GenericPayloadHandler[ResourceEventModel, ResourceEventStore#ResourceEvent](
       jsonParser,
+      (payload, jsonTextFormat) ⇒ {},
       (payload, error) ⇒ {
-        LocalFSEventStore.storeUnparsedResourceEvent(aquarium, payload, error)
         logger.error("Error creating JSON from %s payload".format(Tags.ResourceEventTag), error)
+
+        LocalFSEventStore.storeUnparsedResourceEvent(aquarium, payload, error)
       },
       rcEventParser,
+      (payload, event) ⇒ {
+        LocalFSEventStore.storeResourceEvent(aquarium, event, payload)
+      },
       (payload, error) ⇒ {
         logger.error("Error creating object model from %s payload".format(Tags.ResourceEventTag), error)
       },
@@ -154,11 +159,16 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val imHandler = new GenericPayloadHandler[IMEventModel, IMEventStore#IMEvent](
       jsonParser,
+      (payload, jsonTextFormat) ⇒ {},
       (payload, error) ⇒ {
-        LocalFSEventStore.storeUnparsedIMEvent(aquarium, payload, error)
         logger.error("Error parsing JSON from %s payload".format(Tags.IMEventTag), error)
+
+        LocalFSEventStore.storeUnparsedIMEvent(aquarium, payload, error)
       },
       imEventParser,
+      (payload, event) ⇒ {
+        LocalFSEventStore.storeIMEvent(aquarium, event, payload)
+      },
       (payload, error) ⇒ {
         logger.error("Error creating object model from %s payload".format(Tags.IMEventTag), error)
       },

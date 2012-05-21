@@ -101,8 +101,8 @@ object LocalFSEventStore extends Loggable {
     writeToFile(file, jsonPayload, appendString)
   }
 
-  def storeUnparsedResourceEvent(mc: Aquarium, initialPayload: Array[Byte], exception: Throwable): Unit = {
-    for(root <- mc.eventsStoreFolder) {
+  def storeUnparsedResourceEvent(aquarium: Aquarium, initialPayload: Array[Byte], exception: Throwable): Unit = {
+    for(root <- aquarium.eventsStoreFolder) {
       val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis())
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val rcEventsFolder = createResourceEventsFolder(root)
@@ -112,10 +112,14 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeResourceEvent(mc: Aquarium, event: ResourceEventModel, initialPayload: Array[Byte]): Unit = {
+  def storeResourceEvent(aquarium: Aquarium, event: ResourceEventModel, initialPayload: Array[Byte]): Unit = {
+    if(!aquarium.saveResourceEventsToEventsStoreFolder) {
+      return
+    }
+
     require(event ne null, "Resource event must be not null")
 
-    for(root <- mc.eventsStoreFolder) {
+    for(root <- aquarium.eventsStoreFolder) {
       val occurredMDC = new MutableDateCalc(event.occurredMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val rcEventsFolder = createResourceEventsFolder(root)
@@ -137,8 +141,8 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeUnparsedIMEvent(mc: Aquarium, initialPayload: Array[Byte], exception: Throwable): Unit = {
-    for(root <- mc.eventsStoreFolder) {
+  def storeUnparsedIMEvent(aquarium: Aquarium, initialPayload: Array[Byte], exception: Throwable): Unit = {
+    for(root <- aquarium.eventsStoreFolder) {
       val occurredMDC = new MutableDateCalc(TimeHelpers.nowMillis())
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val imEventsFolder = createIMEventsFolder(root)
@@ -148,9 +152,14 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeIMEvent(mc: Aquarium, event: IMEventModel, initialPayload: Array[Byte]): Unit = {
+  def storeIMEvent(aquarium: Aquarium, event: IMEventModel, initialPayload: Array[Byte]): Unit = {
+    if(!aquarium.saveIMEventsToEventsStoreFolder) {
+      return
+    }
+
     require(event ne null, "IM event must be not null")
-    for(root <- mc.eventsStoreFolder) {
+
+    for(root <- aquarium.eventsStoreFolder) {
       val occurredMDC = new MutableDateCalc(event.occurredMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val imEventsFolder = createIMEventsFolder(root)

@@ -210,6 +210,10 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
     }
   }
 
+  private[this] lazy val _events_store_save_rc_events = props.getBoolean(Keys.events_store_save_rc_events).getOr(false)
+
+  private[this] lazy val _events_store_save_im_events = props.getBoolean(Keys.events_store_save_im_events).getOr(false)
+
   private[this] lazy val _converters = StdConverters.AllConverters
 
   private[this] lazy val _timerService: TimerService = newInstance[SimpleTimerService]()
@@ -382,6 +386,10 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
   }
 
   def eventsStoreFolder = _eventsStoreFolder
+
+  def saveResourceEventsToEventsStoreFolder = _events_store_save_rc_events
+
+  def saveIMEventsToEventsStoreFolder = _events_store_save_im_events
 
   def adminCookie: MaybeOption[String] = props.get(Aquarium.Keys.admin_cookie) match {
     case just @ Just(_) ⇒ just
@@ -563,9 +571,25 @@ object Aquarium {
 
     /**
      * If a value is given to this property, then it represents a folder where all events coming to aquarium are
-     * stored.
+     * saved.
      */
     final val events_store_folder = "events.store.folder"
+
+    /**
+     * If this is `true` and `events.store.folder` is defined, then all resource events are
+     * also stored in `events.store.folder`.
+     *
+     * This is for debugging purposes.
+     */
+    final val events_store_save_rc_events = "events.store.save.rc.events"
+
+    /**
+     * If this is `true` and `events.store.folder` is defined, then all IM events are
+     * also stored in `events.store.folder`.
+     *
+     * This is for debugging purposes.
+     */
+    final val events_store_save_im_events = "events.store.save.im.events"
 
     /**
      * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.event.model.im.IMEventModel]] is

@@ -60,9 +60,11 @@ import gr.grnet.aquarium.Aquarium
 
 class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
     (jsonParser: Array[Byte] ⇒ JsonTextFormat,
-     jsonParserErrorAction: (Array[Byte], Throwable) ⇒ Unit,
+     onJsonParserSuccess: (Array[Byte], JsonTextFormat) ⇒ Unit,
+     onJsonParserError: (Array[Byte], Throwable) ⇒ Unit,
      eventParser: JsonTextFormat ⇒ E,
-     eventParserErrorAction: (Array[Byte], Throwable) ⇒ Unit,
+     onEventParserSuccess: (Array[Byte], E) ⇒ Unit,
+     onEventParserError: (Array[Byte], Throwable) ⇒ Unit,
      saveAction: E ⇒ S,
      forwardAction: S ⇒ Unit) extends PayloadHandler {
 
@@ -70,19 +72,23 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
     // 1. try to parse as json
     MaybeEither { jsonParser(payload) } match {
       case Failed(e) ⇒
-        safeUnit(jsonParserErrorAction(payload, e))
+        safeUnit(onJsonParserError(payload, e))
 
         HandlerResultReject(e.getMessage)
 
       case Just(jsonTextFormat) ⇒
+        safeUnit(onJsonParserSuccess(payload, jsonTextFormat))
+
         // 2. try to parse as model
         MaybeEither { eventParser(jsonTextFormat) } match {
           case Failed(e) ⇒
-            safeUnit(eventParserErrorAction(payload, e))
+            safeUnit(onEventParserError(payload, e))
 
             HandlerResultReject(e.getMessage)
 
           case Just(event) ⇒
+            safeUnit(onEventParserSuccess(payload, event))
+
             // 3. try to save to DB
             MaybeEither { saveAction(event) } match {
               case Failed(e) ⇒
