@@ -243,18 +243,22 @@ package object util {
     maybe.asInstanceOf[Just[A]]
   }
 
+  def charset(encoding: String): Charset = {
+    Charset.forName(encoding)
+  }
+
   /**
    * Transform an array of bytes to a string, assuming UTF-8 encoding.
    */
-  def makeString(bytes: Array[Byte]): String = {
-    new String(bytes, UTF_8_Charset)
+  def makeString(bytes: Array[Byte], charset: Charset = UTF_8_Charset): String = {
+    new String(bytes, charset)
   }
 
   /**
    * Transform a string to an array of bytes, following a UTF-8 decoding scheme.
    */
-  def makeBytes(string: String): Array[Byte] = {
-    string.getBytes(UTF_8_Charset)
+  def makeBytes(string: String, charset: Charset = UTF_8_Charset): Array[Byte] = {
+    string.getBytes(charset)
   }
 
   /**

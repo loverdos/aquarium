@@ -54,48 +54,58 @@ object StdConverters {
   private[this] final lazy val builder: ConvertersBuilder = {
     val builder: ConvertersBuilder = new StdConvertersBuilder().registerDefaultConversions()
 
-    // Any => JValue
+    // Any ⇒ JValue
     builder.registerConverter(AnyToJValueConverter)
 
-    // Any => PrettyJsonTextFormat
+    // Any ⇒ PrettyJsonTextFormat
     builder.registerConverter(AnyToPrettyJsonTextConverter)
 
-    // Any => CompactJsonTextFormat
+    // Any ⇒ CompactJsonTextFormat
     builder.registerConverter(AnyToCompactJsonTextConverter)
 
-    // JsonTextFormat => AnyRef
+    // JsonTextFormat ⇒ AnyRef
     builder.registerConverter(JsonTextToObjectConverter)
 
-    // JsonSupport => DBObject
+    // JsonSupport ⇒ DBObject
     builder.registerConverter(JsonSupportToDBObjectConverter)
 
-    // CharSequence => DBObject
+    // CharSequence ⇒ DBObject
     builder.registerConverter(CharSequenceToDBObjectConverter)
 
-    // JValue => NodeSeq
+    // JValue ⇒ NodeSeq
     builder.registerConverter(JValueToNodeSeqConverter)
+
+    // Array[Byte] ⇒ JsonTextFormat
+    builder.registerConverter(ByteArrayToJsonTextConverter)
 
     builder
   }
 
+  object ByteArrayToJsonTextConverter extends StrictSourceConverterSkeleton[Array[Byte], JsonTextFormat] {
+    @throws(classOf[ConverterException])
+    final protected def convertEx_(sourceValue: Array[Byte]) = {
+      JsonTextFormat(JsonConversions.jsonBytesToJson(sourceValue))
+    }
+  }
+
   object AnyToJValueConverter extends NonStrictSourceConverterSkeleton[Any, JValue] {
-    @scala.throws(classOf[ConverterException])
-    def convertEx[T: Type](sourceValue: Any) = {
-      JsonConversions.anyToJValue(sourceValue)(JsonConversions.Formats).asInstanceOf[T]
+    @throws(classOf[ConverterException])
+    final protected def convertEx_(sourceValue: Any) = {
+      JsonConversions.anyToJValue(sourceValue)(JsonConversions.Formats)
     }
   }
 
   object AnyToPrettyJsonTextConverter extends NonStrictSourceConverterSkeleton[Any, PrettyJsonTextFormat] {
-    @scala.throws(classOf[ConverterException])
-    def convertEx[T: Type](sourceValue: Any) = {
-      PrettyJsonTextFormat(JsonConversions.anyToJson(sourceValue, true)(JsonConversions.Formats)).asInstanceOf[T]
+    @throws(classOf[ConverterException])
+    final protected def convertEx_(sourceValue: Any) = {
+      PrettyJsonTextFormat(JsonConversions.anyToJson(sourceValue, true)(JsonConversions.Formats))
     }
   }
 
   object AnyToCompactJsonTextConverter extends NonStrictSourceConverterSkeleton[Any, CompactJsonTextFormat] {
-    @scala.throws(classOf[ConverterException])
-    def convertEx[T: Type](sourceValue: Any) = {
-      CompactJsonTextFormat(JsonConversions.anyToJson(sourceValue, false)(JsonConversions.Formats)).asInstanceOf[T]
+    @throws(classOf[ConverterException])
+    final protected def convertEx_(sourceValue: Any) = {
+      CompactJsonTextFormat(JsonConversions.anyToJson(sourceValue, false)(JsonConversions.Formats))
     }
   }
 
@@ -106,7 +116,7 @@ object StdConverters {
       erasureOf[JsonTextFormat].isAssignableFrom(erasureOf[S])
     }
 
-    @scala.throws(classOf[ConverterException])
+    @throws(classOf[ConverterException])
     def convertEx[T: Type](sourceValue: Any) = {
       // Generic deserializer from json string to a business logic model
       JsonConversions.jsonToObject[T](sourceValue.asInstanceOf[JsonTextFormat].value)(manifest[T], JsonConversions.Formats)
@@ -114,23 +124,23 @@ object StdConverters {
   }
 
   object JsonSupportToDBObjectConverter extends NonStrictSourceConverterSkeleton[JsonSupport, DBObject] {
-    @scala.throws(classOf[ConverterException])
-    def convertEx[T: Type](sourceValue: Any) = {
-      JSON.parse(sourceValue.asInstanceOf[JsonSupport].toJsonString).asInstanceOf[T]
+    @throws(classOf[ConverterException])
+    final protected def convertEx_(sourceValue: JsonSupport) = {
+      JSON.parse(sourceValue.asInstanceOf[JsonSupport].toJsonString).asInstanceOf[DBObject]
     }
   }
 
   object CharSequenceToDBObjectConverter extends NonStrictSourceConverterSkeleton[CharSequence, DBObject] {
-    @scala.throws(classOf[ConverterException])
-    def convertEx[T: Type](sourceValue: Any) = {
-      JSON.parse(sourceValue.asInstanceOf[CharSequence].toString).asInstanceOf[T]
+    @throws(classOf[ConverterException])
+    final protected def convertEx_(sourceValue: CharSequence) = {
+      JSON.parse(sourceValue.asInstanceOf[CharSequence].toString).asInstanceOf[DBObject]
     }
   }
 
   object JValueToNodeSeqConverter extends NonStrictSourceConverterSkeleton[JValue, NodeSeq] {
-    @scala.throws(classOf[ConverterException])
-    def convertEx[T: Type](sourceValue: Any) = {
-      Xml.toXml(sourceValue.asInstanceOf[JValue]).asInstanceOf[T]
+    @throws(classOf[ConverterException])
+    final protected def convertEx_(sourceValue: JValue) = {
+      Xml.toXml(sourceValue.asInstanceOf[JValue])
     }
   }
 

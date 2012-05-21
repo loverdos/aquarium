@@ -39,6 +39,9 @@ import net.liftweb.json.JsonAST.JValue
 import net.liftweb.json._
 import ext.JodaTimeSerializers
 
+import gr.grnet.aquarium.util.{makeString, UTF_8_Charset}
+import java.nio.charset.Charset
+
 /**
  * Provides conversion methods from and to JSON.
  *
@@ -94,8 +97,12 @@ object JsonConversions {
     }
   }
 
-  final def jsonBytesToObject[A: Manifest](bytes: Array[Byte], encoding: String = "UTF-8"): A = {
-    val json = new String(bytes, encoding)
+  final def jsonBytesToJson(bytes: Array[Byte], charset: Charset = UTF_8_Charset): String = {
+    makeString(bytes, charset)
+  }
+
+  final def jsonBytesToObject[A: Manifest](bytes: Array[Byte], charset: Charset = UTF_8_Charset): A = {
+    val json = jsonBytesToJson(bytes, charset)
     jsonToObject[A](json)
   }
 
