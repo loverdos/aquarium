@@ -36,6 +36,12 @@
 package gr.grnet.aquarium.connector.handler
 
 /**
+ * Signifies that the event payload must be sent again, preserving order.
+ *
+ * Additionally, it provides the extra info that the other end (the one that handled the message) had some very
+ * serious error.
+ *
+ * In effect, this is a refinement of [[gr.grnet.aquarium.connector.handler.HandlerResultResend]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

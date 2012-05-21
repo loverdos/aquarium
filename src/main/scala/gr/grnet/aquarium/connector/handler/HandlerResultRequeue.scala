@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.connector.handler
 
 /**
+ * Signifies that the event payload must be sent again, possibly in a different order.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

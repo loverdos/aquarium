@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.connector.handler
 
 /**
+ * Signifies that the event payload must be rejected and never be sent again.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

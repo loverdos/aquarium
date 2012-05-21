@@ -82,14 +82,14 @@ final class StoreWatcherService extends Lifecycle with Configurable with Loggabl
       // No exception happened, so we are alive
       setStatus(true)
       if(!wasAlive) {
-        logger.info("Reconnected %s store".format(tag))
+        logger.info("Reconnected store for %s".format(tag))
         aquarium.eventBus ! StoreIsAliveBusEvent(tag)
       }
     }
     catch {
       case e: Throwable ⇒
         setStatus(false)
-        logger.info("Store %s detected down".format(tag))
+        logger.info("Store for %s detected down".format(tag))
         aquarium.eventBus ! StoreIsDeadBusEvent(tag)
     }
   }

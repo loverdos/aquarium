@@ -36,6 +36,9 @@
 package gr.grnet.aquarium.connector.handler
 
 /**
+ * Signifies what is the result of handling an event payload.
+ *
+ * This result is returned from a [[gr.grnet.aquarium.connector.handler.PayloadHandler]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

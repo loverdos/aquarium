@@ -36,11 +36,9 @@
 package gr.grnet.aquarium.connector.handler
 
 /**
- * Signifies that the event payload was processed successfully.
+ * Signifies that the event payload must be sent again, preserving order.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object HandlerResultSuccess extends HandlerResult {
-  override def isSuccess = true
-}
+case object HandlerResultResend extends HandlerResult
