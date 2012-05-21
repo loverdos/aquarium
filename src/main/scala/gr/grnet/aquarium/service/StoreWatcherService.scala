@@ -145,23 +145,19 @@ final class StoreWatcherService extends Lifecycle with Configurable with Loggabl
   def start(): Unit = {
     if(!_pingIsScheduled.get()) {
       // First time pings (once)
-      safeUnit {
-        safePingStore(
-          Tags.ResourceEventTag,
-          () ⇒ aquarium.resourceEventStore.pingResourceEventStore(),
-          () ⇒ _rcIsAlive.get(),
-          alive ⇒ _rcIsAlive.set(alive)
-        )
-      }
+      safePingStore(
+        Tags.ResourceEventTag,
+        () ⇒ aquarium.resourceEventStore.pingResourceEventStore(),
+        () ⇒ _rcIsAlive.get(),
+        alive ⇒ _rcIsAlive.set(alive)
+      )
 
-      safeUnit {
-        safePingStore(
-          Tags.IMEventTag,
-          () ⇒ aquarium.resourceEventStore.pingResourceEventStore(),
-          () ⇒ _imIsAlive.get(),
-          alive ⇒ _imIsAlive.set(alive)
-        )
-      }
+      safePingStore(
+        Tags.IMEventTag,
+        () ⇒ aquarium.resourceEventStore.pingResourceEventStore(),
+        () ⇒ _imIsAlive.get(),
+        alive ⇒ _imIsAlive.set(alive)
+      )
 
       pingResourceEventStore()
       pingIMEventStore()
