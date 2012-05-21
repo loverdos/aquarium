@@ -51,6 +51,8 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
   private[this] var _username: String = _
   private[this] var _password: String = _
 
+  private[this] var _mongoDBStore: MongoDBStore = _
+
   def propertyPrefix = Some(MongoDBStoreProvider.MongoDBKeys.Prefix)
 
   def configure(props: Props) = {
@@ -70,17 +72,18 @@ class MongoDBStoreProvider extends StoreProvider with Configurable {
       opt.threadsAllowedToBlockForConnectionMultiplier = 8
 
       this._mongo = new Mongo(addr, opt)
+      this._mongoDBStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
     } catch {
       case e: MongoException =>
         throw new AquariumException("Cannot connect to mongo at %s:%s".format(host, port), e)
     }
   }
 
-  def userStateStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
-  def resourceEventStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
-  def walletEntryStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
-  def imEventStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
-  def policyStore = new MongoDBStore(this._mongo, this._database, this._username, this._password)
+  def userStateStore = _mongoDBStore
+  def resourceEventStore = _mongoDBStore
+  def walletEntryStore = _mongoDBStore
+  def imEventStore = _mongoDBStore
+  def policyStore = _mongoDBStore
 }
 
 /**
