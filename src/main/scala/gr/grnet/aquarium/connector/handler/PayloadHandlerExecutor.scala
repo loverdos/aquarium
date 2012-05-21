@@ -43,6 +43,6 @@ package gr.grnet.aquarium.connector.handler
 
 trait PayloadHandlerExecutor {
   def exec(payload: Array[Byte], handler: PayloadHandler)
-          (onSuccess: HandlerResult ⇒ Unit)
-          (onError: Throwable ⇒ Unit): Unit
+          (onSuccess: HandlerResult ⇒ Any)
+          (onError: Throwable ⇒ Any): Unit
 }

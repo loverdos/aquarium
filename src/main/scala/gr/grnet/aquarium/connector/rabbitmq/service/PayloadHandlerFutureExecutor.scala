@@ -47,8 +47,8 @@ import gr.grnet.aquarium.connector.handler.{PayloadHandler, HandlerResult, Paylo
 final class PayloadHandlerFutureExecutor extends PayloadHandlerExecutor {
 
   def exec(payload: Array[Byte], handler: PayloadHandler)
-          (onSuccess: HandlerResult ⇒ Unit)
-          (onError: Throwable ⇒ Unit): Unit = {
+          (onSuccess: HandlerResult ⇒ Any)
+          (onError: Throwable ⇒ Any): Unit = {
 
     val result = Future { handler.handlePayload(payload) }
 

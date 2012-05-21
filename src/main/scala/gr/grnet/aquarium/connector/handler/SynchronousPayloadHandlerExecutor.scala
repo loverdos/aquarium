@@ -45,8 +45,8 @@ package gr.grnet.aquarium.connector.handler
 final class SynchronousPayloadHandlerExecutor extends PayloadHandlerExecutor {
 
   def exec(payload: Array[Byte], handler: PayloadHandler)
-          (onSuccess: HandlerResult ⇒ Unit)
-          (onError: Throwable ⇒ Unit): Unit = {
+          (onSuccess: HandlerResult ⇒ Any)
+          (onError: Throwable ⇒ Any): Unit = {
 
     try onSuccess(handler.handlePayload(payload))
     catch { case e: Throwable ⇒ onError(e) }
