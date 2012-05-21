@@ -59,7 +59,7 @@ import gr.grnet.aquarium.Aquarium
  */
 
 class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
-    (jsonParser: Array[Byte] ⇒ MaybeEither[JsonTextFormat],
+    (jsonParser: Array[Byte] ⇒ JsonTextFormat,
      jsonParserErrorAction: (Array[Byte], Throwable) ⇒ Unit,
      eventParser: JsonTextFormat ⇒ E,
      eventParserErrorAction: (Array[Byte], Throwable) ⇒ Unit,
@@ -68,7 +68,7 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
 
   def handlePayload(payload: Array[Byte]): HandlerResult = {
     // 1. try to parse as json
-    jsonParser(payload) match {
+    MaybeEither { jsonParser(payload) } match {
       case Failed(e) ⇒
         safeUnit(jsonParserErrorAction(payload, e))
 

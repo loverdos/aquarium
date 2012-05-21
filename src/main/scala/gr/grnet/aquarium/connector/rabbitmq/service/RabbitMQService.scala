@@ -92,8 +92,8 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   }
 
   private[this] def doConfigure(): Unit = {
-    val jsonParser: (Array[Byte] ⇒ MaybeEither[JsonTextFormat]) = { payload ⇒
-      converters.convert[JsonTextFormat](payload)
+    val jsonParser: (Array[Byte] ⇒ JsonTextFormat) = { payload ⇒
+      converters.convertEx[JsonTextFormat](payload)
     }
 
     val rcEventParser: (JsonTextFormat ⇒ ResourceEventModel) = { jsonTextFormat ⇒
