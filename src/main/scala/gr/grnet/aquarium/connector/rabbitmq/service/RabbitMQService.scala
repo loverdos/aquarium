@@ -245,7 +245,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val lg: (String ⇒ Unit) = if(this._consumers.size == 0) logger.warn(_) else logger.debug(_)
     lg("Got %s consumers".format(this._consumers.size))
-
+ 
     this._consumers.foreach(logger.debug("Configured {}", _))
   }
 
