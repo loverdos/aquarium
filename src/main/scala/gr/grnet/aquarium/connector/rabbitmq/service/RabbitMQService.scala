@@ -154,7 +154,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
         logger.error("Error creating object model from %s payload".format(Tags.ResourceEventTag), error)
       },
       rcEvent ⇒ resourceEventStore.insertResourceEvent(rcEvent),
-      rcDebugForwardAction
+      rcForwardAction
     )
 
     val imHandler = new GenericPayloadHandler[IMEventModel, IMEventStore#IMEvent](
@@ -173,7 +173,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
         logger.error("Error creating object model from %s payload".format(Tags.IMEventTag), error)
       },
       imEvent ⇒ imEventStore.insertIMEvent(imEvent),
-      imDebugForwardAction
+      imForwardAction
     )
 
     val futureExecutor = new PayloadHandlerFutureExecutor
