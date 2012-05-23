@@ -49,7 +49,7 @@ case class AgreementSnapshot(name: String, validFrom: Long, validTo: Long = Long
   require(validTo > validFrom)
   require(!name.isEmpty)
 
-  def timeslot = Timeslot(new Date(validFrom), new Date(validTo))
+  def timeslot = Timeslot(validFrom, validTo)
 
   override def toString =
     "AgreementSnapshot(%s, %s, %s)".
