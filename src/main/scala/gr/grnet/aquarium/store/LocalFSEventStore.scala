@@ -67,14 +67,20 @@ object LocalFSEventStore extends Loggable {
     logger.debug("Wrote to file {}", file.getCanonicalPath)
   }
 
+  private[this] def dateTagForFolder(): String = {
+    new MutableDateCalc(TimeHelpers.nowMillis()).toYYYYMMDD
+  }
+
   private[this] def createResourceEventsFolder(root: File): File = {
-    val folder = new File(root, "rc")
+    val folder0 = new File(root, "rc")
+    val folder = new File(folder0, "rc-%s".format(dateTagForFolder()))
     folder.mkdirs()
     folder
   }
 
   private[this] def createIMEventsFolder(root: File): File = {
-    val folder = new File(root, "im")
+    val folder0 = new File(root, "im")
+    val folder = new File(folder0, "im-%s".format(dateTagForFolder()))
     folder.mkdirs()
     folder
   }
