@@ -250,7 +250,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   }
 
   def start() = {
-    aquarium.eventBus.addSubsciber(this)
+    aquarium.eventBus.addSubscriber(this)
 
     safeStart()
   }

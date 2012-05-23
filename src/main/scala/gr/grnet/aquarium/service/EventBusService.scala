@@ -69,7 +69,7 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
   }
 
   def start() = {
-    this addSubsciber this // Wow!
+    this addSubscriber this // Wow!
   }
 
   def stop() = synchronized {
@@ -89,12 +89,12 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
     asyncBus.post(event)
   }
 
-  def removeSubsciber[A <: AnyRef](subscriber: A): Unit = synchronized {
+  def removeSubscriber[A <: AnyRef](subscriber: A): Unit = synchronized {
     subscribers.remove(subscriber)
     asyncBus.unregister(subscriber)
   }
 
-  def addSubsciber[A <: AnyRef](subscriber: A): Unit = synchronized {
+  def addSubscriber[A <: AnyRef](subscriber: A): Unit = synchronized {
     subscribers.add(subscriber)
     asyncBus.register(subscriber)
   }
