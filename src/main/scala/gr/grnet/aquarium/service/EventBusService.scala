@@ -37,12 +37,11 @@ package gr.grnet.aquarium.service
 
 import gr.grnet.aquarium.Configurable
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.service.event.BusEvent
-import com.google.common.eventbus.{DeadEvent, Subscribe, EventBus}
-import akka.actor.{ActorRef, Actor}
-import gr.grnet.aquarium.util.{Lifecycle, Loggable}
-import gr.grnet.aquarium.util.safeUnit
+import com.google.common.eventbus.{AsyncEventBus, DeadEvent, Subscribe}
+import gr.grnet.aquarium.util.{DaemonThreadFactory, Lifecycle, Loggable}
+import java.util.concurrent.{ConcurrentHashMap, Executors}
+import java.util.Collections
 
 
 /**
@@ -52,8 +51,12 @@ import gr.grnet.aquarium.util.safeUnit
  */
 
 class EventBusService extends Loggable with Lifecycle with Configurable {
-  private[this] val theBus = new EventBus(classOf[EventBusService].getName)
-  private[this] var _poster: ActorRef = null
+  private[this] val asyncBus = new AsyncEventBus(
+    classOf[EventBusService].getName,
+    Executors.newFixedThreadPool(1, new DaemonThreadFactory)
+  )
+
+  private[this] val subscribers = Collections.newSetFromMap[AnyRef](new ConcurrentHashMap())
 
   def propertyPrefix = None
 
@@ -67,12 +70,14 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
 
   def start() = {
     this addSubsciber this // Wow!
-
-    this._poster = Actor.actorOf(AsyncPoster).start()
   }
 
-  def stop() = {
-    safeUnit(_poster.stop())
+  def stop() = synchronized {
+    val iterator = subscribers.iterator()
+    while(iterator.hasNext) {
+      asyncBus.unregister(iterator.next())
+    }
+    subscribers.clear()
   }
 
   @inline
@@ -81,27 +86,22 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
   }
 
   def ![A <: BusEvent](event: A): Unit = {
-    _poster ! event
+    asyncBus.post(event)
   }
 
-  def addSubsciber[A <: AnyRef](subscriber: A): Unit = {
-    theBus register subscriber
+  def removeSubsciber[A <: AnyRef](subscriber: A): Unit = synchronized {
+    subscribers.remove(subscriber)
+    asyncBus.unregister(subscriber)
+  }
+
+  def addSubsciber[A <: AnyRef](subscriber: A): Unit = synchronized {
+    subscribers.add(subscriber)
+    asyncBus.register(subscriber)
   }
 
   @Subscribe
   def handleDeadEvent(event: DeadEvent): Unit = {
     event.getSource
     logger.warn("DeadEvent %s".format(event.getEvent))
-  }
-
-  /**
-   * Actor that takes care of asynchronously posting to the underlying event bus
-   */
-  object AsyncPoster extends Actor {
-    protected def receive = {
-      case event: AnyRef ⇒
-        try theBus post event
-        catch { case _ ⇒ }
-    }
   }
 }
