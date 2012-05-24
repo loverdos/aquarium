@@ -35,46 +35,23 @@
 
 package gr.grnet.aquarium.computation.data
 
+import gr.grnet.aquarium.util.date.MutableDateCalc
 import java.util.Date
-
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, Timeslot}
-import gr.grnet.aquarium.logic.accounting.Policy
-import scala.collection.immutable.{SortedMap, TreeMap}
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
- * User agreement data that will be part of UserState.
- * The provided list of agreements cannot have time gaps. This is checked at object creation type.
- *
- * Note: This is copied from UserDataSnapshot.scala/AgreementSnapshot.
- * TODO: Review
+ * Represents an agreement valid for a specific amount of time. By convention,
+ * if an agreement is currently valid, then the validTo field is equal to `Long.MaxValue`.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+case class AgreementHistoryItem(name: String, validFrom: Long, validTo: Long = Long.MaxValue) {
+  require(validTo > validFrom)
+  require(!name.isEmpty)
 
-case class AgreementsSnapshot(agreements: List[AgreementSnapshot]) {
-  ensureNoGaps(agreements.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
+  def timeslot = Timeslot(validFrom, validTo)
 
-  def ensureNoGaps(agreements: List[AgreementSnapshot]): Unit = agreements match {
-    case ha :: (t @ (hb :: tail)) =>
-      assert(ha.validTo - hb.validFrom == 1);
-      ensureNoGaps(t)
-    case h :: Nil =>
-      assert(h.validTo == Long.MaxValue)
-    case Nil => ()
-  }
-
-  def agreementsByTimeslot: SortedMap[Timeslot, String] = {
-    TreeMap(agreements.map(ag => (ag.timeslot, ag.name)): _*)
-  }
-
-  /**
-   * Get the user agreement at the specified timestamp
-   */
-  def findForTime(at: Long): Option[DSLAgreement] = {
-    // FIXME: Refactor and do not make this static call to Policy
-    agreements.find{ x => x.validFrom < at && x.validTo > at} match {
-      case Some(x) => Policy.policy(new Date(at)).findAgreement(x.name)
-      case None => None
-    }
-  }
+  override def toString =
+    "AgreementHistoryItem(%s, %s, %s)".
+      format(name, new MutableDateCalc(validFrom), new MutableDateCalc(validTo))
 }
