@@ -57,23 +57,55 @@ import com.ckkloverdos.maybe.{NoVal, Just, Failed, MaybeEither}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
-(jsonParser: Array[Byte] ⇒ JsonTextFormat,
- onJsonParserSuccess: (Array[Byte], JsonTextFormat) ⇒ Unit,
- onJsonParserError: (Array[Byte], Throwable) ⇒ Unit,
- eventParser: JsonTextFormat ⇒ E,
- onEventParserSuccess: (Array[Byte], E) ⇒ Unit,
- onEventParserError: (Array[Byte], Throwable) ⇒ Unit,
+class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel](
+    /**
+     * Parses payload bytes to a JSON string.
+     * The incoming payload must be in UTF-8.
+     */
+    jsonParser: Array[Byte] ⇒ JsonTextFormat,
 
- /**
-  * If a Some(handlerResult) is returned, then the handlerResult
-  * is also returned from this payload handler.
-  *
-  * This is a business check to ensure that everything is OK before saving to DB.
-  */
- preSaveAction: E ⇒ Option[HandlerResult],
- saveAction: E ⇒ S,
- forwardAction: S ⇒ Unit) extends PayloadHandler {
+    /**
+     * This is called if no error happens while parsing to JSON.
+     */
+    onJsonParserSuccess: (Array[Byte], JsonTextFormat) ⇒ Unit,
+
+    /**
+     * This is called if an error happens while parsing to JSON.
+     */
+    onJsonParserError: (Array[Byte], Throwable) ⇒ Unit,
+
+    /**
+     * Parses JSON into a domain object.
+     */
+    eventParser: JsonTextFormat ⇒ E,
+
+    /**
+     * This is called if no error happens while parsing to a domain object.
+     */
+    onEventParserSuccess: (Array[Byte], E) ⇒ Unit,
+
+    /**
+     * This is called if an error happens while parsing to a domain object.
+     */
+    onEventParserError: (Array[Byte], Throwable) ⇒ Unit,
+
+    /**
+     * This is called with the parsed domain object as a final check before saving to DB.
+     * If the result is `None`, then we proceed with the `saveAction` else the returned
+     * [[gr.grnet.aquarium.connector.handler.HandlerResult]] is communicated back from the
+     * `handlePayload` method.
+     */
+    preSaveAction: E ⇒ Option[HandlerResult],
+
+    /**
+     * Saves the parsed domain object to DB. Returns the saved domain object.
+     */
+    saveAction: E ⇒ S,
+
+    /**
+     * Forwards the saved domain object for further processing.
+     */
+    forwardAction: S ⇒ Unit) extends PayloadHandler {
 
   def handlePayload(payload: Array[Byte]): HandlerResult = {
     // 1. try to parse as json
