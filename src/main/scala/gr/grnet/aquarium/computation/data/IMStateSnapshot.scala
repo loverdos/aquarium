@@ -43,6 +43,10 @@ import gr.grnet.aquarium.event.model.im.IMEventModel
  */
 
 case class IMStateSnapshot(
+                          /**
+                           * True if the user has ever been activated even once.
+                           */
+                           hasBeenActivated: Boolean,
                            /**
                             * This is the latest processed IMEvent
                             */
@@ -63,6 +67,9 @@ case class IMStateSnapshot(
 
 object IMStateSnapshot {
   def initial(imEvent: IMEventModel): IMStateSnapshot = {
-    IMStateSnapshot(imEvent, RoleHistory.initial(imEvent.role, imEvent.occurredMillis))
+    IMStateSnapshot(
+      imEvent.isActive,
+      imEvent,
+      RoleHistory.initial(imEvent.role, imEvent.occurredMillis))
   }
 }
