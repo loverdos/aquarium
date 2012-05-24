@@ -104,28 +104,23 @@ class UserActor extends ReflectiveRoleableActor {
     "default"
   }
 
-  def onProcessIMEvent(event: ProcessIMEvent): Unit = {
-    val now = TimeHelpers.nowMillis()
-
-    val imEvent = event.imEvent
+  /**
+   * Process [[gr.grnet.aquarium.event.model.im.IMEventModel]]s.
+   * When this method is called, we assume that all proper checks have been made and it
+   * is OK to proceed with the event processing.
+   */
+  def onProcessIMEvent(processEvent: ProcessIMEvent): Unit = {
+    val imEvent = processEvent.imEvent
     val hadIMState = _haveIMState
 
     if(hadIMState) {
-      val newOccurredMillis = imEvent.occurredMillis
-      val currentOccurredMillis = this._imState.imEvent.occurredMillis
 
-      if(newOccurredMillis < currentOccurredMillis) {
-        INFO(
-          "Ignoring older IMEvent: [%s] < [%s]",
-          new MutableDateCalc(newOccurredMillis).toYYYYMMDDHHMMSSSSS,
-          new MutableDateCalc(currentOccurredMillis).toYYYYMMDDHHMMSSSSS)
-
-        return
-      }
+      this._imState = this._imState.addMostRecentEvent(imEvent)
+    } else {
+      this._imState = IMStateSnapshot.initial(imEvent)
     }
 
-    this._imState = IMStateSnapshot(imEvent)
-    DEBUG("%s %s", if(hadIMState) "Update" else "Set", shortClassNameOf(this._imState))
+    DEBUG("%s %s = %s", if(hadIMState) "Update" else "Set", shortClassNameOf(this._imState), this._imState)
   }
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
