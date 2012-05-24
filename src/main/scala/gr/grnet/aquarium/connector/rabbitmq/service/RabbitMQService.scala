@@ -43,19 +43,13 @@ import com.rabbitmq.client.Address
 import gr.grnet.aquarium.{Aquarium, Configurable}
 import gr.grnet.aquarium.connector.rabbitmq.conf.{TopicExchange, RabbitMQConsumerConf, RabbitMQExchangeType}
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConfKeys
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
-import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.actor.RouterRole
-import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
-import gr.grnet.aquarium.store.{LocalFSEventStore, IMEventStore, ResourceEventStore}
 import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
 import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle, Tag}
-import gr.grnet.aquarium.util.shortInfoOf
 import gr.grnet.aquarium.util.sameTags
-import gr.grnet.aquarium.connector.handler.{HandlerResultPanic, HandlerResult}
-import com.ckkloverdos.maybe.{Failed, Just, Maybe, MaybeEither}
 import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEvent}
+import gr.grnet.aquarium.connector.handler.{ResourceEventPayloadHandler, IMEventPayloadHandler}
 
 /**
  *
@@ -92,89 +86,11 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   }
 
   private[this] def doConfigure(): Unit = {
-    val jsonParser: (Array[Byte] ⇒ JsonTextFormat) = { payload ⇒
-      converters.convertEx[JsonTextFormat](payload)
-    }
+    val postNotifier = new PayloadHandlerPostNotifier(logger)
 
-    val rcEventParser: (JsonTextFormat ⇒ ResourceEventModel) = { jsonTextFormat ⇒
-      StdResourceEvent.fromJsonTextFormat(jsonTextFormat)
-    }
+    val rcHandler = new ResourceEventPayloadHandler(aquarium, logger)
 
-    val imEventParser: (JsonTextFormat ⇒ IMEventModel) = { jsonTextFormat ⇒
-      StdIMEvent.fromJsonTextFormat(jsonTextFormat)
-    }
-
-    val rcForwardAction: (ResourceEventStore#ResourceEvent ⇒ Unit) = { rcEvent ⇒
-      router ! ProcessResourceEvent(rcEvent)
-    }
-
-    val rcDebugForwardAction: (ResourceEventStore#ResourceEvent ⇒ Unit) = { rcEvent ⇒
-      logger.info("Forwarding {}", rcEvent)
-    }
-
-    val imForwardAction: (IMEventStore#IMEvent ⇒ Unit) = { imEvent ⇒
-      router ! ProcessIMEvent(imEvent)
-    }
-
-    val imDebugForwardAction: (IMEventStore#IMEvent ⇒ Unit) = { imEvent ⇒
-      logger.info("Forwarding {}", imEvent)
-    }
-
-    val postNotifier = (consumer: RabbitMQConsumer, maybeResult: Maybe[HandlerResult]) ⇒ {
-      maybeResult match {
-        case Just(hr @ HandlerResultPanic) ⇒
-          // The other end is crucial to the overall operation and it is in panic mode,
-          // so we stop delivering messages until further notice
-          logger.warn("Shutting down %s due to [%s]".format(consumer.toString, hr))
-          consumer.setAllowReconnects(false)
-          consumer.safeStop()
-
-        case Failed(e) ⇒
-          logger.warn("Shutting down %s due to [%s]".format(consumer.toString, shortInfoOf(e)))
-          consumer.setAllowReconnects(false)
-          consumer.safeStop()
-
-        case _ ⇒
-      }
-    }
-
-    val rcHandler = new GenericPayloadHandler[ResourceEventModel, ResourceEventStore#ResourceEvent](
-      jsonParser,
-      (payload, jsonTextFormat) ⇒ {},
-      (payload, error) ⇒ {
-        logger.error("Error creating JSON from %s payload".format(Tags.ResourceEventTag), error)
-
-        LocalFSEventStore.storeUnparsedResourceEvent(aquarium, payload, error)
-      },
-      rcEventParser,
-      (payload, event) ⇒ {
-        LocalFSEventStore.storeResourceEvent(aquarium, event, payload)
-      },
-      (payload, error) ⇒ {
-        logger.error("Error creating object model from %s payload".format(Tags.ResourceEventTag), error)
-      },
-      rcEvent ⇒ resourceEventStore.insertResourceEvent(rcEvent),
-      rcForwardAction
-    )
-
-    val imHandler = new GenericPayloadHandler[IMEventModel, IMEventStore#IMEvent](
-      jsonParser,
-      (payload, jsonTextFormat) ⇒ {},
-      (payload, error) ⇒ {
-        logger.error("Error parsing JSON from %s payload".format(Tags.IMEventTag), error)
-
-        LocalFSEventStore.storeUnparsedIMEvent(aquarium, payload, error)
-      },
-      imEventParser,
-      (payload, event) ⇒ {
-        LocalFSEventStore.storeIMEvent(aquarium, event, payload)
-      },
-      (payload, error) ⇒ {
-        logger.error("Error creating object model from %s payload".format(Tags.IMEventTag), error)
-      },
-      imEvent ⇒ imEventStore.insertIMEvent(imEvent),
-      imForwardAction
-    )
+    val imHandler = new IMEventPayloadHandler(aquarium, logger)
 
     val futureExecutor = new PayloadHandlerFutureExecutor
 

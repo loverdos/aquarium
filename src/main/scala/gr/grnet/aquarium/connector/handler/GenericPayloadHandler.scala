@@ -33,9 +33,7 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.connector.rabbitmq.service
-
-import com.ckkloverdos.maybe.{Just, Failed, MaybeEither}
+package gr.grnet.aquarium.connector.handler
 
 import gr.grnet.aquarium.converter.JsonTextFormat
 import gr.grnet.aquarium.connector.handler._
@@ -43,6 +41,7 @@ import gr.grnet.aquarium.event.model.ExternalEventModel
 import gr.grnet.aquarium.util.safeUnit
 import gr.grnet.aquarium.service.EventBusService
 import gr.grnet.aquarium.Aquarium
+import com.ckkloverdos.maybe.{NoVal, Just, Failed, MaybeEither}
 
 /**
  * Generic handler of events arriving to Aquarium.
@@ -59,18 +58,28 @@ import gr.grnet.aquarium.Aquarium
  */
 
 class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
-    (jsonParser: Array[Byte] ⇒ JsonTextFormat,
-     onJsonParserSuccess: (Array[Byte], JsonTextFormat) ⇒ Unit,
-     onJsonParserError: (Array[Byte], Throwable) ⇒ Unit,
-     eventParser: JsonTextFormat ⇒ E,
-     onEventParserSuccess: (Array[Byte], E) ⇒ Unit,
-     onEventParserError: (Array[Byte], Throwable) ⇒ Unit,
-     saveAction: E ⇒ S,
-     forwardAction: S ⇒ Unit) extends PayloadHandler {
+(jsonParser: Array[Byte] ⇒ JsonTextFormat,
+ onJsonParserSuccess: (Array[Byte], JsonTextFormat) ⇒ Unit,
+ onJsonParserError: (Array[Byte], Throwable) ⇒ Unit,
+ eventParser: JsonTextFormat ⇒ E,
+ onEventParserSuccess: (Array[Byte], E) ⇒ Unit,
+ onEventParserError: (Array[Byte], Throwable) ⇒ Unit,
+
+ /**
+  * If a Some(handlerResult) is returned, then the handlerResult
+  * is also returned from this payload handler.
+  *
+  * This is a business check to ensure that everything is OK before saving to DB.
+  */
+ preSaveAction: E ⇒ Option[HandlerResult],
+ saveAction: E ⇒ S,
+ forwardAction: S ⇒ Unit) extends PayloadHandler {
 
   def handlePayload(payload: Array[Byte]): HandlerResult = {
     // 1. try to parse as json
-    MaybeEither { jsonParser(payload) } match {
+    MaybeEither {
+      jsonParser(payload)
+    } match {
       case Failed(e) ⇒
         safeUnit(onJsonParserError(payload, e))
 
@@ -80,7 +89,9 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
         safeUnit(onJsonParserSuccess(payload, jsonTextFormat))
 
         // 2. try to parse as model
-        MaybeEither { eventParser(jsonTextFormat) } match {
+        MaybeEither {
+          eventParser(jsonTextFormat)
+        } match {
           case Failed(e) ⇒
             safeUnit(onEventParserError(payload, e))
 
@@ -89,17 +100,37 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel]
           case Just(event) ⇒
             safeUnit(onEventParserSuccess(payload, event))
 
-            // 3. try to save to DB
-            MaybeEither { saveAction(event) } match {
+            // 3. See if we are ready to save to DB
+            MaybeEither {
+              preSaveAction(event)
+            } match {
               case Failed(e) ⇒
-                HandlerResultPanic
+                // oops. must resend this message due to unexpected result
+                HandlerResultResend
 
-              case Just(s) ⇒
-                // 4. try forward but it's OK if something bad happens here.
-                safeUnit { forwardAction(s) }
+              case Just(Some(handlerResult)) ⇒
+                // Nope. Not ready to save.
+                handlerResult
 
-                HandlerResultSuccess
+              case Just(None) ⇒
+                // Yep. Ready to save
+                // 4. try to save to DB
+                MaybeEither {
+                  saveAction(event)
+                } match {
+                  case Failed(e) ⇒
+                    HandlerResultPanic
+
+                  case Just(s) ⇒
+                    // 4. try forward but it's OK if something bad happens here.
+                    safeUnit {
+                      forwardAction(s)
+                    }
+
+                    HandlerResultSuccess
+                }
             }
+
 
         }
     }
