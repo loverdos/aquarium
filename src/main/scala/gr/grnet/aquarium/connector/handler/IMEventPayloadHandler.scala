@@ -80,8 +80,8 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
       },
 
       imEvent ⇒ {
-        val className = shortClassNameOf(imEvent)
         val id = imEvent.id
+        val acceptMessage = None: Option[HandlerResult]
 
         // Let's decide if it is OK to store the event
         // Remember that OK == None as the returning result
@@ -93,70 +93,75 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
         //    It is a requirement that this ID is unique.
         val store = aquarium.imEventStore
 
-        val imEventDebugString = "%s(ID=%s)".format(className, id)
+        val imEventDebugString = imEvent.toDebugString
 
         store.findIMEventById(id) match {
-         case Some(_) ⇒
+          case Some(_) ⇒
            // Reject the duplicate
            logger.debug("Rejecting duplicate ID for %s".format(imEventDebugString))
            Some(HandlerResultReject("Duplicate ID for %s".format(imEventDebugString)))
 
-         case None ⇒
-           // 2. Check that the new event is not older than our most recent event in DB.
-           //    Sorry. We cannot tolerate out-of-order events here, since they really mess with the
-           //    agreements selection and thus with the charging procedure.
-           //
-           // 2.1 The only exception is the very first activation ever. We allow late arrival, since
-           //     the rest of Aquarium does nothing (but accumulate events) if the user has never
-           //     been activated.
-           //
-           // TODO: We really need to store these bad events anyway but somewhere else (BadEventsStore?)
-           val userID = imEvent.userID
+          case None ⇒
+            // 2. Check that the new event is not older than our most recent event in DB.
+            //    Sorry. We cannot tolerate out-of-order events here, since they really mess with the
+            //    agreements selection and thus with the charging procedure.
+            //
+            // 2.1 The only exception is the very first activation ever. We allow late arrival, since
+            //     the rest of Aquarium does nothing (but accumulate events) if the user has never
+            //     been activated.
+            //
+            // TODO: We really need to store these bad events anyway but somewhere else (BadEventsStore?)
+            val userID = imEvent.userID
 
-           store.findLatestIMEventByUserID(userID) match {
-             case Some(latestStoredEvent) ⇒
-               val occurredMillis = imEvent.occurredMillis
+            store.findLatestIMEventByUserID(userID) match {
+              case Some(latestStoredEvent) ⇒
+
+               val occurredMillis       = imEvent.occurredMillis
                val latestOccurredMillis = latestStoredEvent.occurredMillis
 
                if(occurredMillis < latestOccurredMillis) {
-                 // OK this is older than our most recent event. Essentially a glimpse in the past.
-                 def rejectMessage = {
-                   logger.debug("Rejecting newer %s. [%s] is newer than [%s]".format(
-                     className,
-                     new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSSSSS,
-                     new MutableDateCalc(latestOccurredMillis).toYYYYMMDDHHMMSSSSS
-                   ))
+                  // OK this is older than our most recent event. Essentially a glimpse in the past.
+                  def rejectMessage = {
+                    val occurredDebugString       = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSSSSS
+                    val latestOccurredDebugString = new MutableDateCalc(latestOccurredMillis).toYYYYMMDDHHMMSSSSS
 
-                   Some(
-                     HandlerResultReject(
-                       "Out of order %s (%s < %s)".format(
-                         className, occurredMillis, latestOccurredMillis)))
-                 }
+                    val formatter = (x: String) ⇒ x.format(
+                      imEventDebugString,
+                      occurredDebugString,
+                      latestOccurredDebugString
+                    )
 
-                 // Has the user been activated before?
-                 store.findFirstIsActiveIMEventByUserID(userID) match {
-                   case Some(_) ⇒
-                     // Yes, so the new event must be rejected
-                     rejectMessage
+                    logger.debug(formatter("Rejecting newer %s. [%s] < [%s]"))
 
-                   case None ⇒
-                     // No. Process the new event only if it is an activation.
-                     if(imEvent.isActive) {
-                       logger.info("First activation for userID=%s in %s".format(userID, imEventDebugString))
-                       None
-                     } else {
+                    Some(HandlerResultReject(formatter("Newer %s. [%s] < [%s]")))
+                  }
+
+                  // Has the user been activated before?
+                  store.findFirstIsActiveIMEventByUserID(userID) match {
+                    case Some(_) ⇒
+                      // Yes, so the new event must be rejected
+                      rejectMessage
+
+                    case None ⇒
+                      // No. Process the new event only if it is an activation.
+                      if(imEvent.isActive) {
+                       logger.info("First activation %s".format(imEventDebugString))
+                       acceptMessage
+                      } else {
                        rejectMessage
-                     }
-                 }
+                      }
+                  }
                } else {
                  // We accept all newer events
-                 None
+                 acceptMessage
                }
 
-             case None ⇒
-               None
-           }
-       }
+              case None ⇒
+                // This is the very first event ever
+                logger.info("First ever %s".format(imEventDebugString))
+                acceptMessage
+            }
+        }
       },
 
       imEvent ⇒ {
