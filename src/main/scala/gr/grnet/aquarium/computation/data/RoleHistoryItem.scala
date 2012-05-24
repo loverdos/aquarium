@@ -44,23 +44,28 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
  */
 
 case class RoleHistoryItem(
-                            /**
-                             * The role name.
-                             */
-                           name: String,
+    /**
+     * The role name.
+     */
+    name: String,
 
-                           /**
-                            * Validity start time for this role. The time is inclusive.
-                            */
-                           validFrom: Long,
+    /**
+     * Validity start time for this role. The time is inclusive.
+     */
+    validFrom: Long,
 
-                           /**
-                            * Validity stop time for this role. The time is exclusive.
-                            */
-                           validTo: Long = Long.MaxValue) {
+    /**
+     * Validity stop time for this role. The time is exclusive.
+     */
+    validTo: Long = Long.MaxValue) {
 
-  require(validTo > validFrom)
-  require(!name.isEmpty)
+  require(
+    validFrom <= validTo,
+    "validFrom(%s) <= validTo(%s)".format(new MutableDateCalc(validFrom), new MutableDateCalc(validFrom)))
+
+  require(name ne null, "Name is not null")
+
+  require(!name.trim.isEmpty, "Name '%s' is not empty".format(name))
 
   def timeslot = Timeslot(validFrom, validTo)
 
