@@ -174,19 +174,19 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
   private[this] lazy val _eventsStoreFolder: Maybe[File] = {
     props.get(Keys.events_store_folder) map {
       folderName ⇒
+        logger.info("{} = {}", Keys.events_store_folder, folderName)
+        
         val canonicalFolder = {
           val folder = new File(folderName)
           if(folder.isAbsolute) {
             folder.getCanonicalFile
           } else {
-            logger.info("{} is not absolute, making it relative to AQUARIUM_HOME", Keys.events_store_folder)
+            logger.info("{} is not absolute, making it relative to Aquarium Home", Keys.events_store_folder)
             new File(ResourceLocator.Homes.Folders.AquariumHome, folderName).getCanonicalFile
           }
         }
 
         val canonicalPath = canonicalFolder.getCanonicalPath
-
-        logger.info("{} = {}", Keys.events_store_folder, canonicalPath)
 
         if(canonicalFolder.exists() && !canonicalFolder.isDirectory) {
           throw new AquariumInternalError("%s = %s is not a folder".format(Keys.events_store_folder, canonicalFolder))
@@ -290,6 +290,13 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
   }
 
   private[this] def configure(): Unit = {
+    logger.info("Aquarium Home = %s".format(
+      if(Homes.Folders.AquariumHome.isAbsolute)
+        Homes.Folders.AquariumHome
+      else
+        "%s [=%s]".format(Homes.Folders.AquariumHome, Homes.Folders.AquariumHome.getCanonicalPath)
+    ))
+
     for(folder ← this.eventsStoreFolder) {
       logger.info("{} = {}", Aquarium.Keys.events_store_folder, folder)
     }
@@ -299,12 +306,6 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
       logger.info("{} = {}", prop.name, prop.rawValue)
     }
 
-    logger.info("Aquarium Home = %s".format(
-      if(Homes.Folders.AquariumHome.isAbsolute)
-        Homes.Folders.AquariumHome
-      else
-        "%s [=%s]".format(Homes.Folders.AquariumHome, Homes.Folders.AquariumHome.getCanonicalPath)
-    ))
 
     logger.info("CONF_HERE = {}", CONF_HERE)
   }
