@@ -47,7 +47,6 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
  */
 trait IMEventStore {
   type IMEvent <: IMEventModel
-  type ResourceEvent <: ResourceEventModel
 
   def createIMEventFromJson(json: String): IMEvent
 
@@ -68,4 +67,12 @@ trait IMEventStore {
    * Find a user event by event ID
    */
   def findIMEventById(id: String): Option[IMEvent]
+
+  def findLatestIMEventByUserID(userID: String): Option[IMEvent]
+
+  /**
+   * Find the very first activation event for a particular user.
+   *
+   */
+  def findFirstIsActiveIMEventByUserID(userID: String): Option[IMEvent]
 }

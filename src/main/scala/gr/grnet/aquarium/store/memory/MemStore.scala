@@ -194,11 +194,11 @@ class MemStore extends UserStateStore
                         instanceId: String,
                         finalized: Option[Boolean]): List[WalletEntry] = Nil
 
-  def findWalletEntriesAfter(userId: String, from: Date): List[WalletEntry] = {
+  def findWalletEntriesAfter(userID: String, from: Date): List[WalletEntry] = {
     walletEntriesById.valuesIterator.filter { we ⇒
       val occurredDate = we.occurredDate
 
-      we.userId == userId &&
+      we.userId == userID &&
             ( (from before occurredDate) || (from == occurredDate) )
     }.toList
   }
@@ -255,9 +255,9 @@ class MemStore extends UserStateStore
     sorted.toList
   }
 
-  def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
+  def findResourceEventsByUserIdAfterTimestamp(userID: String, timestamp: Long): List[ResourceEvent] = {
     _resourceEvents.filter { ev ⇒
-      ev.userID == userId &&
+      ev.userID == userID &&
       (ev.occurredMillis > timestamp)
     }.toList
   }
@@ -269,17 +269,18 @@ class MemStore extends UserStateStore
     Nil
   }
 
-  def findResourceEventsForReceivedPeriod(userId: String,
+  def findResourceEventsForReceivedPeriod(userID: String,
                                           startTimeMillis: Long,
                                           stopTimeMillis: Long): List[ResourceEvent] = {
     _resourceEvents.filter { ev ⇒
-      ev.userID == userId &&
+      ev.userID == userID &&
       ev.isReceivedWithinMillis(startTimeMillis, stopTimeMillis)
     }.toList
   }
 
-  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Long = {
+  def countOutOfSyncEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long = {
     _resourceEvents.filter { case ev ⇒
+      ev.userID == userID &&
       // out of sync events are those that were received in the billing month but occurred in previous (or next?)
       // months
       ev.isOutOfSyncForBillingPeriod(startMillis, stopMillis)
@@ -294,10 +295,11 @@ class MemStore extends UserStateStore
    *
    * Order them by `occurredMillis`
    */
-  override def findAllRelevantResourceEventsForBillingPeriod(userId: String,
+  override def findAllRelevantResourceEventsForBillingPeriod(userID: String,
                                                              startMillis: Long,
                                                              stopMillis: Long): List[ResourceEvent] = {
     _resourceEvents.filter { case ev ⇒
+      ev.userID == userID &&
       ev.isOccurredOrReceivedWithinMillis(startMillis, stopMillis)
     }.toList sortWith { case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis }
   }
@@ -323,6 +325,33 @@ class MemStore extends UserStateStore
   }
 
   def findIMEventById(id: String) = imEventById.get(id)
+
+  def findLatestIMEventByUserID(userID: String): Option[IMEvent] = {
+    imEventById.valuesIterator.filter(_.userID == userID).toList.sortWith {
+      case (us1, us2) ⇒
+        us1.occurredMillis > us2.occurredMillis
+    } match {
+      case head :: _ ⇒
+        Some(head)
+
+      case _ ⇒
+        None
+    }
+  }
+
+  def findFirstIsActiveIMEventByUserID(userID: String): Option[IMEvent] = {
+    imEventById.valuesIterator.filter { case ev ⇒
+      ev.userID == userID && ev.isActive
+    }.toList.sortWith { case (ev1, ev2) ⇒
+      ev1.occurredMillis <= ev2.occurredMillis
+    } match {
+      case head :: _ ⇒
+        Some(head)
+
+      case _ ⇒
+        None
+    }
+  }
   //- IMEventStore
 
   def loadPolicyEntriesAfter(after: Long) =

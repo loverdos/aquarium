@@ -347,6 +347,40 @@ class MongoDBStore(
   def findIMEventById(id: String): Option[IMEvent] = {
     MongoDBStore.findBy(IMEventNames.id, id, imEvents, MongoDBIMEvent.fromDBObject)
   }
+
+  def findLatestIMEventByUserID(userID: String): Option[IMEvent] = {
+    val query = new BasicDBObject(IMEventNames.userID, userID)
+    val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, -1))
+
+    withCloseable(cursor) { cursor ⇒
+      if(cursor.hasNext) {
+        Some(MongoDBIMEvent.fromDBObject(cursor.next()))
+      } else {
+        None
+      }
+    }
+
+  }
+
+  /**
+   * Find the very first activation event for a particular user.
+   *
+   */
+  def findFirstIsActiveIMEventByUserID(userID: String): Option[IMEvent] = {
+    val query = new BasicDBObjectBuilder().
+      add(IMEventNames.userID, userID).
+      add(IMEventNames.isActive, true).get()
+
+    val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
+
+    withCloseable(cursor) { cursor ⇒
+      if(cursor.hasNext) {
+        Some(MongoDBIMEvent.fromDBObject(cursor.next()))
+      } else {
+        None
+      }
+   }
+  }
   //-IMEventStore
 
   //+PolicyStore
