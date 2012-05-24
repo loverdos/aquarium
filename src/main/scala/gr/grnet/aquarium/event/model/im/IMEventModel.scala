@@ -36,6 +36,8 @@
 package gr.grnet.aquarium.event.model
 package im
 
+import gr.grnet.aquarium.util._
+
 /**
  * The model of any event sent from the `Identity Management` (IM) external system.
  *
@@ -60,6 +62,10 @@ trait IMEventModel extends ExternalEventModel {
   def isCreateUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.create)
 
   def isModifyUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.modify)
+
+  override def toDebugString = {
+    "%s(userID=%s, id=%s, isActive=%s, role='%s')".format(shortClassNameOf(this), userID, id, isActive, role)
+  }
 }
 
 object IMEventModel {
