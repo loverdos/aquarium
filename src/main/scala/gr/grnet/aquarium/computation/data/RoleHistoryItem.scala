@@ -35,34 +35,38 @@
 
 package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.event.model.im.IMEventModel
+import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class IMStateSnapshot(
-                           /**
-                            * This is the latest processed IMEvent
-                            */
-                           latestIMEvent: IMEventModel,
+case class RoleHistoryItem(
+                            /**
+                             * The role name.
+                             */
+                           name: String,
 
                            /**
-                            * This is the recorded role history
+                            * Validity start time for this role. The time is inclusive.
                             */
-                           roleHistory: RoleHistory) {
+                           validFrom: Long,
 
-  def addMostRecentEvent(newEvent: IMEventModel) = {
-    copy(
-      latestIMEvent = newEvent,
-      roleHistory = roleHistory.addMostRecentRole(newEvent.role, newEvent.occurredMillis)
-    )
-  }
-}
+                           /**
+                            * Validity stop time for this role. The time is exclusive.
+                            */
+                           validTo: Long = Long.MaxValue) {
 
-object IMStateSnapshot {
-  def initial(imEvent: IMEventModel): IMStateSnapshot = {
-    IMStateSnapshot(imEvent, RoleHistory.initial(imEvent.role, imEvent.occurredMillis))
-  }
+  require(validTo > validFrom)
+  require(!name.isEmpty)
+
+  def timeslot = Timeslot(validFrom, validTo)
+
+  def withNewValidTo(newValidTo: Long) = copy(validTo = newValidTo)
+
+  override def toString =
+    "RoleHistoryItem(%s, [%s, %s))".
+      format(name, new MutableDateCalc(validFrom), new MutableDateCalc(validTo))
 }

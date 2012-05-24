@@ -35,34 +35,44 @@
 
 package gr.grnet.aquarium.computation.data
 
-import gr.grnet.aquarium.event.model.im.IMEventModel
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import scala.collection.immutable.{TreeMap, SortedMap}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class IMStateSnapshot(
-                           /**
-                            * This is the latest processed IMEvent
-                            */
-                           latestIMEvent: IMEventModel,
+case class RoleHistory(
+                        /**
+                         * The head role is the most recent. The same rule applies for the tail.
+                         */
+                       roles: List[RoleHistoryItem]) {
+  def rolesByTimeslot: SortedMap[Timeslot, String] = {
+    TreeMap(roles.map(role => (role.timeslot, role.name)): _*)
+  }
 
-                           /**
-                            * This is the recorded role history
-                            */
-                           roleHistory: RoleHistory) {
+  /**
+   * Insert the new role in front of the other ones and adjust the `validTo` limit of the previous role.
+   */
+  def addMostRecentRole(role: String, validFrom: Long) = {
+    val newItem = RoleHistoryItem(role, validFrom)
+    val newRoles = roles match {
+      case head :: tail ⇒
+        newItem :: head.withNewValidTo(validFrom) :: tail
 
-  def addMostRecentEvent(newEvent: IMEventModel) = {
-    copy(
-      latestIMEvent = newEvent,
-      roleHistory = roleHistory.addMostRecentRole(newEvent.role, newEvent.occurredMillis)
-    )
+      case Nil ⇒
+        newItem :: Nil
+    }
+
+    RoleHistory(newRoles)
   }
 }
 
-object IMStateSnapshot {
-  def initial(imEvent: IMEventModel): IMStateSnapshot = {
-    IMStateSnapshot(imEvent, RoleHistory.initial(imEvent.role, imEvent.occurredMillis))
+object RoleHistory {
+  final val Empty = RoleHistory(Nil)
+
+  def initial(role: String, validFrom: Long): RoleHistory = {
+    RoleHistory(RoleHistoryItem(role, validFrom) :: Nil)
   }
 }
