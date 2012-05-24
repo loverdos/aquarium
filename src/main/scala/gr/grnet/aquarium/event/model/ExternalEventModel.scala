@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.event.model
 
 import gr.grnet.aquarium.util.makeBytes
+import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.util.xml.XmlSupport
 
@@ -57,6 +58,8 @@ trait ExternalEventModel extends EventModel with JsonSupport with XmlSupport {
   def toBytes: Array[Byte] = makeBytes(toJsonString)
 
   def withReceivedMillis(newReceivedMillis: Long): ExternalEventModel
+
+  def toDebugString = "%s(userID=%s, id=%s)".format(shortClassNameOf(this), userID, id)
 }
 
 object ExternalEventModel {
