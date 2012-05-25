@@ -171,6 +171,7 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
       factory.setUsername(connectionConf(RabbitMQConKeys.username))
       factory.setPassword(connectionConf(RabbitMQConKeys.password))
       factory.setVirtualHost(connectionConf(RabbitMQConKeys.vhost))
+      factory.setRequestedHeartbeat(connectionConf(RabbitMQConKeys.reconnect_period_millis).toInt)
 
       val connection = factory.newConnection(servers)
 
