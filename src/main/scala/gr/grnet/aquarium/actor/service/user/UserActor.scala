@@ -97,8 +97,10 @@ class UserActor extends ReflectiveRoleableActor {
   def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
   }
 
-  private[this] def reloadIMState(userID: String): Unit = {
+  private[this] def createIMState(userID: String): Unit = {
     val store = aquarium.imEventStore
+    // TODO: Optimization: Since IMState only records roles, we should incrementally
+    // TODO:               built it only for those IMEvents that changed the role.
     store.replayIMEventsInOccurrenceOrder(userID) { imEvent ⇒
       logger.debug("Replaying %s".format(imEvent))
 
@@ -118,7 +120,7 @@ class UserActor extends ReflectiveRoleableActor {
 
   def onInitializeUserState(event: InitializeUserState): Unit = {
     logger.debug("Got %s".format(event))
-    reloadIMState(event.userID)
+    createIMState(event.userID)
   }
 
   private[this] def _getAgreementNameForNewUser(imEvent: IMEventModel): String = {
