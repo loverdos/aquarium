@@ -313,7 +313,8 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
     def handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException) = {
     }
 
-    def handleRecoverOk() = {
+
+    def handleRecoverOk(consumerTag: String) = {
     }
 
     def handleDelivery(consumerTag: String, envelope: Envelope, properties: BasicProperties, body: Array[Byte]) = {
