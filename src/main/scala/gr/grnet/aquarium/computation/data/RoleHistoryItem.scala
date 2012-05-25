@@ -37,6 +37,7 @@ package gr.grnet.aquarium.computation.data
 
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.Aquarium
 
 /**
  *
@@ -59,9 +60,16 @@ case class RoleHistoryItem(
      */
     validTo: Long = Long.MaxValue) {
 
-  require(
-    validFrom <= validTo,
-    "validFrom(%s) <= validTo(%s)".format(new MutableDateCalc(validFrom), new MutableDateCalc(validFrom)))
+  try {
+    require(
+      validFrom <= validTo,
+      "validFrom(%s) <= validTo(%s)".format(new MutableDateCalc(validFrom), new MutableDateCalc(validTo)))
+  }
+  catch {
+    case e: IllegalArgumentException ⇒
+      Aquarium.Instance.debug(this, "!! validFrom = %s, validTo = %s, dx=%s", validFrom, validTo, validTo-validFrom)
+      throw e
+  }
 
   require(name ne null, "Name is not null")
 
@@ -69,7 +77,19 @@ case class RoleHistoryItem(
 
   def timeslot = Timeslot(validFrom, validTo)
 
-  def withNewValidTo(newValidTo: Long) = copy(validTo = newValidTo)
+  def copyWithValidTo(newValidTo: Long) = copy(validTo = newValidTo)
+
+  def isUpperBounded = {
+    validTo != Long.MaxValue
+  }
+
+  def contains(time: Long) = {
+    validFrom <= time && time < validTo
+  }
+
+  def isStrictlyAfter(time: Long) = {
+    validFrom > time
+  }
 
   override def toString =
     "RoleHistoryItem(%s, [%s, %s))".

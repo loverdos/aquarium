@@ -40,15 +40,14 @@ package user
 import gr.grnet.aquarium.actor._
 
 import gr.grnet.aquarium.util.shortClassNameOf
-import message.config.{ActorProviderConfigured, AquariumPropertiesLoaded}
 import akka.config.Supervision.Temporary
 import gr.grnet.aquarium.Aquarium
-import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
-import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
+import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.computation.data.IMStateSnapshot
-import gr.grnet.aquarium.computation.UserState
 import gr.grnet.aquarium.event.model.im.IMEventModel
+import gr.grnet.aquarium.computation.NewUserState
+import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProviderConfigured, AquariumPropertiesLoaded}
 
 /**
  *
@@ -57,37 +56,38 @@ import gr.grnet.aquarium.event.model.im.IMEventModel
 
 class UserActor extends ReflectiveRoleableActor {
   private[this] var _imState: IMStateSnapshot = _
-  private[this] var _userState: UserState = _
+//  private[this] var _userState: UserState = _
+//  private[this] var _newUserState: NewUserState = _
 
   self.lifeCycle = Temporary
 
-  private[this] def _userID = this._userState.userID
+//  private[this] def _userID = this._newUserState.userID
   private[this] def _shutmedown(): Unit = {
-    if(_haveUserState) {
-      UserActorCache.invalidate(_userID)
-    }
+//    if(_haveUserState) {
+//      UserActorCache.invalidate(_userID)
+//    }
 
     self.stop()
   }
 
   override protected def onThrowable(t: Throwable, message: AnyRef) = {
     logChainOfCauses(t)
-    ERROR(t, "Terminating due to: %s(%s)", shortClassNameOf(t), t.getMessage)
+//    ERROR(t, "Terminating due to: %s(%s)", shortClassNameOf(t), t.getMessage)
 
     _shutmedown()
   }
 
   def role = UserActorRole
 
-  private[this] def _configurator: Aquarium = Aquarium.Instance
+  private[this] def aquarium: Aquarium = Aquarium.Instance
 
   private[this] def _timestampTheshold =
-    _configurator.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(10000)
+    aquarium.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(10000)
 
 
-  private[this] def _haveUserState = {
-    this._userState ne null
-  }
+//  private[this] def _haveUserState = {
+//    this._newUserState ne null
+//  }
 
   private[this] def _haveIMState = {
     this._imState ne null
@@ -97,6 +97,30 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
+  }
+
+  private[this] def reloadIMState(userID: String): Unit = {
+    val store = aquarium.imEventStore
+    store.replayIMEventsInOccurrenceOrder(userID) { imEvent ⇒
+      logger.debug("Replaying %s".format(imEvent))
+
+      val newState = this._imState match {
+        case null ⇒
+          IMStateSnapshot.initial(imEvent)
+
+        case currentState ⇒
+          currentState.copyWithEvent(imEvent)
+      }
+
+      this._imState = newState
+    }
+
+    logger.debug("Recomputed %s".format(this._imState))
+  }
+
+  def onInitializeUserState(event: InitializeUserState): Unit = {
+    logger.debug("Got %s".format(event))
+    reloadIMState(event.userID)
   }
 
   private[this] def _getAgreementNameForNewUser(imEvent: IMEventModel): String = {
@@ -114,25 +138,32 @@ class UserActor extends ReflectiveRoleableActor {
     val hadIMState = _haveIMState
 
     if(hadIMState) {
+      if(this._imState.latestIMEvent.id == imEvent.id) {
+        // This happens when the actor is brought to life, then immediately initialized, and then
+        // sent the first IM event. But from the initialization procedure, this IM event will have
+        // already been loaded from DB!
+        logger.debug("Ignoring first %s after birth".format(imEvent.toDebugString))
+        return
+      }
 
-      this._imState = this._imState.addMostRecentEvent(imEvent)
+      this._imState = this._imState.copyWithEvent(imEvent)
     } else {
       this._imState = IMStateSnapshot.initial(imEvent)
     }
 
-    DEBUG("%s %s = %s", if(hadIMState) "Update" else "Set", shortClassNameOf(this._imState), this._imState)
+//    DEBUG("%s %s = %s", if(hadIMState) "Update" else "Set", shortClassNameOf(this._imState), this._imState)
   }
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
     val userId = event.userID
     // FIXME: Implement
-    self reply GetUserBalanceResponse(userId, Right(_userState.creditsSnapshot.creditAmount))
+//    self reply GetUserBalanceResponse(userId, Right(_userState.creditsSnapshot.creditAmount))
   }
 
   def onGetUserStateRequest(event: GetUserStateRequest): Unit = {
     val userId = event.userID
    // FIXME: Implement
-    self reply GetUserStateResponse(userId, Right(this._userState))
+//    self reply GetUserStateResponse(userId, Right(this._userState))
   }
 
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
@@ -142,28 +173,28 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
 
-  private[this] def D_userID = {
-    if(this._userState eq null)
-      if(this._imState eq null)
-        "<NOT INITIALIZED>"
-      else
-        this._imState.imEvent.userID
-    else
-      this._userState.userID
-  }
-
-  private[this] def DEBUG(fmt: String, args: Any*) =
-    logger.debug("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
-
-  private[this] def INFO(fmt: String, args: Any*) =
-    logger.info("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
-
-  private[this] def WARN(fmt: String, args: Any*) =
-    logger.warn("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
-
-  private[this] def ERROR(fmt: String, args: Any*) =
-    logger.error("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
-
-  private[this] def ERROR(t: Throwable, fmt: String, args: Any*) =
-    logger.error("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)), t)
+//  private[this] def D_userID = {
+//    if(this._newUserState eq null)
+//      if(this._imState eq null)
+//        "<NOT INITIALIZED>"
+//      else
+//        this._imState.latestIMEvent.userID
+//    else
+//      this._newUserState.userID
+//  }
+//
+//  private[this] def DEBUG(fmt: String, args: Any*) =
+//    logger.debug("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
+//
+//  private[this] def INFO(fmt: String, args: Any*) =
+//    logger.info("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
+//
+//  private[this] def WARN(fmt: String, args: Any*) =
+//    logger.warn("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
+//
+//  private[this] def ERROR(fmt: String, args: Any*) =
+//    logger.error("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
+//
+//  private[this] def ERROR(t: Throwable, fmt: String, args: Any*) =
+//    logger.error("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)), t)
 }

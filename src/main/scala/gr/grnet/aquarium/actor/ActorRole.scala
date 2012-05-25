@@ -38,11 +38,11 @@ import service.router.RouterActor
 import service.pinger.PingerActor
 import service.rest.RESTActor
 import service.user.{UserActor}
-import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured, ActorConfigurationMessage}
 import cc.spray.can.{Timeout, RequestContext}
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
 import gr.grnet.aquarium.actor.message.admin.PingAllRequest
 import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
+import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded, ActorProviderConfigured, ActorConfigurationMessage}
 
 /**
  * Each actor within Aquarium plays one role.
@@ -127,5 +127,6 @@ case object UserActorRole
                           classOf[ProcessIMEvent],
                           classOf[GetUserBalanceRequest],
                           classOf[GetUserStateRequest]),
-                      Set(classOf[ActorProviderConfigured],
+                      Set(classOf[InitializeUserState],
+                          classOf[ActorProviderConfigured],
                           classOf[AquariumPropertiesLoaded]))

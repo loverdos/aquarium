@@ -39,6 +39,7 @@ import gr.grnet.aquarium.util.makeBytes
 import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.util.xml.XmlSupport
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
  * The base model for all events coming from external systems.
@@ -59,7 +60,11 @@ trait ExternalEventModel extends EventModel with JsonSupport with XmlSupport {
 
   def withReceivedMillis(newReceivedMillis: Long): ExternalEventModel
 
-  def toDebugString = "%s(userID=%s, id=%s)".format(shortClassNameOf(this), userID, id)
+  def toDebugString = "%s(userID=%s, id=%s, occurred=%s)".format(
+    shortClassNameOf(this),
+    userID,
+    id,
+    new MutableDateCalc(occurredMillis).toString)
 }
 
 object ExternalEventModel {

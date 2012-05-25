@@ -41,11 +41,11 @@ import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.service.RoleableActorProviderService
 import akka.actor.ActorRef
 import user.{UserActorCache}
-import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
 import gr.grnet.aquarium.actor.message.admin.PingAllRequest
 import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.{AquariumException, AquariumInternalError}
+import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded, ActorProviderConfigured}
 
 /**
  * Business logic router. Incoming messages are routed to appropriate destinations. Replies are routed back
@@ -62,6 +62,8 @@ class RouterActor extends ReflectiveRoleableActor {
     // create a fresh instance
     val userActor = _actorProvider.actorForRole(UserActorRole)
     UserActorCache.put(userID, userActor)
+
+    userActor ! InitializeUserState(userID)
 
     userActor
   }

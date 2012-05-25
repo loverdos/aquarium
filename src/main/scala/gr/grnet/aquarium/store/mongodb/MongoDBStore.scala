@@ -381,7 +381,27 @@ class MongoDBStore(
       }
    }
   }
+
+  /**
+   * Scans events for the given user, sorted by `occurredMillis` in ascending order and runs them through
+   * the given function `f`.
+   *
+   * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
+   */
+  def replayIMEventsInOccurrenceOrder(userID: String)(f: (IMEvent) => Unit) = {
+    val query = new BasicDBObject(IMEventNames.userID, userID)
+    val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
+
+    withCloseable(cursor) { cursor ⇒
+      while(cursor.hasNext) {
+        val model = MongoDBIMEvent.fromDBObject(cursor.next())
+        f(model)
+      }
+    }
+  }
   //-IMEventStore
+
+
 
   //+PolicyStore
   def loadPolicyEntriesAfter(after: Long): List[PolicyEntry] = {

@@ -37,6 +37,8 @@ package gr.grnet.aquarium.computation.data
 
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import scala.collection.immutable.{TreeMap, SortedMap}
+import scala.collection.mutable.ListBuffer
+import scala.annotation.tailrec
 
 /**
  *
@@ -52,20 +54,46 @@ case class RoleHistory(
     TreeMap(roles.map(role => (role.timeslot, role.name)): _*)
   }
 
-  /**
-   * Insert the new role in front of the other ones and adjust the `validTo` limit of the previous role.
-   */
-  def addMostRecentRole(role: String, validFrom: Long) = {
-    val newItem = RoleHistoryItem(role, validFrom)
-    val newRoles = roles match {
-      case head :: tail ⇒
-        newItem :: head.withNewValidTo(validFrom) :: tail
-
+  def copyWithRole(role: String, validFrom: Long) = {
+    val newItems = roles match {
       case Nil ⇒
-        newItem :: Nil
+        RoleHistoryItem(role, validFrom) :: Nil
+
+      case head :: tail ⇒
+        if(head.isStrictlyAfter(validFrom)) {
+          // must search history items to find where this fits in
+          @tailrec
+          def check(allChecked: ListBuffer[RoleHistoryItem],
+                    lastCheck: RoleHistoryItem,
+                    toCheck: List[RoleHistoryItem]): List[RoleHistoryItem] = {
+
+            toCheck match {
+              case Nil ⇒
+                allChecked.append(RoleHistoryItem(role, validFrom, lastCheck.validFrom))
+                allChecked.toList
+
+              case toCheckHead :: toCheckTail ⇒
+                if(toCheckHead.isStrictlyAfter(validFrom)) {
+                  allChecked.append(toCheckHead)
+
+                  check(allChecked, toCheckHead, toCheckTail)
+                } else {
+                  allChecked.append(RoleHistoryItem(role, validFrom, lastCheck.validFrom))
+                  allChecked.toList
+                }
+            }
+          }
+
+          val buffer = new ListBuffer[RoleHistoryItem]
+          buffer.append(head)
+          check(buffer, head, tail)
+        } else {
+          // assume head.validTo goes to infinity,
+          RoleHistoryItem(role, validFrom) :: head.copyWithValidTo(validFrom) :: tail
+        }
     }
 
-    RoleHistory(newRoles)
+    RoleHistory(newItems)
   }
 }
 

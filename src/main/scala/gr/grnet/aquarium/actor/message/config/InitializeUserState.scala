@@ -33,54 +33,15 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.actor.message.config
 
-import gr.grnet.aquarium.util.makeString
-import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, ActorMessage}
+
 
 /**
- * Store for external user events
+ * This is sent to a [[gr.grnet.aquarium.actor.service.user.UserActor]] in order to initialize its internal state.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
- * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait IMEventStore {
-  type IMEvent <: IMEventModel
 
-  def createIMEventFromJson(json: String): IMEvent
-
-  def createIMEventFromJsonBytes(jsonBytes: Array[Byte]) = {
-    createIMEventFromJson(makeString(jsonBytes))
-  }
-
-  def createIMEventFromOther(event: IMEventModel): IMEvent
-
-  def pingIMEventStore(): Unit
-
-  /**
-   * Insert a new event into the store.
-   */
-  def insertIMEvent(event: IMEventModel): IMEvent
-
-  /**
-   * Find a user event by event ID
-   */
-  def findIMEventById(id: String): Option[IMEvent]
-
-  def findLatestIMEventByUserID(userID: String): Option[IMEvent]
-
-  /**
-   * Find the very first activation event for a particular user.
-   *
-   */
-  def findFirstIsActiveIMEventByUserID(userID: String): Option[IMEvent]
-
-  /**
-   * Scans events for the given user, sorted by `occurredMillis` in ascending order and runs them through
-   * the given function `f`.
-   *
-   * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
-   */
-  def replayIMEventsInOccurrenceOrder(userID: String)(f: IMEvent ⇒ Unit): Unit
-}
+case class InitializeUserState(userID: String) extends ActorMessage with ActorConfigurationMessage

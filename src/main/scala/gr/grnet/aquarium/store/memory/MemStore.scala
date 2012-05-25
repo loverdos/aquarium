@@ -352,6 +352,18 @@ class MemStore extends UserStateStore
         None
     }
   }
+
+  /**
+   * Scans events for the given user, sorted by `occurredMillis` in ascending order and runs them through
+   * the given function `f`.
+   *
+   * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
+   */
+  def replayIMEventsInOccurrenceOrder(userID: String)(f: (IMEvent) => Unit) = {
+    imEventById.valuesIterator.filter(_.userID == userID).toSeq.sortWith {
+      case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis
+    } foreach(f)
+  }
   //- IMEventStore
 
   def loadPolicyEntriesAfter(after: Long) =

@@ -57,10 +57,11 @@ case class IMStateSnapshot(
                             */
                            roleHistory: RoleHistory) {
 
-  def addMostRecentEvent(newEvent: IMEventModel) = {
+  def copyWithEvent(imEvent: IMEventModel) = {
     copy(
-      latestIMEvent = newEvent,
-      roleHistory = roleHistory.addMostRecentRole(newEvent.role, newEvent.occurredMillis)
+      hasBeenActivated = this.hasBeenActivated || imEvent.isActive,
+      latestIMEvent    = imEvent,
+      roleHistory      = this.roleHistory.copyWithRole(imEvent.role, imEvent.occurredMillis)
     )
   }
 }
