@@ -251,6 +251,7 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
 
   def safeStop() = {
     _state.set(ShutdownSequence)
+    safeUnit(_channel.removeShutdownListener(RabbitMQShutdownListener))
     safeUnit(_channel.close())
     safeUnit(_connection.close())
     _state.set(Shutdown)
