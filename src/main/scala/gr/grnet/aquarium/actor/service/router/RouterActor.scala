@@ -40,7 +40,7 @@ package router
 import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.service.RoleableActorProviderService
 import akka.actor.ActorRef
-import user.{UserActorCache, UserActorSupervisor}
+import user.{UserActorCache}
 import message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
 import gr.grnet.aquarium.actor.message.admin.PingAllRequest
@@ -62,7 +62,6 @@ class RouterActor extends ReflectiveRoleableActor {
     // create a fresh instance
     val userActor = _actorProvider.actorForRole(UserActorRole)
     UserActorCache.put(userID, userActor)
-    UserActorSupervisor.supervisor.link(userActor)
 
     userActor
   }

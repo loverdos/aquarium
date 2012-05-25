@@ -79,7 +79,6 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
     //Send the poison pill and make sure that all futures have been returned
     accessed.keysIterator.map {
       x =>
-        UserActorSupervisor.supervisor.unlink(_cache.get(x))
         _cache.get(x).stop()
     }
   }
@@ -97,7 +96,6 @@ class UserActorsLRU(val upperWaterMark: Int, val lowerWatermark: Int) extends Li
   private[this] object EvictionListener extends ConcurrentLRUCache.EvictionListener[String, ActorRef] with Loggable {
     def evictedEntry(userId: String, userActor: ActorRef): Unit = {
       logger.debug("Parking UserActor for userId = %s".format(userId))
-      UserActorSupervisor.supervisor.unlink(userActor)
       // Check this is received after any currently servicing business logic message.
       userActor.stop()
       // Hopefully no need to further track these actors as they will now cause their own death.

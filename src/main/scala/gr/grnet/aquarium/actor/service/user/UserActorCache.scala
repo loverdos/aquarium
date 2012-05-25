@@ -63,7 +63,6 @@ object UserActorCache extends Lifecycle with Loggable {
       val userActor = rn.getValue
 
       logger.debug("Parking UserActor for userID = %s".format(userID))
-      UserActorSupervisor.supervisor.unlink(userActor)
       // Check this is received after any currently servicing business logic message.
       userActor.stop()
     }
