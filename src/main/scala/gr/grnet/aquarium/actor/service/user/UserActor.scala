@@ -39,14 +39,12 @@ package user
 
 import gr.grnet.aquarium.actor._
 
-import gr.grnet.aquarium.util.shortClassNameOf
 import akka.config.Supervision.Temporary
 import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
 import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.computation.data.IMStateSnapshot
 import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.computation.NewUserState
 import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProviderConfigured, AquariumPropertiesLoaded}
 
 /**

@@ -43,8 +43,8 @@ import gr.grnet.aquarium.event.model.{WalletEntry, NewWalletEntry}
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup, IMEventArrival}
-import gr.grnet.aquarium.computation.data.{AgreementSnapshot, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementsSnapshot, CreditSnapshot, LatestResourceEventsSnapshot, ImplicitlyIssuedResourceEventsSnapshot, IMStateSnapshot}
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.computation.data.{RoleHistory, AgreementHistoryItem, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, CreditSnapshot, LatestResourceEventsSnapshot, ImplicitlyIssuedResourceEventsSnapshot, IMStateSnapshot}
 
 /**
  * A comprehensive representation of the User's state.
@@ -157,7 +157,7 @@ case class UserState(
     billingPeriodOutOfSyncResourceEventsCounter: Long,
     imStateSnapshot: IMStateSnapshot,
     creditsSnapshot: CreditSnapshot,
-    agreementsSnapshot: AgreementsSnapshot,
+    agreementsSnapshot: AgreementHistory,
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
     newWalletEntries: List[NewWalletEntry],
     occurredMillis: Long, // The time fro which this state is relevant
@@ -209,14 +209,14 @@ case class UserState(
 
   def resourcesMap = ownedResourcesSnapshot.toResourcesMap
 
-  def modifyFromIMEvent(imEvent: IMEventModel, snapshotMillis: Long): UserState = {
-    this.copy(
-      isInitial = false,
-      imStateSnapshot = IMStateSnapshot(imEvent),
-      lastChangeReason = IMEventArrival(imEvent),
-      occurredMillis = snapshotMillis
-    )
-  }
+//  def modifyFromIMEvent(imEvent: IMEventModel, snapshotMillis: Long): UserState = {
+//    this.copy(
+//      isInitial = false,
+//      imStateSnapshot = imStateSnapshot.addMostRecentEvent(imEvent),
+//      lastChangeReason = IMEventArrival(imEvent),
+//      occurredMillis = snapshotMillis
+//    )
+//  }
 
 //  def toShortString = "UserState(%s, %s, %s, %s, %s)".format(
 //    userId,
@@ -258,9 +258,9 @@ object UserState {
       LatestResourceEventsSnapshot(List()),
       0L,
       0L,
-      IMStateSnapshot(imEvent),
+      IMStateSnapshot(true, imEvent, RoleHistory.Empty),
       CreditSnapshot(credits),
-      AgreementsSnapshot(List(AgreementSnapshot(agreementName, userCreationMillis))),
+      AgreementHistory(List(AgreementHistoryItem(agreementName, userCreationMillis))),
       OwnedResourcesSnapshot(Nil),
       Nil,
       userCreationMillis,
@@ -290,16 +290,18 @@ object UserState {
       0L,
       0L,
       IMStateSnapshot(
+        true,
         StdIMEvent(
           "",
           now, now, userID,
           "",
           isActive, roleNames.headOption.getOrElse("default"),
           "1.0",
-          IMEventModel.EventTypeNames.create, Map())
+          IMEventModel.EventTypeNames.create, Map()),
+        RoleHistory.Empty
       ),
       CreditSnapshot(credits),
-      AgreementsSnapshot(List(AgreementSnapshot(agreementName, userCreationMillis))),
+      AgreementHistory(List(AgreementHistoryItem(agreementName, userCreationMillis))),
       OwnedResourcesSnapshot(Nil),
       Nil,
       now,
@@ -309,7 +311,7 @@ object UserState {
 
   def createInitialUserStateFrom(us: UserState): UserState = {
     createInitialUserState(
-      us.imStateSnapshot.imEvent,
+      us.imStateSnapshot.latestIMEvent,
       us.creditsSnapshot.creditAmount,
       us.agreementsSnapshot.agreementsByTimeslot.valuesIterator.toList.last)
   }
