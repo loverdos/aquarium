@@ -42,7 +42,7 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 
 import gr.grnet.aquarium.service._
-import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass, shortClassNameOf}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService
 import gr.grnet.aquarium.converter.StdConverters
@@ -63,6 +63,18 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
   private[this] val _isStopping = new AtomicBoolean(false)
 
   def isStopping() = _isStopping.get()
+
+  def debug(client: AnyRef, fmt: String, args: Any*) = {
+    logger.debug("[%s] %s".format(shortClassNameOf(client), fmt.format(args: _*)))
+  }
+
+  def info(client: AnyRef, fmt: String, args: Any*) = {
+    logger.info("[%s] %s".format(shortClassNameOf(client), fmt.format(args: _*)))
+  }
+
+  def warn(client: AnyRef, fmt: String, args: Any*) = {
+    logger.warn("[%s] %s".format(shortClassNameOf(client), fmt.format(args: _*)))
+  }
 
   /**
    * Reflectively provide a new instance of a class and configure it appropriately.
