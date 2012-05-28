@@ -39,13 +39,13 @@ import dsl.{Timeslot, DSLPolicy, DSL}
 import gr.grnet.aquarium.Aquarium._
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
-import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
-import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.Aquarium.Keys
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import collection.immutable.{TreeMap, SortedMap}
+import gr.grnet.aquarium.{AquariumException, Aquarium}
+import gr.grnet.aquarium.util.date.{MutableDateCalc, TimeHelpers}
 
 /**
  * Searches for and loads the applicable accounting policy
@@ -80,7 +80,7 @@ object Policy extends DSL with Loggable {
     } match {
       case Some(x) => x._2
       case None =>
-        throw new AccountingException("No valid policy for date: %s".format(at))
+        throw new AquariumException("No valid policy for date: %s".format(new MutableDateCalc(at)))
     }
   }
 

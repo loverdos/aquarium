@@ -60,3 +60,6 @@ case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEventModel]
   }
 }
 
+object LatestResourceEventsSnapshot {
+  final val Empty = LatestResourceEventsSnapshot(Nil)
+}

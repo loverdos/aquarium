@@ -36,14 +36,11 @@
 package gr.grnet.aquarium.logic.test
 
 import gr.grnet.aquarium.util.TestMethods
-import org.junit.{Test}
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import org.junit.Test
 import java.util.Date
 import junit.framework.Assert._
-import gr.grnet.aquarium.logic.accounting.{Accounting}
-import gr.grnet.aquarium.event.model.WalletEntry
-import com.ckkloverdos.maybe.Just
-import gr.grnet.aquarium.event.model.resource.StdResourceEvent
+import gr.grnet.aquarium.logic.accounting.Accounting
+import gr.grnet.aquarium.logic.accounting.dsl.{DSLUtils, Timeslot}
 
 /**
  * Tests for the methods that do accounting
@@ -51,7 +48,6 @@ import gr.grnet.aquarium.event.model.resource.StdResourceEvent
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 class AccountingTest extends DSLTestBase with Accounting with TestMethods {
-
   @Test
   def testAlignTimeslots() {
     var a = List(Timeslot(0,1))
@@ -82,8 +78,8 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
     val from = new Date(1322555880000L) //Tue, 29 Nov 2011 10:38:00 EET
     val to = new Date(1322689082000L)  //Wed, 30 Nov 2011 23:38:02 EET
     val agr = dsl.findAgreement("complextimeslots").get
-    a = resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr).keySet.toList
-    b = resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr).keySet.toList
+    a = dslUtils.resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr).keySet.toList
+    b = dslUtils.resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr).keySet.toList
 
     result = alignTimeslots(a, b)
     assertEquals(9, result.size)
@@ -98,8 +94,8 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
 
     val agr = dsl.findAgreement("scaledbandwidth").get
 
-    val alg = resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr)
-    val price = resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr)
+    val alg = dslUtils.resolveEffectiveAlgorithmsForTimeslot(Timeslot(from, to), agr)
+    val price = dslUtils.resolveEffectivePricelistsForTimeslot(Timeslot(from, to), agr)
     val chunks = splitChargeChunks(alg, price)
     val algChunks = chunks._1
     val priceChunks = chunks._2
@@ -112,53 +108,5 @@ class AccountingTest extends DSLTestBase with Accounting with TestMethods {
     algChunks.keySet.zip(priceChunks.keySet).foreach {
       t => assertEquals(t._1, t._2)
     }
-  }
-
-  @Test
-  def testChargeEvent(): Unit = {
-    before
-    val agr = dsl.findAgreement("scaledbandwidth").get
-
-    //Simple, continuous resource
-    var evt = StdResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bandwidthup", "1", 123, "1", Map())
-    var wallet = chargeEvent(evt, agr, 112, new Date(1325755902000L), List(), None)
-    wallet match {
-      case Just(x) => assertEquals(2, x.size)
-      case _ => fail("No results returned")
-    }
-
-    //Complex resource event without details, should fail
-    evt = StdResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", 1, "1", Map())
-    assertFailed[Exception, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List(), None))
-
-    //Complex, onoff resource
-    evt = StdResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", 1, "1", Map("vmid" -> "3"))
-    wallet = chargeEvent(evt, agr, 0, new Date(1325755902000L), List(), None)
-    wallet match {
-      case Just(x) => assertEquals(2, x.size)
-      case _ => fail("No results returned")
-    }
-
-    //Complex, onoff resource, with wrong states, should fail
-    evt = StdResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "vmtime", "1", 1, "1", Map("vmid" -> "3"))
-    assertFailed[Exception, List[WalletEntry]](chargeEvent(evt, agr, 1, new Date(1325755902000L), List(), None))
-
-    //Simple, discrete resource
-    evt = StdResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bookpages", "1", 120, "1", Map())
-    wallet = chargeEvent(evt, agr, 15, new Date(1325755902000L), List(), None)
-    wallet match {
-      case Just(x) => assertEquals(1, x.size)
-      case _ => fail("No results returned")
-    }
-
-    //Simple, discrete resource, time of last update equal to current event's occurred time
-    evt = StdResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bookpages", "1", 120, "1", Map())
-    wallet = chargeEvent(evt, agr, 15, new Date(1325762772000L), List(), None)
-    assertEquals(1, wallet.getOr(List(WalletEntry.zero, WalletEntry.zero)).size)
-
-    //Simple, continuous resource, time of last update equal to current event's occurred time
-    evt = StdResourceEvent("123", 1325762772000L, 1325762774000L, "12", "1", "bandwidthup", "1", 123, "1", Map())
-    wallet = chargeEvent(evt, agr, 15, new Date(1325762772000L), List(), None)
-    assertEquals(0, wallet.getOr(List(WalletEntry.zero)).size)
   }
 }

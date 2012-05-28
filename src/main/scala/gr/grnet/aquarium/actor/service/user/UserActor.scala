@@ -41,11 +41,13 @@ import gr.grnet.aquarium.actor._
 
 import akka.config.Supervision.Temporary
 import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.util.{shortClassNameOf, shortNameOfClass}
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
-import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.computation.data.IMStateSnapshot
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProviderConfigured, AquariumPropertiesLoaded}
+import gr.grnet.aquarium.computation.NewUserState
+import gr.grnet.aquarium.actor.message.{GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 
 /**
  *
@@ -53,24 +55,24 @@ import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProvide
  */
 
 class UserActor extends ReflectiveRoleableActor {
+  private[this] var _userID: String = "<?>"
   private[this] var _imState: IMStateSnapshot = _
 //  private[this] var _userState: UserState = _
-//  private[this] var _newUserState: NewUserState = _
+  private[this] var _newUserState: NewUserState = _
 
   self.lifeCycle = Temporary
 
-//  private[this] def _userID = this._newUserState.userID
   private[this] def _shutmedown(): Unit = {
-//    if(_haveUserState) {
-//      UserActorCache.invalidate(_userID)
-//    }
+    if(_haveUserState) {
+      UserActorCache.invalidate(_userID)
+    }
 
     self.stop()
   }
 
   override protected def onThrowable(t: Throwable, message: AnyRef) = {
     logChainOfCauses(t)
-//    ERROR(t, "Terminating due to: %s(%s)", shortClassNameOf(t), t.getMessage)
+    ERROR(t, "Terminating due to: %s(%s)", shortClassNameOf(t), t.getMessage)
 
     _shutmedown()
   }
@@ -83,9 +85,9 @@ class UserActor extends ReflectiveRoleableActor {
     aquarium.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(10000)
 
 
-//  private[this] def _haveUserState = {
-//    this._newUserState ne null
-//  }
+  private[this] def _haveUserState = {
+    this._newUserState ne null
+  }
 
   private[this] def _haveIMState = {
     this._imState ne null
@@ -115,12 +117,19 @@ class UserActor extends ReflectiveRoleableActor {
       this._imState = newState
     }
 
-    logger.debug("Recomputed %s".format(this._imState))
+    DEBUG("Recomputed %s = %s", shortNameOfClass(classOf[IMStateSnapshot]), this._imState)
+  }
+
+  private[this] def createUserState(userID: String): Unit = {
   }
 
   def onInitializeUserState(event: InitializeUserState): Unit = {
-    logger.debug("Got %s".format(event))
-    createIMState(event.userID)
+    val userID = event.userID
+    this._userID = userID
+    DEBUG("Got %s", event)
+
+    createIMState(userID)
+    createUserState(userID)
   }
 
   private[this] def _getAgreementNameForNewUser(imEvent: IMEventModel): String = {
@@ -135,24 +144,35 @@ class UserActor extends ReflectiveRoleableActor {
    */
   def onProcessIMEvent(processEvent: ProcessIMEvent): Unit = {
     val imEvent = processEvent.imEvent
-    val hadIMState = _haveIMState
 
-    if(hadIMState) {
-      if(this._imState.latestIMEvent.id == imEvent.id) {
-        // This happens when the actor is brought to life, then immediately initialized, and then
-        // sent the first IM event. But from the initialization procedure, this IM event will have
-        // already been loaded from DB!
-        logger.debug("Ignoring first %s after birth".format(imEvent.toDebugString))
-        return
-      }
-
-      this._imState = this._imState.copyWithEvent(imEvent)
-    } else {
-      this._imState = IMStateSnapshot.initial(imEvent)
+    if(!_haveIMState) {
+      // This is an error. Should have been initialized from somewhere ...
+      throw new Exception("Got %s while being uninitialized".format(processEvent))
     }
 
-//    DEBUG("%s %s = %s", if(hadIMState) "Update" else "Set", shortClassNameOf(this._imState), this._imState)
+    if(this._imState.latestIMEvent.id == imEvent.id) {
+      // This happens when the actor is brought to life, then immediately initialized, and then
+      // sent the first IM event. But from the initialization procedure, this IM event will have
+      // already been loaded from DB!
+      DEBUG("Ignoring first %s after birth", imEvent.toDebugString)
+      return
+    }
+
+    this._imState = this._imState.copyWithEvent(imEvent)
+
+    DEBUG("Update %s = %s", shortClassNameOf(this._imState), this._imState)
   }
+
+  def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
+    val rcEvent = event.rcEvent
+
+    if(!_haveIMState) {
+      // This means the user has not been activated. So, we do not process any resource event
+      INFO("Not processing %s", rcEvent.toJsonString)
+      return
+    }
+  }
+
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
     val userId = event.userID
@@ -166,35 +186,22 @@ class UserActor extends ReflectiveRoleableActor {
 //    self reply GetUserStateResponse(userId, Right(this._userState))
   }
 
-  def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
-    val rcEvent = event.rcEvent
-
-    logger.info("Got\n{}", rcEvent.toJsonString)
+  private[this] def D_userID = {
+    this._userID
   }
 
+  private[this] def DEBUG(fmt: String, args: Any*) =
+    logger.debug("User[%s]: %s".format(D_userID, fmt.format(args: _*)))
 
-//  private[this] def D_userID = {
-//    if(this._newUserState eq null)
-//      if(this._imState eq null)
-//        "<NOT INITIALIZED>"
-//      else
-//        this._imState.latestIMEvent.userID
-//    else
-//      this._newUserState.userID
-//  }
-//
-//  private[this] def DEBUG(fmt: String, args: Any*) =
-//    logger.debug("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
-//
-//  private[this] def INFO(fmt: String, args: Any*) =
-//    logger.info("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
-//
-//  private[this] def WARN(fmt: String, args: Any*) =
-//    logger.warn("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
-//
-//  private[this] def ERROR(fmt: String, args: Any*) =
-//    logger.error("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)))
-//
-//  private[this] def ERROR(t: Throwable, fmt: String, args: Any*) =
-//    logger.error("UserActor[%s]: %s".format(D_userID, fmt.format(args: _*)), t)
+  private[this] def INFO(fmt: String, args: Any*) =
+    logger.info("User[%s]: %s".format(D_userID, fmt.format(args: _*)))
+
+  private[this] def WARN(fmt: String, args: Any*) =
+    logger.warn("User[%s]: %s".format(D_userID, fmt.format(args: _*)))
+
+  private[this] def ERROR(fmt: String, args: Any*) =
+    logger.error("User[%s]: %s".format(D_userID, fmt.format(args: _*)))
+
+  private[this] def ERROR(t: Throwable, fmt: String, args: Any*) =
+    logger.error("User[%s]: %s".format(D_userID, fmt.format(args: _*)), t)
 }

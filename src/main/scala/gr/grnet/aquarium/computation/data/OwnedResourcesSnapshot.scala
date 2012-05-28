@@ -88,3 +88,7 @@ case class OwnedResourcesSnapshot(resourceInstanceSnapshots: List[ResourceInstan
     (newOwnedResources, oldResourceInstanceOpt, newResourceInstance)
  }
 }
+
+object OwnedResourcesSnapshot {
+  final val Empty = OwnedResourcesSnapshot(Nil)
+}

@@ -36,19 +36,19 @@
 package gr.grnet.aquarium.store.memory
 
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.maybe.{NoVal, Just, Maybe}
+import com.ckkloverdos.maybe.{NoVal, Just}
 import gr.grnet.aquarium.store._
 import scala.collection.JavaConversions._
-import java.util.Date
 import collection.mutable.ConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.uid.ConcurrentVMLocalUIDGenerator
 import gr.grnet.aquarium.Configurable
-import gr.grnet.aquarium.event.model.{WalletEntry, PolicyEntry}
+import gr.grnet.aquarium.event.model.PolicyEntry
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 import org.bson.types.ObjectId
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.util.Tags
 
 /**
  * An implementation of various stores that persists data in memory.
@@ -62,19 +62,15 @@ import gr.grnet.aquarium.computation.UserState
 class MemStore extends UserStateStore
   with Configurable with PolicyStore
   with ResourceEventStore with IMEventStore
-  with WalletEntryStore
   with StoreProvider {
 
   override type IMEvent = MemIMEvent
   override type ResourceEvent = MemResourceEvent
 
-  private[this] val idGen = new ConcurrentVMLocalUIDGenerator(1000)
-  
   private[this] var _userStates     = List[UserState]()
   private[this] var _policyEntries  = List[PolicyEntry]()
   private[this] var _resourceEvents = List[ResourceEvent]()
 
-  private[this] val walletEntriesById: ConcurrentMap[String, WalletEntry] = new ConcurrentHashMap[String, WalletEntry]()
   private[this] val imEventById: ConcurrentMap[String, MemIMEvent] = new ConcurrentHashMap[String, MemIMEvent]()
 
 
@@ -85,11 +81,10 @@ class MemStore extends UserStateStore
 
   override def toString = {
     val map = Map(
-      "UserState"     -> _userStates.size,
-      "ResourceEvent" -> _resourceEvents.size,
-      "IMEvent"     -> imEventById.size,
-      "PolicyEntry"   -> _policyEntries.size,
-      "WalletEntry"   -> walletEntriesById.size
+      Tags.UserStateTag     -> _userStates.size,
+      Tags.ResourceEventTag -> _resourceEvents.size,
+      Tags.IMEventTag       -> imEventById.size,
+      "PolicyEntry"         -> _policyEntries.size
     )
 
     "MemStore(%s)" format map
@@ -100,8 +95,6 @@ class MemStore extends UserStateStore
 
   def resourceEventStore = this
 
-  def walletEntryStore = this
-
   def imEventStore = this
 
   def policyStore = this
@@ -110,7 +103,7 @@ class MemStore extends UserStateStore
 
   //+ UserStateStore
   def insertUserState(userState: UserState): UserState = {
-    _userStates = userState.copy(_id = new ObjectId()) :: _userStates
+    _userStates = userState.copy(_id = new ObjectId().toString) :: _userStates
     userState
   }
 
@@ -161,48 +154,6 @@ class MemStore extends UserStateStore
     _userStates.filterNot(_.userID == userId)
   }
   //- UserStateStore
-
-  //- WalletEntryStore
-  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] = {
-    walletEntriesById.put(entry.id, entry)
-    Just(RecordID(entry.id))
-  }
-
-  def findWalletEntryById(id: String): Maybe[WalletEntry] = {
-    Maybe(walletEntriesById.apply(id))
-  }
-
-  def findUserWalletEntries(userId: String): List[WalletEntry] = {
-    walletEntriesById.valuesIterator.filter(_.userId == userId).toList
-  }
-
-  def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date): List[WalletEntry] = {
-    walletEntriesById.valuesIterator.filter { we ⇒
-      val receivedDate = we.receivedDate
-
-      we.userId == userId &&
-      ( (from before receivedDate) || (from == receivedDate) ) &&
-      ( (to   after  receivedDate) || (to   == receivedDate) )
-      true
-    }.toList
-  }
-
-  def findLatestUserWalletEntries(userId: String): Maybe[List[WalletEntry]] = NoVal
-
-  def findPreviousEntry(userId: String,
-                        resource: String,
-                        instanceId: String,
-                        finalized: Option[Boolean]): List[WalletEntry] = Nil
-
-  def findWalletEntriesAfter(userID: String, from: Date): List[WalletEntry] = {
-    walletEntriesById.valuesIterator.filter { we ⇒
-      val occurredDate = we.occurredDate
-
-      we.userId == userID &&
-            ( (from before occurredDate) || (from == occurredDate) )
-    }.toList
-  }
-  //- WalletEntryStore
 
   //+ ResourceEventStore
   def createResourceEventFromOther(event: ResourceEventModel): ResourceEvent = {

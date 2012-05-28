@@ -50,8 +50,13 @@ case class RoleHistory(
                          * The head role is the most recent. The same rule applies for the tail.
                          */
                        roles: List[RoleHistoryItem]) {
-  def rolesByTimeslot: SortedMap[Timeslot, String] = {
-    TreeMap(roles.map(role => (role.timeslot, role.name)): _*)
+
+  def roleNamesByTimeslot: SortedMap[Timeslot, String] = {
+    TreeMap(roles.map(role ⇒ (role.timeslot, role.name)): _*)
+  }
+
+  def rolesByTimeslot: SortedMap[Timeslot, RoleHistoryItem] = {
+    TreeMap(roles.map(role ⇒ (role.timeslot, role)): _*)
   }
 
   def copyWithRole(role: String, validFrom: Long) = {
@@ -94,6 +99,34 @@ case class RoleHistory(
     }
 
     RoleHistory(newItems)
+  }
+
+  /**
+   * Returns the first, chronologically, role.
+   */
+  def firstRole: Option[RoleHistoryItem] = {
+    rolesByTimeslot.valuesIterator.toList.lastOption
+  }
+
+  /**
+   * Returns the name of the first, chronologically, role.
+   */
+  def firstRoleName: Option[String] = {
+    roleNamesByTimeslot.valuesIterator.toList.lastOption
+  }
+
+  /**
+   * Returns the last, chronologically, role.
+   */
+  def lastRole: Option[RoleHistoryItem] = {
+    rolesByTimeslot.valuesIterator.toList.headOption
+  }
+
+  /**
+   * Returns the name of the last, chronologically, role.
+   */
+  def lastRoleName: Option[String] = {
+    roleNamesByTimeslot.valuesIterator.toList.headOption
   }
 }
 

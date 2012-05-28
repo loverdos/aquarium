@@ -60,8 +60,12 @@ case class AgreementHistory(agreements: List[AgreementHistoryItem]) {
     case Nil => ()
   }
 
-  def agreementsByTimeslot: SortedMap[Timeslot, String] = {
-    TreeMap(agreements.map(ag => (ag.timeslot, ag.name)): _*)
+  def agreementNamesByTimeslot: SortedMap[Timeslot, String] = {
+    TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag.name)): _*)
+  }
+
+  def agreementsByTimeslot: SortedMap[Timeslot, AgreementHistoryItem] = {
+    TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag)): _*)
   }
 
   /**
@@ -73,6 +77,34 @@ case class AgreementHistory(agreements: List[AgreementHistoryItem]) {
       case Some(x) => Policy.policy(new Date(at)).findAgreement(x.name)
       case None => None
     }
+  }
+
+  /**
+   * Returns the first, chronologically, agreement.
+   */
+  def firstAgreement: Option[AgreementHistoryItem] = {
+    agreementsByTimeslot.valuesIterator.toList.lastOption
+  }
+
+  /**
+   * Returns the name of the first, chronologically, agreement.
+   */
+  def firstAgreementName: Option[String] = {
+    agreementNamesByTimeslot.valuesIterator.toList.lastOption
+  }
+
+  /**
+   * Returns the last, chronologically, agreement.
+   */
+  def lastAgreement: Option[AgreementHistoryItem] = {
+    agreementsByTimeslot.valuesIterator.toList.headOption
+  }
+
+  /**
+   * Returns the name of the last, chronologically, agreement.
+   */
+  def lastAgreementName: Option[String] = {
+    agreementNamesByTimeslot.valuesIterator.toList.headOption
   }
 }
 

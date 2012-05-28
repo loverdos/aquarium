@@ -51,7 +51,8 @@ case class NewUserState(
   stateReferenceMillis: Long, // The time this state refers to
   totalCredits: Double,
   roleHistory: RoleHistory,
-  agreementHistory: AgreementHistory
+  agreementHistory: AgreementHistory,
+  latestResourceEventID: String
 )
 
 object NewUserState {
@@ -77,7 +78,8 @@ object NewUserState {
       userCreationMillis,
       credits,
       RoleHistory.initial(role, userCreationMillis),
-      AgreementHistory.initial(agreement, userCreationMillis)
+      AgreementHistory.initial(agreement, userCreationMillis),
+     ""
     )
   }
 }

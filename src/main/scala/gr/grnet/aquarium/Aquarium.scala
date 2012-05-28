@@ -49,6 +49,8 @@ import gr.grnet.aquarium.converter.StdConverters
 import java.util.concurrent.atomic.AtomicBoolean
 import gr.grnet.aquarium.ResourceLocator._
 import com.ckkloverdos.sys.SysProp
+import gr.grnet.aquarium.computation.UserStateComputations
+import gr.grnet.aquarium.logic.accounting.algorithm.{SimpleCostPolicyAlgorithmCompiler, CostPolicyAlgorithmCompiler}
 
 /**
  * This is the Aquarium entry point.
@@ -120,6 +122,11 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
 
   }
 
+  private[this] lazy val _algorithmCompiler: CostPolicyAlgorithmCompiler = SimpleCostPolicyAlgorithmCompiler
+
+  // FIXME: () ⇒ this ?
+  private[this] lazy val _userStateComputations = new UserStateComputations(() ⇒ this)
+
   private[this] lazy val _actorProvider = newInstance[RoleableActorProviderService](props(Keys.actor_provider_class))
 
   /**
@@ -159,18 +166,6 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
       val instance = newInstance[IMEventStore](className)
       logger.info("Overriding IMEventStore provisioning. Implementation given by: %s".format(instance.getClass))
       instance
-    }
-  }
-
-  private[this] lazy val _WalletEventStoreM: Maybe[WalletEntryStore] = {
-    // If there is a specific `IMStore` implementation specified in the
-    // properties, then this implementation overrides the event store given by
-    // `IMProvider`.
-    props.get(Keys.wallet_entry_store_class) map {
-      className ⇒
-        val instance = newInstance[WalletEntryStore](className)
-        logger.info("Overriding WalletEntryStore provisioning. Implementation given by: %s".format(instance.getClass))
-        instance
     }
   }
 
@@ -346,6 +341,10 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
     stopServices()
   }
 
+  def algorithmCompiler = _algorithmCompiler
+
+  def userStateComputations = _userStateComputations
+
   def converters = _converters
   
   def actorProvider = _actorProvider
@@ -365,13 +364,6 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
     _resourceEventStoreM match {
       case Just(es) ⇒ es
       case _        ⇒ storeProvider.resourceEventStore
-    }
-  }
-
-  def walletStore = {
-    _WalletEventStoreM match {
-      case Just(es) ⇒ es
-      case _        ⇒ storeProvider.walletEntryStore
     }
   }
 
@@ -517,11 +509,6 @@ object Aquarium {
      * The class that implements the IM event store
      */
     final val user_event_store_class = "user.event.store.class"
-
-    /**
-     * The class that implements the wallet entries store
-     */
-    final val wallet_entry_store_class = "wallet.entry.store.class"
 
     /**
      * The class that implements the wallet entries store

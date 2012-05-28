@@ -128,9 +128,15 @@ aquariumpolicy:
     DiskspacePriceUnit
   )
 
-  val Computations = new UserStateComputations
+  val aquarium = AquariumInstance.withStoreProviderClass(classOf[MemStore])
+  Policy.withConfigurator(aquarium)
+  val StoreProvider = aquarium.storeProvider
+  val ResourceEventStore = StoreProvider.resourceEventStore
 
-  val DefaultPolicy = new DSL{} parse PolicyYAML
+  val Computations = aquarium.userStateComputations
+
+  val DSL = new DSL {}
+  val DefaultPolicy = DSL parse PolicyYAML
   val DefaultAccounting = new Accounting{}
   
   val DefaultAlgorithm = new ExecutableCostPolicyAlgorithm {
@@ -216,11 +222,6 @@ aquariumpolicy:
   val Synnefo = ClientSim("synnefo")(TheUIDGenerator)
   val Pithos  = ClientSim("pithos" )(TheUIDGenerator)
 
-  val aquarium = AquariumInstance.withStoreProviderClass(classOf[MemStore])
-  Policy.withConfigurator(aquarium)
-  val StoreProvider = aquarium.storeProvider
-  val ResourceEventStore = StoreProvider.resourceEventStore
-
   val StartOfBillingYearDateCalc = new MutableDateCalc(2012,  1, 1)
   val UserCreationDate           = new MutableDateCalc(2011, 11, 1).toDate
 
@@ -246,10 +247,9 @@ aquariumpolicy:
   val InitialUserState = UserState.createInitialUserState(
     userID = UserCKKL.userId,
     userCreationMillis = UserCreationDate.getTime,
-    isActive = true,
-    credits = 0.0,
-    roleNames = List("user"),
-    agreementName = DSLAgreement.DefaultAgreementName
+    totalCredits = 0.0,
+    initialRole = "default",
+    initialAgreement = DSLAgreement.DefaultAgreementName
   )
 
   // By convention
@@ -263,7 +263,7 @@ aquariumpolicy:
   def showUserState(clog: ContextualLogger, userState: UserState) {
     val id = userState._id
     val parentId = userState.parentUserStateId
-    val credits = userState.creditsSnapshot.creditAmount
+    val credits = userState.totalCredits
     val newWalletEntries = userState.newWalletEntries.map(_.toDebugString)
     val changeReason = userState.lastChangeReason
     val implicitlyIssued = userState.implicitlyIssuedSnapshot.implicitlyIssuedEvents.map(_.toDebugString())
@@ -296,30 +296,19 @@ aquariumpolicy:
     Computations.doFullMonthlyBilling(
       UserCKKL.userId,
       billingMonthInfo,
-      StoreProvider,
       InitialUserState,
       DefaultResourcesMap,
-      DefaultAccounting,
-      DefaultCompiler,
       MonthlyBillingCalculation(billingMonthInfo),
       Some(clog)
     )
   }
-  
-  private[this]
-  def justUserState(userStateM: Maybe[UserState]): UserState = {
-    userStateM match {
-      case Just(userState) ⇒ userState
-      case _ ⇒ throw new AquariumException("Unexpected %s".format(userStateM))
-    }
-  }
-  
+
   private[this]
   def expectCredits(clog: ContextualLogger,
                     creditsConsumed: Double,
                     userState: UserState,
                     accuracy: Double = 0.001): Unit = {
-    val computed = userState.creditsSnapshot.creditAmount
+    val computed = userState.totalCredits
     Assert.assertEquals(-creditsConsumed, computed, accuracy)
     clog.info("Consumed %.3f credits [accuracy = %f]", creditsConsumed, accuracy)
   }

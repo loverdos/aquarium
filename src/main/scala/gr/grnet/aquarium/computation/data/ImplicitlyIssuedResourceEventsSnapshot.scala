@@ -59,3 +59,7 @@ case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[R
   }
 }
 
+object ImplicitlyIssuedResourceEventsSnapshot {
+  final val Empty = ImplicitlyIssuedResourceEventsSnapshot(Nil)
+}
+

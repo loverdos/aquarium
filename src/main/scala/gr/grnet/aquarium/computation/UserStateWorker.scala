@@ -62,7 +62,6 @@ case class UserStateWorker(userID: String,
                            previousResourceEvents: LatestResourceEventsWorker,
                            implicitlyIssuedStartEvents: ImplicitlyIssuedResourceEventsWorker,
                            ignoredFirstResourceEvents: IgnoredFirstResourceEventsWorker,
-                           accounting: Accounting,
                            resourcesMap: DSLResourcesMap) {
 
   /**
@@ -175,13 +174,12 @@ case class UserStateWorker(userID: String,
 }
 
 object UserStateWorker {
-  def fromUserState(userState: UserState, accounting: Accounting, resourcesMap: DSLResourcesMap): UserStateWorker = {
+  def fromUserState(userState: UserState, resourcesMap: DSLResourcesMap): UserStateWorker = {
     UserStateWorker(
       userState.userID,
       userState.latestResourceEventsSnapshot.toMutableWorker,
       userState.implicitlyIssuedSnapshot.toMutableWorker,
       IgnoredFirstResourceEventsWorker.Empty,
-      accounting,
       resourcesMap
     )
   }

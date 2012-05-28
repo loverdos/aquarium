@@ -44,4 +44,5 @@ package gr.grnet.aquarium.util
 object Tags {
   final val ResourceEventTag = newTag("ResourceEvent")
   final val IMEventTag       = newTag("IMEvent")
+  final val UserStateTag     = newTag("UserState")
 }

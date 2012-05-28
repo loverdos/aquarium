@@ -33,39 +33,34 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.logic.accounting
 
-import java.util.Date
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.event.model.WalletEntry
+import gr.grnet.aquarium.util._
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
- * A store for Wallet entries.
+ * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait WalletEntryStore {
 
-  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID]
+case class Chargeslot(
+    startMillis: Long,
+    stopMillis: Long,
+    algorithmDefinition: String,
+    unitPrice: Double,
+    computedCredits: Option[Double] = None) {
 
-  def findWalletEntryById(id: String): Maybe[WalletEntry]
+  def copyWithCredits(credits: Double) = {
+    copy(computedCredits = Some(credits))
+  }
 
-  def findUserWalletEntries(userId: String): List[WalletEntry]
-
-  def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date): List[WalletEntry]
-
-  /**
-   * Finds latest wallet entries with same timestamp.
-   */
-  def findLatestUserWalletEntries(userId: String): Maybe[List[WalletEntry]]
-
-  /**
-   * Find the previous entry in the user's wallet for the provided resource
-   * instance id.
-   */
-  def findPreviousEntry(userId: String, resource: String,
-                        instanceId: String, finalized: Option[Boolean]): List[WalletEntry]
-
-  def findWalletEntriesAfter(userId: String, from: Date): List[WalletEntry]
+  override def toString = "%s(%s, %s, %s, %s, %s)".format(
+    shortClassNameOf(this),
+    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
+    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
+    unitPrice,
+    computedCredits,
+    algorithmDefinition
+  )
 }

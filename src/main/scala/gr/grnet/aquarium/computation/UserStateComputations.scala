@@ -36,31 +36,34 @@
 package gr.grnet.aquarium.computation
 
 import scala.collection.mutable
-import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.logic.accounting.Accounting
-import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
-import gr.grnet.aquarium.store.{StoreProvider, PolicyStore}
 import gr.grnet.aquarium.computation.data._
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason}
 import gr.grnet.aquarium.event.model.NewWalletEntry
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.{Aquarium, AquariumInternalError, AquariumException}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class UserStateComputations extends Loggable {
+class UserStateComputations(_aquarium: () ⇒ Aquarium) extends Loggable {
+
+  protected lazy val aquarium           = _aquarium()
+  protected lazy val storeProvider      = aquarium.storeProvider
+  protected lazy val accounting         = new Accounting {}
+  protected lazy val algorithmCompiler  = aquarium.algorithmCompiler
+  protected lazy val policyStore        = storeProvider.policyStore
+  protected lazy val userStateStore     = storeProvider.userStateStore
+  protected lazy val resourceEventStore = storeProvider.resourceEventStore
 
   def findUserStateAtEndOfBillingMonth(userId: String,
                                        billingMonthInfo: BillingMonthInfo,
-                                       storeProvider: StoreProvider,
                                        currentUserState: UserState,
                                        defaultResourcesMap: DSLResourcesMap,
-                                       accounting: Accounting,
-                                       algorithmCompiler: CostPolicyAlgorithmCompiler,
                                        calculationReason: UserStateChangeReason,
                                        clogOpt: Option[ContextualLogger] = None): UserState = {
 
@@ -74,17 +77,11 @@ class UserStateComputations extends Loggable {
       doFullMonthlyBilling(
         userId,
         billingMonthInfo,
-        storeProvider,
         currentUserState,
         defaultResourcesMap,
-        accounting,
-        algorithmCompiler,
         calculationReason,
         Some(clog))
     }
-
-    val userStateStore = storeProvider.userStateStore
-    val resourceEventStore = storeProvider.resourceEventStore
 
     val userCreationMillis = currentUserState.userCreationMillis
     val userCreationDateCalc = new MutableDateCalc(userCreationMillis)
@@ -162,11 +159,9 @@ class UserStateComputations extends Loggable {
   def processResourceEvent(startingUserState: UserState,
                            userStateWorker: UserStateWorker,
                            currentResourceEvent: ResourceEventModel,
-                           policyStore: PolicyStore,
                            stateChangeReason: UserStateChangeReason,
                            billingMonthInfo: BillingMonthInfo,
                            walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
-                           algorithmCompiler: CostPolicyAlgorithmCompiler,
                            clogOpt: Option[ContextualLogger] = None): UserState = {
 
     val clog = ContextualLogger.fromOther(clogOpt, logger, "walletEntriesForResourceEvent(%s)", currentResourceEvent.id)
@@ -177,7 +172,6 @@ class UserStateComputations extends Loggable {
     val theInstanceId = currentResourceEvent.safeInstanceId
     val theValue = currentResourceEvent.value
 
-    val accounting = userStateWorker.accounting
     val resourcesMap = userStateWorker.resourcesMap
 
     val currentResourceEventDebugInfo = rcDebugInfo(currentResourceEvent)
@@ -214,7 +208,7 @@ class UserStateComputations extends Loggable {
           } else {
             val defaultInitialAmount = costPolicy.getResourceInstanceInitialAmount
             val oldAmount = _workingUserState.getResourceInstanceAmount(theResource, theInstanceId, defaultInitialAmount)
-            val oldCredits = _workingUserState.creditsSnapshot.creditAmount
+            val oldCredits = _workingUserState.totalCredits
 
             // A. Compute new resource instance accumulating amount
             val newAmount = costPolicy.computeNewAccumulatingAmount(oldAmount, theValue)
@@ -222,8 +216,8 @@ class UserStateComputations extends Loggable {
             clog.debug("theValue = %s, oldAmount = %s, newAmount = %s, oldCredits = %s", theValue, oldAmount, newAmount, oldCredits)
 
             // B. Compute new wallet entries
-            clog.debug("agreementsSnapshot = %s", _workingUserState.agreementsSnapshot)
-            val alltimeAgreements = _workingUserState.agreementsSnapshot.agreementsByTimeslot
+            clog.debug("agreementsSnapshot = %s", _workingUserState.agreementHistory)
+            val alltimeAgreements = _workingUserState.agreementHistory.agreementNamesByTimeslot
 
             //              clog.debug("Computing full chargeslots")
             val (referenceTimeslot, fullChargeslots) = accounting.computeFullChargeslots(
@@ -277,9 +271,8 @@ class UserStateComputations extends Loggable {
             }
 
             _workingUserState = _workingUserState.copy(
-              creditsSnapshot = CreditSnapshot(newCredits),
-              stateChangeCounter = _workingUserState.stateChangeCounter + 1,
-              totalEventsProcessedCounter = _workingUserState.totalEventsProcessedCounter + 1
+              totalCredits = newCredits,
+              stateChangeCounter = _workingUserState.stateChangeCounter + 1
             )
           }
         }
@@ -305,11 +298,9 @@ class UserStateComputations extends Loggable {
   def processResourceEvents(resourceEvents: Traversable[ResourceEventModel],
                             startingUserState: UserState,
                             userStateWorker: UserStateWorker,
-                            policyStore: PolicyStore,
                             stateChangeReason: UserStateChangeReason,
                             billingMonthInfo: BillingMonthInfo,
                             walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
-                            algorithmCompiler: CostPolicyAlgorithmCompiler,
                             clogOpt: Option[ContextualLogger] = None): UserState = {
 
     var _workingUserState = startingUserState
@@ -320,11 +311,9 @@ class UserStateComputations extends Loggable {
         _workingUserState,
         userStateWorker,
         currentResourceEvent,
-        policyStore,
         stateChangeReason,
         billingMonthInfo,
         walletEntriesBuffer,
-        algorithmCompiler,
         clogOpt
       )
     }
@@ -335,11 +324,8 @@ class UserStateComputations extends Loggable {
 
   def doFullMonthlyBilling(userId: String,
                            billingMonthInfo: BillingMonthInfo,
-                           storeProvider: StoreProvider,
                            currentUserState: UserState,
                            defaultResourcesMap: DSLResourcesMap,
-                           accounting: Accounting,
-                           algorithmCompiler: CostPolicyAlgorithmCompiler,
                            calculationReason: UserStateChangeReason = NoSpecificChangeReason,
                            clogOpt: Option[ContextualLogger] = None): UserState = {
 
@@ -355,20 +341,14 @@ class UserStateComputations extends Loggable {
     val previousBillingMonthUserState = findUserStateAtEndOfBillingMonth(
       userId,
       billingMonthInfo.previousMonth,
-      storeProvider,
       currentUserState,
       defaultResourcesMap,
-      accounting,
-      algorithmCompiler,
       calculationReason.forPreviousBillingMonth,
       clogSome
     )
 
     val startingUserState = previousBillingMonthUserState
 
-    val userStateStore = storeProvider.userStateStore
-    val resourceEventStore = storeProvider.resourceEventStore
-    val policyStore = storeProvider.policyStore
 
     val billingMonthStartMillis = billingMonthInfo.startMillis
     val billingMonthEndMillis = billingMonthInfo.stopMillis
@@ -378,7 +358,7 @@ class UserStateComputations extends Loggable {
     // NOTE: The calculation reason is not the one we get from the previous user state but the one our caller specifies
     var _workingUserState = startingUserState.copyForChangeReason(calculationReason)
 
-    val userStateWorker = UserStateWorker.fromUserState(_workingUserState, accounting, defaultResourcesMap)
+    val userStateWorker = UserStateWorker.fromUserState(_workingUserState, defaultResourcesMap)
 
     userStateWorker.debugTheMaps(clog)(rcDebugInfo)
 
@@ -394,11 +374,9 @@ class UserStateComputations extends Loggable {
       allResourceEventsForMonth,
       _workingUserState,
       userStateWorker,
-      policyStore,
       calculationReason,
       billingMonthInfo,
       newWalletEntries,
-      algorithmCompiler,
       clogSome
     )
 
@@ -420,7 +398,6 @@ class UserStateComputations extends Loggable {
       LatestResourceEventsWorker.fromList(specialEvents),
       ImplicitlyIssuedResourceEventsWorker.Empty,
       IgnoredFirstResourceEventsWorker.Empty,
-      userStateWorker.accounting,
       userStateWorker.resourcesMap
     )
 
@@ -428,11 +405,9 @@ class UserStateComputations extends Loggable {
       theirImplicitEnds,
       _workingUserState,
       specialUserStateWorker,
-      policyStore,
       calculationReason,
       billingMonthInfo,
       newWalletEntries,
-      algorithmCompiler,
       clogSome
     )
 

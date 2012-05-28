@@ -37,14 +37,12 @@ package gr.grnet.aquarium.computation
 
 import org.bson.types.ObjectId
 
-import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-import gr.grnet.aquarium.event.model.{WalletEntry, NewWalletEntry}
+import gr.grnet.aquarium.event.model.NewWalletEntry
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
-import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup, IMEventArrival}
-import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
-import gr.grnet.aquarium.computation.data.{RoleHistory, AgreementHistoryItem, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, CreditSnapshot, LatestResourceEventsSnapshot, ImplicitlyIssuedResourceEventsSnapshot, IMStateSnapshot}
+import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup}
+import gr.grnet.aquarium.computation.data.{RoleHistory, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, LatestResourceEventsSnapshot, ImplicitlyIssuedResourceEventsSnapshot}
 
 /**
  * A comprehensive representation of the User's state.
@@ -70,20 +68,15 @@ import gr.grnet.aquarium.computation.data.{RoleHistory, AgreementHistoryItem, Re
  * @param isFullBillingMonthState
  * @param theFullBillingMonth
  * @param implicitlyIssuedSnapshot
- * @param billingMonthWalletEntries
- * @param outOfSyncWalletEntries
  * @param latestResourceEventsSnapshot
- * @param billingPeriodResourceEventsCounter
  * @param billingPeriodOutOfSyncResourceEventsCounter
- * @param creditsSnapshot
- * @param agreementsSnapshot
+ * @param agreementHistory
  * @param ownedResourcesSnapshot
  * @param newWalletEntries
  *          The wallet entries computed. Not all user states need to holds wallet entries,
  *          only those that refer to billing periods (end of billing period).
   * @param lastChangeReason
  *          The [[gr.grnet.aquarium.computation.reason.UserStateChangeReason]] for which the usr state has changed.
- * @param totalEventsProcessedCounter
  * @param parentUserStateId
  *          The `ID` of the parent state. The parent state is the one used as a reference point in order to calculate
  *          this user state.
@@ -129,45 +122,33 @@ case class UserState(
     implicitlyIssuedSnapshot: ImplicitlyIssuedResourceEventsSnapshot,
 
     /**
-     * So far computed wallet entries for the current billing month.
-     */
-    billingMonthWalletEntries: List[WalletEntry],
-
-    /**
-     * Wallet entries that were computed for out of sync events.
-     * (for the current billing month ??)
-     */
-    outOfSyncWalletEntries: List[WalletEntry],
-
-    /**
      * The latest (previous) resource events per resource instance.
      */
     latestResourceEventsSnapshot: LatestResourceEventsSnapshot,
-
-    /**
-     * Counts the total number of resource events used to produce this user state for
-     * the billing period recorded by `billingPeriodSnapshot`
-     */
-    billingPeriodResourceEventsCounter: Long,
 
     /**
      * The out of sync events used to produce this user state for
      * the billing period recorded by `billingPeriodSnapshot`
      */
     billingPeriodOutOfSyncResourceEventsCounter: Long,
-    imStateSnapshot: IMStateSnapshot,
-    creditsSnapshot: CreditSnapshot,
-    agreementsSnapshot: AgreementHistory,
+
+    totalCredits: Double,
+
+    roleHistory: RoleHistory,
+
+    agreementHistory: AgreementHistory,
+
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
+
     newWalletEntries: List[NewWalletEntry],
     occurredMillis: Long, // The time fro which this state is relevant
+
     // The last known change reason for this userState
     lastChangeReason: UserStateChangeReason = NoSpecificChangeReason,
-    totalEventsProcessedCounter: Long = 0L,
     // The user state we used to compute this one. Normally the (cached)
     // state at the beginning of the billing period.
     parentUserStateId: Option[String] = None,
-    _id: ObjectId = new ObjectId()
+    _id: String = new ObjectId().toString
 ) extends JsonSupport {
 
   def idOpt: Option[String] = _id match {
@@ -180,7 +161,7 @@ case class UserState(
 //  def userCreationFormatedDate = new MutableDateCalc(userCreationMillis).toString
 
   def findDSLAgreementForTime(at: Long): Option[DSLAgreement] = {
-    agreementsSnapshot.findForTime(at)
+    agreementHistory.findForTime(at)
   }
 
   def findResourceInstanceSnapshot(resource: String, instanceId: String): Option[ResourceInstanceSnapshot] = {
@@ -236,46 +217,11 @@ object UserState {
     final val userID = "userID"
   }
 
-  def createInitialUserState(imEvent: IMEventModel, credits: Double, agreementName: String) = {
-    if(!imEvent.isCreateUser) {
-      throw new AquariumInternalError(
-        "Got '%s' instead of '%s'".format(imEvent.eventType, IMEventModel.EventTypeNames.create))
-    }
-
-    val userID = imEvent.userID
-    val userCreationMillis = imEvent.occurredMillis
-
-    UserState(
-      true,
-      userID,
-      userCreationMillis,
-      0L,
-      false,
-      null,
-      ImplicitlyIssuedResourceEventsSnapshot(List()),
-      Nil,
-      Nil,
-      LatestResourceEventsSnapshot(List()),
-      0L,
-      0L,
-      IMStateSnapshot(true, imEvent, RoleHistory.Empty),
-      CreditSnapshot(credits),
-      AgreementHistory(List(AgreementHistoryItem(agreementName, userCreationMillis))),
-      OwnedResourcesSnapshot(Nil),
-      Nil,
-      userCreationMillis,
-      InitialUserStateSetup
-    )
-  }
-
   def createInitialUserState(userID: String,
                              userCreationMillis: Long,
-                             isActive: Boolean,
-                             credits: Double,
-                             roleNames: List[String] = List(),
-                             agreementName: String = DSLAgreement.DefaultAgreementName) = {
-    val now = userCreationMillis
-
+                             totalCredits: Double,
+                             initialRole: String,
+                             initialAgreement: String) = {
     UserState(
       true,
       userID,
@@ -283,36 +229,26 @@ object UserState {
       0L,
       false,
       null,
-      ImplicitlyIssuedResourceEventsSnapshot(List()),
-      Nil,
-      Nil,
-      LatestResourceEventsSnapshot(List()),
+      ImplicitlyIssuedResourceEventsSnapshot.Empty,
+      LatestResourceEventsSnapshot.Empty,
       0L,
-      0L,
-      IMStateSnapshot(
-        true,
-        StdIMEvent(
-          "",
-          now, now, userID,
-          "",
-          isActive, roleNames.headOption.getOrElse("default"),
-          "1.0",
-          IMEventModel.EventTypeNames.create, Map()),
-        RoleHistory.Empty
-      ),
-      CreditSnapshot(credits),
-      AgreementHistory(List(AgreementHistoryItem(agreementName, userCreationMillis))),
-      OwnedResourcesSnapshot(Nil),
+      totalCredits,
+      RoleHistory.initial(initialRole, userCreationMillis),
+      AgreementHistory.initial(initialAgreement, userCreationMillis),
+      OwnedResourcesSnapshot.Empty,
       Nil,
-      now,
+      userCreationMillis,
       InitialUserStateSetup
     )
   }
 
   def createInitialUserStateFrom(us: UserState): UserState = {
     createInitialUserState(
-      us.imStateSnapshot.latestIMEvent,
-      us.creditsSnapshot.creditAmount,
-      us.agreementsSnapshot.agreementsByTimeslot.valuesIterator.toList.last)
+      us.userID,
+      us.userCreationMillis,
+      us.totalCredits,
+      us.roleHistory.firstRoleName.getOrElse("default"),          // FIXME What is the default?
+      us.agreementHistory.firstAgreementName.getOrElse("default") // FIXME What is the default?
+    )
   }
 }

@@ -44,9 +44,7 @@ import gr.grnet.aquarium.event.model.im.IMEventModel.{Names ⇒ IMEventNames}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel.{Names ⇒ ResourceEventNames}
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.event.model.WalletEntry.{JsonNames ⇒ WalletJsonNames}
 import gr.grnet.aquarium.event.model.PolicyEntry.{JsonNames ⇒ PolicyJsonNames}
-import java.util.Date
 import gr.grnet.aquarium.logic.accounting.Policy
 import com.mongodb._
 import org.bson.types.ObjectId
@@ -54,7 +52,7 @@ import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.converter.Conversions
 import gr.grnet.aquarium.computation.UserState
-import gr.grnet.aquarium.event.model.{ExternalEventModel, WalletEntry, PolicyEntry}
+import gr.grnet.aquarium.event.model.{ExternalEventModel, PolicyEntry}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -69,7 +67,6 @@ class MongoDBStore(
     val password: String)
   extends ResourceEventStore
   with UserStateStore
-  with WalletEntryStore
   with IMEventStore
   with PolicyStore
   with Loggable {
@@ -81,7 +78,6 @@ class MongoDBStore(
   private[store] lazy val userStates       = getCollection(MongoDBStore.USER_STATES_COLLECTION)
   private[store] lazy val imEvents         = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
   private[store] lazy val unparsedIMEvents = getCollection(MongoDBStore.UNPARSED_IM_EVENTS_COLLECTION)
-  private[store] lazy val walletEntries    = getCollection(MongoDBStore.WALLET_ENTRIES_COLLECTION)
   private[store] lazy val policyEntries    = getCollection(MongoDBStore.POLICY_ENTRIES_COLLECTION)
 
   private[this] def getCollection(name: String): DBCollection = {
@@ -236,95 +232,6 @@ class MongoDBStore(
   }
   //- UserStateStore
 
-  //+WalletEntryStore
-  def storeWalletEntry(entry: WalletEntry): Maybe[RecordID] = {
-    Maybe {
-      MongoDBStore.storeAny[WalletEntry](
-        entry,
-        walletEntries,
-        WalletJsonNames.id,
-        (e) => e.id,
-        MongoDBStore.jsonSupportToDBObject)
-    }
-  }
-
-  def findWalletEntryById(id: String): Maybe[WalletEntry] = {
-    MongoDBStore.findBy(WalletJsonNames.id, id, walletEntries, MongoDBStore.dbObjectToWalletEntry): Maybe[WalletEntry]
-  }
-
-  def findUserWalletEntries(userId: String) = {
-    // TODO: optimize
-    findUserWalletEntriesFromTo(userId, new Date(0), new Date(Int.MaxValue))
-  }
-
-  def findUserWalletEntriesFromTo(userId: String, from: Date, to: Date) : List[WalletEntry] = {
-    val q = new BasicDBObject()
-    // TODO: Is this the correct way for an AND query?
-    q.put(WalletJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
-    q.put(WalletJsonNames.occurredMillis, new BasicDBObject("$lt", to.getTime))
-    q.put(WalletJsonNames.userId, userId)
-
-    MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
-  }
-
-  def findWalletEntriesAfter(userId: String, from: Date) : List[WalletEntry] = {
-    val q = new BasicDBObject()
-    q.put(WalletJsonNames.occurredMillis, new BasicDBObject("$gt", from.getTime))
-    q.put(WalletJsonNames.userId, userId)
-
-    MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
-  }
-
-  def findLatestUserWalletEntries(userId: String) = {
-    Maybe {
-      val orderBy = new BasicDBObject(WalletJsonNames.occurredMillis, -1) // -1 is descending order
-      val cursor = walletEntries.find().sort(orderBy)
-
-      try {
-        val buffer = new scala.collection.mutable.ListBuffer[WalletEntry]
-        if(cursor.hasNext) {
-          val walletEntry = MongoDBStore.dbObjectToWalletEntry(cursor.next())
-          buffer += walletEntry
-
-          var _previousOccurredMillis = walletEntry.occurredMillis
-          var _ok = true
-
-          while(cursor.hasNext && _ok) {
-            val walletEntry = MongoDBStore.dbObjectToWalletEntry(cursor.next())
-            var currentOccurredMillis = walletEntry.occurredMillis
-            _ok = currentOccurredMillis == _previousOccurredMillis
-            
-            if(_ok) {
-              buffer += walletEntry
-            }
-          }
-
-          buffer.toList
-        } else {
-          null
-        }
-      } finally {
-        cursor.close()
-      }
-    }
-  }
-
-  def findPreviousEntry(userId: String, resource: String,
-                        instanceId: String,
-                        finalized: Option[Boolean]): List[WalletEntry] = {
-    val q = new BasicDBObject()
-    q.put(WalletJsonNames.userId, userId)
-    q.put(WalletJsonNames.resource, resource)
-    q.put(WalletJsonNames.instanceId, instanceId)
-    finalized match {
-      case Some(x) => q.put(WalletJsonNames.finalized, x)
-      case None =>
-    }
-
-    MongoDBStore.runQuery[WalletEntry](q, walletEntries)(MongoDBStore.dbObjectToWalletEntry)(Some(_sortByTimestampAsc))
-  }
-  //-WalletEntryStore
-
   //+IMEventStore
   def createIMEventFromJson(json: String) = {
     MongoDBStore.createIMEventFromJson(json)
@@ -463,13 +370,6 @@ object MongoDBStore {
   final val UNPARSED_IM_EVENTS_COLLECTION = "unparsed_imevents"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.event.model.WalletEntry]].
-   *
-   * Wallet entries are generated internally in Aquarium.
-   */
-  final val WALLET_ENTRIES_COLLECTION = "wallets"
-
-  /**
    * Collection holding [[gr.grnet.aquarium.logic.accounting.dsl.DSLPolicy]].
    */
 //  final val POLICIES_COLLECTION = "policies"
@@ -481,10 +381,6 @@ object MongoDBStore {
 
   def dbObjectToUserState(dbObj: DBObject): UserState = {
     UserState.fromJson(JSON.serialize(dbObj))
-  }
-
-  def dbObjectToWalletEntry(dbObj: DBObject): WalletEntry = {
-    WalletEntry.fromJson(JSON.serialize(dbObj))
   }
 
   def dbObjectToPolicyEntry(dbObj: DBObject): PolicyEntry = {
