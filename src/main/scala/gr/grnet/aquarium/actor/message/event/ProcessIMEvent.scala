@@ -47,4 +47,6 @@ import gr.grnet.aquarium.event.model.im.IMEventModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class ProcessIMEvent(imEvent: IMEventModel) extends ActorMessage with UserActorRequestMessage
+case class ProcessIMEvent(imEvent: IMEventModel) extends ActorMessage with UserActorRequestMessage {
+  def referenceTimeMillis = imEvent.occurredMillis
+}

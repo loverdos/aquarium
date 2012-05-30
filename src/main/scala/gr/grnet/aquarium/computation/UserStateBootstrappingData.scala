@@ -33,17 +33,18 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor.message
+package gr.grnet.aquarium.computation
 
 /**
+ * Used to bootstrao the user state.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class GetUserStateRequest(userID: String, timestamp: Long)
-extends ActorMessage
-  with RouterRequestMessage
-  with UserActorRequestMessage {
-
-  def referenceTimeMillis = timestamp
-}
+case class UserStateBootstrappingData(
+    userID: String,
+    userCreationMillis: Long,
+    initialRole: String,
+    initialAgreement: String,
+    initialCredits: Double
+)

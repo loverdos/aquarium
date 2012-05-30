@@ -35,7 +35,9 @@
 
 package gr.grnet.aquarium.actor.message.config
 
-import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, ActorMessage}
+import gr.grnet.aquarium.actor.message.ActorMessage
+import gr.grnet.aquarium.util.shortClassNameOf
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 
 /**
@@ -44,4 +46,11 @@ import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, ActorMessage}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class InitializeUserState(userID: String) extends ActorMessage with ActorConfigurationMessage
+case class InitializeUserState(userID: String, referenceTimeMillis: Long)
+extends ActorMessage
+   with ActorConfigurationMessage {
+
+  override def toString = {
+    "%s(%s, %s)".format(shortClassNameOf(this), userID, new MutableDateCalc(referenceTimeMillis).toString)
+  }
+}

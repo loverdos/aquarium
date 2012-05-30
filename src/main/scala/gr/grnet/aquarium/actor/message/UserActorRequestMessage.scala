@@ -41,4 +41,6 @@ package gr.grnet.aquarium.actor.message
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UserActorRequestMessage extends ActorMessage
+trait UserActorRequestMessage extends ActorMessage {
+  def referenceTimeMillis: Long
+}

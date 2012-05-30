@@ -44,7 +44,7 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class UserSim(userId: String, userCreationDate: Date, aquarium: AquariumSim) { userSelf ⇒
+case class UserSim(userID: String, userCreationDate: Date, aquarium: AquariumSim) { userSelf ⇒
   private[this]
   def resourceEventStore = aquarium.resourceEventStore
 
@@ -54,7 +54,7 @@ case class UserSim(userId: String, userCreationDate: Date, aquarium: AquariumSim
   }
 
   def myResourceEvents: List[ResourceEventModel] = {
-    resourceEventStore.findResourceEventsByUserId(userId)(None)
+    resourceEventStore.findResourceEventsByUserId(userID)(None)
   }
 
   def myResourceEventsByReceivedDate: List[ResourceEventModel] = {

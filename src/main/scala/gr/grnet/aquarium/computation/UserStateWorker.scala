@@ -138,8 +138,10 @@ case class UserStateWorker(userID: String,
    *
    * @see [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
    */
-  def findAndRemoveGeneratorsOfImplicitEndEvents(newOccuredMillis: Long
-                                                  ): (List[ResourceEventModel], List[ResourceEventModel]) = {
+  def findAndRemoveGeneratorsOfImplicitEndEvents(
+      newOccuredMillis: Long
+  ): (List[ResourceEventModel], List[ResourceEventModel]) = {
+
     val buffer = mutable.ListBuffer[(ResourceEventModel, ResourceEventModel)]()
     val checkSet = mutable.Set[ResourceEventModel]()
 

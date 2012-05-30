@@ -40,6 +40,7 @@ import gr.grnet.aquarium.util._
 import com.mongodb.DBObject
 import com.mongodb.util.JSON
 import gr.grnet.aquarium.event.model.im.IMEventModel
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 
 /**
@@ -66,6 +67,23 @@ case class MongoDBIMEvent(
 
   def withDetails(newDetails: Map[String, String], newOccurredMillis: Long) =
     this.copy(details = newDetails, occurredMillis = newOccurredMillis)
+
+  override def toString = {
+    "%s(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)".format(
+      shortClassNameOf(this),
+      id,
+      new MutableDateCalc(occurredMillis).toString,
+      new MutableDateCalc(receivedMillis).toString,
+      userID,
+      clientID,
+      isActive,
+      role,
+      eventVersion,
+      eventType,
+      details,
+      _id
+    )
+  }
 }
 
 object MongoDBIMEvent {

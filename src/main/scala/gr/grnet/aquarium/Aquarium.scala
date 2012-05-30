@@ -50,6 +50,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import gr.grnet.aquarium.ResourceLocator._
 import gr.grnet.aquarium.computation.UserStateComputations
 import gr.grnet.aquarium.logic.accounting.algorithm.{SimpleCostPolicyAlgorithmCompiler, CostPolicyAlgorithmCompiler}
+import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
+import gr.grnet.aquarium.logic.accounting.Policy
 
 /**
  * This is the Aquarium entry point.
@@ -381,6 +383,21 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
   }
 
   def storeProvider = _storeProvider
+
+  def currentResourcesMap: DSLResourcesMap = {
+    // FIXME: Get rid of this singleton stuff
+    Policy.policy.resourcesMap
+  }
+
+  def initialAgreementForRole(role: String, referenceTimeMillis: Long): String = {
+    // FIXME: Where is the mapping?
+    "default"
+  }
+
+  def initialBalanceForRole(role: String, referenceTimeMillis: Long): Double = {
+    // FIXME: Where is the mapping?
+    10000.0
+  }
   
   def withStoreProviderClass[C <: StoreProvider](spc: Class[C]): Aquarium = {
     val map = this.props.map

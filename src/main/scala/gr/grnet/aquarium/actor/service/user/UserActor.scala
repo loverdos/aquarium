@@ -46,8 +46,11 @@ import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEve
 import gr.grnet.aquarium.computation.data.IMStateSnapshot
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProviderConfigured, AquariumPropertiesLoaded}
-import gr.grnet.aquarium.computation.NewUserState
-import gr.grnet.aquarium.actor.message.{GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
+import gr.grnet.aquarium.actor.message.{GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
+import gr.grnet.aquarium.computation.{BillingMonthInfo, UserStateBootstrappingData, UserState}
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.logic.accounting.Policy
+import gr.grnet.aquarium.computation.reason.InitialUserStateSetup
 
 /**
  *
@@ -57,8 +60,7 @@ import gr.grnet.aquarium.actor.message.{GetUserBalanceResponse, GetUserStateRequ
 class UserActor extends ReflectiveRoleableActor {
   private[this] var _userID: String = "<?>"
   private[this] var _imState: IMStateSnapshot = _
-//  private[this] var _userState: UserState = _
-  private[this] var _newUserState: NewUserState = _
+  private[this] var _userState: UserState = _
 
   self.lifeCycle = Temporary
 
@@ -80,13 +82,14 @@ class UserActor extends ReflectiveRoleableActor {
   def role = UserActorRole
 
   private[this] def aquarium: Aquarium = Aquarium.Instance
+  private[this] def userStateComputations = aquarium.userStateComputations
 
-  private[this] def _timestampTheshold =
+  private[this] def _timestampTheshold = {
     aquarium.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(10000)
-
+  }
 
   private[this] def _haveUserState = {
-    this._newUserState ne null
+    this._userState ne null
   }
 
   private[this] def _haveIMState = {
@@ -99,7 +102,8 @@ class UserActor extends ReflectiveRoleableActor {
   def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
   }
 
-  private[this] def createIMState(userID: String): Unit = {
+  private[this] def createIMState(event: InitializeUserState): Unit = {
+    val userID = event.userID
     val store = aquarium.imEventStore
     // TODO: Optimization: Since IMState only records roles, we should incrementally
     // TODO:               built it only for those IMEvents that changed the role.
@@ -111,7 +115,7 @@ class UserActor extends ReflectiveRoleableActor {
           IMStateSnapshot.initial(imEvent)
 
         case currentState ⇒
-          currentState.copyWithEvent(imEvent)
+          currentState.updateHistoryWithEvent(imEvent)
       }
 
       this._imState = newState
@@ -120,7 +124,47 @@ class UserActor extends ReflectiveRoleableActor {
     DEBUG("Recomputed %s = %s", shortNameOfClass(classOf[IMStateSnapshot]), this._imState)
   }
 
-  private[this] def createUserState(userID: String): Unit = {
+  /**
+   * Resource events are processed only if the user has been activated.
+   */
+  private[this] def shouldProcessResourceEvents: Boolean = {
+    _haveIMState && this._imState.hasBeenActivated
+  }
+
+  private[this] def createUserState(event: InitializeUserState): Unit = {
+    val userID = event.userID
+    val referenceTime = event.referenceTimeMillis
+
+    if(!_haveIMState) {
+      // Should have been created from `createIMState()`
+      DEBUG("Cannot create user state from %s, since %s = %s", event, shortNameOfClass(classOf[IMStateSnapshot]), this._imState)
+      return
+    }
+
+    if(!this._imState.hasBeenActivated) {
+      // Cannot set the initial state!
+      DEBUG("Cannot create user state from %s, since user is inactive", event)
+      return
+    }
+
+    val userActivationMillis = this._imState.userActivationMillis.get
+    val initialRole = this._imState.roleHistory.firstRole.get.name
+
+    val userStateBootstrap = UserStateBootstrappingData(
+      this._userID,
+      userActivationMillis,
+      initialRole,
+      aquarium.initialAgreementForRole(initialRole, userActivationMillis),
+      aquarium.initialBalanceForRole(initialRole, userActivationMillis)
+    )
+
+    userStateComputations.doFullMonthlyBilling(
+      userStateBootstrap,
+      BillingMonthInfo.fromMillis(TimeHelpers.nowMillis()),
+      aquarium.currentResourcesMap,
+      InitialUserStateSetup,
+      None
+    )
   }
 
   def onInitializeUserState(event: InitializeUserState): Unit = {
@@ -128,13 +172,8 @@ class UserActor extends ReflectiveRoleableActor {
     this._userID = userID
     DEBUG("Got %s", event)
 
-    createIMState(userID)
-    createUserState(userID)
-  }
-
-  private[this] def _getAgreementNameForNewUser(imEvent: IMEventModel): String = {
-    // FIXME: Implement based on the role
-    "default"
+    createIMState(event)
+    createUserState(event)
   }
 
   /**
@@ -154,30 +193,43 @@ class UserActor extends ReflectiveRoleableActor {
       // This happens when the actor is brought to life, then immediately initialized, and then
       // sent the first IM event. But from the initialization procedure, this IM event will have
       // already been loaded from DB!
-      DEBUG("Ignoring first %s after birth", imEvent.toDebugString)
+      INFO("Ignoring first %s after birth", imEvent.toDebugString)
       return
     }
 
-    this._imState = this._imState.copyWithEvent(imEvent)
+    this._imState = this._imState.updateHistoryWithEvent(imEvent)
 
-    DEBUG("Update %s = %s", shortClassNameOf(this._imState), this._imState)
+    INFO("Update %s = %s", shortClassNameOf(this._imState), this._imState)
   }
 
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
     val rcEvent = event.rcEvent
 
-    if(!_haveIMState) {
+    if(!shouldProcessResourceEvents) {
       // This means the user has not been activated. So, we do not process any resource event
-      INFO("Not processing %s", rcEvent.toJsonString)
+      DEBUG("Not processing %s", rcEvent.toJsonString)
       return
     }
   }
 
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
-    val userId = event.userID
-    // FIXME: Implement
-//    self reply GetUserBalanceResponse(userId, Right(_userState.creditsSnapshot.creditAmount))
+    val userID = event.userID
+
+    if(!_haveIMState) {
+      // No IMEvent has arrived, so this user is virtually unknown
+      self reply GetUserBalanceResponse(Left("User not found"), 404/*Not found*/)
+    }
+    else if(!_haveUserState) {
+      // The user is known but we have no state.
+      // Ridiculous. Should have been created at least during initialization.
+    }
+
+    if(!_haveUserState) {
+      self reply GetUserBalanceResponse(Left("Not found"), 404/*Not found*/)
+    } else {
+      self reply GetUserBalanceResponse(Right(GetUserBalanceResponseData(userID, this._userState.totalCredits)))
+    }
   }
 
   def onGetUserStateRequest(event: GetUserStateRequest): Unit = {

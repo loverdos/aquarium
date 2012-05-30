@@ -242,6 +242,16 @@ object UserState {
     )
   }
 
+  def createInitialUserState(usb: UserStateBootstrappingData): UserState = {
+    createInitialUserState(
+      usb.userID,
+      usb.userCreationMillis,
+      usb.initialCredits,
+      usb.initialRole,
+      usb.initialAgreement
+    )
+  }
+
   def createInitialUserStateFrom(us: UserState): UserState = {
     createInitialUserState(
       us.userID,

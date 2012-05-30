@@ -47,8 +47,8 @@ import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler}
 import gr.grnet.aquarium.{AquariumException}
 import gr.grnet.aquarium.Aquarium.{Instance ⇒ AquariumInstance}
-import gr.grnet.aquarium.computation.{UserState, BillingMonthInfo, UserStateComputations}
 import gr.grnet.aquarium.computation.reason.MonthlyBillingCalculation
+import gr.grnet.aquarium.computation.{UserStateBootstrappingData, UserState, BillingMonthInfo, UserStateComputations}
 
 
 /**
@@ -244,12 +244,20 @@ aquariumpolicy:
 
   val UserCKKL  = Aquarium.newUser("CKKL", UserCreationDate)
 
-  val InitialUserState = UserState.createInitialUserState(
-    userID = UserCKKL.userId,
-    userCreationMillis = UserCreationDate.getTime,
-    totalCredits = 0.0,
+//  val InitialUserState = UserState.createInitialUserState(
+//    userID = UserCKKL.userID,
+//    userCreationMillis = UserCreationDate.getTime,
+//    totalCredits = 0.0,
+//    initialRole = "default",
+//    initialAgreement = DSLAgreement.DefaultAgreementName
+//  )
+
+  val UserStateBootstrap = UserStateBootstrappingData(
+    userID = UserCKKL.userID,
+    userCreationMillis = UserCreationDate.getTime(),
     initialRole = "default",
-    initialAgreement = DSLAgreement.DefaultAgreementName
+    initialAgreement = DSLAgreement.DefaultAgreementName,
+    initialCredits = 0.0
   )
 
   // By convention
@@ -294,9 +302,8 @@ aquariumpolicy:
   private[this]
   def doFullMonthlyBilling(clog: ContextualLogger, billingMonthInfo: BillingMonthInfo) = {
     Computations.doFullMonthlyBilling(
-      UserCKKL.userId,
+      UserStateBootstrap,
       billingMonthInfo,
-      InitialUserState,
       DefaultResourcesMap,
       MonthlyBillingCalculation(billingMonthInfo),
       Some(clog)

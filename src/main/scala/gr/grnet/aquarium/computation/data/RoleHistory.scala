@@ -59,13 +59,22 @@ case class RoleHistory(
     TreeMap(roles.map(role ⇒ (role.timeslot, role)): _*)
   }
 
-  def copyWithRole(role: String, validFrom: Long) = {
+  def updateWithRole(role: String, validFrom: Long) = {
+    def fixValidTo(validFrom: Long, validTo: Long): Long = {
+      if(validTo == validFrom) {
+        // Since validTo is exclusive, make at least 1ms gap
+        validFrom + 1
+      } else {
+        validTo
+      }
+    }
+
     val newItems = roles match {
       case Nil ⇒
         RoleHistoryItem(role, validFrom) :: Nil
 
       case head :: tail ⇒
-        if(head.isStrictlyAfter(validFrom)) {
+        if(head.startsStrictlyAfter(validFrom)) {
           // must search history items to find where this fits in
           @tailrec
           def check(allChecked: ListBuffer[RoleHistoryItem],
@@ -74,16 +83,16 @@ case class RoleHistory(
 
             toCheck match {
               case Nil ⇒
-                allChecked.append(RoleHistoryItem(role, validFrom, lastCheck.validFrom))
+                allChecked.append(RoleHistoryItem(role, validFrom, fixValidTo(validFrom, lastCheck.validFrom)))
                 allChecked.toList
 
               case toCheckHead :: toCheckTail ⇒
-                if(toCheckHead.isStrictlyAfter(validFrom)) {
+                if(toCheckHead.startsStrictlyAfter(validFrom)) {
                   allChecked.append(toCheckHead)
 
                   check(allChecked, toCheckHead, toCheckTail)
                 } else {
-                  allChecked.append(RoleHistoryItem(role, validFrom, lastCheck.validFrom))
+                  allChecked.append(RoleHistoryItem(role, validFrom, fixValidTo(validFrom, lastCheck.validFrom)))
                   allChecked.toList
                 }
             }
@@ -94,7 +103,7 @@ case class RoleHistory(
           check(buffer, head, tail)
         } else {
           // assume head.validTo goes to infinity,
-          RoleHistoryItem(role, validFrom) :: head.copyWithValidTo(validFrom) :: tail
+          RoleHistoryItem(role, validFrom) :: head.copyWithValidTo(fixValidTo(head.validFrom, validFrom)) :: tail
         }
     }
 

@@ -87,7 +87,7 @@ case class RoleHistoryItem(
     validFrom <= time && time < validTo
   }
 
-  def isStrictlyAfter(time: Long) = {
+  def startsStrictlyAfter(time: Long) = {
     validFrom > time
   }
 

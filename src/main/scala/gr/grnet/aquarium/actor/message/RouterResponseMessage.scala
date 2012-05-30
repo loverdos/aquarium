@@ -43,16 +43,17 @@ import gr.grnet.aquarium.converter.{StdConverters, PrettyJsonTextFormat}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class RouterResponseMessage[T](val response: Either[String, T]) extends ActorMessage {
+abstract class RouterResponseMessage[T](
+    val response: Either[String, T],
+    val suggestedHTTPStatus: Int = 200)
+extends ActorMessage {
+
   def isError = response.isRight
 
   def responseToJsonString: String = {
-    response match {
-      case Left(error) ⇒
-        "{}"
-
-      case Right(data) ⇒
-        StdConverters.AllConverters.convertEx[PrettyJsonTextFormat](data).value
-    }
+    response.fold(
+      _    ⇒ "", // No JSON response on error
+      data ⇒ StdConverters.AllConverters.convertEx[PrettyJsonTextFormat](data).value
+    )
   }
 }

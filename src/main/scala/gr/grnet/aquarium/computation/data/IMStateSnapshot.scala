@@ -36,6 +36,8 @@
 package gr.grnet.aquarium.computation.data
 
 import gr.grnet.aquarium.event.model.im.IMEventModel
+import gr.grnet.aquarium.util.shortClassNameOf
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
  *
@@ -43,25 +45,42 @@ import gr.grnet.aquarium.event.model.im.IMEventModel
  */
 
 case class IMStateSnapshot(
-                          /**
-                           * True if the user has ever been activated even once.
-                           */
-                           hasBeenActivated: Boolean,
                            /**
                             * This is the latest processed IMEvent
                             */
                            latestIMEvent: IMEventModel,
 
                            /**
+                            * The earliest activation time, if it exists.
+                            */
+                           userActivationMillis: Option[Long],
+
+                           /**
                             * This is the recorded role history
                             */
                            roleHistory: RoleHistory) {
 
-  def copyWithEvent(imEvent: IMEventModel) = {
+  /**
+   * True iff the user has ever been activated even once.
+   */
+  def hasBeenActivated: Boolean = {
+    userActivationMillis.isDefined
+  }
+
+  def updateHistoryWithEvent(imEvent: IMEventModel) = {
     copy(
-      hasBeenActivated = this.hasBeenActivated || imEvent.isActive,
-      latestIMEvent    = imEvent,
-      roleHistory      = this.roleHistory.copyWithRole(imEvent.role, imEvent.occurredMillis)
+      userActivationMillis = if(imEvent.isStateActive) Some(imEvent.occurredMillis) else this.userActivationMillis,
+      latestIMEvent = imEvent,
+      roleHistory   = this.roleHistory.updateWithRole(imEvent.role, imEvent.occurredMillis)
+    )
+  }
+
+  override def toString = {
+    "%s(\n!! %s\n!! %s\n!! %s)".format(
+      shortClassNameOf(this),
+      latestIMEvent,
+      userActivationMillis.map(new MutableDateCalc(_)),
+      roleHistory
     )
   }
 }
@@ -69,8 +88,8 @@ case class IMStateSnapshot(
 object IMStateSnapshot {
   def initial(imEvent: IMEventModel): IMStateSnapshot = {
     IMStateSnapshot(
-      imEvent.isActive,
       imEvent,
+      if(imEvent.isStateActive) Some(imEvent.occurredMillis) else None,
       RoleHistory.initial(imEvent.role, imEvent.occurredMillis))
   }
 }

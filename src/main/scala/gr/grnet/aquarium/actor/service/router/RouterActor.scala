@@ -58,28 +58,28 @@ class RouterActor extends ReflectiveRoleableActor {
 
   def role = RouterRole
 
-  private[this] def _launchUserActor(userID: String): ActorRef = {
+  private[this] def _launchUserActor(userID: String, referenceTimeMillis: Long): ActorRef = {
     // create a fresh instance
     val userActor = _actorProvider.actorForRole(UserActorRole)
     UserActorCache.put(userID, userActor)
 
-    userActor ! InitializeUserState(userID)
+    userActor ! InitializeUserState(userID, referenceTimeMillis)
 
     userActor
   }
 
-  private[this] def _findOrCreateUserActor(userID: String): ActorRef = {
+  private[this] def _findOrCreateUserActor(userID: String, referenceTimeMillis: Long): ActorRef = {
     UserActorCache.get(userID) match {
       case Some(userActorRef) ⇒
         userActorRef
 
       case None ⇒
-        _launchUserActor(userID)
+        _launchUserActor(userID, referenceTimeMillis)
     }
   }
 
   private[this] def _forwardToUserActor(userID: String, m: UserActorRequestMessage): Unit = {
-    _findOrCreateUserActor(userID) forward m
+    _findOrCreateUserActor(userID, m.referenceTimeMillis) forward m
   }
 
 

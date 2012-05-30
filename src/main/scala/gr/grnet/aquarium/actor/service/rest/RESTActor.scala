@@ -143,8 +143,8 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
   private[this]
   def callRouter(message: RouterRequestMessage, responder: RequestResponder): Unit = {
-    val configurator = Aquarium.Instance
-    val actorProvider = configurator.actorProvider
+    val aquarium = Aquarium.Instance
+    val actorProvider = aquarium.actorProvider
     val router = actorProvider.actorForRole(RouterRole)
     val futureResponse = router ask message
 
@@ -152,7 +152,9 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
       future ⇒
         future.value match {
           case None ⇒
-          // TODO: Will this ever happen??
+            // TODO: Will this ever happen??
+            logger.warn("Future did not complete for %s".format(message))
+            responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
 
           case Some(Left(error)) ⇒
             logger.error("Error serving %s: %s".format(message, error))
@@ -162,14 +164,14 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
             actualResponse match {
               case routerResponse: RouterResponseMessage[_] ⇒
                 routerResponse.response match {
-                  case Left(error) ⇒
-                    logger.error("Error %s serving %s: Response is: %s".format(error, message, actualResponse))
-                    responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+                  case Left(errorMessage) ⇒
+                    logger.error("Error '%s' serving %s. Response is: %s".format(errorMessage, message, actualResponse))
+                    responder.complete(stringResponse(routerResponse.suggestedHTTPStatus, errorMessage, "text/plain"))
 
                   case Right(response) ⇒
                     responder.complete(
                       HttpResponse(
-                        status = 200,
+                        routerResponse.suggestedHTTPStatus,
                         body = routerResponse.responseToJsonString.getBytes("UTF-8"),
                         headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
                 }

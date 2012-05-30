@@ -41,6 +41,8 @@ package gr.grnet.aquarium.actor.message
  */
 
 case class GetUserBalanceResponse(
-    userID: String,
-    balance: Either[String, Double])
-extends RouterResponseMessage(balance)
+    balance: Either[String, GetUserBalanceResponseData],
+    override val suggestedHTTPStatus: Int = 200)
+extends RouterResponseMessage(balance, suggestedHTTPStatus)
+
+case class GetUserBalanceResponseData(userID: String, balance: Double)

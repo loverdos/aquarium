@@ -48,4 +48,7 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
  */
 case class ProcessResourceEvent(rcEvent: ResourceEventModel)
 extends ActorMessage
-   with UserActorRequestMessage
+   with UserActorRequestMessage {
+
+  def referenceTimeMillis = rcEvent.occurredMillis
+}
