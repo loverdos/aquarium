@@ -33,23 +33,21 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.connector.rabbitmq.service
+package gr.grnet.aquarium.service
 
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.env.{EnvKey, Env}
-import com.ckkloverdos.key.{LongKey, ArrayKey, IntKey, TypedKeySkeleton, BooleanKey, StringKey}
 import com.google.common.eventbus.Subscribe
-import com.rabbitmq.client.Address
 import gr.grnet.aquarium.{Aquarium, Configurable}
-import gr.grnet.aquarium.connector.rabbitmq.conf.{TopicExchange, RabbitMQConsumerConf, RabbitMQExchangeType}
-import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConfKeys
 import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
-import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle, Tag}
+import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle}
 import gr.grnet.aquarium.util.sameTags
 import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEvent}
 import gr.grnet.aquarium.connector.handler.{ResourceEventPayloadHandler, IMEventPayloadHandler}
+import gr.grnet.aquarium.connector.rabbitmq.service.{PayloadHandlerFutureExecutor, PayloadHandlerPostNotifier}
+import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys.RabbitMQConfKeys
+import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys
 
 /**
  *
@@ -60,7 +58,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   @volatile private[this] var _props: Props = Props()(StdConverters.AllConverters)
   @volatile private[this] var _consumers = List[RabbitMQConsumer]()
 
-  def propertyPrefix = Some(RabbitMQService.PropertiesPrefix)
+  def propertyPrefix = Some(RabbitMQKeys.PropertiesPrefix)
 
   def aquarium = Aquarium.Instance
 
@@ -103,33 +101,33 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
     val all_rc_ERQs = _props.getTrimmedList(RabbitMQConfKeys.rcevents_queues)
 
     val rcConsumerConfs_ = for(oneERQ ← all_rc_ERQs) yield {
-      RabbitMQService.makeRabbitMQConsumerConf(Tags.ResourceEventTag, _props, oneERQ)
+      RabbitMQKeys.makeRabbitMQConsumerConf(Tags.ResourceEventTag, _props, oneERQ)
     }
     val rcConsumerConfs = rcConsumerConfs_.toSet.toList
     if(rcConsumerConfs.size != rcConsumerConfs_.size) {
       logger.warn(
         "Duplicate %s consumer info in %s=%s".format(
-        RabbitMQService.PropertiesPrefix,
-        RabbitMQConfKeys.rcevents_queues,
-        _props(RabbitMQConfKeys.rcevents_queues)))
+          RabbitMQKeys.PropertiesPrefix,
+          RabbitMQConfKeys.rcevents_queues,
+          _props(RabbitMQConfKeys.rcevents_queues)))
     }
 
     val all_im_ERQs = _props.getTrimmedList(RabbitMQConfKeys.imevents_queues)
     val imConsumerConfs_ = for(oneERQ ← all_im_ERQs) yield {
-      RabbitMQService.makeRabbitMQConsumerConf(Tags.IMEventTag, _props, oneERQ)
+      RabbitMQKeys.makeRabbitMQConsumerConf(Tags.IMEventTag, _props, oneERQ)
     }
     val imConsumerConfs = imConsumerConfs_.toSet.toList
     if(imConsumerConfs.size != imConsumerConfs_.size) {
       logger.warn(
         "Duplicate %s consumer info in %s=%s".format(
-        RabbitMQService.PropertiesPrefix,
-        RabbitMQConfKeys.imevents_queues,
-        _props(RabbitMQConfKeys.imevents_queues)))
+          RabbitMQKeys.PropertiesPrefix,
+          RabbitMQConfKeys.imevents_queues,
+          _props(RabbitMQConfKeys.imevents_queues)))
     }
 
     val rcConsumers = for(rccc ← rcConsumerConfs) yield {
       logger.info("Declaring %s consumer {exchange=%s, routingKey=%s, queue=%s}".format(
-        RabbitMQService.PropertiesPrefix,
+        RabbitMQKeys.PropertiesPrefix,
         rccc.exchangeName,
         rccc.routingKey,
         rccc.queueName
@@ -144,7 +142,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val imConsumers = for(imcc ← imConsumerConfs) yield {
       logger.info("Declaring %s consumer {exchange=%s, routingKey=%s, queue=%s}".format(
-        RabbitMQService.PropertiesPrefix,
+        RabbitMQKeys.PropertiesPrefix,
         imcc.exchangeName,
         imcc.routingKey,
         imcc.queueName
@@ -161,7 +159,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val lg: (String ⇒ Unit) = if(this._consumers.size == 0) logger.warn(_) else logger.debug(_)
     lg("Got %s consumers".format(this._consumers.size))
- 
+
     this._consumers.foreach(logger.debug("Configured {}", _))
   }
 
@@ -225,177 +223,5 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
         consumer.safeStart()
       }
     }
-  }
-}
-
-object RabbitMQService {
-  final val PropertiesPrefix       = "rabbitmq"
-  final val PropertiesPrefixAndDot = PropertiesPrefix + "."
-
-  @inline private[this] def p(name: String) = PropertiesPrefixAndDot + name
-
-  final val DefaultExchangeConfArguments = Env()
-
-  final val DefaultExchangeConf = Env() +
-    (RabbitMQExchangeKeys.`type`,     TopicExchange) +
-    (RabbitMQExchangeKeys.autoDelete, false)         +
-    (RabbitMQExchangeKeys.durable,    true)          +
-    (RabbitMQExchangeKeys.arguments,  DefaultExchangeConfArguments)
-
-
-  final val DefaultQueueConfArguments = Env() +
-    (RabbitMQQueueKeys.Args.xHAPolixy, "all")
-
-  final val DefaultQueueConf = Env() +
-    (RabbitMQQueueKeys.autoDelete, false)         +
-    (RabbitMQQueueKeys.durable,    true)          +
-    (RabbitMQQueueKeys.exclusive,  false)         +
-    (RabbitMQQueueKeys.arguments,  DefaultQueueConfArguments)
-
-  final val DefaultChannelConf = Env() +
-    (RabbitMQChannelKeys.qosPrefetchCount, 1) +
-    (RabbitMQChannelKeys.qosPrefetchSize,  0) +
-    (RabbitMQChannelKeys.qosGlobal,        false)
-
-  def makeConnectionConf(props: Props) = {
-    val servers = props.getTrimmedList(RabbitMQConfKeys.servers)
-    val port = props.getIntEx(RabbitMQConfKeys.port)
-    val addresses = servers.map(new Address(_, port)).toArray
-
-    // TODO: Integrate the below RabbitMQConKeys and RabbitMQConfKeys
-    // TODO:  Normally this means to get rid of Props and use Env everywhere.
-    // TODO:  [Will be more type-safe anyway.]
-    Env() +
-      (RabbitMQConKeys.username, props(RabbitMQConfKeys.username)) +
-      (RabbitMQConKeys.password, props(RabbitMQConfKeys.password)) +
-      (RabbitMQConKeys.vhost,    props(RabbitMQConfKeys.vhost))    +
-      (RabbitMQConKeys.servers,  addresses) +
-      (RabbitMQConKeys.reconnect_period_millis, props.getLongEx(RabbitMQConfKeys.reconnect_period_millis))
-  }
-
-  def makeRabbitMQConsumerConf(tag: Tag, props: Props, oneERQ: String) = {
-    val Array(exchange, routing, queue) = oneERQ.split(':')
-
-    RabbitMQConsumerConf(
-      tag         = tag,
-      exchangeName   = exchange,
-      routingKey     = routing,
-      queueName      = queue,
-      connectionConf = makeConnectionConf(props),
-      exchangeConf   = DefaultExchangeConf,
-      channelConf    = DefaultChannelConf,
-      queueConf      = DefaultQueueConf
-    )
-  }
-
-  object RabbitMQConKeys {
-    final val username  = StringKey(p("username"))
-    final val password  = StringKey(p("password"))
-    final val vhost     = StringKey(p("vhost"))
-    final val servers   = ArrayKey[Address](p("servers"))
-
-    final val reconnect_period_millis = LongKey(p("reconnect.period.millis"))
-  }
-
-  /**
-   * A [[com.ckkloverdos.key.TypedKey]] for the exchange type
-   */
-  final case object RabbitMQExchangeTypedKey extends TypedKeySkeleton[RabbitMQExchangeType]("type")
-
-  /**
-   * Configuration keys for a `RabbitMQ` exchange.
-   *
-   * @author Christos KK Loverdos <loverdos@gmail.com>
-   */
-  object RabbitMQExchangeKeys {
-    final val `type`     = RabbitMQExchangeTypedKey
-    final val durable    = BooleanKey(p("durable"))
-    final val autoDelete = BooleanKey(p("autoDelete"))
-    final val arguments  = EnvKey(p("arguments"))
-  }
-
-  /**
-   * Configuration keys for a `RabbitMQ` exchange.
-   *
-   * @author Christos KK Loverdos <loverdos@gmail.com>
-   */
-  object RabbitMQQueueKeys {
-    final val durable    = BooleanKey(p("durable"))
-    final val autoDelete = BooleanKey(p("autoDelete"))
-    final val exclusive  = BooleanKey(p("exclusive"))
-    final val arguments  = EnvKey(p("arguments"))
-
-    object Args {
-      // http://www.rabbitmq.com/ha.html
-      // NOTE the exact name of the key (without using p()); this will be passed directly to RabbitMQ
-      final val xHAPolixy = StringKey("x-ha-policy")
-    }
-  }
-
-  /**
-   * Configuration keys for a `RabbitMQ` channel.
-   *
-   * @author Christos KK Loverdos <loverdos@gmail.com>
-   */
-  object RabbitMQChannelKeys {
-    final val qosPrefetchCount = IntKey(p("qosPrefetchCount"))
-    final val qosPrefetchSize  = IntKey(p("qosPrefetchSize"))
-    final val qosGlobal        = BooleanKey(p("qosGlobal"))
-  }
-
-  object RabbitMQConfKeys {
-    /**
-     * How often do we attempt a reconnection?
-     */
-    final val reconnect_period_millis = p("reconnect.period.millis")
-
-    /**
-     * Comma separated list of AMQP servers running in active-active
-     * configuration.
-     */
-    final val servers = p("servers")
-
-    /**
-     * Comma separated list of AMQP servers running in active-active
-     * configuration.
-     */
-    final val port = p("port")
-
-    /**
-     * User name for connecting with the AMQP server
-     */
-    final val username = p("username")
-
-    /**
-     * Password for connecting with the AMQP server
-     */
-    final val password = p("passwd")
-
-    /**
-     * Virtual host on the AMQP server
-     */
-    final val vhost = p("vhost")
-
-    /**
-     * Comma separated list of exchanges known to aquarium
-     * FIXME: What is this??
-     */
-    final val exchange = p("exchange")
-
-    /**
-     * Queues for retrieving resource events from. Multiple queues can be
-     * declared, separated by comma.
-     *
-     * Format is `exchange:routing.key:queue-name,...`
-     */
-    final val rcevents_queues = p("rcevents.queues")
-
-    /**
-     * Queues for retrieving user events from. Multiple queues can be
-     * declared, separated by comma.
-     *
-     * Format is `exchange:routing.key:queue-name,...`
-     */
-    final val imevents_queues = p("imevents.queues")
   }
 }

@@ -37,18 +37,17 @@ package gr.grnet.aquarium
 
 import java.io.File
 
+import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
 import com.ckkloverdos.maybe._
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
+import com.ckkloverdos.sys.SysProp
 
-import gr.grnet.aquarium.service._
 import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass, shortClassNameOf}
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService
+import gr.grnet.aquarium.service._
 import gr.grnet.aquarium.converter.StdConverters
 import java.util.concurrent.atomic.AtomicBoolean
 import gr.grnet.aquarium.ResourceLocator._
-import com.ckkloverdos.sys.SysProp
 import gr.grnet.aquarium.computation.UserStateComputations
 import gr.grnet.aquarium.logic.accounting.algorithm.{SimpleCostPolicyAlgorithmCompiler, CostPolicyAlgorithmCompiler}
 

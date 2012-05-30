@@ -36,10 +36,8 @@
 package gr.grnet.aquarium.service
 
 import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle, Tag}
-import gr.grnet.aquarium.util.safeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEvent}
-import gr.grnet.aquarium.connector.rabbitmq.service.RabbitMQService.RabbitMQConKeys
 import gr.grnet.aquarium.{Configurable, Aquarium}
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.store.StoreProvider
