@@ -131,6 +131,10 @@ package object util {
     afterLastIndexOf(".", theClass.getName)
   }
 
+  def shortNameOfType[C : Manifest]: String = {
+    afterLastIndexOf(".", manifest[C].toString)
+  }
+
   /**
    * Compute the class name excluding any leading packages and any `$` prefixes.
    *
