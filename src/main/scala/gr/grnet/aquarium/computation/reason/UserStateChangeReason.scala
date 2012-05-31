@@ -55,6 +55,9 @@ sealed trait UserStateChangeReason {
   def code: UserStateChangeReasonCodes.ChangeReasonCode
 }
 
+/**
+ * When the user state is initially set up.
+ */
 case object InitialUserStateSetup extends UserStateChangeReason {
   def shouldStoreUserState = true
 
@@ -65,6 +68,21 @@ case object InitialUserStateSetup extends UserStateChangeReason {
   def calculateCreditsForImplicitlyTerminated = false
 
   def code = UserStateChangeReasonCodes.InitialSetupCode
+}
+
+/**
+ * When the user processing unit (actor) is initially set up.
+ */
+case object InitialUserActorSetup extends UserStateChangeReason {
+  def shouldStoreUserState = true
+
+  def shouldStoreCalculatedWalletEntries = false
+
+  def forPreviousBillingMonth = this
+
+  def calculateCreditsForImplicitlyTerminated = false
+
+  def code = UserStateChangeReasonCodes.InitialUserActorSetup
 }
 /**
  * A calculation made for no specific reason. Can be for testing, for example.

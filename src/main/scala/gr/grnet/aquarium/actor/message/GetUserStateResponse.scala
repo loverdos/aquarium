@@ -43,6 +43,7 @@ import gr.grnet.aquarium.computation.UserState
  */
 
 case class GetUserStateResponse(
-    userID: String,
-    state: Either[String, UserState])
-extends RouterResponseMessage(state)
+    state: Either[String, UserState],
+    override val suggestedHTTPStatus: Int = 200)
+extends RouterResponseMessage(state, suggestedHTTPStatus)
+

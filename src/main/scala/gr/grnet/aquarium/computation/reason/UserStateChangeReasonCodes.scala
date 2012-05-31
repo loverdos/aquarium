@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.computation.reason
 
 /**
+ * Codes that characterize reasons for user state change.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -43,9 +44,10 @@ package gr.grnet.aquarium.computation.reason
 object UserStateChangeReasonCodes {
   type ChangeReasonCode = Int
 
-  final val InitialSetupCode = 1
-  final val NoSpecificChangeCode = 2
-  final val MonthlyBillingCode = 3
-  final val RealtimeBillingCode = 4
-  final val IMEventArrivalCode = 5
+  final val InitialSetupCode      = 1
+  final val NoSpecificChangeCode  = 2
+  final val MonthlyBillingCode    = 3
+  final val RealtimeBillingCode   = 4
+  final val IMEventArrivalCode    = 5
+  final val InitialUserActorSetup = 6
 }

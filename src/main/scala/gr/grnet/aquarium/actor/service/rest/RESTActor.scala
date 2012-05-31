@@ -60,6 +60,8 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
   self.id = _id
 
+  private[this] def aquarium = Aquarium.Instance
+
   private def stringResponse(status: Int, stringBody: String, contentType: String = "application/json"): HttpResponse = {
     HttpResponse(
       status,
@@ -101,14 +103,16 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
       val millis = TimeHelpers.nowMillis()
       uri match {
         case UserBalancePath(userID) ⇒
+          // /user/(.+)/balance/?
           callRouter(GetUserBalanceRequest(userID, millis), responder)
 
         case UserStatePath(userId) ⇒
+          // /user/(.+)/state/?
           callRouter(GetUserStateRequest(userId, millis), responder)
 
         case AdminPingAll() ⇒
-          val mc = Aquarium.Instance
-          mc.adminCookie match {
+          // /admin/ping/all/?
+          aquarium.adminCookie match {
             case Just(adminCookie) ⇒
               headers.find(_.name.toLowerCase == Aquarium.HTTP.RESTAdminHeaderNameLowerCase) match {
                 case Some(cookieHeader) if(cookieHeader.value == adminCookie) ⇒

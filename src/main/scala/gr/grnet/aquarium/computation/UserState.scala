@@ -148,7 +148,7 @@ case class UserState(
     // The user state we used to compute this one. Normally the (cached)
     // state at the beginning of the billing period.
     parentUserStateId: Option[String] = None,
-    _id: String = new ObjectId().toString
+    _id: String = null
 ) extends JsonSupport {
 
   def idOpt: Option[String] = _id match {
@@ -185,8 +185,18 @@ case class UserState(
   }
 
   def copyForChangeReason(changeReason: UserStateChangeReason) = {
-    this.copy(lastChangeReason = changeReason)
+    this.copy(
+      lastChangeReason = changeReason,
+      stateChangeCounter = this.stateChangeCounter + 1
+    )
   }
+
+//  def copyForRoleHistory(newRoleHistory: RoleHistory) = {
+//    this.copy(
+//      roleHistory = newRoleHistory,
+//      stateChangeCounter = this.stateChangeCounter + 1
+//    )
+//  }
 
   def resourcesMap = ownedResourcesSnapshot.toResourcesMap
 

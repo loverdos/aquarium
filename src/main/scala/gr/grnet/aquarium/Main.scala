@@ -66,15 +66,18 @@ object Main extends LazyLoggable {
   def main(args: Array[String]) = {
     configureLogging()
 
+    logSeparator()
     logStarting("Aquarium")
     val ms0 = TimeHelpers.nowMillis()
     try {
       doStart()
       val ms1 = TimeHelpers.nowMillis()
       logStarted(ms0, ms1, "Aquarium")
+      logSeparator()
     } catch {
       case e: Throwable ⇒
       logger.error("Aquarium not started\n%s".format(gr.grnet.aquarium.util.chainOfCausesForLogging(e, 1)), e)
+      logSeparator()
       System.exit(1)
     }
   }

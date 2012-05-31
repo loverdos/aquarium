@@ -67,7 +67,7 @@ case class IMStateSnapshot(
     userActivationMillis.isDefined
   }
 
-  def updateHistoryWithEvent(imEvent: IMEventModel) = {
+  def updateRoleHistoryWithEvent(imEvent: IMEventModel) = {
     copy(
       userActivationMillis = if(imEvent.isStateActive) Some(imEvent.occurredMillis) else this.userActivationMillis,
       latestIMEvent = imEvent,

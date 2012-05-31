@@ -46,9 +46,9 @@ import scala.annotation.tailrec
  */
 
 case class RoleHistory(
-                        /**
-                         * The head role is the most recent. The same rule applies for the tail.
-                         */
+                       /**
+                        * The head role is the most recent. The same rule applies for the tail.
+                        */
                        roles: List[RoleHistoryItem]) {
 
   def roleNamesByTimeslot: SortedMap[Timeslot, String] = {
@@ -60,6 +60,9 @@ case class RoleHistory(
   }
 
   def updateWithRole(role: String, validFrom: Long) = {
+    // TODO: Review this when Timeslot is also reviewed.
+    //       Currently, we need `fixValidTo` because Timeslot does not validate when `validFrom` and `validTo`
+    //       are equal.
     def fixValidTo(validFrom: Long, validTo: Long): Long = {
       if(validTo == validFrom) {
         // Since validTo is exclusive, make at least 1ms gap
@@ -114,28 +117,28 @@ case class RoleHistory(
    * Returns the first, chronologically, role.
    */
   def firstRole: Option[RoleHistoryItem] = {
-    rolesByTimeslot.valuesIterator.toList.lastOption
+    rolesByTimeslot.valuesIterator.toList.headOption
   }
 
   /**
    * Returns the name of the first, chronologically, role.
    */
   def firstRoleName: Option[String] = {
-    roleNamesByTimeslot.valuesIterator.toList.lastOption
+    roleNamesByTimeslot.valuesIterator.toList.headOption
   }
 
   /**
    * Returns the last, chronologically, role.
    */
   def lastRole: Option[RoleHistoryItem] = {
-    rolesByTimeslot.valuesIterator.toList.headOption
+    rolesByTimeslot.valuesIterator.toList.lastOption
   }
 
   /**
    * Returns the name of the last, chronologically, role.
    */
   def lastRoleName: Option[String] = {
-    roleNamesByTimeslot.valuesIterator.toList.headOption
+    roleNamesByTimeslot.valuesIterator.toList.lastOption
   }
 }
 

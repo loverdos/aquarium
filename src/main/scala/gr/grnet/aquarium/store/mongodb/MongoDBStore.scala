@@ -199,7 +199,11 @@ class MongoDBStore(
 
   //+ UserStateStore
   def insertUserState(userState: UserState) = {
-    MongoDBStore.insertUserState(userState, userStates, MongoDBStore.jsonSupportToDBObject)
+    MongoDBStore.insertUserState(
+      userState.copy(_id = new ObjectId().toString),
+      userStates,
+      MongoDBStore.jsonSupportToDBObject
+    )
   }
 
   def findUserStateByUserID(userID: String): Option[UserState] = {
