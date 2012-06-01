@@ -44,5 +44,8 @@ package gr.grnet.aquarium.connector.handler
  */
 
 trait PayloadHandler {
+  /**
+   * This is the core business logic that Aquarium applies to an incoming event.
+   */
   def handlePayload(payload: Array[Byte]): HandlerResult
 }
