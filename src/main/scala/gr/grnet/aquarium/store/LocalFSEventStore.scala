@@ -37,7 +37,7 @@ package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.Aquarium
 import java.io.{FileOutputStream, File}
-import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace}
+import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace, makeBytes, UTF_8_Charset}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
@@ -45,22 +45,32 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.
  *
+ * This is mainly a debugging aid. You normally want to disable it in a production environment.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 object LocalFSEventStore extends Loggable {
-  private[this] final val NewLine  = "\n".getBytes("UTF-8")
-  private[this] final val NewLine2 = NewLine ++ NewLine
+  private[this] final val NewLine  = makeBytes("\n", UTF_8_Charset) // super-fluous!
 
-  private[this] def writeToFile(file: File, data: Array[Byte], appendString: Option[String] = None): Unit = {
+  private[this] def writeToFile(file: File,
+                                dataHeader: String,
+                                data: Array[Byte],
+                                dataFooter: String,
+                                appendString: Option[String] = None): Unit = {
     val out = new FileOutputStream(file)
+
+    out.write(makeBytes(dataHeader, UTF_8_Charset))
     out.write(data)
+    out.write(makeBytes(dataFooter, UTF_8_Charset))
+
     appendString match {
       case Some(s) ⇒
-        out.write(NewLine2)
-        out.write(s.getBytes("UTF-8"))
+        out.write(NewLine)
+        out.write(makeBytes(s, UTF_8_Charset))
       case None ⇒
     }
+
     out.flush()
     out.close()
 
@@ -104,7 +114,15 @@ object LocalFSEventStore extends Loggable {
         if(isParsed) "p" else "u"
       ))
 
-    writeToFile(file, jsonPayload, appendString)
+    val dataHeader = "// %s bytes of payload\n".format(jsonPayload.length)
+    val dataFooter = "\n" + dataHeader
+
+    writeToFile(
+      file,
+      dataHeader,
+      jsonPayload,
+      dataFooter,
+      appendString)
   }
 
   def storeUnparsedResourceEvent(aquarium: Aquarium, initialPayload: Array[Byte], exception: Throwable): Unit = {
