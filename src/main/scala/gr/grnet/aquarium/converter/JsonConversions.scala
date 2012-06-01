@@ -41,6 +41,7 @@ import ext.JodaTimeSerializers
 
 import gr.grnet.aquarium.util.{makeString, UTF_8_Charset}
 import java.nio.charset.Charset
+import gr.grnet.aquarium.computation.reason.{IMEventArrival, RealtimeBillingCalculation, MonthlyBillingCalculation, NoSpecificChangeReason, InitialUserActorSetup, InitialUserStateSetup}
 
 /**
  * Provides conversion methods from and to JSON.
@@ -51,10 +52,23 @@ import java.nio.charset.Charset
  */
 
 object JsonConversions {
+  final val HintedFormats = new DefaultFormats {
+
+    override val typeHints = ShortTypeHints(
+      List(
+        InitialUserStateSetup.getClass,
+        InitialUserActorSetup.getClass,
+        NoSpecificChangeReason.getClass,
+        classOf[MonthlyBillingCalculation],
+        classOf[RealtimeBillingCalculation],
+        classOf[IMEventArrival]))
+
+    override val typeHintFieldName = "type"
+  }
   /**
    * The application-wide JSON formats used from the underlying lift-json library.
    */
-  implicit val Formats = (DefaultFormats ++ JodaTimeSerializers.all)
+  implicit final val Formats = (HintedFormats ++ JodaTimeSerializers.all)
 
   /**
    * Converts a value to JSON AST (Abstract Syntax Tree) by acting a bit intelligently, depending on the actual type
