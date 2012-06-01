@@ -144,7 +144,6 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
     }
   }
 
-
   private[this]
   def callRouter(message: RouterRequestMessage, responder: RequestResponder): Unit = {
     val aquarium = Aquarium.Instance
@@ -158,19 +157,28 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
           case None ⇒
             // TODO: Will this ever happen??
             logger.warn("Future did not complete for %s".format(message))
-            responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+            val statusCode = 500
+            responder.complete(stringResponse(statusCode, "Internal Server Error", "text/plain"))
 
           case Some(Left(error)) ⇒
-            logger.error("Error serving %s: %s".format(message, error))
-            responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+            val statusCode = 500
+            logger.error("Error %s serving %s: %s".format(statusCode, message, error))
+            responder.complete(stringResponse(statusCode, "Internal Server Error", "text/plain"))
 
           case Some(Right(actualResponse)) ⇒
             actualResponse match {
               case routerResponse: RouterResponseMessage[_] ⇒
                 routerResponse.response match {
                   case Left(errorMessage) ⇒
-                    logger.error("Error '%s' serving %s. Response is: %s".format(errorMessage, message, actualResponse))
-                    responder.complete(stringResponse(routerResponse.suggestedHTTPStatus, errorMessage, "text/plain"))
+                    val statusCode = routerResponse.suggestedHTTPStatus
+
+                    logger.error("Error %s '%s' serving %s. Internal response: %s".format(
+                      statusCode,
+                      errorMessage,
+                      message,
+                      actualResponse))
+
+                    responder.complete(stringResponse(statusCode, errorMessage, "text/plain"))
 
                   case Right(response) ⇒
                     responder.complete(
@@ -181,8 +189,9 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
                 }
 
               case _ ⇒
-                logger.error("Error serving %s: Response is: %s".format(message, actualResponse))
-                responder.complete(stringResponse(500, "Internal Server Error", "text/plain"))
+                val statusCode = 500
+                logger.error("Error %s serving %s: Response is: %s".format(statusCode, message, actualResponse))
+                responder.complete(stringResponse(statusCode, "Internal Server Error", "text/plain"))
             }
         }
     }

@@ -40,7 +40,6 @@ package user
 import gr.grnet.aquarium.actor._
 
 import akka.config.Supervision.Temporary
-import gr.grnet.aquarium.util.{shortClassNameOf, shortNameOfClass, shortNameOfType}
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
 import gr.grnet.aquarium.computation.data.IMStateSnapshot
 import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProviderConfigured, AquariumPropertiesLoaded}
@@ -50,6 +49,7 @@ import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.{AquariumException, Aquarium}
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.computation.reason.{InitialUserActorSetup, UserStateChangeReason, IMEventArrival, InitialUserStateSetup}
+import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf, shortNameOfClass, shortNameOfType}
 
 /**
  *
@@ -72,7 +72,7 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   override protected def onThrowable(t: Throwable, message: AnyRef) = {
-    logChainOfCauses(t)
+    LogHelpers.logChainOfCauses(logger, t)
     ERROR(t, "Terminating due to: %s(%s)", shortClassNameOf(t), t.getMessage)
 
     _shutmedown()
@@ -124,7 +124,7 @@ class UserActor extends ReflectiveRoleableActor {
   /**
    * Creates the IMStateSnapshot and returns the number of updates it made to it.
    */
-  private[this] def createIMState(event: InitializeUserState): Int = {
+  private[this] def createInitialIMState(event: InitializeUserState): Int = {
     val userID = event.userID
     val store = aquarium.imEventStore
 
@@ -157,19 +157,7 @@ class UserActor extends ReflectiveRoleableActor {
     haveIMState && this._imState.hasBeenActivated
   }
 
-  private[this] def createUserState(event: InitializeUserState): Unit = {
-    if(!haveIMState) {
-      // Should have been created from `createIMState()`
-      DEBUG("Cannot create user state from %s, since %s = %s", event, shortNameOfClass(classOf[IMStateSnapshot]), this._imState)
-      return
-    }
-
-    if(!this._imState.hasBeenActivated) {
-      // Cannot set the initial state!
-      DEBUG("Cannot create %s from %s, since user is inactive", shortNameOfType[UserState], event)
-      return
-    }
-
+  private[this] def loadUserStateAndUpdateRoleHistory(): Unit = {
     val userActivationMillis = this._imState.userActivationMillis.get
     val initialRole = this._imState.roleHistory.firstRole.get.name
 
@@ -193,11 +181,28 @@ class UserActor extends ReflectiveRoleableActor {
 
     // Final touch: Update role history
     if(haveIMState && haveUserState) {
-      // FIXME: Not satisfied with this redundant info
       if(this._userState.roleHistory != this._imState.roleHistory) {
         this._userState = newUserStateWithUpdatedRoleHistory(InitialUserActorSetup)
       }
     }
+  }
+
+  private[this] def createInitialUserState(event: InitializeUserState): Unit = {
+    if(!haveIMState) {
+      // Should have been created from `createIMState()`
+      DEBUG("Cannot create user state from %s, since %s = %s", event, shortNameOfClass(classOf[IMStateSnapshot]), this._imState)
+      return
+    }
+
+    if(!this._imState.hasBeenActivated) {
+      // Cannot set the initial state!
+      DEBUG("Cannot create %s from %s, since user is inactive", shortNameOfType[UserState], event)
+      return
+    }
+
+    // We will also need this functionality when receiving IMEvents,
+    // so we place it in a method
+    loadUserStateAndUpdateRoleHistory()
 
     if(haveUserState) {
       DEBUG("%s = %s", shortNameOfType[UserState], this._userState)
@@ -209,8 +214,8 @@ class UserActor extends ReflectiveRoleableActor {
     this._userID = userID
     DEBUG("Got %s", event)
 
-    createIMState(event)
-    createUserState(event)
+    createInitialIMState(event)
+    createInitialUserState(event)
   }
 
   /**
@@ -256,13 +261,13 @@ class UserActor extends ReflectiveRoleableActor {
 
       // Must also update user state
       if(shouldProcessResourceEvents) {
-        if(haveUserState) {
-          DEBUG("Also updating %s with new %s",
-            shortClassNameOf(this._userState),
-            shortClassNameOf(this._imState.roleHistory)
-          )
-
+        if(!haveUserState) {
+          loadUserStateAndUpdateRoleHistory()
+          INFO("Loaded %s due to %s", shortNameOfType[UserState], imEvent)
+        } else {
+          // Just update role history
           this._userState = newUserStateWithUpdatedRoleHistory(IMEventArrival(imEvent))
+          INFO("Updated %s due to %s", shortNameOfType[UserState], imEvent)
         }
       }
     } else {
@@ -282,7 +287,6 @@ class UserActor extends ReflectiveRoleableActor {
       return
     }
   }
-
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
     val userID = event.userID

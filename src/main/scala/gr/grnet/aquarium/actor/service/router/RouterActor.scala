@@ -37,7 +37,6 @@ package gr.grnet.aquarium.actor
 package service
 package router
 
-import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.service.RoleableActorProviderService
 import akka.actor.ActorRef
 import user.{UserActorCache}
@@ -46,6 +45,7 @@ import gr.grnet.aquarium.actor.message.admin.PingAllRequest
 import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.{AquariumException, AquariumInternalError}
 import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded, ActorProviderConfigured}
+import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
 
 /**
  * Business logic router. Incoming messages are routed to appropriate destinations. Replies are routed back
@@ -94,7 +94,7 @@ class RouterActor extends ReflectiveRoleableActor {
    * is an NPE.
    */
   override protected def onThrowable(t: Throwable, servicingMessage: AnyRef) = {
-    logChainOfCauses(t)
+    LogHelpers.logChainOfCauses(logger, t)
 
     def logIgnore(e: Throwable) = {
       logger.error("Ignoring %s".format(shortClassNameOf(e)), e)
