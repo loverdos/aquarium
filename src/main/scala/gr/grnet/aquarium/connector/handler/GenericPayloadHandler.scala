@@ -36,12 +36,9 @@
 package gr.grnet.aquarium.connector.handler
 
 import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.connector.handler._
 import gr.grnet.aquarium.event.model.ExternalEventModel
-import gr.grnet.aquarium.util.safeUnit
-import gr.grnet.aquarium.service.EventBusService
-import gr.grnet.aquarium.Aquarium
-import com.ckkloverdos.maybe.{NoVal, Just, Failed, MaybeEither}
+import com.ckkloverdos.maybe.{Just, Failed, MaybeEither}
+import gr.grnet.aquarium.util.{LogHelpers, Loggable, safeUnit, shortInfoOf, shortClassNameOf}
 
 /**
  * Generic handler of events arriving to Aquarium.
@@ -105,9 +102,16 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel](
     /**
      * Forwards the saved domain object for further processing.
      */
-    forwardAction: S ⇒ Unit) extends PayloadHandler {
+    forwardAction: S ⇒ Unit) extends PayloadHandler with Loggable {
 
-  def handlePayload(payload: Array[Byte]): HandlerResult = {
+  /**
+   * This is the core business logic that Aquarium applies to an incoming event.
+   * The method is marked `final` to indicate that the business logic is fixed
+   * and any parameterization must happen via the constructor parameters.
+   *
+   * The implementation is careful to catch any exceptions and return the proper result.
+   */
+  final def handlePayload(payload: Array[Byte]): HandlerResult = {
     // 1. try to parse as json
     MaybeEither {
       jsonParser(payload)
@@ -137,6 +141,13 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel](
               preSaveAction(event)
             } match {
               case Failed(e) ⇒
+                val errMsg = "While running preSaveAction(%s) from %s".format(
+                  shortClassNameOf(event),
+                  shortClassNameOf(this))
+
+                LogHelpers.logChainOfCauses(logger, e, errMsg)
+                logger.error(errMsg, e)
+
                 // oops. must resend this message due to unexpected result
                 HandlerResultResend
 
@@ -151,7 +162,14 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel](
                   saveAction(event)
                 } match {
                   case Failed(e) ⇒
-                    HandlerResultPanic
+                    val errMsg = "While running saveAction(%s) from %s".format(
+                      shortClassNameOf(event),
+                      shortClassNameOf(this))
+
+                    LogHelpers.logChainOfCauses(logger, e, errMsg)
+                    logger.error(errMsg, e)
+
+                    HandlerResultPanic(shortInfoOf(e))
 
                   case Just(s) ⇒
                     // 4. try forward but it's OK if something bad happens here.
@@ -162,8 +180,6 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel](
                     HandlerResultSuccess
                 }
             }
-
-
         }
     }
   }
