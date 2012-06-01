@@ -206,7 +206,7 @@ object ResourceLocator {
   /**
    * This exists in order to have a feeling of where we are.
    */
-  final lazy val LOGBACK_XML = getResource(ResourceNames.LOGBACK_XML).getOr(null)
+  final lazy val LOGBACK_XML = getResource(ResourceNames.LOGBACK_XML)
 
   final object Resources {
     final lazy val AquariumPropertiesResource = {

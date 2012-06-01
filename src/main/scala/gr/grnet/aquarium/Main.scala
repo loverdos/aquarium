@@ -38,6 +38,10 @@ package gr.grnet.aquarium
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.LazyLoggable
 import gr.grnet.aquarium.ResourceLocator._
+import org.slf4j.LoggerFactory
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.joran.JoranConfigurator
+import com.ckkloverdos.maybe.Just
 
 /**
  * Main method for Aquarium
@@ -48,6 +52,20 @@ object Main extends LazyLoggable {
   private[this] def configureLogging(): Unit = {
     // Make sure AQUARIUM_HOME is configured, since it is used in logback.xml
     assert(ResourceLocator.Homes.Folders.AquariumHome.isDirectory)
+
+    ResourceLocator.LOGBACK_XML match {
+      case Just(resource) ⇒
+        val f = LoggerFactory.getILoggerFactory
+        f match {
+          case context: LoggerContext ⇒
+            val joran = new JoranConfigurator
+            joran.setContext(context)
+            context.reset()
+            joran.doConfigure(resource.url)
+        }
+
+      case _ ⇒
+    }
   }
 
   def doStart(): Unit = {
