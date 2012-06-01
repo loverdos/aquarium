@@ -53,31 +53,44 @@ import gr.grnet.aquarium.util._
 
 class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
   extends GenericPayloadHandler[ResourceEventModel, ResourceEventStore#ResourceEvent](
+      // jsonParser: Array[Byte] ⇒ JsonTextFormat
       payload ⇒ {
         aquarium.converters.convertEx[JsonTextFormat](payload)
       },
 
+      // onJsonParserSuccess: (Array[Byte], JsonTextFormat) ⇒ Unit
       (payload, jsonTextFormat) ⇒ {
       },
 
+      // onJsonParserError: (Array[Byte], Throwable) ⇒ Unit
       (payload, error) ⇒ {
-        logger.error("Error creating JSON from %s payload".format(Tags.ResourceEventTag), error)
+        val errMsg = "Error creating JSON from %s payload".format(Tags.ResourceEventTag)
+        LogHelpers.logChainOfCauses(logger, error, errMsg)
+        logger.error(errMsg, error)
 
         LocalFSEventStore.storeUnparsedResourceEvent(aquarium, payload, error)
       },
 
+      // eventParser: JsonTextFormat ⇒ E
       jsonTextFormat ⇒ {
         StdResourceEvent.fromJsonTextFormat(jsonTextFormat)
       },
 
+      // onEventParserSuccess: (Array[Byte], E) ⇒ Unit
       (payload, event) ⇒ {
         LocalFSEventStore.storeResourceEvent(aquarium, event, payload)
       },
 
+      // onEventParserError: (Array[Byte], Throwable) ⇒ Unit
       (payload, error) ⇒ {
-        logger.error("Error creating object model from %s payload".format(Tags.ResourceEventTag), error)
+        val errMsg = "Error creating object model from %s payload".format(Tags.ResourceEventTag)
+        LogHelpers.logChainOfCauses(logger, error, errMsg)
+        logger.error(errMsg, error)
+
+        LocalFSEventStore.storeUnparsedResourceEvent(aquarium, payload, error)
       },
 
+      // preSaveAction: E ⇒ Option[HandlerResult]
       rcEvent ⇒ {
         val className = shortClassNameOf(rcEvent)
         val id = rcEvent.id
@@ -101,10 +114,12 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
         }
       },
 
+      // saveAction: E ⇒ S
       rcEvent ⇒ {
         aquarium.resourceEventStore.insertResourceEvent(rcEvent)
       },
 
+      // forwardAction: S ⇒ Unit
       rcEvent ⇒ {
         aquarium.actorProvider.actorForRole(RouterRole) ! ProcessResourceEvent(rcEvent)
       }

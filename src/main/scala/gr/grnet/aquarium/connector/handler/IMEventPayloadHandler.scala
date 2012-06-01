@@ -38,12 +38,12 @@ package gr.grnet.aquarium.connector.handler
 import gr.grnet.aquarium.Aquarium
 import org.slf4j.Logger
 import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.util.{Tags, shortClassNameOf}
 import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.store.{IMEventStore, LocalFSEventStore}
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.util.{LogHelpers, Tags, shortClassNameOf}
 
 /**
  * A [[gr.grnet.aquarium.connector.handler.PayloadHandler]] for
@@ -54,31 +54,44 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
 
 class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
   extends GenericPayloadHandler[IMEventModel, IMEventStore#IMEvent](
+      // jsonParser: Array[Byte] ⇒ JsonTextFormat
       payload ⇒ {
         aquarium.converters.convertEx[JsonTextFormat](payload)
       },
 
+      // onJsonParserSuccess: (Array[Byte], JsonTextFormat) ⇒ Unit
       (payload, jsonTextFormat) ⇒ {
       },
 
+      // onJsonParserError: (Array[Byte], Throwable) ⇒ Unit
       (payload, error) ⇒ {
-        logger.error("Error creating JSON from %s payload".format(Tags.IMEventTag), error)
+        val errMsg = "Error creating JSON from %s payload".format(Tags.IMEventTag)
+        LogHelpers.logChainOfCauses(logger, error, errMsg)
+        logger.error(errMsg, error)
 
         LocalFSEventStore.storeUnparsedIMEvent(aquarium, payload, error)
       },
 
+      // eventParser: JsonTextFormat ⇒ E
       jsonTextFormat ⇒ {
         StdIMEvent.fromJsonTextFormat(jsonTextFormat)
       },
 
+      // onEventParserSuccess: (Array[Byte], E) ⇒ Unit
       (payload, event) ⇒ {
         LocalFSEventStore.storeIMEvent(aquarium, event, payload)
       },
 
+      // onEventParserError: (Array[Byte], Throwable) ⇒ Unit
       (payload, error) ⇒ {
-        logger.error("Error creating object model from %s payload".format(Tags.IMEventTag), error)
+        val errMsg = "Error creating object model from %s payload".format(Tags.IMEventTag)
+        LogHelpers.logChainOfCauses(logger, error, errMsg)
+        logger.error(errMsg, error)
+
+        LocalFSEventStore.storeUnparsedIMEvent(aquarium, payload, error)
       },
 
+      // preSaveAction: E ⇒ Option[HandlerResult]
       imEvent ⇒ {
         val id = imEvent.id
         val acceptMessage = None: Option[HandlerResult]
@@ -164,10 +177,12 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
         }
       },
 
+      // saveAction: E ⇒ S
       imEvent ⇒ {
         aquarium.imEventStore.insertIMEvent(imEvent)
       },
 
+      // forwardAction: S ⇒ Unit
       imEvent ⇒ {
         aquarium.actorProvider.actorForRole(RouterRole) ! ProcessIMEvent(imEvent)
       }
