@@ -198,12 +198,15 @@ object ResourceLocator {
 
   final lazy val AQUARIUM_HOME_CONF_FOLDER = new File(Homes.Folders.AquariumHome, ResourceNames.CONF_FODLER)
 
-  final lazy val LOGBACK_XML_FILE = new File(AQUARIUM_HOME_CONF_FOLDER, ResourceNames.LOGBACK_XML)
+  /**
+   * This exists in order to have a feeling of where we are.
+   */
+  final lazy val HERE = justForSure(getResource(".")).get.url.toExternalForm
 
   /**
    * This exists in order to have a feeling of where we are.
    */
-  final lazy val CONF_HERE = justForSure(getResource(".")).get.url.toExternalForm
+  final lazy val LOGBACK_XML = getResource(ResourceNames.LOGBACK_XML).getOr(null)
 
   final object Resources {
     final lazy val AquariumPropertiesResource = {
@@ -215,10 +218,7 @@ object ResourceLocator {
         case Failed(e) ⇒
           // On error, fail
           throw new AquariumInternalError(
-            "Could not find %s=%s".format(
-              ResourceLocator.SysProps.Names.AquariumPropertiesPath,
-              ResourceLocator.SysProps.Names.AquariumPropertiesPath),
-            e)
+            "Could not find %s".format(ResourceLocator.SysProps.Names.AquariumPropertiesPath), e)
 
         case NoVal ⇒
           // Otherwise try other locations

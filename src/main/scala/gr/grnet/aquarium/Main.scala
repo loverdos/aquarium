@@ -37,11 +37,11 @@ package gr.grnet.aquarium
 
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.LazyLoggable
+import gr.grnet.aquarium.ResourceLocator._
 
 /**
  * Main method for Aquarium
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object Main extends LazyLoggable {
