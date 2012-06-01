@@ -44,10 +44,10 @@ import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
 import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle}
 import gr.grnet.aquarium.util.sameTags
 import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEvent}
-import gr.grnet.aquarium.connector.handler.{ResourceEventPayloadHandler, IMEventPayloadHandler}
 import gr.grnet.aquarium.connector.rabbitmq.service.{PayloadHandlerFutureExecutor, PayloadHandlerPostNotifier}
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys.RabbitMQConfKeys
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys
+import gr.grnet.aquarium.connector.handler.{SynchronousPayloadHandlerExecutor, ResourceEventPayloadHandler, IMEventPayloadHandler}
 
 /**
  *
@@ -90,7 +90,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
     val imHandler = new IMEventPayloadHandler(aquarium, logger)
 
-    val futureExecutor = new PayloadHandlerFutureExecutor
+    val futureExecutor = new SynchronousPayloadHandlerExecutor
 
     // (e)xchange:(r)outing key:(q)
 
