@@ -293,14 +293,15 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
     try f(_channel)
     catch {
       case e: Exception ⇒
+        logger.error("While using channel %s".format(this._channel), e)
         // FIXME: What is this?
         postBusError(RabbitMQError(e))
 
-        safeStop()
+//        safeStop()
     }
   }
 
-  object RabbitMQMessageConsumer extends Consumer {
+  object RabbitMQMessageConsumer extends Consumer with Loggable {
     def handleConsumeOk(consumerTag: String) = {
     }
 
@@ -339,20 +340,24 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
 
           case result @ HandlerResultResend ⇒
             doWithChannel(_.basicNack(deliveryTag, false, true))
+            logger.debug("Got {}", result)
             result
 
-          case result @ HandlerResultReject(_) ⇒
+          case result @ HandlerResultReject(reason) ⇒
             doWithChannel(_.basicReject(deliveryTag, false))
+            logger.info("Got {}", result)
             result
 
-          case result @ HandlerResultRequeue(_) ⇒
+          case result @ HandlerResultRequeue(reason) ⇒
             doWithChannel(_.basicReject(deliveryTag, true))
+            logger.info("Got {}", result)
             result
 
-          case result @ HandlerResultPanic ⇒
+          case result @ HandlerResultPanic(reason) ⇒
             // Just inform RabbitMQ and subsequent actions will be made by the notifier.
             // So, this is a `HandlerResultResend` with extra semantics.
             doWithChannel(_.basicNack(deliveryTag, false, true))
+            logger.info("Got {}", result)
             result
         }
 

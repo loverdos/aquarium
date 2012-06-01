@@ -46,4 +46,4 @@ package gr.grnet.aquarium.connector.handler
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case object HandlerResultPanic extends HandlerResult
+case class HandlerResultPanic(reason: String) extends HandlerResult

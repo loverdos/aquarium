@@ -39,25 +39,28 @@ import org.slf4j.Logger
 import com.ckkloverdos.maybe.{Failed, Just, Maybe}
 import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
 import gr.grnet.aquarium.connector.handler.{HandlerResultPanic, HandlerResult}
-import gr.grnet.aquarium.util.shortInfoOf
+import sun.rmi.log.LogHandler
+import gr.grnet.aquarium.util.{LogHelpers, shortInfoOf}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class PayloadHandlerPostNotifier(logger: Logger) extends ((RabbitMQConsumer, Maybe[HandlerResult]) ⇒ Unit) {
+final class PayloadHandlerPostNotifier(logger: Logger) extends ((RabbitMQConsumer, Maybe[HandlerResult]) ⇒ Unit) {
   def apply(consumer: RabbitMQConsumer, maybeResult: Maybe[HandlerResult]) = {
     maybeResult match {
-      case Just(hr @ HandlerResultPanic) ⇒
+      case Just(hr @ HandlerResultPanic(reason)) ⇒
         // The other end is crucial to the overall operation and it is in panic mode,
         // so we stop delivering messages until further notice
-        logger.warn("Shutting down %s due to [%s]".format(consumer.toString, hr))
+        val errMsg = "Shutting down %s due to [%s]".format(consumer.toString, hr)
+        logger.error(errMsg)
         consumer.setAllowReconnects(false)
         consumer.safeStop()
 
       case Failed(e) ⇒
-        logger.warn("Shutting down %s due to [%s]".format(consumer.toString, shortInfoOf(e)))
+        val errMsg = "Shutting down %s due to [%s]".format(consumer.toString, shortInfoOf(e))
+        logger.warn(errMsg)
         consumer.setAllowReconnects(false)
         consumer.safeStop()
 
