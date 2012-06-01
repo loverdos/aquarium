@@ -75,10 +75,6 @@ trait LazyLoggable {
     LogHelpers.logStopped(this.logger, ms0, ms1, fmt, args: _*)
   }
 
-  protected def logChainOfCauses(t: Throwable, caughtTraceIndex: Int = 2): Unit = {
-    logger.error("Oops!\n{}", chainOfCausesForLogging(t, caughtTraceIndex + 1))
-  }
-
   protected def logSeparator(): Unit = {
     // With this, we should be 120 characters wide (full log line)
     logger.debug("================================================")

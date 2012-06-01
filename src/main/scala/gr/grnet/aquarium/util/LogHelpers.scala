@@ -75,4 +75,8 @@ object LogHelpers {
   def logStopped(logger: Logger, ms0: Long, ms1: Long, fmt: String, args: Any*): Unit = {
     logger.info("Stopped %s in %.3f sec".format(fmt.format(args: _*), TimeHelpers.secDiffOfMillis(ms0, ms1)))
   }
+
+  def logChainOfCauses(logger: Logger, t: Throwable, message: String = "Oops!"): Unit = {
+    logger.error(message + "\n{}", chainOfCausesForLogging(t))
+  }
 }

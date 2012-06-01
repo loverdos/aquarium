@@ -99,10 +99,6 @@ trait Loggable {
     LogHelpers.logStopped(this.logger, ms0, ms1, fmt, args: _*)
   }
 
-  protected def logChainOfCauses(t: Throwable): Unit = {
-    logger.error("Oops!\n{}", chainOfCausesForLogging(t))
-  }
-
   protected def logSeparator(): Unit = {
     // With this, we should be 120 characters wide (full log line)
     logger.debug("================================================")
