@@ -65,6 +65,7 @@ object Main extends LazyLoggable {
         }
 
       case _ ⇒
+        // Otherwise it will be configured in what way logback does it automatically
     }
   }
 
