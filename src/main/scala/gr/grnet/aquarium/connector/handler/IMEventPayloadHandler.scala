@@ -66,8 +66,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
       // onJsonParserError: (Array[Byte], Throwable) ⇒ Unit
       (payload, error) ⇒ {
         val errMsg = "Error creating JSON from %s payload".format(Tags.IMEventTag)
-        LogHelpers.logChainOfCauses(logger, error, errMsg)
-        logger.error(errMsg, error)
+        LogHelpers.logChainOfCausesAndException(logger, error, errMsg)
 
         LocalFSEventStore.storeUnparsedIMEvent(aquarium, payload, error)
       },
@@ -85,8 +84,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
       // onEventParserError: (Array[Byte], Throwable) ⇒ Unit
       (payload, error) ⇒ {
         val errMsg = "Error creating object model from %s payload".format(Tags.IMEventTag)
-        LogHelpers.logChainOfCauses(logger, error, errMsg)
-        logger.error(errMsg, error)
+        LogHelpers.logChainOfCausesAndException(logger, error, errMsg)
 
         LocalFSEventStore.storeUnparsedIMEvent(aquarium, payload, error)
       },

@@ -79,4 +79,9 @@ object LogHelpers {
   def logChainOfCauses(logger: Logger, t: Throwable, message: String = "Oops!"): Unit = {
     logger.error(message + "\n{}", chainOfCausesForLogging(t))
   }
+
+  def logChainOfCausesAndException(logger: Logger, t: Throwable, message: String = "Oops!"): Unit = {
+    logger.error(message + "\n{}", chainOfCausesForLogging(t))
+    logger.error(message, t)
+  }
 }
