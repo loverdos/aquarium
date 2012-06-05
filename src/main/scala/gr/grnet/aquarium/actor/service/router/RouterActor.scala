@@ -100,6 +100,7 @@ class RouterActor extends ReflectiveRoleableActor {
       logger.error("Ignoring %s".format(shortClassNameOf(e)), e)
     }
 
+    // We ignore everything except serious errors.
     t match {
       case e: Error ⇒
         throw e
