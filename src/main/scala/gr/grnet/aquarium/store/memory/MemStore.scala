@@ -277,17 +277,23 @@ class MemStore extends UserStateStore
 
   def findIMEventById(id: String) = imEventById.get(id)
 
+
+  /**
+   * Find the `CREATE` even for the given user. Note that there must be only one such event.
+   */
+  def findCreateIMEventByUserID(userID: String): Option[IMEvent] = {
+    imEventById.valuesIterator.filter { e ⇒
+      e.userID == userID && e.isCreateUser
+    }.toList.sortWith { case (e1, e2) ⇒
+      e1.occurredMillis < e2.occurredMillis
+    } headOption
+  }
+
   def findLatestIMEventByUserID(userID: String): Option[IMEvent] = {
     imEventById.valuesIterator.filter(_.userID == userID).toList.sortWith {
       case (us1, us2) ⇒
         us1.occurredMillis > us2.occurredMillis
-    } match {
-      case head :: _ ⇒
-        Some(head)
-
-      case _ ⇒
-        None
-    }
+    } headOption
   }
 
   def findFirstIsActiveIMEventByUserID(userID: String): Option[IMEvent] = {

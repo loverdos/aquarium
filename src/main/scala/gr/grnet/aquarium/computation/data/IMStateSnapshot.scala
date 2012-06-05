@@ -53,7 +53,12 @@ case class IMStateSnapshot(
                            /**
                             * The earliest activation time, if it exists.
                             */
-                           userActivationMillis: Option[Long],
+                           userEarliestActivationMillis: Option[Long],
+
+                           /**
+                            * The user creation time, if it exists
+                            */
+                           userCreationMillis: Option[Long],
 
                            /**
                             * This is the recorded role history
@@ -64,22 +69,101 @@ case class IMStateSnapshot(
    * True iff the user has ever been activated even once.
    */
   def hasBeenActivated: Boolean = {
-    userActivationMillis.isDefined
+    userEarliestActivationMillis.isDefined
   }
 
-  def updateRoleHistoryWithEvent(imEvent: IMEventModel) = {
-    copy(
-      userActivationMillis = if(imEvent.isStateActive) Some(imEvent.occurredMillis) else this.userActivationMillis,
-      latestIMEvent = imEvent,
-      roleHistory   = this.roleHistory.updateWithRole(imEvent.role, imEvent.occurredMillis)
+  def hasBeenCreated: Boolean = {
+    userCreationMillis.isDefined
+  }
+
+  /**
+   * Given the newly arrived event, we compute the updated user earliest activation time, if any.
+   * We always update activation time if it is earlier than the currently known activation time.
+   */
+  private[this] def updatedEarliestActivationTime(imEvent: IMEventModel): Option[Long] = {
+    this.userEarliestActivationMillis match {
+      case Some(activationMillis) if imEvent.isStateActive && activationMillis < imEvent.occurredMillis ⇒
+        Some(imEvent.occurredMillis)
+
+      case None if imEvent.isStateActive ⇒
+        Some(imEvent.occurredMillis)
+
+      case other ⇒
+        other
+    }
+  }
+
+  /**
+   * Given the newly arrived event, we compute the updated user creation time, if any.
+   * Only the first `create` event triggers an actual update.
+   */
+  private[this] def updatedCreationTime(imEvent: IMEventModel): Option[Long] = {
+    // Allow only the first `create` event
+    if(this.userCreationMillis.isDefined) {
+      this.userCreationMillis
+    } else if(imEvent.isCreateUser) {
+      Some(imEvent.occurredMillis)
+    } else {
+      None
+    }
+  }
+
+  /**
+   * Given the newly arrived event, we compute the updated role history.
+   */
+  private[this] def updatedRoleHistory(imEvent: IMEventModel): RoleHistory = {
+    this.roleHistory.updatedWithRole(imEvent.role, imEvent.occurredMillis)
+  }
+
+  /**
+   * Computes an updated state and returns a tuple made of four elements:
+   * a) the updated state, b) a `Boolean` indicating whether the user creation
+   * time has changed, c) a `Boolean` indicating whether the user activation
+   * time has changed and d) a `Boolean` indicating whether the user
+   * role history has changed.
+   *
+   * The role history is updated only if the `roleCheck` is not `None` and
+   * the role it represents is different than the role of the `imEvent`.
+   * The motivation for `roleCheck` is to use this method in a loop (as in replaying
+   * events from the [[gr.grnet.aquarium.store.IMEventStore]]).
+   */
+  def updatedWithEvent(imEvent: IMEventModel,
+                       roleCheck: Option[String]): (IMStateSnapshot, Boolean, Boolean, Boolean) = {
+    // Things of interest that may change by the imEvent:
+    // - user creation time
+    // - user activation time
+    // - user role
+
+    val newCreationTime = updatedCreationTime(imEvent)
+    val creationTimeChanged = this.userCreationMillis != newCreationTime
+
+    val newActivationTime = updatedEarliestActivationTime(imEvent)
+    val activationTimeChanged = this.userEarliestActivationMillis != newActivationTime
+
+    val (roleChanged, newRoleHistory) = roleCheck match {
+      case Some(role) if role != imEvent.role ⇒
+        (true, updatedRoleHistory(imEvent))
+
+      case _ ⇒
+        (false, this.roleHistory)
+    }
+
+    val newState = this.copy(
+      latestIMEvent      = imEvent,
+      userCreationMillis = newCreationTime,
+      userEarliestActivationMillis = newActivationTime,
+      roleHistory = newRoleHistory
     )
+
+    (newState, creationTimeChanged, activationTimeChanged, roleChanged)
   }
 
   override def toString = {
-    "%s(\n!! %s\n!! %s\n!! %s)".format(
+    "%s(\n!! %s\n!! %s\n!! %s\n!! %s)".format(
       shortClassNameOf(this),
       latestIMEvent,
-      userActivationMillis.map(new MutableDateCalc(_)),
+      userCreationMillis.map(new MutableDateCalc(_)),
+      userEarliestActivationMillis.map(new MutableDateCalc(_)),
       roleHistory
     )
   }
@@ -90,6 +174,7 @@ object IMStateSnapshot {
     IMStateSnapshot(
       imEvent,
       if(imEvent.isStateActive) Some(imEvent.occurredMillis) else None,
+      if(imEvent.isCreateUser) Some(imEvent.occurredMillis) else None,
       RoleHistory.initial(imEvent.role, imEvent.occurredMillis))
   }
 }

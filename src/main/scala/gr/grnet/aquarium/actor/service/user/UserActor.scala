@@ -48,8 +48,8 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.{AquariumException, Aquarium}
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
-import gr.grnet.aquarium.computation.reason.{InitialUserActorSetup, UserStateChangeReason, IMEventArrival, InitialUserStateSetup}
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf, shortNameOfClass, shortNameOfType}
+import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, InitialUserActorSetup, UserStateChangeReason, IMEventArrival, InitialUserStateSetup}
 
 /**
  *
@@ -101,79 +101,74 @@ class UserActor extends ReflectiveRoleableActor {
   def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
   }
 
-  private[this] def _updateIMStateRoleHistory(imEvent: IMEventModel): (Boolean, Boolean, String) = {
+  private[this] def _updateIMStateRoleHistory(imEvent: IMEventModel, roleCheck: Option[String]) = {
     if(haveIMState) {
-      val currentRole = this._imState.roleHistory.lastRole.map(_.name).getOrElse(null)
-//      logger.debug("Current role = %s".format(currentRole))
+      val (newState,
+           creationTimeChanged,
+           activationTimeChanged,
+           roleChanged) = this._imState.updatedWithEvent(imEvent, roleCheck)
 
-      if(imEvent.role != currentRole) {
-//        logger.debug("New role = %s".format(imEvent.role))
-        this._imState = this._imState.updateRoleHistoryWithEvent(imEvent)
-        (true, false, "")
-      } else {
-        val noUpdateReason = "Same role '%s'".format(currentRole)
-//        logger.debug(noUpdateReason)
-        (false, false, noUpdateReason)
-      }
+      this._imState = newState
+      (creationTimeChanged, activationTimeChanged, roleChanged)
     } else {
       this._imState = IMStateSnapshot.initial(imEvent)
-      (true, true, "")
+      (
+        imEvent.isCreateUser,
+        true, // first activation status is a change by default??
+        true  // first role is a change by default??
+        )
     }
   }
 
   /**
    * Creates the IMStateSnapshot and returns the number of updates it made to it.
    */
-  private[this] def createInitialIMState(event: InitializeUserState): Int = {
-    val userID = event.userID
+  private[this] def createInitialIMState(): Unit = {
     val store = aquarium.imEventStore
 
-    var _updateCount = 0
+    var _roleCheck = None: Option[String]
 
-    store.replayIMEventsInOccurrenceOrder(userID) { imEvent ⇒
+    // this._userID is already set up
+    store.replayIMEventsInOccurrenceOrder(this._userID) { imEvent ⇒
       DEBUG("Replaying %s", imEvent)
 
-      val (updated, firstUpdate, noUpdateReason) = _updateIMStateRoleHistory(imEvent)
-      if(updated) {
-        _updateCount = _updateCount + 1
-        DEBUG("Updated %s for role '%s'", shortNameOfType[IMStateSnapshot], imEvent.role)
-      } else {
-        DEBUG("Not updated %s due to: %s", shortNameOfType[IMStateSnapshot], noUpdateReason)
-      }
+      val (creationTimeChanged, activationTimeChanged, roleChanged) = _updateIMStateRoleHistory(imEvent, _roleCheck)
+      _roleCheck = this._imState.roleHistory.lastRoleName
+
+      DEBUG(
+        "(creationTimeChanged, activationTimeChanged, roleChanged)=(%s, %s, %s) using %s",
+        creationTimeChanged, activationTimeChanged, roleChanged,
+        imEvent
+      )
     }
 
-    if(_updateCount > 0)
-      DEBUG("Computed %s = %s", shortNameOfType[IMStateSnapshot], this._imState)
-    else
-      DEBUG("Not computed %s", shortNameOfType[IMStateSnapshot])
-
-    _updateCount
+    DEBUG("New %s = %s", shortNameOfType[IMStateSnapshot], this._imState)
   }
 
   /**
    * Resource events are processed only if the user has been activated.
    */
   private[this] def shouldProcessResourceEvents: Boolean = {
-    haveIMState && this._imState.hasBeenActivated
+    haveIMState && this._imState.hasBeenCreated
   }
 
   private[this] def loadUserStateAndUpdateRoleHistory(): Unit = {
-    val userActivationMillis = this._imState.userActivationMillis.get
+    val userCreationMillis = this._imState.userCreationMillis.get
     val initialRole = this._imState.roleHistory.firstRole.get.name
 
     val userStateBootstrap = UserStateBootstrappingData(
       this._userID,
-      userActivationMillis,
+      userCreationMillis,
       initialRole,
-      aquarium.initialAgreementForRole(initialRole, userActivationMillis),
-      aquarium.initialBalanceForRole(initialRole, userActivationMillis)
+      aquarium.initialAgreementForRole(initialRole, userCreationMillis),
+      aquarium.initialBalanceForRole(initialRole, userCreationMillis)
     )
 
     val userState = userStateComputations.doFullMonthlyBilling(
       userStateBootstrap,
       BillingMonthInfo.fromMillis(TimeHelpers.nowMillis()),
       aquarium.currentResourcesMap,
-      InitialUserStateSetup,
+      InitialUserStateSetup(),
       None
     )
 
@@ -182,7 +177,7 @@ class UserActor extends ReflectiveRoleableActor {
     // Final touch: Update role history
     if(haveIMState && haveUserState) {
       if(this._userState.roleHistory != this._imState.roleHistory) {
-        this._userState = newUserStateWithUpdatedRoleHistory(InitialUserActorSetup)
+        this._userState = newUserStateWithUpdatedRoleHistory(InitialUserActorSetup())
       }
     }
   }
@@ -194,9 +189,9 @@ class UserActor extends ReflectiveRoleableActor {
       return
     }
 
-    if(!this._imState.hasBeenActivated) {
+    if(!this._imState.hasBeenCreated) {
       // Cannot set the initial state!
-      DEBUG("Cannot create %s from %s, since user is inactive", shortNameOfType[UserState], event)
+      DEBUG("Cannot create %s from %s, since user has not been created", shortNameOfType[UserState], event)
       return
     }
 
@@ -210,11 +205,10 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onInitializeUserState(event: InitializeUserState): Unit = {
-    val userID = event.userID
-    this._userID = userID
+    this._userID = event.userID
     DEBUG("Got %s", event)
 
-    createInitialIMState(event)
+    createInitialIMState()
     createInitialUserState(event)
   }
 
@@ -254,25 +248,29 @@ class UserActor extends ReflectiveRoleableActor {
       return
     }
 
-    val (updated, firstUpdate, noUpdateReason) = _updateIMStateRoleHistory(imEvent)
+    val (creationTimeChanged,
+         activationTimeChanged,
+         roleChanged) = _updateIMStateRoleHistory(imEvent, this._imState.roleHistory.lastRoleName)
 
-    if(updated) {
-      DEBUG("Updated %s = %s", shortClassNameOf(this._imState), this._imState)
+    DEBUG(
+      "(creationTimeChanged, activationTimeChanged, roleChanged)=(%s, %s, %s) using %s",
+      creationTimeChanged, activationTimeChanged, roleChanged,
+      imEvent
+    )
 
-      // Must also update user state
-      if(shouldProcessResourceEvents) {
-        if(!haveUserState) {
-          loadUserStateAndUpdateRoleHistory()
-          INFO("Loaded %s due to %s", shortNameOfType[UserState], imEvent)
-        } else {
-          // Just update role history
-          this._userState = newUserStateWithUpdatedRoleHistory(IMEventArrival(imEvent))
-          INFO("Updated %s due to %s", shortNameOfType[UserState], imEvent)
-        }
+    // Must also update user state if we know when in history the life of a user begins
+    if(creationTimeChanged) {
+      if(!haveUserState) {
+        loadUserStateAndUpdateRoleHistory()
+        INFO("Loaded %s due to %s", shortNameOfType[UserState], imEvent)
+      } else {
+        // Just update role history
+        this._userState = newUserStateWithUpdatedRoleHistory(IMEventArrival(imEvent))
+        INFO("Updated %s due to %s", shortNameOfType[UserState], imEvent)
       }
-    } else {
-      DEBUG("Not updating %s from %s due to: %s", shortNameOfType[IMStateSnapshot], imEvent, noUpdateReason)
     }
+
+    DEBUG("New %s = %s", shortNameOfType[IMStateSnapshot], this._imState)
 
     logSeparator()
   }

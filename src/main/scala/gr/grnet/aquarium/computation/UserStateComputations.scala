@@ -69,7 +69,7 @@ class UserStateComputations(_aquarium: () ⇒ Aquarium) extends Loggable {
     val clog = ContextualLogger.fromOther(
       clogOpt,
       logger,
-      "findUserStateAtEndOfBillingMonth(%s)", billingMonthInfo)
+      "findUserStateAtEndOfBillingMonth(%s)", billingMonthInfo.toShortDebugString)
     clog.begin()
 
     def doCompute: UserState = {
@@ -84,8 +84,8 @@ class UserStateComputations(_aquarium: () ⇒ Aquarium) extends Loggable {
     val userID = userStateBootstrap.userID
     val userCreationMillis = userStateBootstrap.userCreationMillis
     val userCreationDateCalc = new MutableDateCalc(userCreationMillis)
-    val billingMonthStartMillis = billingMonthInfo.startMillis
-    val billingMonthStopMillis = billingMonthInfo.stopMillis
+    val billingMonthStartMillis = billingMonthInfo.monthStartMillis
+    val billingMonthStopMillis = billingMonthInfo.monthStopMillis
 
     if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
@@ -323,7 +323,7 @@ class UserStateComputations(_aquarium: () ⇒ Aquarium) extends Loggable {
   def doFullMonthlyBilling(userStateBootstrap: UserStateBootstrappingData,
                            billingMonthInfo: BillingMonthInfo,
                            defaultResourcesMap: DSLResourcesMap,
-                           calculationReason: UserStateChangeReason = NoSpecificChangeReason,
+                           calculationReason: UserStateChangeReason,
                            clogOpt: Option[ContextualLogger] = None): UserState = {
 
     val userID = userStateBootstrap.userID
@@ -331,7 +331,7 @@ class UserStateComputations(_aquarium: () ⇒ Aquarium) extends Loggable {
     val clog = ContextualLogger.fromOther(
       clogOpt,
       logger,
-      "doFullMonthlyBilling(%s)", billingMonthInfo)
+      "doFullMonthlyBilling(%s)", billingMonthInfo.toShortDebugString)
     clog.begin()
 
     val clogSome = Some(clog)
@@ -340,15 +340,15 @@ class UserStateComputations(_aquarium: () ⇒ Aquarium) extends Loggable {
       userStateBootstrap,
       billingMonthInfo.previousMonth,
       defaultResourcesMap,
-      calculationReason.forPreviousBillingMonth,
+      calculationReason.forBillingMonthInfo(billingMonthInfo.previousMonth),
       clogSome
     )
 
     val startingUserState = previousBillingMonthUserState
 
 
-    val billingMonthStartMillis = billingMonthInfo.startMillis
-    val billingMonthEndMillis = billingMonthInfo.stopMillis
+    val billingMonthStartMillis = billingMonthInfo.monthStartMillis
+    val billingMonthEndMillis = billingMonthInfo.monthStopMillis
 
     // Keep the working (current) user state. This will get updated as we proceed with billing for the month
     // specified in the parameters.

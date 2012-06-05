@@ -47,8 +47,8 @@ import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler}
 import gr.grnet.aquarium.{AquariumException}
 import gr.grnet.aquarium.Aquarium.{Instance ⇒ AquariumInstance}
-import gr.grnet.aquarium.computation.reason.MonthlyBillingCalculation
 import gr.grnet.aquarium.computation.{UserStateBootstrappingData, UserState, BillingMonthInfo, UserStateComputations}
+import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, MonthlyBillingCalculation}
 
 
 /**
@@ -305,7 +305,7 @@ aquariumpolicy:
       UserStateBootstrap,
       billingMonthInfo,
       DefaultResourcesMap,
-      MonthlyBillingCalculation(billingMonthInfo),
+      MonthlyBillingCalculation(NoSpecificChangeReason(), billingMonthInfo),
       Some(clog)
     )
   }

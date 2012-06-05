@@ -64,6 +64,8 @@ trait IMEventModel extends ExternalEventModel {
 
   def isModifyUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.modify)
 
+  def userCreationMillisOption = if(isCreateUser) Some(this.occurredMillis) else None
+
   override def toDebugString = {
     "%s(userID=%s, id=%s, isActive=%s, role='%s', occurred=%s)".format(
       shortClassNameOf(this),

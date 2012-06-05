@@ -68,6 +68,11 @@ trait IMEventStore {
    */
   def findIMEventById(id: String): Option[IMEvent]
 
+  /**
+   * Find the `CREATE` even for the given user. Note that there must be only one such event.
+   */
+  def findCreateIMEventByUserID(userID: String): Option[IMEvent]
+
   def findLatestIMEventByUserID(userID: String): Option[IMEvent]
 
   /**

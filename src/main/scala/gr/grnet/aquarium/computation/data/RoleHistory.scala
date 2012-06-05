@@ -59,7 +59,7 @@ case class RoleHistory(
     TreeMap(roles.map(role ⇒ (role.timeslot, role)): _*)
   }
 
-  def updateWithRole(role: String, validFrom: Long) = {
+  def updatedWithRole(role: String, validFrom: Long) = {
     // TODO: Review this when Timeslot is also reviewed.
     //       Currently, we need `fixValidTo` because Timeslot does not validate when `validFrom` and `validTo`
     //       are equal.

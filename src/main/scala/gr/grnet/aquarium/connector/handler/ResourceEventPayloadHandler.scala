@@ -98,8 +98,9 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
         // Let's decide if it is OK to store the event
         // Remember that OK == None as the returning result
         //
-        // NOTE: If anything goes wrong with this function, then the handler will issue a Resend, so
-        //       do not bother to catch exceptions here.
+        // NOTE: If anything goes wrong with this function, then the handler
+        //       (handlePayload in GenericPayloadHandler) will issue a Resend,
+        //       so do not bother to catch exceptions here.
 
         // 1. Check if the same ID exists. Note that we use the ID sent by the event producer.
         //    It is a requirement that this ID is unique.

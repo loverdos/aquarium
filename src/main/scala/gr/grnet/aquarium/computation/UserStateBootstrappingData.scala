@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.computation
 
 /**
- * Used to bootstrao the user state.
+ * This is used to bootstrap the user state.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

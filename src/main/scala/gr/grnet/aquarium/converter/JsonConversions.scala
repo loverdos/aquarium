@@ -52,23 +52,10 @@ import gr.grnet.aquarium.computation.reason.{IMEventArrival, RealtimeBillingCalc
  */
 
 object JsonConversions {
-  final val HintedFormats = new DefaultFormats {
-
-    override val typeHints = ShortTypeHints(
-      List(
-        InitialUserStateSetup.getClass,
-        InitialUserActorSetup.getClass,
-        NoSpecificChangeReason.getClass,
-        classOf[MonthlyBillingCalculation],
-        classOf[RealtimeBillingCalculation],
-        classOf[IMEventArrival]))
-
-    override val typeHintFieldName = "type"
-  }
   /**
    * The application-wide JSON formats used from the underlying lift-json library.
    */
-  implicit final val Formats = (HintedFormats ++ JodaTimeSerializers.all)
+  implicit final val Formats = (DefaultFormats ++ JodaTimeSerializers.all)
 
   /**
    * Converts a value to JSON AST (Abstract Syntax Tree) by acting a bit intelligently, depending on the actual type

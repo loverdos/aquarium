@@ -100,7 +100,7 @@ class MongoDBStore(
     MongoDBResourceEvent.fromOther(event, null)
   }
 
-  def pingResourceEventStore(): Unit = {
+  def pingResourceEventStore(): Unit = synchronized {
     MongoDBStore.ping(mongo)
   }
 
@@ -259,6 +259,27 @@ class MongoDBStore(
     MongoDBStore.findBy(IMEventNames.id, id, imEvents, MongoDBIMEvent.fromDBObject)
   }
 
+
+  /**
+   * Find the `CREATE` even for the given user. Note that there must be only one such event.
+   */
+  def findCreateIMEventByUserID(userID: String): Option[IMEvent] = {
+    val query = new BasicDBObjectBuilder().
+      add(IMEventNames.userID, userID).
+      add(IMEventNames.eventType, IMEventModel.EventTypeNames.create).get()
+
+    // Normally one such event is allowed ...
+    val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
+
+    withCloseable(cursor) { cursor ⇒
+      if(cursor.hasNext) {
+        Some(MongoDBIMEvent.fromDBObject(cursor.next()))
+      } else {
+        None
+      }
+    }
+  }
+
   def findLatestIMEventByUserID(userID: String): Option[IMEvent] = {
     val query = new BasicDBObject(IMEventNames.userID, userID)
     val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, -1))
@@ -391,7 +412,7 @@ object MongoDBStore {
     PolicyEntry.fromJson(JSON.serialize(dbObj))
   }
 
-  def ping(mongo: Mongo): Unit = {
+  def ping(mongo: Mongo): Unit = synchronized {
     // This requires a network roundtrip
     mongo.isLocked
   }

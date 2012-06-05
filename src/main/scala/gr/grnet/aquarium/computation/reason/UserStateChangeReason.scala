@@ -37,8 +37,74 @@ package gr.grnet.aquarium.computation.reason
 
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.model.im.IMEventModel
+import gr.grnet.aquarium.util.shortClassNameOf
 
-sealed trait UserStateChangeReason {
+/**
+ * Provides information explaining the reason Aquarium calculated a new [[gr.grnet.aquarium.computation.UserState]].
+ */
+case class UserStateChangeReason(
+    parentReason: Option[UserStateChangeReason],
+    billingMonthInfo: Option[BillingMonthInfo],
+    details: Map[String, Any]
+) {
+
+  require(
+    details.contains(UserStateChangeReason.Names.`type`),
+    "No type present in the details of %s".format(shortClassNameOf(this))
+  )
+
+  private[this] def booleanFromDetails(name: String, default: Boolean) = {
+    details.get(name) match {
+      case Some(value: Boolean) ⇒
+        value
+
+      case _ ⇒
+        false
+    }
+  }
+
+   /**
+    * Return `true` if the result of the calculation should be stored back to the
+    * [[gr.grnet.aquarium.store.UserStateStore]].
+    *
+    */
+  def shouldStoreUserState: Boolean =
+     booleanFromDetails(UserStateChangeReason.Names.shouldStoreUserState, false)
+
+  def shouldStoreCalculatedWalletEntries: Boolean =
+    booleanFromDetails(UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries, false)
+
+  def calculateCreditsForImplicitlyTerminated: Boolean =
+    booleanFromDetails(UserStateChangeReason.Names.calculateCreditsForImplicitlyTerminated, false)
+
+  def forBillingMonthInfo(bmi: BillingMonthInfo) = {
+    copy(
+      parentReason = Some(this),
+      billingMonthInfo = Some(bmi)
+    )
+  }
+
+  def `type`: String = {
+    // This must be always present
+    details(UserStateChangeReason.Names.`type`).asInstanceOf[String]
+  }
+}
+
+object UserStateChangeReason {
+  object Names {
+    final val `type` = "type"
+
+    final val imEvent = "imEvent"
+    final val forWhenMillis = "forWhenMillis"
+
+    final val shouldStoreUserState = "shouldStoreUserState"
+    final val shouldStoreCalculatedWalletEntries = "shouldStoreCalculatedWalletEntries"
+    final val calculateCreditsForImplicitlyTerminated = "calculateCreditsForImplicitlyTerminated"
+  }
+}
+
+sealed trait UserStateChangeReason_ {
+  def originalReason: UserStateChangeReason_
   /**
     * Return `true` if the result of the calculation should be stored back to the
     * [[gr.grnet.aquarium.store.UserStateStore]].
@@ -48,104 +114,116 @@ sealed trait UserStateChangeReason {
 
   def shouldStoreCalculatedWalletEntries: Boolean
 
-  def forPreviousBillingMonth: UserStateChangeReason
+  def forPreviousBillingMonth: UserStateChangeReason_
 
   def calculateCreditsForImplicitlyTerminated: Boolean
 
   def code: UserStateChangeReasonCodes.ChangeReasonCode
 }
 
-/**
- * When the user state is initially set up.
- */
-case object InitialUserStateSetup extends UserStateChangeReason {
-  def shouldStoreUserState = true
+object InitialUserStateSetup {
+  def `type` = "InitialUserStateSetup"
 
-  def shouldStoreCalculatedWalletEntries = false
-
-  def forPreviousBillingMonth = this
-
-  def calculateCreditsForImplicitlyTerminated = false
-
-  def code = UserStateChangeReasonCodes.InitialSetupCode
+  /**
+   * When the user state is initially set up.
+   */
+  def apply() = {
+    UserStateChangeReason(
+      None,
+      None,
+      Map(
+        UserStateChangeReason.Names.`type` -> `type`,
+        UserStateChangeReason.Names.shouldStoreUserState -> true
+      )
+    )
+  }
 }
 
-/**
- * When the user processing unit (actor) is initially set up.
- */
-case object InitialUserActorSetup extends UserStateChangeReason {
-  def shouldStoreUserState = true
+object InitialUserActorSetup {
+  def `type` = "InitialUserActorSetup"
 
-  def shouldStoreCalculatedWalletEntries = false
-
-  def forPreviousBillingMonth = this
-
-  def calculateCreditsForImplicitlyTerminated = false
-
-  def code = UserStateChangeReasonCodes.InitialUserActorSetup
-}
-/**
- * A calculation made for no specific reason. Can be for testing, for example.
- *
- */
-case object NoSpecificChangeReason extends UserStateChangeReason {
-  def shouldStoreUserState = false
-
-  def shouldStoreCalculatedWalletEntries = false
-
-  def forBillingMonthInfo(bmi: BillingMonthInfo) = this
-
-  def forPreviousBillingMonth = this
-
-  def calculateCreditsForImplicitlyTerminated = false
-
-  def code = UserStateChangeReasonCodes.NoSpecificChangeCode
+  /**
+   * When the user processing unit (actor) is initially set up.
+   */
+  def apply() = {
+    UserStateChangeReason(
+      None,
+      None,
+      Map(
+        UserStateChangeReason.Names.`type` -> `type`,
+        UserStateChangeReason.Names.shouldStoreUserState -> true
+      )
+    )
+  }
 }
 
-/**
- * An authoritative calculation for the billing period.
- *
- * This marks a state for caching.
- *
- * @param billingMonthInfo
- */
-case class MonthlyBillingCalculation(billingMonthInfo: BillingMonthInfo) extends UserStateChangeReason {
-  def shouldStoreUserState = true
+object NoSpecificChangeReason {
+  def `type` = "NoSpecificChangeReason"
 
-  def shouldStoreCalculatedWalletEntries = true
-
-  def forPreviousBillingMonth = MonthlyBillingCalculation(billingMonthInfo.previousMonth)
-
-  def calculateCreditsForImplicitlyTerminated = true
-
-  def code = UserStateChangeReasonCodes.MonthlyBillingCode
+  /**
+   * A calculation made for no specific reason. Can be for testing, for example.
+   */
+  def apply() = {
+    UserStateChangeReason(
+      None,
+      None,
+      Map(
+        UserStateChangeReason.Names.`type` -> `type`
+      )
+    )
+  }
 }
 
-/**
- * Used for the realtime billing calculation.
- *
- * @param forWhenMillis The time this calculation is for
- */
-case class RealtimeBillingCalculation(forWhenMillis: Long) extends UserStateChangeReason {
-  def shouldStoreUserState = false
+object MonthlyBillingCalculation {
+  def `type` = "MonthlyBillingCalculation"
 
-  def shouldStoreCalculatedWalletEntries = false
-
-  def forPreviousBillingMonth = this
-
-  def calculateCreditsForImplicitlyTerminated = false
-
-  def code = UserStateChangeReasonCodes.RealtimeBillingCode
+  /**
+   * An authoritative calculation for the billing period.
+   */
+  def apply(parentReason: UserStateChangeReason, billingMongthInfo: BillingMonthInfo) = {
+    UserStateChangeReason(
+      Some(parentReason),
+      Some(billingMongthInfo),
+      Map(
+        UserStateChangeReason.Names.`type` -> `type`,
+        UserStateChangeReason.Names.shouldStoreUserState -> true,
+        UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries -> true,
+        UserStateChangeReason.Names.calculateCreditsForImplicitlyTerminated -> true
+      )
+    )
+  }
 }
 
-case class IMEventArrival(imEvent: IMEventModel) extends UserStateChangeReason {
-  def shouldStoreUserState = true
+object RealtimeBillingCalculation {
+  def `type` = "RealtimeBillingCalculation"
 
-  def shouldStoreCalculatedWalletEntries = false
+  /**
+   * Used for the real-time billing calculation.
+   */
+  def apply(parentReason: Option[UserStateChangeReason], forWhenMillis: Long) = {
+    UserStateChangeReason(
+      parentReason,
+      None,
+      Map(
+        UserStateChangeReason.Names.`type` -> `type`,
+        UserStateChangeReason.Names.forWhenMillis -> forWhenMillis
+      )
+    )
+  }
+}
 
-  def forPreviousBillingMonth = this
+object IMEventArrival {
+  def `type` = "IMEventArrival"
 
-  def calculateCreditsForImplicitlyTerminated = false
-
-  def code = UserStateChangeReasonCodes.IMEventArrivalCode
+  def apply(imEvent: IMEventModel) = {
+    UserStateChangeReason(
+      None,
+      None,
+      Map(
+        UserStateChangeReason.Names.`type` -> `type`,
+        UserStateChangeReason.Names.imEvent -> imEvent,
+        UserStateChangeReason.Names.shouldStoreUserState -> true
+      )
+    )
+  }
 }

@@ -97,8 +97,9 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
         // Let's decide if it is OK to store the event
         // Remember that OK == None as the returning result
         //
-        // NOTE: If anything goes wrong with this function, then the handler will issue a Resend, so
-        //       do not bother to catch exceptions here.
+        // NOTE: If anything goes wrong with this function, then the handler
+        //       (handlePayload in GenericPayloadHandler) will issue a Resend,
+        //       so do not bother to catch exceptions here.
 
         // 1. Check if the same ID exists. Note that we use the ID sent by the event producer.
         //    It is a requirement that this ID is unique.
@@ -117,22 +118,18 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
             //    Sorry. We cannot tolerate out-of-order events here, since they really mess with the
             //    agreements selection and thus with the charging procedure.
             //
-            // 2.1 The only exception is the very first activation ever. We allow late arrival, since
+            // 2.1 The only exception is the user creation event. We allow late arrival, since
             //     the rest of Aquarium does nothing (but accumulate events) if the user has never
-            //     been activated.
+            //     been properly created (this behavior may be helpful to devops).
             //
             // TODO: We really need to store these bad events anyway but somewhere else (BadEventsStore?)
-            val userID = imEvent.userID
+            def checkOlder(): Option[HandlerResult] = {
+              store.findLatestIMEventByUserID(imEvent.userID) match {
+                case Some(latestStoredEvent) ⇒
+                  val occurredMillis       = imEvent.occurredMillis
+                  val latestOccurredMillis = latestStoredEvent.occurredMillis
 
-            store.findLatestIMEventByUserID(userID) match {
-              case Some(latestStoredEvent) ⇒
-
-               val occurredMillis       = imEvent.occurredMillis
-               val latestOccurredMillis = latestStoredEvent.occurredMillis
-
-               if(occurredMillis < latestOccurredMillis) {
-                  // OK this is older than our most recent event. Essentially a glimpse in the past.
-                  def rejectMessage = {
+                  if(occurredMillis < latestOccurredMillis) {
                     val occurredDebugString       = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSSSSS
                     val latestOccurredDebugString = new MutableDateCalc(latestOccurredMillis).toYYYYMMDDHHMMSSSSS
 
@@ -142,35 +139,43 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
                       latestOccurredDebugString
                     )
 
-                    logger.debug(formatter("Rejecting newer %s. [%s] < [%s]"))
+                    logger.debug(formatter("Rejecting older %s. [%s] < [%s]"))
 
-                    Some(HandlerResultReject(formatter("Newer %s. [%s] < [%s]")))
+                    Some(HandlerResultReject(formatter("Older %s. [%s] < [%s]")))
+                  } else {
+                    None
                   }
 
-                  // Has the user been activated before?
-                  store.findFirstIsActiveIMEventByUserID(userID) match {
-                    case Some(_) ⇒
-                      // Yes, so the new event must be rejected
-                      rejectMessage
+                case None ⇒
+                  None
+              }
+            }
+            val userID = imEvent.userID
 
-                    case None ⇒
-                      // No. Process the new event only if it is an activation.
-                      if(imEvent.isActive) {
-                       logger.info("First activation %s".format(imEventDebugString))
-                       acceptMessage
-                      } else {
-                       rejectMessage
-                      }
-                  }
-               } else {
-                 // We accept all newer events
-                 acceptMessage
-               }
+            val userHasBeenCreated = store.findCreateIMEventByUserID(userID).isDefined
+            val isCreateUser       = imEvent.isCreateUser
 
-              case None ⇒
-                // This is the very first event ever
-                logger.info("First ever %s".format(imEventDebugString))
-                acceptMessage
+            (userHasBeenCreated, isCreateUser) match {
+              case (true, true) ⇒
+                // (User CREATEd, CREATE event)
+                val reason = "User is already created. Rejecting %s".format(imEventDebugString)
+                logger.info(reason)
+                Some(HandlerResultReject(reason))
+
+              case (true, false) ⇒
+                // (User CREATEd, MODIFY event)
+                checkOlder()
+
+              case (false, true) ⇒
+                // (User not CREATEd, CREATE event)
+                logger.info("User created by %s".format(imEventDebugString))
+                None
+
+              case (false, false) ⇒
+                // (User not CREATEd, MODIFY event)
+                // We allow any older modification events until the user is created
+                logger.debug("User not created yet. Processing %s".format(imEventDebugString))
+                None
             }
         }
       },

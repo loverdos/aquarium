@@ -144,7 +144,7 @@ case class UserState(
     occurredMillis: Long, // The time fro which this state is relevant
 
     // The last known change reason for this userState
-    lastChangeReason: UserStateChangeReason = NoSpecificChangeReason,
+    lastChangeReason: UserStateChangeReason = NoSpecificChangeReason(),
     // The user state we used to compute this one. Normally the (cached)
     // state at the beginning of the billing period.
     parentUserStateId: Option[String] = None,
@@ -248,7 +248,7 @@ object UserState {
       OwnedResourcesSnapshot.Empty,
       Nil,
       userCreationMillis,
-      InitialUserStateSetup
+      InitialUserStateSetup()
     )
   }
 
