@@ -36,16 +36,32 @@
 package gr.grnet.aquarium.computation
 
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.util.shortClassNameOf
 
 /**
+ * Provides information about the billing month and related calculation utilities.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final class BillingMonthInfo private(val year: Int,
-                                     val month: Int,
-                                     val startMillis: Long,
-                                     val stopMillis: Long) extends Ordered[BillingMonthInfo] {
+final class BillingMonthInfo(
+    /**
+     * The billing year.
+     */
+    final val year: Int,
+
+    /**
+     * The billing month, in the range from 1 to 12.
+     */
+    final val month: Int) extends Ordered[BillingMonthInfo] {
+
+  final val (monthStartMillis, monthStopMillis) = {
+    val mdc = new MutableDateCalc(year, month, 1)
+    (
+      mdc.goStartOfThisMonth.getMillis,
+      mdc.goEndOfThisMonth.getMillis // no need to `copy` here, since we are discarding `mdc`
+    )
+  }
 
   def previousMonth: BillingMonthInfo = {
     BillingMonthInfo.fromDateCalc(new MutableDateCalc(year, month).goPreviousMonth)
@@ -57,14 +73,14 @@ final class BillingMonthInfo private(val year: Int,
 
 
   def compare(that: BillingMonthInfo) = {
-    val ds = this.startMillis - that.startMillis
+    val ds = this.monthStartMillis - that.monthStartMillis
     if(ds < 0) -1 else if(ds == 0) 0 else 1
   }
 
 
   override def equals(any: Any) = any match {
-    case that: BillingMonthInfo ⇒
-      this.year == that.year && this.month == that.month // normally everything else MUST be the same by construction
+    case BillingMonthInfo(thatYear, thatMonth) ⇒
+      this.year == thatYear && this.month == thatMonth // normally everything else MUST be the same by construction
     case _ ⇒
       false
   }
@@ -73,7 +89,9 @@ final class BillingMonthInfo private(val year: Int,
     31 * year + month
   }
 
-  override def toString = "%s-%02d".format(year, month)
+  override def toString = "%s(%s-%02d-01)".format(shortClassNameOf(this), year, month)
+
+  def toShortDebugString = "%s-%02d-01".format(year, month)
 }
 
 object BillingMonthInfo {
@@ -84,9 +102,11 @@ object BillingMonthInfo {
   def fromDateCalc(mdc: MutableDateCalc): BillingMonthInfo = {
     val year = mdc.getYear
     val month = mdc.getMonthOfYear
-    val startMillis = mdc.goStartOfThisMonth.getMillis
-    val stopMillis = mdc.goEndOfThisMonth.getMillis // no need to `copy` here, since we are discarding `mdc`
 
-    new BillingMonthInfo(year, month, startMillis, stopMillis)
+    new BillingMonthInfo(year, month)
+  }
+
+  def unapply(bmi: BillingMonthInfo): Option[(Int, Int)] = {
+    Some((bmi.year, bmi.month))
   }
 }
