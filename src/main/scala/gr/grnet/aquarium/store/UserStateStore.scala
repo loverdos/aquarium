@@ -57,12 +57,10 @@ trait UserStateStore {
    */
   def findUserStateByUserID(userID: String): Option[UserState]
 
-  def findLatestUserStateByUserID(userID: String): Option[UserState]
-
   /**
    * Find the most up-to-date user state for the particular billing period.
    */
-  def findLatestUserStateForEndOfBillingMonth(userId: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
+  def findLatestUserStateForEndOfBillingMonth(userID: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
 
   /**
    * Delete a state for a user

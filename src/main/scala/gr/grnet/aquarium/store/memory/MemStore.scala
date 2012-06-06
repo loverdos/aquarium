@@ -111,20 +111,6 @@ class MemStore extends UserStateStore
     _userStates.find(_.userID == userID)
   }
 
-  def findLatestUserStateByUserID(userID: String) = {
-    val goodOnes = _userStates.filter(_.userID == userID)
-
-    goodOnes.sortWith {
-      case (us1, us2) ⇒
-        us1.occurredMillis > us2.occurredMillis
-    } match {
-      case head :: _ ⇒
-        Some(head)
-      case _ ⇒
-        None
-    }
-  }
-
   def findLatestUserStateForEndOfBillingMonth(userID: String,
                                               yearOfBillingMonth: Int,
                                               billingMonth: Int): Option[UserState] = {
@@ -229,7 +215,7 @@ class MemStore extends UserStateStore
     }.toList
   }
 
-  def countOutOfSyncEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long = {
+  def countOutOfSyncResourceEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long = {
     _resourceEvents.filter { case ev ⇒
       ev.userID == userID &&
       // out of sync events are those that were received in the billing month but occurred in previous (or next?)
@@ -338,9 +324,8 @@ class MemStore extends UserStateStore
           p :: acc
   }
 
-  def findPolicyEntry(id: String) = _policyEntries.find(p => p.id == id) match {
-    case Some(x) => Just(x)
-    case None => NoVal
+  def findPolicyEntry(id: String) = {
+    _policyEntries.find(p => p.id == id)
   }
 }
 

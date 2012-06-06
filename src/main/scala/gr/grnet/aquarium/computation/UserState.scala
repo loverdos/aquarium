@@ -141,7 +141,8 @@ case class UserState(
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
 
     newWalletEntries: List[NewWalletEntry],
-    occurredMillis: Long, // The time fro which this state is relevant
+
+    occurredMillis: Long, // When this user state was computed
 
     // The last known change reason for this userState
     lastChangeReason: UserStateChangeReason = NoSpecificChangeReason(),
@@ -223,8 +224,17 @@ object UserState {
   }
 
   object JsonNames {
-    final val _id = "_id"
+    final val _id    = "_id"
     final val userID = "userID"
+    final val isFullBillingMonthState = "isFullBillingMonthState"
+    final val occurredMillis = "occurredMillis"
+
+    object theFullBillingMonth {
+      final val year  = "year"
+      final val month = "month"
+      final val monthStartMillis = "monthStartMillis"
+      final val monthStopMillis  = "monthStopMillis"
+    }
   }
 
   def createInitialUserState(userID: String,

@@ -184,9 +184,22 @@ class MongoDBStore(
     MongoDBStore.runQuery[ResourceEvent](query, resourceEvents, orderBy)(MongoDBResourceEvent.fromDBObject)(None)
   }
   
-  def countOutOfSyncEventsForBillingPeriod(userId: String, startMillis: Long, stopMillis: Long): Long = {
-    // FIXME: Implement
-    0L
+  def countOutOfSyncResourceEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long = {
+    val query = new BasicDBObjectBuilder().
+      add(ResourceEventModel.Names.userID, userID).
+      // received within the period
+      add(ResourceEventModel.Names.receivedMillis, new BasicDBObject("$gte", startMillis)).
+      add(ResourceEventModel.Names.receivedMillis, new BasicDBObject("$lte", stopMillis)).
+      // occurred outside the period
+      add("$or", {
+        val dbList = new BasicDBList()
+        dbList.add(0, new BasicDBObject(ResourceEventModel.Names.occurredMillis, new BasicDBObject("$lt", startMillis)))
+        dbList.add(1, new BasicDBObject(ResourceEventModel.Names.occurredMillis, new BasicDBObject("$gt", stopMillis)))
+        dbList
+      }).
+      get()
+
+    resourceEvents.count(query)
   }
 
   def findAllRelevantResourceEventsForBillingPeriod(userId: String,
@@ -210,24 +223,25 @@ class MongoDBStore(
     val query = new BasicDBObject(UserStateJsonNames.userID, userID)
     val cursor = userStates find query
 
-    withCloseable(cursor) { cursor ⇒
-      if(cursor.hasNext)
-        Some(MongoDBStore.dbObjectToUserState(cursor.next()))
-      else
-        None
-    }
+    MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
   }
 
-
-  def findLatestUserStateByUserID(userID: String) = {
-    // FIXME: implement
-    null
-  }
-
-  def findLatestUserStateForEndOfBillingMonth(userId: String,
+  def findLatestUserStateForEndOfBillingMonth(userID: String,
                                               yearOfBillingMonth: Int,
                                               billingMonth: Int): Option[UserState] = {
-    None // FIXME: implement
+    val query = new BasicDBObjectBuilder().
+      add(UserState.JsonNames.userID, userID).
+      add(UserState.JsonNames.isFullBillingMonthState, true).
+      add(UserState.JsonNames.theFullBillingMonth.year, yearOfBillingMonth).
+      add(UserState.JsonNames.theFullBillingMonth.month, billingMonth).
+      get()
+
+    // Descending order, so that the latest comes first
+    val sorter = new BasicDBObject(UserState.JsonNames.occurredMillis, -1)
+
+    val cursor = userStates.find(query).sort(sorter)
+
+    MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
   }
 
   def deleteUserState(userId: String) = {
@@ -271,27 +285,14 @@ class MongoDBStore(
     // Normally one such event is allowed ...
     val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
 
-    withCloseable(cursor) { cursor ⇒
-      if(cursor.hasNext) {
-        Some(MongoDBIMEvent.fromDBObject(cursor.next()))
-      } else {
-        None
-      }
-    }
+    MongoDBStore.firstResultIfExists(cursor, MongoDBIMEvent.fromDBObject)
   }
 
   def findLatestIMEventByUserID(userID: String): Option[IMEvent] = {
     val query = new BasicDBObject(IMEventNames.userID, userID)
     val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, -1))
 
-    withCloseable(cursor) { cursor ⇒
-      if(cursor.hasNext) {
-        Some(MongoDBIMEvent.fromDBObject(cursor.next()))
-      } else {
-        None
-      }
-    }
-
+    MongoDBStore.firstResultIfExists(cursor, MongoDBIMEvent.fromDBObject)
   }
 
   /**
@@ -406,6 +407,16 @@ object MongoDBStore {
 
   def dbObjectToUserState(dbObj: DBObject): UserState = {
     UserState.fromJson(JSON.serialize(dbObj))
+  }
+
+  def firstResultIfExists[A](cursor: DBCursor, f: DBObject ⇒ A): Option[A] = {
+    withCloseable(cursor) { cursor ⇒
+      if(cursor.hasNext) {
+        Some(f(cursor.next()))
+      } else {
+        None
+      }
+    }
   }
 
   def dbObjectToPolicyEntry(dbObj: DBObject): PolicyEntry = {

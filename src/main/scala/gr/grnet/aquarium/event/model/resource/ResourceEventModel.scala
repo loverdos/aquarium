@@ -104,8 +104,10 @@ trait ResourceEventModel extends ExternalEventModel {
   }
 
   def isOutOfSyncForBillingPeriod(billingStartMillis: Long, billingStopMillis: Long): Boolean = {
-    isReceivedWithinMillis(billingStartMillis, billingStopMillis) &&
-    (occurredMillis < billingStartMillis || occurredMillis > billingStopMillis)
+    // Out of sync events are those that were received within the billing period
+    // but actually occurred outside the billing period.
+     isReceivedWithinMillis(billingStartMillis, billingStopMillis) &&
+    !isOccurredWithinMillis(billingStartMillis, billingStopMillis)
   }
 
   def toDebugString(useOnlyInstanceId: Boolean = false): String = {

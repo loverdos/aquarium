@@ -196,9 +196,9 @@ object Policy extends DSL with Loggable {
         receivedMillis = ts, validFrom = ts)
 
       config.policyStore.findPolicyEntry(newPolicy.id) match {
-        case Just(x) =>
+        case Some(x) =>
           logger.warn("Policy file contents not modified")
-        case NoVal =>
+        case None =>
           if (!pol.isEmpty) {
             val toUpdate = pol.last.copy(validTo = ts - 1)
             config.policyStore.updatePolicyEntry(toUpdate)
@@ -206,8 +206,6 @@ object Policy extends DSL with Loggable {
           } else {
             config.policyStore.storePolicyEntry(newPolicy)
           }
-        case failed @ Failed(e) =>
-          failed.throwMe
       }
     }
 

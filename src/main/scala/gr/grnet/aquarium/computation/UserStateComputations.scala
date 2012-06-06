@@ -72,7 +72,7 @@ class UserStateComputations(_aquarium: () ⇒ Aquarium) extends Loggable {
       "findUserStateAtEndOfBillingMonth(%s)", billingMonthInfo.toShortDebugString)
     clog.begin()
 
-    def doCompute: UserState = {
+    def computeFullMonthlyBilling(): UserState = {
       doFullMonthlyBilling(
         userStateBootstrap,
         billingMonthInfo,
@@ -98,53 +98,53 @@ class UserStateComputations(_aquarium: () ⇒ Aquarium) extends Loggable {
       clog.debug("Returning INITIAL state [_id=%s] %s".format(initialUserState1._id, initialUserState1))
       clog.end()
 
-      initialUserState1
-    } else {
-      // Ask DB cache for the latest known user state for this billing period
-      val latestUserStateOpt = userStateStore.findLatestUserStateForEndOfBillingMonth(
-        userID,
-        billingMonthInfo.year,
-        billingMonthInfo.month)
+      return initialUserState1
+    }
 
-      latestUserStateOpt match {
-        case None ⇒
-          // Not found, must compute
-          clog.debug("No user state found from cache, will have to (re)compute")
-          val result = doCompute
-          clog.end()
-          result
+    // Ask DB cache for the latest known user state for this billing period
+    val latestUserStateOpt = userStateStore.findLatestUserStateForEndOfBillingMonth(
+      userID,
+      billingMonthInfo.year,
+      billingMonthInfo.month)
 
-        case Some(latestUserState) ⇒
-          // Found a "latest" user state but need to see if it is indeed the true and one latest.
-          // For this reason, we must count the events again.
-          val latestStateOOSEventsCounter = latestUserState.billingPeriodOutOfSyncResourceEventsCounter
-          val actualOOSEventsCounter = resourceEventStore.countOutOfSyncEventsForBillingPeriod(
-            userID,
-            billingMonthStartMillis,
-            billingMonthStopMillis)
+    latestUserStateOpt match {
+      case None ⇒
+        // Not found, must compute
+        clog.debug("No user state found from cache, will have to (re)compute")
+        val result = computeFullMonthlyBilling
+        clog.end()
+        result
 
-          val counterDiff = actualOOSEventsCounter - latestStateOOSEventsCounter
-          counterDiff match {
-            // ZERO, we are OK!
-            case 0 ⇒
-              // NOTE: Keep the caller's calculation reason
-              latestUserState.copyForChangeReason(calculationReason)
+      case Some(latestUserState) ⇒
+        // Found a "latest" user state but need to see if it is indeed the true and one latest.
+        // For this reason, we must count the events again.
+        val latestStateOOSEventsCounter = latestUserState.billingPeriodOutOfSyncResourceEventsCounter
+        val actualOOSEventsCounter = resourceEventStore.countOutOfSyncResourceEventsForBillingPeriod(
+          userID,
+          billingMonthStartMillis,
+          billingMonthStopMillis)
 
-            // We had more, so must recompute
-            case n if n > 0 ⇒
-              clog.debug(
-                "Found %s out of sync events (%s more), will have to (re)compute user state", actualOOSEventsCounter, n)
-              val result = doCompute
-              clog.end()
-              result
+        val counterDiff = actualOOSEventsCounter - latestStateOOSEventsCounter
+        counterDiff match {
+          // ZERO, we are OK!
+          case 0 ⇒
+            // NOTE: Keep the caller's calculation reason
+            latestUserState.copyForChangeReason(calculationReason)
 
-            // We had less????
-            case n if n < 0 ⇒
-              val errMsg = "Found %s out of sync events (%s less). DB must be inconsistent".format(actualOOSEventsCounter, n)
-              clog.warn(errMsg)
-              throw new AquariumException(errMsg)
-          }
-      }
+          // We had more, so must recompute
+          case n if n > 0 ⇒
+            clog.debug(
+              "Found %s out of sync events (%s more), will have to (re)compute user state", actualOOSEventsCounter, n)
+            val result = computeFullMonthlyBilling
+            clog.end()
+            result
+
+          // We had less????
+          case n if n < 0 ⇒
+            val errMsg = "Found %s out of sync events (%s less). DB must be inconsistent".format(actualOOSEventsCounter, n)
+            clog.warn(errMsg)
+            throw new AquariumInternalError(errMsg)
+        }
     }
   }
 

@@ -95,5 +95,5 @@ trait PolicyStore {
   /**
    * Find a policy by its unique id
    */
-  def findPolicyEntry(id: String): Maybe[PolicyEntry]
+  def findPolicyEntry(id: String): Option[PolicyEntry]
 }
