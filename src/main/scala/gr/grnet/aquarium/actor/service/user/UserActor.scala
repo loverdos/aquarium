@@ -46,10 +46,10 @@ import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProvide
 import gr.grnet.aquarium.computation.{BillingMonthInfo, UserStateBootstrappingData, UserState}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.{AquariumException, Aquarium}
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf, shortNameOfClass, shortNameOfType}
-import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, InitialUserActorSetup, UserStateChangeReason, IMEventArrival, InitialUserStateSetup}
+import gr.grnet.aquarium.computation.reason.{RealtimeBillingCalculation, NoSpecificChangeReason, InitialUserActorSetup, UserStateChangeReason, IMEventArrival, InitialUserStateSetup}
+import gr.grnet.aquarium.{AquariumInternalError, AquariumException, Aquarium}
 
 /**
  *
@@ -60,6 +60,7 @@ class UserActor extends ReflectiveRoleableActor {
   private[this] var _userID: String = "<?>"
   private[this] var _imState: IMStateSnapshot = _
   private[this] var _userState: UserState = _
+  private[this] var _latestResourceEventOccurredMillis = TimeHelpers.nowMillis() // some valid datetime
 
   self.lifeCycle = Temporary
 
@@ -84,7 +85,7 @@ class UserActor extends ReflectiveRoleableActor {
   private[this] def userStateComputations = aquarium.userStateComputations
 
   private[this] def _timestampTheshold = {
-    aquarium.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(10000)
+    aquarium.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(1000L * 60 * 5 /* 5 minutes */)
   }
 
   private[this] def haveUserState = {
@@ -164,11 +165,13 @@ class UserActor extends ReflectiveRoleableActor {
       aquarium.initialBalanceForRole(initialRole, userCreationMillis)
     )
 
-    val userState = userStateComputations.doFullMonthlyBilling(
+    val userState = userStateComputations.doBillingForMonth(
       userStateBootstrap,
       BillingMonthInfo.fromMillis(TimeHelpers.nowMillis()),
+      false,
+      TimeHelpers.nowMillis(),
       aquarium.currentResourcesMap,
-      InitialUserStateSetup(),
+      InitialUserStateSetup(None),
       None
     )
 
@@ -236,7 +239,7 @@ class UserActor extends ReflectiveRoleableActor {
 
     if(!haveIMState) {
       // This is an error. Should have been initialized from somewhere ...
-      throw new AquariumException("Got %s while being uninitialized".format(processEvent))
+      throw new AquariumInternalError("Got %s while uninitialized".format(processEvent))
     }
 
     if(this._imState.latestIMEvent.id == imEvent.id) {
@@ -245,6 +248,7 @@ class UserActor extends ReflectiveRoleableActor {
       // already been loaded from DB!
       INFO("Ignoring first %s just after %s birth", imEvent.toDebugString, shortClassNameOf(this))
       logSeparator()
+
       return
     }
 
@@ -271,7 +275,6 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     DEBUG("New %s = %s", shortNameOfType[IMStateSnapshot], this._imState)
-
     logSeparator()
   }
 
@@ -282,8 +285,63 @@ class UserActor extends ReflectiveRoleableActor {
       // This means the user has not been activated. So, we do not process any resource event
       DEBUG("Not processing %s", rcEvent.toJsonString)
       logSeparator()
+
       return
     }
+
+    this._userState.findLatestResourceEventID match {
+      case Some(id) ⇒
+        if(id == rcEvent.id) {
+          INFO("Ignoring first %s just after %s birth", rcEvent.toDebugString, shortClassNameOf(this))
+          logSeparator()
+
+          return
+        }
+
+      case _ ⇒
+    }
+
+    val now = TimeHelpers.nowMillis()
+    val dt  = now - this._latestResourceEventOccurredMillis
+    val belowThreshold = dt <= _timestampTheshold
+
+    if(belowThreshold) {
+      this._latestResourceEventOccurredMillis = event.rcEvent.occurredMillis
+
+      DEBUG("Below threshold (%s ms). Not processing %s", this._timestampTheshold, rcEvent.toJsonString)
+      return
+    }
+
+    val userID = this._userID
+    val userCreationMillis = this._imState.userCreationMillis.get
+    val initialRole = this._imState.roleHistory.firstRoleName.getOrElse(aquarium.defaultInitialUserRole)
+    val initialAgreement = aquarium.initialAgreementForRole(initialRole, userCreationMillis)
+    val initialCredits   = aquarium.initialBalanceForRole(initialRole, userCreationMillis)
+    val userStateBootstrap = UserStateBootstrappingData(
+      userID,
+      userCreationMillis,
+      initialRole,
+      initialAgreement,
+      initialCredits
+    )
+    val billingMonthInfoNow =BillingMonthInfo.fromMillis(now)
+    val currentResourcesMap = aquarium.currentResourcesMap
+    val calculationReason = RealtimeBillingCalculation(None, now)
+
+    DEBUG("Using %s", currentResourcesMap)
+
+    this._userState = aquarium.userStateComputations.doBillingForMonth(
+      userStateBootstrap,
+      billingMonthInfoNow,
+      false,
+      now,
+      currentResourcesMap,
+      calculationReason
+    )
+
+    this._latestResourceEventOccurredMillis = event.rcEvent.occurredMillis
+
+    DEBUG("New %s = %s", shortClassNameOf(this._userState), this._userState)
   }
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
@@ -317,7 +375,7 @@ class UserActor extends ReflectiveRoleableActor {
         }
 
       case (false, true) ⇒
-        // (no IMState, have UserState
+        // (no IMState, have UserState)
         // A bit ridiculous situation
         self reply GetUserBalanceResponse(Left("Unknown user %s [AQU-BAL-0004]".format(userID)), 404/*Not found*/)
 

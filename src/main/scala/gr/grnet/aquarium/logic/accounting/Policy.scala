@@ -214,4 +214,6 @@ object Policy extends DSL with Loggable {
         acc ++ Map(Timeslot(p.validFrom, p.validTo) -> parse(p.policyYAML))
     }
   }
+
+  Policy.policy
 }

@@ -35,51 +35,32 @@
 
 package gr.grnet.aquarium.computation
 
-import gr.grnet.aquarium.computation.data.{AgreementHistory, RoleHistory, AgreementHistoryItem}
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-
+import gr.grnet.aquarium.util._
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
+ * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class NewUserState(
-  isInitial: Boolean,
-  userID: String,
-  userCreationMillis: Long,
-  stateReferenceMillis: Long, // The time this state refers to
-  totalCredits: Double,
-  roleHistory: RoleHistory,
-  agreementHistory: AgreementHistory,
-  latestResourceEventID: String
-)
+case class Chargeslot(
+    startMillis: Long,
+    stopMillis: Long,
+    algorithmDefinition: String,
+    unitPrice: Double,
+    computedCredits: Option[Double] = None) {
 
-object NewUserState {
-  def fromJson(json: String): NewUserState = {
-    StdConverters.AllConverters.convertEx[NewUserState](JsonTextFormat(json))
+  def copyWithCredits(credits: Double) = {
+    copy(computedCredits = Some(credits))
   }
 
-  object JsonNames {
-    final val _id = "_id"
-    final val userID = "userID"
-  }
-
-  def createInitialUserState(userID: String,
-                             credits: Double,
-                             isActive: Boolean,
-                             role: String,
-                             agreement: String,
-                             userCreationMillis: Long): NewUserState = {
-    NewUserState(
-      true,
-      userID,
-      userCreationMillis,
-      userCreationMillis,
-      credits,
-      RoleHistory.initial(role, userCreationMillis),
-      AgreementHistory.initial(agreement, userCreationMillis),
-     ""
-    )
-  }
+  override def toString = "%s(%s, %s, %s, %s, %s)".format(
+    shortClassNameOf(this),
+    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
+    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
+    unitPrice,
+    computedCredits,
+    algorithmDefinition
+  )
 }

@@ -36,19 +36,18 @@
 package gr.grnet.aquarium.user
 
 import gr.grnet.aquarium.store.memory.MemStore
-import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl._
-import gr.grnet.aquarium.logic.accounting.{Policy, Accounting}
+import gr.grnet.aquarium.logic.accounting.Policy
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
 import gr.grnet.aquarium.simulation._
 import gr.grnet.aquarium.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
-import com.ckkloverdos.maybe.{Maybe, Just}
 import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler}
-import gr.grnet.aquarium.{AquariumException}
+import gr.grnet.aquarium.AquariumException
 import gr.grnet.aquarium.Aquarium.{Instance ⇒ AquariumInstance}
-import gr.grnet.aquarium.computation.{UserStateBootstrappingData, UserState, BillingMonthInfo, UserStateComputations}
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, MonthlyBillingCalculation}
+import gr.grnet.aquarium.computation.{TimeslotComputations, UserStateBootstrappingData, UserState, BillingMonthInfo}
+import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 
 
 /**
@@ -137,8 +136,7 @@ aquariumpolicy:
 
   val DSL = new DSL {}
   val DefaultPolicy = DSL parse PolicyYAML
-  val DefaultAccounting = new Accounting{}
-  
+
   val DefaultAlgorithm = new ExecutableCostPolicyAlgorithm {
     def creditsForContinuous(timeDelta: Double, oldTotalAmount: Double) =
       hrs(timeDelta) * oldTotalAmount * ContinuousPriceUnit
@@ -270,12 +268,12 @@ aquariumpolicy:
   private[this]
   def showUserState(clog: ContextualLogger, userState: UserState) {
     val id = userState._id
-    val parentId = userState.parentUserStateId
+    val parentId = userState.parentUserStateIDInStore
     val credits = userState.totalCredits
     val newWalletEntries = userState.newWalletEntries.map(_.toDebugString)
     val changeReason = userState.lastChangeReason
-    val implicitlyIssued = userState.implicitlyIssuedSnapshot.implicitlyIssuedEvents.map(_.toDebugString())
-    val latestResourceEvents = userState.latestResourceEventsSnapshot.resourceEvents.map(_.toDebugString())
+    val implicitlyIssued = userState.implicitlyIssuedSnapshot.implicitlyIssuedEvents.map(_.toDebugString)
+    val latestResourceEvents = userState.latestResourceEventsSnapshot.resourceEvents.map(_.toDebugString)
 
     clog.debug("_id = %s", id)
     clog.debug("parentId = %s", parentId)
@@ -292,7 +290,7 @@ aquariumpolicy:
     clog.begin("Events by OccurredMillis")
     clog.withIndent {
       for(event <- UserCKKL.myResourceEventsByOccurredDate) {
-        clog.debug(event.toDebugString())
+        clog.debug(event.toDebugString)
       }
     }
     clog.end("Events by OccurredMillis")
@@ -300,10 +298,17 @@ aquariumpolicy:
   }
 
   private[this]
-  def doFullMonthlyBilling(clog: ContextualLogger, billingMonthInfo: BillingMonthInfo) = {
-    Computations.doFullMonthlyBilling(
+  def doFullMonthlyBilling(
+      clog: ContextualLogger,
+      billingMonthInfo: BillingMonthInfo,
+      isFullBillingMonthState: Boolean,
+      billingTimeMillis: Long) = {
+
+    Computations.doBillingForMonth(
       UserStateBootstrap,
       billingMonthInfo,
+      isFullBillingMonthState,
+      billingTimeMillis,
       DefaultResourcesMap,
       MonthlyBillingCalculation(NoSpecificChangeReason(), billingMonthInfo),
       Some(clog)
@@ -348,7 +353,7 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan)
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, false, TimeHelpers.nowMillis())
 
     showUserState(clog, userState)
 
@@ -377,7 +382,7 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan)
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, false, TimeHelpers.nowMillis())
 
     showUserState(clog, userState)
 
@@ -407,7 +412,7 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan)
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, false, TimeHelpers.nowMillis())
 
     showUserState(clog, userState)
 
@@ -458,7 +463,7 @@ aquariumpolicy:
 
     clog.debugMap("DefaultResourcesMap", DefaultResourcesMap.map, 1)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan)
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, false, TimeHelpers.nowMillis())
 
     showUserState(clog, userState)
 

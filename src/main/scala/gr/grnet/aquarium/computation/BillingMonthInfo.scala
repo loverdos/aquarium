@@ -35,8 +35,8 @@
 
 package gr.grnet.aquarium.computation
 
-import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.util.shortClassNameOf
+import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 
 /**
  * Provides information about the billing month and related calculation utilities.

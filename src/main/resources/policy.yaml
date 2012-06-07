@@ -1,30 +1,21 @@
 aquariumpolicy:
   resources:
     - resource:
-      name: bandwidthup
-      unit: MB/hr
-      complex: false
-      costpolicy: discrete
-    - resource:
-      name: bandwidthdown
-      unit: MB/hr
+      name: bandwidth
+      unit: MB/Hr
       complex: false
       costpolicy: discrete
     - resource:
       name: vmtime
-      unit: Hour
+      unit: Hr
       complex: true
       costpolicy: onoff
+      descriminatorfield: vmid
     - resource:
       name: diskspace
       unit: MB/hr
       complex: false
       costpolicy: continuous
-    - resource:
-      name: refills
-      unit: credits
-      complex: false
-      costpolicy: once
 
   implicitvars:
     - price
@@ -33,27 +24,21 @@ aquariumpolicy:
   algorithms:
     - algorithm:
       name: default
-      bandwidthup: $price times $volume
-      bandwidthdown: $price times $volume
-      vmtime: $price times $volume
-      diskspace: $price times $volume
-      bookpages: $price times $volume
-      refills: $price times $volume
+      bandwidth: function bandwidth() {return 1;}
+      vmtime: function vmtime() {return 1;}
+      diskspace: function diskspace() {return 1;}
       effective:
         from: 0
-  
+
   pricelists:
-    - pricelist: 
+    - pricelist:
       name: default
-      bandwidthup: 0.01
-      bandwidthdown: 0.02
-      vmtime: 0.1
-      diskspace: 0.05
-      bookpages: 0.1
-      refills: 1
+      bandwidth: 0.01
+      vmtime: 0.01
+      diskspace: 0.01
       effective:
         from: 0
-  
+
   creditplans:
     - creditplan:
       name: default
@@ -68,4 +53,3 @@ aquariumpolicy:
       algorithm: default
       pricelist: default
       creditplan: default
-

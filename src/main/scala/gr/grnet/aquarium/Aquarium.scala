@@ -60,7 +60,7 @@ import gr.grnet.aquarium.logic.accounting.Policy
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-final class Aquarium(val props: Props) extends Lifecycle with Loggable {
+final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariumSelf ⇒
   import Aquarium.Keys
 
   private[this] val _isStopping = new AtomicBoolean(false)
@@ -125,8 +125,7 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
 
   private[this] lazy val _algorithmCompiler: CostPolicyAlgorithmCompiler = SimpleCostPolicyAlgorithmCompiler
 
-  // FIXME: () ⇒ this ?
-  private[this] lazy val _userStateComputations = new UserStateComputations(() ⇒ this)
+  private[this] lazy val _userStateComputations = new UserStateComputations(aquariumSelf)
 
   private[this] lazy val _actorProvider = newInstance[RoleableActorProviderService](props(Keys.actor_provider_class))
 
@@ -398,6 +397,11 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable {
   def initialBalanceForRole(role: String, referenceTimeMillis: Long): Double = {
     // FIXME: Where is the mapping?
     10000.0
+  }
+
+  def defaultInitialUserRole: String = {
+    // FIXME: Read from properties?
+    "default"
   }
   
   def withStoreProviderClass[C <: StoreProvider](spc: Class[C]): Aquarium = {

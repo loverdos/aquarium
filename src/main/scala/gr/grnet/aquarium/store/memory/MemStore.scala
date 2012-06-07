@@ -114,10 +114,10 @@ class MemStore extends UserStateStore
   def findLatestUserStateForEndOfBillingMonth(userID: String,
                                               yearOfBillingMonth: Int,
                                               billingMonth: Int): Option[UserState] = {
-    val goodOnes = _userStates.filter { userState ⇒
+    val goodOnes = _userStates.filter(_.theFullBillingMonth.isDefined).filter { userState ⇒
         val f1 = userState.userID == userID
         val f2 = userState.isFullBillingMonthState
-        val bm = userState.theFullBillingMonth
+        val bm = userState.theFullBillingMonth.get
         val f3 = (bm ne null) && {
           bm.year == yearOfBillingMonth && bm.month == billingMonth
         }

@@ -57,7 +57,7 @@ trait EventModel {
    * The ID given to this event if/when persisted to a store.
    * The exact type of the id is store-specific.
    */
-  def storeID: Option[AnyRef] = None
+  def idInStore: Option[AnyRef] = None
 
   def eventVersion: String
 

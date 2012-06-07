@@ -37,7 +37,6 @@ package gr.grnet.aquarium.computation
 
 import scala.collection.mutable
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
-import gr.grnet.aquarium.logic.accounting.Accounting
 import gr.grnet.aquarium.computation.data.{LatestResourceEventsWorker, ImplicitlyIssuedResourceEventsWorker, IgnoredFirstResourceEventsWorker}
 import gr.grnet.aquarium.util.ContextualLogger
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel

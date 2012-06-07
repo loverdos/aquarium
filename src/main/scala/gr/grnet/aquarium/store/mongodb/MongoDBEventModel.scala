@@ -45,5 +45,5 @@ import gr.grnet.aquarium.event.model.ExternalEventModel
 trait MongoDBEventModel extends ExternalEventModel {
   def _id: String
 
-  override def storeID: Option[String] = Option(_id)
+  override def idInStore: Option[String] = Option(_id)
 }

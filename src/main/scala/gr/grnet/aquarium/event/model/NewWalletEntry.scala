@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.event.model
 
-import gr.grnet.aquarium.logic.accounting.Chargeslot
+import gr.grnet.aquarium.computation.Chargeslot
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLResource}
 import resource.ResourceEventModel

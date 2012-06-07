@@ -58,6 +58,16 @@ case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEventModel]
     }
     LatestResourceEventsWorker(map)
   }
+
+  def findTheLatest: Option[ResourceEventModel] = {
+    resourceEvents.sortWith {
+      case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis
+    }.headOption
+  }
+
+  def findTheLatestID = {
+    findTheLatest.map(_.id)
+  }
 }
 
 object LatestResourceEventsSnapshot {

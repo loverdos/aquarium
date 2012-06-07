@@ -127,9 +127,9 @@ object InitialUserStateSetup {
   /**
    * When the user state is initially set up.
    */
-  def apply() = {
+  def apply(parentReason: Option[UserStateChangeReason]) = {
     UserStateChangeReason(
-      None,
+      parentReason,
       None,
       Map(
         UserStateChangeReason.Names.`type` -> `type`,

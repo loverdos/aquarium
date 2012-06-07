@@ -41,7 +41,6 @@ import ext.JodaTimeSerializers
 
 import gr.grnet.aquarium.util.{makeString, UTF_8_Charset}
 import java.nio.charset.Charset
-import gr.grnet.aquarium.computation.reason.{IMEventArrival, RealtimeBillingCalculation, MonthlyBillingCalculation, NoSpecificChangeReason, InitialUserActorSetup, InitialUserStateSetup}
 
 /**
  * Provides conversion methods from and to JSON.

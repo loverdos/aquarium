@@ -110,8 +110,8 @@ trait ResourceEventModel extends ExternalEventModel {
     !isOccurredWithinMillis(billingStartMillis, billingStopMillis)
   }
 
-  def toDebugString(useOnlyInstanceId: Boolean = false): String = {
-    val instanceInfo = if(useOnlyInstanceId) instanceID else "%s::%s".format(resource, instanceID)
+  override def toDebugString: String = {
+    val instanceInfo = "%s::%s".format(resource, instanceID)
     val occurredFormatted = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSS
     if(occurredMillis == receivedMillis) {
       "%sEVENT(%s, [%s], %s, %s, %s, %s, %s)".format(

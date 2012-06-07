@@ -134,7 +134,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   def getResourceInstanceUndefinedAmount: Double = -1.0
 
   /**
-   * Get the value that will be used in credit calculation in Accounting.chargeEvents
+   * Get the value that will be used in credit calculation in TimeslotComputations.chargeEvents
    */
   def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
 

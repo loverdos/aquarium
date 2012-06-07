@@ -35,14 +35,13 @@
 
 package gr.grnet.aquarium.computation
 
-import org.bson.types.ObjectId
-
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.event.model.NewWalletEntry
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup}
-import gr.grnet.aquarium.computation.data.{RoleHistory, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, LatestResourceEventsSnapshot, ImplicitlyIssuedResourceEventsSnapshot}
+import gr.grnet.aquarium.computation.data.{OwnedResourcesMap, RoleHistory, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, LatestResourceEventsSnapshot, ImplicitlyIssuedResourceEventsSnapshot}
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  * A comprehensive representation of the User's state.
@@ -77,7 +76,7 @@ import gr.grnet.aquarium.computation.data.{RoleHistory, ResourceInstanceSnapshot
  *          only those that refer to billing periods (end of billing period).
   * @param lastChangeReason
  *          The [[gr.grnet.aquarium.computation.reason.UserStateChangeReason]] for which the usr state has changed.
- * @param parentUserStateId
+ * @param parentUserStateIDInStore
  *          The `ID` of the parent state. The parent state is the one used as a reference point in order to calculate
  *          this user state.
  * @param _id
@@ -108,7 +107,7 @@ case class UserState(
      * This is set when the user state refers to a full billing period (= month)
      * and is used to cache the user state for subsequent queries.
      */
-    theFullBillingMonth: BillingMonthInfo,
+    theFullBillingMonth: Option[BillingMonthInfo],
 
     /**
      * If this is a state for a full billing month, then keep here the implicit OFF
@@ -148,11 +147,11 @@ case class UserState(
     lastChangeReason: UserStateChangeReason = NoSpecificChangeReason(),
     // The user state we used to compute this one. Normally the (cached)
     // state at the beginning of the billing period.
-    parentUserStateId: Option[String] = None,
+    parentUserStateIDInStore: Option[String] = None,
     _id: String = null
 ) extends JsonSupport {
 
-  def idOpt: Option[String] = _id match {
+  def idInStore: Option[String] = _id match {
     case null ⇒ None
     case _id  ⇒ Some(_id.toString)
   }
@@ -173,42 +172,39 @@ case class UserState(
     ownedResourcesSnapshot.getResourceInstanceAmount(resource, instanceId, defaultValue)
   }
 
-  def copyForResourcesSnapshotUpdate(resource: String,   // resource name
+  def newWithResourcesSnapshotUpdate(resource: String,   // resource name
                                      instanceId: String, // resource instance id
                                      newAmount: Double,
                                      snapshotTime: Long): UserState = {
 
-    val (newResources, _, _) = ownedResourcesSnapshot.computeResourcesSnapshotUpdate(resource, instanceId, newAmount, snapshotTime)
+    val (newResources, _, _) =
+      ownedResourcesSnapshot.computeResourcesSnapshotUpdate(resource, instanceId, newAmount, snapshotTime)
 
     this.copy(
+      isInitial = false,
       ownedResourcesSnapshot = newResources,
       stateChangeCounter = this.stateChangeCounter + 1)
   }
 
-  def copyForChangeReason(changeReason: UserStateChangeReason) = {
+  def newWithChangeReason(changeReason: UserStateChangeReason) = {
     this.copy(
+      isInitial = false,
       lastChangeReason = changeReason,
       stateChangeCounter = this.stateChangeCounter + 1
     )
   }
 
-//  def copyForRoleHistory(newRoleHistory: RoleHistory) = {
-//    this.copy(
-//      roleHistory = newRoleHistory,
-//      stateChangeCounter = this.stateChangeCounter + 1
-//    )
-//  }
+  def resourcesMap: OwnedResourcesMap = {
+    ownedResourcesSnapshot.toResourcesMap
+  }
 
-  def resourcesMap = ownedResourcesSnapshot.toResourcesMap
+  def findLatestResourceEvent: Option[ResourceEventModel] = {
+    latestResourceEventsSnapshot.findTheLatest
+  }
 
-//  def modifyFromIMEvent(imEvent: IMEventModel, snapshotMillis: Long): UserState = {
-//    this.copy(
-//      isInitial = false,
-//      imStateSnapshot = imStateSnapshot.addMostRecentEvent(imEvent),
-//      lastChangeReason = IMEventArrival(imEvent),
-//      occurredMillis = snapshotMillis
-//    )
-//  }
+  def findLatestResourceEventID: Option[String] = {
+    latestResourceEventsSnapshot.findTheLatestID
+  }
 
 //  def toShortString = "UserState(%s, %s, %s, %s, %s)".format(
 //    userId,
@@ -237,18 +233,23 @@ object UserState {
     }
   }
 
-  def createInitialUserState(userID: String,
-                             userCreationMillis: Long,
-                             totalCredits: Double,
-                             initialRole: String,
-                             initialAgreement: String) = {
+  def createInitialUserState(
+      userID: String,
+      userCreationMillis: Long,
+      occurredMillis: Long,
+      totalCredits: Double,
+      initialRole: String,
+      initialAgreement: String,
+      calculationReason: UserStateChangeReason = InitialUserStateSetup(None)
+  ) = {
+
     UserState(
       true,
       userID,
       userCreationMillis,
       0L,
       false,
-      null,
+      None,
       ImplicitlyIssuedResourceEventsSnapshot.Empty,
       LatestResourceEventsSnapshot.Empty,
       0L,
@@ -257,28 +258,25 @@ object UserState {
       AgreementHistory.initial(initialAgreement, userCreationMillis),
       OwnedResourcesSnapshot.Empty,
       Nil,
-      userCreationMillis,
-      InitialUserStateSetup()
+      occurredMillis,
+      calculationReason
     )
   }
 
-  def createInitialUserState(usb: UserStateBootstrappingData): UserState = {
+  def createInitialUserStateFromBootstrap(
+      usb: UserStateBootstrappingData,
+      occurredMillis: Long,
+      calculationReason: UserStateChangeReason
+  ): UserState = {
+
     createInitialUserState(
       usb.userID,
       usb.userCreationMillis,
+      occurredMillis,
       usb.initialCredits,
       usb.initialRole,
-      usb.initialAgreement
-    )
-  }
-
-  def createInitialUserStateFrom(us: UserState): UserState = {
-    createInitialUserState(
-      us.userID,
-      us.userCreationMillis,
-      us.totalCredits,
-      us.roleHistory.firstRoleName.getOrElse("default"),          // FIXME What is the default?
-      us.agreementHistory.firstAgreementName.getOrElse("default") // FIXME What is the default?
+      usb.initialAgreement,
+      calculationReason
     )
   }
 }

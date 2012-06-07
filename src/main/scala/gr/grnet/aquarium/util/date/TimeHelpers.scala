@@ -44,8 +44,10 @@ import java.util.Date
  */
 
 object TimeHelpers {
+  @inline
   def nowMillis() = System.currentTimeMillis()
 
+  @inline
   def nowDate = new Date(nowMillis())
 
   def secDiffOfMillis(ms0: Long, ms1: Long) = (ms1 - ms0).toDouble / 1000.0
