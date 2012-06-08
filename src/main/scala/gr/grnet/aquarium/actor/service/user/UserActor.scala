@@ -150,7 +150,8 @@ class UserActor extends ReflectiveRoleableActor {
       )
     }
 
-    DEBUG("New %s = %s", shortNameOfType[IMStateSnapshot], this._imState)
+    DEBUG("Initial %s = %s", shortNameOfType[IMStateSnapshot], this._imState.toJsonString)
+    logSeparator()
   }
 
   /**
@@ -211,7 +212,8 @@ class UserActor extends ReflectiveRoleableActor {
     loadUserStateAndUpdateRoleHistory()
 
     if(haveUserState) {
-      DEBUG("%s = %s", shortNameOfType[UserState], this._userState)
+      DEBUG("Initial %s = %s", shortNameOfType[UserState], this._userState.toJsonString)
+      logSeparator()
     }
   }
 
@@ -278,7 +280,7 @@ class UserActor extends ReflectiveRoleableActor {
       }
     }
 
-    DEBUG("New %s = %s", shortNameOfType[IMStateSnapshot], this._imState)
+    DEBUG("Updated %s = %s", shortNameOfType[IMStateSnapshot], this._imState.toJsonString)
     logSeparator()
   }
 
@@ -313,6 +315,8 @@ class UserActor extends ReflectiveRoleableActor {
       this._latestResourceEventOccurredMillis = event.rcEvent.occurredMillis
 
       DEBUG("Below threshold (%s ms). Not processing %s", this._timestampTheshold, rcEvent.toJsonString)
+      logSeparator()
+
       return
     }
 
@@ -333,7 +337,7 @@ class UserActor extends ReflectiveRoleableActor {
     val calculationReason = RealtimeBillingCalculation(None, now)
     val eventOccurredMillis = rcEvent.occurredMillis
 
-    DEBUG("Using %s", currentResourcesMap)
+//    DEBUG("Using %s", currentResourcesMap.toJsonString)
 
     this._userState = aquarium.userStateComputations.doMonthBillingUpTo(
       billingMonthInfo,
@@ -346,7 +350,8 @@ class UserActor extends ReflectiveRoleableActor {
 
     this._latestResourceEventOccurredMillis = event.rcEvent.occurredMillis
 
-    DEBUG("New %s = %s", shortClassNameOf(this._userState), this._userState)
+    DEBUG("Updated %s = %s", shortClassNameOf(this._userState), this._userState.toJsonString)
+    logSeparator()
   }
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {

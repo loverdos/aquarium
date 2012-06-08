@@ -150,7 +150,9 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
           // ZERO, we are OK!
           case 0 ⇒
             // NOTE: Keep the caller's calculation reason
-            latestUserState.newWithChangeReason(calculationReason)
+            val result = latestUserState.newWithChangeReason(calculationReason)
+            clog.end()
+            result
 
           // We had more, so must recompute
           case n if n > 0 ⇒

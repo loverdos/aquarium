@@ -41,6 +41,7 @@ import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.computation.parts.RoleHistory
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
  *
@@ -67,7 +68,7 @@ case class IMStateSnapshot(
      * This is the recorded role history
      */
     roleHistory: RoleHistory
-) {
+) extends JsonSupport {
 
   /**
    * True iff the user has ever been activated even once.

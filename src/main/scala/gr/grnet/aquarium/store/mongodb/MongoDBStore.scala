@@ -236,8 +236,6 @@ class MongoDBStore(
       add(UserState.JsonNames.theFullBillingMonth_month, bmi.month).
       get()
 
-    logger.debug("findLatestUserStateForFullMonthBilling(%s, %s) query: %s".format(userID, bmi, query))
-
     // Descending order, so that the latest comes first
     val sorter = new BasicDBObject(UserState.JsonNames.occurredMillis, -1)
 

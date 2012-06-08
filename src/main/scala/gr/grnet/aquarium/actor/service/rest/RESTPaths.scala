@@ -51,16 +51,21 @@ object RESTPaths {
   final val ResourcesPolicyYAML = "/resources/policy\\.yaml".r
 
   final val RolesAgreementsMap = "/resources/roles-agreements\\.map".r
+
+  final val ResourceEventPath = "/rcevent/([^/]+)/?".r
+
+  final val IMEventPath = "/imevent/([^/]+)/?".r
+
   /**
    * Use this URI path to query for the user balance. The parenthesized regular expression part
    * represents the user ID.
    */
-  final val UserBalancePath = "/user/(.+)/balance/?".r
+  final val UserBalancePath = "/user/([^/]+)/balance/?".r
 
   /**
    * Use this URI path to query for the user state.
    */
-  final val UserStatePath = "/user/(.+)/state/?".r
+  final val UserStatePath = "/user/([^/]+)/state/?".r
 
   /**
    * Use this administrative URI path to ping all services used by Aquarium.

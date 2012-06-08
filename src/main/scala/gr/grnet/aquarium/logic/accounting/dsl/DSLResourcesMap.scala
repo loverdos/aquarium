@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import gr.grnet.aquarium.util.json.JsonSupport
+
 
 /**
  * Enumerates known resources by name.
@@ -45,7 +47,7 @@ package gr.grnet.aquarium.logic.accounting.dsl
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final class DSLResourcesMap(underlying: Map[String, DSLResource]) {
+final case class DSLResourcesMap(underlying: Map[String, DSLResource]) extends JsonSupport {
   def this(list: List[DSLResource]) = this(Map(list.map(r ⇒ (r.name, r)): _*))
 
   def map   = underlying

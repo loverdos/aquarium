@@ -52,6 +52,7 @@ import gr.grnet.aquarium.{ResourceLocator, Aquarium}
 import com.ckkloverdos.resource.StreamResource
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import java.net.InetAddress
+import gr.grnet.aquarium.event.model.{ExternalEventModel, EventModel}
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -63,9 +64,13 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
   self.id = _id
 
+  final val TEXT_PLAIN       = "text/plain"
+  final val APPLICATION_JSON = "application/json"
+
+
   private[this] def aquarium = Aquarium.Instance
 
-  private def stringResponse(status: Int, stringBody: String, contentType: String = "application/json"): HttpResponse = {
+  private def stringResponse(status: Int, stringBody: String, contentType: String): HttpResponse = {
     HttpResponse(
       status,
       HttpHeader("Content-type", "%s;charset=utf-8".format(contentType)) :: Nil,
@@ -86,11 +91,29 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
     res match {
       case Failed(e) ⇒
         logger.error("While serving %s".format(uri), e)
-        responder.complete(stringResponse(501, "Internal Server Error: %s".format(shortInfoOf(e)), "text/plain"))
+        responder.complete(stringResponse(501, "Internal Server Error: %s".format(shortInfoOf(e)), TEXT_PLAIN))
 
       case _ ⇒
 
     }
+  }
+
+  private def eventInfoResponse[E <: ExternalEventModel](
+      uri: String,
+      responder: RequestResponder,
+      getter: String ⇒ Option[E],
+      eventID: String
+  ): Unit = {
+
+    val toSend = getter.apply(eventID) match {
+     case Some(event) ⇒
+       (200, event.toJsonString, APPLICATION_JSON)
+
+     case None ⇒
+       (404, "Event not found", TEXT_PLAIN)
+   }
+
+   responder.complete(stringResponse(toSend._1, toSend._2, toSend._3))
   }
 
   def withAdminCookie(
@@ -108,24 +131,24 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
             catch {
               case e: Throwable ⇒
                 logger.error("While serving %s".format(uri), e)
-                responder.complete(stringResponse(501, "Internal Server Error: %s".format(shortInfoOf(e)), "text/plain"))
+                responder.complete(stringResponse(501, "Internal Server Error: %s".format(shortInfoOf(e)), TEXT_PLAIN))
             }
 
           case Some(cookieHeader) ⇒
             logger.warn("Admin request %s with bad cookie '%s' from %s".format(uri, cookieHeader.value, remoteAddress))
-            responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
+            responder.complete(stringResponse(401, "Unauthorized!", TEXT_PLAIN))
 
           case None ⇒
             logger.warn("Admin request %s with no cookie from %s".format(uri, remoteAddress))
-            responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
+            responder.complete(stringResponse(401, "Unauthorized!", TEXT_PLAIN))
         }
 
       case NoVal ⇒
-        responder.complete(stringResponse(403, "Forbidden!", "text/plain"))
+        responder.complete(stringResponse(403, "Forbidden!", TEXT_PLAIN))
     }
   }
 
-  private def stringResponse200(stringBody: String, contentType: String = "application/json"): HttpResponse = {
+  private def stringResponse200(stringBody: String, contentType: String): HttpResponse = {
     stringResponse(200, stringBody, contentType)
   }
 
@@ -133,7 +156,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
     case RequestContext(HttpRequest(GET, "/ping", _, _, _), _, responder) ⇒
       val now = TimeHelpers.nowMillis()
       val nowFormatted = ISODateTimeFormat.dateTime().print(now)
-      responder.complete(stringResponse200("PONG\n%s\n%s".format(now, nowFormatted), "text/plain"))
+      responder.complete(stringResponse200("PONG\n%s\n%s".format(now, nowFormatted), TEXT_PLAIN))
 
     case RequestContext(HttpRequest(GET, "/stats", _, _, _), _, responder) ⇒ {
       (serverActor ? GetStats).mapTo[Stats].onComplete {
@@ -142,18 +165,23 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
             case Right(stats) => responder.complete {
               stringResponse200(
                 "Uptime              : " + (stats.uptime / 1000.0) + " sec\n" +
-                  "Requests dispatched : " + stats.requestsDispatched + '\n' +
-                  "Requests timed out  : " + stats.requestsTimedOut + '\n' +
-                  "Requests open       : " + stats.requestsOpen + '\n' +
-                  "Open connections    : " + stats.connectionsOpen + '\n'
+                "Requests dispatched : " + stats.requestsDispatched + '\n' +
+                "Requests timed out  : " + stats.requestsTimedOut + '\n' +
+                "Requests open       : " + stats.requestsOpen + '\n' +
+                "Open connections    : " + stats.connectionsOpen + '\n',
+                TEXT_PLAIN
               )
             }
-            case Left(ex) => responder.complete(stringResponse(500, "Couldn't get server stats due to " + ex, "text/plain"))
+            case Left(ex) => responder.complete(stringResponse(500, "Couldn't get server stats due to " + ex, TEXT_PLAIN))
           }
       }
     }
 
     case RequestContext(HttpRequest(GET, uri, headers, body, protocol), remoteAddress, responder) ⇒
+      def withAdminCookieHelper(f: RequestResponder ⇒ Unit): Unit = {
+        withAdminCookie(uri, responder, headers, remoteAddress)(f)
+      }
+
       //+ Main business logic REST URIs are matched here
       val millis = TimeHelpers.nowMillis()
       uri match {
@@ -166,32 +194,42 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
           callRouter(GetUserStateRequest(userId, millis), responder)
 
         case AdminPingAll() ⇒
-          withAdminCookie(uri, responder, headers, remoteAddress) { responder ⇒
+          withAdminCookieHelper { responder ⇒
             callRouter(PingAllRequest(), responder)
           }
 
         case ResourcesAquariumProperties() ⇒
-          withAdminCookie(uri, responder, headers, remoteAddress) { responder ⇒
-            resourceInfoResponse(uri, responder, ResourceLocator.Resources.AquariumPropertiesResource, "text/plain")
+          withAdminCookieHelper { responder ⇒
+            resourceInfoResponse(uri, responder, ResourceLocator.Resources.AquariumPropertiesResource, TEXT_PLAIN)
           }
 
         case ResourcesLogbackXML() ⇒
-          withAdminCookie(uri, responder, headers, remoteAddress) { responder ⇒
-            resourceInfoResponse(uri, responder, ResourceLocator.Resources.LogbackXMLResource, "text/plain")
+          withAdminCookieHelper { responder ⇒
+            resourceInfoResponse(uri, responder, ResourceLocator.Resources.LogbackXMLResource, TEXT_PLAIN)
           }
 
         case ResourcesPolicyYAML() ⇒
-          withAdminCookie(uri, responder, headers, remoteAddress) { responder ⇒
-            resourceInfoResponse(uri, responder, ResourceLocator.Resources.PolicyYAMLResource, "text/plain")
+          withAdminCookieHelper { responder ⇒
+            resourceInfoResponse(uri, responder, ResourceLocator.Resources.PolicyYAMLResource, TEXT_PLAIN)
+          }
+
+        case ResourceEventPath(id) ⇒
+          withAdminCookieHelper { responder ⇒
+            eventInfoResponse(uri, responder, aquarium.resourceEventStore.findResourceEventById, id)
+          }
+
+        case IMEventPath(id) ⇒
+          withAdminCookieHelper { responder ⇒
+            eventInfoResponse(uri, responder, aquarium.imEventStore.findIMEventById, id)
           }
 
         case _ ⇒
-          responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
+          responder.complete(stringResponse(404, "Unknown resource!", TEXT_PLAIN))
       }
     //- Main business logic REST URIs are matched here
 
     case RequestContext(HttpRequest(_, _, _, _, _), _, responder) ⇒
-      responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
+      responder.complete(stringResponse(404, "Unknown resource!", TEXT_PLAIN))
 
     case Timeout(method, uri, _, _, _, complete) ⇒ complete {
       HttpResponse(status = 500).withBody("The " + method + " request to '" + uri + "' has timed out...")
@@ -212,12 +250,12 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
             // TODO: Will this ever happen??
             logger.warn("Future did not complete for %s".format(message))
             val statusCode = 500
-            responder.complete(stringResponse(statusCode, "Internal Server Error", "text/plain"))
+            responder.complete(stringResponse(statusCode, "Internal Server Error", TEXT_PLAIN))
 
           case Some(Left(error)) ⇒
             val statusCode = 500
             logger.error("Error %s serving %s: %s".format(statusCode, message, error))
-            responder.complete(stringResponse(statusCode, "Internal Server Error", "text/plain"))
+            responder.complete(stringResponse(statusCode, "Internal Server Error", TEXT_PLAIN))
 
           case Some(Right(actualResponse)) ⇒
             actualResponse match {
@@ -232,20 +270,21 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
                       message,
                       actualResponse))
 
-                    responder.complete(stringResponse(statusCode, errorMessage, "text/plain"))
+                    responder.complete(stringResponse(statusCode, errorMessage, TEXT_PLAIN))
 
                   case Right(response) ⇒
                     responder.complete(
                       HttpResponse(
                         routerResponse.suggestedHTTPStatus,
                         body = routerResponse.responseToJsonString.getBytes("UTF-8"),
-                        headers = HttpHeader("Content-type", "application/json;charset=utf-8") :: Nil))
+                        headers = HttpHeader("Content-type", APPLICATION_JSON+";charset=utf-8") ::
+                          Nil))
                 }
 
               case _ ⇒
                 val statusCode = 500
                 logger.error("Error %s serving %s: Response is: %s".format(statusCode, message, actualResponse))
-                responder.complete(stringResponse(statusCode, "Internal Server Error", "text/plain"))
+                responder.complete(stringResponse(statusCode, "Internal Server Error", TEXT_PLAIN))
             }
         }
     }
@@ -253,7 +292,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
   ////////////// helpers //////////////
 
-  val defaultHeaders = List(HttpHeader("Content-Type", "text/plain"))
+  final val defaultHeaders = List(HttpHeader("Content-Type", TEXT_PLAIN))
 
   lazy val serverActor = Actor.registry.actorsFor("spray-can-server").head
 
