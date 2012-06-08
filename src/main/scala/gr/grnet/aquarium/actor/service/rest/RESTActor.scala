@@ -40,6 +40,7 @@ package rest
 import cc.spray.can.HttpMethods.GET
 import cc.spray.can._
 import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.util.shortInfoOf
 import akka.actor.Actor
 import gr.grnet.aquarium.actor.{RESTRole, RoleableActor, RouterRole}
 import RESTPaths._
@@ -50,6 +51,7 @@ import gr.grnet.aquarium.actor.message.{RouterResponseMessage, GetUserStateReque
 import gr.grnet.aquarium.{ResourceLocator, Aquarium}
 import com.ckkloverdos.resource.StreamResource
 import com.ckkloverdos.maybe.{Failed, NoVal, Just}
+import java.net.InetAddress
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -72,6 +74,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
   }
 
   private def resourceInfoResponse(
+      uri: String,
       responder: RequestResponder,
       resource: StreamResource,
       contentType: String
@@ -82,10 +85,43 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
     res match {
       case Failed(e) ⇒
-        logger.error("While serving %s".format(resource), e)
+        logger.error("While serving %s".format(uri), e)
+        responder.complete(stringResponse(501, "Internal Server Error: %s".format(shortInfoOf(e)), "text/plain"))
 
       case _ ⇒
 
+    }
+  }
+
+  def withAdminCookie(
+      uri: String,
+      responder: RequestResponder,
+      headers: List[HttpHeader],
+      remoteAddress: InetAddress
+  )(  f: RequestResponder ⇒ Unit): Unit = {
+
+    aquarium.adminCookie match {
+      case Just(adminCookie) ⇒
+        headers.find(_.name.toLowerCase == Aquarium.HTTP.RESTAdminHeaderNameLowerCase) match {
+          case Some(cookieHeader) if(cookieHeader.value == adminCookie) ⇒
+            try f(responder)
+            catch {
+              case e: Throwable ⇒
+                logger.error("While serving %s".format(uri), e)
+                responder.complete(stringResponse(501, "Internal Server Error: %s".format(shortInfoOf(e)), "text/plain"))
+            }
+
+          case Some(cookieHeader) ⇒
+            logger.warn("Admin request %s with bad cookie '%s' from %s".format(uri, cookieHeader.value, remoteAddress))
+            responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
+
+          case None ⇒
+            logger.warn("Admin request %s with no cookie from %s".format(uri, remoteAddress))
+            responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
+        }
+
+      case NoVal ⇒
+        responder.complete(stringResponse(403, "Forbidden!", "text/plain"))
     }
   }
 
@@ -130,34 +166,24 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
           callRouter(GetUserStateRequest(userId, millis), responder)
 
         case AdminPingAll() ⇒
-          // /admin/ping/all/?
-          aquarium.adminCookie match {
-            case Just(adminCookie) ⇒
-              headers.find(_.name.toLowerCase == Aquarium.HTTP.RESTAdminHeaderNameLowerCase) match {
-                case Some(cookieHeader) if(cookieHeader.value == adminCookie) ⇒
-                  callRouter(PingAllRequest(), responder)
-
-                case Some(cookieHeader) ⇒
-                  logger.warn("Admin request with bad cookie '{}' from {}", cookieHeader.value, remoteAddress)
-                  responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
-
-                case None ⇒
-                  logger.warn("Admin request with no cookie")
-                  responder.complete(stringResponse(401, "Unauthorized!", "text/plain"))
-              }
-
-            case NoVal ⇒
-              responder.complete(stringResponse(403, "Forbidden!", "text/plain"))
+          withAdminCookie(uri, responder, headers, remoteAddress) { responder ⇒
+            callRouter(PingAllRequest(), responder)
           }
 
         case ResourcesAquariumProperties() ⇒
-          resourceInfoResponse(responder, ResourceLocator.Resources.AquariumPropertiesResource, "text/plain")
+          withAdminCookie(uri, responder, headers, remoteAddress) { responder ⇒
+            resourceInfoResponse(uri, responder, ResourceLocator.Resources.AquariumPropertiesResource, "text/plain")
+          }
 
         case ResourcesLogbackXML() ⇒
-          resourceInfoResponse(responder, ResourceLocator.Resources.LogbackXMLResource, "text/plain")
+          withAdminCookie(uri, responder, headers, remoteAddress) { responder ⇒
+            resourceInfoResponse(uri, responder, ResourceLocator.Resources.LogbackXMLResource, "text/plain")
+          }
 
         case ResourcesPolicyYAML() ⇒
-          resourceInfoResponse(responder, ResourceLocator.Resources.PolicyYAMLResource, "text/plain")
+          withAdminCookie(uri, responder, headers, remoteAddress) { responder ⇒
+            resourceInfoResponse(uri, responder, ResourceLocator.Resources.PolicyYAMLResource, "text/plain")
+          }
 
         case _ ⇒
           responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))
