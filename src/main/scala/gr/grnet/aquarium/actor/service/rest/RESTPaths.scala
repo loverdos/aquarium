@@ -44,6 +44,13 @@ package rest
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 object RESTPaths {
+  final val ResourcesLogbackXML = "/resources/logback\\.xml".r
+
+  final val ResourcesAquariumProperties = "/resources/aquarium\\.properties".r
+
+  final val ResourcesPolicyYAML = "/resources/policy\\.yaml".r
+
+  final val RolesAgreementsMap = "/resources/roles-agreements\\.map".r
   /**
    * Use this URI path to query for the user balance. The parenthesized regular expression part
    * represents the user ID.

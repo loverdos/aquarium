@@ -326,8 +326,9 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariu
     }
 
     logger.info("CONF_HERE =  {}", HERE)
-    logger.info("{} = {}", ResourceLocator.ResourceNames.LOGBACK_XML, LOGBACK_XML)
     logger.info("{} = {}", ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES, ResourceLocator.Resources.AquariumPropertiesResource)
+    logger.info("{} = {}", ResourceLocator.ResourceNames.LOGBACK_XML, ResourceLocator.Resources.LogbackXMLResource)
+    logger.info("{} = {}", ResourceLocator.ResourceNames.POLICY_YAML, ResourceLocator.Resources.PolicyYAMLResource)
   }
 
   private[this] def addShutdownHooks(): Unit = {

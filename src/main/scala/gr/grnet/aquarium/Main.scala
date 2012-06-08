@@ -53,19 +53,13 @@ object Main extends LazyLoggable {
     // Make sure AQUARIUM_HOME is configured, since it is used in logback.xml
     assert(ResourceLocator.Homes.Folders.AquariumHome.isDirectory)
 
-    ResourceLocator.LOGBACK_XML match {
-      case Just(resource) ⇒
-        val f = LoggerFactory.getILoggerFactory
-        f match {
-          case context: LoggerContext ⇒
-            val joran = new JoranConfigurator
-            joran.setContext(context)
-            context.reset()
-            joran.doConfigure(resource.url)
-        }
-
-      case _ ⇒
-        // Otherwise it will be configured in what way logback does it automatically
+    val f = LoggerFactory.getILoggerFactory
+    f match {
+      case context: LoggerContext ⇒
+        val joran = new JoranConfigurator
+        joran.setContext(context)
+        context.reset()
+        joran.doConfigure(ResourceLocator.Resources.LogbackXMLResource.url)
     }
   }
 

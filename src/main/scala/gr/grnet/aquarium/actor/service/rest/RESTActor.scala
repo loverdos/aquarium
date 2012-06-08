@@ -40,15 +40,16 @@ package rest
 import cc.spray.can.HttpMethods.GET
 import cc.spray.can._
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.Aquarium
 import akka.actor.Actor
 import gr.grnet.aquarium.actor.{RESTRole, RoleableActor, RouterRole}
-import RESTPaths.{UserBalancePath, UserStatePath, AdminPingAll}
-import com.ckkloverdos.maybe.{NoVal, Just}
+import RESTPaths._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
 import gr.grnet.aquarium.actor.message.admin.PingAllRequest
 import gr.grnet.aquarium.actor.message.{RouterResponseMessage, GetUserStateRequest, RouterRequestMessage, ActorMessage, GetUserBalanceRequest}
+import gr.grnet.aquarium.{ResourceLocator, Aquarium}
+import com.ckkloverdos.resource.StreamResource
+import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -68,6 +69,24 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
       HttpHeader("Content-type", "%s;charset=utf-8".format(contentType)) :: Nil,
       stringBody.getBytes("UTF-8")
     )
+  }
+
+  private def resourceInfoResponse(
+      responder: RequestResponder,
+      resource: StreamResource,
+      contentType: String
+  ): Unit = {
+
+    val fmt = (body: String) ⇒ "%s\n\n%s".format(resource.url, body)
+    val res = resource.mapString(body ⇒ responder.complete(stringResponse(200, fmt(body), contentType)))
+
+    res match {
+      case Failed(e) ⇒
+        logger.error("While serving %s".format(resource), e)
+
+      case _ ⇒
+
+    }
   }
 
   private def stringResponse200(stringBody: String, contentType: String = "application/json"): HttpResponse = {
@@ -130,6 +149,15 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
             case NoVal ⇒
               responder.complete(stringResponse(403, "Forbidden!", "text/plain"))
           }
+
+        case ResourcesAquariumProperties() ⇒
+          resourceInfoResponse(responder, ResourceLocator.Resources.AquariumPropertiesResource, "text/plain")
+
+        case ResourcesLogbackXML() ⇒
+          resourceInfoResponse(responder, ResourceLocator.Resources.LogbackXMLResource, "text/plain")
+
+        case ResourcesPolicyYAML() ⇒
+          resourceInfoResponse(responder, ResourceLocator.Resources.PolicyYAMLResource, "text/plain")
 
         case _ ⇒
           responder.complete(stringResponse(404, "Unknown resource!", "text/plain"))

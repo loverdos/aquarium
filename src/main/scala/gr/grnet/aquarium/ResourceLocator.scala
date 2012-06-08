@@ -203,11 +203,6 @@ object ResourceLocator {
    */
   final lazy val HERE = justForSure(getResource(".")).get.url.toExternalForm
 
-  /**
-   * This exists in order to have a feeling of where we are.
-   */
-  final lazy val LOGBACK_XML = getResource(ResourceNames.LOGBACK_XML)
-
   final object Resources {
     final lazy val AquariumPropertiesResource = {
       ResourceLocator.SysProps.AquariumPropertiesPath.value match {
@@ -239,8 +234,38 @@ object ResourceLocator {
           }
       }
     }
-  }
 
+    final lazy val LogbackXMLResource = {
+      getResource(ResourceNames.LOGBACK_XML) match {
+        case Just(logbackXML) ⇒
+          logbackXML
+
+        case NoVal ⇒
+          throw new AquariumInternalError(
+            "Could not find %s".format(ResourceLocator.ResourceNames.LOGBACK_XML))
+
+        case Failed(e) ⇒
+          throw new AquariumInternalError(
+            "Could not find %s".format(ResourceLocator.ResourceNames.LOGBACK_XML), e)
+
+      }
+    }
+
+    final lazy val PolicyYAMLResource = {
+      ResourceLocator.getResource(ResourceLocator.ResourceNames.POLICY_YAML) match {
+        case Just(policyYAML) ⇒
+          policyYAML
+
+        case NoVal ⇒
+          throw new AquariumInternalError(
+            "Could not find %s".format(ResourceLocator.ResourceNames.POLICY_YAML))
+
+        case Failed(e) ⇒
+          throw new AquariumInternalError(
+            "Could not find %s".format(ResourceLocator.ResourceNames.POLICY_YAML), e)
+      }
+    }
+  }
 
   def getResource(what: String): Maybe[StreamResource] = {
     ResourceContexts.MasterResourceContext.getResource(what)
