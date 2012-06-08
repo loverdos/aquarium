@@ -55,6 +55,8 @@ object JsonConversions {
    * The application-wide JSON formats used from the underlying lift-json library.
    */
   implicit final val Formats = (DefaultFormats ++ JodaTimeSerializers.all)
+//  implicit final val Formats = (DefaultFormats.withHints(FullTypeHints(List(classOf[AnyRef]))) ++ JodaTimeSerializers.all)
+//  Serialization.formats(FullTypeHints(List(classOf[AnyRef])))
 
   /**
    * Converts a value to JSON AST (Abstract Syntax Tree) by acting a bit intelligently, depending on the actual type

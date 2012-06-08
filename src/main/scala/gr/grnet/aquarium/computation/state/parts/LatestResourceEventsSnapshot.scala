@@ -33,65 +33,45 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
-import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
+ * Keeps the latest resource event per resource instance.
+ *
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class RoleHistoryItem(
-    /**
-     * The role name.
-     */
-    name: String,
+case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEventModel]) {
 
-    /**
-     * Validity start time for this role. The time is inclusive.
-     */
-    validFrom: Long,
-
-    /**
-     * Validity stop time for this role. The time is exclusive.
-     */
-    validTo: Long = Long.MaxValue) {
-
-  try {
-    require(
-      validFrom <= validTo,
-      "validFrom(%s) <= validTo(%s)".format(new MutableDateCalc(validFrom), new MutableDateCalc(validTo)))
-  }
-  catch {
-    case e: IllegalArgumentException ⇒
-      Aquarium.Instance.debug(this, "!! validFrom = %s, validTo = %s, dx=%s", validFrom, validTo, validTo-validFrom)
-      throw e
+  /**
+   * The gateway to playing with mutable state.
+   *
+   * @return A fresh instance of [[gr.grnet.aquarium.computation.state.parts.LatestResourceEventsWorker]].
+   */
+  def toMutableWorker = {
+    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
+    for(latestEvent <- resourceEvents) {
+      map(latestEvent.fullResourceInfo) = latestEvent
+    }
+    LatestResourceEventsWorker(map)
   }
 
-  require(name ne null, "Name is not null")
-
-  require(!name.trim.isEmpty, "Name '%s' is not empty".format(name))
-
-  def timeslot = Timeslot(validFrom, validTo)
-
-  def copyWithValidTo(newValidTo: Long) = copy(validTo = newValidTo)
-
-  def isUpperBounded = {
-    validTo != Long.MaxValue
+  def findTheLatest: Option[ResourceEventModel] = {
+    resourceEvents.sortWith {
+      case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis
+    }.headOption
   }
 
-  def contains(time: Long) = {
-    validFrom <= time && time < validTo
+  def findTheLatestID = {
+    findTheLatest.map(_.id)
   }
+}
 
-  def startsStrictlyAfter(time: Long) = {
-    validFrom > time
-  }
-
-  override def toString =
-    "RoleHistoryItem(%s, [%s, %s))".
-      format(name, new MutableDateCalc(validFrom), new MutableDateCalc(validTo))
+object LatestResourceEventsSnapshot {
+  final val Empty = LatestResourceEventsSnapshot(Nil)
 }

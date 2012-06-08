@@ -160,7 +160,6 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-compiler</artifactId>
       <version>${scala.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -361,6 +360,9 @@
     <resources>
       <resource>
         <directory>${basedir}/src/main/resources</directory>
+        <excludes>
+          <exclude>aquarium.properties</exclude>
+        </excludes>
       </resource>
       <resource>
         <directory>${project.build.directory}/generated-resources</directory>

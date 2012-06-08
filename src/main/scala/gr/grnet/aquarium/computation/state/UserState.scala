@@ -33,20 +33,22 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
+package gr.grnet.aquarium.computation.state
 
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.event.model.NewWalletEntry
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup}
-import gr.grnet.aquarium.computation.data.{OwnedResourcesMap, RoleHistory, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, LatestResourceEventsSnapshot, ImplicitlyIssuedResourceEventsSnapshot}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.computation.parts.RoleHistory
+import gr.grnet.aquarium.computation.state.parts.{OwnedResourcesMap, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, ImplicitlyIssuedResourceEventsSnapshot, LatestResourceEventsSnapshot}
 
 /**
  * A comprehensive representation of the User's state.
  *
- * Note that it is made of autonomous parts that are actually data snapshots.
+ * Note that it is made of autonomous parts that are actually parts snapshots.
  *
  * The different snapshots need not agree on the snapshot time, ie. some state
  * part may be stale, while other may be fresh.
@@ -54,15 +56,15 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
  * The user state is meant to be partially updated according to relevant events landing on Aquarium.
  *
  * @define communicatedByIM
- *          This is communicated to Aquarium from the `IM` system.
+ *         This is communicated to Aquarium from the `IM` system.
  *
  *
  * @param userID
- *          The user ID. $communicatedByIM
+ * The user ID. $communicatedByIM
  * @param userCreationMillis
- *          When the user was created.
- *          $communicatedByIM
- *          Set to zero if unknown.
+ * When the user was created.
+ * $communicatedByIM
+ * Set to zero if unknown.
  * @param stateChangeCounter
  * @param isFullBillingMonthState
  * @param theFullBillingMonth
@@ -72,15 +74,15 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
  * @param agreementHistory
  * @param ownedResourcesSnapshot
  * @param newWalletEntries
- *          The wallet entries computed. Not all user states need to holds wallet entries,
- *          only those that refer to billing periods (end of billing period).
-  * @param lastChangeReason
- *          The [[gr.grnet.aquarium.computation.reason.UserStateChangeReason]] for which the usr state has changed.
+ * The wallet entries computed. Not all user states need to holds wallet entries,
+ * only those that refer to billing periods (end of billing period).
+ * @param lastChangeReason
+ * The [[gr.grnet.aquarium.computation.reason.UserStateChangeReason]] for which the usr state has changed.
  * @param parentUserStateIDInStore
- *          The `ID` of the parent state. The parent state is the one used as a reference point in order to calculate
- *          this user state.
+ * The `ID` of the parent state. The parent state is the one used as a reference point in order to calculate
+ * this user state.
  * @param _id
- *          The unique `ID` given by the store.
+ * The unique `ID` given by the store.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -153,12 +155,12 @@ case class UserState(
 
   def idInStore: Option[String] = _id match {
     case null ⇒ None
-    case _id  ⇒ Some(_id.toString)
+    case _id ⇒ Some(_id.toString)
   }
 
-//  def userCreationDate = new Date(userCreationMillis)
-//
-//  def userCreationFormatedDate = new MutableDateCalc(userCreationMillis).toString
+  //  def userCreationDate = new Date(userCreationMillis)
+  //
+  //  def userCreationFormatedDate = new MutableDateCalc(userCreationMillis).toString
 
   def findDSLAgreementForTime(at: Long): Option[DSLAgreement] = {
     agreementHistory.findForTime(at)
@@ -172,7 +174,7 @@ case class UserState(
     ownedResourcesSnapshot.getResourceInstanceAmount(resource, instanceId, defaultValue)
   }
 
-  def newWithResourcesSnapshotUpdate(resource: String,   // resource name
+  def newWithResourcesSnapshotUpdate(resource: String, // resource name
                                      instanceId: String, // resource instance id
                                      newAmount: Double,
                                      snapshotTime: Long): UserState = {
@@ -183,7 +185,8 @@ case class UserState(
     this.copy(
       isInitial = false,
       ownedResourcesSnapshot = newResources,
-      stateChangeCounter = this.stateChangeCounter + 1)
+      stateChangeCounter = this.stateChangeCounter + 1
+    )
   }
 
   def newWithChangeReason(changeReason: UserStateChangeReason) = {
@@ -191,6 +194,16 @@ case class UserState(
       isInitial = false,
       lastChangeReason = changeReason,
       stateChangeCounter = this.stateChangeCounter + 1
+    )
+  }
+
+  def newWithRoleHistory(newRoleHistory: RoleHistory, changeReason: UserStateChangeReason) = {
+    // FIXME: Also update agreement
+    this.copy(
+      isInitial = false,
+      stateChangeCounter = this.stateChangeCounter + 1,
+      roleHistory = newRoleHistory,
+      lastChangeReason = changeReason
     )
   }
 
@@ -206,12 +219,12 @@ case class UserState(
     latestResourceEventsSnapshot.findTheLatestID
   }
 
-//  def toShortString = "UserState(%s, %s, %s, %s, %s)".format(
-//    userId,
-//    _id,
-//    parentUserStateId,
-//    totalEventsProcessedCounter,
-//    calculationReason)
+  //  def toShortString = "UserState(%s, %s, %s, %s, %s)".format(
+  //    userId,
+  //    _id,
+  //    parentUserStateId,
+  //    totalEventsProcessedCounter,
+  //    calculationReason)
 }
 
 object UserState {
@@ -220,17 +233,18 @@ object UserState {
   }
 
   object JsonNames {
-    final val _id    = "_id"
+    final val _id = "_id"
     final val userID = "userID"
     final val isFullBillingMonthState = "isFullBillingMonthState"
     final val occurredMillis = "occurredMillis"
+    final val theFullBillingMonth_year  = "theFullBillingMonth.year"  // FQN
+    final val theFullBillingMonth_month = "theFullBillingMonth.month" // FQN
 
     object theFullBillingMonth {
-      final val year  = "year"
+      final val year = "year"
       final val month = "month"
-      final val monthStartMillis = "monthStartMillis"
-      final val monthStopMillis  = "monthStopMillis"
     }
+
   }
 
   def createInitialUserState(
@@ -264,7 +278,7 @@ object UserState {
   }
 
   def createInitialUserStateFromBootstrap(
-      usb: UserStateBootstrappingData,
+      usb: UserStateBootstrap,
       occurredMillis: Long,
       calculationReason: UserStateChangeReason
   ): UserState = {

@@ -34,12 +34,13 @@
  */
 
 package gr.grnet.aquarium.computation
+package state
 
 import scala.collection.mutable
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
-import gr.grnet.aquarium.computation.data.{LatestResourceEventsWorker, ImplicitlyIssuedResourceEventsWorker, IgnoredFirstResourceEventsWorker}
 import gr.grnet.aquarium.util.ContextualLogger
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.computation.state.parts.{IgnoredFirstResourceEventsWorker, ImplicitlyIssuedResourceEventsWorker, LatestResourceEventsWorker}
 
 /**
  * A helper object holding intermediate state/results during resource event processing.
@@ -57,11 +58,13 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class UserStateWorker(userID: String,
-                           previousResourceEvents: LatestResourceEventsWorker,
-                           implicitlyIssuedStartEvents: ImplicitlyIssuedResourceEventsWorker,
-                           ignoredFirstResourceEvents: IgnoredFirstResourceEventsWorker,
-                           resourcesMap: DSLResourcesMap) {
+case class UserStateWorker(
+                            userID: String,
+                            previousResourceEvents: LatestResourceEventsWorker,
+                            implicitlyIssuedStartEvents: ImplicitlyIssuedResourceEventsWorker,
+                            ignoredFirstResourceEvents: IgnoredFirstResourceEventsWorker,
+                            resourcesMap: DSLResourcesMap
+                            ) {
 
   /**
    * Finds the previous resource event by checking two possible sources: a) The implicitly terminated resource
@@ -138,6 +141,10 @@ case class UserStateWorker(userID: String,
    * @see [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
    */
   def findAndRemoveGeneratorsOfImplicitEndEvents(
+      /**
+       * The `occurredMillis` that will be recorded in the synthetic implicit OFFs.
+       * Normally, this will be the end of a billing month.
+       */
       newOccuredMillis: Long
   ): (List[ResourceEventModel], List[ResourceEventModel]) = {
 

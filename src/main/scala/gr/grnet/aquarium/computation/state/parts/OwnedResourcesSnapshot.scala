@@ -33,8 +33,9 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
-
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 /**
  *
@@ -50,8 +51,8 @@ case class OwnedResourcesSnapshot(resourceInstanceSnapshots: List[ResourceInstan
   }
 
   def resourceInstanceSnapshotsExcept(resource: String, instanceId: String) = {
-    // Unfortunately, we have to use a List for data, since JSON serialization is not as flexible
-    // (at least out of the box). Thus, the update is O(L), where L is the length of the data List.
+    // Unfortunately, we have to use a List for parts, since JSON serialization is not as flexible
+    // (at least out of the box). Thus, the update is O(L), where L is the length of the parts List.
     resourceInstanceSnapshots.filterNot(_.isSameResourceInstance(resource, instanceId))
   }
 

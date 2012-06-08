@@ -33,11 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.computation.parts.RoleHistory
 
 /**
  *
@@ -45,25 +48,26 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
  */
 
 case class IMStateSnapshot(
-                           /**
-                            * This is the latest processed IMEvent
-                            */
-                           latestIMEvent: IMEventModel,
+    /**
+     * This is the latest processed IMEvent
+     */
+    latestIMEvent: IMEventModel,
 
-                           /**
-                            * The earliest activation time, if it exists.
-                            */
-                           userEarliestActivationMillis: Option[Long],
+    /**
+     * The earliest activation time, if it exists.
+     */
+    userEarliestActivationMillis: Option[Long],
 
-                           /**
-                            * The user creation time, if it exists
-                            */
-                           userCreationMillis: Option[Long],
+    /**
+     * The user creation time, if it exists
+     */
+    userCreationMillis: Option[Long],
 
-                           /**
-                            * This is the recorded role history
-                            */
-                           roleHistory: RoleHistory) {
+    /**
+     * This is the recorded role history
+     */
+    roleHistory: RoleHistory
+) {
 
   /**
    * True iff the user has ever been activated even once.

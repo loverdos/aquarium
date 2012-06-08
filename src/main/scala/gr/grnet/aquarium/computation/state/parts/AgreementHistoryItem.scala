@@ -33,10 +33,11 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import java.util.Date
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**

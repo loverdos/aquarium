@@ -36,22 +36,22 @@
 package gr.grnet.aquarium.store.memory
 
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.maybe.{NoVal, Just}
+import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.store._
 import scala.collection.JavaConversions._
 import collection.mutable.ConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
-import gr.grnet.aquarium.uid.ConcurrentVMLocalUIDGenerator
 import gr.grnet.aquarium.Configurable
 import gr.grnet.aquarium.event.model.PolicyEntry
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 import org.bson.types.ObjectId
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
-import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.util.Tags
+import gr.grnet.aquarium.computation.BillingMonthInfo
 
 /**
- * An implementation of various stores that persists data in memory.
+ * An implementation of various stores that persists parts in memory.
  *
  * This is just for testing purposes.
  * 
@@ -111,16 +111,12 @@ class MemStore extends UserStateStore
     _userStates.find(_.userID == userID)
   }
 
-  def findLatestUserStateForEndOfBillingMonth(userID: String,
-                                              yearOfBillingMonth: Int,
-                                              billingMonth: Int): Option[UserState] = {
+  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
     val goodOnes = _userStates.filter(_.theFullBillingMonth.isDefined).filter { userState ⇒
         val f1 = userState.userID == userID
         val f2 = userState.isFullBillingMonthState
         val bm = userState.theFullBillingMonth.get
-        val f3 = (bm ne null) && {
-          bm.year == yearOfBillingMonth && bm.month == billingMonth
-        }
+        val f3 = bm == bmi
 
         f1 && f2 && f3
     }
@@ -134,10 +130,6 @@ class MemStore extends UserStateStore
       case _ ⇒
         None
     }
-  }
-
-  def deleteUserState(userId: String) {
-    _userStates.filterNot(_.userID == userId)
   }
   //- UserStateStore
 

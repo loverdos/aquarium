@@ -40,23 +40,24 @@ import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.util.shortClassNameOf
 
 /**
- * Provides information explaining the reason Aquarium calculated a new [[gr.grnet.aquarium.computation.UserState]].
+ * Provides information explaining the reason Aquarium calculated a new
+ * [[gr.grnet.aquarium.computation.state.UserState]].
  */
 case class UserStateChangeReason(
-    parentReason: Option[UserStateChangeReason],
+    details: Map[String, String],
     billingMonthInfo: Option[BillingMonthInfo],
-    details: Map[String, Any]
+    parentReason: Option[UserStateChangeReason]
 ) {
 
   require(
-    details.contains(UserStateChangeReason.Names.`type`),
-    "No type present in the details of %s".format(shortClassNameOf(this))
+    details.contains(UserStateChangeReason.Names.name),
+    "No name present in the details of %s".format(shortClassNameOf(this))
   )
 
   private[this] def booleanFromDetails(name: String, default: Boolean) = {
     details.get(name) match {
-      case Some(value: Boolean) ⇒
-        value
+      case Some(value) ⇒
+        value.toBoolean
 
       case _ ⇒
         false
@@ -68,8 +69,8 @@ case class UserStateChangeReason(
     * [[gr.grnet.aquarium.store.UserStateStore]].
     *
     */
-  def shouldStoreUserState: Boolean =
-     booleanFromDetails(UserStateChangeReason.Names.shouldStoreUserState, false)
+//  def shouldStoreUserState: Boolean =
+//     booleanFromDetails(UserStateChangeReason.Names.shouldStoreUserState, false)
 
   def shouldStoreCalculatedWalletEntries: Boolean =
     booleanFromDetails(UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries, false)
@@ -84,15 +85,15 @@ case class UserStateChangeReason(
     )
   }
 
-  def `type`: String = {
+  def name: String = {
     // This must be always present
-    details(UserStateChangeReason.Names.`type`).asInstanceOf[String]
+    details.get(UserStateChangeReason.Names.name).getOrElse("<unknown>")
   }
 }
 
 object UserStateChangeReason {
   object Names {
-    final val `type` = "type"
+    final val name = "name"
 
     final val imEvent = "imEvent"
     final val forWhenMillis = "forWhenMillis"
@@ -121,109 +122,112 @@ sealed trait UserStateChangeReason_ {
   def code: UserStateChangeReasonCodes.ChangeReasonCode
 }
 
+/**
+ * Used when the very first user state is saved.
+ */
 object InitialUserStateSetup {
-  def `type` = "InitialUserStateSetup"
+  def name = "InitialUserStateSetup"
 
   /**
    * When the user state is initially set up.
    */
   def apply(parentReason: Option[UserStateChangeReason]) = {
     UserStateChangeReason(
-      parentReason,
-      None,
       Map(
-        UserStateChangeReason.Names.`type` -> `type`,
-        UserStateChangeReason.Names.shouldStoreUserState -> true
-      )
+        UserStateChangeReason.Names.name -> name//,
+//        UserStateChangeReason.Names.shouldStoreUserState -> true
+      ),
+      None,
+      parentReason
     )
   }
 }
 
 object InitialUserActorSetup {
-  def `type` = "InitialUserActorSetup"
+  def name = "InitialUserActorSetup"
 
   /**
    * When the user processing unit (actor) is initially set up.
    */
   def apply() = {
     UserStateChangeReason(
-      None,
-      None,
       Map(
-        UserStateChangeReason.Names.`type` -> `type`,
-        UserStateChangeReason.Names.shouldStoreUserState -> true
-      )
+        UserStateChangeReason.Names.name -> name//,
+//        UserStateChangeReason.Names.shouldStoreUserState -> true
+      ),
+      None,
+      None
     )
   }
 }
 
 object NoSpecificChangeReason {
-  def `type` = "NoSpecificChangeReason"
+  def name = "NoSpecificChangeReason"
 
   /**
    * A calculation made for no specific reason. Can be for testing, for example.
    */
   def apply() = {
     UserStateChangeReason(
-      None,
-      None,
       Map(
-        UserStateChangeReason.Names.`type` -> `type`
-      )
+        UserStateChangeReason.Names.name -> name
+      ),
+      None,
+      None
     )
   }
 }
 
 object MonthlyBillingCalculation {
-  def `type` = "MonthlyBillingCalculation"
+  def name = "MonthlyBillingCalculation"
 
   /**
    * An authoritative calculation for the billing period.
    */
   def apply(parentReason: UserStateChangeReason, billingMongthInfo: BillingMonthInfo) = {
     UserStateChangeReason(
-      Some(parentReason),
-      Some(billingMongthInfo),
       Map(
-        UserStateChangeReason.Names.`type` -> `type`,
-        UserStateChangeReason.Names.shouldStoreUserState -> true,
-        UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries -> true,
-        UserStateChangeReason.Names.calculateCreditsForImplicitlyTerminated -> true
-      )
+        UserStateChangeReason.Names.name -> name,
+//        UserStateChangeReason.Names.shouldStoreUserState -> true,
+        UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries -> true.toString,
+        UserStateChangeReason.Names.calculateCreditsForImplicitlyTerminated -> true.toString
+      ),
+      Some(billingMongthInfo),
+      Some(parentReason)
     )
   }
 }
 
 object RealtimeBillingCalculation {
-  def `type` = "RealtimeBillingCalculation"
+  def name = "RealtimeBillingCalculation"
 
   /**
    * Used for the real-time billing calculation.
    */
   def apply(parentReason: Option[UserStateChangeReason], forWhenMillis: Long) = {
     UserStateChangeReason(
-      parentReason,
-      None,
       Map(
-        UserStateChangeReason.Names.`type` -> `type`,
-        UserStateChangeReason.Names.forWhenMillis -> forWhenMillis
-      )
+        UserStateChangeReason.Names.name -> name,
+        UserStateChangeReason.Names.forWhenMillis -> forWhenMillis.toString
+      ),
+      None,
+      parentReason
     )
   }
 }
 
 object IMEventArrival {
-  def `type` = "IMEventArrival"
+  def name = "IMEventArrival"
 
   def apply(imEvent: IMEventModel) = {
     UserStateChangeReason(
-      None,
-      None,
       Map(
-        UserStateChangeReason.Names.`type` -> `type`,
-        UserStateChangeReason.Names.imEvent -> imEvent,
-        UserStateChangeReason.Names.shouldStoreUserState -> true
-      )
+        UserStateChangeReason.Names.name -> name,
+        UserStateChangeReason.Names.imEvent -> imEvent.toJsonString//,
+//        UserStateChangeReason.Names.shouldStoreUserState -> true
+      ),
+      None,
+      None
     )
   }
 }

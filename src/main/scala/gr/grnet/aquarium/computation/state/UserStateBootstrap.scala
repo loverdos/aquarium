@@ -33,12 +33,18 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
-
+package gr.grnet.aquarium.computation.state
 
 /**
+ * This is used to bootstrap the [[gr.grnet.aquarium.computation.state.UserState]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class CreditSnapshot(creditAmount: Double)
+case class UserStateBootstrap(
+    userID:             String,
+    userCreationMillis: Long,
+    initialRole:        String,
+    initialAgreement:   String,
+    initialCredits:     Double
+)

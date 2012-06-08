@@ -33,22 +33,67 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation.parts
+
+import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.Aquarium
 
 /**
- * A map from (resourceName, resourceInstanceId) to value.
- *
- * This representation is convenient for computations and updating, while the
- * [[gr.grnet.aquarium.computation.data.OwnedResourcesSnapshot]] representation is convenient for JSON serialization.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class OwnedResourcesMap(resourcesMap: Map[(String, String), Double]) {
-  def toResourcesSnapshot(snapshotTime: Long): OwnedResourcesSnapshot =
-    OwnedResourcesSnapshot(
-      resourcesMap map {
-        case ((name, instanceId), value) ⇒
-          ResourceInstanceSnapshot(name, instanceId, value) } toList
-    )
+case class RoleHistoryItem(
+    /**
+     * The role name.
+     */
+    name: String,
+
+    /**
+     * Validity start time for this role. The time is inclusive.
+     */
+    validFrom: Long,
+
+    /**
+     * Validity stop time for this role. The time is exclusive.
+     */
+    validTo: Long = Long.MaxValue
+) {
+
+  try {
+    require(
+      validFrom <= validTo,
+      "validFrom(%s) <= validTo(%s)".format(new MutableDateCalc(validFrom), new MutableDateCalc(validTo)))
+  }
+  catch {
+    case e: IllegalArgumentException ⇒
+      // TODO Remove this
+      Aquarium.Instance.debug(this, "!! validFrom = %s, validTo = %s, dx=%s", validFrom, validTo, validTo-validFrom)
+      throw e
+  }
+
+  require(name ne null, "Name is not null")
+
+  require(!name.trim.isEmpty, "Name '%s' is not empty".format(name))
+
+  def timeslot = Timeslot(validFrom, validTo)
+
+  def copyWithValidTo(newValidTo: Long) = copy(validTo = newValidTo)
+
+  def isUpperBounded = {
+    validTo != Long.MaxValue
+  }
+
+  def contains(time: Long) = {
+    validFrom <= time && time < validTo
+  }
+
+  def startsStrictlyAfter(time: Long) = {
+    validFrom > time
+  }
+
+  override def toString =
+    "RoleHistoryItem(%s, [%s, %s))".
+      format(name, new MutableDateCalc(validFrom), new MutableDateCalc(validTo))
 }

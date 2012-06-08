@@ -33,40 +33,59 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 import gr.grnet.aquarium.util.findAndRemoveFromMap
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel.FullMutableResourceTypeMap
 
-
 /**
- * This is the mutable cousin of [[gr.grnet.aquarium.computation.data.ImplicitlyIssuedResourceEventsSnapshot]].
+ * This is the mutable cousin of [[gr.grnet.aquarium.computation.state.parts.LatestResourceEventsSnapshot]].
  *
- * @param implicitlyIssuedEventsMap
+ * @param latestEventsMap
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullMutableResourceTypeMap) {
+case class LatestResourceEventsWorker(latestEventsMap: FullMutableResourceTypeMap) {
 
-  def toList: scala.List[ResourceEventModel] = {
-    implicitlyIssuedEventsMap.valuesIterator.toList
+  /**
+   * The gateway to immutable state.
+   *
+   * @param snapshotTime The relevant snapshot time.
+   * @return A fresh instance of [[gr.grnet.aquarium.computation.state.parts.LatestResourceEventsSnapshot]].
+   */
+  def toImmutableSnapshot(snapshotTime: Long) =
+    LatestResourceEventsSnapshot(latestEventsMap.valuesIterator.toList)
+
+  def updateResourceEvent(resourceEvent: ResourceEventModel): Unit = {
+    latestEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
   }
 
-  def toImmutableSnapshot(snapshotTime: Long) =
-    ImplicitlyIssuedResourceEventsSnapshot(toList)
+  def findResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
+    latestEventsMap.get((resource, instanceId))
+  }
 
   def findAndRemoveResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
-    findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))
+    findAndRemoveFromMap(latestEventsMap, (resource, instanceId))
   }
 
-  def size = implicitlyIssuedEventsMap.size
+  def size = latestEventsMap.size
 
   def foreach[U](f: ResourceEventModel => U): Unit = {
-    implicitlyIssuedEventsMap.valuesIterator.foreach(f)
+    latestEventsMap.valuesIterator.foreach(f)
   }
 }
 
-object ImplicitlyIssuedResourceEventsWorker {
-  final val Empty = ImplicitlyIssuedResourceEventsWorker(scala.collection.mutable.Map())
+object LatestResourceEventsWorker {
+  final val Empty = LatestResourceEventsWorker(scala.collection.mutable.Map())
+
+  /**
+   * Helper factory to construct a worker from a list of events.
+   */
+  def fromList(latestEventsList: List[ResourceEventModel]): LatestResourceEventsWorker = {
+    LatestResourceEventsSnapshot(latestEventsList).toMutableWorker
+  }
 }
+

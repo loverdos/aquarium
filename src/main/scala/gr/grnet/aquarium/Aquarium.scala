@@ -52,6 +52,7 @@ import gr.grnet.aquarium.computation.UserStateComputations
 import gr.grnet.aquarium.logic.accounting.algorithm.{SimpleCostPolicyAlgorithmCompiler, CostPolicyAlgorithmCompiler}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.logic.accounting.Policy
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
  * This is the Aquarium entry point.
@@ -67,16 +68,27 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariu
 
   def isStopping() = _isStopping.get()
 
+  @inline
+  def getClientLogger(client: AnyRef): Logger = {
+    client match {
+      case null ⇒
+        this.logger
+
+      case _ ⇒
+        LoggerFactory.getLogger(client.getClass)
+    }
+  }
+
   def debug(client: AnyRef, fmt: String, args: Any*) = {
-    logger.debug("[%s] %s".format(shortClassNameOf(client), fmt.format(args: _*)))
+    getClientLogger(client).debug(fmt.format(args: _*))
   }
 
   def info(client: AnyRef, fmt: String, args: Any*) = {
-    logger.info("[%s] %s".format(shortClassNameOf(client), fmt.format(args: _*)))
+    getClientLogger(client).info(fmt.format(args: _*))
   }
 
   def warn(client: AnyRef, fmt: String, args: Any*) = {
-    logger.warn("[%s] %s".format(shortClassNameOf(client), fmt.format(args: _*)))
+    getClientLogger(client).warn(fmt.format(args: _*))
   }
 
   /**
@@ -569,9 +581,9 @@ object Aquarium {
     final val aquarium_role_agreement_map = "aquarium.role-agreement.map"
     
     /**
-     * A time period in milliseconds for which we can tolerate stale data regarding user state.
+     * A time period in milliseconds for which we can tolerate stale parts regarding user state.
      *
-     * The smaller the value, the more accurate the user credits and other state data are.
+     * The smaller the value, the more accurate the user credits and other state parts are.
      *
      * If a request for user state (e.g. balance) is received and the request timestamp exceeds
      * the timestamp of the last known balance amount by this value, then a re-computation for

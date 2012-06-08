@@ -41,15 +41,17 @@ import gr.grnet.aquarium.actor._
 
 import akka.config.Supervision.Temporary
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
-import gr.grnet.aquarium.computation.data.IMStateSnapshot
 import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProviderConfigured, AquariumPropertiesLoaded}
-import gr.grnet.aquarium.computation.{BillingMonthInfo, UserStateBootstrappingData, UserState}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf, shortNameOfClass, shortNameOfType}
-import gr.grnet.aquarium.computation.reason.{RealtimeBillingCalculation, NoSpecificChangeReason, InitialUserActorSetup, UserStateChangeReason, IMEventArrival, InitialUserStateSetup}
-import gr.grnet.aquarium.{AquariumInternalError, AquariumException, Aquarium}
+import gr.grnet.aquarium.computation.reason.{RealtimeBillingCalculation, InitialUserActorSetup, UserStateChangeReason, IMEventArrival, InitialUserStateSetup}
+import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
+import gr.grnet.aquarium.computation.state.parts.IMStateSnapshot
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.computation.state.{UserStateBootstrap, UserState}
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  *
@@ -82,7 +84,12 @@ class UserActor extends ReflectiveRoleableActor {
   def role = UserActorRole
 
   private[this] def aquarium: Aquarium = Aquarium.Instance
+
   private[this] def userStateComputations = aquarium.userStateComputations
+
+  private[this] def stdUserStateStoreFunc = (userState: UserState) ⇒ {
+    aquarium.userStateStore.insertUserState(userState)
+  }
 
   private[this] def _timestampTheshold = {
     aquarium.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(1000L * 60 * 5 /* 5 minutes */)
@@ -157,7 +164,7 @@ class UserActor extends ReflectiveRoleableActor {
     val userCreationMillis = this._imState.userCreationMillis.get
     val initialRole = this._imState.roleHistory.firstRole.get.name
 
-    val userStateBootstrap = UserStateBootstrappingData(
+    val userStateBootstrap = UserStateBootstrap(
       this._userID,
       userCreationMillis,
       initialRole,
@@ -165,13 +172,14 @@ class UserActor extends ReflectiveRoleableActor {
       aquarium.initialBalanceForRole(initialRole, userCreationMillis)
     )
 
-    val userState = userStateComputations.doBillingForMonth(
+    val now = TimeHelpers.nowMillis()
+    val userState = userStateComputations.doMonthBillingUpTo(
+      BillingMonthInfo.fromMillis(now),
+      now,
       userStateBootstrap,
-      BillingMonthInfo.fromMillis(TimeHelpers.nowMillis()),
-      false,
-      TimeHelpers.nowMillis(),
       aquarium.currentResourcesMap,
-      InitialUserStateSetup(None),
+      InitialUserActorSetup(),
+      stdUserStateStoreFunc,
       None
     )
 
@@ -221,12 +229,8 @@ class UserActor extends ReflectiveRoleableActor {
    * call this.
    */
   private[this] def newUserStateWithUpdatedRoleHistory(stateChangeReason: UserStateChangeReason): UserState = {
-    this._userState.copy(
-      roleHistory = this._imState.roleHistory,
-      // FIXME: Also update agreement
-      stateChangeCounter = this._userState.stateChangeCounter + 1,
-      lastChangeReason = stateChangeReason
-    )
+    // FIXME: Also update agreement
+    this._userState.newWithRoleHistory(this._imState.roleHistory, stateChangeReason)
   }
 
   /**
@@ -317,26 +321,27 @@ class UserActor extends ReflectiveRoleableActor {
     val initialRole = this._imState.roleHistory.firstRoleName.getOrElse(aquarium.defaultInitialUserRole)
     val initialAgreement = aquarium.initialAgreementForRole(initialRole, userCreationMillis)
     val initialCredits   = aquarium.initialBalanceForRole(initialRole, userCreationMillis)
-    val userStateBootstrap = UserStateBootstrappingData(
+    val userStateBootstrap = UserStateBootstrap(
       userID,
       userCreationMillis,
       initialRole,
       initialAgreement,
       initialCredits
     )
-    val billingMonthInfoNow =BillingMonthInfo.fromMillis(now)
+    val billingMonthInfo = BillingMonthInfo.fromMillis(now)
     val currentResourcesMap = aquarium.currentResourcesMap
     val calculationReason = RealtimeBillingCalculation(None, now)
+    val eventOccurredMillis = rcEvent.occurredMillis
 
     DEBUG("Using %s", currentResourcesMap)
 
-    this._userState = aquarium.userStateComputations.doBillingForMonth(
+    this._userState = aquarium.userStateComputations.doMonthBillingUpTo(
+      billingMonthInfo,
+      now max eventOccurredMillis, // take into account that the event may be out-of-sync
       userStateBootstrap,
-      billingMonthInfoNow,
-      false,
-      now,
       currentResourcesMap,
-      calculationReason
+      calculationReason,
+      stdUserStateStoreFunc
     )
 
     this._latestResourceEventOccurredMillis = event.rcEvent.occurredMillis

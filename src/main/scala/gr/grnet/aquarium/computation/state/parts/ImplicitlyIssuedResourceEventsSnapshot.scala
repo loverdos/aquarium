@@ -33,43 +33,35 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
- * Keeps the latest resource event per resource instance.
- *
+ * Keeps the implicit OFF events when a billing period ends.
+ * This is normally recorded in the [[gr.grnet.aquarium.computation.state.UserState]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEventModel]) {
-
+case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[ResourceEventModel]) {
   /**
    * The gateway to playing with mutable state.
    *
-   * @return A fresh instance of [[gr.grnet.aquarium.computation.data.LatestResourceEventsWorker]].
+   * @return A fresh instance of [[gr.grnet.aquarium.computation.state.parts.ImplicitlyIssuedResourceEventsWorker]].
    */
   def toMutableWorker = {
     val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
-    for(latestEvent <- resourceEvents) {
-      map(latestEvent.fullResourceInfo) = latestEvent
+    for(implicitEvent <- implicitlyIssuedEvents) {
+      map(implicitEvent.fullResourceInfo) = implicitEvent
     }
-    LatestResourceEventsWorker(map)
-  }
 
-  def findTheLatest: Option[ResourceEventModel] = {
-    resourceEvents.sortWith {
-      case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis
-    }.headOption
-  }
-
-  def findTheLatestID = {
-    findTheLatest.map(_.id)
+    ImplicitlyIssuedResourceEventsWorker(map)
   }
 }
 
-object LatestResourceEventsSnapshot {
-  final val Empty = LatestResourceEventsSnapshot(Nil)
+object ImplicitlyIssuedResourceEventsSnapshot {
+  final val Empty = ImplicitlyIssuedResourceEventsSnapshot(Nil)
 }
+

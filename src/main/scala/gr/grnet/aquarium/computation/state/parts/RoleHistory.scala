@@ -33,7 +33,7 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation.parts
 
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import scala.collection.immutable.{TreeMap, SortedMap}
@@ -46,10 +46,11 @@ import scala.annotation.tailrec
  */
 
 case class RoleHistory(
-                       /**
-                        * The head role is the most recent. The same rule applies for the tail.
-                        */
-                       roles: List[RoleHistoryItem]) {
+    /**
+     * The head role is the most recent. The same rule applies for the tail.
+     */
+    roles: List[RoleHistoryItem]
+) {
 
   def roleNamesByTimeslot: SortedMap[Timeslot, String] = {
     TreeMap(roles.map(role ⇒ (role.timeslot, role.name)): _*)

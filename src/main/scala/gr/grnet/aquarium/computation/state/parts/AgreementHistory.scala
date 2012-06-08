@@ -33,7 +33,9 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 import java.util.Date
 
@@ -42,7 +44,7 @@ import gr.grnet.aquarium.logic.accounting.Policy
 import scala.collection.immutable.{SortedMap, TreeMap}
 
 /**
- * User agreement data that will be part of UserState.
+ * User agreement parts that will be part of UserState.
  * The provided list of agreements cannot have time gaps. This is checked at object creation type.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>

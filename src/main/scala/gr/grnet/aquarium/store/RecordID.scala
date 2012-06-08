@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.store
 
 /**
- * Represents an ID given by a store to a data object (document).
+ * Represents an ID given by a store to a parts object (document).
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */

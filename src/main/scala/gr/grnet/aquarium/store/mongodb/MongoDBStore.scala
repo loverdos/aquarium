@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.store.mongodb
 
 import com.mongodb.util.JSON
-import gr.grnet.aquarium.computation.UserState.{JsonNames ⇒ UserStateJsonNames}
+import gr.grnet.aquarium.computation.state.UserState.{JsonNames ⇒ UserStateJsonNames}
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
 import gr.grnet.aquarium.event.model.im.IMEventModel
@@ -51,8 +51,10 @@ import org.bson.types.ObjectId
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.converter.Conversions
-import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.event.model.{ExternalEventModel, PolicyEntry}
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.Aquarium
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -226,15 +228,15 @@ class MongoDBStore(
     MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
   }
 
-  def findLatestUserStateForEndOfBillingMonth(userID: String,
-                                              yearOfBillingMonth: Int,
-                                              billingMonth: Int): Option[UserState] = {
+  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
     val query = new BasicDBObjectBuilder().
       add(UserState.JsonNames.userID, userID).
       add(UserState.JsonNames.isFullBillingMonthState, true).
-      add(UserState.JsonNames.theFullBillingMonth.year, yearOfBillingMonth).
-      add(UserState.JsonNames.theFullBillingMonth.month, billingMonth).
+      add(UserState.JsonNames.theFullBillingMonth_year, bmi.year).
+      add(UserState.JsonNames.theFullBillingMonth_month, bmi.month).
       get()
+
+    logger.debug("findLatestUserStateForFullMonthBilling(%s, %s) query: %s".format(userID, bmi, query))
 
     // Descending order, so that the latest comes first
     val sorter = new BasicDBObject(UserState.JsonNames.occurredMillis, -1)
@@ -242,11 +244,6 @@ class MongoDBStore(
     val cursor = userStates.find(query).sort(sorter)
 
     MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
-  }
-
-  def deleteUserState(userId: String) = {
-    val query = new BasicDBObject(UserStateJsonNames.userID, userId)
-    userStates.findAndRemove(query)
   }
   //- UserStateStore
 
@@ -373,9 +370,10 @@ object MongoDBStore {
   final val RESOURCE_EVENTS_COLLECTION = "resevents"
 
   /**
-   * Collection holding the snapshots of [[gr.grnet.aquarium.computation.UserState]].
+   * Collection holding the snapshots of [[gr.grnet.aquarium.computation.state.UserState]].
    *
-   * [[gr.grnet.aquarium.computation.UserState]] is held internally within [[gr.grnet.aquarium.actor.service.user.UserActor]]s.
+   * [[gr.grnet.aquarium.computation.state.UserState]] is held internally within
+   * [[gr.grnet.aquarium.actor.service.user .UserActor]]s.
    */
   final val USER_STATES_COLLECTION = "userstates"
 

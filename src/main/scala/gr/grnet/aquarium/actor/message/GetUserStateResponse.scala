@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.actor.message
 
-import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.computation.state.UserState
 
 /**
  *

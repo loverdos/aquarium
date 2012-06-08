@@ -34,17 +34,24 @@
  */
 
 package gr.grnet.aquarium.computation
+package state
+package parts
 
 /**
- * This is used to bootstrap the user state.
+ * A map from (resourceName, resourceInstanceId) to value.
+ *
+ * This representation is convenient for computations and updating, while the
+ * [[gr.grnet.aquarium.computation.state.parts.OwnedResourcesSnapshot]] representation is convenient for JSON
+ * serialization.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class UserStateBootstrappingData(
-    userID: String,
-    userCreationMillis: Long,
-    initialRole: String,
-    initialAgreement: String,
-    initialCredits: Double
-)
+class OwnedResourcesMap(resourcesMap: Map[(String, String), Double]) {
+  def toResourcesSnapshot(snapshotTime: Long): OwnedResourcesSnapshot =
+    OwnedResourcesSnapshot(
+      resourcesMap map {
+        case ((name, instanceId), value) ⇒
+          ResourceInstanceSnapshot(name, instanceId, value) } toList
+    )
+}

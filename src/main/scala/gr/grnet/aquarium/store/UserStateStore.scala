@@ -35,12 +35,13 @@
 
 package gr.grnet.aquarium.store
 
-import gr.grnet.aquarium.computation.UserState
+import gr.grnet.aquarium.computation.state.UserState
+import gr.grnet.aquarium.computation.BillingMonthInfo
 
 /**
  * A store for user state snapshots.
  *
- * This is used to hold snapshots of [[gr.grnet.aquarium.computation.UserState]]
+ * This is used to hold snapshots of [[gr.grnet.aquarium.computation.state.UserState]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -48,22 +49,17 @@ import gr.grnet.aquarium.computation.UserState
 trait UserStateStore {
 
   /**
-   * Store a user state.
+   * Stores a user state.
    */
   def insertUserState(userState: UserState): UserState
 
   /**
-   * Find a state by user ID
+   * Finds a state by user ID
    */
   def findUserStateByUserID(userID: String): Option[UserState]
 
   /**
-   * Find the most up-to-date user state for the particular billing period.
+   * Finds the most up-to-date user state for the particular billing period.
    */
-  def findLatestUserStateForEndOfBillingMonth(userID: String, yearOfBillingMonth: Int, billingMonth: Int): Option[UserState]
-
-  /**
-   * Delete a state for a user
-   */
-  def deleteUserState(userId: String): Unit
+  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState]
 }

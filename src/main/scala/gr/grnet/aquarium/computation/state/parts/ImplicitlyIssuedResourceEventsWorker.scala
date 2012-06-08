@@ -33,22 +33,40 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
+import gr.grnet.aquarium.util.findAndRemoveFromMap
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel.FullMutableResourceTypeMap
+
 
 /**
+ * This is the mutable cousin of [[gr.grnet.aquarium.computation.state.parts.ImplicitlyIssuedResourceEventsSnapshot]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullMutableResourceTypeMap) {
 
-case class IgnoredFirstResourceEventsSnapshot(ignoredFirstEvents: List[ResourceEventModel]) {
-  def toMutableWorker = {
-    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
-    for(ignoredFirstEvent <- ignoredFirstEvents) {
-      map(ignoredFirstEvent.fullResourceInfo) = ignoredFirstEvent
-    }
-
-    IgnoredFirstResourceEventsWorker(map)
+  def toList: scala.List[ResourceEventModel] = {
+    implicitlyIssuedEventsMap.valuesIterator.toList
   }
+
+  def toImmutableSnapshot(snapshotTime: Long) =
+    ImplicitlyIssuedResourceEventsSnapshot(toList)
+
+  def findAndRemoveResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
+    findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))
+  }
+
+  def size = implicitlyIssuedEventsMap.size
+
+  def foreach[U](f: ResourceEventModel => U): Unit = {
+    implicitlyIssuedEventsMap.valuesIterator.foreach(f)
+  }
+}
+
+object ImplicitlyIssuedResourceEventsWorker {
+  final val Empty = ImplicitlyIssuedResourceEventsWorker(scala.collection.mutable.Map())
 }

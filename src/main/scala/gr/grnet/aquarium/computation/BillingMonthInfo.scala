@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.computation
 
 import gr.grnet.aquarium.util.shortClassNameOf
-import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
+import gr.grnet.aquarium.util.date.MutableDateCalc
 
 /**
  * Provides information about the billing month and related calculation utilities.
@@ -90,6 +90,8 @@ final class BillingMonthInfo(
   }
 
   override def toString = "%s(%s-%02d-01)".format(shortClassNameOf(this), year, month)
+
+  def toDebugString = toString
 
   def toShortDebugString = "%s-%02d-01".format(year, month)
 }

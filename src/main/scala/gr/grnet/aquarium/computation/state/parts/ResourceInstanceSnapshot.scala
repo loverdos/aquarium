@@ -33,7 +33,9 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 /**
  * Maintains the current state of a resource instance owned by the user.
@@ -41,7 +43,7 @@ package gr.grnet.aquarium.computation.data
  *
  * name: DSLResource.name
  * instanceId: instance-id (in the resource's descriminatorField)
- * data: current-resource-value
+ * parts: current-resource-value
  * snapshotTime: last-update-timestamp
  *
  * In order to have a uniform representation of the resource state for all
@@ -50,11 +52,13 @@ package gr.grnet.aquarium.computation.data
  *  - If the resource is complex, the (name, instanceId) is (DSLResource.name, instance-id)
  *  - If the resource is simple,  the (name, instanceId) is (DSLResource.name, "1")
  *
- * @param resource        Same as `resource` of [[gr.grnet.aquarium.event.resource.ResourceEventModel]]
- * @param instanceId      Same as `instanceId` of [[gr.grnet.aquarium.event.resource.ResourceEventModel]]
+ * @param resource        Same as `resource` of [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]
+ * @param instanceId      Same as `instanceId` of [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]
  * @param instanceAmount  This is the amount kept for the resource instance.
-*                         The general rule is that an amount saved in a [[gr.grnet.aquarium.computation.data. ResourceInstanceSnapshot]]
- *                        represents a total value, while a value appearing in a [[gr.grnet.aquarium.event.resource.ResourceEventModel]]
+*                         The general rule is that an amount saved in a
+ *                        [[gr.grnet.aquarium.computation.parts. ResourceInstanceSnapshot]]
+ *                        represents a total value, while a value appearing in a
+ *                        [[gr.grnet.aquarium.event .model.resource.ResourceEventModel]]
  *                        represents a difference. How these two values are combined to form the new amount is dictated
  *                        by the underlying [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
  *

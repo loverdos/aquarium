@@ -39,11 +39,12 @@ import scala.collection.mutable
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
-import gr.grnet.aquarium.computation.data._
+import gr.grnet.aquarium.computation.state.parts._
 import gr.grnet.aquarium.event.model.NewWalletEntry
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
 import gr.grnet.aquarium.computation.reason.{MonthlyBillingCalculation, InitialUserStateSetup, UserStateChangeReason}
+import gr.grnet.aquarium.computation.state.{UserStateWorker, UserStateBootstrap, UserState}
 
 /**
  *
@@ -52,19 +53,22 @@ import gr.grnet.aquarium.computation.reason.{MonthlyBillingCalculation, InitialU
 final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
 
   lazy val aquarium = _aquarium
-  lazy val storeProvider        = aquarium.storeProvider
-  lazy val timeslotComputations = new TimeslotComputations {}
-  lazy val algorithmCompiler    = aquarium.algorithmCompiler
-  lazy val policyStore          = storeProvider.policyStore
-  lazy val userStateStore       = storeProvider.userStateStore
-  lazy val resourceEventStore   = storeProvider.resourceEventStore
 
-  def findUserStateAtEndOfBillingMonth(userStateBootstrap: UserStateBootstrappingData,
-                                       billingMonthInfo: BillingMonthInfo,
-                                       billingTimeMillis: Long,
-                                       defaultResourcesMap: DSLResourcesMap,
-                                       calculationReason: UserStateChangeReason,
-                                       clogOpt: Option[ContextualLogger] = None): UserState = {
+  lazy val storeProvider         = aquarium.storeProvider
+  lazy val timeslotComputations  = new TimeslotComputations {}
+  lazy val algorithmCompiler     = aquarium.algorithmCompiler
+  lazy val policyStore           = storeProvider.policyStore
+  lazy val userStateStoreForRead = storeProvider.userStateStore
+  lazy val resourceEventStore    = storeProvider.resourceEventStore
+
+  def findUserStateAtEndOfBillingMonth(
+      userStateBootstrap: UserStateBootstrap,
+      billingMonthInfo: BillingMonthInfo,
+      defaultResourcesMap: DSLResourcesMap,
+      calculationReason: UserStateChangeReason,
+      storeFunc: UserState ⇒ UserState,
+      clogOpt: Option[ContextualLogger] = None
+  ): UserState = {
 
     val clog = ContextualLogger.fromOther(
       clogOpt,
@@ -72,14 +76,24 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
       "findUserStateAtEndOfBillingMonth(%s)", billingMonthInfo.toShortDebugString)
     clog.begin()
 
-    def computeFullMonthlyBilling(): UserState = {
-      doFullMonthlyBilling(
+    def computeFullMonthBillingAndSaveState(): UserState = {
+      val userState0 = doFullMonthBilling(
         userStateBootstrap,
         billingMonthInfo,
-        billingTimeMillis,
         defaultResourcesMap,
-        MonthlyBillingCalculation(calculationReason, billingMonthInfo),
-        Some(clog))
+        calculationReason,
+        storeFunc,
+        Some(clog)
+      )
+
+      // We always save the state when it is a full month billing
+      val userState1 = storeFunc.apply(
+        userState0.newWithChangeReason(
+          MonthlyBillingCalculation(calculationReason, billingMonthInfo))
+      )
+
+      clog.debug("Stored full %s %s", billingMonthInfo.toDebugString, userState1.toJsonString)
+      userState1
     }
 
     val userID = userStateBootstrap.userID
@@ -92,30 +106,33 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
       // If the user did not exist for this billing month, piece of cake
       clog.debug("User did not exist before %s", userCreationDateCalc)
 
+      // TODO: The initial user state might have already been created.
+      //       First ask if it exists and compute only if not
       val initialUserState0 = UserState.createInitialUserStateFromBootstrap(
         userStateBootstrap,
         TimeHelpers.nowMillis(),
         InitialUserStateSetup(Some(calculationReason)) // we record the originating calculation reason
       )
-      val initialUserState1 = userStateStore.insertUserState(initialUserState0)
 
-      clog.debug("Initial state %s".format(initialUserState1))
+      // We always save the initial state
+      val initialUserState1 = storeFunc.apply(initialUserState0)
+
+      clog.debug("Stored initial state = %s", initialUserState1.toJsonString)
       clog.end()
 
       return initialUserState1
     }
 
     // Ask DB cache for the latest known user state for this billing period
-    val latestUserStateOpt = userStateStore.findLatestUserStateForEndOfBillingMonth(
+    val latestUserStateOpt = userStateStoreForRead.findLatestUserStateForFullMonthBilling(
       userID,
-      billingMonthInfo.year,
-      billingMonthInfo.month)
+      billingMonthInfo)
 
     latestUserStateOpt match {
       case None ⇒
         // Not found, must compute
         clog.debug("No user state found from cache, will have to (re)compute")
-        val result = computeFullMonthlyBilling
+        val result = computeFullMonthBillingAndSaveState
         clog.end()
         result
 
@@ -139,7 +156,7 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
           case n if n > 0 ⇒
             clog.debug(
               "Found %s out of sync events (%s more), will have to (re)compute user state", actualOOSEventsCounter, n)
-            val result = computeFullMonthlyBilling
+            val result = computeFullMonthBillingAndSaveState
             clog.end()
             result
 
@@ -158,13 +175,15 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
   }
   //- Utility methods
 
-  def processResourceEvent(startingUserState: UserState,
-                           userStateWorker: UserStateWorker,
-                           currentResourceEvent: ResourceEventModel,
-                           stateChangeReason: UserStateChangeReason,
-                           billingMonthInfo: BillingMonthInfo,
-                           walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
-                           clogOpt: Option[ContextualLogger] = None): UserState = {
+  def processResourceEvent(
+      startingUserState: UserState,
+      userStateWorker: UserStateWorker,
+      currentResourceEvent: ResourceEventModel,
+      stateChangeReason: UserStateChangeReason,
+      billingMonthInfo: BillingMonthInfo,
+      walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
+      clogOpt: Option[ContextualLogger] = None
+  ): UserState = {
 
     val clog = ContextualLogger.fromOther(clogOpt, logger, "processResourceEvent(%s)", currentResourceEvent.id)
 
@@ -297,13 +316,15 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
     _workingUserState
   }
 
-  def processResourceEvents(resourceEvents: Traversable[ResourceEventModel],
-                            startingUserState: UserState,
-                            userStateWorker: UserStateWorker,
-                            stateChangeReason: UserStateChangeReason,
-                            billingMonthInfo: BillingMonthInfo,
-                            walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
-                            clogOpt: Option[ContextualLogger] = None): UserState = {
+  def processResourceEvents(
+      resourceEvents: Traversable[ResourceEventModel],
+      startingUserState: UserState,
+      userStateWorker: UserStateWorker,
+      stateChangeReason: UserStateChangeReason,
+      billingMonthInfo: BillingMonthInfo,
+      walletEntriesBuffer: mutable.Buffer[NewWalletEntry],
+      clogOpt: Option[ContextualLogger] = None
+  ): UserState = {
 
     var _workingUserState = startingUserState
 
@@ -323,54 +344,65 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
     _workingUserState
   }
 
-  def doFullMonthlyBilling(userStateBootstrap: UserStateBootstrappingData,
-                           billingMonthInfo: BillingMonthInfo,
-                           billingTimeMillis: Long,
-                           defaultResourcesMap: DSLResourcesMap,
-                           calculationReason: UserStateChangeReason,
-                           clogOpt: Option[ContextualLogger] = None): UserState = {
-    doBillingForMonth(
-      userStateBootstrap,
+  def doFullMonthBilling(
+      userStateBootstrap: UserStateBootstrap,
+      billingMonthInfo: BillingMonthInfo,
+      defaultResourcesMap: DSLResourcesMap,
+      calculationReason: UserStateChangeReason,
+      storeFunc: UserState ⇒ UserState,
+      clogOpt: Option[ContextualLogger] = None
+  ): UserState = {
+
+    doMonthBillingUpTo(
       billingMonthInfo,
-      true,
-      billingTimeMillis,
+      billingMonthInfo.monthStopMillis,
+      userStateBootstrap,
       defaultResourcesMap,
       calculationReason,
+      storeFunc,
       clogOpt
     )
   }
 
-  def doBillingForMonth(userStateBootstrap: UserStateBootstrappingData,
-                        billingMonthInfo: BillingMonthInfo,
-                        fullBillingMonthState: Boolean, // See UserState#isFullBillingMonthState
-                        billingTimeMillis: Long,           // See UserState$occurredMillis
-                        defaultResourcesMap: DSLResourcesMap,
-                        calculationReason: UserStateChangeReason,
-                        clogOpt: Option[ContextualLogger] = None): UserState = {
+  def doMonthBillingUpTo(
+      /**
+       * Which month to bill.
+       */
+      billingMonthInfo: BillingMonthInfo,
+      /**
+       * Bill from start of month up to (and including) this time.
+       */
+      billingEndTimeMillis: Long,
+      userStateBootstrap: UserStateBootstrap,
+      defaultResourcesMap: DSLResourcesMap,
+      calculationReason: UserStateChangeReason,
+      storeFunc: UserState ⇒ UserState,
+      clogOpt: Option[ContextualLogger] = None
+  ): UserState = {
 
+    val isFullMonthBilling = billingEndTimeMillis == billingMonthInfo.monthStopMillis
     val userID = userStateBootstrap.userID
 
     val clog = ContextualLogger.fromOther(
       clogOpt,
       logger,
-      "doFullMonthlyBilling(%s)", billingMonthInfo.toShortDebugString)
+      "doMonthBillingUpTo(%s)", new MutableDateCalc(billingEndTimeMillis).toYYYYMMDDHHMMSSSSS)
     clog.begin()
+
+    clog.debug("calculationReason = %s", calculationReason)
 
     val clogSome = Some(clog)
 
     val previousBillingMonthUserState = findUserStateAtEndOfBillingMonth(
       userStateBootstrap,
       billingMonthInfo.previousMonth,
-      billingTimeMillis,
       defaultResourcesMap,
-      calculationReason.forBillingMonthInfo(billingMonthInfo.previousMonth),
+      calculationReason,
+      storeFunc,
       clogSome
     )
 
     val startingUserState = previousBillingMonthUserState
-
-    val billingMonthStartMillis = billingMonthInfo.monthStartMillis
-    val billingMonthEndMillis = billingMonthInfo.monthStopMillis
 
     // Keep the working (current) user state. This will get updated as we proceed with billing for the month
     // specified in the parameters.
@@ -384,8 +416,9 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
     // First, find and process the actual resource events from DB
     val allResourceEventsForMonth = resourceEventStore.findAllRelevantResourceEventsForBillingPeriod(
       userID,
-      billingMonthStartMillis,
-      billingMonthEndMillis)
+      billingMonthInfo.monthStartMillis, // from start of month
+      billingEndTimeMillis               // to requested time
+    )
 
     val newWalletEntries = scala.collection.mutable.ListBuffer[NewWalletEntry]()
 
@@ -399,43 +432,46 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
       clogSome
     )
 
-    // Second, for the remaining events which must contribute an implicit OFF, we collect those OFFs
-    // ... in order to generate an implicit ON later
-    val (specialEvents, theirImplicitEnds) = userStateWorker.
-      findAndRemoveGeneratorsOfImplicitEndEvents(billingMonthEndMillis)
-    if(specialEvents.lengthCompare(1) >= 0 || theirImplicitEnds.lengthCompare(1) >= 0) {
-      clog.debug("")
-      clog.debug("Process implicitly issued events")
-      clog.debugSeq("specialEvents", specialEvents, 0)
-      clog.debugSeq("theirImplicitEnds", theirImplicitEnds, 0)
+    if(isFullMonthBilling) {
+      // Second, for the remaining events which must contribute an implicit OFF, we collect those OFFs
+      // ... in order to generate an implicit ON later (during the next billing cycle).
+      val (specialEvents, theirImplicitEnds) = userStateWorker.
+        findAndRemoveGeneratorsOfImplicitEndEvents(billingMonthInfo.monthStopMillis)
+
+      if(specialEvents.lengthCompare(1) >= 0 || theirImplicitEnds.lengthCompare(1) >= 0) {
+        clog.debug("")
+        clog.debug("Process implicitly issued events")
+        clog.debugSeq("specialEvents", specialEvents, 0)
+        clog.debugSeq("theirImplicitEnds", theirImplicitEnds, 0)
+      }
+
+      // Now, the previous and implicitly started must be our base for the following computation, so we create an
+      // appropriate worker
+      val specialUserStateWorker = UserStateWorker(
+        userStateWorker.userID,
+        LatestResourceEventsWorker.fromList(specialEvents),
+        ImplicitlyIssuedResourceEventsWorker.Empty,
+        IgnoredFirstResourceEventsWorker.Empty,
+        userStateWorker.resourcesMap
+      )
+
+      _workingUserState = processResourceEvents(
+        theirImplicitEnds,
+        _workingUserState,
+        specialUserStateWorker,
+        calculationReason,
+        billingMonthInfo,
+        newWalletEntries,
+        clogSome
+      )
     }
-
-    // Now, the previous and implicitly started must be our base for the following computation, so we create an
-    // appropriate worker
-    val specialUserStateWorker = UserStateWorker(
-      userStateWorker.userID,
-      LatestResourceEventsWorker.fromList(specialEvents),
-      ImplicitlyIssuedResourceEventsWorker.Empty,
-      IgnoredFirstResourceEventsWorker.Empty,
-      userStateWorker.resourcesMap
-    )
-
-    _workingUserState = processResourceEvents(
-      theirImplicitEnds,
-      _workingUserState,
-      specialUserStateWorker,
-      calculationReason,
-      billingMonthInfo,
-      newWalletEntries,
-      clogSome
-    )
 
     val lastUpdateTime = TimeHelpers.nowMillis()
 
     _workingUserState = _workingUserState.copy(
-      isFullBillingMonthState = fullBillingMonthState,
+      isFullBillingMonthState = isFullMonthBilling,
 
-      theFullBillingMonth = if(fullBillingMonthState)
+      theFullBillingMonth = if(isFullMonthBilling)
         Some(billingMonthInfo)
       else
         _workingUserState.theFullBillingMonth,
@@ -451,15 +487,6 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
       newWalletEntries = newWalletEntries.toList
     )
 
-    clog.debug("calculationReason = %s", calculationReason)
-
-    if(calculationReason.shouldStoreUserState) {
-      val storedUserState = userStateStore.insertUserState(_workingUserState)
-      clog.debug("Saved [_id=%s] %s", storedUserState._id, storedUserState)
-      _workingUserState = storedUserState
-    }
-
-    clog.debug("RETURN %s", _workingUserState)
     clog.end()
     _workingUserState
   }

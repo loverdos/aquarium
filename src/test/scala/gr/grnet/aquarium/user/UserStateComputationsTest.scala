@@ -46,8 +46,9 @@ import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorit
 import gr.grnet.aquarium.AquariumException
 import gr.grnet.aquarium.Aquarium.{Instance ⇒ AquariumInstance}
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, MonthlyBillingCalculation}
-import gr.grnet.aquarium.computation.{TimeslotComputations, UserStateBootstrappingData, UserState, BillingMonthInfo}
-import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
+import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.computation.state.{UserStateBootstrap, UserState}
 
 
 /**
@@ -250,7 +251,7 @@ aquariumpolicy:
 //    initialAgreement = DSLAgreement.DefaultAgreementName
 //  )
 
-  val UserStateBootstrap = UserStateBootstrappingData(
+  val UserStateBootstrapper = UserStateBootstrap(
     userID = UserCKKL.userID,
     userCreationMillis = UserCreationDate.getTime(),
     initialRole = "default",
@@ -301,27 +302,30 @@ aquariumpolicy:
   def doFullMonthlyBilling(
       clog: ContextualLogger,
       billingMonthInfo: BillingMonthInfo,
-      isFullBillingMonthState: Boolean,
       billingTimeMillis: Long) = {
 
-    Computations.doBillingForMonth(
-      UserStateBootstrap,
+    Computations.doMonthBillingUpTo(
       billingMonthInfo,
-      isFullBillingMonthState,
       billingTimeMillis,
+      UserStateBootstrapper,
       DefaultResourcesMap,
       MonthlyBillingCalculation(NoSpecificChangeReason(), billingMonthInfo),
+      aquarium.userStateStore.insertUserState,
       Some(clog)
     )
   }
 
   private[this]
-  def expectCredits(clog: ContextualLogger,
-                    creditsConsumed: Double,
-                    userState: UserState,
-                    accuracy: Double = 0.001): Unit = {
+  def expectCredits(
+      clog: ContextualLogger,
+      creditsConsumed: Double,
+      userState: UserState,
+      accuracy: Double = 0.001
+  ): Unit = {
+
     val computed = userState.totalCredits
     Assert.assertEquals(-creditsConsumed, computed, accuracy)
+
     clog.info("Consumed %.3f credits [accuracy = %f]", creditsConsumed, accuracy)
   }
 
@@ -353,7 +357,7 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, false, TimeHelpers.nowMillis())
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, BillingMonthInfoJan.monthStopMillis)
 
     showUserState(clog, userState)
 
@@ -382,7 +386,7 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, false, TimeHelpers.nowMillis())
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, BillingMonthInfoJan.monthStopMillis)
 
     showUserState(clog, userState)
 
@@ -412,7 +416,7 @@ aquariumpolicy:
 
     showResourceEvents(clog)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, false, TimeHelpers.nowMillis())
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, BillingMonthInfoJan.monthStopMillis)
 
     showUserState(clog, userState)
 
@@ -463,7 +467,7 @@ aquariumpolicy:
 
     clog.debugMap("DefaultResourcesMap", DefaultResourcesMap.map, 1)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, false, TimeHelpers.nowMillis())
+    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, BillingMonthInfoJan.monthStopMillis)
 
     showUserState(clog, userState)
 

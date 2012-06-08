@@ -40,7 +40,7 @@ import java.util.Date
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
 /**
- * Store entry for serialized policy data.
+ * Store entry for serialized policy parts.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */

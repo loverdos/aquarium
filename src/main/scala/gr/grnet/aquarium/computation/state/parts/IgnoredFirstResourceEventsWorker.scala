@@ -33,57 +33,37 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.data
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 import gr.grnet.aquarium.util.findAndRemoveFromMap
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel.FullMutableResourceTypeMap
 
 /**
- * This is the mutable cousin of [[gr.grnet.aquarium.computation.data.LatestResourceEventsSnapshot]].
- *
- * @param latestEventsMap
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class LatestResourceEventsWorker(latestEventsMap: FullMutableResourceTypeMap) {
-
-  /**
-   * The gateway to immutable state.
-   *
-   * @param snapshotTime The relevant snapshot time.
-   * @return A fresh instance of [[gr.grnet.aquarium.computation.data.LatestResourceEventsSnapshot]].
-   */
+case class IgnoredFirstResourceEventsWorker(ignoredFirstEventsMap: FullMutableResourceTypeMap) {
   def toImmutableSnapshot(snapshotTime: Long) =
-    LatestResourceEventsSnapshot(latestEventsMap.valuesIterator.toList)
-
-  def updateResourceEvent(resourceEvent: ResourceEventModel): Unit = {
-    latestEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
-  }
-
-  def findResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
-    latestEventsMap.get((resource, instanceId))
-  }
+    IgnoredFirstResourceEventsSnapshot(ignoredFirstEventsMap.valuesIterator.toList)
 
   def findAndRemoveResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
-    findAndRemoveFromMap(latestEventsMap, (resource, instanceId))
+    findAndRemoveFromMap(ignoredFirstEventsMap, (resource, instanceId))
   }
 
-  def size = latestEventsMap.size
-
-  def foreach[U](f: ResourceEventModel => U): Unit = {
-    latestEventsMap.valuesIterator.foreach(f)
+  def updateResourceEvent(resourceEvent: ResourceEventModel): Unit = {
+    ignoredFirstEventsMap((resourceEvent.resource, resourceEvent.instanceID)) = resourceEvent
   }
-}
 
-object LatestResourceEventsWorker {
-  final val Empty = LatestResourceEventsWorker(scala.collection.mutable.Map())
+  def size = ignoredFirstEventsMap.size
 
-  /**
-   * Helper factory to construct a worker from a list of events.
-   */
-  def fromList(latestEventsList: List[ResourceEventModel]): LatestResourceEventsWorker = {
-    LatestResourceEventsSnapshot(latestEventsList).toMutableWorker
+  def foreach[U](f: ResourceEventModel ⇒ U): Unit = {
+    ignoredFirstEventsMap.valuesIterator.foreach(f)
   }
 }
 
+object IgnoredFirstResourceEventsWorker {
+  final val Empty = IgnoredFirstResourceEventsWorker(scala.collection.mutable.Map())
+}

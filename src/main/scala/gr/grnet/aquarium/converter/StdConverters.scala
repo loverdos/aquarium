@@ -45,7 +45,7 @@ import net.liftweb.json.Xml
 
 
 /**
- * Every data type conversion happening inside Aquarium is defined here.
+ * Every parts type conversion happening inside Aquarium is defined here.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
