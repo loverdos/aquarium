@@ -28,7 +28,7 @@
 # The views and conclusions contained in the software and documentation are
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of GRNET S.A.
-
+#
 #
 # Init script for Aquarium
 #
@@ -47,8 +47,18 @@
 # AQUARIUM_HOME   Location of the top level Aquarium dir
 #                 (default: .)
 #----------------------
-
+#
 #set -x
+#
+### BEGIN INIT INFO
+# Provides:             aquarium
+# Required-Start:       $all
+# Required-Stop:        $all
+# Should-Start:         $local_fs
+# Should-Stop:          $local_fs
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+### END INIT INFO
 
 # resolve links - $0 may be a softlink
 PRG="$0"
