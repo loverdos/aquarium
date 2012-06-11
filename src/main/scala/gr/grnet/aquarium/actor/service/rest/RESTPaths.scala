@@ -37,6 +37,8 @@ package gr.grnet.aquarium.actor
 package service
 package rest
 
+import gr.grnet.aquarium.ResourceLocator
+
 
 /**
  * Paths recognized and served by the REST API.
@@ -44,17 +46,21 @@ package rest
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 object RESTPaths {
-  final val ResourcesLogbackXML = "/resources/logback\\.xml".r
+  final val ResourcesPath = "/resources/?".r
 
-  final val ResourcesAquariumProperties = "/resources/aquarium\\.properties".r
+  private def fixREDot(s: String) = s.replaceAll("""\.""", """\\.""")
+  private def toResourcesPath(name: String) = "/resources/%s".format(fixREDot(name)).r
+  private def toEventPath(name: String) = "/%s/([^/]+)/?".format(name).r
 
-  final val ResourcesPolicyYAML = "/resources/policy\\.yaml".r
+  final val ResourcesAquariumPropertiesPath = toResourcesPath(ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES)
 
-  final val RolesAgreementsMap = "/resources/roles-agreements\\.map".r
+  final val ResourcesLogbackXMLPath = toResourcesPath(ResourceLocator.ResourceNames.LOGBACK_XML)
 
-  final val ResourceEventPath = "/rcevent/([^/]+)/?".r
+  final val ResourcesPolicyYAMLPath = toResourcesPath(ResourceLocator.ResourceNames.POLICY_YAML)
 
-  final val IMEventPath = "/imevent/([^/]+)/?".r
+  final val ResourceEventPath = toEventPath("rcevent")
+
+  final val IMEventPath = toEventPath("imevent")
 
   /**
    * Use this URI path to query for the user balance. The parenthesized regular expression part
@@ -70,5 +76,5 @@ object RESTPaths {
   /**
    * Use this administrative URI path to ping all services used by Aquarium.
    */
-  final val AdminPingAll = "/admin/ping/all/?".r
+  final val AdminPingAllPath = "/admin/ping/all/?".r
 }

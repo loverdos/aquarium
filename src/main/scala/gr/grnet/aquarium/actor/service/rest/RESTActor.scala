@@ -193,22 +193,34 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
           // /user/(.+)/state/?
           callRouter(GetUserStateRequest(userId, millis), responder)
 
-        case AdminPingAll() ⇒
+//        case AdminPingAllPath() ⇒
+//          withAdminCookieHelper { responder ⇒
+//            callRouter(PingAllRequest(), responder)
+//          }
+
+        case ResourcesPath() ⇒
           withAdminCookieHelper { responder ⇒
-            callRouter(PingAllRequest(), responder)
+            responder.complete(
+              stringResponse200("%s\n%s\n%s\n" .format(
+                  ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+                  ResourceLocator.ResourceNames.LOGBACK_XML,
+                  ResourceLocator.ResourceNames.POLICY_YAML),
+                TEXT_PLAIN
+              )
+            )
           }
 
-        case ResourcesAquariumProperties() ⇒
+        case ResourcesAquariumPropertiesPath() ⇒
           withAdminCookieHelper { responder ⇒
             resourceInfoResponse(uri, responder, ResourceLocator.Resources.AquariumPropertiesResource, TEXT_PLAIN)
           }
 
-        case ResourcesLogbackXML() ⇒
+        case ResourcesLogbackXMLPath() ⇒
           withAdminCookieHelper { responder ⇒
             resourceInfoResponse(uri, responder, ResourceLocator.Resources.LogbackXMLResource, TEXT_PLAIN)
           }
 
-        case ResourcesPolicyYAML() ⇒
+        case ResourcesPolicyYAMLPath() ⇒
           withAdminCookieHelper { responder ⇒
             resourceInfoResponse(uri, responder, ResourceLocator.Resources.PolicyYAMLResource, TEXT_PLAIN)
           }
