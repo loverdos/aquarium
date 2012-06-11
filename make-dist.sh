@@ -161,7 +161,6 @@ collectscripts() {
   cp $SERVER_SCRIPTS_SRC/aquarium.sh $DIST/bin || fail "copying aquarium.sh"
   cp $SERVER_SCRIPTS_SRC/start.sh $DIST/bin || fail "copying start.sh"
   cp $SERVER_SCRIPTS_SRC/stop.sh $DIST/bin || fail "copying stop.sh"
-  cp $SERVER_SCRIPTS_SRC/test.sh $DIST/bin || fail "copying test.sh"
 }
 
 gitmark() {
