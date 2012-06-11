@@ -227,7 +227,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
         case ResourceEventPath(id) ⇒
           withAdminCookieHelper { responder ⇒
-            eventInfoResponse(uri, responder, aquarium.resourceEventStore.findResourceEventById, id)
+            eventInfoResponse(uri, responder, aquarium.resourceEventStore.findResourceEventByID, id)
           }
 
         case IMEventPath(id) ⇒

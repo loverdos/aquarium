@@ -219,6 +219,10 @@ case class UserState(
     latestResourceEventsSnapshot.findTheLatestID
   }
 
+  def isLatestResourceEventIDEqualTo(toCheckID: String) = {
+    findLatestResourceEventID.map(_ == toCheckID).getOrElse(false)
+  }
+
   //  def toShortString = "UserState(%s, %s, %s, %s, %s)".format(
   //    userId,
   //    _id,

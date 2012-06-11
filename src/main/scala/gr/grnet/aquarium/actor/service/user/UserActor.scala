@@ -137,7 +137,7 @@ class UserActor extends ReflectiveRoleableActor {
     var _roleCheck = None: Option[String]
 
     // this._userID is already set up
-    store.replayIMEventsInOccurrenceOrder(this._userID) { imEvent ⇒
+    store.foreachIMEventInOccurrenceOrder(this._userID) { imEvent ⇒
       DEBUG("Replaying %s", imEvent)
 
       val (creationTimeChanged, activationTimeChanged, roleChanged) = _updateIMStateRoleHistory(imEvent, _roleCheck)
@@ -288,23 +288,23 @@ class UserActor extends ReflectiveRoleableActor {
     val rcEvent = event.rcEvent
 
     if(!shouldProcessResourceEvents) {
-      // This means the user has not been activated. So, we do not process any resource event
+      // This means the user has not been created (at least, as far as Aquarium is concerned).
+      // So, we do not process any resource event
       DEBUG("Not processing %s", rcEvent.toJsonString)
       logSeparator()
 
       return
     }
 
-    this._userState.findLatestResourceEventID match {
-      case Some(id) ⇒
-        if(id == rcEvent.id) {
-          INFO("Ignoring first %s just after %s birth", rcEvent.toDebugString, shortClassNameOf(this))
-          logSeparator()
+    // Since the latest resource event per resource is recorded in the user state,
+    // we do not need to query the store. Just query the in-memory state.
+    // Note: This is a similar situation with the first IMEvent received right after the user
+    //       actor is created.
+    if(this._userState.isLatestResourceEventIDEqualTo(rcEvent.id)) {
+      INFO("Ignoring first %s just after %s birth", rcEvent.toDebugString, shortClassNameOf(this))
+      logSeparator()
 
-          return
-        }
-
-      case _ ⇒
+      return
     }
 
     val now = TimeHelpers.nowMillis()
@@ -341,7 +341,9 @@ class UserActor extends ReflectiveRoleableActor {
 
     this._userState = aquarium.userStateComputations.doMonthBillingUpTo(
       billingMonthInfo,
-      now max eventOccurredMillis, // take into account that the event may be out-of-sync
+      // Take into account that the event may be out-of-sync.
+      // TODO: Should we use this._latestResourceEventOccurredMillis instead of now?
+      now max eventOccurredMillis,
       userStateBootstrap,
       currentResourcesMap,
       calculationReason,

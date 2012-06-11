@@ -76,16 +76,10 @@ trait IMEventStore {
   def findLatestIMEventByUserID(userID: String): Option[IMEvent]
 
   /**
-   * Find the very first activation event for a particular user.
-   *
-   */
-  def findFirstIsActiveIMEventByUserID(userID: String): Option[IMEvent]
-
-  /**
    * Scans events for the given user, sorted by `occurredMillis` in ascending order and runs them through
    * the given function `f`.
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def replayIMEventsInOccurrenceOrder(userID: String)(f: IMEvent ⇒ Unit): Unit
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: IMEvent ⇒ Unit): Unit
 }

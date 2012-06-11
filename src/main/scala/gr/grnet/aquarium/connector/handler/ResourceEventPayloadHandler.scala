@@ -105,7 +105,7 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
         // 1. Check if the same ID exists. Note that we use the ID sent by the event producer.
         //    It is a requirement that this ID is unique.
         val store = aquarium.resourceEventStore
-        store.findResourceEventById(id) match {
+        store.findResourceEventByID(id) match {
           case Some(_) ⇒
             // Reject the duplicate
             Some(HandlerResultReject("Duplicate %s with id = %s".format(className, id)))

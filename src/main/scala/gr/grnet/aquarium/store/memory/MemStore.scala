@@ -167,11 +167,11 @@ class MemStore extends UserStateStore
     localEvent
   }
 
-  def findResourceEventById(id: String) = {
+  def findResourceEventByID(id: String) = {
     _resourceEvents.find(ev ⇒ ev.id == id)
   }
 
-  def findResourceEventsByUserId(userId: String)
+  def findResourceEventsByUserID(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
     val byUserId = _resourceEvents.filter(_.userID == userId).toArray
     val sorted = sortWith match {
@@ -184,29 +184,6 @@ class MemStore extends UserStateStore
     sorted.toList
   }
 
-  def findResourceEventsByUserIdAfterTimestamp(userID: String, timestamp: Long): List[ResourceEvent] = {
-    _resourceEvents.filter { ev ⇒
-      ev.userID == userID &&
-      (ev.occurredMillis > timestamp)
-    }.toList
-  }
-
-  def findResourceEventHistory(userId: String,
-                               resName: String,
-                               instid: Option[String],
-                               upTo: Long): List[ResourceEvent] = {
-    Nil
-  }
-
-  def findResourceEventsForReceivedPeriod(userID: String,
-                                          startTimeMillis: Long,
-                                          stopTimeMillis: Long): List[ResourceEvent] = {
-    _resourceEvents.filter { ev ⇒
-      ev.userID == userID &&
-      ev.isReceivedWithinMillis(startTimeMillis, stopTimeMillis)
-    }.toList
-  }
-
   def countOutOfSyncResourceEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long = {
     _resourceEvents.filter { case ev ⇒
       ev.userID == userID &&
@@ -215,24 +192,18 @@ class MemStore extends UserStateStore
       ev.isOutOfSyncForBillingPeriod(startMillis, stopMillis)
     }.size.toLong
   }
+  //- ResourceEventStore
 
-  /**
-   * Finds all relevant resource events for the billing period.
-   * The relevant events are those:
-   * a) whose `occurredMillis` is within the given billing period or
-   * b) whose `receivedMillis` is within the given billing period.
-   *
-   * Order them by `occurredMillis`
-   */
-  override def findAllRelevantResourceEventsForBillingPeriod(userID: String,
-                                                             startMillis: Long,
-                                                             stopMillis: Long): List[ResourceEvent] = {
+  def foreachResourceEventOccurredInPeriod(
+      userID: String,
+      startMillis: Long,
+      stopMillis: Long
+  )(f: ResourceEvent ⇒ Unit): Unit = {
     _resourceEvents.filter { case ev ⇒
       ev.userID == userID &&
-      ev.isOccurredOrReceivedWithinMillis(startMillis, stopMillis)
-    }.toList sortWith { case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis }
+      ev.isOccurredWithinMillis(startMillis, stopMillis)
+    }.foreach(f)
   }
-  //- ResourceEventStore
 
   //+ IMEventStore
   def createIMEventFromJson(json: String) = {
@@ -274,27 +245,13 @@ class MemStore extends UserStateStore
     } headOption
   }
 
-  def findFirstIsActiveIMEventByUserID(userID: String): Option[IMEvent] = {
-    imEventById.valuesIterator.filter { case ev ⇒
-      ev.userID == userID && ev.isActive
-    }.toList.sortWith { case (ev1, ev2) ⇒
-      ev1.occurredMillis <= ev2.occurredMillis
-    } match {
-      case head :: _ ⇒
-        Some(head)
-
-      case _ ⇒
-        None
-    }
-  }
-
   /**
    * Scans events for the given user, sorted by `occurredMillis` in ascending order and runs them through
    * the given function `f`.
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def replayIMEventsInOccurrenceOrder(userID: String)(f: (IMEvent) => Unit) = {
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEvent) => Unit) = {
     imEventById.valuesIterator.filter(_.userID == userID).toSeq.sortWith {
       case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis
     } foreach(f)

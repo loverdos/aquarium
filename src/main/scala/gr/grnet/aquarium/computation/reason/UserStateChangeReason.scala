@@ -38,6 +38,7 @@ package gr.grnet.aquarium.computation.reason
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.util.shortClassNameOf
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
  * Provides information explaining the reason Aquarium calculated a new
@@ -47,7 +48,7 @@ case class UserStateChangeReason(
     details: Map[String, String],
     billingMonthInfo: Option[BillingMonthInfo],
     parentReason: Option[UserStateChangeReason]
-) {
+) extends JsonSupport {
 
   require(
     details.contains(UserStateChangeReason.Names.name),

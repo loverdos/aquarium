@@ -105,17 +105,21 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   }
 
   /**
-   * Given the old amount of a resource instance (see [[gr.grnet.aquarium.computation.data.ResourceInstanceSnapshot]]) and the
-   * value arriving in a new resource event, compute the new instance amount.
+   * Given the old amount of a resource instance
+   * (see [[gr.grnet.aquarium.computation.state.parts.ResourceInstanceSnapshot]]), the
+   * value arriving in a new resource event and the new details, compute the new instance amount.
    *
    * Note that the `oldAmount` does not make sense for all types of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]],
    * in which case it is ignored.
    *
-   * @param oldAmount the old accumulating amount
-   * @param newEventValue the value contained in a newly arrived [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]
+   * @param oldAmount     the old accumulating amount
+   * @param newEventValue the value contained in a newly arrived
+   *                      [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]
+   * @param details       the `details` of the newly arrived
+   *                      [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]
    * @return
    */
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double
 
   def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double
 
@@ -237,7 +241,9 @@ case object OnceCostPolicy
 
   def isBillableFirstEventBasedOnValue(eventValue: Double) = true
 
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double) = oldAmount
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]) = {
+    oldAmount
+  }
 
   def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double) = getResourceInstanceInitialAmount
 
@@ -269,8 +275,15 @@ case object ContinuousCostPolicy
   extends DSLCostPolicy(DSLCostPolicyNames.continuous,
                         Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLOldTotalAmountVar, DSLTimeDeltaVar)) {
 
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
-    oldAmount + newEventValue
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
+    // If the total is in the details, get it, or else compute it
+    details.get("total") match {
+      case Some(total) ⇒
+        total.toDouble
+
+      case _ ⇒
+        oldAmount + newEventValue
+    }
   }
 
   def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double = {
@@ -331,7 +344,7 @@ case object OnOffCostPolicy
    * @param newEventValue
    * @return
    */
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
     newEventValue
   }
   
@@ -433,7 +446,7 @@ object OnOffCostPolicyValues {
 case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete,
                                                      Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLCurrentValueVar)) {
 
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double): Double = {
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
     oldAmount + newEventValue
   }
 

@@ -54,7 +54,7 @@ case class UserSim(userID: String, userCreationDate: Date, aquarium: AquariumSim
   }
 
   def myResourceEvents: List[ResourceEventModel] = {
-    resourceEventStore.findResourceEventsByUserId(userID)(None)
+    resourceEventStore.findResourceEventsByUserID(userID)(None)
   }
 
   def myResourceEventsByReceivedDate: List[ResourceEventModel] = {

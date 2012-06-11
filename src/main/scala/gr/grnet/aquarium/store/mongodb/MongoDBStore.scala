@@ -112,80 +112,17 @@ class MongoDBStore(
     localEvent
   }
 
-  def findResourceEventById(id: String): Option[ResourceEvent] = {
+  def findResourceEventByID(id: String): Option[ResourceEvent] = {
     MongoDBStore.findBy(ResourceEventNames.id, id, resourceEvents, MongoDBResourceEvent.fromDBObject)
   }
 
-  def findResourceEventsByUserId(userId: String)
+  def findResourceEventsByUserID(userId: String)
                                 (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
     val query = new BasicDBObject(ResourceEventNames.userID, userId)
 
     MongoDBStore.runQuery(query, resourceEvents)(MongoDBResourceEvent.fromDBObject)(sortWith)
   }
 
-  def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent] = {
-    val query = new BasicDBObject()
-    query.put(ResourceEventNames.userID, userId)
-    query.put(ResourceEventNames.occurredMillis, new BasicDBObject("$gt", timestamp))
-    
-    val sort = new BasicDBObject(ResourceEventNames.occurredMillis, 1)
-
-    val cursor = resourceEvents.find(query).sort(sort)
-
-    try {
-      val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
-      while(cursor.hasNext) {
-        buffer += MongoDBResourceEvent.fromDBObject(cursor.next())
-      }
-      buffer.toList.sortWith(_sortByTimestampAsc)
-    } finally {
-      cursor.close()
-    }
-  }
-
-  def findResourceEventHistory(userId: String, resName: String,
-                               instid: Option[String], upTo: Long) : List[ResourceEvent] = {
-    val query = new BasicDBObject()
-    query.put(ResourceEventNames.userID, userId)
-    query.put(ResourceEventNames.occurredMillis, new BasicDBObject("$lt", upTo))
-    query.put(ResourceEventNames.resource, resName)
-
-    instid match {
-      case Some(id) =>
-        Policy.policy.findResource(resName) match {
-          case Some(y) => query.put(ResourceEventNames.details,
-            new BasicDBObject(y.descriminatorField, instid.get))
-          case None =>
-        }
-      case None =>
-    }
-
-    val sort = new BasicDBObject(ResourceEventNames.occurredMillis, 1)
-    val cursor = resourceEvents.find(query).sort(sort)
-
-    try {
-      val buffer = new scala.collection.mutable.ListBuffer[ResourceEvent]
-      while(cursor.hasNext) {
-        buffer += MongoDBResourceEvent.fromDBObject(cursor.next())
-      }
-      buffer.toList.sortWith(_sortByTimestampAsc)
-    } finally {
-      cursor.close()
-    }
-  }
-
-  def findResourceEventsForReceivedPeriod(userId: String, startTimeMillis: Long, stopTimeMillis: Long): List[ResourceEvent] = {
-    val query = new BasicDBObject()
-    query.put(ResourceEventNames.userID, userId)
-    query.put(ResourceEventNames.receivedMillis, new BasicDBObject("$gte", startTimeMillis))
-    query.put(ResourceEventNames.receivedMillis, new BasicDBObject("$lte", stopTimeMillis))
-
-    // Sort them by increasing order for occurred time
-    val orderBy = new BasicDBObject(ResourceEventNames.occurredMillis, 1)
-
-    MongoDBStore.runQuery[ResourceEvent](query, resourceEvents, orderBy)(MongoDBResourceEvent.fromDBObject)(None)
-  }
-  
   def countOutOfSyncResourceEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long = {
     val query = new BasicDBObjectBuilder().
       add(ResourceEventModel.Names.userID, userID).
@@ -204,11 +141,29 @@ class MongoDBStore(
     resourceEvents.count(query)
   }
 
-  def findAllRelevantResourceEventsForBillingPeriod(userId: String,
-                                                    startMillis: Long,
-                                                    stopMillis: Long): List[ResourceEvent] = {
-    // FIXME: Implement
-    Nil
+  def foreachResourceEventOccurredInPeriod(
+      userID: String,
+      startMillis: Long,
+      stopMillis: Long
+  )(f: ResourceEvent ⇒ Unit): Unit = {
+
+    val query = new BasicDBObjectBuilder().
+      add(ResourceEventModel.Names.userID, userID).
+      add(ResourceEventModel.Names.occurredMillis, new BasicDBObject("$gte", startMillis)).
+      add(ResourceEventModel.Names.occurredMillis, new BasicDBObject("$lte", stopMillis)).
+      get()
+
+    val sorter = new BasicDBObject(ResourceEventModel.Names.occurredMillis, 1)
+    val cursor = resourceEvents.find(query).sort(sorter)
+
+    withCloseable(cursor) { cursor ⇒
+      while(cursor.hasNext) {
+        val nextDBObject = cursor.next()
+        val nextEvent = MongoDBResourceEvent.fromDBObject(nextDBObject)
+
+        f(nextEvent)
+      }
+    }
   }
   //-ResourceEventStore
 
@@ -291,32 +246,12 @@ class MongoDBStore(
   }
 
   /**
-   * Find the very first activation event for a particular user.
-   *
-   */
-  def findFirstIsActiveIMEventByUserID(userID: String): Option[IMEvent] = {
-    val query = new BasicDBObjectBuilder().
-      add(IMEventNames.userID, userID).
-      add(IMEventNames.isActive, true).get()
-
-    val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
-
-    withCloseable(cursor) { cursor ⇒
-      if(cursor.hasNext) {
-        Some(MongoDBIMEvent.fromDBObject(cursor.next()))
-      } else {
-        None
-      }
-   }
-  }
-
-  /**
    * Scans events for the given user, sorted by `occurredMillis` in ascending order and runs them through
    * the given function `f`.
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def replayIMEventsInOccurrenceOrder(userID: String)(f: (IMEvent) => Unit) = {
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEvent) => Unit) = {
     val query = new BasicDBObject(IMEventNames.userID, userID)
     val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
 

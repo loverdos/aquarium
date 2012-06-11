@@ -35,8 +35,8 @@
 
 package gr.grnet.aquarium.store
 
-import gr.grnet.aquarium.AquariumException
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.AquariumInternalError
 
 /**
  * An abstraction for Aquarium `ResourceEvent` stores.
@@ -50,44 +50,27 @@ trait ResourceEventStore {
   def createResourceEventFromOther(event: ResourceEventModel): ResourceEvent
 
   def clearResourceEvents(): Unit = {
-    throw new AquariumException("Unsupported operation")
+    // This method is implemented only in MemStore.
+    throw new AquariumInternalError("Unsupported operation")
   }
 
   def pingResourceEventStore(): Unit
 
   def insertResourceEvent(event: ResourceEventModel): ResourceEvent
 
-  def findResourceEventById(id: String): Option[ResourceEvent]
+  def findResourceEventByID(id: String): Option[ResourceEvent]
 
-  def findResourceEventsByUserId(userId: String)(sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent]
-
-  /**
-   * Returns the events for the given User after (or equal) the given timestamp.
-   *
-   * The events are returned in ascending timestamp order.
-   */
-  def findResourceEventsByUserIdAfterTimestamp(userId: String, timestamp: Long): List[ResourceEvent]
-  
-  def findResourceEventHistory(userId: String, resName: String,
-                               instid: Option[String], upTo: Long) : List[ResourceEvent]
-
-  def findResourceEventsForReceivedPeriod(userId: String, startTimeMillis: Long, stopTimeMillis: Long): List[ResourceEvent]
+  def findResourceEventsByUserID(userID: String)(sortWith: Option[(ResourceEvent, ResourceEvent) ⇒ Boolean]): List[ResourceEvent]
 
   /**
-   * Count and return the number of "out of sync" events for a billing month.
+   * Counts and returns the number of "out of sync" events for a billing period.
+   * Note the we assume billing months for now. So, do not cross the month border in the provided time-stamps.
    */
   def countOutOfSyncResourceEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long
 
-  /**
-   * Finds all relevant resource events for the billing period.
-   * The relevant events are those:
-   * a) whose `occurredMillis` is within the given billing period or
-   * b) whose `receivedMillis` is within the given billing period.
-   *
-   * Order them by `occurredMillis`
-   * FIXME: implement
-   */
-  def findAllRelevantResourceEventsForBillingPeriod(userId: String,
-                                                    startMillis: Long,
-                                                    stopMillis: Long): List[ResourceEvent]
+  def foreachResourceEventOccurredInPeriod(
+      userID: String,
+      startMillis: Long,
+      stopMillis: Long
+  )(f: ResourceEvent ⇒ Unit): Unit
 }
