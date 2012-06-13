@@ -210,26 +210,52 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
       // We have a resource (and thus a cost policy)
       case Some(dslResource) ⇒
         val costPolicy = dslResource.costPolicy
-        clog.debug("Cost policy %s for %s", costPolicy, dslResource)
+        clog.debug("%s for %s", costPolicy, dslResource)
         val isBillable = costPolicy.isBillableEventBasedOnValue(theValue)
         if(!isBillable) {
           // The resource event is not billable
-          clog.debug("Ignoring not billable event %s", currentResourceEventDebugInfo)
+          clog.debug("Ignoring not billable %s", currentResourceEventDebugInfo)
         } else {
           // The resource event is billable
           // Find the previous event.
           // This is (potentially) needed to calculate new credit amount and new resource instance amount
-          val previousResourceEventOpt = userStateWorker.findAndRemovePreviousResourceEvent(theResource, theInstanceId)
-          clog.debug("PreviousM %s", previousResourceEventOpt.map(rcDebugInfo(_)))
+          val previousResourceEventOpt0 = userStateWorker.findAndRemovePreviousResourceEvent(theResource, theInstanceId)
+          clog.debug("PreviousM %s", previousResourceEventOpt0.map(rcDebugInfo(_)))
 
-          val havePreviousResourceEvent = previousResourceEventOpt.isDefined
+          val havePreviousResourceEvent = previousResourceEventOpt0.isDefined
           val needPreviousResourceEvent = costPolicy.needsPreviousEventForCreditAndAmountCalculation
-          if(needPreviousResourceEvent && !havePreviousResourceEvent) {
+
+          val (proceed, previousResourceEventOpt1) = if(needPreviousResourceEvent && !havePreviousResourceEvent) {
             // This must be the first resource event of its kind, ever.
             // TODO: We should normally check the DB to verify the claim (?)
-            clog.debug("Ignoring first event of its kind %s", currentResourceEventDebugInfo)
-            userStateWorker.updateIgnored(currentResourceEvent)
+
+            val actualFirstEvent = currentResourceEvent
+
+            if(costPolicy.isBillableFirstEventBasedOnValue(actualFirstEvent.value) &&
+              costPolicy.mustGenerateDummyFirstEvent) {
+
+              clog.debug("First event of its kind %s", currentResourceEventDebugInfo)
+
+              // OK. Let's see what the cost policy decides. If it must generate a dummy first event, we use that.
+              // Otherwise, the current event goes to the ignored list.
+              // The dummy first is considered to exist at the beginning of the billing period
+
+              val dummyFirst = costPolicy.constructDummyFirstEventFor(currentResourceEvent, billingMonthInfo.monthStartMillis)
+
+              clog.debug("Dummy first companion %s", rcDebugInfo(dummyFirst))
+
+              // proceed with charging???
+              (true, Some(dummyFirst))
+            } else {
+              clog.debug("Ignoring first event of its kind %s", currentResourceEventDebugInfo)
+              userStateWorker.updateIgnored(currentResourceEvent)
+              (false, None)
+            }
           } else {
+            (true, previousResourceEventOpt0)
+          }
+
+          if(proceed) {
             val defaultInitialAmount = costPolicy.getResourceInstanceInitialAmount
             val oldAmount = _workingUserState.getResourceInstanceAmount(theResource, theInstanceId, defaultInitialAmount)
             val oldCredits = _workingUserState.totalCredits
@@ -245,7 +271,7 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
 
             //              clog.debug("Computing full chargeslots")
             val (referenceTimeslot, fullChargeslots) = timeslotComputations.computeFullChargeslots(
-              previousResourceEventOpt,
+              previousResourceEventOpt1,
               currentResourceEvent,
               oldCredits,
               oldAmount,
@@ -280,7 +306,7 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
                 billingMonthInfo.year,
                 billingMonthInfo.month,
                 if(havePreviousResourceEvent)
-                  List(currentResourceEvent, previousResourceEventOpt.get)
+                  List(currentResourceEvent, previousResourceEventOpt1.get)
                 else
                   List(currentResourceEvent),
                 fullChargeslots,

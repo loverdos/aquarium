@@ -148,7 +148,6 @@ trait ResourceEventModel extends ExternalEventModel {
   def isSynthetic = {
     details contains ResourceEventModel.Names.details_aquarium_is_synthetic
   }
-
 }
 
 object ResourceEventModel {
@@ -170,6 +169,12 @@ object ResourceEventModel {
     final val details_aquarium_is_synthetic    = "__aquarium_is_synthetic__"
 
     final val details_aquarium_is_implicit_end = "__aquarium_is_implicit_end__"
+
+    final val details_aquarium_is_dummy_first = "__aquarium_is_dummy_first__"
+
+    final val details_aquarium_reference_event_id = "__aquarium_reference_event_id__"
+
+    final val details_aquarium_reference_event_id_in_store = "__aquarium_reference_event_id_in_store__"
   }
 
   object Names extends NamesT
@@ -180,4 +185,9 @@ object ResourceEventModel {
       updated(Names.details_aquarium_is_implicit_end, "true")
   }
 
+  def setAquariumSyntheticAndDummyFirst(map: Map[String, String]): Map[String, String] = {
+    map.
+      updated(Names.details_aquarium_is_synthetic, "true").
+      updated(Names.details_aquarium_is_dummy_first, "true")
+  }
 }

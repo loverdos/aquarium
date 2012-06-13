@@ -45,26 +45,29 @@ import gr.grnet.aquarium.computation.state.parts.{IgnoredFirstResourceEventsWork
 /**
  * A helper object holding intermediate state/results during resource event processing.
  *
- * @param previousResourceEvents
- * This is a collection of all the latest resource events.
- * We want these in order to correlate incoming resource events with their previous (in `occurredMillis` time)
- * ones. Will be updated on processing the next resource event.
- *
- * @param implicitlyIssuedStartEvents
- * The implicitly issued resource events at the beginning of the billing period.
- *
- * @param ignoredFirstResourceEvents
- * The resource events that were first (and unused) of their kind.
- *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 case class UserStateWorker(
-                            userID: String,
-                            previousResourceEvents: LatestResourceEventsWorker,
-                            implicitlyIssuedStartEvents: ImplicitlyIssuedResourceEventsWorker,
-                            ignoredFirstResourceEvents: IgnoredFirstResourceEventsWorker,
-                            resourcesMap: DSLResourcesMap
-                            ) {
+    userID: String,
+
+    /**
+     * This is a collection of all the latest resource events.
+     * We want these in order to correlate incoming resource events with their previous (in `occurredMillis` time)
+     * ones. Will be updated on processing the next resource event.
+     */
+    previousResourceEvents: LatestResourceEventsWorker,
+
+    /**
+     * The implicitly issued resource events at the beginning of the billing period.
+     */
+    implicitlyIssuedStartEvents: ImplicitlyIssuedResourceEventsWorker,
+
+    /**
+     * The resource events that were first (and unused) of their kind.
+     */
+    ignoredFirstResourceEvents: IgnoredFirstResourceEventsWorker,
+    resourcesMap: DSLResourcesMap
+) {
 
   /**
    * Finds the previous resource event by checking two possible sources: a) The implicitly terminated resource

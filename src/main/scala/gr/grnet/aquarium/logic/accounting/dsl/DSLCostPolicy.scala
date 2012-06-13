@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.logic.accounting.dsl
 
 import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
-import gr.grnet.aquarium.AquariumException
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 
 /**
  * A cost policy indicates how charging for a resource will be done
@@ -138,11 +138,6 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   def getResourceInstanceUndefinedAmount: Double = -1.0
 
   /**
-   * Get the value that will be used in credit calculation in TimeslotComputations.chargeEvents
-   */
-  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double]
-
-  /**
    * An event's value by itself should carry enough info to characterize it billable or not.
    *
    * Typically all events are billable by default and indeed this is the default implementation
@@ -160,7 +155,26 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * @return
    */
   def isBillableFirstEventBasedOnValue(eventValue: Double): Boolean
-  
+
+  def mustGenerateDummyFirstEvent: Boolean
+
+  def getDummyFirstEventValue: Double = 0.0
+
+  def constructDummyFirstEventFor(actualFirst: ResourceEventModel, newOccurredMillis: Long): ResourceEventModel = {
+    if(!mustGenerateDummyFirstEvent) {
+      throw new AquariumException("constructDummyFirstEventFor() Not compliant with %s".format(this))
+    }
+
+    val newDetails = Map(
+      ResourceEventModel.Names.details_aquarium_is_synthetic   -> "true",
+      ResourceEventModel.Names.details_aquarium_is_dummy_first -> "true",
+      ResourceEventModel.Names.details_aquarium_reference_event_id -> actualFirst.id,
+      ResourceEventModel.Names.details_aquarium_reference_event_id_in_store -> actualFirst.stringIDInStoreOrEmpty
+    )
+
+    actualFirst.withDetailsAndValue(newDetails, getDummyFirstEventValue, newOccurredMillis)
+  }
+
   /**
    * There are resources (cost policies) for which implicit events must be generated at the end of the billing period
    * and also at the beginning of the next one. For these cases, this method must return `true`.
@@ -237,9 +251,14 @@ object DSLCostPolicy {
  *
  */
 case object OnceCostPolicy
-  extends DSLCostPolicy(DSLCostPolicyNames.once, Set(DSLCostPolicyNameVar, DSLCurrentValueVar)) {
+extends DSLCostPolicy(
+    DSLCostPolicyNames.once,
+    Set(DSLCostPolicyNameVar, DSLCurrentValueVar)
+) {
 
   def isBillableFirstEventBasedOnValue(eventValue: Double) = true
+
+  def mustGenerateDummyFirstEvent = false // no need to
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]) = {
     oldAmount
@@ -248,8 +267,6 @@ case object OnceCostPolicy
   def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double) = getResourceInstanceInitialAmount
 
   def getResourceInstanceInitialAmount = 0.0
-
-  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double) = Just(newEventValue)
 
   def supportsImplicitEvents = false
 
@@ -272,8 +289,10 @@ case object OnceCostPolicy
  * is diskspace.
  */
 case object ContinuousCostPolicy
-  extends DSLCostPolicy(DSLCostPolicyNames.continuous,
-                        Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLOldTotalAmountVar, DSLTimeDeltaVar)) {
+extends DSLCostPolicy(
+    DSLCostPolicyNames.continuous,
+    Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLOldTotalAmountVar, DSLTimeDeltaVar)
+) {
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
     // If the total is in the details, get it, or else compute it
@@ -294,13 +313,11 @@ case object ContinuousCostPolicy
     0.0
   }
 
-  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
-    oldAmountM
+  def isBillableFirstEventBasedOnValue(eventValue: Double) = {
+    true
   }
 
-  def isBillableFirstEventBasedOnValue(eventValue: Double) = {
-    false
-  }
+  def mustGenerateDummyFirstEvent = true
 
   def supportsImplicitEvents = {
     true
@@ -335,8 +352,10 @@ case object ContinuousCostPolicy
  * cloud application and books in a book lending application.
  */
 case object OnOffCostPolicy
-  extends DSLCostPolicy(DSLCostPolicyNames.onoff,
-                        Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLTimeDeltaVar)) {
+extends DSLCostPolicy(
+    DSLCostPolicyNames.onoff,
+    Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLTimeDeltaVar)
+) {
 
   /**
    *
@@ -359,36 +378,6 @@ case object OnOffCostPolicy
   def getResourceInstanceInitialAmount: Double = {
     0.0
   }
-  
-  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
-    oldAmountM match {
-      case Just(oldAmount) ⇒
-        Maybe(getValueForCreditCalculation(oldAmount, newEventValue))
-      case NoVal ⇒
-        Failed(new AquariumException("NoVal for oldValue instead of Just"))
-      case Failed(e) ⇒
-        Failed(new AquariumException("Failed for oldValue instead of Just", e))
-    }
-  }
-
-  private[this]
-  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
-    import OnOffCostPolicyValues.{ON, OFF}
-
-    def exception(rs: OnOffPolicyResourceState) =
-      new AquariumException("Resource state transition error (%s -> %s)".format(rs, rs))
-
-    (oldAmount, newEventValue) match {
-      case (ON, ON) ⇒
-        throw exception(OnResourceState)
-      case (ON, OFF) ⇒
-        OFF
-      case (OFF, ON) ⇒
-        ON
-      case (OFF, OFF) ⇒
-        throw exception(OffResourceState)
-    }
-  }
 
   override def isBillableEventBasedOnValue(eventValue: Double) = {
     // ON events do not contribute, only OFF ones.
@@ -399,10 +388,11 @@ case object OnOffCostPolicy
     false
   }
 
+  def mustGenerateDummyFirstEvent = false // should be handled by the implicit OFFs
+
   def supportsImplicitEvents = {
     true
   }
-
 
   def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
     // If we have ON events with no OFF companions at the end of the billing period,
@@ -422,7 +412,7 @@ case object OnOffCostPolicy
   }
 
   def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
-    throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
+    throw new AquariumInternalError("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
 
@@ -443,8 +433,11 @@ object OnOffCostPolicyValues {
  * actions (e.g. the fact that a user has created an account) or resources
  * that should be charged per volume once (e.g. the allocation of a volume)
  */
-case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete,
-                                                     Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLCurrentValueVar)) {
+case object DiscreteCostPolicy
+extends DSLCostPolicy(
+    DSLCostPolicyNames.discrete,
+    Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLCurrentValueVar)
+) {
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
     oldAmount + newEventValue
@@ -457,14 +450,13 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
   def getResourceInstanceInitialAmount: Double = {
     0.0
   }
-  
-  def getValueForCreditCalculation(oldAmountM: Maybe[Double], newEventValue: Double): Maybe[Double] = {
-    Just(newEventValue)
-  }
 
   def isBillableFirstEventBasedOnValue(eventValue: Double) = {
     false // nope, we definitely need a  previous one.
   }
+
+  // FIXME: Check semantics of this. I just put false until thorough study
+  def mustGenerateDummyFirstEvent = false
 
   def supportsImplicitEvents = {
     false
@@ -475,11 +467,11 @@ case object DiscreteCostPolicy extends DSLCostPolicy(DSLCostPolicyNames.discrete
   }
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
-    throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
+    throw new AquariumInternalError("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
 
   def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
-    throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
+    throw new AquariumInternalError("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
 

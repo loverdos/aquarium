@@ -59,6 +59,8 @@ trait EventModel {
    */
   def idInStore: Option[AnyRef] = None
 
+  def stringIDInStoreOrEmpty = idInStore.map(_.toString).getOrElse("")
+
   def eventVersion: String
 
   /**
