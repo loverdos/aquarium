@@ -91,10 +91,11 @@ case class DSLPolicy (
 
   def toPolicyEntry: PolicyEntry = {
     val yaml = toYAML
-    val ts = TimeHelpers.nowMillis()
-    PolicyEntry(CryptoUtils.sha1(yaml), ts, ts, yaml, ts + 1, Long.MaxValue)
+    val now = TimeHelpers.nowMillis()
+    // FIXME: Define proper validity period instead of [0L, Long.MaxValue)
+    PolicyEntry(CryptoUtils.sha1(yaml), now, now, yaml, 0L, Long.MaxValue)
   }
-  
+
   def toPolicyEntry(occurredMillis: Long, validFromMillis: Long, validToMillis: Long = Long.MaxValue) = {
     val yaml = toYAML
     val id = CryptoUtils.sha1(yaml)
