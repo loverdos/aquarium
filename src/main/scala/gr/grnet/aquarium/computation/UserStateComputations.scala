@@ -231,7 +231,7 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
 
             val actualFirstEvent = currentResourceEvent
 
-            if(costPolicy.isBillableFirstEventBasedOnValue(actualFirstEvent.value) &&
+            if(costPolicy.isBillableFirstEvent(actualFirstEvent) &&
               costPolicy.mustGenerateDummyFirstEvent) {
 
               clog.debug("First event of its kind %s", currentResourceEventDebugInfo)

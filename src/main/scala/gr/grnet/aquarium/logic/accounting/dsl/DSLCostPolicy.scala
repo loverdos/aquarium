@@ -128,27 +128,24 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   def getResourceInstanceUndefinedAmount: Double = -1.0
 
   /**
-   * An event's value by itself should carry enough info to characterize it billable or not.
+   * An event carries enough info to characterize it as billable or not.
    *
    * Typically all events are billable by default and indeed this is the default implementation
    * provided here.
    *
    * The only exception to the rule is ON events for [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
    */
-  def isBillableEventBasedOnValue(eventValue: Double): Boolean = true
+  def isBillableEvent(event: ResourceEventModel): Boolean = false
 
   /**
    * This is called when we have the very first event for a particular resource instance, and we want to know
    * if it is billable or not.
-   *
-   * @param eventValue
-   * @return
    */
-  def isBillableFirstEventBasedOnValue(eventValue: Double): Boolean
+  def isBillableFirstEvent(event: ResourceEventModel): Boolean
 
   def mustGenerateDummyFirstEvent: Boolean
 
-  def getDummyFirstEventValue: Double = 0.0
+  def dummyFirstEventValue: Double = 0.0
 
   def constructDummyFirstEventFor(actualFirst: ResourceEventModel, newOccurredMillis: Long): ResourceEventModel = {
     if(!mustGenerateDummyFirstEvent) {
@@ -162,7 +159,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
       ResourceEventModel.Names.details_aquarium_reference_event_id_in_store -> actualFirst.stringIDInStoreOrEmpty
     )
 
-    actualFirst.withDetailsAndValue(newDetails, getDummyFirstEventValue, newOccurredMillis)
+    actualFirst.withDetailsAndValue(newDetails, dummyFirstEventValue, newOccurredMillis)
   }
 
   /**
@@ -243,7 +240,13 @@ extends DSLCostPolicy(
     Set(DSLCostPolicyNameVar, DSLCurrentValueVar)
 ) {
 
-  def isBillableFirstEventBasedOnValue(eventValue: Double) = true
+  /**
+   * This is called when we have the very first event for a particular resource instance, and we want to know
+   * if it is billable or not.
+   */
+  def isBillableFirstEvent(event: ResourceEventModel) = {
+    true
+  }
 
   def mustGenerateDummyFirstEvent = false // no need to
 
@@ -290,7 +293,11 @@ extends DSLCostPolicy(
     0.0
   }
 
-  def isBillableFirstEventBasedOnValue(eventValue: Double) = {
+  /**
+   * This is called when we have the very first event for a particular resource instance, and we want to know
+   * if it is billable or not.
+   */
+  def isBillableFirstEvent(event: ResourceEventModel) = {
     true
   }
 
@@ -363,12 +370,16 @@ extends DSLCostPolicy(
     }
   }
 
-  override def isBillableEventBasedOnValue(eventValue: Double) = {
+  override def isBillableEvent(event: ResourceEventModel) = {
     // ON events do not contribute, only OFF ones.
-    OnOffCostPolicyValues.isOFFValue(eventValue)
+    OnOffCostPolicyValues.isOFFValue(event.value)
   }
 
-  def isBillableFirstEventBasedOnValue(eventValue: Double) = {
+  /**
+   * This is called when we have the very first event for a particular resource instance, and we want to know
+   * if it is billable or not.
+   */
+  def isBillableFirstEvent(event: ResourceEventModel) = {
     false
   }
 
@@ -431,7 +442,11 @@ extends DSLCostPolicy(
     0.0
   }
 
-  def isBillableFirstEventBasedOnValue(eventValue: Double) = {
+  /**
+   * This is called when we have the very first event for a particular resource instance, and we want to know
+   * if it is billable or not.
+   */
+  def isBillableFirstEvent(event: ResourceEventModel) = {
     false // nope, we definitely need a  previous one.
   }
 
