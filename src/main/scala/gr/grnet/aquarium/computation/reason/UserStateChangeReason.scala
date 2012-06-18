@@ -73,8 +73,8 @@ case class UserStateChangeReason(
 //  def shouldStoreUserState: Boolean =
 //     booleanFromDetails(UserStateChangeReason.Names.shouldStoreUserState, false)
 
-  def shouldStoreCalculatedWalletEntries: Boolean =
-    booleanFromDetails(UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries, false)
+//  def shouldStoreCalculatedWalletEntries: Boolean =
+//    booleanFromDetails(UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries, false)
 
   def calculateCreditsForImplicitlyTerminated: Boolean =
     booleanFromDetails(UserStateChangeReason.Names.calculateCreditsForImplicitlyTerminated, false)
@@ -99,8 +99,8 @@ object UserStateChangeReason {
     final val imEvent = "imEvent"
     final val forWhenMillis = "forWhenMillis"
 
-    final val shouldStoreUserState = "shouldStoreUserState"
-    final val shouldStoreCalculatedWalletEntries = "shouldStoreCalculatedWalletEntries"
+//    final val shouldStoreUserState = "shouldStoreUserState"
+//    final val shouldStoreCalculatedWalletEntries = "shouldStoreCalculatedWalletEntries"
     final val calculateCreditsForImplicitlyTerminated = "calculateCreditsForImplicitlyTerminated"
   }
 }
@@ -190,7 +190,7 @@ object MonthlyBillingCalculation {
       Map(
         UserStateChangeReason.Names.name -> name,
 //        UserStateChangeReason.Names.shouldStoreUserState -> true,
-        UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries -> true.toString,
+//        UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries -> true.toString,
         UserStateChangeReason.Names.calculateCreditsForImplicitlyTerminated -> true.toString
       ),
       Some(billingMongthInfo),

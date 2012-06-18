@@ -35,8 +35,8 @@
 
 package gr.grnet.aquarium.computation
 
-import scala.collection.mutable
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
+import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.computation.state.parts._
@@ -211,7 +211,7 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
       case Some(dslResource) ⇒
         val costPolicy = dslResource.costPolicy
         clog.debug("%s for %s", costPolicy, dslResource)
-        val isBillable = costPolicy.isBillableEventBasedOnValue(theValue)
+        val isBillable = costPolicy.isBillableEvent(currentResourceEvent)
         if(!isBillable) {
           // The resource event is not billable
           clog.debug("Ignoring not billable %s", currentResourceEventDebugInfo)
@@ -295,30 +295,26 @@ final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
             val newCreditsDiff = fullChargeslots.map(_.computedCredits.get).sum
             val newCredits = oldCredits - newCreditsDiff
 
-            if(stateChangeReason.shouldStoreCalculatedWalletEntries) {
-              val newWalletEntry = NewWalletEntry(
-                userStateWorker.userID,
-                newCreditsDiff,
-                oldCredits,
-                newCredits,
-                TimeHelpers.nowMillis(),
-                referenceTimeslot,
-                billingMonthInfo.year,
-                billingMonthInfo.month,
-                if(havePreviousResourceEvent)
-                  List(currentResourceEvent, previousResourceEventOpt1.get)
-                else
-                  List(currentResourceEvent),
-                fullChargeslots,
-                dslResource,
-                currentResourceEvent.isSynthetic
-              )
-              clog.debug("New %s", newWalletEntry)
+            val newWalletEntry = NewWalletEntry(
+              userStateWorker.userID,
+              newCreditsDiff,
+              oldCredits,
+              newCredits,
+              TimeHelpers.nowMillis(),
+              referenceTimeslot,
+              billingMonthInfo.year,
+              billingMonthInfo.month,
+              if(havePreviousResourceEvent)
+                List(currentResourceEvent, previousResourceEventOpt1.get)
+              else
+                List(currentResourceEvent),
+              fullChargeslots,
+              dslResource,
+              currentResourceEvent.isSynthetic
+            )
+            clog.debug("%s = %s", shortClassNameOf(newWalletEntry), newWalletEntry)
 
-              walletEntryRecorder.apply(newWalletEntry)
-            } else {
-              clog.debug("newCreditsDiff = %s, newCredits = %s", newCreditsDiff, newCredits)
-            }
+            walletEntryRecorder.apply(newWalletEntry)
 
             _workingUserState = _workingUserState.copy(
               totalCredits = newCredits,
