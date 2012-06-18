@@ -88,14 +88,6 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
       unitPrice)
   }
 
-  def isOnOff: Boolean = isNamed(DSLCostPolicyNames.onoff)
-
-  def isContinuous: Boolean = isNamed(DSLCostPolicyNames.continuous)
-
-  def isDiscrete: Boolean = isNamed(DSLCostPolicyNames.discrete)
-  
-  def isOnce: Boolean = isNamed(DSLCostPolicyNames.once)
-
   def isNamed(aName: String): Boolean = aName == name
 
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = {
@@ -120,8 +112,6 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * @return
    */
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double
-
-  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double
 
   /**
    * The initial amount.
@@ -190,9 +180,6 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
 
   @throws(classOf[Exception])
   def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long): ResourceEventModel
-
-  @throws(classOf[Exception])
-  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel): ResourceEventModel
 }
 
 object DSLCostPolicyNames {
@@ -264,8 +251,6 @@ extends DSLCostPolicy(
     oldAmount
   }
 
-  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double) = getResourceInstanceInitialAmount
-
   def getResourceInstanceInitialAmount = 0.0
 
   def supportsImplicitEvents = false
@@ -274,10 +259,6 @@ extends DSLCostPolicy(
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
     throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
-  }
-
-  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
-    throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
 
@@ -303,10 +284,6 @@ extends DSLCostPolicy(
       case _ ⇒
         oldAmount + newEventValue
     }
-  }
-
-  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double = {
-    oldAmount
   }
 
   def getResourceInstanceInitialAmount: Double = {
@@ -335,10 +312,6 @@ extends DSLCostPolicy(
 
     resourceEvent.withDetails(newDetails, newOccurredMillis)
   }
-
-  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
-    throw new AquariumException("constructImplicitStartEventFor() Not compliant with %s".format(this))
-  }
 }
 
 /**
@@ -366,17 +339,28 @@ extends DSLCostPolicy(
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
     newEventValue
   }
-  
-  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double = {
-    import OnOffCostPolicyValues.{ON, OFF}
-    oldAmount match {
-      case ON  ⇒ /* implicit off at the end of the billing period */ OFF
-      case OFF ⇒ OFF
-    }
-  }
 
   def getResourceInstanceInitialAmount: Double = {
     0.0
+  }
+
+  private[this]
+  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
+    import OnOffCostPolicyValues.{ON, OFF}
+
+    def exception(rs: OnOffPolicyResourceState) =
+      new AquariumException("Resource state transition error (%s -> %s)".format(rs, rs))
+
+    (oldAmount, newEventValue) match {
+      case (ON, ON) ⇒
+        throw exception(OnResourceState)
+      case (ON, OFF) ⇒
+        OFF
+      case (OFF, ON) ⇒
+        ON
+      case (OFF, OFF) ⇒
+        throw exception(OffResourceState)
+    }
   }
 
   override def isBillableEventBasedOnValue(eventValue: Double) = {
@@ -443,10 +427,6 @@ extends DSLCostPolicy(
     oldAmount + newEventValue
   }
 
-  def computeResourceInstanceAmountForNewBillingPeriod(oldAmount: Double): Double  = {
-    0.0 // ?? def getResourceInstanceInitialAmount
-  }
-
   def getResourceInstanceInitialAmount: Double = {
     0.0
   }
@@ -468,10 +448,6 @@ extends DSLCostPolicy(
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
     throw new AquariumInternalError("constructImplicitEndEventFor() Not compliant with %s".format(this))
-  }
-
-  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
-    throw new AquariumInternalError("constructImplicitStartEventFor() Not compliant with %s".format(this))
   }
 }
 
