@@ -65,6 +65,11 @@
       <name>Christos KK Loverdos</name>
       <email>loverdos@grnet.gr</email>
     </developer>
+    <developer>
+      <id>pgerakios</id>
+      <name>Prodromos Gerakios</name>
+      <email>pgerakios@grnet.gr</email>
+    </developer>
   </developers>
 
   <scm>
