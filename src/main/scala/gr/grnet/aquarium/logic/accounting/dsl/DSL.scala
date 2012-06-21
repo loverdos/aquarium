@@ -40,6 +40,7 @@ import com.kenai.crontabparser.impl.CronTabParserBridge
 import gr.grnet.aquarium.util.yaml._
 import java.util.Date
 import java.io.{ByteArrayInputStream, InputStreamReader, InputStream}
+import gr.grnet.aquarium.logic.accounting.dsl.DSLTimeSpec
 
 /**
  * A parser for the Aquarium accounting DSL.
@@ -486,32 +487,24 @@ trait DSL {
     } catch {
       case e => throw new DSLParseException("Error parsing cron string: " + e.getMessage)
     }
-
-    def splitMultiVals(input: String): List[Int] = {
+    def splitMultiVals(ii : Int): List[Int] = {
+      val input = cron.get(ii).toString
       if (input.equals("*"))
-        return (-1).until(0).toList
-
-      if (input.contains('-')) {
+        (-1).until(0).toList
+      else if (input.contains('-')) {
         val ints = input.split('-')
         ints(0).toInt.until(ints(1).toInt + 1).toList
-      } else if (input.contains(',')) {
-        input.split(',').map{i => i.toInt}.toList
-      } else {
+      } else if (input.contains(','))
+        input.split(',').map(_.toInt).toList
+       else
         input.toInt.until(input.toInt + 1).toList
-      }
     }
-
-    splitMultiVals(cron.get(0).toString).map(
-      a => splitMultiVals(cron.get(1).toString).map(
-        b => splitMultiVals(cron.get(2).toString).map(
-          c => splitMultiVals(cron.get(3).toString).map(
-            d => splitMultiVals(cron.get(4).toString).map(
-              e => DSLTimeSpec(a, b, c, d, e)
-            )
-          ).flatten
-        ).flatten
-      ).flatten
-    ).flatten.toList
+    for { a <- splitMultiVals(0)
+          b <- splitMultiVals(1)
+          c <- splitMultiVals(2)
+          d <- splitMultiVals(3)
+          e <- splitMultiVals(4)  } yield
+      DSLTimeSpec(a,b,c,d,e)
   }
 }
 

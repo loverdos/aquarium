@@ -74,37 +74,4 @@ trait DateUtils extends Loggable {
     else
       limit
   }
-
-  /**
-   * Search within
-   */
-  def findDays(from: Date, to: Date, f: Calendar => Boolean) : List[Date] = {
-    val c = new GregorianCalendar()
-    val result = new mutable.ListBuffer[Date]()
-
-    c.setTime(from)
-
-    while (c.getTime().getTime <= to.getTime) {
-      if (f(c))
-        result += new Date(c.getTime.getTime)
-      c.add(Calendar.DAY_OF_YEAR, 1)
-    }
-
-    result.toList
-  }
-
-  /**
-   * Adjust time in the provided date to the provided values
-   */
-  def adjustToTime(d: Date, h: Int,  m: Int): Date = {
-
-    assert((0 <= h) && (h <= 23))
-    assert((0 <= m) && (m <= 59))
-
-    val c = new GregorianCalendar()
-    c.setTime(d)
-    c.roll(Calendar.MINUTE, m - c.get(Calendar.MINUTE))
-    c.roll(Calendar.HOUR_OF_DAY, h - c.get(Calendar.HOUR_OF_DAY))
-    c.getTime
-  }
 }

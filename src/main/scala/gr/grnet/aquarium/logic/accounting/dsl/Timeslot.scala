@@ -39,6 +39,7 @@ import java.util.Date
 import scala.collection.mutable
 import annotation.tailrec
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  * A representation of a timeslot with a start and end date.
@@ -53,50 +54,43 @@ final case class Timeslot(from: Date, to: Date)
   assert(to != null)
   assert(from.before(to), "from = %s, to = %s".format(new MutableDateCalc(from), new MutableDateCalc(to)))
 
-  def startsBefore(t: Timeslot) : Boolean = this.from.before(t.from)
+  def startsBefore(t: Timeslot) : Boolean =  start < t.start
 
-  def startsAfter(t: Timeslot) : Boolean = this.from.after(t.from)
+  def startsAfter(t: Timeslot) : Boolean =   start > t.start
 
-  def endsBefore(t: Timeslot) : Boolean = this.to.before(t.to)
+  def endsBefore(t: Timeslot) : Boolean = end < t.end
 
-  def endsAfter(t: Timeslot) : Boolean = this.to.after(t.to)
+  def endsAfter(t: Timeslot) : Boolean =  end > t.end
 
-  def after(t: Timeslot): Boolean = if (this.from.after(t.to)) true else false
+  def after(t: Timeslot): Boolean =  start > t.end
 
-  def before(t: Timeslot): Boolean = if (this.to.before(t.from)) true else false
+  def before(t: Timeslot): Boolean = end < t.start
+
+  def start : Long =  this.from.getTime
+
+  def end : Long =  this.to.getTime
 
   /**
    * Check whether this time slot fully contains the provided one.
    */
-  def contains(t: Timeslot) : Boolean = {
-    if (this.from.getTime <= t.from.getTime &&
-      this.to.getTime >= t.to.getTime)
-      return true
-    return false
-  }
+  def contains(t: Timeslot) : Boolean = this.start <= t.start && this.end >= t.end
 
-  def containsTimeInMillis(millis: Long) = {
-    fromMillis <= millis && millis <= toMillis
-  }
+
+  def containsTimeInMillis(millis: Long) =  start <= millis && millis <= end
+
 
   /**
    * Check whether this timeslot contains the provided time instant.
    */
-  def includes(t: Date) : Boolean =
-    if (from.before(t) && to.after(t)) true else false
+  private def includes(t: Date) : Boolean = start <= t.getTime &&  t.getTime <= end
+
 
   /**
    * Check whether this timeslot overlaps with the provided one.
    */
-  def overlaps(t: Timeslot) : Boolean = {
-    if (contains(t) || t.contains(this))
-      return true
+  def overlaps(t: Timeslot) : Boolean =
+    contains(t) || t.contains(this) || this.includes(t.from) || this.includes(t.to)
 
-    if (this.includes(t.from) || this.includes(t.to))
-      return true
-
-    false
-  }
 
   /**
    * Merges this timeslot with the provided one. If the timeslots overlap,
@@ -104,27 +98,23 @@ final case class Timeslot(from: Date, to: Date)
      * overlap, the returned list contains both timeslots in increasing start
    * date order.
    */
-  def merge(t: Timeslot) : List[Timeslot] = {
-    if (overlaps(t)) {
-      val nfrom = if (from.before(t.from)) from else t.from
-      val nto   = if (to.after(t.to)) to else t.to
-      List(Timeslot(nfrom, nto))
-    } else
-      if (this.from.before(t.from))
-        List(this, t)
-      else
-        List(t, this)
+  def merge(t: Timeslot) : Timeslot  = {
+   assert(overlaps(t),this +" has no overlap with " + t)
+   val nfrom = if (start < t.start) from else t.from
+   val nto   = if (end > t.end) to else t.to
+   Timeslot(nfrom, nto)
   }
 
   /**
    * Split the timeslot in two parts at the provided timestamp, if the
    * timestamp falls within the timeslot boundaries.
    */
-  def slice(d: Date) : List[Timeslot] =
-    if (includes(d))
+   def slice(d: Date) : List[Timeslot] =
+    if (includes(d) && d.getTime != start && d.getTime != end)
       List(Timeslot(from, d), Timeslot(d,to))
     else
       List(this)
+
 
   /**
    * Find and return the timeslots within which this Timeslot overrides
@@ -135,19 +125,15 @@ final case class Timeslot(from: Date, to: Date)
    *
    * the result will be: `List(Timeslot(7,8), Timeslot(11,15))`
    */
-  def overlappingTimeslots(list: List[Timeslot]) : List[Timeslot] = {
+  def overlappingTimeslots(list: List[Timeslot]) : List[Timeslot] =
+    list.foldLeft(List[Timeslot]()) { (ret,t) =>
+      if (t.contains(this)) this :: ret
+      else if (this.contains(t)) t :: ret
+      else if (t.overlaps(this) && t.startsBefore(this)) slice(t.to).head :: ret
+      else if (t.overlaps(this) && t.startsAfter(this))  slice(t.from).last :: ret
+      else ret
+    }.reverse
 
-    val result = new mutable.ListBuffer[Timeslot]()
-
-    list.foreach {
-      t =>
-        if (t.contains(this)) result += this
-        else if (this.contains(t)) result += t
-        else if (t.overlaps(this) && t.startsBefore(this)) result += this.slice(t.to).head
-        else if (t.overlaps(this) && t.startsAfter(this)) result += this.slice(t.from).last
-    }
-    result.toList
-  }
 
   /**
    * Find and return the timeslots whithin which this Timeslot does not
@@ -158,31 +144,17 @@ final case class Timeslot(from: Date, to: Date)
    *
    * the result will be: `List(Timeslot(9,10), Timeslot(15,20))`
    */
-  def nonOverlappingTimeslots(list: List[Timeslot]): List[Timeslot] = {
-
-    val overlaps = list.filter(t => this.overlaps(t))
-
-    if (overlaps.isEmpty)
-      return List(this)
-
-    def build(acc: List[Timeslot], listPart: List[Timeslot]): List[Timeslot] = {
-
-      listPart match {
-        case Nil => acc
-        case x :: Nil => build(acc, List())
-        case x :: y :: rest =>
-          build(acc ++ List(Timeslot(x.to,  y.from)), y :: rest)
-      }
+  def nonOverlappingTimeslots(list: List[Timeslot]): List[Timeslot] =
+    overlappingTimeslots(list) sortWith {_.start < _.start} match  {
+      case Nil => List(this)
+      case over =>
+        val (head,last) = (over.head,over.last)
+        val hd = if (head.start > this.start) List(Timeslot(this.from, head.from)) else List()
+        val tl = if (last.end < this.end) List(Timeslot(last.to, this.to)) else List()
+        hd ++ over.tail.foldLeft((List[Timeslot](),over.head)) {
+          case ((l,x),y) => (l ++ List(Timeslot(x.to,  y.from)),y)
+        }._1  ++ tl
     }
-
-    val head = overlaps.head
-    val last = overlaps.reverse.head
-
-    val start = if (head.startsAfter(this)) List(Timeslot(this.from, head.from)) else List()
-    val end = if (last.endsBefore(this)) List(Timeslot(last.to, this.to)) else List()
-
-    start ++ build(List(), overlaps) ++ end
-  }
 
   /**
    * Align a list of consecutive timeslots to the boundaries
@@ -223,9 +195,9 @@ final case class Timeslot(from: Date, to: Date)
 
   def deltaMillis = to.getTime - from.getTime
 
-  def fromMillis = from.getTime
-  def toMillis   = to.getTime
 
+  def myString : String = "Timeslot(" + this.start + "," + this.end + ")"
+  //override def toString() = myString
   override def toString() = toDateString
 
   def toDateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from), new MutableDateCalc(to))

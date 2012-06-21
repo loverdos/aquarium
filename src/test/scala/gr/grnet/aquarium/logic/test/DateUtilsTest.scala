@@ -42,26 +42,4 @@ import gr.grnet.aquarium.util.{TestMethods, DateUtils}
 
 class DateUtilsTest extends DateUtils with TestMethods {
 
-  @Test
-  def testFindDays() = {
-    var start = new Date(1321530829000L) // 17/11/2011 13:54:02
-    var end = new Date(1353160515000L)   // 17/11/2012 13:55:15
-
-    var result = findDays(start, end, {
-      c =>
-        c.get(Calendar.DAY_OF_WEEK) == 5}
-    )
-    assertEquals(53, result.size)
-  }
-
-  @Test
-  def testAdjustTime() = {
-    var d = new Date(1321615962000L)        // 18/11/2011 13:32:42
-    var target = new Date(1321573542000L)   // 18/11/2011 01:45:42
-
-    val result = adjustToTime(d, 1, 45)
-    assertEquals(target, result)
-
-    assertThrows(adjustToTime(d, 1, 62))
-  }
 }

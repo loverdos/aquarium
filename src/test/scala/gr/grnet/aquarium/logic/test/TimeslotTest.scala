@@ -78,15 +78,15 @@ class TimeslotTest extends TestMethods {
 
   @Test
   def testNonOverlappingTimeslots = {
-    var t = Timeslot(new Date(7), new Date(20))
-    val list = List(Timeslot(new Date(1), new Date(3)),
-      Timeslot(new Date(6), new Date(8)),
-      Timeslot(new Date(11), new Date(15)))
+    var t = Timeslot(new Date(7L), new Date(20L))
+    val list = List(Timeslot(new Date(1L), new Date(3L)),
+      Timeslot(new Date(6L), new Date(8L)),
+      Timeslot(new Date(11L), new Date(15L)))
 
     var result = t.nonOverlappingTimeslots(list)
-    assertEquals(2, result.size)
+    assertEquals(2L, result.size)
 
-    t = Timeslot(new Date(9), new Date(20))
+    t = Timeslot(new Date(9L), new Date(20L))
     result = t.nonOverlappingTimeslots(list)
     assertEquals(2, result.size)
 
@@ -108,41 +108,5 @@ class TimeslotTest extends TestMethods {
     result = t.nonOverlappingTimeslots(List())
     assertEquals(1, result.size)
     assertEquals(t, result.head)
-  }
-
-  @Test
-  def testAlign = {
-    var t = Timeslot(new Date(7), new Date(20))
-    var list = List(Timeslot(new Date(1), new Date(3)),
-      Timeslot(new Date(6), new Date(8)),
-      Timeslot(new Date(11), new Date(15)))
-
-    var aligned = t.align(list)
-    assertEquals(2, aligned.size)
-    assertEquals(Timeslot(new Date(7), new Date(8)), aligned.head)
-
-    list = list ++ List(Timeslot(new Date(19), new Date(22)))
-    aligned = t.align(list)
-    assertEquals(3, aligned.size)
-    assertEquals(Timeslot(new Date(7), new Date(8)), aligned.head)
-    assertEquals(Timeslot(new Date(19), new Date(20)), aligned.last)
-
-    // Real-world failure, test whether aligned timeslot contains this
-    t = Timeslot(
-      new MutableDateCalc(2012, 1, 1).goPlusHours(3).toDate,
-      new MutableDateCalc(2012, 1, 2).goPlusHours(4).toDate)
-
-    val dc20110101 = new MutableDateCalc(2011, 1, 1)
-    val dc20111101 = new MutableDateCalc(2011, 11, 1)
-    val polTs = List(Timeslot(dc20110101.toDate, dc20110101.copy.goPlusYears(2).toDate))
-    val agrTs = List(Timeslot(dc20111101.toDate, new Date(Long.MaxValue)))
-
-    val alignedPolTs = t.align(polTs)
-    assertEquals(1, alignedPolTs.size)
-    assertEquals(t.to, alignedPolTs.last.to)
-
-    val alignedAgrTs = t.align(agrTs)
-    assertEquals(1, alignedAgrTs.size)
-    assertEquals(t.to, alignedAgrTs.last.to)
   }
 }

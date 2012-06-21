@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import java.util.Date
+
 /**
  * A DSL time bounded item whose effectivity is constrained by well defined time bounds.
  * All time bounded items also support inheritance.
@@ -45,6 +47,8 @@ abstract class DSLTimeBoundedItem[T <: DSLTimeBoundedItem[T]](val name: String,
                                                               val overrides: Option[T],
                                                               val effective: DSLTimeFrame)
 extends DSLItem {
+
+  def toTimeslot : Timeslot = Timeslot(effective.from,effective.to.getOrElse(new Date(Long.MaxValue)))
 
   override def toMap(): Map[String, Any] = {
     val data = new scala.collection.mutable.HashMap[String, Any]()

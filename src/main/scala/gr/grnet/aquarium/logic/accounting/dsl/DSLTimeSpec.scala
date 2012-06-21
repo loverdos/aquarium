@@ -35,7 +35,8 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import java.util.Calendar
+import java.util.{GregorianCalendar, Date, Calendar}
+import collection.mutable
 
 /**
  * Represents an instance of an expanded cronstring declaration. Enforces,
@@ -53,13 +54,13 @@ import java.util.Calendar
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-case class DSLTimeSpec(
-  min: Int,
-  hour: Int,
-  dom: Int,
-  mon: Int,
-  dow: Int
-) extends DSLItem {
+  case class DSLTimeSpec(
+    min: Int,
+    hour: Int,
+    dom: Int,
+    mon: Int,
+    dow: Int
+  ) extends DSLItem {
   //Preconditions to force correct values on object creation
   assert(0 <= min && 60 > min)
   assert(0 <= hour && 24 > hour)
@@ -67,8 +68,39 @@ case class DSLTimeSpec(
   assert(-1 <= mon && 12 > mon && mon != 0)
   assert(-1 <= dow && 7 > dow)
 
+
+  def expandTimeSpec(from: Date,  to: Date) : List[Date] = {
+    val c = new GregorianCalendar()
+    c.setTime { /*adjust time given from "from" variable  */
+      c.setTime(from)
+      c.set(Calendar.MINUTE,this.min)
+      c.set(Calendar.HOUR_OF_DAY,this.hour)
+      /*if(c.getTimeInMillis < from.getTime) {
+        //c.add(Calendar.DAY_OF_YEAR, 1)
+       // assert(c.getTimeInMillis >= from.getTime,c.getTime + " >=" + from) /* sanity check */
+      }*/
+      c.getTime
+   }
+   def equals () : Boolean =
+      (this.mon < 0  || c.get(Calendar.MONTH) == this.getCalendarMonth()) &&
+      (this.dom < 0  || c.get(Calendar.DAY_OF_MONTH) == this.dom) &&
+      (this.dow < 0  || c.get(Calendar.DAY_OF_WEEK) == this.getCalendarDow())
+
+    val result = new mutable.ListBuffer[Date]()
+    //Console.err.println("\n\nBEGIN\n\n")
+    while (c.getTimeInMillis <= to.getTime) {
+      val b : Boolean = equals
+      //Console.err.println(c.getTime +  "\t\t"  + to + " ==>" + (if(b) "YES" else "NO"))
+      if (b) result += new Date(c.getTime.getTime)
+      c.add(Calendar.DAY_OF_YEAR, 1)
+    }
+    //Console.err.println("\n\nEND\n\n")
+    result.toList
+  }
+
+
   /** Day of week conversions to stay compatible with [[java.util.Calendar]] */
-  def getCalendarDow(): Int = dow match {
+  private def getCalendarDow(): Int = dow match {
     case 0 => Calendar.SUNDAY
     case 1 => Calendar.MONDAY
     case 2 => Calendar.TUESDAY
@@ -80,7 +112,7 @@ case class DSLTimeSpec(
   }
 
   /** Month conversions to stay compatible with [[java.util.Calendar]] */
-  def getCalendarMonth(): Int = mon match {
+  private def getCalendarMonth(): Int = mon match {
     case 1 => Calendar.JANUARY
     case 2 => Calendar.FEBRUARY
     case 3 => Calendar.MARCH
