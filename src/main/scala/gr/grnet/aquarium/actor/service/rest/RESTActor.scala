@@ -46,13 +46,12 @@ import gr.grnet.aquarium.actor.{RESTRole, RoleableActor, RouterRole}
 import RESTPaths._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
-import gr.grnet.aquarium.actor.message.admin.PingAllRequest
-import gr.grnet.aquarium.actor.message.{RouterResponseMessage, GetUserStateRequest, RouterRequestMessage, ActorMessage, GetUserBalanceRequest}
+import gr.grnet.aquarium.actor.message.{RouterResponseMessage, GetUserStateRequest, RouterRequestMessage, GetUserBalanceRequest}
 import gr.grnet.aquarium.{ResourceLocator, Aquarium}
 import com.ckkloverdos.resource.StreamResource
-import com.ckkloverdos.maybe.{Failed, NoVal, Just}
+import com.ckkloverdos.maybe.Failed
 import java.net.InetAddress
-import gr.grnet.aquarium.event.model.{ExternalEventModel, EventModel}
+import gr.grnet.aquarium.event.model.ExternalEventModel
 
 /**
  * Spray-based REST service. This is the outer-world's interface to Aquarium functionality.
@@ -66,9 +65,6 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
   final val TEXT_PLAIN       = "text/plain"
   final val APPLICATION_JSON = "application/json"
-
-
-  private[this] def aquarium = Aquarium.Instance
 
   private def stringResponse(status: Int, stringBody: String, contentType: String): HttpResponse = {
     HttpResponse(
@@ -124,7 +120,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
   )(  f: RequestResponder ⇒ Unit): Unit = {
 
     aquarium.adminCookie match {
-      case Just(adminCookie) ⇒
+      case Some(adminCookie) ⇒
         headers.find(_.name.toLowerCase == Aquarium.HTTP.RESTAdminHeaderNameLowerCase) match {
           case Some(cookieHeader) if(cookieHeader.value == adminCookie) ⇒
             try f(responder)
@@ -143,7 +139,7 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
             responder.complete(stringResponse(401, "Unauthorized!", TEXT_PLAIN))
         }
 
-      case NoVal ⇒
+      case None ⇒
         responder.complete(stringResponse(403, "Forbidden!", TEXT_PLAIN))
     }
   }
@@ -250,7 +246,6 @@ class RESTActor private(_id: String) extends RoleableActor with Loggable {
 
   private[this]
   def callRouter(message: RouterRequestMessage, responder: RequestResponder): Unit = {
-    val aquarium = Aquarium.Instance
     val actorProvider = aquarium.actorProvider
     val router = actorProvider.actorForRole(RouterRole)
     val futureResponse = router ask message

@@ -33,10 +33,8 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.parts
+package gr.grnet.aquarium.service.event
 
-import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.Aquarium
 
 /**
@@ -44,47 +42,4 @@ import gr.grnet.aquarium.Aquarium
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class RoleHistoryItem(
-    /**
-     * The role name.
-     */
-    name: String,
-
-    /**
-     * Validity start time for this role. The time is inclusive.
-     */
-    validFrom: Long,
-
-    /**
-     * Validity stop time for this role. The time is exclusive.
-     */
-    validTo: Long = Long.MaxValue
-) {
-  require(
-    validFrom <= validTo,
-    "validFrom(%s) <= validTo(%s)".format(new MutableDateCalc(validFrom), new MutableDateCalc(validTo)))
-
-  require(name ne null, "Name is not null")
-
-  require(!name.trim.isEmpty, "Name '%s' is not empty".format(name))
-
-  def timeslot = Timeslot(validFrom, validTo)
-
-  def copyWithValidTo(newValidTo: Long) = copy(validTo = newValidTo)
-
-  def isUpperBounded = {
-    validTo != Long.MaxValue
-  }
-
-  def contains(time: Long) = {
-    validFrom <= time && time < validTo
-  }
-
-  def startsStrictlyAfter(time: Long) = {
-    validFrom > time
-  }
-
-  override def toString =
-    "RoleHistoryItem(%s, [%s, %s))".
-      format(name, new MutableDateCalc(validFrom), new MutableDateCalc(validTo))
-}
+final case class AquariumCreatedEvent(aquarium: Aquarium) extends BusEvent

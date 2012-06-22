@@ -59,7 +59,7 @@ import gr.grnet.aquarium.computation.BillingMonthInfo
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-class MemStore extends UserStateStore
+class MemStoreProvider extends UserStateStore
   with Configurable with PolicyStore
   with ResourceEventStore with IMEventStore
   with StoreProvider {
@@ -87,7 +87,7 @@ class MemStore extends UserStateStore
       "PolicyEntry"         -> _policyEntries.size
     )
 
-    "MemStore(%s)" format map
+    "MemStoreProvider(%s)" format map
   }
 
   //+ StoreProvider
@@ -278,7 +278,7 @@ class MemStore extends UserStateStore
   }
 }
 
-object MemStore {
+object MemStoreProvider {
   final def isLocalIMEvent(event: IMEventModel) = event match {
     case _: MemIMEvent ⇒ true
     case _ ⇒ false

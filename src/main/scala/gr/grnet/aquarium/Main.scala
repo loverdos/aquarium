@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import com.ckkloverdos.maybe.Just
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 
 /**
  * Main method for Aquarium
@@ -63,19 +64,6 @@ object Main extends LazyLoggable {
     }
   }
 
-  def doStart(): Unit = {
-    import ResourceLocator.SysEnvs
-
-    // We have AKKA builtin, so no need to mess with pre-existing installation.
-    if(SysEnvs.AKKA_HOME.value.isJust) {
-      val error = new AquariumInternalError("%s is set. Please unset and restart Aquarium".format(SysEnvs.Names.AKKA_HOME))
-      logger.error("%s is set".format(SysEnvs.Names.AKKA_HOME), error)
-      throw error
-    }
-
-    Aquarium.Instance.start()
-  }
-
   def main(args: Array[String]) = {
     configureLogging()
 
@@ -83,9 +71,11 @@ object Main extends LazyLoggable {
     logStarting("Aquarium")
     val ms0 = TimeHelpers.nowMillis()
     try {
-      doStart()
+      val aquarium = new AquariumBuilder(ResourceLocator.AquariumProperties).build()
+      aquarium.start()
+
       val ms1 = TimeHelpers.nowMillis()
-      logStarted(ms0, ms1, "Aquarium")
+      logStarted(ms0, ms1, "Aquarium [%s]", aquarium.version)
       logSeparator()
     } catch {
       case e: Throwable ⇒

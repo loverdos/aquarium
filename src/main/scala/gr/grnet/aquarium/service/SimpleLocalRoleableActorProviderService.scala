@@ -37,22 +37,25 @@ package gr.grnet.aquarium.service
 
 import com.ckkloverdos.props.Props
 import akka.actor.ActorRef
-import gr.grnet.aquarium.Configurable
+import gr.grnet.aquarium.{AquariumAwareSkeleton, Configurable}
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.actor.message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
 import gr.grnet.aquarium.actor._
-
 
 /**
  * All actors are provided locally.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class SimpleLocalRoleableActorProviderService extends RoleableActorProviderService with Configurable with Loggable {
+class SimpleLocalRoleableActorProviderService
+  extends RoleableActorProviderService
+     with AquariumAwareSkeleton
+     with Configurable
+     with Loggable {
+
   private[this] val actorCache = new ConcurrentHashMap[ActorRole, ActorRef]
-  private[this] var _props: Props = _
+  @volatile private[this] var _props: Props = _
 
   def propertyPrefix = None
 
@@ -73,7 +76,11 @@ class SimpleLocalRoleableActorProviderService extends RoleableActorProviderServi
   }
 
   private[this] def _newActor(role: ActorRole): ActorRef = {
-    val actorRef = akka.actor.Actor.actorOf(role.actorType).start()
+    val actorFactory = (_class: Class[_ <: RoleableActor]) ⇒ {
+      aquarium.newInstance(_class, _class.getName)
+    }
+
+    val actorRef = akka.actor.Actor.actorOf(actorFactory(role.actorType)).start()
 
     val propsMsg = AquariumPropertiesLoaded(this._props)
     if(role.canHandleConfigurationMessage(propsMsg)) {

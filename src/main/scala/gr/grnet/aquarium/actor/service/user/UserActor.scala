@@ -46,12 +46,11 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf, shortNameOfClass, shortNameOfType}
-import gr.grnet.aquarium.computation.reason.{RealtimeBillingCalculation, InitialUserActorSetup, UserStateChangeReason, IMEventArrival, InitialUserStateSetup}
-import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
+import gr.grnet.aquarium.computation.reason.{RealtimeBillingCalculation, InitialUserActorSetup, UserStateChangeReason, IMEventArrival}
+import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.computation.state.parts.IMStateSnapshot
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.computation.state.{UserStateBootstrap, UserState}
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  *
@@ -83,8 +82,6 @@ class UserActor extends ReflectiveRoleableActor {
 
   def role = UserActorRole
 
-  private[this] def aquarium: Aquarium = Aquarium.Instance
-
   private[this] def userStateComputations = aquarium.userStateComputations
 
   private[this] def stdUserStateStoreFunc = (userState: UserState) ⇒ {
@@ -92,7 +89,7 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   private[this] def _timestampTheshold = {
-    aquarium.props.getLong(Aquarium.Keys.user_state_timestamp_threshold).getOr(1000L * 60 * 5 /* 5 minutes */)
+    aquarium.userStateTimestampThreshold
   }
 
   private[this] def haveUserState = {
