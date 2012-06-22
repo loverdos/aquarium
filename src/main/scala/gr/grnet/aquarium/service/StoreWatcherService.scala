@@ -38,7 +38,7 @@ package gr.grnet.aquarium.service
 import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle, Tag}
 import java.util.concurrent.atomic.AtomicBoolean
 import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEvent}
-import gr.grnet.aquarium.{Configurable, Aquarium}
+import gr.grnet.aquarium.{AquariumAwareSkeleton, Configurable, Aquarium}
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.store.StoreProvider
 
@@ -48,16 +48,13 @@ import gr.grnet.aquarium.store.StoreProvider
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final class StoreWatcherService extends Lifecycle with Configurable with Loggable {
+final class StoreWatcherService extends Lifecycle with Configurable with AquariumAwareSkeleton with Loggable {
   private[this] var _reconnectPeriodMillis = 1000L
 
   private[this] val _pingIsScheduled = new AtomicBoolean(false)
   private[this] val _stopped = new AtomicBoolean(false)
   private[this] val _rcIsAlive = new AtomicBoolean(true)
   private[this] val _imIsAlive = new AtomicBoolean(true)
-
-  def aquarium = Aquarium.Instance
-
 
   def propertyPrefix = Some(StoreProvider.Prefix)
 
@@ -70,10 +67,13 @@ final class StoreWatcherService extends Lifecycle with Configurable with Loggabl
     this._reconnectPeriodMillis = props.getLongEx(StoreProvider.Keys.reconnect_period_millis)
   }
 
-  private[this] def safePingStore(tag: Tag,
-                                  pinger: () ⇒ Any,
-                                  getStatus: () ⇒ Boolean,
-                                  setStatus: (Boolean) ⇒ Any): Unit = {
+  private[this] def safePingStore(
+      tag: Tag,
+      pinger: () ⇒ Any,
+      getStatus: () ⇒ Boolean,
+      setStatus: (Boolean) ⇒ Any
+  ): Unit = {
+
     try {
       val wasAlive = getStatus()
       pinger()
@@ -92,11 +92,14 @@ final class StoreWatcherService extends Lifecycle with Configurable with Loggabl
     }
   }
 
-  private[this] def doSchedulePing(tag: Tag,
-                                   info: String,
-                                   pinger: () ⇒ Any,
-                                   getStatus: () ⇒ Boolean,
-                                   setStatus: (Boolean) ⇒ Any): Unit = {
+  private[this] def doSchedulePing(
+      tag: Tag,
+      info: String,
+      pinger: () ⇒ Any,
+      getStatus: () ⇒ Boolean,
+      setStatus: (Boolean) ⇒ Any
+  ): Unit = {
+
     aquarium.timerService.scheduleOnce(
       info,
       {

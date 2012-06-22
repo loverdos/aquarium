@@ -45,7 +45,7 @@ import util.{Loggable, shortClassNameOf}
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-trait RoleableActor extends Actor with Loggable {
+trait RoleableActor extends Actor with Loggable with AquariumAwareSkeleton {
   def role: ActorRole
 
   override def toString = "%s@%s(%s)".format(shortClassNameOf(this), System.identityHashCode(this), role.role)

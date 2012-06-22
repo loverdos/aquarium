@@ -39,26 +39,35 @@ import gr.grnet.aquarium.actor.RESTRole
 import _root_.akka.actor._
 import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
+import gr.grnet.aquarium.{Configurable, AquariumAwareSkeleton, Aquarium}
+import com.ckkloverdos.props.Props
 
 /**
  * REST service based on Actors and Spray.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RESTActorService extends Lifecycle with Loggable {
+class RESTActorService extends Lifecycle with AquariumAwareSkeleton with Configurable with Loggable {
   private[this] var _port: Int = 8080
   private[this] var _restActor: ActorRef = _
   private[this] var _serverActor: ActorRef = _
   private[this] var _clientActor: ActorRef = _
 
-  def start(): Unit = {
-    val aquarium = Aquarium.Instance
-    this._port = aquarium.props.getInt(Aquarium.Keys.rest_port).getOr(
-      throw new AquariumInternalError(
-        "%s was not specified in Aquarium properties".format(Aquarium.Keys.rest_port)))
 
-    logger.debug("Starting on port %s".format(this._port))
+  def propertyPrefix = Some(RESTActorService.Prefix)
+
+  /**
+   * Configure this instance with the provided properties.
+   *
+   * If `propertyPrefix` is defined, then `props` contains only keys that start with the given prefix.
+   */
+  def configure(props: Props) {
+    this._port = props.getIntEx(Aquarium.EnvKeys.restPort.name)
+    logger.debug("HTTP port is %s".format(this._port))
+  }
+
+  def start(): Unit = {
+    logger.info("Starting HTTP on port %s".format(this._port))
 
     this._restActor = aquarium.actorProvider.actorForRole(RESTRole)
     // Start Spray subsystem
@@ -67,7 +76,13 @@ class RESTActorService extends Lifecycle with Loggable {
   }
 
   def stop(): Unit = {
+    logger.info("Stopping HTTP on port %s".format(this._port))
+
     this._serverActor.stop()
     this._clientActor.stop()
   }
+}
+
+object RESTActorService {
+  final val Prefix = "rest"
 }

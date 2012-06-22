@@ -39,6 +39,7 @@ import akka.actor.ActorRef
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.util.Lifecycle
 import gr.grnet.aquarium.actor.ActorRole
+import gr.grnet.aquarium.AquariumAware
 
 /**
  *

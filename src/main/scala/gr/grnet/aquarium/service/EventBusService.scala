@@ -38,7 +38,7 @@ package gr.grnet.aquarium.service
 import gr.grnet.aquarium.Configurable
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.service.event.BusEvent
-import com.google.common.eventbus.{AsyncEventBus, DeadEvent, Subscribe}
+import com.google.common.eventbus.{EventBus, AsyncEventBus, DeadEvent, Subscribe}
 import gr.grnet.aquarium.util.{DaemonThreadFactory, Lifecycle, Loggable}
 import java.util.concurrent.{ConcurrentHashMap, Executors}
 import java.util.Collections
@@ -51,10 +51,13 @@ import java.util.Collections
  */
 
 class EventBusService extends Loggable with Lifecycle with Configurable {
+  private[this] val className = classOf[EventBusService].getName
   private[this] val asyncBus = new AsyncEventBus(
-    classOf[EventBusService].getName,
+    "%s/async".format(className),
     Executors.newFixedThreadPool(1, new DaemonThreadFactory)
   )
+
+  private[this] val syncBus = new EventBus("%s/sync")
 
   private[this] val subscribers = Collections.newSetFromMap[AnyRef](new ConcurrentHashMap())
 
@@ -75,16 +78,23 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
   def stop() = synchronized {
     val iterator = subscribers.iterator()
     while(iterator.hasNext) {
-      asyncBus.unregister(iterator.next())
+      val subscriber = iterator.next()
+      asyncBus.unregister(subscriber)
+      syncBus.unregister(subscriber)
     }
     subscribers.clear()
   }
 
-  @inline
-  def post[A <: BusEvent](event: A): Unit = {
-    this ! event
+  /**
+   * Posts an event synchronously.
+   */
+  def syncPost[A <: BusEvent](event: A): Unit = {
+    syncBus.post(event)
   }
 
+  /**
+   * Post an event asynchronously.
+   */
   def ![A <: BusEvent](event: A): Unit = {
     asyncBus.post(event)
   }
@@ -92,11 +102,13 @@ class EventBusService extends Loggable with Lifecycle with Configurable {
   def removeSubscriber[A <: AnyRef](subscriber: A): Unit = synchronized {
     subscribers.remove(subscriber)
     asyncBus.unregister(subscriber)
+    syncBus.register(subscriber)
   }
 
   def addSubscriber[A <: AnyRef](subscriber: A): Unit = synchronized {
     subscribers.add(subscriber)
     asyncBus.register(subscriber)
+    syncBus.register(subscriber)
   }
 
   @Subscribe

@@ -37,7 +37,8 @@ package gr.grnet.aquarium.service
 
 import akka.actor.Actor
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.ResourceLocator.SysEnvs
+import gr.grnet.aquarium.AquariumInternalError
 
 /**
  * A wrapper around Akka, so that it is uniformly treated as an Aquarium service.
@@ -47,6 +48,12 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 
 final class AkkaService extends Lifecycle with Loggable {
   def start() = {
+    // We have AKKA builtin, so no need to mess with pre-existing installation.
+    if(SysEnvs.AKKA_HOME.value.isJust) {
+      val error = new AquariumInternalError("%s is set. Please unset and restart Aquarium".format(SysEnvs.Names.AKKA_HOME))
+      logger.error("%s is set".format(SysEnvs.Names.AKKA_HOME), error)
+      throw error
+    }
   }
 
   def stop()= {

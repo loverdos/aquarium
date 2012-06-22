@@ -36,23 +36,21 @@
 package gr.grnet.aquarium.logic.accounting
 
 import dsl.{Timeslot, DSLPolicy, DSL}
-import gr.grnet.aquarium.Aquarium._
 import java.io.{InputStream, FileInputStream, File}
 import java.util.Date
 import gr.grnet.aquarium.util.Loggable
 import java.util.concurrent.atomic.AtomicReference
-import gr.grnet.aquarium.Aquarium.Keys
-import com.ckkloverdos.maybe.{Failed, NoVal, Just}
 import collection.immutable.{TreeMap, SortedMap}
-import gr.grnet.aquarium.{AquariumException, Aquarium}
+import gr.grnet.aquarium.{ResourceLocator, AquariumAwareSkeleton, AquariumException, Aquarium}
 import gr.grnet.aquarium.util.date.{MutableDateCalc, TimeHelpers}
+import com.ckkloverdos.maybe.{Failed, Just}
 
 /**
  * Searches for and loads the applicable accounting policy
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-object Policy extends DSL with Loggable {
+object Policy extends DSL with Loggable with AquariumAwareSkeleton {
 
   /* Pointer to the latest policy */
   private[logic] lazy val policies = {
@@ -163,7 +161,7 @@ object Policy extends DSL with Loggable {
    */
   private[logic] def reloadPolicies: SortedMap[Timeslot, DSLPolicy] =
     if (config == null)
-      reloadPolicies(Instance)
+      reloadPolicies(aquarium)
     else
       reloadPolicies(config)
 
@@ -174,24 +172,24 @@ object Policy extends DSL with Loggable {
 
     //2. Check whether policy file has been updated
     val latestPolicyChange = if (pol.isEmpty) 0 else pol.last.validFrom
-    val policyf = Instance.findConfigFile(PolicyConfName, Keys.aquarium_policy, PolicyConfName)
+
+    val policyf = ResourceLocator.Resources.PolicyYAMLResource
     var updated = false
 
     if (policyf.exists) {
-      if (policyf.lastModified > latestPolicyChange) {
-        logger.info("Policy file updated since last check, reloading")
         updated = true
-      } else {
-        logger.info("Policy file not changed since last check")
-      }
-    } else {
+     } else {
       logger.warn("User specified policy file %s does not exist, " +
-        "using stored policy information".format(policyf.getAbsolutePath))
+        "using stored policy information".format(policyf.url))
     }
 
     if (updated) {
       val ts = TimeHelpers.nowMillis()
-      val parsedNew = loadPolicyFromFile(policyf)
+      val parsedNewM = policyf.mapInputStream(parse).toMaybeEither
+      val parsedNew = parsedNewM match {
+        case Just(parsedNew) ⇒ parsedNew
+        case Failed(e)       ⇒ throw e
+      }
       val newPolicy = parsedNew.toPolicyEntry
 
       config.policyStore.findPolicyEntry(newPolicy.id) match {

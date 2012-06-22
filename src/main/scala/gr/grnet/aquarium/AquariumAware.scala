@@ -35,24 +35,13 @@
 
 package gr.grnet.aquarium
 
-import store.memory.MemStore
-import store.mongodb.MongoDBStoreProvider
-import util.Loggable
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 
 /**
- * Returns the appropriate Configurator implementation depending on value
- * of the test.store runtime parameter.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait StoreConfigurator extends Loggable {
 
-  def configurator: Aquarium =
-    LogicTestsAssumptions.propertyValue(PropertyNames.TestStore) match {
-      case "mem" => Aquarium.Instance.withStoreProviderClass(classOf[MemStore])
-      case "mongo" => Aquarium.Instance.withStoreProviderClass(classOf[MongoDBStoreProvider])
-      case _ =>
-        logger.warn("Unknown store type, defaulting to \"mem\"")
-        Aquarium.Instance.withStoreProviderClass(classOf[MemStore])
-  }
+trait AquariumAware {
+  def awareOfAquariumEx(event: AquariumCreatedEvent): Unit
 }

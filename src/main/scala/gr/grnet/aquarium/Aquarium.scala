@@ -35,34 +35,31 @@
 
 package gr.grnet.aquarium
 
-import java.io.File
-
-import com.ckkloverdos.convert.Converters.{DefaultConverters => TheDefaultConverters}
-import com.ckkloverdos.maybe._
+import com.ckkloverdos.env.Env
+import com.ckkloverdos.key.{IntKey, StringKey, LongKey, TypedKeySkeleton, TypedKey, BooleanKey}
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.sys.SysProp
-
-import gr.grnet.aquarium.util.{Lifecycle, Loggable, shortNameOfClass, shortClassNameOf}
-import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.service._
-import gr.grnet.aquarium.converter.StdConverters
+import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, IMEventStore, ResourceEventStore, StoreProvider}
+import java.io.File
+import gr.grnet.aquarium.util.{Loggable, Lifecycle}
+import gr.grnet.aquarium.service.{RoleableActorProviderService, StoreWatcherService, RabbitMQService, TimerService, EventBusService, AkkaService}
+import com.ckkloverdos.convert.Converters
 import java.util.concurrent.atomic.AtomicBoolean
-import gr.grnet.aquarium.ResourceLocator._
+import org.slf4j.{LoggerFactory, Logger}
+import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.computation.UserStateComputations
-import gr.grnet.aquarium.logic.accounting.algorithm.{SimpleCostPolicyAlgorithmCompiler, CostPolicyAlgorithmCompiler}
+import com.ckkloverdos.maybe._
+import gr.grnet.aquarium.ResourceLocator._
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.logic.accounting.Policy
-import org.slf4j.{Logger, LoggerFactory}
+import com.ckkloverdos.sys.SysProp
 
 /**
- * This is the Aquarium entry point.
  *
- * Responsible to load all of application configuration and provide the relevant services.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariumSelf ⇒
-  import Aquarium.Keys
+
+final class Aquarium(env: Env) extends Lifecycle with Loggable {
+  import Aquarium.EnvKeys
 
   private[this] val _isStopping = new AtomicBoolean(false)
 
@@ -91,199 +88,17 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariu
     getClientLogger(client).warn(fmt.format(args: _*))
   }
 
-  /**
-   * Reflectively provide a new instance of a class and configure it appropriately.
-   */
-  private[this] def newInstance[C : Manifest](_className: String = ""): C = {
-    val className = _className match {
-      case "" ⇒
-        manifest[C].erasure.getName
-
-      case name ⇒
-        name
-    }
-
-    val instanceM = MaybeEither(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
-    instanceM match {
-      case Just(instance) ⇒ instance match {
-        case configurable: Configurable ⇒
-          val localProps = configurable.propertyPrefix match {
-            case Some(prefix) ⇒
-              props.subsetForKeyPrefix(prefix)
-
-            case None ⇒
-              props
-          }
-
-          logger.debug("Configuring {} with props", configurable.getClass.getName)
-          MaybeEither(configurable configure localProps) match {
-            case Just(_) ⇒
-              logger.info("Configured {} with props", configurable.getClass.getName)
-              instance
-
-            case Failed(e) ⇒
-              throw new AquariumInternalError("Could not configure instance of %s".format(className), e)
-          }
-
-        case _ ⇒
-          instance
-      }
-
-      case Failed(e) ⇒
-        throw new AquariumInternalError("Could not instantiate %s".format(className), e)
-    }
-
-  }
-
-  private[this] lazy val _algorithmCompiler: CostPolicyAlgorithmCompiler = SimpleCostPolicyAlgorithmCompiler
-
-  private[this] lazy val _userStateComputations = new UserStateComputations(aquariumSelf)
-
-  private[this] lazy val _actorProvider = newInstance[RoleableActorProviderService](props(Keys.actor_provider_class))
-
-  /**
-   * Initializes a store provider, according to the value configured
-   * in the configuration file. The
-   */
-  private[this] lazy val _storeProvider = newInstance[StoreProvider](props(Keys.store_provider_class))
-  
-  private[this] lazy val _restService = newInstance[Lifecycle](props(Keys.rest_service_class))
-
-  private[this] lazy val _userStateStoreM: Maybe[UserStateStore] = {
-    // If there is a specific `UserStateStore` implementation specified in the
-    // properties, then this implementation overrides the user store given by
-    // `StoreProvider`.
-    props.get(Keys.user_state_store_class) map { className ⇒
-      val instance = newInstance[UserStateStore](className)
-      logger.info("Overriding %s provisioning. Implementation given by: %s".format(
-        shortNameOfClass(classOf[UserStateStore]),
-        instance.getClass))
-      instance
+  @throws(classOf[AquariumInternalError])
+  def apply[T: Manifest](key: TypedKey[T]): T = {
+    try {
+     env.getEx(key)
+    } catch {
+      case e: Exception ⇒
+        throw new AquariumInternalError("Could not locate %s in Aquarium environment".format(key))
     }
   }
 
-  private[this] lazy val _resourceEventStoreM: Maybe[ResourceEventStore] = {
-    // If there is a specific `EventStore` implementation specified in the
-    // properties, then this implementation overrides the event store given by
-    // `StoreProvider`.
-    props.get(Keys.resource_event_store_class) map { className ⇒
-      val instance = newInstance[ResourceEventStore](className)
-      logger.info("Overriding EventStore provisioning. Implementation given by: %s".format(instance.getClass))
-      instance
-    }
-  }
-
-  private[this] lazy val _imEventStoreM: Maybe[IMEventStore] = {
-    props.get(Keys.user_event_store_class) map { className ⇒
-      val instance = newInstance[IMEventStore](className)
-      logger.info("Overriding IMEventStore provisioning. Implementation given by: %s".format(instance.getClass))
-      instance
-    }
-  }
-
-  private[this] lazy val _policyStoreM: Maybe[PolicyStore] = {
-    props.get(Keys.policy_store_class) map {
-      className ⇒
-        val instance = newInstance[PolicyStore](className)
-        logger.info("Overriding PolicyStore provisioning. Implementation given by: %s".format(instance.getClass))
-        instance
-    }
-  }
-
-  private[this] lazy val _eventsStoreFolder: Maybe[File] = {
-    props.get(Keys.events_store_folder) map {
-      folderName ⇒
-        logger.info("{} = {}", Keys.events_store_folder, folderName)
-        
-        val canonicalFolder = {
-          val folder = new File(folderName)
-          if(folder.isAbsolute) {
-            folder.getCanonicalFile
-          } else {
-            logger.info("{} is not absolute, making it relative to Aquarium Home", Keys.events_store_folder)
-            new File(ResourceLocator.Homes.Folders.AquariumHome, folderName).getCanonicalFile
-          }
-        }
-
-        val canonicalPath = canonicalFolder.getCanonicalPath
-
-        if(canonicalFolder.exists() && !canonicalFolder.isDirectory) {
-          throw new AquariumInternalError("%s = %s is not a folder".format(Keys.events_store_folder, canonicalFolder))
-        }
-
-        // Now, events folder must be outside AQUARIUM_HOME, since AQUARIUM_HOME can be wiped out for an upgrade but
-        // we still want to keep the events.
-        val ahCanonicalPath = ResourceLocator.Homes.Folders.AquariumHome.getCanonicalPath
-        if(canonicalPath.startsWith(ahCanonicalPath)) {
-          throw new AquariumException(
-            "%s = %s is under Aquarium Home = %s".format(
-              Keys.events_store_folder,
-              canonicalFolder,
-              ahCanonicalPath
-            ))
-        }
-
-        canonicalFolder.mkdirs()
-
-        canonicalFolder
-    }
-  }
-
-  private[this] lazy val _events_store_save_rc_events = props.getBoolean(Keys.events_store_save_rc_events).getOr(false)
-
-  private[this] lazy val _events_store_save_im_events = props.getBoolean(Keys.events_store_save_im_events).getOr(false)
-
-  private[this] lazy val _converters = StdConverters.AllConverters
-
-  private[this] lazy val _timerService: TimerService = newInstance[SimpleTimerService]()
-
-  private[this] lazy val _akka = newInstance[AkkaService]()
-
-  private[this] lazy val _eventBus = newInstance[EventBusService]()
-
-  private[this] lazy val _rabbitmqService = newInstance[RabbitMQService]()
-
-  private[this] lazy val _storeWatcherService = newInstance[StoreWatcherService]()
-
-  private[this] lazy val _allServices = List(
-    _timerService,
-    _akka,
-    _actorProvider,
-    _eventBus,
-    _restService,
-    _rabbitmqService,
-    _storeWatcherService
-  )
-
-  def get(key: String, default: String = ""): String = props.getOr(key, default)
-
-  def defaultClassLoader = Thread.currentThread().getContextClassLoader
-
-  /**
-   * FIXME: This must be ditched.
-   * 
-   * Find a file whose location can be overiden in
-   * the configuration file (e.g. policy.yaml)
-   *
-   * @param name Name of the file to search for
-   * @param prop Name of the property that defines the file path
-   * @param default Name to return if no file is found
-   */
-  def findConfigFile(name: String, prop: String, default: String): File = {
-    // Check for the configured value first
-    val configured = new File(get(prop))
-    if (configured.exists)
-      return configured
-
-    // Look into the configuration context
-    ResourceLocator.getResource(name) match {
-      case Just(policyResource) ⇒
-        val path = policyResource.url.getPath
-        new File(path)
-      case _ ⇒
-        new File(default)
-    }
-  }
+  private[this] lazy val _allServices = Aquarium.ServiceKeys.map(this(_))
 
   private[this] def startServices(): Unit = {
     for(service ← _allServices) {
@@ -303,12 +118,7 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariu
     }
   }
 
-  def stopWithDelay(millis: Long) {
-    Thread sleep millis
-    stop()
-  }
-
-  private[this] def configure(): Unit = {
+  private[this] def showBasicConfiguration(): Unit = {
     logger.info("Aquarium Home = %s".format(
       if(Homes.Folders.AquariumHome.isAbsolute)
         Homes.Folders.AquariumHome
@@ -317,7 +127,7 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariu
     ))
 
     for(folder ← this.eventsStoreFolder) {
-      logger.info("{} = {}", Aquarium.Keys.events_store_folder, folder)
+      logger.info("{} = {}", EnvKeys.eventsStoreFolder.name, folder)
     }
     this.eventsStoreFolder.throwMe // on error
 
@@ -343,59 +153,71 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariu
     }))
   }
 
-  def start() = {
+  def start(): Unit = {
     this._isStopping.set(false)
-    configure()
+    showBasicConfiguration()
     addShutdownHooks()
     startServices()
   }
 
-  def stop() = {
+  def stop(): Unit = {
     this._isStopping.set(true)
     stopServices()
   }
 
-  def algorithmCompiler = _algorithmCompiler
-
-  def userStateComputations = _userStateComputations
-
-  def converters = _converters
-  
-  def actorProvider = _actorProvider
-
-  def eventBus = _eventBus
-
-  def timerService = _timerService
-
-  def userStateStore = {
-    _userStateStoreM match {
-      case Just(us) ⇒ us
-      case _        ⇒ storeProvider.userStateStore
-    }
+  /**
+   * Stops Aquarium after the given millis. Used during testing.
+   */
+  def stopAfterMillis(millis: Long) {
+    Thread sleep millis
+    stop()
   }
 
-  def resourceEventStore = {
-    _resourceEventStoreM match {
-      case Just(es) ⇒ es
-      case _        ⇒ storeProvider.resourceEventStore
-    }
-  }
+  /**
+   * Reflectively provide a new instance of a class and configure it appropriately.
+   */
+  def newInstance[C <: AnyRef](_class: Class[C], className: String): C = {
+    val originalProps = apply(EnvKeys.originalProps)
 
-  def imEventStore = {
-    _imEventStoreM match {
-      case Just(es) ⇒ es
-      case _        ⇒ storeProvider.imEventStore
-    }
-  }
+    val instanceM = MaybeEither(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
+    instanceM match {
+      case Just(instance) ⇒
+        eventBus.addSubscriber[C](instance)
 
-  def policyStore = {
-    _policyStoreM match {
-      case Just(es) ⇒ es
-      case _        ⇒ storeProvider.policyStore
-    }
-  }
+        instance match {
+          case configurable: Configurable if (originalProps ne null) ⇒
+            val localProps = configurable.propertyPrefix match {
+              case somePrefix @ Some(prefix) ⇒
+                if(prefix.length == 0) {
+                  logger.warn(
+                    "Property prefix for %s is %s. Consider using None".format(instance, somePrefix))
+                }
 
-  def storeProvider = _storeProvider
+                originalProps.subsetForKeyPrefix(prefix)
+
+              case None ⇒
+                originalProps
+            }
+
+            logger.debug("Configuring {} with props", configurable.getClass.getName)
+            MaybeEither(configurable configure localProps) match {
+              case Just(_) ⇒
+                logger.info("Configured {} with props", configurable.getClass.getName)
+                instance
+
+              case Failed(e) ⇒
+                throw new AquariumInternalError("Could not configure instance of %s".format(className), e)
+            }
+
+          case _ ⇒
+            instance
+        }
+
+      case Failed(e) ⇒
+        throw new AquariumInternalError("Could not instantiate %s".format(className), e)
+    }
+
+  }
 
   def currentResourcesMap: DSLResourcesMap = {
     // FIXME: Get rid of this singleton stuff
@@ -416,24 +238,42 @@ final class Aquarium(val props: Props) extends Lifecycle with Loggable { aquariu
     // FIXME: Read from properties?
     "default"
   }
-  
-  def withStoreProviderClass[C <: StoreProvider](spc: Class[C]): Aquarium = {
-    val map = this.props.map
-    val newMap = map.updated(Keys.store_provider_class, spc.getName)
-    val newProps = new Props(newMap)
-    new Aquarium(newProps)
-  }
 
-  def eventsStoreFolder = _eventsStoreFolder
+  def defaultClassLoader = apply(EnvKeys.defaultClassLoader)
 
-  def saveResourceEventsToEventsStoreFolder = _events_store_save_rc_events
+  def resourceEventStore = apply(EnvKeys.resourceEventStore)
 
-  def saveIMEventsToEventsStoreFolder = _events_store_save_im_events
+  def imEventStore = apply(EnvKeys.imEventStore)
 
-  def adminCookie: MaybeOption[String] = props.get(Aquarium.Keys.admin_cookie) match {
-    case just @ Just(_) ⇒ just
-    case _ ⇒ NoVal
-  }
+  def userStateStore = apply(EnvKeys.userStateStore)
+
+  def policyStore = apply(EnvKeys.policyStore)
+
+  def eventsStoreFolder = apply(EnvKeys.eventsStoreFolder)
+
+  def algorithmCompiler = apply(EnvKeys.algorithmCompiler)
+
+  def eventBus = apply(EnvKeys.eventBus)
+
+  def userStateComputations = apply(EnvKeys.userStateComputations)
+
+  def userStateTimestampThreshold = apply(EnvKeys.userStateTimestampThreshold)
+
+  def adminCookie = apply(EnvKeys.adminCookie)
+
+  def converters = apply(EnvKeys.converters)
+
+  def actorProvider = apply(EnvKeys.actorProvider)
+
+  def saveResourceEventsToEventsStoreFolder = apply(EnvKeys.eventsStoreSaveRCEvents)
+
+  def saveIMEventsToEventsStoreFolder = apply(EnvKeys.eventsStoreSaveIMEvents)
+
+  def timerService = apply(EnvKeys.timerService)
+
+  def restPort = apply(EnvKeys.restPort)
+
+  def version = apply(EnvKeys.version)
 }
 
 object Aquarium {
@@ -451,136 +291,67 @@ object Aquarium {
     SysProp.FileEncoding
   )
 
-  implicit val DefaultConverters = TheDefaultConverters
+  object HTTP {
+   final val RESTAdminHeaderName = "X-Aquarium-Admin-Cookie"
+   final val RESTAdminHeaderNameLowerCase = RESTAdminHeaderName.toLowerCase
+ }
 
-  final val PolicyConfName = ResourceLocator.ResourceNames.POLICY_YAML
-
-  final val RolesAgreementsName = ResourceLocator.ResourceNames.ROLE_AGREEMENTS_MAP
-
-  final lazy val AquariumPropertiesResource = ResourceLocator.Resources.AquariumPropertiesResource
-
-  final lazy val AquariumProperties = {
-    val maybeProps = Props(AquariumPropertiesResource)
-    maybeProps match {
-      case Just(props) ⇒
-        props
-
-      case NoVal ⇒
-        throw new AquariumInternalError(
-          "Could not load %s from %s".format(
-            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
-            AquariumPropertiesResource))
-
-
-      case Failed(e) ⇒
-        throw new AquariumInternalError(
-          "Could not load %s from %s".format(
-            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
-            AquariumPropertiesResource),
-          e)
-    }
+  final class AquariumEnvKey[T: Manifest](override val name: String) extends TypedKeySkeleton[T](name) {
+    override def toString = name
   }
 
-  /**
-   * The main [[gr.grnet.aquarium.Aquarium]] instance.
-   */
-  final lazy val Instance = {
-    Maybe(new Aquarium(AquariumProperties)) match {
-      case Just(masterConf) ⇒
-        masterConf
+  final val ServiceKeys: List[TypedKey[_ <: Lifecycle]] = List(
+    EnvKeys.timerService,
+    EnvKeys.akkaService,
+    EnvKeys.actorProvider,
+    EnvKeys.eventBus,
+    EnvKeys.restService,
+    EnvKeys.rabbitMQService,
+    EnvKeys.storeWatcherService
+  )
 
-      case NoVal ⇒
-        throw new AquariumInternalError(
-          "Could not create Aquarium configuration from %s".format(
-            AquariumPropertiesResource))
-
-      case Failed(e) ⇒
-        throw new AquariumInternalError(
-          "Could not create Aquarium configuration from %s".format(
-            AquariumPropertiesResource),
-          e)
-    }
-  }
-
-  /**
-   * Defines the names of all the known keys inside the master properties file.
-   */
-  final object Keys {
-
+  object EnvKeys {
     /**
      * The Aquarium version. Will be reported in any due occasion.
      */
-    final val version = "version"
+    final val version = StringKey("version")
 
-    /**
-     * The fully qualified name of the class that implements the `RoleableActorProviderService`.
-     * Will be instantiated reflectively and should have a public default constructor.
-     */
-    final val actor_provider_class = "actor.provider.class"
-
-    /**
-     * The class that initializes the REST service
-     */
-    final val rest_service_class = "rest.service.class"
+    final val originalProps: TypedKey[Props] =
+      new AquariumEnvKey[Props]("originalProps")
 
     /**
      * The fully qualified name of the class that implements the `StoreProvider`.
      * Will be instantiated reflectively and should have a public default constructor.
      */
-    final val store_provider_class = "store.provider.class"
+    final val storeProvider: TypedKey[StoreProvider] =
+      new AquariumEnvKey[StoreProvider]("store.provider.class")
 
     /**
-     * The class that implements the User store
-     */
-    final val user_state_store_class = "user.state.store.class"
-
-    /**
-     * The class that implements the resource event store
-     */
-    final val resource_event_store_class = "resource.event.store.class"
-
-    /**
-     * The class that implements the IM event store
-     */
-    final val user_event_store_class = "user.event.store.class"
-
-    /**
-     * The class that implements the wallet entries store
-     */
-    final val policy_store_class = "policy.store.class"
-
-
-    /** The lower mark for the UserActors' LRU.
+     * If a value is given to this property, then it represents a folder where all events coming to aquarium are
+     * saved.
      *
-     * The terminology is borrowed from the (also borrowed) Apache-lucene-solr-based implementation.
+     * This is for debugging purposes.
+     */
+    final val eventsStoreFolder: TypedKey[Option[File]] =
+      new AquariumEnvKey[Option[File]]("events.store.folder")
+
+    /**
+     * If this is `true` and `events.store.folder` is defined, then all resource events are
+     * also stored in `events.store.folder`.
      *
+     * This is for debugging purposes.
      */
-    final val user_actors_lru_lower_mark = "user.actors.LRU.lower.mark"
+
+    final val eventsStoreSaveRCEvents = BooleanKey("events.store.save.rc.events")
 
     /**
-     * The upper mark for the UserActors' LRU.
+     * If this is `true` and `events.store.folder` is defined, then all IM events are
+     * also stored in `events.store.folder`.
      *
-     * The terminology is borrowed from the (also borrowed) Apache-lucene-solr-based implementation.
+     * This is for debugging purposes.
      */
-    final val user_actors_lru_upper_mark = "user.actors.LRU.upper.mark"
+    final val eventsStoreSaveIMEvents = BooleanKey("events.store.save.im.events")
 
-    /**
-     * REST service listening port.
-     *
-     * Default is 8080.
-     */
-    final val rest_port = "rest.port"
-
-    /**
-     * Location of the Aquarium accounting policy config file
-     */
-    final val aquarium_policy = "aquarium.policy"
-
-    /**
-     * Location of the role-agreement mapping file
-     */
-    final val aquarium_role_agreement_map = "aquarium.role-agreement.map"
-    
     /**
      * A time period in milliseconds for which we can tolerate stale parts regarding user state.
      *
@@ -590,56 +361,73 @@ object Aquarium {
      * the timestamp of the last known balance amount by this value, then a re-computation for
      * the balance is triggered.
      */
-    final val user_state_timestamp_threshold = "user.state.timestamp.threshold"
+    final val userStateTimestampThreshold = LongKey("user.state.timestamp.threshold")
 
     /**
-     * The time unit is the lowest billable time period.
-     * For example, with a time unit of ten seconds, if a VM is started up and shut down in nine
-     * seconds, then the user will be billed for ten seconds.
+     * REST service listening port.
      *
-     * This is an overall constant. We use it as a property in order to prepare ourselves for
-     * multi-cloud setup, where the same Aquarium instance is used to bill several distinct cloud
-     * infrastructures.
+     * Default is 8080.
      */
-    final val time_unit_in_millis = "time.unit.in.seconds"
-
-    /**
-     * If a value is given to this property, then it represents a folder where all events coming to aquarium are
-     * saved.
-     */
-    final val events_store_folder = "events.store.folder"
-
-    /**
-     * If this is `true` and `events.store.folder` is defined, then all resource events are
-     * also stored in `events.store.folder`.
-     *
-     * This is for debugging purposes.
-     */
-    final val events_store_save_rc_events = "events.store.save.rc.events"
-
-    /**
-     * If this is `true` and `events.store.folder` is defined, then all IM events are
-     * also stored in `events.store.folder`.
-     *
-     * This is for debugging purposes.
-     */
-    final val events_store_save_im_events = "events.store.save.im.events"
-
-    /**
-     * If set to `true`, then an IM event that cannot be parsed to [[gr.grnet.aquarium.event.model.im.IMEventModel]] is
-     * saved to the [[gr.grnet.aquarium.store.IMEventStore]].
-     */
-    final val save_unparsed_event_im = "save.unparsed.event.im"
+    final val restPort = IntKey("rest.port")
 
     /**
      * A cookie used in every administrative REST API call, so that Aquarium knows it comes from
      * an authorised client.
      */
-    final val admin_cookie = "admin.cookie"
-  }
+    final val adminCookie: TypedKey[Option[String]] =
+      new AquariumEnvKey[Option[String]]("admin.cookie")
 
-  object HTTP {
-    final val RESTAdminHeaderName = "X-Aquarium-Admin-Cookie"
-    final val RESTAdminHeaderNameLowerCase = RESTAdminHeaderName.toLowerCase
+    final val resourceEventStore: TypedKey[ResourceEventStore] =
+      new AquariumEnvKey[ResourceEventStore]("resource.event.store.class")
+
+    final val imEventStore: TypedKey[IMEventStore] =
+      new AquariumEnvKey[IMEventStore]("im.event.store.class")
+
+    final val userStateStore: TypedKey[UserStateStore] =
+      new AquariumEnvKey[UserStateStore]("user.state.store.class")
+
+    final val policyStore: TypedKey[PolicyStore] =
+      new AquariumEnvKey[PolicyStore]("policy.store.class")
+
+    /**
+     * The class that initializes the REST service
+     */
+    final val restService: TypedKey[Lifecycle] =
+      new AquariumEnvKey[Lifecycle]("rest.service.class")
+
+    /**
+     * The fully qualified name of the class that implements the `RoleableActorProviderService`.
+     * Will be instantiated reflectively and should have a public default constructor.
+     */
+    final val actorProvider: TypedKey[RoleableActorProviderService] =
+      new AquariumEnvKey[RoleableActorProviderService]("actor.provider.class")
+
+    final val akkaService: TypedKey[AkkaService] =
+      new AquariumEnvKey[AkkaService]("akka.service")
+
+    final val eventBus: TypedKey[EventBusService] =
+      new AquariumEnvKey[EventBusService]("event.bus.service")
+
+    final val timerService: TypedKey[TimerService] =
+      new AquariumEnvKey[TimerService]("timer.service")
+
+    final val rabbitMQService: TypedKey[RabbitMQService] =
+      new AquariumEnvKey[RabbitMQService]("rabbitmq.service")
+
+    final val storeWatcherService: TypedKey[StoreWatcherService] =
+      new AquariumEnvKey[StoreWatcherService]("store.watcher.service")
+
+    final val converters: TypedKey[Converters] =
+      new AquariumEnvKey[Converters]("converters")
+
+    final val algorithmCompiler: TypedKey[CostPolicyAlgorithmCompiler] =
+      new AquariumEnvKey[CostPolicyAlgorithmCompiler]("algorithm.compiler")
+
+    final val userStateComputations: TypedKey[UserStateComputations] =
+      new AquariumEnvKey[UserStateComputations]("user.state.computations")
+
+    final val defaultClassLoader: TypedKey[ClassLoader] =
+      new AquariumEnvKey[ClassLoader]("default.class.loader")
+
   }
 }

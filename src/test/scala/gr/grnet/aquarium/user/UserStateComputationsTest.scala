@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.user
 
-import gr.grnet.aquarium.store.memory.MemStore
+import gr.grnet.aquarium.store.memory.MemStoreProvider
 import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.logic.accounting.Policy
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
@@ -43,8 +43,7 @@ import gr.grnet.aquarium.simulation._
 import gr.grnet.aquarium.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
 import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler}
-import gr.grnet.aquarium.AquariumException
-import gr.grnet.aquarium.Aquarium.{Instance ⇒ AquariumInstance}
+import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder, AquariumException}
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, MonthlyBillingCalculation}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.computation.BillingMonthInfo
@@ -128,10 +127,13 @@ aquariumpolicy:
     DiskspacePriceUnit
   )
 
-  val aquarium = AquariumInstance.withStoreProviderClass(classOf[MemStore])
-  Policy.withConfigurator(aquarium)
-  val StoreProvider = aquarium.storeProvider
-  val ResourceEventStore = StoreProvider.resourceEventStore
+  val aquarium = new AquariumBuilder(ResourceLocator.AquariumProperties).
+    update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
+    build()
+
+  Policy.withConfigurator(aquarium) // FIXME
+
+  val ResourceEventStore = aquarium.resourceEventStore
 
   val Computations = aquarium.userStateComputations
 
@@ -236,12 +238,13 @@ aquariumpolicy:
   val policyOccurredMillis  = policyDateCalc.toMillis
   val policyValidFromMillis = policyDateCalc.copy.goPreviousYear.toMillis
   val policyValidToMillis   = policyDateCalc.copy.goNextYear.toMillis
-  StoreProvider.policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry(policyOccurredMillis, policyValidFromMillis, policyValidToMillis))
+  aquarium.policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry(policyOccurredMillis, policyValidFromMillis,
+    policyValidToMillis))
 
-  val Aquarium = AquariumSim(List(VMTimeResourceSim, DiskspaceResourceSim, BandwidthResourceSim), StoreProvider.resourceEventStore)
-  val DefaultResourcesMap = Aquarium.resourcesMap
+  val AquariumSim_ = AquariumSim(List(VMTimeResourceSim, DiskspaceResourceSim, BandwidthResourceSim), aquarium.resourceEventStore)
+  val DefaultResourcesMap = AquariumSim_.resourcesMap
 
-  val UserCKKL  = Aquarium.newUser("CKKL", UserCreationDate)
+  val UserCKKL  = AquariumSim_.newUser("CKKL", UserCreationDate)
 
 //  val InitialUserState = UserState.createInitialUserState(
 //    userID = UserCKKL.userID,
