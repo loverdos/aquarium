@@ -39,7 +39,6 @@ import java.util.Date
 import scala.collection.mutable
 import annotation.tailrec
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  * A representation of a timeslot with a start and end date.
