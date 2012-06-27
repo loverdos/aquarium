@@ -36,9 +36,7 @@ package gr.grnet.aquarium.actor
 
 import service.router.RouterActor
 import service.pinger.PingerActor
-import service.rest.RESTActor
 import service.user.{UserActor}
-import cc.spray.can.{Timeout, RequestContext}
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
 import gr.grnet.aquarium.actor.message.admin.PingAllRequest
 import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
@@ -49,11 +47,13 @@ import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumProp
  *
  * A role also dictates which configuration messages the respective actor handles.
  */
-sealed abstract class ActorRole(val role: String,
-                                val isCacheable: Boolean,
-                                val actorType: Class[_ <: RoleableActor],
-                                val handledServiceMessages: Set[Class[_]],
-                                val handledConfigurationMessages: Set[Class[_ <: ActorConfigurationMessage]] = Set()) {
+sealed abstract class ActorRole(
+    val role: String,
+    val isCacheable: Boolean,
+    val actorType: Class[_ <: RoleableActor],
+    val handledServiceMessages: Set[Class[_]],
+    val handledConfigurationMessages: Set[Class[_ <: ActorConfigurationMessage]] = Set()
+) {
 
   val knownMessageTypes = handledServiceMessages ++ handledConfigurationMessages
 
@@ -105,16 +105,6 @@ case object RouterRole
                           classOf[PingAllRequest]),
                       Set(classOf[ActorProviderConfigured],
                           classOf[AquariumPropertiesLoaded]))
-
-/**
- * REST request handler.
- */
-case object RESTRole
-    extends ActorRole("RESTRole",
-                      true,
-                      classOf[RESTActor],
-                      Set(classOf[RequestContext],
-                          classOf[Timeout]))
 
 /**
  * User-oriented business logic handler role.

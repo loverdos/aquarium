@@ -402,6 +402,10 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
       propValue.toInt
     }
 
+    checkPropsOverride(EnvKeys.restShutdownTimeoutMillis) { (envKey, propValue) ⇒
+        propValue.toLong
+    }
+
     checkOptionalPropsOverride(EnvKeys.adminCookie) { (envKey, propValue) ⇒
       Some(propValue)
     }

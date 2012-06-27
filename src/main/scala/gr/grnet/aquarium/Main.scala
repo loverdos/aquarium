@@ -75,7 +75,7 @@ object Main extends LazyLoggable {
       aquarium.start()
 
       val ms1 = TimeHelpers.nowMillis()
-      logStarted(ms0, ms1, "Aquarium [%s]", aquarium.version)
+      logStarted(ms0, ms1, "%s", aquarium.toString)
       logSeparator()
     } catch {
       case e: Throwable ⇒

@@ -45,10 +45,5 @@ object PropertyNames {
   val TestEnableRabbitMQ = "test.enable.rabbitmq"
   val TestEnableStore    = "test.enable.store"
   val TestEnablePerf     = "test.enable.perf"
-  val TestEnableSpray    = "test.enable.spray"
   val TestEnableAll      = "test.enable.all"
-
-  // Define which store implementation to use. Overrides
-  // values in aquarium.properties.
-  val TestStore          = "test.store"
 }

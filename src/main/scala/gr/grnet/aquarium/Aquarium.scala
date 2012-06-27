@@ -63,6 +63,8 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   private[this] val _isStopping = new AtomicBoolean(false)
 
+  override def toString = "%s/v%s".format(getClass.getName, version)
+
   def isStopping() = _isStopping.get()
 
   @inline
@@ -369,6 +371,8 @@ object Aquarium {
      * Default is 8080.
      */
     final val restPort = IntKey("rest.port")
+
+    final val restShutdownTimeoutMillis = LongKey("rest.shutdown.timeout.millis")
 
     /**
      * A cookie used in every administrative REST API call, so that Aquarium knows it comes from

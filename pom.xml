@@ -138,9 +138,9 @@
     </repository>
 
     <repository>
-      <name>Spray</name>
-      <id>spray</id>
-      <url>http://repo.spray.cc/</url>
+      <name>Twitter</name>
+      <id>twitter</id>
+      <url>http://maven.twttr.com/</url>
     </repository>
   </repositories>
 
@@ -328,9 +328,15 @@
     </dependency>-->
 
     <dependency>
-      <groupId>cc.spray</groupId>
-      <artifactId>spray-can</artifactId>
-      <version>0.9.3</version>
+      <groupId>com.twitter</groupId>
+      <artifactId>finagle-core_2.9.1</artifactId>
+      <version>4.0.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>finagle-http_2.9.1</artifactId>
+      <version>4.0.2</version>
     </dependency>
 
     <dependency>

@@ -224,7 +224,7 @@ class MemStoreProvider extends UserStateStore
     localEvent
   }
 
-  def findIMEventById(id: String) = imEventById.get(id)
+  def findIMEventByID(id: String) = imEventById.get(id)
 
 
   /**

@@ -35,54 +35,42 @@
 
 package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.actor.RESTRole
-import _root_.akka.actor._
-import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import gr.grnet.aquarium.{Configurable, AquariumAwareSkeleton, Aquarium}
-import com.ckkloverdos.props.Props
+import gr.grnet.aquarium.ResourceLocator
 
 /**
- * REST service based on Actors and Spray.
+ * Paths recognized and served by the REST API.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
-class RESTActorService extends Lifecycle with AquariumAwareSkeleton with Configurable with Loggable {
-  private[this] var _port: Int = 8080
-  private[this] var _restActor: ActorRef = _
-  private[this] var _serverActor: ActorRef = _
-  private[this] var _clientActor: ActorRef = _
+object RESTPaths {
+  final val PingPath = "/ping".r
 
+  final val AdminPrefix = "/admin"
 
-  def propertyPrefix = Some(RESTActorService.Prefix)
+  private def fixREDot(s: String) = s.replaceAll("""\.""", """\\.""")
+  private def toResourcesPath(name: String) = AdminPrefix + "/resources/%s".format(fixREDot(name))
+  private def toEventPath(name: String)     = AdminPrefix + "/%s/([^/]+)/?".format(name)
+
+  final val ResourcesPath = (AdminPrefix + "/resources/?").r
+
+  final val ResourcesAquariumPropertiesPath = toResourcesPath(ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES).r
+
+  final val ResourcesLogbackXMLPath = toResourcesPath(ResourceLocator.ResourceNames.LOGBACK_XML).r
+
+  final val ResourcesPolicyYAMLPath = toResourcesPath(ResourceLocator.ResourceNames.POLICY_YAML).r
+
+  final val ResourceEventPath = toEventPath("rcevent").r
+
+  final val IMEventPath = toEventPath("imevent").r
 
   /**
-   * Configure this instance with the provided properties.
-   *
-   * If `propertyPrefix` is defined, then `props` contains only keys that start with the given prefix.
+   * Use this URI path to query for the user balance. The parenthesized regular expression part
+   * represents the user ID.
    */
-  def configure(props: Props) {
-    this._port = props.getIntEx(Aquarium.EnvKeys.restPort.name)
-    logger.debug("HTTP port is %s".format(this._port))
-  }
+  final val UserBalancePath = "/user/([^/]+)/balance/?".r
 
-  def start(): Unit = {
-    logger.info("Starting HTTP on port %s".format(this._port))
-
-    this._restActor = aquarium.actorProvider.actorForRole(RESTRole)
-    // Start Spray subsystem
-    this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
-    this._clientActor = Actor.actorOf(new HttpClient()).start()
-  }
-
-  def stop(): Unit = {
-    logger.info("Stopping HTTP on port %s".format(this._port))
-
-    this._serverActor.stop()
-    this._clientActor.stop()
-  }
-}
-
-object RESTActorService {
-  final val Prefix = "rest"
+  /**
+   * Use this URI path to query for the user state.
+   */
+  final val UserStatePath = "/user/([^/]+)/state/?".r
 }

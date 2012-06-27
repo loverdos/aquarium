@@ -107,7 +107,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
         val imEventDebugString = imEvent.toDebugString
 
-        store.findIMEventById(id) match {
+        store.findIMEventByID(id) match {
           case Some(_) ⇒
            // Reject the duplicate
            logger.debug("Rejecting duplicate ID for %s".format(imEventDebugString))

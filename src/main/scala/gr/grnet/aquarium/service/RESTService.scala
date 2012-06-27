@@ -33,48 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-package service
-package rest
-
-import gr.grnet.aquarium.ResourceLocator
-
+package gr.grnet.aquarium.service
 
 /**
- * Paths recognized and served by the REST API.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object RESTPaths {
-  final val ResourcesPath = "/resources/?".r
 
-  private def fixREDot(s: String) = s.replaceAll("""\.""", """\\.""")
-  private def toResourcesPath(name: String) = "/resources/%s".format(fixREDot(name)).r
-  private def toEventPath(name: String) = "/%s/([^/]+)/?".format(name).r
-
-  final val ResourcesAquariumPropertiesPath = toResourcesPath(ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES)
-
-  final val ResourcesLogbackXMLPath = toResourcesPath(ResourceLocator.ResourceNames.LOGBACK_XML)
-
-  final val ResourcesPolicyYAMLPath = toResourcesPath(ResourceLocator.ResourceNames.POLICY_YAML)
-
-  final val ResourceEventPath = toEventPath("rcevent")
-
-  final val IMEventPath = toEventPath("imevent")
-
-  /**
-   * Use this URI path to query for the user balance. The parenthesized regular expression part
-   * represents the user ID.
-   */
-  final val UserBalancePath = "/user/([^/]+)/balance/?".r
-
-  /**
-   * Use this URI path to query for the user state.
-   */
-  final val UserStatePath = "/user/([^/]+)/state/?".r
-
-  /**
-   * Use this administrative URI path to ping all services used by Aquarium.
-   */
-  final val AdminPingAllPath = "/admin/ping/all/?".r
+object RESTService {
+  final val Prefix = "rest"
 }
