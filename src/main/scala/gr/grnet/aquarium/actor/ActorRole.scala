@@ -35,7 +35,6 @@
 package gr.grnet.aquarium.actor
 
 import service.router.RouterActor
-import service.pinger.PingerActor
 import service.user.{UserActor}
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
 import gr.grnet.aquarium.actor.message.admin.PingAllRequest
@@ -81,15 +80,6 @@ sealed abstract class ActorRole(
     canHandleMessage(msg.getClass)
   }
 }
-
-/**
- * The actor that pings several internal services
- */
-case object PingerRole
-    extends ActorRole("PingerRole",
-                      true,
-                      classOf[PingerActor],
-                      Set(classOf[PingAllRequest]))
 
 /**
  * The generic router.

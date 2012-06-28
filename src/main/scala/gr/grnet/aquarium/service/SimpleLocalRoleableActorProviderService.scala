@@ -124,9 +124,7 @@ class SimpleLocalRoleableActorProviderService
 object SimpleLocalRoleableActorProviderService {
   // Always set Router at the end.
   // We could definitely use some automatic dependency sorting here (topological sorting anyone?)
-  final val RolesToBeStarted = List(
-    PingerRole,
-    RouterRole)
+  final val RolesToBeStarted = List(RouterRole)
 
   lazy val ActorClassByRole: Map[ActorRole, Class[_ <: RoleableActor]] =
     RolesToBeStarted map {
