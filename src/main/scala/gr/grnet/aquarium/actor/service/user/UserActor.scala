@@ -147,8 +147,10 @@ class UserActor extends ReflectiveRoleableActor {
       )
     }
 
-    DEBUG("Initial %s = %s", shortNameOfType[IMStateSnapshot], this._imState.toJsonString)
-    logSeparator()
+    if(haveIMState) {
+      DEBUG("Initial %s = %s", shortNameOfType[IMStateSnapshot], this._imState.toJsonString)
+      logSeparator()
+    }
   }
 
   /**
@@ -400,7 +402,7 @@ class UserActor extends ReflectiveRoleableActor {
         self reply GetUserStateResponse(Right(this._userState))
 
       case false ⇒
-        self reply GetUserStateResponse(Left("No state for user %s [AQU-STA-0006]".format(event.userID)))
+        self reply GetUserStateResponse(Left("No state for user %s [AQU-STA-0006]".format(event.userID)), 404)
     }
   }
 
