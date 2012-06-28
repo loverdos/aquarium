@@ -40,10 +40,6 @@ package gr.grnet.aquarium.actor.message
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class GetUserBalanceRequest(userID: String, timestamp: Long)
-extends ActorMessage
-   with RouterRequestMessage
-   with UserActorRequestMessage {
-
+case class GetUserBalanceRequest(userID: String, timestamp: Long) extends ActorMessage with UserActorRequestMessage {
   def referenceTimeMillis = timestamp
 }

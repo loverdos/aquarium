@@ -35,10 +35,21 @@
 
 package gr.grnet.aquarium.service
 
-import akka.actor.Actor
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
+import akka.actor.{Props, ActorRef, ActorSystem}
+import gr.grnet.aquarium.util.{Loggable, Lifecycle, shortClassNameOf}
 import gr.grnet.aquarium.ResourceLocator.SysEnvs
-import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.{AquariumAwareSkeleton, Configurable, AquariumException, AquariumInternalError}
+import com.typesafe.config.ConfigFactory
+import java.util.concurrent.atomic.AtomicBoolean
+import com.google.common.cache.{RemovalNotification, RemovalListener, CacheBuilder, Cache}
+import com.ckkloverdos.props.{Props ⇒ KKProps}
+import gr.grnet.aquarium.actor.service.user.UserActor
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
+import gr.grnet.aquarium.actor.message.config.InitializeUserState
+import gr.grnet.aquarium.util.date.TimeHelpers
+import java.util.concurrent.{TimeUnit, ConcurrentHashMap, Callable}
+import akka.dispatch.{Await, Future}
+import akka.util.Duration
 
 /**
  * A wrapper around Akka, so that it is uniformly treated as an Aquarium service.
@@ -46,7 +57,39 @@ import gr.grnet.aquarium.AquariumInternalError
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final class AkkaService extends Lifecycle with Loggable {
+final class AkkaService extends AquariumAwareSkeleton with Configurable with Lifecycle with Loggable {
+  @volatile private[this] var _actorSystem: ActorSystem = _
+  @volatile private[this] var _userActorCache: Cache[String, ActorRef] = _
+  @volatile private[this] var _cacheEvictionListener: RemovalListener[String, ActorRef] = _
+  @volatile private[this] var _cacheMaximumSize = 1000
+  @volatile private[this] var _cacheInitialCapacity = 100
+  @volatile private[this] var _cacheConcurrencyLevel = 20
+
+  private[this] val stoppingUserActors = new ConcurrentHashMap[String, Future[Boolean]]
+
+  private[this] val isShuttingDown = new AtomicBoolean(false)
+
+  def propertyPrefix: Option[String] = Some("actors")
+
+  /**
+   * Configure this instance with the provided properties.
+   *
+   * If `propertyPrefix` is defined, then `props` contains only keys that start with the given prefix.
+   */
+  def configure(props: KKProps): Unit = {}
+
+  def actorSystem = {
+    if(this._actorSystem eq null) {
+      throw new AquariumInternalError("Akka actorSystem is null")
+    }
+
+    if(this.isShuttingDown.get()) {
+      throw new AquariumException("%s is shutting down".format(shortClassNameOf(this)))
+    }
+
+    this._actorSystem
+  }
+
   def start() = {
     // We have AKKA builtin, so no need to mess with pre-existing installation.
     if(SysEnvs.AKKA_HOME.value.isJust) {
@@ -54,9 +97,110 @@ final class AkkaService extends Lifecycle with Loggable {
       logger.error("%s is set".format(SysEnvs.Names.AKKA_HOME), error)
       throw error
     }
+
+    this._cacheEvictionListener = new RemovalListener[String, ActorRef] {
+      def onRemoval(rn: RemovalNotification[String, ActorRef]): Unit = {
+        if(isShuttingDown.get()) {
+          return
+        }
+
+        val userID   = rn.getKey
+        val actorRef = rn.getValue
+
+        logger.debug("Due to memory constraints, unloading UserActor for userID = %s".format(userID))
+
+        gracefullyStopUserActor(userID, actorRef)
+      }
+    }
+
+    this._userActorCache = CacheBuilder.
+      newBuilder().
+        maximumSize(_cacheMaximumSize).
+        initialCapacity(_cacheInitialCapacity).
+        concurrencyLevel(_cacheConcurrencyLevel).
+        removalListener(this._cacheEvictionListener).
+      build()
+
+    this._actorSystem = ActorSystem("aquarium-akka", ConfigFactory.load("akka.conf"))
+    logger.debug("Created %s".format(this._actorSystem))
   }
 
-  def stop()= {
-    Actor.registry.shutdownAll()
+  def stop() = {
+    this.isShuttingDown.set(true)
+
+    this.stoppingUserActors.clear()
+
+    this._userActorCache.invalidateAll
+    this._userActorCache.cleanUp()
+
+    this._actorSystem.shutdown()
+
+    logger.info("Shut down %s".format(this._actorSystem))
+  }
+
+  def notifyUserActorPostStop(userActor: UserActor): Unit = {
+    this.stoppingUserActors.remove(userActor.userID)
+  }
+
+  private[this] def gracefullyStopUserActor(userID: String, actorRef: ActorRef): Unit = {
+    this.stoppingUserActors.put(
+      userID,
+      akka.pattern.gracefulStop(actorRef, Duration(1000, TimeUnit.MILLISECONDS))(this._actorSystem)
+    )
+  }
+
+  def invalidateUserActor(userActor: UserActor): Unit = {
+    if(this.isShuttingDown.get()) {
+      return
+    }
+
+    val userID = userActor.userID
+    val actorRef = userActor.self
+
+    this._userActorCache.invalidate(userID)
+    gracefullyStopUserActor(userID, actorRef)
+  }
+
+  def getOrCreateUserActor(userID: String): ActorRef = {
+    if(this.isShuttingDown.get()) {
+      throw new AquariumException(
+        "%s is shutting down. Cannot provide user actor %s".format(
+          shortClassNameOf(this),
+          userID))
+    }
+
+    // If stopping, wait to stop or ignore
+    this.stoppingUserActors.get(userID) match {
+      case null ⇒
+
+      case future ⇒
+        try {
+          Await.result(future, Duration(500, TimeUnit.MILLISECONDS))
+        }
+        catch {
+          case e: Throwable ⇒
+            logger.error("While Await(ing) UserActor %s to stop".format(userID), e)
+        }
+        this.stoppingUserActors.remove(userID)
+    }
+
+    this._userActorCache.get(userID, new Callable[ActorRef] {
+      def call(): ActorRef = {
+        // Create new User Actor instance
+        val actorRef = _actorSystem.actorOf(Props.apply({
+          val actor = aquarium.newInstance(classOf[UserActor], classOf[UserActor].getName)
+          actor.awareOfAquariumEx(AquariumCreatedEvent(aquarium))
+          actor
+        }), "userActor::%s".format(userID))
+
+        // Cache it for subsequent calls
+        _userActorCache.put(userID, actorRef)
+
+        // Send the initialization message
+        actorRef ! InitializeUserState(userID, TimeHelpers.nowMillis())
+
+        actorRef
+      }
+    })
   }
 }

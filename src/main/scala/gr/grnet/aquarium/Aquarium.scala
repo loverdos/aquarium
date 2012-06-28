@@ -265,7 +265,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   def converters = apply(EnvKeys.converters)
 
-  def actorProvider = apply(EnvKeys.actorProvider)
+//  def actorProvider = apply(EnvKeys.actorProvider)
 
   def saveResourceEventsToEventsStoreFolder = apply(EnvKeys.eventsStoreSaveRCEvents)
 
@@ -274,6 +274,8 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   def timerService = apply(EnvKeys.timerService)
 
   def restPort = apply(EnvKeys.restPort)
+
+  def akkaService = apply(EnvKeys.akkaService)
 
   def version = apply(EnvKeys.version)
 }
@@ -305,7 +307,6 @@ object Aquarium {
   final val ServiceKeys: List[TypedKey[_ <: Lifecycle]] = List(
     EnvKeys.timerService,
     EnvKeys.akkaService,
-    EnvKeys.actorProvider,
     EnvKeys.eventBus,
     EnvKeys.restService,
     EnvKeys.rabbitMQService,
@@ -403,8 +404,8 @@ object Aquarium {
      * The fully qualified name of the class that implements the `RoleableActorProviderService`.
      * Will be instantiated reflectively and should have a public default constructor.
      */
-    final val actorProvider: TypedKey[RoleableActorProviderService] =
-      new AquariumEnvKey[RoleableActorProviderService]("actor.provider.class")
+//    final val actorProvider: TypedKey[RoleableActorProviderService] =
+//      new AquariumEnvKey[RoleableActorProviderService]("actor.provider.class")
 
     final val akkaService: TypedKey[AkkaService] =
       new AquariumEnvKey[AkkaService]("akka.service")

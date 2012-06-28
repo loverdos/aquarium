@@ -390,10 +390,6 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
       newInstance(envKey.keyType, classOf[StoreWatcherService].getName)
     }
 
-    checkPropsOverride(EnvKeys.actorProvider) { (envKey, propValue) ⇒
-      newInstance(envKey.keyType, propValue)
-    }
-
     checkPropsOverride(EnvKeys.userStateTimestampThreshold) { (envKey, propValue) ⇒
       propValue.toLong
     }

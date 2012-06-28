@@ -41,7 +41,6 @@ import gr.grnet.aquarium.converter.JsonTextFormat
 import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.actor.message.event.ProcessResourceEvent
-import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.util._
 
 /**
@@ -122,6 +121,6 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
       // forwardAction: S ⇒ Unit
       rcEvent ⇒ {
-        aquarium.actorProvider.actorForRole(RouterRole) ! ProcessResourceEvent(rcEvent)
+        aquarium.akkaService.getOrCreateUserActor(rcEvent.userID) ! ProcessResourceEvent(rcEvent)
       }
     )

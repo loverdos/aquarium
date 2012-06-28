@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.actor.message
 
 import gr.grnet.aquarium.computation.state.UserState
+import gr.grnet.aquarium.AquariumInternalError
 
 /**
  *
@@ -45,5 +46,13 @@ import gr.grnet.aquarium.computation.state.UserState
 case class GetUserStateResponse(
     state: Either[String, UserState],
     override val suggestedHTTPStatus: Int = 200)
-extends RouterResponseMessage(state, suggestedHTTPStatus)
+extends UserActorResponseMessage(state, suggestedHTTPStatus) {
+  def userID = state match {
+    case Left(error) ⇒
+      throw new AquariumInternalError("Could not obtain userID. %s".format(error))
+
+    case Right(data) ⇒
+      data.userID
+  }
+}
 

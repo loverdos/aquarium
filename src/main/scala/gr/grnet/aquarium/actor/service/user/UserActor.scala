@@ -39,9 +39,8 @@ package user
 
 import gr.grnet.aquarium.actor._
 
-import akka.config.Supervision.Temporary
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
-import gr.grnet.aquarium.actor.message.config.{InitializeUserState, ActorProviderConfigured, AquariumPropertiesLoaded}
+import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
@@ -58,26 +57,34 @@ import gr.grnet.aquarium.computation.state.{UserStateBootstrap, UserState}
  */
 
 class UserActor extends ReflectiveRoleableActor {
-  private[this] var _userID: String = "<?>"
-  private[this] var _imState: IMStateSnapshot = _
-  private[this] var _userState: UserState = _
-  private[this] var _latestResourceEventOccurredMillis = TimeHelpers.nowMillis() // some valid datetime
+  @volatile private[this] var _userID: String = "<?>"
+  @volatile private[this] var _imState: IMStateSnapshot = _
+  @volatile private[this] var _userState: UserState = _
+  @volatile private[this] var _latestResourceEventOccurredMillis = TimeHelpers.nowMillis() // some valid datetime
 
-  self.lifeCycle = Temporary
-
-  private[this] def _shutmedown(): Unit = {
-    if(haveUserState) {
-      UserActorCache.invalidate(_userID)
+  def userID = {
+    if(this._userID eq null) {
+      throw new AquariumInternalError("%s not initialized ")
     }
 
-    self.stop()
+    this._userID
+  }
+
+  override def postStop() {
+    aquarium.akkaService.notifyUserActorPostStop(this)
+  }
+
+  private[this] def shutmedown(): Unit = {
+    if(haveIMState) {
+      aquarium.akkaService.invalidateUserActor(this)
+    }
   }
 
   override protected def onThrowable(t: Throwable, message: AnyRef) = {
     LogHelpers.logChainOfCauses(logger, t)
     ERROR(t, "Terminating due to: %s(%s)", shortClassNameOf(t), t.getMessage)
 
-    _shutmedown()
+    shutmedown()
   }
 
   def role = UserActorRole
@@ -101,9 +108,6 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onAquariumPropertiesLoaded(event: AquariumPropertiesLoaded): Unit = {
-  }
-
-  def onActorProviderConfigured(event: ActorProviderConfigured): Unit = {
   }
 
   private[this] def _updateIMStateRoleHistory(imEvent: IMEventModel, roleCheck: Option[String]) = {
@@ -364,12 +368,12 @@ class UserActor extends ReflectiveRoleableActor {
         this._imState.hasBeenActivated match {
           case true ⇒
             // (have IMState, activated, have UserState)
-            self reply GetUserBalanceResponse(Right(GetUserBalanceResponseData(userID, this._userState.totalCredits)))
+            sender ! GetUserBalanceResponse(Right(GetUserBalanceResponseData(userID, this._userState.totalCredits)))
 
           case false ⇒
             // (have IMState, not activated, have UserState)
             // Since we have user state, we should have been activated
-            self reply GetUserBalanceResponse(Left("Internal Server Error [AQU-BAL-0001]"), 500)
+            sender ! GetUserBalanceResponse(Left("Internal Server Error [AQU-BAL-0001]"), 500)
         }
 
       case (true, false) ⇒
@@ -378,31 +382,31 @@ class UserActor extends ReflectiveRoleableActor {
           case true  ⇒
             // (have IMState, activated, no UserState)
             // Since we are activated, we should have some state.
-            self reply GetUserBalanceResponse(Left("Internal Server Error [AQU-BAL-0002]"), 500)
+            sender ! GetUserBalanceResponse(Left("Internal Server Error [AQU-BAL-0002]"), 500)
           case false ⇒
             // (have IMState, not activated, no UserState)
             // The user is virtually unknown
-            self reply GetUserBalanceResponse(Left("User %s not activated [AQU-BAL-0003]".format(userID)), 404 /*Not found*/)
+            sender ! GetUserBalanceResponse(Left("User %s not activated [AQU-BAL-0003]".format(userID)), 404 /*Not found*/)
         }
 
       case (false, true) ⇒
         // (no IMState, have UserState)
         // A bit ridiculous situation
-        self reply GetUserBalanceResponse(Left("Unknown user %s [AQU-BAL-0004]".format(userID)), 404/*Not found*/)
+        sender ! GetUserBalanceResponse(Left("Unknown user %s [AQU-BAL-0004]".format(userID)), 404/*Not found*/)
 
       case (false, false) ⇒
         // (no IMState, no UserState)
-        self reply GetUserBalanceResponse(Left("Unknown user %s [AQU-BAL-0005]".format(userID)), 404/*Not found*/)
+        sender ! GetUserBalanceResponse(Left("Unknown user %s [AQU-BAL-0005]".format(userID)), 404/*Not found*/)
     }
   }
 
   def onGetUserStateRequest(event: GetUserStateRequest): Unit = {
     haveUserState match {
       case true ⇒
-        self reply GetUserStateResponse(Right(this._userState))
+        sender ! GetUserStateResponse(Right(this._userState))
 
       case false ⇒
-        self reply GetUserStateResponse(Left("No state for user %s [AQU-STA-0006]".format(event.userID)), 404)
+        sender ! GetUserStateResponse(Left("No state for user %s [AQU-STA-0006]".format(event.userID)), 404)
     }
   }
 

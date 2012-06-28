@@ -34,12 +34,10 @@
  */
 package gr.grnet.aquarium.actor
 
-import service.router.RouterActor
 import service.user.{UserActor}
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
-import gr.grnet.aquarium.actor.message.admin.PingAllRequest
 import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
-import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded, ActorProviderConfigured, ActorConfigurationMessage}
+import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded, ActorConfigurationMessage}
 
 /**
  * Each actor within Aquarium plays one role.
@@ -82,21 +80,6 @@ sealed abstract class ActorRole(
 }
 
 /**
- * The generic router.
- */
-case object RouterRole
-    extends ActorRole("RouterRole",
-                      true,
-                      classOf[RouterActor],
-                      Set(classOf[GetUserBalanceRequest],
-                          classOf[GetUserStateRequest],
-                          classOf[ProcessResourceEvent],
-                          classOf[ProcessIMEvent],
-                          classOf[PingAllRequest]),
-                      Set(classOf[ActorProviderConfigured],
-                          classOf[AquariumPropertiesLoaded]))
-
-/**
  * User-oriented business logic handler role.
  */
 case object UserActorRole
@@ -108,5 +91,4 @@ case object UserActorRole
                           classOf[GetUserBalanceRequest],
                           classOf[GetUserStateRequest]),
                       Set(classOf[InitializeUserState],
-                          classOf[ActorProviderConfigured],
                           classOf[AquariumPropertiesLoaded]))

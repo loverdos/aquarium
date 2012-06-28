@@ -42,5 +42,7 @@ package gr.grnet.aquarium.actor.message
  */
 
 trait UserActorRequestMessage extends ActorMessage {
+  def userID: String
+
   def referenceTimeMillis: Long
 }

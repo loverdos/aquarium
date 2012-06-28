@@ -51,11 +51,11 @@ import java.net.InetSocketAddress
 import java.util.concurrent.{Executors, TimeUnit}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
-import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest, RouterResponseMessage, RouterRequestMessage}
-import gr.grnet.aquarium.actor.RouterRole
+import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, GetUserStateRequest, GetUserBalanceRequest, UserActorResponseMessage}
 import com.ckkloverdos.resource.StreamResource
 import com.ckkloverdos.maybe.{Just, Failed}
 import gr.grnet.aquarium.event.model.ExternalEventModel
+import akka.util.{Timeout ⇒ ATimeout, Duration ⇒ ADuration}
 
 /**
  *
@@ -166,42 +166,31 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
   }
 
   final case class MainService() extends Service[THttpRequest, THttpResponse] {
-    final class ActorRouterService extends Service[RouterRequestMessage, RouterResponseMessage[_]] {
-      def apply(message: RouterRequestMessage): TFuture[RouterResponseMessage[_]] = {
+    final case class UserActorService() extends Service[UserActorRequestMessage, UserActorResponseMessage[_]] {
+      def apply(request: UserActorRequestMessage): TFuture[UserActorResponseMessage[_]] = {
         // We want to asynchronously route the message via akka and get the whole computation as a
         // twitter future.
-        val actorProvider = aquarium.actorProvider
-        val router = actorProvider.actorForRole(RouterRole)
-        val promise = new TPromise[RouterResponseMessage[_]]()
+        val actorRef = aquarium.akkaService.getOrCreateUserActor(request.userID)
+        val promise = new TPromise[UserActorResponseMessage[_]]()
 
-        val actualWork = router.ask(message)
+        val actualWork = akka.pattern.ask(actorRef, request)(ATimeout(ADuration(500, TimeUnit.MILLISECONDS))).
+          asInstanceOf[TFuture[UserActorResponseMessage[_]]]
 
-        actualWork onComplete { akkaFuture ⇒
-          akkaFuture.value match {
-            case Some(eitherValue) ⇒
-              eitherValue match {
-                case Left(throwable) ⇒
-                  promise.setException(throwable)
-
-                case Right(value) ⇒
-                  promise.setValue(value.asInstanceOf[RouterResponseMessage[_]])
-              }
-
-            case None ⇒
-              promise.setException(new Exception("Got no response for %s".format(message)))
-          }
-        }
+        actualWork.
+          onSuccess(promise.setValue).
+          onFailure(promise.setException).
+          onCancellation(promise.setException(new Exception("Processing of %s has been cancelled".format(request))))
 
         promise
       }
     }
 
-    final val actorRouterService = new ActorRouterService
+    final val actorRouterService = UserActorService()
 
-    def callRouter(requestMessage: RouterRequestMessage): TFuture[THttpResponse] = {
+    def callUserActor(requestMessage: UserActorRequestMessage): TFuture[THttpResponse] = {
       actorRouterService(requestMessage).transform { tryResponse ⇒
         tryResponse match {
-          case TReturn(responseMessage: RouterResponseMessage[_]) ⇒
+          case TReturn(responseMessage: UserActorResponseMessage[_]) ⇒
             val statusCode = responseMessage.suggestedHTTPStatus
             val status = THttpResponseStatus.valueOf(statusCode)
 
@@ -253,11 +242,11 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
 
         case RESTPaths.UserBalancePath(userID) ⇒
           // /user/(.+)/balance/?
-          callRouter(GetUserBalanceRequest(userID, millis))
+          callUserActor(GetUserBalanceRequest(userID, millis))
 
         case RESTPaths.UserStatePath(userId) ⇒
           // /user/(.+)/state/?
-          callRouter(GetUserStateRequest(userId, millis))
+          callUserActor(GetUserStateRequest(userId, millis))
 
         case RESTPaths.ResourcesAquariumPropertiesPath() ⇒
           resourceInfoResponse(ResourceLocator.Resources.AquariumPropertiesResource, TEXT_PLAIN)
