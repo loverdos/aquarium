@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.actor.message.config.{AquariumPropertiesLoaded, ActorProviderConfigured}
 import gr.grnet.aquarium.actor._
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 
 /**
  * All actors are provided locally.
@@ -77,7 +78,9 @@ class SimpleLocalRoleableActorProviderService
 
   private[this] def _newActor(role: ActorRole): ActorRef = {
     val actorFactory = (_class: Class[_ <: RoleableActor]) ⇒ {
-      aquarium.newInstance(_class, _class.getName)
+      val actor = aquarium.newInstance(_class, _class.getName)
+      actor.awareOfAquariumEx(AquariumCreatedEvent(aquarium))
+      actor
     }
 
     val actorRef = akka.actor.Actor.actorOf(actorFactory(role.actorType)).start()

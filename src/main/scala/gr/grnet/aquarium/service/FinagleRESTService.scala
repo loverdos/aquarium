@@ -236,7 +236,7 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
       val millis = TimeHelpers.nowMillis()
       val uri = request.getUri
       val method = request.getMethod
-      logger.debug("%s %s".format(method, uri))
+      logger.debug("%s %s %s".format(method, request.getProtocolVersion, uri))
 
       uri match {
         case RESTPaths.PingPath() ⇒
