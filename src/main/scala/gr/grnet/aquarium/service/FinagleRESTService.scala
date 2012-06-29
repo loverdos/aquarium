@@ -134,15 +134,9 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
       service(request) handle {
         case error ⇒
           logger.error("While serving %s".format(request), error)
-          val statusCode = error match {
-            case _: IllegalArgumentException ⇒
-              FORBIDDEN
-            case _ ⇒
-              INTERNAL_SERVER_ERROR
-          }
-
-          val errorResponse = new TDefaultHttpResponse(HTTP_1_1, statusCode)
-          errorResponse.setContent(copiedBuffer(error.getStackTraceString, UTF_8))
+          val status = INTERNAL_SERVER_ERROR
+          val errorResponse = new TDefaultHttpResponse(HTTP_1_1, status)
+          errorResponse.setContent(copiedBuffer(status.getReasonPhrase, UTF_8))
 
           errorResponse
       }
