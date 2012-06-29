@@ -56,6 +56,7 @@ import com.ckkloverdos.resource.StreamResource
 import com.ckkloverdos.maybe.{Just, Failed}
 import gr.grnet.aquarium.event.model.ExternalEventModel
 import akka.util.{Timeout ⇒ ATimeout, Duration ⇒ ADuration}
+import akka.dispatch.{Future ⇒ AFuture}
 
 /**
  *
@@ -174,12 +175,15 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
         val promise = new TPromise[UserActorResponseMessage[_]]()
 
         val actualWork = akka.pattern.ask(actorRef, request)(ATimeout(ADuration(500, TimeUnit.MILLISECONDS))).
-          asInstanceOf[TFuture[UserActorResponseMessage[_]]]
+          asInstanceOf[AFuture[UserActorResponseMessage[_]]]
 
-        actualWork.
-          onSuccess(promise.setValue).
-          onFailure(promise.setException).
-          onCancellation(promise.setException(new Exception("Processing of %s has been cancelled".format(request))))
+        actualWork.onComplete {
+          case Left(throwable) ⇒
+            promise.setException(throwable)
+
+          case Right(value) ⇒
+            promise.setValue(value)
+        }
 
         promise
       }
