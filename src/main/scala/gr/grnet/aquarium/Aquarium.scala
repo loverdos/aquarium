@@ -52,6 +52,7 @@ import gr.grnet.aquarium.ResourceLocator._
 import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.logic.accounting.Policy
 import com.ckkloverdos.sys.SysProp
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 
 /**
  *
@@ -186,7 +187,13 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     val instanceM = MaybeEither(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
     instanceM match {
       case Just(instance) ⇒
-        eventBus.addSubscriber[C](instance)
+//        eventBus.addSubscriber[C](instance)
+        instance match {
+          case aquariumAware: AquariumAware ⇒
+            aquariumAware.awareOfAquarium(AquariumCreatedEvent(this))
+
+          case _ ⇒
+        }
 
         instance match {
           case configurable: Configurable if (originalProps ne null) ⇒
@@ -203,19 +210,19 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
                 originalProps
             }
 
-            logger.debug("Configuring {} with props", configurable.getClass.getName)
+            logger.debug("Configuring {} with props (prefix={})", configurable.getClass.getName, configurable.propertyPrefix)
             MaybeEither(configurable configure localProps) match {
               case Just(_) ⇒
-                logger.info("Configured {} with props", configurable.getClass.getName)
-                instance
+                logger.info("Configured {} with props (prefix={})", configurable.getClass.getName, configurable.propertyPrefix)
 
               case Failed(e) ⇒
                 throw new AquariumInternalError("Could not configure instance of %s".format(className), e)
             }
 
           case _ ⇒
-            instance
         }
+
+        instance
 
       case Failed(e) ⇒
         throw new AquariumInternalError("Could not instantiate %s".format(className), e)
@@ -370,8 +377,6 @@ object Aquarium {
 
     /**
      * REST service listening port.
-     *
-     * Default is 8080.
      */
     final val restPort = IntKey("rest.port")
 
