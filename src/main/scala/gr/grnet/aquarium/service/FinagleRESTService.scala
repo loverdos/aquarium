@@ -151,6 +151,9 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
           case Some(`headerValue`) ⇒
             service(request)
 
+          case Some(_) ⇒
+            statusResponse(FORBIDDEN)
+
           case None ⇒
             statusResponse(FORBIDDEN)
         }
