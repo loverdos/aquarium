@@ -128,10 +128,10 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
                 originalProps
             }
 
-            logger.debug("Configuring {} with props", configurable.getClass.getName)
+            logger.debug("Configuring {} with props (prefix={})", configurable.getClass.getName, configurable.propertyPrefix)
             MaybeEither(configurable configure localProps) match {
               case Just(_) ⇒
-                logger.info("Configured {} with props", configurable.getClass.getName)
+                logger.info("Configured {} with props (prefix={})", configurable.getClass.getName, configurable.propertyPrefix)
                 instance
 
               case Failed(e) ⇒
