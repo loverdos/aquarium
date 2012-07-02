@@ -33,15 +33,15 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor.message
-package config
+package gr.grnet.aquarium
 
-import gr.grnet.aquarium.service.RoleableActorProviderService
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 
 /**
- * Sent with the configured [[gr.grnet.aquarium.service.RoleableActorProviderService]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class ActorProviderConfigured(actorProvider: RoleableActorProviderService) extends ActorConfigurationMessage
+trait AquariumAware {
+  def awareOfAquarium(event: AquariumCreatedEvent): Unit
+}

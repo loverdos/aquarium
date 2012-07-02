@@ -58,8 +58,8 @@ object LogicTestsAssumptions {
   }
 
   private[this] def _testPropertyTrue(name: String): Boolean = {
-    // A property is true if it is given without a value (-Dtest.enable.spray) or it is given
-    // with a value that corresponds to true (-Dtest.enable.spray=true)
+    // A property is true if it is given without a value (-Dtest.enable.store) or it is given
+    // with a value that corresponds to true (-Dtest.enable.store=true)
     SysProp(name).value.map(_checkValue(_, true)).getOr(false)
   }
 
@@ -76,7 +76,6 @@ object LogicTestsAssumptions {
   def EnableRabbitMQTests = isPropertyEnabled(PropertyNames.TestEnableRabbitMQ)
   def EnableStoreTests  = isPropertyEnabled(PropertyNames.TestEnableStore)
   def EnablePerfTests = isPropertyEnabled(PropertyNames.TestEnablePerf)
-  def EnableSprayTests = isPropertyEnabled(PropertyNames.TestEnableSpray)
 
   def propertyValue(name: String) = SysProp(name).rawValue
 }

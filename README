@@ -1,13 +1,1 @@
-Aquarium
---------
-
-Aquarium offers resource sharing and charging services for all services
-in the Okeanos cloud.
-
-Building
---------
-
--Install Java 1.6 and Maven 3
--Run mvn install
-
-
+Aquarium offers resource charging services for the Okeanos IaaS platform.

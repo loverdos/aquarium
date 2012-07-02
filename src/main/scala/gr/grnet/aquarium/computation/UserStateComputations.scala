@@ -42,24 +42,22 @@ import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.computation.state.parts._
 import gr.grnet.aquarium.event.model.NewWalletEntry
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
+import gr.grnet.aquarium.{AquariumAwareSkeleton, Aquarium, AquariumAware, AquariumInternalError}
 import gr.grnet.aquarium.computation.reason.{MonthlyBillingCalculation, InitialUserStateSetup, UserStateChangeReason}
 import gr.grnet.aquarium.computation.state.{UserStateWorker, UserStateBootstrap, UserState}
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
+import com.google.common.eventbus.Subscribe
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-final class UserStateComputations(_aquarium: => Aquarium) extends Loggable {
-
-  lazy val aquarium = _aquarium
-
-  lazy val storeProvider         = aquarium.storeProvider
-  lazy val timeslotComputations  = new TimeslotComputations {}
+final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
+  lazy val timeslotComputations  = new TimeslotComputations {} // FIXME
   lazy val algorithmCompiler     = aquarium.algorithmCompiler
-  lazy val policyStore           = storeProvider.policyStore
-  lazy val userStateStoreForRead = storeProvider.userStateStore
-  lazy val resourceEventStore    = storeProvider.resourceEventStore
+  lazy val policyStore           = aquarium.policyStore
+  lazy val userStateStoreForRead = aquarium.userStateStore
+  lazy val resourceEventStore    = aquarium.resourceEventStore
 
   def findUserStateAtEndOfBillingMonth(
       userStateBootstrap: UserStateBootstrap,

@@ -33,17 +33,25 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.processor.actor
+package gr.grnet.aquarium
+
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
+import com.google.common.eventbus.Subscribe
+import gr.grnet.aquarium.util.Loggable
 
 /**
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object Constants {
-  val RemoteHost = "localhost"
-  val RemotePort = 2552
-  val LocalHost = "localhost"
-  val LocalPort = 2551
-  val ActorNameEcho = "echo"
-  val ActorNameSilent = "silent"
+
+trait AquariumAwareSkeleton extends AquariumAware { this: Loggable ⇒
+  @volatile private var _aquarium: Aquarium = null
+
+  final protected def aquarium = _aquarium
+
+  @Subscribe
+  def awareOfAquarium(event: AquariumCreatedEvent) = {
+    this._aquarium = event.aquarium
+    logger.debug("Aware of Aquarium: %s".format(this._aquarium))
+  }
 }

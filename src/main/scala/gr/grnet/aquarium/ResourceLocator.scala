@@ -42,6 +42,11 @@ import java.io.File
 import gr.grnet.aquarium.util.justForSure
 import gr.grnet.aquarium.util.isRunningTests
 import com.ckkloverdos.resource.{FileStreamResource, StreamResource, CompositeStreamResourceContext, ClassLoaderStreamResourceContext, FileStreamResourceContext}
+import com.ckkloverdos.props.Props
+import com.ckkloverdos.convert.Converters._
+import com.ckkloverdos.maybe.Just
+import com.ckkloverdos.maybe.Failed
+import com.ckkloverdos.convert.Converters
 
 /**
  * Locates resources.
@@ -266,6 +271,30 @@ object ResourceLocator {
       }
     }
   }
+
+  final lazy val AquariumProperties = {
+    implicit val DefaultConverters = Converters.DefaultConverters
+    val maybeProps = Props(Resources.AquariumPropertiesResource)
+    maybeProps match {
+      case Just(props) ⇒
+        props
+
+      case NoVal ⇒
+        throw new AquariumInternalError(
+          "Could not load %s from %s".format(
+            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+            Resources.AquariumPropertiesResource))
+
+
+      case Failed(e) ⇒
+        throw new AquariumInternalError(
+          "Could not load %s from %s".format(
+            ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
+            Resources.AquariumPropertiesResource),
+          e)
+    }
+  }
+
 
   def getResource(what: String): Maybe[StreamResource] = {
     ResourceContexts.MasterResourceContext.getResource(what)

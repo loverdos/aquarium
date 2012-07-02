@@ -37,30 +37,28 @@ package gr.grnet.aquarium.service
 
 import com.ckkloverdos.props.Props
 import com.google.common.eventbus.Subscribe
-import gr.grnet.aquarium.{Aquarium, Configurable}
+import gr.grnet.aquarium.{AquariumAwareSkeleton, Configurable}
 import gr.grnet.aquarium.converter.StdConverters
-import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
 import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle}
 import gr.grnet.aquarium.util.sameTags
-import gr.grnet.aquarium.service.event.{StoreIsAliveBusEvent, StoreIsDeadBusEvent}
-import gr.grnet.aquarium.connector.rabbitmq.service.{PayloadHandlerFutureExecutor, PayloadHandlerPostNotifier}
+import gr.grnet.aquarium.service.event.{AquariumCreatedEvent, StoreIsAliveBusEvent, StoreIsDeadBusEvent}
+import gr.grnet.aquarium.connector.rabbitmq.service.PayloadHandlerPostNotifier
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys.RabbitMQConfKeys
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys
 import gr.grnet.aquarium.connector.handler.{SynchronousPayloadHandlerExecutor, ResourceEventPayloadHandler, IMEventPayloadHandler}
 
 /**
+ * The service that is responsible to handle `RabbitMQ` connecrivity.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class RabbitMQService extends Loggable with Lifecycle with Configurable {
+class RabbitMQService extends Loggable with Lifecycle with Configurable with AquariumAwareSkeleton {
   @volatile private[this] var _props: Props = Props()(StdConverters.AllConverters)
   @volatile private[this] var _consumers = List[RabbitMQConsumer]()
 
   def propertyPrefix = Some(RabbitMQKeys.PropertiesPrefix)
-
-  def aquarium = Aquarium.Instance
 
   def eventBus = aquarium.eventBus
 
@@ -70,8 +68,6 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
 
   def converters = aquarium.converters
 
-  def router = aquarium.actorProvider.actorForRole(RouterRole)
-
   /**
    * Configure this instance with the provided properties.
    *
@@ -79,11 +75,18 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
    */
   def configure(props: Props) = {
     this._props = props
-
-    doConfigure()
   }
 
-  private[this] def doConfigure(): Unit = {
+  @Subscribe
+  override def awareOfAquarium(event: AquariumCreatedEvent) {
+    super.awareOfAquarium(event)
+
+    aquarium.eventBus.addSubscriber(this)
+
+    doSetup()
+  }
+
+  private[this] def doSetup(): Unit = {
     val postNotifier = new PayloadHandlerPostNotifier(logger)
 
     val rcHandler = new ResourceEventPayloadHandler(aquarium, logger)
@@ -133,6 +136,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
         rccc.queueName
       ))
       new RabbitMQConsumer(
+        aquarium,
         rccc,
         rcHandler,
         futureExecutor,
@@ -148,6 +152,7 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
         imcc.queueName
       ))
       new RabbitMQConsumer(
+        aquarium,
         imcc,
         imHandler,
         futureExecutor,
@@ -164,8 +169,6 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable {
   }
 
   def start() = {
-    aquarium.eventBus.addSubscriber(this)
-
     safeStart()
   }
 

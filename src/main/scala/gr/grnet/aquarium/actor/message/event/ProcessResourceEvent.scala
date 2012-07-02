@@ -39,16 +39,14 @@ import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, ActorMessage}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
- * [[gr.grnet.aquarium.actor.service.router.RouterActor]] message
- * that triggers the resource event processing pipeline.
+ * A message that triggers the resource event processing pipeline.
  *
  * Note that the prefix `Process` means that no reply is created or needed.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ProcessResourceEvent(rcEvent: ResourceEventModel)
-extends ActorMessage
-   with UserActorRequestMessage {
+case class ProcessResourceEvent(rcEvent: ResourceEventModel) extends ActorMessage with UserActorRequestMessage {
+  def userID = rcEvent.userID
 
   def referenceTimeMillis = rcEvent.occurredMillis
 }

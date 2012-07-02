@@ -64,9 +64,9 @@ trait IMEventStore {
   def insertIMEvent(event: IMEventModel): IMEvent
 
   /**
-   * Find a user event by event ID
+   * Find an event by its ID
    */
-  def findIMEventById(id: String): Option[IMEvent]
+  def findIMEventByID(id: String): Option[IMEvent]
 
   /**
    * Find the `CREATE` even for the given user. Note that there must be only one such event.

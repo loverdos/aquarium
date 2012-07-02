@@ -33,25 +33,48 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor
-package service
-package pinger
+package gr.grnet.aquarium.service
 
-
-import gr.grnet.aquarium.actor.{PingerRole}
-import gr.grnet.aquarium.actor.message.admin.PingAllRequest
-
+import gr.grnet.aquarium.ResourceLocator
 
 /**
- * An actor that handles the REST ing requests.
+ * Paths recognized and served by the REST API.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
+object RESTPaths {
+  final val PingPath = "/ping".r
 
-class PingerActor extends ReflectiveRoleableActor {
-  def role = PingerRole
+  final val AdminPrefix = "/admin"
 
-  def onPingAllRequest(msg: PingAllRequest): Unit = {
-    logger.debug("Got {}", msg)
-  }
+  private def fixREDot(s: String) = s.replaceAll("""\.""", """\\.""")
+  private def toResourcesPath(name: String) = AdminPrefix + "/resources/%s".format(fixREDot(name))
+  private def toEventPath(name: String)     = AdminPrefix + "/%s/([^/]+)/?".format(name)
+
+  final val ResourcesPath = (AdminPrefix + "/resources/?").r
+
+  final val ResourcesAquariumPropertiesPath = toResourcesPath(ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES).r
+
+  final val ResourcesLogbackXMLPath = toResourcesPath(ResourceLocator.ResourceNames.LOGBACK_XML).r
+
+  final val ResourcesPolicyYAMLPath = toResourcesPath(ResourceLocator.ResourceNames.POLICY_YAML).r
+
+  final val ResourceEventPath = toEventPath("rcevent").r
+
+  final val IMEventPath = toEventPath("imevent").r
+
+  /**
+   * Use this URI path to query for the user balance. The parenthesized regular expression part
+   * represents the user ID.
+   */
+  final val UserBalancePath = "/user/([^/]+)/balance/?".r
+
+  /**
+   * Use this URI path to query for the user state.
+   */
+  final val UserStatePath = "/user/([^/]+)/state/?".r
+
+  final val UserActorCacheContentsPath = (AdminPrefix + "/cache/actor/user/contents").r
+  final val UserActorCacheCountPath    = (AdminPrefix + "/cache/actor/user/size").r
+  final val UserActorCacheStatsPath    = (AdminPrefix + "/cache/actor/user/stats").r
 }

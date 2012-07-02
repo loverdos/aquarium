@@ -34,26 +34,23 @@
  */
 package gr.grnet.aquarium.actor
 
-import service.router.RouterActor
-import service.pinger.PingerActor
-import service.rest.RESTActor
 import service.user.{UserActor}
-import cc.spray.can.{Timeout, RequestContext}
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
-import gr.grnet.aquarium.actor.message.admin.PingAllRequest
 import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
-import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded, ActorProviderConfigured, ActorConfigurationMessage}
+import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded, ActorConfigurationMessage}
 
 /**
  * Each actor within Aquarium plays one role.
  *
  * A role also dictates which configuration messages the respective actor handles.
  */
-sealed abstract class ActorRole(val role: String,
-                                val isCacheable: Boolean,
-                                val actorType: Class[_ <: RoleableActor],
-                                val handledServiceMessages: Set[Class[_]],
-                                val handledConfigurationMessages: Set[Class[_ <: ActorConfigurationMessage]] = Set()) {
+sealed abstract class ActorRole(
+    val role: String,
+    val isCacheable: Boolean,
+    val actorType: Class[_ <: RoleableActor],
+    val handledServiceMessages: Set[Class[_]],
+    val handledConfigurationMessages: Set[Class[_ <: ActorConfigurationMessage]] = Set()
+) {
 
   val knownMessageTypes = handledServiceMessages ++ handledConfigurationMessages
 
@@ -83,40 +80,6 @@ sealed abstract class ActorRole(val role: String,
 }
 
 /**
- * The actor that pings several internal services
- */
-case object PingerRole
-    extends ActorRole("PingerRole",
-                      true,
-                      classOf[PingerActor],
-                      Set(classOf[PingAllRequest]))
-
-/**
- * The generic router.
- */
-case object RouterRole
-    extends ActorRole("RouterRole",
-                      true,
-                      classOf[RouterActor],
-                      Set(classOf[GetUserBalanceRequest],
-                          classOf[GetUserStateRequest],
-                          classOf[ProcessResourceEvent],
-                          classOf[ProcessIMEvent],
-                          classOf[PingAllRequest]),
-                      Set(classOf[ActorProviderConfigured],
-                          classOf[AquariumPropertiesLoaded]))
-
-/**
- * REST request handler.
- */
-case object RESTRole
-    extends ActorRole("RESTRole",
-                      true,
-                      classOf[RESTActor],
-                      Set(classOf[RequestContext],
-                          classOf[Timeout]))
-
-/**
  * User-oriented business logic handler role.
  */
 case object UserActorRole
@@ -128,5 +91,4 @@ case object UserActorRole
                           classOf[GetUserBalanceRequest],
                           classOf[GetUserStateRequest]),
                       Set(classOf[InitializeUserState],
-                          classOf[ActorProviderConfigured],
                           classOf[AquariumPropertiesLoaded]))

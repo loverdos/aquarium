@@ -40,7 +40,6 @@ import com.kenai.crontabparser.impl.CronTabParserBridge
 import gr.grnet.aquarium.util.yaml._
 import java.util.Date
 import java.io.{ByteArrayInputStream, InputStreamReader, InputStream}
-import gr.grnet.aquarium.logic.accounting.dsl.DSLTimeSpec
 
 /**
  * A parser for the Aquarium accounting DSL.

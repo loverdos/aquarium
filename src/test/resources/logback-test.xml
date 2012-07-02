@@ -10,8 +10,6 @@
 
   <logger name="com.ckkloverdos" level="DEBUG"/>
 
-  <logger name="cc.spray.can" level="DEBUG"/>
-
   <logger name="gr.grnet" level="DEBUG"/>
 
   <root level="DEBUG">

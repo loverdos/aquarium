@@ -33,41 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.service
+package gr.grnet.aquarium.service.event
 
-import gr.grnet.aquarium.actor.RESTRole
-import _root_.akka.actor._
-import cc.spray.can.{ServerConfig, HttpClient, HttpServer}
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
+import gr.grnet.aquarium.Aquarium
 
 /**
- * REST service based on Actors and Spray.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class RESTActorService extends Lifecycle with Loggable {
-  private[this] var _port: Int = 8080
-  private[this] var _restActor: ActorRef = _
-  private[this] var _serverActor: ActorRef = _
-  private[this] var _clientActor: ActorRef = _
 
-  def start(): Unit = {
-    val aquarium = Aquarium.Instance
-    this._port = aquarium.props.getInt(Aquarium.Keys.rest_port).getOr(
-      throw new AquariumInternalError(
-        "%s was not specified in Aquarium properties".format(Aquarium.Keys.rest_port)))
-
-    logger.debug("Starting on port %s".format(this._port))
-
-    this._restActor = aquarium.actorProvider.actorForRole(RESTRole)
-    // Start Spray subsystem
-    this._serverActor = Actor.actorOf(new HttpServer(ServerConfig(port = this._port))).start()
-    this._clientActor = Actor.actorOf(new HttpClient()).start()
-  }
-
-  def stop(): Unit = {
-    this._serverActor.stop()
-    this._clientActor.stop()
-  }
-}
+final case class AquariumCreatedEvent(aquarium: Aquarium) extends BusEvent

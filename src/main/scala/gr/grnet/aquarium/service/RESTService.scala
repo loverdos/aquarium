@@ -33,14 +33,13 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor.message.admin
-
-import gr.grnet.aquarium.actor.message.{RouterResponseMessage, RouterRequestMessage, ActorMessage}
-
+package gr.grnet.aquarium.service
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class PingAllResponse() extends RouterResponseMessage(Right(""))
+object RESTService {
+  final val Prefix = "rest"
+}

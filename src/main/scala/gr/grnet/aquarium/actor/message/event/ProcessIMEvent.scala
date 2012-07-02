@@ -39,8 +39,7 @@ import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, ActorMessage}
 import gr.grnet.aquarium.event.model.im.IMEventModel
 
 /**
- * [[gr.grnet.aquarium.actor.service.router.RouterActor]] message
- * that triggers the user event processing pipeline.
+ * A message that triggers the user event processing pipeline.
  *
  * Note that the prefix `Process` means that no reply is created or needed.
  *
@@ -48,5 +47,7 @@ import gr.grnet.aquarium.event.model.im.IMEventModel
  */
 
 case class ProcessIMEvent(imEvent: IMEventModel) extends ActorMessage with UserActorRequestMessage {
+  def userID = imEvent.userID
+
   def referenceTimeMillis = imEvent.occurredMillis
 }

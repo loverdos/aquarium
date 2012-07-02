@@ -50,7 +50,7 @@ trait ResourceEventStore {
   def createResourceEventFromOther(event: ResourceEventModel): ResourceEvent
 
   def clearResourceEvents(): Unit = {
-    // This method is implemented only in MemStore.
+    // This method is implemented only in MemStoreProvider.
     throw new AquariumInternalError("Unsupported operation")
   }
 

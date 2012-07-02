@@ -219,7 +219,7 @@ class MongoDBStore(
     localEvent
   }
 
-  def findIMEventById(id: String): Option[IMEvent] = {
+  def findIMEventByID(id: String): Option[IMEvent] = {
     MongoDBStore.findBy(IMEventNames.id, id, imEvents, MongoDBIMEvent.fromDBObject)
   }
 

@@ -60,18 +60,9 @@ case class RoleHistoryItem(
      */
     validTo: Long = Long.MaxValue
 ) {
-
-  try {
-    require(
-      validFrom <= validTo,
-      "validFrom(%s) <= validTo(%s)".format(new MutableDateCalc(validFrom), new MutableDateCalc(validTo)))
-  }
-  catch {
-    case e: IllegalArgumentException ⇒
-      // TODO Remove this
-      Aquarium.Instance.debug(this, "!! validFrom = %s, validTo = %s, dx=%s", validFrom, validTo, validTo-validFrom)
-      throw e
-  }
+  require(
+    validFrom <= validTo,
+    "validFrom(%s) <= validTo(%s)".format(new MutableDateCalc(validFrom), new MutableDateCalc(validTo)))
 
   require(name ne null, "Name is not null")
 

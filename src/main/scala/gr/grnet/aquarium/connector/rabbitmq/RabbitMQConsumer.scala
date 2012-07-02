@@ -54,22 +54,24 @@ import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys.{RabbitMQConKeys, 
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
+class RabbitMQConsumer(
+    val aquarium: Aquarium,
+    val conf: RabbitMQConsumerConf,
 
-                       /**
-                        * Specifies what we do with the message payload.
-                        */
-                       handler: PayloadHandler,
+    /**
+     * Specifies what we do with the message payload.
+     */
+    handler: PayloadHandler,
 
-                       /**
-                        * Specifies how we execute the handler
-                        */
-                       executor: PayloadHandlerExecutor,
+    /**
+     * Specifies how we execute the handler
+     */
+    executor: PayloadHandlerExecutor,
 
-                       /**
-                        * After the payload is processed, we call this function with ourselves and the result.
-                        */
-                       notifier: (RabbitMQConsumer, Maybe[HandlerResult]) ⇒ Unit
+    /**
+     * After the payload is processed, we call this function with ourselves and the result.
+     */
+    notifier: (RabbitMQConsumer, Maybe[HandlerResult]) ⇒ Unit
 ) extends Loggable with Lifecycle { consumerSelf ⇒
 
   private[this] var _factory: ConnectionFactory = _
@@ -126,7 +128,7 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
   case object LifecycleStartReason extends StartReason
   case object PingStartReason extends StartReason
 
-  private[this] def timerService = Aquarium.Instance.timerService
+  private[this] def timerService = aquarium.timerService
 
   private[this] lazy val servers = {
     conf.connectionConf(RabbitMQConKeys.servers)
@@ -260,8 +262,6 @@ class RabbitMQConsumer(val conf: RabbitMQConsumerConf,
   def stop() = {
     safeStop()
   }
-
-  private[this] def aquarium = Aquarium.Instance
 
   private[this] def postBusError(event: BusEvent): Unit = {
     aquarium.eventBus ! event

@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.actor.message
 
+import gr.grnet.aquarium.AquariumInternalError
+
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
@@ -43,6 +45,14 @@ package gr.grnet.aquarium.actor.message
 case class GetUserBalanceResponse(
     balance: Either[String, GetUserBalanceResponseData],
     override val suggestedHTTPStatus: Int = 200)
-extends RouterResponseMessage(balance, suggestedHTTPStatus)
+extends UserActorResponseMessage(balance, suggestedHTTPStatus) {
+  def userID = balance match {
+    case Left(error) ⇒
+      throw new AquariumInternalError("Could not obtain userID. %s".format(error))
+
+    case Right(data) ⇒
+      data.userID
+  }
+}
 
 case class GetUserBalanceResponseData(userID: String, balance: Double)

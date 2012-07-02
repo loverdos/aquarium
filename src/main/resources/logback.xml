@@ -22,8 +22,6 @@
 
   <logger name="com.ckkloverdos" level="WARN"/>
 
-  <logger name="cc.spray.can" level="INFO"/>
-
   <logger name="gr.grnet" level="DEBUG"/>
 
   <root level="DEBUG">

@@ -38,7 +38,6 @@ package gr.grnet.aquarium.connector.handler
 import gr.grnet.aquarium.Aquarium
 import org.slf4j.Logger
 import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.actor.RouterRole
 import gr.grnet.aquarium.store.{IMEventStore, LocalFSEventStore}
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
@@ -107,7 +106,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
         val imEventDebugString = imEvent.toDebugString
 
-        store.findIMEventById(id) match {
+        store.findIMEventByID(id) match {
           case Some(_) ⇒
            // Reject the duplicate
            logger.debug("Rejecting duplicate ID for %s".format(imEventDebugString))
@@ -187,6 +186,6 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
       // forwardAction: S ⇒ Unit
       imEvent ⇒ {
-        aquarium.actorProvider.actorForRole(RouterRole) ! ProcessIMEvent(imEvent)
+        aquarium.akkaService.getOrCreateUserActor(imEvent.userID) ! ProcessIMEvent(imEvent)
       }
     )

@@ -33,14 +33,27 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor.message.admin
+package gr.grnet.aquarium.actor.message
 
-import gr.grnet.aquarium.actor.message.{RouterRequestMessage, ActorMessage}
-
+import gr.grnet.aquarium.converter.{StdConverters, PrettyJsonTextFormat}
 
 /**
+ * Response message sent as a reply by the [[gr.grnet.aquarium.actor.service.user.UserActor]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class PingAllRequest() extends ActorMessage with RouterRequestMessage
+abstract class UserActorResponseMessage[T](
+    val response: Either[String, T],
+    val suggestedHTTPStatus: Int = 200)
+extends ActorMessage {
+
+  def isError = response.isRight
+
+  def responseToJsonString: String = {
+    response.fold(
+      _    ⇒ "", // No JSON response on error
+      data ⇒ StdConverters.AllConverters.convertEx[PrettyJsonTextFormat](data).value
+    )
+  }
+}
