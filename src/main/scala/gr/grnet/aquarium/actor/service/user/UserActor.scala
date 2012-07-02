@@ -71,6 +71,7 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   override def postStop() {
+    DEBUG("I am finally stopped (in postStop())")
     aquarium.akkaService.notifyUserActorPostStop(this)
   }
 
