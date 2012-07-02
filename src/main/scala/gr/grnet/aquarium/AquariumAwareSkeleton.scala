@@ -50,7 +50,7 @@ trait AquariumAwareSkeleton extends AquariumAware { this: Loggable ⇒
   final protected def aquarium = _aquarium
 
   @Subscribe
-  def awareOfAquariumEx(event: AquariumCreatedEvent) = {
+  def awareOfAquarium(event: AquariumCreatedEvent) = {
     this._aquarium = event.aquarium
     logger.debug("Aware of Aquarium: %s".format(this._aquarium))
   }

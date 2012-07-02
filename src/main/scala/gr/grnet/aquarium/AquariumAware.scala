@@ -43,5 +43,5 @@ import gr.grnet.aquarium.service.event.AquariumCreatedEvent
  */
 
 trait AquariumAware {
-  def awareOfAquariumEx(event: AquariumCreatedEvent): Unit
+  def awareOfAquarium(event: AquariumCreatedEvent): Unit
 }

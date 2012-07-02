@@ -78,8 +78,8 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
   }
 
   @Subscribe
-  override def awareOfAquariumEx(event: AquariumCreatedEvent) {
-    super.awareOfAquariumEx(event)
+  override def awareOfAquarium(event: AquariumCreatedEvent) {
+    super.awareOfAquarium(event)
 
     aquarium.eventBus.addSubscriber(this)
 
