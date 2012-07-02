@@ -144,7 +144,6 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
       build()
 
     this._actorSystem = ActorSystem("aquarium-akka", ConfigFactory.load("akka.conf"))
-    logger.debug("Created %s %s".format(shortClassNameOf(this._actorSystem), this._actorSystem))
   }
 
   def stop() = {
@@ -152,12 +151,11 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
 
     this.stoppingUserActors.clear()
 
+    logger.info("UserActor cache stats: {}", this._userActorCache.stats())
     this._userActorCache.invalidateAll
     this._userActorCache.cleanUp()
 
     this._actorSystem.shutdown()
-
-    logger.info("Shut down %s".format(this._actorSystem))
   }
 
   def notifyUserActorPostStop(userActor: UserActor): Unit = {
@@ -200,12 +198,20 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
 
       case future ⇒
         try {
-          logger.debug("Waiting while UserActor %s is stopping".format(userID))
-          Await.result(future, Duration(1000, TimeUnit.MILLISECONDS))
+          logger.debug("Await.result(): Waiting while UserActor %s is stopping".format(userID))
+          val stopped = Await.result(future, Duration(1000, TimeUnit.MILLISECONDS))
+          if(!stopped) {
+            // TODO: Add metric
+            logger.warn("Await.result(): UserActor %s id not stop. Will remove from stopping anayway".format(userID))
+          }
         }
         catch {
+          case e: java.util.concurrent.TimeoutException ⇒
+            // TODO: Add metric
+            logger.error("Timed-out while waiting for UserActor %s to stop. Will remove from stopping anayway".format(userID), e)
+
           case e: Throwable ⇒
-            logger.error("While Await(ing) UserActor %s to stop".format(userID), e)
+            logger.error("While Await(ing) UserActor %s to stop. Will remove from stopping anayway".format(userID), e)
         }
         finally {
           this.stoppingUserActors.remove(userID)
