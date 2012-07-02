@@ -439,19 +439,32 @@ trait DSL {
       case YAMLEmptyNode => None
     }
 
-    val effective = timeframe / Vocabulary.repeat match {
-      case x: YAMLListNode => parseTimeFrameRepeat(x)
-      case YAMLEmptyNode => List()
+    val repeat =
+     timeframe / Vocabulary.repeat match {
+       case x: YAMLListNode => parseTimeFrameRepeat(x)
+      case YAMLEmptyNode => Nil
     }
 
-    DSLTimeFrame(from, to, effective)
+    /*val cronRepeat = timeframe / "cron" match {
+      case x: YAMLListNode =>  parseCronSpecs(x)
+      case _ => Nil
+    }*/
+
+    DSLTimeFrame(from, to,repeat)
   }
+
+  /*def parseCronSpecs(l: YAMLListNode) : List[DSLCronSpec] =
+      l.listValue map  {
+        case x:YAMLStringNode => new DSLCronSpec(x.string.trim)
+        case YAMLEmptyNode => throw new DSLParseException("Bad cron expression")
+      }*/
 
   /** Parse a resource frame repeat block */
   def parseTimeFrameRepeat(tmr: YAMLListNode): List[DSLTimeFrameRepeat] = {
 
     if (tmr.isEmpty)
       return List()
+
 
     /** Parse a resource frame entry (start, end tags) */
     def findInMap(repeat: YAMLMapNode,
@@ -464,7 +477,7 @@ trait DSL {
 
     val start = findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.start)
     val end = findInMap(tmr.head.asInstanceOf[YAMLMapNode], Vocabulary.end)
-
+    assert(start._2.size == end._2.size)
     DSLTimeFrameRepeat(start._2, end._2, start._1,end._1) :: parseTimeFrameRepeat(tmr.tail)
   }
 
@@ -491,6 +504,7 @@ trait DSL {
       val input = cron.get(ii).toString
       if (input.equals("*"))
         (-1).until(0).toList
+       //TODO:  DO NOT ACCEPT "-" and ","
       else if (input.contains('-')) {
         val ints = input.split('-')
         ints(0).toInt.until(ints(1).toInt + 1).toList
@@ -503,8 +517,9 @@ trait DSL {
           b <- splitMultiVals(1)
           c <- splitMultiVals(2)
           d <- splitMultiVals(3)
-          e <- splitMultiVals(4)  } yield
-      DSLTimeSpec(a,b,c,d,e)
+          e <- splitMultiVals(4)}
+    yield
+       DSLTimeSpec(a,b,c,d,e)
   }
 }
 

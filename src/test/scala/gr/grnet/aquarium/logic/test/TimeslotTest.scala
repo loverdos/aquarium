@@ -109,4 +109,31 @@ class TimeslotTest extends TestMethods {
     assertEquals(1, result.size)
     assertEquals(t, result.head)
   }
+
+  @Test
+  def testMergeOverlaps = {
+    var l = List(Timeslot(new Date(3), new Date(5)),Timeslot(new Date(1), new Date(3)))
+
+    var result = Timeslot.mergeOverlaps(l)
+    assertEquals(1, result.size)
+    assertEquals(Timeslot(new Date(1), new Date(5)), result.head)
+
+    l = l ++ List(Timeslot(new Date(4), new Date(6)))
+    result = Timeslot.mergeOverlaps(l)
+    assertEquals(1, result.size)
+    assertEquals(Timeslot(new Date(1), new Date(6)), result.head)
+
+    l = l ++ List(Timeslot(new Date(7), new Date(8)))
+    result = Timeslot.mergeOverlaps(l)
+    assertEquals(2, result.size)
+    assertEquals(Timeslot(new Date(1), new Date(6)), result.head)
+    assertEquals(Timeslot(new Date(7), new Date(8)), result.tail.head)
+
+    l = l ++ List(Timeslot(new Date(2), new Date(20)))
+    result = Timeslot.mergeOverlaps(l)
+    assertEquals(1, result.size)
+    assertEquals(Timeslot(new Date(1), new Date(20)), result.head)
+  }
+
+
 }

@@ -35,6 +35,9 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
+import org.quartz.CronExpression
+import java.util.Date
+
 /**
  * Encapsulates a repeating item
  *
@@ -46,6 +49,20 @@ case class DSLTimeFrameRepeat (
   startCron: String,
   endCron: String
 ) extends DSLItem {
+
+  private def makeCronExpression(s: String) : CronExpression  = {
+    val e = "0 " + s.trim
+    val l = e.split(" ")
+    (l(3),l(5))  match {
+      case ("?",_) | (_,"?") => ()
+      case (_,"*") => l.update(5,"?")
+      case ("*",_) => l.update(3,"?")
+    }
+    val e1 = l.foldLeft("") { (s,elt) => s + " " + elt}
+    new CronExpression(e1)
+  }
+  val getStart = DSLCronSpec(startCron)
+  val getEnd =  DSLCronSpec(endCron)
 
   assert(start.size == end.size,
     ("start (%s) and end (%s) cron-like specs do not expand to equal" +

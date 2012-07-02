@@ -37,13 +37,13 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import java.util.Date
 import scala.collection._
-
+//TODO: REMOVE THIS CLASS
 /**
  * A semantic checker for the Aquarium accounting DSL. 
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-trait DSLSemanticChecks {
+/*trait DSLSemanticChecks {
 
   /**
    * Functions to apply by default when checking consistency for
@@ -147,4 +147,4 @@ trait DSLSemanticChecks {
 
 sealed trait DSLConsistencyMsg
 case class DSLConsistencyWarn(warn: String) extends DSLConsistencyMsg
-case class DSLConsistencyError(err: String) extends DSLConsistencyMsg
+case class DSLConsistencyError(err: String) extends DSLConsistencyMsg*/

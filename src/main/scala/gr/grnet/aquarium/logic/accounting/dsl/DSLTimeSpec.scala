@@ -68,36 +68,35 @@ import collection.mutable
   assert(-1 <= mon && 12 > mon && mon != 0)
   assert(-1 <= dow && 7 > dow)
 
-
-  def expandTimeSpec(from: Date,  to: Date) : List[Date] = {
-    val c = new GregorianCalendar()
-    c.setTime { /*adjust time given from "from" variable  */
-      c.setTime(from)
-      c.set(Calendar.MINUTE,this.min)
-      c.set(Calendar.HOUR_OF_DAY,this.hour)
-      /*if(c.getTimeInMillis < from.getTime) {
-        //c.add(Calendar.DAY_OF_YEAR, 1)
-       // assert(c.getTimeInMillis >= from.getTime,c.getTime + " >=" + from) /* sanity check */
-      }*/
-      c.getTime
-   }
-   def equals () : Boolean =
-      (this.mon < 0  || c.get(Calendar.MONTH) == this.getCalendarMonth()) &&
-      (this.dom < 0  || c.get(Calendar.DAY_OF_MONTH) == this.dom) &&
-      (this.dow < 0  || c.get(Calendar.DAY_OF_WEEK) == this.getCalendarDow())
-
-    val result = new mutable.ListBuffer[Date]()
-    //Console.err.println("\n\nBEGIN\n\n")
-    while (c.getTimeInMillis <= to.getTime) {
-      val b : Boolean = equals
-      //Console.err.println(c.getTime +  "\t\t"  + to + " ==>" + (if(b) "YES" else "NO"))
-      if (b) result += new Date(c.getTime.getTime)
-      c.add(Calendar.DAY_OF_YEAR, 1)
+  /* calendar-related methods*/
+  private val cal = new GregorianCalendar()
+  private def initDay(init:Long) {
+    cal.setTimeInMillis(init)
+    cal.set(Calendar.MINUTE,min)
+    cal.set(Calendar.HOUR_OF_DAY,hour)
+    cal.set(Calendar.SECOND,0)
+  }
+  private def nextValidDay(end:Long) (): Date = {
+    var ret : Date = null
+    while (cal.getTimeInMillis <= end && ret == null) {
+      val valid : Boolean = (mon < 0  || cal.get(Calendar.MONTH) == getCalendarMonth()) &&
+                            (dom < 0  || cal.get(Calendar.DAY_OF_MONTH) == dom) &&
+                            (dow < 0  || cal.get(Calendar.DAY_OF_WEEK) == getCalendarDow())
+      if(valid)
+         ret = cal.getTime
+      cal.add(Calendar.DAY_OF_YEAR, 1)
     }
-    //Console.err.println("\n\nEND\n\n")
-    result.toList
+    ret
   }
 
+  def expandTimeSpec(from: Date,  to: Date) : List[Date] = {
+    val result = new mutable.ListBuffer[Date]()
+    val nextDay = this.nextValidDay (to.getTime) _
+    var d : Date = null
+    initDay(from.getTime)
+    while({d=nextDay();d}!=null) result += d
+    result.toList
+  }
 
   /** Day of week conversions to stay compatible with [[java.util.Calendar]] */
   private def getCalendarDow(): Int = dow match {
@@ -129,5 +128,22 @@ import collection.mutable
 }
 
 object DSLTimeSpec {
-  val emtpyTimeSpec = DSLTimeSpec(0, 0, 0, 0, 0)
+  val emtpyTimeSpec = DSLTimeSpec(0,0, -1, -1, -1)
+
+  def expandTimeSpec(d0:DSLTimeSpec,d1:DSLTimeSpec, from: Date,  to: Date) : List[(Date,Date)] = {
+    assert(d0!=null)
+    assert(d1!=null)
+    assert(from!=null)
+    assert(to!=null)
+    val result = new mutable.ListBuffer[(Date,Date)]()
+    val d0_nextDay = d0.nextValidDay (to.getTime) _ /* iterator for valid dates of d0*/
+    val d1_nextDay = d1.nextValidDay (to.getTime) _ /* iterator for valid dates of d1*/
+    var d0_d : Date = null
+    d0.initDay(from.getTime)
+    while({d0_d=d0_nextDay();d0_d}!=null){
+      val d1_d : Date = {d1.initDay(d0_d.getTime);d1_nextDay()}
+      if(d1_d!=null) result += ((d0_d,d1_d))
+    }
+    result.toList
+  }
 }

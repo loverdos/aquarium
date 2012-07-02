@@ -73,37 +73,48 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
 
     var a = DSLTimeSpec(33, 12, -1, -1, 3)
-    var result = a.expandTimeSpec(from, to)
+    var b = DSLTimeSpec(34, 12, -1, -1, 3)
+    var result = DSLTimeSpec.expandTimeSpec(a,b,from, to)
     assertEquals(4, result.size)
 
     a = DSLTimeSpec(33, 12, -1, 10, 3)   // Timespec falling outside from-to
-    result = a.expandTimeSpec(from, to)
+    b = DSLTimeSpec(34, 12, -1, -1, 3)
+    result = DSLTimeSpec.expandTimeSpec(a,b,from, to)
     assertEquals(0, result.size)
 
     // Would only return an entry if the 1rst of Dec 2011 is Thursday
     a = DSLTimeSpec(33, 12, 1, -1, 3)
-    result = a.expandTimeSpec(from, to)
+    b = DSLTimeSpec(34, 12, 1, -1, 3)
+    result = DSLTimeSpec.expandTimeSpec(a,b,from, to)
     assertEquals(0, result.size)
 
     // The 9th of Dec 2011 is Friday
     //Console.err.println("\n\nBEGIN CALCULATION\t\t" + from + "\t\t" + to +  "\n\n")
     a = DSLTimeSpec(33, 12, 9, -1, 5)
-    result = a.expandTimeSpec(from, to)
+    b = DSLTimeSpec(34, 12, 9, -1, 5)
+    result = DSLTimeSpec.expandTimeSpec(a,b,from, to)
     //Console.err.println("\n\nEND CALCULATION: " + result +"\n\n")
     assertEquals(1, result.size)
 
     // Every day
     a = DSLTimeSpec(33, 12, -1, -1, -1)
-    result = a.expandTimeSpec(from, to)
+    b = DSLTimeSpec(34, 12, -1, -1, -1)
+    result = DSLTimeSpec.expandTimeSpec(a,b,from, to)
     assertEquals(31, result.size)
 
+    from.setTime(1340614800000L) //  06/25/2012 12:00:00
+    to.setTime(1340982000000L)   // 06/29/2012 18:00:00
+    a = DSLTimeSpec(00, 12, -1, -1, 1 ) // monday at 12:00
+    b = DSLTimeSpec(00, 19, -1, -1, 5) //  friday at 19:00
+    result = DSLTimeSpec.expandTimeSpec(a,b,from, to)
+    assert(result.size==0)
 
-    //Console.err.println("\n\n@BEGIN CALCULATION\t\t" + from + "\t\t" + to +  "\n\n")
-    a = DSLTimeSpec(33, 12, -1, -1, 5)
-    result = a.expandTimeSpec(from, to)
-    //Console.err.println("\n\n@END CALCULATION: " + result +"\n\n")
-//    assertEquals(1, result.size)
-
+    from.setTime(1340614800000L) //  06/25/2012 12:00:00
+    to.setTime(1341068400000L)   // 06/30/2012 18:00:00
+    a = DSLTimeSpec(00, 12, -1, -1, 1 ) // monday at 12:00
+    b = DSLTimeSpec(00, 19, -1, -1, 5) //  friday at 19:00
+    result = DSLTimeSpec.expandTimeSpec(a,b,from, to)
+    assert(result.size==1)
   }
 
   /*@Test
@@ -122,32 +133,7 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     assertEquals(34, result.size)
   }*/
 
-  @Test
-  def testMergeOverlaps = {
-    var l = List(Timeslot(new Date(3), new Date(5)),Timeslot(new Date(1), new Date(3)))
-
-    var result = mergeOverlaps(l)
-    assertEquals(1, result.size)
-    assertEquals(Timeslot(new Date(1), new Date(5)), result.head)
-
-    l = l ++ List(Timeslot(new Date(4), new Date(6)))
-    result = mergeOverlaps(l)
-    assertEquals(1, result.size)
-    assertEquals(Timeslot(new Date(1), new Date(6)), result.head)
-
-    l = l ++ List(Timeslot(new Date(7), new Date(8)))
-    result = mergeOverlaps(l)
-    assertEquals(2, result.size)
-    assertEquals(Timeslot(new Date(1), new Date(6)), result.head)
-    assertEquals(Timeslot(new Date(7), new Date(8)), result.tail.head)
-
-    l = l ++ List(Timeslot(new Date(2), new Date(20)))
-    result = mergeOverlaps(l)
-    assertEquals(1, result.size)
-    assertEquals(Timeslot(new Date(1), new Date(20)), result.head)
-  }
-
-  @Test
+  /*@Test
   def testEffectiveTimeslots = {
     val from =  new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
     val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
@@ -200,9 +186,9 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     result = effectiveTimeslots(repeat, new Date(1304121600000L),
       new Date(1319932800000L))
     assertNotEmpty(result)
-  }
+  } */
 
-  @Test
+  /*@Test
   def testAllEffectiveTimeslots = {
     var from = new Date(1321621969000L) //Fri Nov 18 15:12:49 +0200 2011
     val to =  new Date(1324214719000L)   //Sun Dec 18 15:25:19 +0200 2011
@@ -217,16 +203,16 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
       parseCronString("00 20 * * 5"),
       "00 18 * * 5",
       "00 20 * * 5")
-    val tf = DSLTimeFrame(from, None, List(repeat1, repeat2))
+   // val tf = DSLTimeFrame(from, None, List(repeat1, repeat2),Nil)
 
-    var result = allEffectiveTimeslots(tf, Timeslot(from, to))
+    /*var result = allEffectiveTimeslots(tf, Timeslot(from, to))
     assertEquals(36, result.size)
     testSuccessiveTimeslots(result)
 
-    result = allEffectiveTimeslots(DSLTimeFrame(new Date(0), None, List()),
+    result = allEffectiveTimeslots(DSLTimeFrame(new Date(0), None, List(),Nil),
       Timeslot(new Date(14), new Date(40)))
-    assertEquals(1, result.size)
-  }
+    assertEquals(1, result.size)*/
+  } */
 
  /* @Test
   def testNonEffectiveTimeslots = {
@@ -265,6 +251,26 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
 
     return
   } */
+    private def times[R](times:Int,block: => R): R = {
+     val count = times
+     val (ret,s) =  time(block)
+     var sum = s
+     for { i <- 2 to times} {
+       val (_,t) = time(block)
+       sum += t
+       //System.err.println("time" + t +  " count " + count)
+     }
+     //Console.err.println("Elapsed time: " + (sum/count)/1000000L + "\tms")
+     ret
+   }
+
+    private def time[R](block: => R): (R,Long) = {
+     val t0 = System.nanoTime()
+     val result = block    // call-by-name
+     val t1 = System.nanoTime()
+     (result,t1-t0)
+    }
+
 
   @Test
   def testFindEffective = {
@@ -278,9 +284,12 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     val ts5 = 1322689082000L //Wed, 30 Nov 2011 23:38:02 EET
     val ts6 = 1322555880000L //Tue, 29 Nov 2011 10:38:00 EET
 
-    var pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts2)), agr)
+    var check = new Timeslot(new Date(1322649482000L), new Date(1322654400000L))
+    //Console.err.println("Check " + check)
+    var pricelists = times(1,resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts2)), agr))
+
     assertEquals(2, pricelists.keySet.size)
-    assertNotNone(pricelists.get(new Timeslot(new Date(1322654402000L), new Date(1322656682000L))))
+    assertNotNone(pricelists.get(check))
     assertEquals("foobar", pricelists.head._2.name)
 
     pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts2), new Date(ts3)), agr)
@@ -295,7 +304,7 @@ class DSLUtilsTest extends DSLTestBase with DSLUtils with TestMethods {
     pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts1), new Date(ts5)), agr)
     assertEquals(4, pricelists.keySet.size)
 
-    pricelists = resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts6), new Date(ts5)), agr)
+    pricelists = times(1,resolveEffectivePricelistsForTimeslot(Timeslot(new Date(ts6), new Date(ts5)), agr))
     assertEquals(9, pricelists.keySet.size)
   }
 

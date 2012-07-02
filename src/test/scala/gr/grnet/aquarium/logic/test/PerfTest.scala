@@ -81,9 +81,10 @@ class PerfTest extends DSLUtils with DSL {
         var rndEnd = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
 
         while (rndEnd.before(rndStart)) rndEnd = new Date((min + (scala.math.random * (max - min) + 1)).toLong)
-        val tf = DSLTimeFrame(rndStart, Some(rndEnd), List(repeat1, repeat2))
+        val tf = DSLTimeFrame(rndStart, Some(rndEnd), List(repeat1, repeat2))//,Nil)
 
-        numResolved += allEffectiveTimeslots(tf, Timeslot(new Date(min), new Date(max))).size
+        numResolved += tf.intervalsOf(Timeslot(new Date(min), new Date(max))).size
+          //allEffectiveTimeslots(tf, Timeslot(new Date(min), new Date(max))).size
     }
 
     var total = TimeHelpers.nowMillis() - start

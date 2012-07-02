@@ -52,7 +52,7 @@ final case class Timeslot(from: Date, to: Date)
   /* Preconditions to ensure correct object creations */
   assert(from != null)
   assert(to != null)
-  assert(from.before(to), "from = %s, to = %s".format(new MutableDateCalc(from), new MutableDateCalc(to)))
+  assert(start <= end, "from = %s, to = %s".format(new MutableDateCalc(from), new MutableDateCalc(to)))
 
   def startsBefore(t: Timeslot) : Boolean =  start < t.start
 
@@ -82,7 +82,7 @@ final case class Timeslot(from: Date, to: Date)
   /**
    * Check whether this timeslot contains the provided time instant.
    */
-  private def includes(t: Date) : Boolean = start <= t.getTime &&  t.getTime <= end
+  private[dsl] def includes(t: Date) : Boolean = start <= t.getTime &&  t.getTime <= end
 
 
   /**
@@ -179,6 +179,21 @@ final case class Timeslot(from: Date, to: Date)
     }
   }
 
+  /* align a time slot in "bound_size" boundaries so that
+   * start0 <= start and end0 >= end */
+  def align(bound_size : Long) : Timeslot = {
+    val start0 = (start / bound_size) * bound_size
+    val add_one = if (end % bound_size == 0) 0 else 1
+    val end0  =  (end / bound_size + add_one) * bound_size
+    Timeslot(start0,end0)
+  }
+
+  /* returns true when the start and end address are
+  *  multiples of bound_size*/
+  def isAligned(bound_size : Long) : Boolean =
+     start % bound_size == 0 && end % bound_size == 0
+
+
   /**
    * Compares the starting times of two timeslots.
    */
@@ -198,7 +213,8 @@ final case class Timeslot(from: Date, to: Date)
 
   def myString : String = "Timeslot(" + this.start + "," + this.end + ")"
   //override def toString() = myString
-  override def toString() = toDateString
+  override def toString() =
+    toDateString
 
   def toDateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from), new MutableDateCalc(to))
   def toISODateString = "Timeslot(%s, %s)".format(new MutableDateCalc(from).toISOString, new MutableDateCalc(to).toISOString)
@@ -210,4 +226,18 @@ object Timeslot {
 
   def apply(x: Int, y: Int): Timeslot =
     new Timeslot(new Date(x), new Date(y))
+
+ def mergeOverlaps(list: List[Timeslot]): List[Timeslot] = {
+    def sorter(x: Timeslot, y: Timeslot) : Boolean =   y.from after x.from
+    (list sortWith sorter).foldLeft(List[Timeslot]()) {
+      case (Nil,b) =>
+        List(b)
+      case (hd::Nil,b) =>
+        if (hd overlaps  b) (hd merge b)::Nil
+        else b::hd::Nil
+      case (a @ hd::tl,b) =>
+        if(hd overlaps b) (hd merge b)::tl
+        else b :: a
+    }.reverse
+  }
 }

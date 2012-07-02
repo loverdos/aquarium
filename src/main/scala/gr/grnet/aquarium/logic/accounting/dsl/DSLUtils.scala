@@ -68,13 +68,95 @@ trait DSLUtils extends DateUtils {
   immutable.SortedMap[Timeslot, DSLPriceList] =
     resolveEffective[DSLPriceList](timeslot,agr.pricelist)
 
+  /*private def printPolicy[T <: DSLTimeBoundedItem[T]](t : T) : Unit = {
+    Console.err.println("Policy " + t.name + " " + t.toTimeslot + " DETAIL : " + t.effective)
+    t.overrides match {
+      case None => Console.println
+      case Some(t) => printPolicy(t)
+    }
+  }
+
+  private def printMap[T <: DSLTimeBoundedItem[T]](m: immutable.SortedMap[Timeslot, T]) = {
+    Console.err.println("BEGIN MAP: ")
+    for { (t,p) <- m.toList } Console.err.println("Timeslot " + t + "\t\t" + p.name)
+    Console.err.println("END MAP")
+  } */
+
+  def resolveEffective[T <: DSLTimeBoundedItem[T]](timeslot0: Timeslot,policy: T):
+  immutable.SortedMap[Timeslot, T] = {
+    //Console.err.println("\n\nInput timeslot: " + timeslot0 + "\n\n")
+    ///printPolicy(policy)
+    val ret =  resolveEffective3(timeslot0,policy) //HERE
+    //printMap(ret)
+    ret
+  }
+
+  def resolveEffective3[T <: DSLTimeBoundedItem[T]](timeslot0: Timeslot,policy: T):
+  immutable.SortedMap[Timeslot, T] = {
+    assert(policy.toTimeslot contains timeslot0,"Policy does not contain timeslot")
+    val timeslot = timeslot0 //TODO: timeslot0.align(5000)
+    val subtimeslots_of_this_policy = Timeslot.mergeOverlaps(policy.effective intervalsOf timeslot)
+    val subtimeslots_NOT_IN_this_policy = Timeslot.mergeOverlaps(timeslot.nonOverlappingTimeslots
+                                                                                          (subtimeslots_of_this_policy))
+    val policy_map =  subtimeslots_of_this_policy.foldLeft  (immutable.SortedMap[Timeslot, T]())
+                                                            {(map,t) =>
+                                                                  //Console.err.println("Adding timeslot" + t + " for policy " + policy.name)
+                                                                  map + ((t,policy))
+                                                            }
+    val other_policy_map = policy.overrides match {
+                                              case None =>
+                                                 immutable.SortedMap[Timeslot, T]()
+                                              case Some(parent_policy)=>
+                                                  subtimeslots_NOT_IN_this_policy.foldLeft (
+                                                      (immutable.SortedMap[Timeslot, T]()))
+                                                      {(map,t) =>
+                                                        //Console.err.println("Residual timeslot: " + t)
+                                                        map ++ resolveEffective3(t,parent_policy)
+                                                      }
+                                            }
+    val final_map = policy_map ++ other_policy_map
+    final_map
+  }
+
+  /*def resolveEffective2[T <: DSLTimeBoundedItem[T]](timeslot0: Timeslot,policy: T):
+  immutable.SortedMap[Timeslot, T] = {
+    assert(policy.toTimeslot contains timeslot0,"Policy does not contain timeslot")
+
+    /* generate mappings from timeslots -> policies
+     * Algorithm: find next valid date (starting from timeslot.start) in this policy
+     */
+    val timeslot = timeslot0 //TODO: timeslot0.align(5000)
+    def nextDate(d:Date,p:T) : Option[(Date,T,Boolean)] =
+      (p.effective nextValidAfter d,p.overrides) match {
+        case (None,None) => None
+        case (None,Some(parent_policy)) =>
+          val d1 = nextDate(d,parent_policy)
+          d1
+        case (Some(d1),_) => /* the next valid date cannot occur after the end of timeslot*/
+           if (d1.before(timeslot.to)) Some((d1,p,true)) else Some((timeslot.to,p,false))
+      }
+    def genMap(map: immutable.SortedMap[Timeslot, T],d:Date) : immutable.SortedMap[Timeslot, T] = {
+        val step = 1000L
+        nextDate(d,policy) match {
+        case None => map
+        case Some((d1,policy,cont)) =>
+          val t = Timeslot(d,d1)
+          val map1 = map + (t -> policy)
+          if(cont) genMap(map1,new Date(d1.getTime + step)) // 1 second after d1
+          else map1 /* done */
+      }
+    }
+    val map = genMap(immutable.SortedMap[Timeslot, T](),timeslot.from)
+    map
+  }
+
   /**
    * Splits the provided timeslot into chunks according to the validity
    * timeslots specified by the provided time bounded item. It
    * returns a map whose keys are the timeslot chunks and the values
    * correspond to the effective time bounded item (algorithm or pricelist).
    */
-  def resolveEffective[T <: DSLTimeBoundedItem[T]](timeslot: Timeslot,policy: T):
+  def resolveEffective1[T <: DSLTimeBoundedItem[T]](timeslot: Timeslot,policy: T):
   immutable.SortedMap[Timeslot, T] = {
       assert(policy.toTimeslot contains timeslot,"Policy does not contain timeslot")
 
@@ -87,26 +169,23 @@ trait DSLUtils extends DateUtils {
      val timeslots_IN_policy = timeslot.overlappingTimeslots(all_timeslots)
      val timeslots_NOT_IN_policy = timeslot.nonOverlappingTimeslots(all_timeslots)
 
-      immutable.SortedMap[Timeslot, T]() ++
+     val ret =  immutable.SortedMap[Timeslot, T]() ++
       /*add [timeslots -> policy] covered by this policy*/
       timeslots_IN_policy.flatMap {
-         effective_timeslot => Map(effective_timeslot -> policy)
+         effective_timeslot =>  Map(effective_timeslot -> policy)
       } ++
       /*add [timeslots -> policy] covered by parent policies */
       timeslots_NOT_IN_policy.flatMap { /* search the policy hierarchy for effective timeslots not covered by this policy.*/
         not_effective_timeslot => policy.overrides match {
           case None => immutable.SortedMap[Timeslot, T]() /*Nothing to do. TODO: throw exception ?*/
-          case Some(parent_policy) => resolveEffective(not_effective_timeslot,parent_policy) /* search the policy hierarchy*/
+          case Some(parent_policy) => resolveEffective1(not_effective_timeslot,parent_policy) /* search the policy hierarchy*/
         }
       }
-  }
+    ret
+  }*/
 
-  /**
-   * Utility function to put timeslots in increasing start timestamp order
-   */
-  private def sorter(x: Timeslot, y: Timeslot) : Boolean =   y.from after x.from
-
-  /**
+   /*
+  /*
    * Get a list of all timeslots within which a timeframe
    * is effective, whithin the provided time bounds.
    */
@@ -117,34 +196,30 @@ trait DSLUtils extends DateUtils {
       val toDate = if (spec.to.getOrElse(t.to).after(t.to)) t.to else spec.to.getOrElse(t.to)
       List(Timeslot(fromDate, toDate))
     } /* otherwise for all repetitions determine timeslots*/
-    else mergeOverlaps(for { r <- spec.repeat
-                            ts <- effectiveTimeslots(r, t.from, t.to) }
-                       yield ts)
+    else {
+        val all =  for { r <- spec.repeat
+                         ts <- effectiveTimeslots(r, t.from, t.to)
+                      }  yield ts
+      //for{ i <- all} Console.err.println(i)
+        mergeOverlaps(all)
+    }
+  */
+
+
 
   /**
    * Merges overlapping timeslots.
    */
-  private[logic] def mergeOverlaps(list: List[Timeslot]): List[Timeslot] =
-    (list sortWith sorter).foldLeft(List[Timeslot]()) {
-      case (Nil,b) =>
-        List(b)
-      case (hd::Nil,b) =>
-        if (hd overlaps  b) (hd merge b)::Nil
-        else b::hd::Nil
-      case (a @ hd::tl,b) =>
-        if(hd overlaps b) (hd merge b)::tl
-        else b :: a
-      }.reverse
 
-
-  /**
+  /*/**
    * Get a list of all timeslots within which a time frame is active.
      The result is returned sorted by timeframe start date.
    */
   def effectiveTimeslots(spec: DSLTimeFrameRepeat, from: Date, to : Date):
     List[Timeslot] =
       for { (h1,h2) <- spec.start zip spec.end
-            (d1,d2) <- h1.expandTimeSpec(from, to) zip h2.expandTimeSpec(from, to)
+            (d1,d2) <- DSLTimeSpec.expandTimeSpec(h1,h2,from,to)
           }
       yield Timeslot(d1,d2)
+      */
 }

@@ -52,6 +52,7 @@ aquariumpolicy:
       overrides: default
       diskspace: 0
       effective:
+        #cron: ["00 00 12-14,18-20 * *"] #5 fields!!
         repeat:
           - start: "00 00 12 * *"
             end:   "00 00 14 * *"
@@ -79,6 +80,7 @@ aquariumpolicy:
       vmtime: 0.1
       diskspace: 0.05
       effective:
+        #cron: ["* 02 * * Tue,Wed"]
         repeat:
           - start: "00 02 * * Tue"
             end:   "00 02 * * Wed"
@@ -91,6 +93,7 @@ aquariumpolicy:
       vmtime: 0.6
       diskspace: 0.05
       effective:
+        #cron : ["* 12-14,18-20 * * *"] 
         repeat:
           - start: "00 12 * * *"
             end:   "00 14 * * *"
