@@ -143,8 +143,6 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
         removalListener(this._cacheEvictionListener).
       build()
 
-    this._userActorCache.stats()
-
     this._actorSystem = ActorSystem("aquarium-akka", ConfigFactory.load("akka.conf"))
     logger.debug("Created %s %s".format(shortClassNameOf(this._actorSystem), this._actorSystem))
   }
