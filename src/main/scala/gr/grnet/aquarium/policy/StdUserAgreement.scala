@@ -33,13 +33,22 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.Timespan
 
 /**
- * Thrown when an error occurs at the persistence layer.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class StoreException(msg: String) extends AquariumException(msg)
+
+case class StdUserAgreement(
+    id: String,
+    parentID: Option[String],
+    validityTimespan: Timespan,
+    role: String,
+    fullPriceTableRef: FullPriceTableRef
+) extends UserAgreementModel {
+
+  def idInStore: Option[Any] = None
+}

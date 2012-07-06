@@ -33,90 +33,86 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.dsl
+package gr.grnet.aquarium.charging
 
 /**
- * The type of variable needed in order to compute costs, that is credit charges.
- *
- * A [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]] declares which variables
- * it needs in order to compute credit charges. These and only these variables are
- * passed to the repsective [[gr.grnet.aquarium.logic.accounting.dsl.DSLAlgorithm]] (and
- * are also used to type-check the algorithm).
+ * An input that is used in a charging function.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-sealed abstract class DSLCostPolicyVar(val name: String) {
-  def isDirectlyRelatedToPreviousEvent: Boolean = false
-  def isDirectlyRelatedToCurrentEvent: Boolean = false
-}
+
+sealed abstract class ChargingInput(
+    val name: String,
+    val isDirectlyRelatedToPreviousEvent: Boolean = false,
+    val isDirectlyRelatedToCurrentEvent: Boolean = false
+)
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the name of the cost
+ * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the name of the cost
  * policy for which a cost computation applies.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLCostPolicyNameVar extends DSLCostPolicyVar("costPolicyName")
+case object ChargingBehaviorNameInput extends ChargingInput("chargingBehaviorName")
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the total credits.
+ * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the total credits.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLTotalCreditsVar extends DSLCostPolicyVar("totalCredits")
+case object TotalCreditsInput extends ChargingInput("totalCredits")
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the old total (accumulating)
+ * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the old total (accumulating)
  * amount, that is the resource amount before taking into account a new resource event.
  * For example, in the case of `diskspace`, this is the total diskspace used by a user.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLOldTotalAmountVar extends DSLCostPolicyVar("oldTotalAmount")
+case object OldTotalAmountInput extends ChargingInput("oldTotalAmount")
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the new total (accumulating)
+ * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the new total (accumulating)
  * amount, that is the resource amount after taking into account a new resource event.
  * For example, in the case of `diskspace`, this is the total diskspace used by a user.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLNewTotalAmountVar extends DSLCostPolicyVar("newTotalAmount")
+case object NewTotalAmountInput extends ChargingInput("newTotalAmount")
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the time delta between two
+ * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the time delta between two
  * consecutive resource events of the same type (same `resource` and `instanceId`). Time is measured in milliseconds.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLTimeDeltaVar extends DSLCostPolicyVar("timeDelta") {
-  override def isDirectlyRelatedToPreviousEvent = true
-  override def isDirectlyRelatedToCurrentEvent = true
-}
+case object TimeDeltaInput extends ChargingInput("timeDelta", true, true)
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the `value` of the previous
- * [[gr.grnet.aquarium.logic.events.ResourceEvent]].
+ * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the `value` of the previous
+ * [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLPreviousValueVar extends DSLCostPolicyVar("previousValue") {
-  override def isDirectlyRelatedToPreviousEvent = true
-}
+case object PreviousValueInput extends ChargingInput("previousValue", true, false)
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the `value` of the current
- * [[gr.grnet.aquarium.logic.events.ResourceEvent]].
+ * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the `value` of the current
+ * [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLCurrentValueVar extends DSLCostPolicyVar("currentValue") {
-  override def isDirectlyRelatedToCurrentEvent = true
-}
+case object CurrentValueInput extends ChargingInput("currentValue", false, true)
 
 /**
- * The type of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]] that holds the unit price as
- * given in a [[gr.grnet.aquarium.logic.accounting.dsl.DSLPriceList]].
- *
+ * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the unit price.
+ * 
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case object DSLUnitPriceVar extends DSLCostPolicyVar("unitPrice")
+case object UnitPriceInput extends ChargingInput("unitPrice")
+
+case object DetailsInput extends ChargingInput("details")
+
+
+
+

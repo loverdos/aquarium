@@ -42,7 +42,7 @@ import java.util.Date
  * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-case class DSLCronSpec(cronSpec: String) extends DSLItem {
+case class DSLCronSpec(cronSpec: String) {
 
     private val cronExpr = {
       val e = "00 " + cronSpec.trim //IMPORTANT: WE DO NOT CARE ABOUT SECONDS!!!

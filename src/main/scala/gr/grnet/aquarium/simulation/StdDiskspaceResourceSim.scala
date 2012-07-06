@@ -35,9 +35,8 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, ContinuousCostPolicy, DSLCostPolicy}
-import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
-
+import gr.grnet.aquarium.policy.PolicyModel
+import gr.grnet.aquarium.charging.{ContinuousChargingBehavior, ChargingBehavior}
 
 /**
  * A simulator for the standard `diskspace` resource.
@@ -45,16 +44,11 @@ import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class StdDiskspaceResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
-                              unit: String = StdVMTimeResourceSim.DSLNames.unit,
-                              costPolicy: DSLCostPolicy = ContinuousCostPolicy,
-                              isComplex: Boolean = false,
-                              descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
-  extends ResourceSim(name,
-                      unit,
-                      costPolicy,
-                      isComplex,
-                      descriminatorField) {
+class StdDiskspaceResourceSim(
+    name: String = StdVMTimeResourceSim.DSLNames.name,
+    unit: String = StdVMTimeResourceSim.DSLNames.unit,
+    chargingBehavior: ChargingBehavior = ContinuousChargingBehavior
+) extends ResourceSim(name, unit, chargingBehavior) {
 
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
     StdDiskspaceInstanceSim(this, instanceId, owner, client)
@@ -65,16 +59,11 @@ object StdDiskspaceResourceSim {
   object DSLNames {
     final val name = "diskspace"
     final val unit = "MB/Hr"
-    final val descriminatorField = "instanceId"
   }
 
-  def fromPolicy(dslPolicy: DSLPolicy): StdDiskspaceResourceSim = {
-    val dslResource = dslPolicy.findResource(DSLNames.name).get
-    new StdDiskspaceResourceSim(
-      dslResource.name,
-      dslResource.unit,
-      dslResource.costPolicy,
-      dslResource.isComplex,
-      dslResource.descriminatorField)
+  def fromPolicy(policy: PolicyModel): StdDiskspaceResourceSim = {
+    val resourceType = policy.resourceTypesMap(DSLNames.name)
+
+    new StdDiskspaceResourceSim(resourceType.name, resourceType.unit)
   }
 }

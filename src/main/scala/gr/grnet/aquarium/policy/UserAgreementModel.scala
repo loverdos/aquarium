@@ -45,7 +45,7 @@ import gr.grnet.aquarium.Timespan
 trait UserAgreementModel {
   def id: String
 
-  def idInStore: String
+  def idInStore: Option[Any]
 
   def parentID: Option[String]
 
@@ -54,4 +54,10 @@ trait UserAgreementModel {
   def role: String
 
   def fullPriceTableRef: FullPriceTableRef
+
+  def timeslot = validityTimespan.toTimeslot
+
+  def validFrom = validityTimespan.fromMillis
+
+  def validTo = validityTimespan.toMillis
 }

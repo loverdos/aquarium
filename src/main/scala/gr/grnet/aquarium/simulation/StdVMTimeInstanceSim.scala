@@ -35,10 +35,10 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicyValues
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.charging.OnOffChargingBehaviorValues
 
 /**
  * A simulator for an instance of the standard `vmtime` resource.
@@ -46,31 +46,38 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdVMTimeInstanceSim(override val resource: StdVMTimeResourceSim,
-                                override val instanceId: String,
-                                override val owner: UserSim,
-                                override val client: ClientSim)
-extends ResourceInstanceSim(resource, instanceId, owner, client) {
+case class StdVMTimeInstanceSim(
+    override val resource: StdVMTimeResourceSim,
+    override val instanceId: String,
+    override val owner: UserSim,
+    override val client: ClientSim
+) extends ResourceInstanceSim(resource, instanceId, owner, client) {
 
-  def newON(occurredDate: Date,
-            details: Map[String, String] = Map(),
-            eventVersion: String = "1.0") = {
+  def newON(
+      occurredDate: Date,
+      details: Map[String, String] = Map(),
+      eventVersion: String = "1.0"
+  ) = {
+
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
-      OnOffCostPolicyValues.ON,
+      OnOffChargingBehaviorValues.ON,
       details,
       eventVersion
     )
   }
 
-  def newOFF(occurredDate: Date,
-             details: Map[String, String] = Map(),
-             eventVersion: String = "1.0") = {
+  def newOFF(
+      occurredDate: Date,
+      details: Map[String, String] = Map(),
+      eventVersion: String = "1.0"
+  ) = {
+
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
-      OnOffCostPolicyValues.OFF,
+      OnOffChargingBehaviorValues.OFF,
       details,
       eventVersion
     )
@@ -84,10 +91,12 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
     (onID, offID)
   }
 
-  def newOFF_OutOfSync(occuredDate: Date,
-                       outOfSyncHours: Int,
-                       details: Map[String, String] = Map(),
-                       eventVersion: String = "1.0") = {
+  def newOFF_OutOfSync(
+      occuredDate: Date,
+      outOfSyncHours: Int,
+      details: Map[String, String] = Map(),
+      eventVersion: String = "1.0"
+  ) = {
 
     val occurredDateCalc = new MutableDateCalc(occuredDate)
     val occurredTime = occurredDateCalc.toMillis
@@ -96,7 +105,7 @@ extends ResourceInstanceSim(resource, instanceId, owner, client) {
     newResourceEvent(
       occurredTime,
       receivedTime,
-      OnOffCostPolicyValues.OFF,
+      OnOffChargingBehaviorValues.OFF,
       details,
       eventVersion
     )

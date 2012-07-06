@@ -35,7 +35,8 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, OnOffCostPolicy, DSLCostPolicy}
+import gr.grnet.aquarium.policy.PolicyModel
+import gr.grnet.aquarium.charging.{OnOffChargingBehavior, ChargingBehavior}
 
 
 /**
@@ -44,16 +45,11 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLPolicy, OnOffCostPolicy, DSLCo
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class StdVMTimeResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
-                           unit: String = StdVMTimeResourceSim.DSLNames.unit,
-                           costPolicy: DSLCostPolicy = OnOffCostPolicy,
-                           isComplex: Boolean = true,
-                           descriminatorField: String = StdVMTimeResourceSim.DSLNames.descriminatorField)
-  extends ResourceSim(name,
-                      unit,
-                      costPolicy,
-                      isComplex,
-                      descriminatorField) {
+class StdVMTimeResourceSim(
+    name: String = StdVMTimeResourceSim.DSLNames.name,
+    unit: String = StdVMTimeResourceSim.DSLNames.unit,
+    chargingBehavior: ChargingBehavior = OnOffChargingBehavior
+) extends ResourceSim(name, unit, chargingBehavior) {
 
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
     StdVMTimeInstanceSim(this, instanceId, owner, client)
@@ -64,16 +60,11 @@ object StdVMTimeResourceSim {
   object DSLNames {
     final val name = "vmtime"
     final val unit = "Hr"
-    final val descriminatorField = "vmtime"
   }
 
-  def fromPolicy(dslPolicy: DSLPolicy): StdVMTimeResourceSim = {
-    val dslResource = dslPolicy.findResource(DSLNames.name).get
-    new StdVMTimeResourceSim(
-      dslResource.name,
-      dslResource.unit,
-      dslResource.costPolicy,
-      dslResource.isComplex,
-      dslResource.descriminatorField)
+  def fromPolicy(policy: PolicyModel): StdVMTimeResourceSim = {
+    val resourceType = policy.resourceTypesMap(DSLNames.name)
+
+    new StdVMTimeResourceSim(resourceType.name, resourceType.unit)
   }
 }

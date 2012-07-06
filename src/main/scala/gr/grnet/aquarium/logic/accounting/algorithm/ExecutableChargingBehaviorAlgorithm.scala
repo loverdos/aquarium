@@ -33,44 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.dsl
+package gr.grnet.aquarium.logic.accounting.algorithm
+
+import gr.grnet.aquarium.charging.ChargingInput
+
 
 /**
- * Represents a chargeable resource.
+ * An charging algorithm in executable form.
  *
- * @param name
- * @param unit
- * @param costPolicy
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class DSLResource (
-  name: String,
-  unit: String,
-  costPolicy: DSLCostPolicy,
-  isComplex: Boolean = false,
-  descriminatorField: String = "instanceId"
-) extends DSLItem {
-
-  override def toMap(): Map[String, Any] =
-    Map(Vocabulary.name -> name) ++
-    Map(Vocabulary.unit -> unit) ++
-    Map(Vocabulary.costpolicy -> costPolicy.name) ++
-    Map(Vocabulary.complex -> isComplex) ++
-    Map(Vocabulary.descriminatorfield -> descriminatorField)
-}
-
-object DSLResource {
-  final val SimpleResourceInstanceId = "1"
-  final val SomeSimpleResourceInstanceId = Some(SimpleResourceInstanceId)
-}
-
-object DSLSimpleResource {
-  def apply(name: String, unit: String, costPolicy: DSLCostPolicy) = {
-    DSLResource(name, unit, costPolicy)
-  }
-}
-
-object DSLComplexResource {
-  def apply(name: String, unit: String, costPolicy: DSLCostPolicy) = {//, descriminatorField: String) = {
-    DSLResource(name, unit, costPolicy, true)
-  }
-}
+trait ExecutableChargingBehaviorAlgorithm extends (Map[ChargingInput, Any] ⇒ Double)

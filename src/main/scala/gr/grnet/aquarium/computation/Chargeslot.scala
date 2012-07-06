@@ -47,7 +47,6 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
 case class Chargeslot(
     startMillis: Long,
     stopMillis: Long,
-    algorithmDefinition: String,
     unitPrice: Double,
     computedCredits: Option[Double] = None) {
 
@@ -60,7 +59,6 @@ case class Chargeslot(
     new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
     new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
     unitPrice,
-    computedCredits,
-    algorithmDefinition
+    computedCredits
   )
 }

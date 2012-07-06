@@ -35,7 +35,9 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.{AquariumInternalError, Timespan}
+import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.charging.ChargingBehavior
 
 /**
  * A policy is the fundamental business-related configuration of Aquarium.
@@ -47,12 +49,12 @@ import gr.grnet.aquarium.Timespan
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait PolicyModel {
+trait PolicyModel extends JsonSupport {
   def id: String
 
   def parentID: Option[String]
 
-  def idInStore: String
+  def idInStore: Option[Any]
 
 
   /**
@@ -60,16 +62,14 @@ trait PolicyModel {
    */
   def validityTimespan: Timespan
 
+  final def validFrom: Long = validityTimespan.fromMillis
+
+  final def validTo: Long = validityTimespan.toMillis
+
   /**
    * All known resource types for the policy's validity period.
    */
   def resourceTypes: Set[ResourceType]
-
-
-  /**
-   * All known charging types for the policy's validity period.
-   */
-  def chargingTypes: Set[ChargingType]
 
   /**
    * All known charging behaviors for the policy's validity period.<p/>
@@ -77,7 +77,7 @@ trait PolicyModel {
    * Note than since a charging behavior is semantically attached to an implementation, a change in the set
    * of known charging behaviors normally means a change in the implementation of Aquarium.
    */
-  def chargingBehaviors: List[ChargingBehavior]
+  def chargingBehaviorClasses: Set[String/*ImplementationClassName*/]
 
   /**
    * Each role is mapped to a full price table.
@@ -94,4 +94,13 @@ trait PolicyModel {
    */
   def roles: Set[String] = roleMapping.keySet
 
+  def resourceTypesMap: Map[String, ResourceType] = Map(resourceTypes.map(rt ⇒ (rt.name, rt)).toSeq: _*)
+}
+
+object PolicyModel {
+  trait NamesT {
+    final val a = 1
+  }
+
+  final object Names extends NamesT
 }

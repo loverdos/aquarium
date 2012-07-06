@@ -33,17 +33,24 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.util.yaml
+package gr.grnet.aquarium.policy
+
+import gr.grnet.aquarium.Timespan
 
 /**
+ * Standard implementation of Aquarium policy model.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class YAMLLongNode(path: String,  long: Long) extends YAMLNode {
-  def /(childName: String) = YAMLEmptyNode
 
-  override def longValue = long
-  override def isLong = true
+case class StdPolicy(
+    id: String,
+    parentID: Option[String],
+    validityTimespan: Timespan,
+    resourceTypes: Set[ResourceType],
+    chargingBehaviorClasses: Set[String],
+    roleMapping: Map[String/*Role*/, FullPriceTable]
+) extends PolicyModel {
 
-  def withPath(newPath: String) = this.copy(path = newPath)
+  def idInStore = Some(id)
 }

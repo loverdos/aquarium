@@ -33,17 +33,39 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.util.yaml
+package gr.grnet.aquarium.store.mongodb
+
+import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.policy.{PolicyModel, FullPriceTable, ResourceType}
 
 /**
- * 
- * @author Christos KK Loverdos <loverdos@gmail.com>.
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class YAMLUnknownNode(unknownObj: AnyRef, actualType: String) extends YAMLNode {
-  def /(childName: String) = this
 
-  override def isUnknown = false
+case class MongoDBPolicy(
+    _id: String,
+    id: String,
+    parentID: Option[String],
+    validityTimespan: Timespan,
+    resourceTypes: Set[ResourceType],
+    chargingBehaviorClasses: Set[String],
+    roleMapping: Map[String/*Role*/, FullPriceTable]
+) extends PolicyModel {
 
-  def path = ""
-  def withPath(newPath: String) = this
+  def idInStore = Some(_id)
+}
+
+object MongoDBPolicy {
+  final def fromOther(policy: PolicyModel, _id: String): MongoDBPolicy = {
+    MongoDBPolicy(
+      _id,
+      policy.id,
+      policy.parentID,
+      policy.validityTimespan,
+      policy.resourceTypes,
+      policy.chargingBehaviorClasses,
+      policy.roleMapping
+    )
+  }
 }

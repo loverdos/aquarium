@@ -45,8 +45,7 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-final case class Timeslot(from: Date, to: Date)
-  extends DSLItem with Ordered[Timeslot] {
+final case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
 
   /* Preconditions to ensure correct object creations */
   assert(from != null)

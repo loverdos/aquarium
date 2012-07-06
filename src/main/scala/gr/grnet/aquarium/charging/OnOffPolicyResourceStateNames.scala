@@ -33,26 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
-package state
-package parts
-
-import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+package gr.grnet.aquarium.charging
 
 /**
- * Represents an agreement valid for a specific amount of time. By convention,
- * if an agreement is currently valid, then the validTo field is equal to `Long.MaxValue`.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class AgreementHistoryItem(name: String, validFrom: Long, validTo: Long = Long.MaxValue) {
-  require(validTo > validFrom)
-  require(!name.isEmpty)
 
-  def timeslot = Timeslot(validFrom, validTo)
-
-  override def toString =
-    "AgreementHistoryItem(%s, %s, %s)".
-      format(name, new MutableDateCalc(validFrom), new MutableDateCalc(validTo))
+object OnOffPolicyResourceStateNames {
+  final val on  = "on"
+  final val off = "off"
 }

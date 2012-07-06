@@ -39,40 +39,41 @@ package gr.grnet.aquarium.logic.accounting.algorithm
 import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.charging.{CurrentValueInput, TimeDeltaInput, OldTotalAmountInput, UnitPriceInput, ChargingBehaviorNames, ChargingBehaviorNameInput, ChargingInput}
 
 /**
  * An executable charging algorithm with some simple implementation.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object SimpleExecutableCostPolicyAlgorithm extends ExecutableCostPolicyAlgorithm {
+object SimpleExecutableChargingBehaviorAlgorithm extends ExecutableChargingBehaviorAlgorithm {
 
   @inline private[this]
   def hrs(millis: Double) = millis / 1000 / 60 / 60
 
-  def apply(vars: Map[DSLCostPolicyVar, Any]): Double = {
-    vars.apply(DSLCostPolicyNameVar) match {
-      case DSLCostPolicyNames.continuous ⇒
-        val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
-        val oldTotalAmount = vars(DSLOldTotalAmountVar).asInstanceOf[Double]
-        val timeDelta = vars(DSLTimeDeltaVar).asInstanceOf[Double]
+  def apply(vars: Map[ChargingInput, Any]): Double = {
+    vars.apply(ChargingBehaviorNameInput) match {
+      case ChargingBehaviorNames.continuous ⇒
+        val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
+        val oldTotalAmount = vars(OldTotalAmountInput).asInstanceOf[Double]
+        val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
 
         hrs(timeDelta) * oldTotalAmount * unitPrice
 
-      case DSLCostPolicyNames.discrete ⇒
-        val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
-        val currentValue = vars(DSLCurrentValueVar).asInstanceOf[Double]
+      case ChargingBehaviorNames.discrete ⇒
+        val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
+        val currentValue = vars(CurrentValueInput).asInstanceOf[Double]
 
         currentValue * unitPrice
 
-      case DSLCostPolicyNames.onoff ⇒
-        val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
-        val timeDelta = vars(DSLTimeDeltaVar).asInstanceOf[Double]
+      case ChargingBehaviorNames.onoff ⇒
+        val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
+        val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
 
         hrs(timeDelta) * unitPrice
 
-      case DSLCostPolicyNames.once ⇒
-        val currentValue = vars(DSLCurrentValueVar).asInstanceOf[Double]
+      case ChargingBehaviorNames.once ⇒
+        val currentValue = vars(CurrentValueInput).asInstanceOf[Double]
         currentValue
 
       case name ⇒
@@ -82,8 +83,8 @@ object SimpleExecutableCostPolicyAlgorithm extends ExecutableCostPolicyAlgorithm
 
   override def toString = "SimpleExecutableCostPolicyAlgorithm(%s)".format(
     Map(
-      DSLCostPolicyNames.continuous -> "hrs(timeDelta) * oldTotalAmount * unitPrice",
-      DSLCostPolicyNames.discrete   -> "currentValue * unitPrice",
-      DSLCostPolicyNames.onoff      -> "hrs(timeDelta) * unitPrice",
-      DSLCostPolicyNames.once       -> "currentValue"))
+      ChargingBehaviorNames.continuous -> "hrs(timeDelta) * oldTotalAmount * unitPrice",
+      ChargingBehaviorNames.discrete   -> "currentValue * unitPrice",
+      ChargingBehaviorNames.onoff      -> "hrs(timeDelta) * unitPrice",
+      ChargingBehaviorNames.once       -> "currentValue"))
 }

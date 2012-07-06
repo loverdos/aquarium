@@ -51,5 +51,5 @@ trait CostPolicyAlgorithmCompiler {
    * @param definition the textual representation of the algorithm
    * @return the executable form of the algorithm
    */
-  def compile(definition: String): ExecutableCostPolicyAlgorithm
+  def compile(definition: String): ExecutableChargingBehaviorAlgorithm
 }

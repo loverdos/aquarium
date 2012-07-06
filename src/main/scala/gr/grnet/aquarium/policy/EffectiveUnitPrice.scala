@@ -40,4 +40,4 @@ package gr.grnet.aquarium.policy
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class EffectiveUnitPrice(unitPrice: Double, when: String)
+case class EffectiveUnitPrice(unitPrice: Double, when: List[(String, String)])

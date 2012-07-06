@@ -35,65 +35,42 @@
 
 package gr.grnet.aquarium.store
 
-import scala.collection.immutable
 import collection.immutable.SortedMap
-import gr.grnet.aquarium.logic.accounting.dsl.{DSL, DSLPolicy, Timeslot}
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.event.model.PolicyEntry
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.policy.PolicyModel
 
 /**
- * A store for serialized policy entries.
+ * A store for serialized policy models.
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 trait PolicyStore {
+  type Policy <: PolicyModel
 
   /**
    * Load all accounting policies valid after the specified time instance.
    * The results are returned sorted by PolicyEntry.validFrom
    */
-  def loadPolicyEntriesAfter(after: Long): List[PolicyEntry]
+  def loadPoliciesAfter(afterMillis: Long): List[Policy]
 
-  def loadAndSortPolicyEntriesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyEntry] = {
-    val all = loadPolicyEntriesAfter(0L)
-    val filtered = all.filter { policyEntry ⇒
-      policyEntry.validFrom <= fromMillis &&
-      policyEntry.validTo   >= toMillis
-    }
-
-    (immutable.SortedMap[Timeslot, PolicyEntry]() /: filtered) { (map, policyEntry) ⇒
-      map.updated(policyEntry.fromToTimeslot, policyEntry)
-    }
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
+    // FIXME implement
+    throw new UnsupportedOperationException
   }
   
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long, dsl: DSL): SortedMap[Timeslot, DSLPolicy] = {
-    for((timeslot, policyEntry) <- loadAndSortPolicyEntriesWithin(fromMillis, toMillis))
-      yield (timeslot, dsl.parse(policyEntry.policyYAML))
-  }
-  
-  def loadValidPolicyEntryAt(atMillis: Long): Option[PolicyEntry] = {
-    loadPolicyEntriesAfter(0L).find { policyEntry ⇒
-      policyEntry.fromToTimeslot.containsTimeInMillis(atMillis)
-    }
-  }
-  
-  def loadValidPolicyAt(atMillis: Long, dsl: DSL): Option[DSLPolicy] = {
-    loadValidPolicyEntryAt(atMillis).map(policyEntry ⇒ dsl.parse(policyEntry.policyYAML))
+  def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
+    // FIXME implement
+    throw new UnsupportedOperationException
   }
 
   /**
    * Store an accounting policy.
    */
-  def storePolicyEntry(policy: PolicyEntry): Maybe[RecordID]
+  def insertPolicy(policy: PolicyModel): Policy
 
   /**
-   * Updates the policy record whose id is equal to the id
-   * of the provided policy entry.
+   * Find a policy by its unique id.
    */
-  def updatePolicyEntry(policy: PolicyEntry): Unit
-
-  /**
-   * Find a policy by its unique id
-   */
-  def findPolicyEntry(id: String): Option[PolicyEntry]
+  def findPolicyByID(id: String): Option[Policy]
 }

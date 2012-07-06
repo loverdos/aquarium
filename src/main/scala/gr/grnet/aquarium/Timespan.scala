@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium
 
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
@@ -44,4 +46,6 @@ case class Timespan(fromMillis: Long, toMillis: Long = Long.MaxValue) {
   def extendsToInfinity: Boolean = toMillis == Long.MaxValue
 
   def extendToInfinity: Timespan = Timespan(fromMillis, Long.MaxValue)
+
+  def toTimeslot = Timeslot(fromMillis, toMillis)
 }

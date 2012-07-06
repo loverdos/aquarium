@@ -42,13 +42,13 @@ import scala.collection.JavaConversions._
 import collection.mutable.ConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.Configurable
-import gr.grnet.aquarium.event.model.PolicyEntry
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 import org.bson.types.ObjectId
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.util.Tags
 import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.policy.StdPolicy
 
 /**
  * An implementation of various stores that persists parts in memory.
@@ -59,16 +59,20 @@ import gr.grnet.aquarium.computation.BillingMonthInfo
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-class MemStoreProvider extends UserStateStore
-  with Configurable with PolicyStore
-  with ResourceEventStore with IMEventStore
-  with StoreProvider {
+class MemStoreProvider
+extends StoreProvider
+   with UserStateStore
+   with Configurable
+   with PolicyStore
+   with ResourceEventStore
+   with IMEventStore {
 
   override type IMEvent = MemIMEvent
   override type ResourceEvent = MemResourceEvent
+  override type Policy = StdPolicy
 
-  private[this] var _userStates     = List[UserState]()
-  private[this] var _policyEntries  = List[PolicyEntry]()
+  private[this] var _userStates = List[UserState]()
+  private[this] var _policies  = List[Policy]()
   private[this] var _resourceEvents = List[ResourceEvent]()
 
   private[this] val imEventById: ConcurrentMap[String, MemIMEvent] = new ConcurrentHashMap[String, MemIMEvent]()
@@ -84,7 +88,7 @@ class MemStoreProvider extends UserStateStore
       Tags.UserStateTag     -> _userStates.size,
       Tags.ResourceEventTag -> _resourceEvents.size,
       Tags.IMEventTag       -> imEventById.size,
-      "PolicyEntry"         -> _policyEntries.size
+      "PolicyEntry"         -> _policies.size
     )
 
     "MemStoreProvider(%s)" format map
@@ -258,23 +262,12 @@ class MemStoreProvider extends UserStateStore
   }
   //- IMEventStore
 
-  def loadPolicyEntriesAfter(after: Long) =
-    _policyEntries.filter(p => p.validFrom > after)
+  def loadPoliciesAfter(afterMillis: Long) =
+    _policies.filter(p => p.validFrom > afterMillis)
             .sortWith((a,b) => a.validFrom < b.validFrom)
 
-  def storePolicyEntry(policy: PolicyEntry) = {_policyEntries = policy :: _policyEntries; Just(RecordID(policy.id))}
-
-  def updatePolicyEntry(policy: PolicyEntry) =
-    _policyEntries = _policyEntries.foldLeft(List[PolicyEntry]()){
-      (acc, p) =>
-        if (p.id == policy.id)
-          policy :: acc
-        else
-          p :: acc
-  }
-
-  def findPolicyEntry(id: String) = {
-    _policyEntries.find(p => p.id == id)
+  def findPolicyByID(id: String) = {
+    _policies.find(p => p.id == id)
   }
 }
 

@@ -34,7 +34,8 @@
  */
 
 package gr.grnet.aquarium.simulation
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLCostPolicy, DSLPolicy, DiscreteCostPolicy}
+import gr.grnet.aquarium.policy.PolicyModel
+import gr.grnet.aquarium.charging.{DiscreteChargingBehavior, ChargingBehavior}
 
 
 /**
@@ -43,16 +44,11 @@ import gr.grnet.aquarium.logic.accounting.dsl.{DSLCostPolicy, DSLPolicy, Discret
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class StdBandwidthResourceSim(name: String = StdVMTimeResourceSim.DSLNames.name,
-                              unit: String = StdVMTimeResourceSim.DSLNames.unit,
-                              costPolicy: DSLCostPolicy = DiscreteCostPolicy,
-                              isComplex: Boolean = false,
-                              descriminatorField: String = StdDiskspaceResourceSim.DSLNames.descriminatorField)
-extends ResourceSim(name,
-                    unit,
-                    costPolicy,
-                    isComplex,
-                    descriminatorField) {
+class StdBandwidthResourceSim(
+    name: String = StdVMTimeResourceSim.DSLNames.name,
+    unit: String = StdVMTimeResourceSim.DSLNames.unit,
+    costPolicy: ChargingBehavior = DiscreteChargingBehavior
+) extends ResourceSim(name, unit, costPolicy) {
 
 override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
     StdBandwidthInstanceSim(this, instanceId, owner, client)
@@ -63,17 +59,15 @@ object StdBandwidthResourceSim {
   object DSLNames {
     final val name = "bandwidth"
     final val unit = "MB/Hr"
-    final val descriminatorField = "instanceId"
   }
 
-  def fromPolicy(dslPolicy: DSLPolicy): StdBandwidthResourceSim = {
-    val dslResource = dslPolicy.findResource(DSLNames.name).get
+  def fromPolicy(policy: PolicyModel): StdBandwidthResourceSim = {
+    val resourceType = policy.resourceTypesMap(DSLNames.name)
     new StdBandwidthResourceSim(
-      dslResource.name,
-      dslResource.unit,
-      dslResource.costPolicy,
-      dslResource.isComplex,
-      dslResource.descriminatorField)
+      resourceType.name,
+      resourceType.unit,
+      resourceType.chargingBehavior
+    )
   }
 }
 

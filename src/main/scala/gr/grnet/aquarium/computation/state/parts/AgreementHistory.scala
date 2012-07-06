@@ -37,11 +37,9 @@ package gr.grnet.aquarium.computation
 package state
 package parts
 
-import java.util.Date
-
-import gr.grnet.aquarium.logic.accounting.dsl.{DSLAgreement, Timeslot}
-import gr.grnet.aquarium.logic.accounting.Policy
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot}
 import scala.collection.immutable.{SortedMap, TreeMap}
+import gr.grnet.aquarium.policy.UserAgreementModel
 
 /**
  * User agreement parts that will be part of UserState.
@@ -50,10 +48,10 @@ import scala.collection.immutable.{SortedMap, TreeMap}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class AgreementHistory(agreements: List[AgreementHistoryItem]) {
+case class AgreementHistory(agreements: List[UserAgreementModel]) {
   ensureNoGaps(agreements.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
 
-  def ensureNoGaps(agreements: List[AgreementHistoryItem]): Unit = agreements match {
+  def ensureNoGaps(agreements: List[UserAgreementModel]): Unit = agreements match {
     case ha :: (t @ (hb :: tail)) =>
       assert(ha.validTo - hb.validFrom == 1);
       ensureNoGaps(t)
@@ -62,58 +60,37 @@ case class AgreementHistory(agreements: List[AgreementHistoryItem]) {
     case Nil => ()
   }
 
-  def agreementNamesByTimeslot: SortedMap[Timeslot, String] = {
-    TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag.name)): _*)
-  }
-
-  def agreementsByTimeslot: SortedMap[Timeslot, AgreementHistoryItem] = {
+  def agreementsByTimeslot: SortedMap[Timeslot, UserAgreementModel] = {
     TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag)): _*)
   }
 
   /**
    * Get the user agreement at the specified timestamp
    */
-  def findForTime(at: Long): Option[DSLAgreement] = {
+  def findForTime(at: Long): Option[UserAgreementModel] = {
     // FIXME: Refactor and do not make this static call to Policy
-    agreements.find{ x => x.validFrom < at && x.validTo > at} match {
-      case Some(x) => Policy.policy(new Date(at)).findAgreement(x.name)
-      case None => None
-    }
+    None
   }
 
   /**
    * Returns the first, chronologically, agreement.
    */
-  def firstAgreement: Option[AgreementHistoryItem] = {
+  def firstAgreement: Option[UserAgreementModel] = {
     agreementsByTimeslot.valuesIterator.toList.lastOption
-  }
-
-  /**
-   * Returns the name of the first, chronologically, agreement.
-   */
-  def firstAgreementName: Option[String] = {
-    agreementNamesByTimeslot.valuesIterator.toList.lastOption
   }
 
   /**
    * Returns the last, chronologically, agreement.
    */
-  def lastAgreement: Option[AgreementHistoryItem] = {
+  def lastAgreement: Option[UserAgreementModel] = {
     agreementsByTimeslot.valuesIterator.toList.headOption
-  }
-
-  /**
-   * Returns the name of the last, chronologically, agreement.
-   */
-  def lastAgreementName: Option[String] = {
-    agreementNamesByTimeslot.valuesIterator.toList.headOption
   }
 }
 
 object AgreementHistory {
   final val Empty = AgreementHistory(Nil)
 
-  def initial(agreement: String, validFrom: Long): AgreementHistory ={
-    AgreementHistory(AgreementHistoryItem(agreement, validFrom) :: Nil)
+  def initial(userAgreement: UserAgreementModel): AgreementHistory ={
+    AgreementHistory(userAgreement :: Nil)
   }
 }

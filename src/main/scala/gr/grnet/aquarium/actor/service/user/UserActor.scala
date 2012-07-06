@@ -172,8 +172,7 @@ class UserActor extends ReflectiveRoleableActor {
     val userStateBootstrap = UserStateBootstrap(
       this._userID,
       userCreationMillis,
-      initialRole,
-      aquarium.initialAgreementForRole(initialRole, userCreationMillis),
+      aquarium.initialUserAgreementForRole(initialRole, userCreationMillis),
       aquarium.initialBalanceForRole(initialRole, userCreationMillis)
     )
 
@@ -182,7 +181,7 @@ class UserActor extends ReflectiveRoleableActor {
       BillingMonthInfo.fromMillis(now),
       now,
       userStateBootstrap,
-      aquarium.currentResourcesMap,
+      aquarium.currentResourceTypesMap,
       InitialUserActorSetup(),
       stdUserStateStoreFunc,
       None
@@ -327,21 +326,20 @@ class UserActor extends ReflectiveRoleableActor {
     val userID = this._userID
     val userCreationMillis = this._imState.userCreationMillis.get
     val initialRole = this._imState.roleHistory.firstRoleName.getOrElse(aquarium.defaultInitialUserRole)
-    val initialAgreement = aquarium.initialAgreementForRole(initialRole, userCreationMillis)
+    val initialAgreement = aquarium.initialUserAgreementForRole(initialRole, userCreationMillis)
     val initialCredits   = aquarium.initialBalanceForRole(initialRole, userCreationMillis)
     val userStateBootstrap = UserStateBootstrap(
       userID,
       userCreationMillis,
-      initialRole,
       initialAgreement,
       initialCredits
     )
     val billingMonthInfo = BillingMonthInfo.fromMillis(now)
-    val currentResourcesMap = aquarium.currentResourcesMap
+    val currentResourcesMap = aquarium.currentResourceTypesMap
     val calculationReason = RealtimeBillingCalculation(None, now)
     val eventOccurredMillis = rcEvent.occurredMillis
 
-//    DEBUG("Using %s", currentResourcesMap.toJsonString)
+//    DEBUG("Using %s", currentResourceTypesMap.toJsonString)
 
     this._userState = aquarium.userStateComputations.doMonthBillingUpTo(
       billingMonthInfo,

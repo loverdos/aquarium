@@ -33,29 +33,41 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.dsl
+package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.util.json.JsonSupport
-
+import gr.grnet.aquarium.AquariumException
 
 /**
- * Enumerates known resources by name.
- *
- * This is related to [[gr.grnet.aquarium.logic.accounting.dsl.DSLResource]] but currently does not directly appear
- * in the rest of the DSL.
+ * Encapsulates the possible states that a resource with an
+ * [[gr.grnet.aquarium.charging.OnOffChargingBehavior]]
+ * can be.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-final case class DSLResourcesMap(underlying: Map[String, DSLResource]) extends JsonSupport {
-  def this(list: List[DSLResource]) = this(Map(list.map(r ⇒ (r.name, r)): _*))
-
-  def map   = underlying
-  def names = underlying.keySet
-
-  def findResource(name: String): Option[DSLResource] = {
-    underlying.get(name)
-  }
-
-  def toResourcesList: List[DSLResource] = underlying.valuesIterator.toList
+sealed abstract class OnOffPolicyResourceState(val state: String) {
+  def isOn: Boolean = !isOff
+  def isOff: Boolean = !isOn
 }
+
+object OnResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceStateNames.on) {
+  override def isOn = true
+}
+
+object OffResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceStateNames.off) {
+  override def isOff = true
+}
+
+object OnOffPolicyResourceState {
+  def apply(name: Any): OnOffPolicyResourceState = {
+    name match {
+      case x: String if (x.equalsIgnoreCase(OnOffPolicyResourceStateNames.on))  ⇒ OnResourceState
+      case y: String if (y.equalsIgnoreCase(OnOffPolicyResourceStateNames.off)) ⇒ OffResourceState
+      case a: Double if (a == 0) => OffResourceState
+      case b: Double if (b == 1) => OnResourceState
+      case i: Int if (i == 0) => OffResourceState
+      case j: Int if (j == 1) => OnResourceState
+      case _ => throw new AquariumException("Invalid OnOffPolicyResourceState %s".format(name))
+    }
+  }
+}
+

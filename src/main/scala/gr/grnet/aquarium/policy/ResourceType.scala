@@ -35,13 +35,15 @@
 
 package gr.grnet.aquarium.policy
 
+import gr.grnet.aquarium.charging.ChargingBehavior
+
 /**
  * The definition of a resource type. A resource type is a broad classification to which resource instances belong.
  *
- * @param name
- * @param unit
- * @param chargingTypeName
+ * @param name The name of this resource type. Examples are `vmtime`, `diskspace`, `bandwidth`, `diskio`.
+ * @param unit The unit we use to count the resource usage.
+ * @param chargingBehavior The charging behavior used for this resource types.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ResourceType(name: String, unit: String, chargingTypeName: String)
+case class ResourceType(name: String, unit: String, chargingBehavior: ChargingBehavior)

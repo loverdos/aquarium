@@ -38,15 +38,13 @@ package gr.grnet.aquarium.computation
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.util.shortClassNameOf
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.computation.state.parts._
 import gr.grnet.aquarium.event.model.NewWalletEntry
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.{AquariumAwareSkeleton, Aquarium, AquariumAware, AquariumInternalError}
+import gr.grnet.aquarium.{AquariumAwareSkeleton, AquariumInternalError}
 import gr.grnet.aquarium.computation.reason.{MonthlyBillingCalculation, InitialUserStateSetup, UserStateChangeReason}
 import gr.grnet.aquarium.computation.state.{UserStateWorker, UserStateBootstrap, UserState}
-import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import com.google.common.eventbus.Subscribe
+import gr.grnet.aquarium.policy.ResourceType
 
 /**
  *
@@ -54,7 +52,6 @@ import com.google.common.eventbus.Subscribe
  */
 final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
   lazy val timeslotComputations  = new TimeslotComputations {} // FIXME
-  lazy val algorithmCompiler     = aquarium.algorithmCompiler
   lazy val policyStore           = aquarium.policyStore
   lazy val userStateStoreForRead = aquarium.userStateStore
   lazy val resourceEventStore    = aquarium.resourceEventStore
@@ -62,7 +59,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
   def findUserStateAtEndOfBillingMonth(
       userStateBootstrap: UserStateBootstrap,
       billingMonthInfo: BillingMonthInfo,
-      defaultResourcesMap: DSLResourcesMap,
+      defaultResourceTypesMap: Map[String, ResourceType],
       calculationReason: UserStateChangeReason,
       storeFunc: UserState ⇒ UserState,
       clogOpt: Option[ContextualLogger] = None
@@ -78,7 +75,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
       val userState0 = doFullMonthBilling(
         userStateBootstrap,
         billingMonthInfo,
-        defaultResourcesMap,
+        defaultResourceTypesMap,
         calculationReason,
         storeFunc,
         Some(clog)
@@ -194,7 +191,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
     val theValue = currentResourceEvent.value
     val theDetails = currentResourceEvent.details
 
-    val resourcesMap = userStateWorker.resourcesMap
+    val resourceTypesMap = userStateWorker.resourceTypesMap
 
     val currentResourceEventDebugInfo = rcDebugInfo(currentResourceEvent)
     clog.begin(currentResourceEventDebugInfo)
@@ -202,14 +199,13 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
     userStateWorker.debugTheMaps(clog)(rcDebugInfo)
 
     // Ignore the event if it is not billable (but still record it in the "previous" stuff).
-    // But to make this decision, first we need the resource definition (and its cost policy).
-    val dslResourceOpt = resourcesMap.findResource(theResource)
-    dslResourceOpt match {
-      // We have a resource (and thus a cost policy)
-      case Some(dslResource) ⇒
-        val costPolicy = dslResource.costPolicy
-        clog.debug("%s for %s", costPolicy, dslResource)
-        val isBillable = costPolicy.isBillableEvent(currentResourceEvent)
+    // But to make this decision, first we need the resource type (and its charging behavior).
+    resourceTypesMap.get(theResource) match {
+      // We have a resource type (and thus a charging behavior)
+      case Some(resourceType) ⇒
+        val chargingBehavior = resourceType.chargingBehavior
+        clog.debug("%s for %s", chargingBehavior, resourceType)
+        val isBillable = chargingBehavior.isBillableEvent(currentResourceEvent)
         if(!isBillable) {
           // The resource event is not billable
           clog.debug("Ignoring not billable %s", currentResourceEventDebugInfo)
@@ -221,7 +217,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
           clog.debug("PreviousM %s", previousResourceEventOpt0.map(rcDebugInfo(_)))
 
           val havePreviousResourceEvent = previousResourceEventOpt0.isDefined
-          val needPreviousResourceEvent = costPolicy.needsPreviousEventForCreditAndAmountCalculation
+          val needPreviousResourceEvent = chargingBehavior.needsPreviousEventForCreditAndAmountCalculation
 
           val (proceed, previousResourceEventOpt1) = if(needPreviousResourceEvent && !havePreviousResourceEvent) {
             // This must be the first resource event of its kind, ever.
@@ -229,8 +225,8 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
 
             val actualFirstEvent = currentResourceEvent
 
-            if(costPolicy.isBillableFirstEvent(actualFirstEvent) &&
-              costPolicy.mustGenerateDummyFirstEvent) {
+            if(chargingBehavior.isBillableFirstEvent(actualFirstEvent) &&
+              chargingBehavior.mustGenerateDummyFirstEvent) {
 
               clog.debug("First event of its kind %s", currentResourceEventDebugInfo)
 
@@ -238,7 +234,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
               // Otherwise, the current event goes to the ignored list.
               // The dummy first is considered to exist at the beginning of the billing period
 
-              val dummyFirst = costPolicy.constructDummyFirstEventFor(currentResourceEvent, billingMonthInfo.monthStartMillis)
+              val dummyFirst = chargingBehavior.constructDummyFirstEventFor(currentResourceEvent, billingMonthInfo.monthStartMillis)
 
               clog.debug("Dummy first companion %s", rcDebugInfo(dummyFirst))
 
@@ -254,18 +250,18 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
           }
 
           if(proceed) {
-            val defaultInitialAmount = costPolicy.getResourceInstanceInitialAmount
+            val defaultInitialAmount = chargingBehavior.getResourceInstanceInitialAmount
             val oldAmount = _workingUserState.getResourceInstanceAmount(theResource, theInstanceId, defaultInitialAmount)
             val oldCredits = _workingUserState.totalCredits
 
             // A. Compute new resource instance accumulating amount
-            val newAccumulatingAmount = costPolicy.computeNewAccumulatingAmount(oldAmount, theValue, theDetails)
+            val newAccumulatingAmount = chargingBehavior.computeNewAccumulatingAmount(oldAmount, theValue, theDetails)
 
             clog.debug("theValue = %s, oldAmount = %s, newAmount = %s, oldCredits = %s", theValue, oldAmount, newAccumulatingAmount, oldCredits)
 
             // B. Compute new wallet entries
             clog.debug("agreementsSnapshot = %s", _workingUserState.agreementHistory)
-            val alltimeAgreements = _workingUserState.agreementHistory.agreementNamesByTimeslot
+            val alltimeAgreements = _workingUserState.agreementHistory.agreementsByTimeslot
 
             //              clog.debug("Computing full chargeslots")
             val (referenceTimeslot, fullChargeslots) = timeslotComputations.computeFullChargeslots(
@@ -274,10 +270,9 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
               oldCredits,
               oldAmount,
               newAccumulatingAmount,
-              dslResource,
-              resourcesMap,
+              resourceType,
+              resourceTypesMap,
               alltimeAgreements,
-              algorithmCompiler,
               policyStore,
               Some(clog)
             )
@@ -307,7 +302,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
               else
                 List(currentResourceEvent),
               fullChargeslots,
-              dslResource,
+              resourceType,
               currentResourceEvent.isSynthetic
             )
             clog.debug("%s = %s", shortClassNameOf(newWalletEntry), newWalletEntry)
@@ -370,7 +365,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
   def doFullMonthBilling(
       userStateBootstrap: UserStateBootstrap,
       billingMonthInfo: BillingMonthInfo,
-      defaultResourcesMap: DSLResourcesMap,
+      defaultResourceTypesMap: Map[String, ResourceType],
       calculationReason: UserStateChangeReason,
       storeFunc: UserState ⇒ UserState,
       clogOpt: Option[ContextualLogger] = None
@@ -380,7 +375,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
       billingMonthInfo,
       billingMonthInfo.monthStopMillis,
       userStateBootstrap,
-      defaultResourcesMap,
+      defaultResourceTypesMap,
       calculationReason,
       storeFunc,
       clogOpt
@@ -397,7 +392,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
        */
       billingEndTimeMillis: Long,
       userStateBootstrap: UserStateBootstrap,
-      defaultResourcesMap: DSLResourcesMap,
+      defaultResourceTypesMap: Map[String, ResourceType],
       calculationReason: UserStateChangeReason,
       storeFunc: UserState ⇒ UserState,
       clogOpt: Option[ContextualLogger] = None
@@ -420,7 +415,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
     val previousBillingMonthUserState = findUserStateAtEndOfBillingMonth(
       userStateBootstrap,
       previousBillingMonthInfo,
-      defaultResourcesMap,
+      defaultResourceTypesMap,
       calculationReason,
       storeFunc,
       clogSome
@@ -437,7 +432,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
     // NOTE: The calculation reason is not the one we get from the previous user state but the one our caller specifies
     var _workingUserState = startingUserState.newWithChangeReason(calculationReason)
 
-    val userStateWorker = UserStateWorker.fromUserState(_workingUserState, defaultResourcesMap)
+    val userStateWorker = UserStateWorker.fromUserState(_workingUserState, defaultResourceTypesMap)
 
     userStateWorker.debugTheMaps(clog)(rcDebugInfo)
 
@@ -491,7 +486,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
         LatestResourceEventsWorker.fromList(specialEvents),
         ImplicitlyIssuedResourceEventsWorker.Empty,
         IgnoredFirstResourceEventsWorker.Empty,
-        userStateWorker.resourcesMap
+        userStateWorker.resourceTypesMap
       )
 
       _workingUserState = processResourceEvents(

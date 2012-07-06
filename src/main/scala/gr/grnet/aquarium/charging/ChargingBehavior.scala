@@ -33,51 +33,51 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.dsl
+package gr.grnet.aquarium.charging
 
-import com.ckkloverdos.maybe.{NoVal, Failed, Just, Maybe}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 
 /**
- * A cost policy indicates how charging for a resource will be done
+ * A charging behavior indicates how charging for a resource will be done
  * wrt the various states a resource can be.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) extends DSLItem {
+abstract class ChargingBehavior(val name: String, val inputs: Set[ChargingInput]) {
 
-  def varNames = vars.map(_.name)
+  final lazy val inputNames = inputs.map(_.name)
 
   /**
-   * Generate a map where the key is a [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]]
+   * Generate a map where the key is a [[gr.grnet.aquarium.charging.ChargingInput]]
    * and the value the respective value. This map will be used to do the actual credit charge calculation
    * by the respective algorithm.
    *
    * Values are obtained from a corresponding context, which is provided by the parameters. We assume that this context
    * has been validated before the call to `makeValueMap` is made.
    *
-   * @param totalCredits   the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLTotalCreditsVar]]
-   * @param oldTotalAmount the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLOldTotalAmountVar]]
-   * @param newTotalAmount the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLNewTotalAmountVar]]
-   * @param timeDelta      the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLTimeDeltaVar]]
-   * @param previousValue  the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLPreviousValueVar]]
-   * @param currentValue   the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLCurrentValueVar]]
-   * @param unitPrice      the value for [[gr.grnet.aquarium.logic.accounting.dsl.DSLUnitPriceVar]]
+   * @param totalCredits   the value for [[gr.grnet.aquarium.charging.TotalCreditsInput.]]
+   * @param oldTotalAmount the value for [[gr.grnet.aquarium.charging.OldTotalAmountInput]]
+   * @param newTotalAmount the value for [[gr.grnet.aquarium.charging.NewTotalAmountInput]]
+   * @param timeDelta      the value for [[gr.grnet.aquarium.charging.TimeDeltaInput]]
+   * @param previousValue  the value for [[gr.grnet.aquarium.charging.PreviousValueInput]]
+   * @param currentValue   the value for [[gr.grnet.aquarium.charging.CurrentValueInput]]
+   * @param unitPrice      the value for [[gr.grnet.aquarium.charging.UnitPriceInput]]
    *
-   * @return a map from [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicyVar]]s to respective values.
+   * @return a map from [[gr.grnet.aquarium.charging.ChargingInput]]s to respective values.
    */
-  def makeValueMap(totalCredits: Double,
-                   oldTotalAmount: Double,
-                   newTotalAmount: Double,
-                   timeDelta: Double,
-                   previousValue: Double,
-                   currentValue: Double,
-                   unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
+  def makeValueMap(
+      totalCredits: Double,
+      oldTotalAmount: Double,
+      newTotalAmount: Double,
+      timeDelta: Double,
+      previousValue: Double,
+      currentValue: Double,
+      unitPrice: Double
+  ): Map[ChargingInput, Any] = {
 
-    DSLCostPolicy.makeValueMapFor(
+    ChargingBehavior.makeValueMapFor(
       this,
       totalCredits,
       oldTotalAmount,
@@ -93,7 +93,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = {
     // If we need any variable that is related to the previous event
     // then we do need a previous event
-    vars.exists(_.isDirectlyRelatedToPreviousEvent)
+    inputs.exists(_.isDirectlyRelatedToPreviousEvent)
   }
 
   /**
@@ -101,7 +101,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * (see [[gr.grnet.aquarium.computation.state.parts.ResourceInstanceSnapshot]]), the
    * value arriving in a new resource event and the new details, compute the new instance amount.
    *
-   * Note that the `oldAmount` does not make sense for all types of [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]],
+   * Note that the `oldAmount` does not make sense for all types of [[gr.grnet.aquarium.charging.ChargingBehavior]],
    * in which case it is ignored.
    *
    * @param oldAmount     the old accumulating amount
@@ -133,7 +133,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * Typically all events are billable by default and indeed this is the default implementation
    * provided here.
    *
-   * The only exception to the rule is ON events for [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]].
+   * The only exception to the rule is ON events for [[gr.grnet.aquarium.charging.OnOffChargingBehavior]].
    */
   def isBillableEvent(event: ResourceEventModel): Boolean = false
 
@@ -166,7 +166,7 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
    * There are resources (cost policies) for which implicit events must be generated at the end of the billing period
    * and also at the beginning of the next one. For these cases, this method must return `true`.
    *
-   * The motivating example comes from the [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]] for which we
+   * The motivating example comes from the [[gr.grnet.aquarium.charging.OnOffChargingBehavior]] for which we
    * must implicitly assume `OFF` events at the end of the billing period and `ON` events at the beginning of the next
    * one.
    *
@@ -179,65 +179,61 @@ abstract class DSLCostPolicy(val name: String, val vars: Set[DSLCostPolicyVar]) 
   def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long): ResourceEventModel
 }
 
-object DSLCostPolicyNames {
-  final val onoff      = "onoff"
-  final val discrete   = "discrete"
-  final val continuous = "continuous"
-  final val once       = "once"
-}
-
-object DSLCostPolicy {
-  def apply(name: String): DSLCostPolicy  = {
+object ChargingBehavior {
+  def apply(name: String): ChargingBehavior  = {
     name match {
       case null ⇒
-        throw new DSLParseException("<null> cost policy")
+        throw new AquariumException("<null> charging behavior")
 
       case name ⇒ name.toLowerCase match {
-        case DSLCostPolicyNames.onoff      ⇒ OnOffCostPolicy
-        case DSLCostPolicyNames.discrete   ⇒ DiscreteCostPolicy
-        case DSLCostPolicyNames.continuous ⇒ ContinuousCostPolicy
-        case DSLCostPolicyNames.once       ⇒ ContinuousCostPolicy
+        case ChargingBehaviorNames.onoff      ⇒ OnOffChargingBehavior
+        case ChargingBehaviorNames.discrete   ⇒ DiscreteChargingBehavior
+        case ChargingBehaviorNames.continuous ⇒ ContinuousChargingBehavior
+        case ChargingBehaviorNames.once       ⇒ ContinuousChargingBehavior
 
         case _ ⇒
-          throw new DSLParseException("Invalid cost policy %s".format(name))
+          throw new AquariumException("Invalid charging behavior %s".format(name))
       }
     }
   }
 
-  def makeValueMapFor(costPolicy: DSLCostPolicy,
-                      totalCredits: Double,
-                      oldTotalAmount: Double,
-                      newTotalAmount: Double,
-                      timeDelta: Double,
-                      previousValue: Double,
-                      currentValue: Double,
-                      unitPrice: Double): Map[DSLCostPolicyVar, Any] = {
-    val vars = costPolicy.vars
-    var map = Map[DSLCostPolicyVar, Any]()
+  def makeValueMapFor(
+      chargingBehavior: ChargingBehavior,
+      totalCredits: Double,
+      oldTotalAmount: Double,
+      newTotalAmount: Double,
+      timeDelta: Double,
+      previousValue: Double,
+      currentValue: Double,
+      unitPrice: Double
+  ): Map[ChargingInput, Any] = {
+    
+    val inputs = chargingBehavior.inputs
+    var map = Map[ChargingInput, Any]()
 
-    if(vars contains DSLCostPolicyNameVar) map += DSLCostPolicyNameVar -> costPolicy.name
-    if(vars contains DSLTotalCreditsVar  ) map += DSLTotalCreditsVar   -> totalCredits
-    if(vars contains DSLOldTotalAmountVar) map += DSLOldTotalAmountVar -> oldTotalAmount
-    if(vars contains DSLNewTotalAmountVar) map += DSLNewTotalAmountVar -> newTotalAmount
-    if(vars contains DSLTimeDeltaVar     ) map += DSLTimeDeltaVar      -> timeDelta
-    if(vars contains DSLPreviousValueVar ) map += DSLPreviousValueVar  -> previousValue
-    if(vars contains DSLCurrentValueVar  ) map += DSLCurrentValueVar   -> currentValue
-    if(vars contains DSLUnitPriceVar     ) map += DSLUnitPriceVar      -> unitPrice
+    if(inputs contains ChargingBehaviorNameInput) map += ChargingBehaviorNameInput -> chargingBehavior.name
+    if(inputs contains TotalCreditsInput  ) map += TotalCreditsInput   -> totalCredits
+    if(inputs contains OldTotalAmountInput) map += OldTotalAmountInput -> oldTotalAmount
+    if(inputs contains NewTotalAmountInput) map += NewTotalAmountInput -> newTotalAmount
+    if(inputs contains TimeDeltaInput     ) map += TimeDeltaInput      -> timeDelta
+    if(inputs contains PreviousValueInput ) map += PreviousValueInput  -> previousValue
+    if(inputs contains CurrentValueInput  ) map += CurrentValueInput   -> currentValue
+    if(inputs contains UnitPriceInput     ) map += UnitPriceInput      -> unitPrice
 
     map
   }
 }
 
 /**
- * A cost policy for which resource events just carry a credit amount that will be added to the total one.
+ * A charging behavior for which resource events just carry a credit amount that will be added to the total one.
  *
  * Examples are: a) Give a gift of X credits to the user, b) User bought a book, so charge for the book price.
  *
  */
-case object OnceCostPolicy
-extends DSLCostPolicy(
-    DSLCostPolicyNames.once,
-    Set(DSLCostPolicyNameVar, DSLCurrentValueVar)
+case object OnceChargingBehavior
+extends ChargingBehavior(
+    ChargingBehaviorNames.once,
+    Set(ChargingBehaviorNameInput, CurrentValueInput)
 ) {
 
   /**
@@ -272,10 +268,10 @@ extends DSLCostPolicy(
  * Example resource that might be adept to a continuous policy
  * is diskspace.
  */
-case object ContinuousCostPolicy
-extends DSLCostPolicy(
-    DSLCostPolicyNames.continuous,
-    Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLOldTotalAmountVar, DSLTimeDeltaVar)
+case object ContinuousChargingBehavior
+extends ChargingBehavior(
+    ChargingBehaviorNames.continuous,
+    Set(ChargingBehaviorNameInput, UnitPriceInput, OldTotalAmountInput, TimeDeltaInput)
 ) {
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
@@ -322,7 +318,7 @@ extends DSLCostPolicy(
 }
 
 /**
- * An onoff cost policy expects a resource to be in one of the two allowed
+ * An onoff charging behavior expects a resource to be in one of the two allowed
  * states (`on` and `off`, respectively). It will charge for resource usage
  * within the timeframes specified by consecutive on and off resource events.
  * An onoff policy is the same as a continuous policy, except for
@@ -331,10 +327,10 @@ extends DSLCostPolicy(
  * Example resources that might be adept to onoff policies are VMs in a
  * cloud application and books in a book lending application.
  */
-case object OnOffCostPolicy
-extends DSLCostPolicy(
-    DSLCostPolicyNames.onoff,
-    Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLTimeDeltaVar)
+case object OnOffChargingBehavior
+extends ChargingBehavior(
+    ChargingBehaviorNames.onoff,
+    Set(ChargingBehaviorNameInput, UnitPriceInput, TimeDeltaInput)
 ) {
 
   /**
@@ -353,7 +349,7 @@ extends DSLCostPolicy(
 
   private[this]
   def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
-    import OnOffCostPolicyValues.{ON, OFF}
+    import OnOffChargingBehaviorValues.{ON, OFF}
 
     def exception(rs: OnOffPolicyResourceState) =
       new AquariumException("Resource state transition error (%s -> %s)".format(rs, rs))
@@ -372,7 +368,7 @@ extends DSLCostPolicy(
 
   override def isBillableEvent(event: ResourceEventModel) = {
     // ON events do not contribute, only OFF ones.
-    OnOffCostPolicyValues.isOFFValue(event.value)
+    OnOffChargingBehaviorValues.isOFFValue(event.value)
   }
 
   /**
@@ -392,16 +388,16 @@ extends DSLCostPolicy(
   def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
     // If we have ON events with no OFF companions at the end of the billing period,
     // then we must generate implicit OFF events.
-    OnOffCostPolicyValues.isONValue(resourceEvent.value)
+    OnOffChargingBehaviorValues.isONValue(resourceEvent.value)
   }
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long) = {
     assert(supportsImplicitEvents && mustConstructImplicitEndEventFor(resourceEvent))
-    assert(OnOffCostPolicyValues.isONValue(resourceEvent.value))
+    assert(OnOffChargingBehaviorValues.isONValue(resourceEvent.value))
 
     val details = resourceEvent.details
     val newDetails = ResourceEventModel.setAquariumSyntheticAndImplicitEnd(details)
-    val newValue   = OnOffCostPolicyValues.OFF
+    val newValue   = OnOffChargingBehaviorValues.OFF
 
     resourceEvent.withDetailsAndValue(newDetails, newValue, newOccurredMillis)
   }
@@ -411,7 +407,7 @@ extends DSLCostPolicy(
   }
 }
 
-object OnOffCostPolicyValues {
+object OnOffChargingBehaviorValues {
   final val ON  = 1.0
   final val OFF = 0.0
 
@@ -420,7 +416,7 @@ object OnOffCostPolicyValues {
 }
 
 /**
- * An discrete cost policy indicates that a resource should be charged directly
+ * An discrete charging behavior indicates that a resource should be charged directly
  * at each resource state change, i.e. the charging is not dependent on
  * the time the resource.
  *
@@ -428,10 +424,10 @@ object OnOffCostPolicyValues {
  * actions (e.g. the fact that a user has created an account) or resources
  * that should be charged per volume once (e.g. the allocation of a volume)
  */
-case object DiscreteCostPolicy
-extends DSLCostPolicy(
-    DSLCostPolicyNames.discrete,
-    Set(DSLCostPolicyNameVar, DSLUnitPriceVar, DSLCurrentValueVar)
+case object DiscreteChargingBehavior
+extends ChargingBehavior(
+    ChargingBehaviorNames.discrete,
+    Set(ChargingBehaviorNameInput, UnitPriceInput, CurrentValueInput)
 ) {
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
@@ -464,40 +460,4 @@ extends DSLCostPolicy(
   def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
     throw new AquariumInternalError("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
-}
-
-/**
- * Encapsulates the possible states that a resource with an
- * [[gr.grnet.aquarium.logic.accounting.dsl.OnOffCostPolicy]]
- * can be.
- */
-abstract class OnOffPolicyResourceState(val state: String) {
-  def isOn: Boolean = !isOff
-  def isOff: Boolean = !isOn
-}
-
-object OnOffPolicyResourceState {
-  def apply(name: Any): OnOffPolicyResourceState = {
-    name match {
-      case x: String if (x.equalsIgnoreCase(OnOffPolicyResourceStateNames.on))  => OnResourceState
-      case y: String if (y.equalsIgnoreCase(OnOffPolicyResourceStateNames.off)) => OffResourceState
-      case a: Double if (a == 0) => OffResourceState
-      case b: Double if (b == 1) => OnResourceState
-      case i: Int if (i == 0) => OffResourceState
-      case j: Int if (j == 1) => OnResourceState
-      case _ => throw new DSLParseException("Invalid OnOffPolicyResourceState %s".format(name))
-    }
-  }
-}
-
-object OnOffPolicyResourceStateNames {
-  final val on  = "on"
-  final val off = "off"
-}
-
-object OnResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceStateNames.on) {
-  override def isOn = true
-}
-object OffResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceStateNames.off) {
-  override def isOff = true
 }

@@ -44,17 +44,15 @@ import gr.grnet.aquarium.event.model.im.IMEventModel.{Names ⇒ IMEventNames}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel.{Names ⇒ ResourceEventNames}
 import gr.grnet.aquarium.store._
-import gr.grnet.aquarium.event.model.PolicyEntry.{JsonNames ⇒ PolicyJsonNames}
-import gr.grnet.aquarium.logic.accounting.Policy
 import com.mongodb._
 import org.bson.types.ObjectId
-import com.ckkloverdos.maybe.Maybe
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.converter.Conversions
 import gr.grnet.aquarium.computation.state.UserState
-import gr.grnet.aquarium.event.model.{ExternalEventModel, PolicyEntry}
+import gr.grnet.aquarium.event.model.ExternalEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.policy.PolicyModel
+import gr.grnet.aquarium.{Aquarium, AquariumException}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -63,6 +61,7 @@ import gr.grnet.aquarium.Aquarium
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 class MongoDBStore(
+    val aquarium: Aquarium,
     val mongo: Mongo,
     val database: String,
     val username: String,
@@ -75,26 +74,20 @@ class MongoDBStore(
 
   override type IMEvent = MongoDBIMEvent
   override type ResourceEvent = MongoDBResourceEvent
+  override type Policy = MongoDBPolicy
 
-  private[store] lazy val resourceEvents   = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
-  private[store] lazy val userStates       = getCollection(MongoDBStore.USER_STATES_COLLECTION)
-  private[store] lazy val imEvents         = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
-  private[store] lazy val unparsedIMEvents = getCollection(MongoDBStore.UNPARSED_IM_EVENTS_COLLECTION)
-  private[store] lazy val policyEntries    = getCollection(MongoDBStore.POLICY_ENTRIES_COLLECTION)
+  private[store] lazy val resourceEvents = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
+  private[store] lazy val userStates = getCollection(MongoDBStore.USER_STATES_COLLECTION)
+  private[store] lazy val imEvents = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
+  private[store] lazy val policies = getCollection(MongoDBStore.POLICY_COLLECTION)
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
     //logger.debug("Authenticating to mongo")
     if(!db.isAuthenticated && !db.authenticate(username, password.toCharArray)) {
-      throw new StoreException("Could not authenticate user %s".format(username))
+      throw new AquariumException("Could not authenticate user %s".format(username))
     }
     db.getCollection(name)
-  }
-
-  private[this] def _sortByTimestampAsc[A <: ExternalEventModel](one: A, two: A): Boolean = {
-    if (one.occurredMillis > two.occurredMillis) false
-    else if (one.occurredMillis < two.occurredMillis) true
-    else true
   }
 
   //+ResourceEventStore
@@ -169,7 +162,7 @@ class MongoDBStore(
 
   //+ UserStateStore
   def insertUserState(userState: UserState) = {
-    MongoDBStore.insertUserState(
+    MongoDBStore.insertObject(
       userState.copy(_id = new ObjectId().toString),
       userStates,
       MongoDBStore.jsonSupportToDBObject
@@ -267,26 +260,24 @@ class MongoDBStore(
 
 
   //+PolicyStore
-  def loadPolicyEntriesAfter(after: Long): List[PolicyEntry] = {
-    val query = new BasicDBObject(PolicyEntry.JsonNames.validFrom,
-      new BasicDBObject("$gt", after))
-    MongoDBStore.runQuery(query, policyEntries)(MongoDBStore.dbObjectToPolicyEntry)(Some(_sortByTimestampAsc))
+  def loadPoliciesAfter(after: Long): List[Policy] = {
+    // FIXME implement
+    throw new UnsupportedOperationException
   }
 
-  def storePolicyEntry(policy: PolicyEntry): Maybe[RecordID] = MongoDBStore.storePolicyEntry(policy, policyEntries)
 
-
-  def updatePolicyEntry(policy: PolicyEntry) = {
-    //Find the entry
-    val query = new BasicDBObject(PolicyEntry.JsonNames.id, policy.id)
-    val policyObject = MongoDBStore.jsonSupportToDBObject(policy)
-    policyEntries.update(query, policyObject, true, false)
-  }
-  
-  def findPolicyEntry(id: String) = {
-    MongoDBStore.findBy(PolicyJsonNames.id, id, policyEntries, MongoDBStore.dbObjectToPolicyEntry)
+  def findPolicyByID(id: String) = {
+    // FIXME implement
+    throw new UnsupportedOperationException
   }
 
+  /**
+   * Store an accounting policy.
+   */
+  def insertPolicy(policy: PolicyModel): Policy = {
+    val dbPolicy = MongoDBPolicy.fromOther(policy, new ObjectId().toStringMongod)
+    MongoDBStore.insertObject(dbPolicy, policies, MongoDBStore.jsonSupportToDBObject)
+  }
   //-PolicyStore
 }
 
@@ -318,23 +309,9 @@ object MongoDBStore {
   final val IM_EVENTS_COLLECTION = "imevents"
 
   /**
-   * Collection holding [[gr.grnet.aquarium.event.model.im.IMEventModel]]s that could not be parsed to normal objects.
-   *
-   * We of course assume at least a valid JSON representation.
-   *
-   * User events are coming from the IM module (external).
+   * Collection holding [[gr.grnet.aquarium.policy.PolicyModel]]s.
    */
-  final val UNPARSED_IM_EVENTS_COLLECTION = "unparsed_imevents"
-
-  /**
-   * Collection holding [[gr.grnet.aquarium.logic.accounting.dsl.DSLPolicy]].
-   */
-//  final val POLICIES_COLLECTION = "policies"
-
-  /**
-   * Collection holding [[gr.grnet.aquarium.event.model.PolicyEntry]].
-   */
-  final val POLICY_ENTRIES_COLLECTION = "policyEntries"
+  final val POLICY_COLLECTION = "policies"
 
   def dbObjectToUserState(dbObj: DBObject): UserState = {
     UserState.fromJson(JSON.serialize(dbObj))
@@ -348,10 +325,6 @@ object MongoDBStore {
         None
       }
     }
-  }
-
-  def dbObjectToPolicyEntry(dbObj: DBObject): PolicyEntry = {
-    PolicyEntry.fromJson(JSON.serialize(dbObj))
   }
 
   def ping(mongo: Mongo): Unit = synchronized {
@@ -406,10 +379,6 @@ object MongoDBStore {
   def storeUserState(userState: UserState, collection: DBCollection) = {
     storeAny[UserState](userState, collection, ResourceEventNames.userID, _.userID, MongoDBStore.jsonSupportToDBObject)
   }
-  
-  def storePolicyEntry(policyEntry: PolicyEntry, collection: DBCollection): Maybe[RecordID] = {
-    Maybe(storeAny[PolicyEntry](policyEntry, collection, PolicyJsonNames.id, _.id, MongoDBStore.jsonSupportToDBObject))
-  }
 
   def storeAny[A](any: A,
                   collection: DBCollection,
@@ -426,41 +395,9 @@ object MongoDBStore {
     RecordID(dbObject.get("_id").toString)
   }
 
-  // FIXME: consolidate
-  def insertUserState[A <: UserState](obj: A, collection: DBCollection, serializer: A ⇒ DBObject) = {
-    val dbObject = serializer apply obj
-    val objectId = obj._id  match {
-      case null ⇒
-        val _id = new ObjectId()
-        dbObject.put("_id", _id)
-        _id
-
-      case _id ⇒
-        _id
-    }
-
-    dbObject.put(JsonNames._id, objectId)
-
-    collection.insert(dbObject, WriteConcern.JOURNAL_SAFE)
-
+  def insertObject[A <: AnyRef](obj: A, collection: DBCollection, serializer: A ⇒ DBObject) : A = {
+    collection.insert(serializer apply obj, WriteConcern.JOURNAL_SAFE)
     obj
-  }
-
-  def insertObject[A <: MongoDBEventModel](obj: A, collection: DBCollection, serializer: (A) => DBObject) : Unit = {
-    val dbObject = serializer apply obj
-    val objectId = obj._id  match {
-      case null ⇒
-        val _id = new ObjectId()
-        dbObject.put("_id", _id)
-        _id
-
-      case _id ⇒
-        _id
-    }
-
-    dbObject.put(JsonNames._id, objectId)
-
-    collection.insert(dbObject, WriteConcern.JOURNAL_SAFE)
   }
 
   def jsonSupportToDBObject(jsonSupport: JsonSupport) = {

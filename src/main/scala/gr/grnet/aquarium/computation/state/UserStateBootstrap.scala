@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.computation.state
 
+import gr.grnet.aquarium.policy.UserAgreementModel
+
 /**
  * This is used to bootstrap the [[gr.grnet.aquarium.computation.state.UserState]].
  *
@@ -44,7 +46,6 @@ package gr.grnet.aquarium.computation.state
 case class UserStateBootstrap(
     userID:             String,
     userCreationMillis: Long,
-    initialRole:        String,
-    initialAgreement:   String,
+    initialAgreement:   UserAgreementModel,
     initialCredits:     Double
 )

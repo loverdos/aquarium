@@ -42,7 +42,11 @@ package gr.grnet.aquarium.policy
  */
 
 case class FullPriceTable(perResource: Map[String/*Resource*/, EffectivePriceTable]) {
-  def effectiveProceTableForResource(resource: String): Option[EffectivePriceTable] = {
-    perResource.get(resource)
+  def effectivePriceTableForResourceType(resourceType: String): Option[EffectivePriceTable] = {
+    perResource.get(resourceType)
+  }
+
+  def effectivePriceTableForResourceType(resourceType: ResourceType): Option[EffectivePriceTable] = {
+    perResource.get(resourceType.name)
   }
 }

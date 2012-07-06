@@ -41,18 +41,16 @@ import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, IMEventStore, ResourceEventStore, StoreProvider}
 import java.io.File
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
-import gr.grnet.aquarium.service.{RoleableActorProviderService, StoreWatcherService, RabbitMQService, TimerService, EventBusService, AkkaService}
+import gr.grnet.aquarium.service.{StoreWatcherService, RabbitMQService, TimerService, EventBusService, AkkaService}
 import com.ckkloverdos.convert.Converters
 import java.util.concurrent.atomic.AtomicBoolean
 import org.slf4j.{LoggerFactory, Logger}
-import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.computation.UserStateComputations
 import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.ResourceLocator._
-import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
-import gr.grnet.aquarium.logic.accounting.Policy
 import com.ckkloverdos.sys.SysProp
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
+import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel, ResourceType}
 
 /**
  *
@@ -230,14 +228,14 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   }
 
-  def currentResourcesMap: DSLResourcesMap = {
-    // FIXME: Get rid of this singleton stuff
-    Policy.policy.resourcesMap
+  def currentResourceTypesMap: Map[String, ResourceType] = {
+    // FIXME: Implement
+    Map()
   }
 
-  def initialAgreementForRole(role: String, referenceTimeMillis: Long): String = {
+  def initialUserAgreementForRole(role: String, referenceTimeMillis: Long): UserAgreementModel = {
     // FIXME: Where is the mapping?
-    "default"
+    StdUserAgreement("", None, Timespan(0L), defaultInitialUserRole, PolicyDefinedFullPriceTableRef)
   }
 
   def initialBalanceForRole(role: String, referenceTimeMillis: Long): Double = {
@@ -262,8 +260,6 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   def eventsStoreFolder = apply(EnvKeys.eventsStoreFolder)
 
-  def algorithmCompiler = apply(EnvKeys.algorithmCompiler)
-
   def eventBus = apply(EnvKeys.eventBus)
 
   def userStateComputations = apply(EnvKeys.userStateComputations)
@@ -273,8 +269,6 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   def adminCookie = apply(EnvKeys.adminCookie)
 
   def converters = apply(EnvKeys.converters)
-
-//  def actorProvider = apply(EnvKeys.actorProvider)
 
   def saveResourceEventsToEventsStoreFolder = apply(EnvKeys.eventsStoreSaveRCEvents)
 
@@ -407,13 +401,6 @@ object Aquarium {
     final val restService: TypedKey[Lifecycle] =
       new AquariumEnvKey[Lifecycle]("rest.service.class")
 
-    /**
-     * The fully qualified name of the class that implements the `RoleableActorProviderService`.
-     * Will be instantiated reflectively and should have a public default constructor.
-     */
-//    final val actorProvider: TypedKey[RoleableActorProviderService] =
-//      new AquariumEnvKey[RoleableActorProviderService]("actor.provider.class")
-
     final val akkaService: TypedKey[AkkaService] =
       new AquariumEnvKey[AkkaService]("akka.service")
 
@@ -431,9 +418,6 @@ object Aquarium {
 
     final val converters: TypedKey[Converters] =
       new AquariumEnvKey[Converters]("converters")
-
-    final val algorithmCompiler: TypedKey[CostPolicyAlgorithmCompiler] =
-      new AquariumEnvKey[CostPolicyAlgorithmCompiler]("algorithm.compiler")
 
     final val userStateComputations: TypedKey[UserStateComputations] =
       new AquariumEnvKey[UserStateComputations]("user.state.computations")
