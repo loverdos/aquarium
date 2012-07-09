@@ -39,6 +39,8 @@ package gr.grnet.aquarium.policy
  * A specific price table for a particular resource type that has information of what unit price is
  * effective when.
  *
+ * NOTE: head of `priceOverrides` is most specific.
+ *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 

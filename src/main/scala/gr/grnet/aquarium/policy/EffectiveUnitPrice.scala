@@ -35,9 +35,11 @@
 
 package gr.grnet.aquarium.policy
 
+import gr.grnet.aquarium.logic.accounting.dsl.DSLTimeFrame
+
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class EffectiveUnitPrice(unitPrice: Double, when: List[(String, String)])
+case class EffectiveUnitPrice(unitPrice: Double, when: DSLTimeFrame) // TODO: use DSLTimeframe

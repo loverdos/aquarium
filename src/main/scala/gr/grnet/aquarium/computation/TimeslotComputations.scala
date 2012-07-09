@@ -209,6 +209,7 @@ trait TimeslotComputations extends Loggable {
         // referring to (almost) an instant in time
         val previousValue = chargingBehavior.getResourceInstanceUndefinedAmount
 
+        // TODO: Check semantics of this
         val referenceTimeslot = Timeslot(new MutableDateCalc(occurredDate).goPreviousMilli.toDate, occurredDate)
 
         // TODO: store policies in mem?

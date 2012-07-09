@@ -52,7 +52,7 @@ trait DSLUtils {
    * provided timeslot and returns it as a Map
    */
   def resolveEffectiveUnitPricesForTimeslot(
-      timeslot: Timeslot,
+      alignedTimeslot: Timeslot,
       policy: PolicyModel,
       agreement: UserAgreementModel,
       resourceType: ResourceType
@@ -81,16 +81,39 @@ trait DSLUtils {
         effectivePriceTable
     }
 
-    resolveEffective3(timeslot, effectivePriceTable)
+    resolveEffective(alignedTimeslot, effectivePriceTable)
   }
+
+  /*private def printPolicy[T <: DSLTimeBoundedItem[T]](t : T) : Unit = {
+      Console.err.println("Policy " + t.name + " " + t.toTimeslot + " DETAIL : " + t.effective)
+      t.overrides match {
+        case None => Console.println
+        case Some(t) => printPolicy(t)
+      }
+    }
+
+    private def printMap[T <: DSLTimeBoundedItem[T]](m: immutable.SortedMap[Timeslot, T]) = {
+      Console.err.println("BEGIN MAP: ")
+      for { (t,p) <- m.toList } Console.err.println("Timeslot " + t + "\t\t" + p.name)
+      Console.err.println("END MAP")
+    } */
+
+  def resolveEffective[T <: DSLTimeBoundedItem[T]](timeslot0: Timeslot,policy: T):
+    immutable.SortedMap[Timeslot, T] = {
+      //Console.err.println("\n\nInput timeslot: " + timeslot0 + "\n\n")
+      ///printPolicy(policy)
+      val ret =  resolveEffective3(timeslot0,policy) //HERE
+      //printMap(ret)
+      ret
+    }
 
 
   def resolveEffective3(
-      timeslot0: Timeslot,
+      alignedTimeslot: Timeslot,
       effectivePriceTable: EffectivePriceTable
   ): immutable.SortedMap[Timeslot, Double/*unit price*/] = {
 //    assert(policy.toTimeslot contains timeslot0,"Policy does not contain timeslot")
-    val timeslot = timeslot0 //TODO: timeslot0.align(5000)
+    val timeslot = alignedTimeslot //TODO: timeslot0.align(5000)
     val subtimeslots_of_this_policy = Timeslot.mergeOverlaps(policy.effective intervalsOf timeslot)
     val subtimeslots_NOT_IN_this_policy = Timeslot.mergeOverlaps(timeslot.nonOverlappingTimeslots
                                                                                           (subtimeslots_of_this_policy))

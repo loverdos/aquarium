@@ -261,7 +261,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
 
             // B. Compute new wallet entries
             clog.debug("agreementsSnapshot = %s", _workingUserState.agreementHistory)
-            val alltimeAgreements = _workingUserState.agreementHistory.agreementsByTimeslot
+            val agreementByTimeslot = _workingUserState.agreementHistory.agreementsByTimeslot
 
             //              clog.debug("Computing full chargeslots")
             val (referenceTimeslot, fullChargeslots) = timeslotComputations.computeFullChargeslots(
@@ -271,7 +271,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
               oldAmount,
               newAccumulatingAmount,
               resourceType,
-              alltimeAgreements,
+              agreementByTimeslot,
               policyStore,
               Some(clog)
             )

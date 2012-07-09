@@ -74,7 +74,7 @@ case class DSLTimeFrame (
    *  */
   def intervalsOf(t:Timeslot) : List[Timeslot]=
     if(repeat.isEmpty)
-      t.overlappingTimeslots(List(Timeslot(start,end)))
+      List(t) // .overlappingTimeslots(List(Timeslot(start,end)))
     else {
       val result = new mutable.ListBuffer[Timeslot]()
       var offset = t.from
