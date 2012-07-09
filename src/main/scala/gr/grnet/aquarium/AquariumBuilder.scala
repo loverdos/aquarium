@@ -372,8 +372,6 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
       newInstance(envKey.keyType, classOf[SimpleTimerService].getName)
     }
 
-    checkNoPropsOverride(EnvKeys.algorithmCompiler) { _ ⇒ SimpleCostPolicyAlgorithmCompiler }
-
     checkNoPropsOverride(EnvKeys.userStateComputations) { envKey ⇒
       newInstance(envKey.keyType, classOf[UserStateComputations].getName)
     }

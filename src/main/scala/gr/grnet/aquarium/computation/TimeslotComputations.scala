@@ -42,8 +42,9 @@ import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.logic.accounting.algorithm.CostPolicyAlgorithmCompiler
-import gr.grnet.aquarium.logic.accounting.dsl.{DSL, DSLResourcesMap, DSLPolicy, DSLResource, DSLPriceList, DSLAlgorithm, DSLAgreement, Timeslot, DSLUtils}
+import gr.grnet.aquarium.logic.accounting.algorithm.SimpleExecutableChargingBehaviorAlgorithm
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLUtils}
+import gr.grnet.aquarium.policy.{EffectivePriceTable, PolicyModel, ResourceType, UserAgreementModel}
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -64,25 +65,19 @@ trait TimeslotComputations extends Loggable {
    * @return
    */
   protected
-  def splitTimeslotByPoliciesAndAgreements(referenceTimeslot: Timeslot,
-                                           policyTimeslots: List[Timeslot],
-                                           agreementTimeslots: List[Timeslot],
-                                           clogM: Maybe[ContextualLogger] = NoVal): List[Timeslot] = {
-
-    //    val clog = ContextualLogger.fromOther(clogM, logger, "splitTimeslotByPoliciesAndAgreements()")
-    //    clog.begin()
+  def splitTimeslotByPoliciesAndAgreements(
+      referenceTimeslot: Timeslot,
+      policyTimeslots: List[Timeslot],
+      agreementTimeslots: List[Timeslot],
+      clogM: Maybe[ContextualLogger] = NoVal
+  ): List[Timeslot] = {
 
     // Align policy and agreement validity timeslots to the referenceTimeslot
     val alignedPolicyTimeslots = referenceTimeslot.align(policyTimeslots)
     val alignedAgreementTimeslots = referenceTimeslot.align(agreementTimeslots)
 
-    //    clog.debug("referenceTimeslot = %s", referenceTimeslot)
-    //    clog.debugSeq("alignedPolicyTimeslots", alignedPolicyTimeslots, 0)
-    //    clog.debugSeq("alignedAgreementTimeslots", alignedAgreementTimeslots, 0)
-
     val result = alignTimeslots(alignedPolicyTimeslots, alignedAgreementTimeslots)
-    //    clog.debugSeq("result", result, 1)
-    //    clog.end()
+
     result
   }
 
@@ -92,53 +87,43 @@ trait TimeslotComputations extends Loggable {
    *
    */
   protected
-  def resolveEffectiveAlgorithmsAndPriceLists(alignedTimeslot: Timeslot,
-                                              agreement: DSLAgreement,
-                                              clogOpt: Option[ContextualLogger] = None):
-  (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
+  def resolveEffectiveUnitPrices(
+      alignedTimeslot: Timeslot,
+      policy: PolicyModel,
+      agreement: UserAgreementModel,
+      resourceType: ResourceType,
+      clogOpt: Option[ContextualLogger] = None
+  ): SortedMap[Timeslot, Double] = {
 
-    val clog = ContextualLogger.fromOther(clogOpt, logger, "resolveEffectiveAlgorithmsAndPriceLists()")
+    val clog = ContextualLogger.fromOther(clogOpt, logger, "resolveEffectiveUnitPrices()")
 
     // Note that most of the code is taken from calcChangeChunks()
-    val alg = dslUtils.resolveEffectiveAlgorithmsForTimeslot(alignedTimeslot, agreement)
-    val pri = dslUtils.resolveEffectivePricelistsForTimeslot(alignedTimeslot, agreement)
-    val chargeChunks = splitChargeChunks(alg, pri)
-    val algorithmByTimeslot = chargeChunks._1
-    val pricelistByTimeslot = chargeChunks._2
-
-    assert(algorithmByTimeslot.size == pricelistByTimeslot.size)
-
-    (algorithmByTimeslot, pricelistByTimeslot)
+    dslUtils.resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType)
   }
 
   protected
-  def computeInitialChargeslots(referenceTimeslot: Timeslot,
-                                dslResource: DSLResource,
-                                policiesByTimeslot: Map[Timeslot, DSLPolicy],
-                                agreementNamesByTimeslot: Map[Timeslot, String],
-                                clogOpt: Option[ContextualLogger] = None): List[Chargeslot] = {
+  def computeInitialChargeslots(
+      referenceTimeslot: Timeslot,
+      resourceType: ResourceType,
+      policyByTimeslot: SortedMap[Timeslot, PolicyModel],
+      agreementByTimeslot: SortedMap[Timeslot, UserAgreementModel],
+      clogOpt: Option[ContextualLogger] = None
+  ): List[Chargeslot] = {
 
     val clog = ContextualLogger.fromOther(clogOpt, logger, "computeInitialChargeslots()")
-    //    clog.begin()
 
-    val policyTimeslots = policiesByTimeslot.keySet
-    val agreementTimeslots = agreementNamesByTimeslot.keySet
+    val policyTimeslots = policyByTimeslot.keySet
+    val agreementTimeslots = agreementByTimeslot.keySet
 
-    //    clog.debugMap("policiesByTimeslot", policiesByTimeslot, 1)
-    //    clog.debugMap("agreementNamesByTimeslot", agreementNamesByTimeslot, 1)
-
-    def getPolicy(ts: Timeslot): DSLPolicy = {
-      policiesByTimeslot.find(_._1.contains(ts)).get._2
+    def getPolicyWithin(ts: Timeslot): PolicyModel = {
+      policyByTimeslot.find(_._1.contains(ts)).get._2
     }
-    def getAgreementName(ts: Timeslot): String = {
-      agreementNamesByTimeslot.find(_._1.contains(ts)).get._2
+    def getAgreementWithin(ts: Timeslot): UserAgreementModel = {
+      agreementByTimeslot.find(_._1.contains(ts)).get._2
     }
 
     // 1. Round ONE: split time according to overlapping policies and agreements.
-    //    clog.begin("ROUND 1")
     val alignedTimeslots = splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList, Just(clog))
-    //    clog.debugSeq("alignedTimeslots", alignedTimeslots, 1)
-    //    clog.end("ROUND 1")
 
     // 2. Round TWO: Use the aligned timeslots of Round ONE to produce even more
     //    fine-grained timeslots according to applicable algorithms.
@@ -147,81 +132,31 @@ trait TimeslotComputations extends Loggable {
     val allChargeslots = for {
       alignedTimeslot <- alignedTimeslots
     } yield {
-      //      val alignedTimeslotMsg = "alignedTimeslot = %s".format(alignedTimeslot)
-      //      clog.begin(alignedTimeslotMsg)
-
-      val dslPolicy = getPolicy(alignedTimeslot)
+      val policy = getPolicyWithin(alignedTimeslot)
       //      clog.debug("dslPolicy = %s", dslPolicy)
-      val agreementName = getAgreementName(alignedTimeslot)
-      //      clog.debug("agreementName = %s", agreementName)
-      val agreementOpt = dslPolicy.findAgreement(agreementName)
-      //      clog.debug("agreementOpt = %s", agreementOpt)
+      val userAgreement = getAgreementWithin(alignedTimeslot)
 
-      agreementOpt match {
-        case None ⇒
-          val errMsg = "Unknown agreement %s during %s".format(agreementName, alignedTimeslot)
-          clog.error("%s", errMsg)
-          throw new AquariumException(errMsg)
+      // TODO: Factor this out, just like we did with:
+      // TODO:  val alignedTimeslots = splitTimeslotByPoliciesAndAgreements
+      // Note that most of the code is already taken from calcChangeChunks()
+      val unitPriceByTimeslot = resolveEffectiveUnitPrices(alignedTimeslot, policy, userAgreement, resourceType, Some(clog))
 
-        case Some(agreement) ⇒
-          // TODO: Factor this out, just like we did with:
-          // TODO:  val alignedTimeslots = splitTimeslotByPoliciesAndAgreements
-          // Note that most of the code is already taken from calcChangeChunks()
-          val r = resolveEffectiveAlgorithmsAndPriceLists(alignedTimeslot, agreement, Some(clog))
-          val algorithmByTimeslot: Map[Timeslot, DSLAlgorithm] = r._1
-          val pricelistByTimeslot: Map[Timeslot, DSLPriceList] = r._2
+      // Now, the timeslots must be the same
+      val finegrainedTimeslots = unitPriceByTimeslot.keySet
 
-          // Now, the timeslots must be the same
-          val finegrainedTimeslots = algorithmByTimeslot.keySet
-
-          val chargeslots = for {
-            finegrainedTimeslot <- finegrainedTimeslots
-          } yield {
-            //            val finegrainedTimeslotMsg = "finegrainedTimeslot = %s".format(finegrainedTimeslot)
-            //            clog.begin(finegrainedTimeslotMsg)
-
-            val dslAlgorithm = algorithmByTimeslot(finegrainedTimeslot) // TODO: is this correct?
-            //            clog.debug("dslAlgorithm = %s", dslAlgorithm)
-            //            clog.debugMap("dslAlgorithm.algorithms", dslAlgorithm.algorithms, 1)
-            val dslPricelist = pricelistByTimeslot(finegrainedTimeslot) // TODO: is this correct?
-            //            clog.debug("dslPricelist = %s", dslPricelist)
-            //            clog.debug("dslResource = %s", dslResource)
-            val algorithmDefOpt = dslAlgorithm.algorithms.get(dslResource)
-            //            clog.debug("algorithmDefOpt = %s", algorithmDefOpt)
-            val priceUnitOpt = dslPricelist.prices.get(dslResource)
-            //            clog.debug("priceUnitOpt = %s", priceUnitOpt)
-
-            val chargeslot = (algorithmDefOpt, priceUnitOpt) match {
-              case (None, None) ⇒
-                throw new AquariumException(
-                  "Unknown algorithm and price unit for resource %s during %s".
-                    format(dslResource, finegrainedTimeslot))
-              case (None, _) ⇒
-                throw new AquariumException(
-                  "Unknown algorithm for resource %s during %s".
-                    format(dslResource, finegrainedTimeslot))
-              case (_, None) ⇒
-                throw new AquariumException(
-                  "Unknown price unit for resource %s during %s".
-                    format(dslResource, finegrainedTimeslot))
-              case (Some(algorithmDefinition), Some(priceUnit)) ⇒
-                Chargeslot(finegrainedTimeslot.from.getTime, finegrainedTimeslot.to.getTime, algorithmDefinition, priceUnit)
-            }
-
-            //            clog.end(finegrainedTimeslotMsg)
-            chargeslot
-          }
-
-          //          clog.end(alignedTimeslotMsg)
-          chargeslots.toList
+      val chargeslots = for (finegrainedTimeslot ← finegrainedTimeslots) yield {
+        Chargeslot(
+          finegrainedTimeslot.from.getTime,
+          finegrainedTimeslot.to.getTime,
+          unitPriceByTimeslot(finegrainedTimeslot)
+        )
       }
-    }
-    //    clog.end("ROUND 2")
 
+      chargeslots.toList
+    }
 
     val result = allChargeslots.flatten
-    //    clog.debugSeq("result", allChargeslots, 1)
-    //    clog.end()
+
     result
   }
 
@@ -235,10 +170,8 @@ trait TimeslotComputations extends Loggable {
       oldCredits: Double,
       oldTotalAmount: Double,
       newTotalAmount: Double,
-      dslResource: DSLResource,
-      defaultResourceMap: DSLResourcesMap,
-      agreementNamesByTimeslot: SortedMap[Timeslot, String],
-      algorithmCompiler: CostPolicyAlgorithmCompiler,
+      resourceType: ResourceType,
+      agreementByTimeslot: SortedMap[Timeslot, UserAgreementModel],
       policyStore: PolicyStore,
       clogOpt: Option[ContextualLogger] = None
   ): (Timeslot, List[Chargeslot]) = {
@@ -248,73 +181,62 @@ trait TimeslotComputations extends Loggable {
 
     val occurredDate = currentResourceEvent.occurredDate
     val occurredMillis = currentResourceEvent.occurredMillis
-    val costPolicy = dslResource.costPolicy
+    val chargingBehavior = resourceType.chargingBehavior
 
-    val dsl = new DSL {}
-    val (referenceTimeslot, relevantPolicies, previousValue) = costPolicy.needsPreviousEventForCreditAndAmountCalculation match {
+    val (referenceTimeslot, policyByTimeslot, previousValue) = chargingBehavior.needsPreviousEventForCreditAndAmountCalculation match {
       // We need a previous event
       case true ⇒
         previousResourceEventOpt match {
           // We have a previous event
           case Some(previousResourceEvent) ⇒
-            //            clog.debug("Have previous event")
-            //            clog.debug("previousValue = %s", previousResourceEvent.value)
-
             val referenceTimeslot = Timeslot(previousResourceEvent.occurredDate, occurredDate)
-            //            clog.debug("referenceTimeslot = %s".format(referenceTimeslot))
-
             // all policies within the interval from previous to current resource event
             //            clog.debug("Calling policyStore.loadAndSortPoliciesWithin(%s)", referenceTimeslot)
-            val relevantPolicies = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime, dsl)
-            //            clog.debugMap("==> relevantPolicies", relevantPolicies, 0)
+            // TODO: store policies in mem?
+            val policyByTimeslot = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime)
 
-            (referenceTimeslot, relevantPolicies, previousResourceEvent.value)
+            (referenceTimeslot, policyByTimeslot, previousResourceEvent.value)
 
           // We do not have a previous event
           case None ⇒
-            throw new AquariumException(
-              "Unable to charge. No previous event given for %s".
-                format(currentResourceEvent.toDebugString))
+            throw new AquariumInternalError(
+              "Unable to charge. No previous event given for %s".format(currentResourceEvent.toDebugString))
         }
 
       // We do not need a previous event
       case false ⇒
         // ... so we cannot compute timedelta from a previous event, there is just one chargeslot
         // referring to (almost) an instant in time
-        //        clog.debug("DO NOT have previous event")
-        val previousValue = costPolicy.getResourceInstanceUndefinedAmount
-        //        clog.debug("previousValue = costPolicy.getResourceInstanceUndefinedAmount = %s", previousValue)
+        val previousValue = chargingBehavior.getResourceInstanceUndefinedAmount
 
+        // TODO: Check semantics of this
         val referenceTimeslot = Timeslot(new MutableDateCalc(occurredDate).goPreviousMilli.toDate, occurredDate)
-        //        clog.debug("referenceTimeslot = %s".format(referenceTimeslot))
 
-        //        clog.debug("Calling policyStore.loadValidPolicyEntryAt(%s)", new MutableDateCalc(occurredMillis))
-        val relevantPolicyOpt = policyStore.loadValidPolicyAt(occurredMillis, dsl)
-        //        clog.debug("  ==> relevantPolicyM = %s", relevantPolicyM)
+        // TODO: store policies in mem?
+        val relevantPolicyOpt: Option[PolicyModel] = policyStore.loadValidPolicyAt(occurredMillis)
 
-        val relevantPolicies = relevantPolicyOpt match {
+        val policyByTimeslot = relevantPolicyOpt match {
           case Some(relevantPolicy) ⇒
-            Map(referenceTimeslot -> relevantPolicy)
+            SortedMap(referenceTimeslot -> relevantPolicy)
 
           case None ⇒
             throw new AquariumInternalError("No relevant policy found for %s".format(referenceTimeslot))
         }
 
-        (referenceTimeslot, relevantPolicies, previousValue)
+        (referenceTimeslot, policyByTimeslot, previousValue)
     }
 
     val initialChargeslots = computeInitialChargeslots(
       referenceTimeslot,
-      dslResource,
-      relevantPolicies,
-      agreementNamesByTimeslot,
+      resourceType,
+      policyByTimeslot,
+      agreementByTimeslot,
       Some(clog)
     )
 
     val fullChargeslots = initialChargeslots.map {
-      case chargeslot@Chargeslot(startMillis, stopMillis, algorithmDefinition, unitPrice, _) ⇒
-        val execAlgorithm = algorithmCompiler.compile(algorithmDefinition)
-        val valueMap = costPolicy.makeValueMap(
+      case chargeslot@Chargeslot(startMillis, stopMillis, unitPrice, _) ⇒
+        val valueMap = chargingBehavior.makeValueMap(
           oldCredits,
           oldTotalAmount,
           newTotalAmount,
@@ -328,47 +250,13 @@ trait TimeslotComputations extends Loggable {
         clog.debugMap("valueMap", valueMap, 1)
 
         // This is it
-        val credits = execAlgorithm.apply(valueMap)
+        val credits = SimpleExecutableChargingBehaviorAlgorithm.apply(valueMap)
         chargeslot.copyWithCredits(credits)
     }
 
     val result = referenceTimeslot -> fullChargeslots
 
     result
-  }
-
-  /**
-   * Align charge timeslots between algorithms and pricelists. As algorithm
-   * and pricelists can have different effectivity periods, this method
-   * examines them and splits them as necessary.
-   */
-  private[computation] def splitChargeChunks(alg: SortedMap[Timeslot, DSLAlgorithm],
-                                       price: SortedMap[Timeslot, DSLPriceList]):
-  (Map[Timeslot, DSLAlgorithm], Map[Timeslot, DSLPriceList]) = {
-
-    val zipped = alg.keySet.zip(price.keySet)
-
-    zipped.find(p => !p._1.equals(p._2)) match {
-      case None => (alg, price)
-      case Some(x) =>
-        val algTimeslot = x._1
-        val priTimeslot = x._2
-
-        assert(algTimeslot.from == priTimeslot.from)
-
-        if(algTimeslot.endsAfter(priTimeslot)) {
-          val slices = algTimeslot.slice(priTimeslot.to)
-          val algo = alg.get(algTimeslot).get
-          val newalg = alg - algTimeslot ++ Map(slices.apply(0) -> algo) ++ Map(slices.apply(1) -> algo)
-          splitChargeChunks(newalg, price)
-        }
-        else {
-          val slices = priTimeslot.slice(priTimeslot.to)
-          val pl = price.get(priTimeslot).get
-          val newPrice = price - priTimeslot ++ Map(slices.apply(0) -> pl) ++ Map(slices.apply(1) -> pl)
-          splitChargeChunks(alg, newPrice)
-        }
-    }
   }
 
   /**

@@ -37,10 +37,10 @@ package gr.grnet.aquarium.computation
 package state
 
 import scala.collection.mutable
-import gr.grnet.aquarium.logic.accounting.dsl.DSLResourcesMap
 import gr.grnet.aquarium.util.ContextualLogger
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.computation.state.parts.{IgnoredFirstResourceEventsWorker, ImplicitlyIssuedResourceEventsWorker, LatestResourceEventsWorker}
+import gr.grnet.aquarium.policy.ResourceType
 
 /**
  * A helper object holding intermediate state/results during resource event processing.
@@ -66,7 +66,7 @@ case class UserStateWorker(
      * The resource events that were first (and unused) of their kind.
      */
     ignoredFirstResourceEvents: IgnoredFirstResourceEventsWorker,
-    resourcesMap: DSLResourcesMap
+    resourceTypesMap: Map[String, ResourceType]
 ) {
 
   /**
@@ -141,7 +141,7 @@ case class UserStateWorker(
    * end events along with those implicitly issued events. Before returning, remove the events that generated the
    * implicit ends from the internal state of this instance.
    *
-   * @see [[gr.grnet.aquarium.logic.accounting.dsl.DSLCostPolicy]]
+   * @see [[gr.grnet.aquarium.charging.ChargingBehavior]]
    */
   def findAndRemoveGeneratorsOfImplicitEndEvents(
       /**
@@ -158,12 +158,12 @@ case class UserStateWorker(
       val resourceEvents = map.valuesIterator
       for {
         resourceEvent ← resourceEvents
-        dslResource ← resourcesMap.findResource(resourceEvent.safeResource)
-        costPolicy = dslResource.costPolicy
+        resourceType ← resourceTypesMap.get(resourceEvent.safeResource)
+        chargingBehavior = resourceType.chargingBehavior
       } {
-        if(costPolicy.supportsImplicitEvents) {
-          if(costPolicy.mustConstructImplicitEndEventFor(resourceEvent)) {
-            val implicitEnd = costPolicy.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
+        if(chargingBehavior.supportsImplicitEvents) {
+          if(chargingBehavior.mustConstructImplicitEndEventFor(resourceEvent)) {
+            val implicitEnd = chargingBehavior.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
 
             if(!checkSet.contains(resourceEvent)) {
               checkSet.add(resourceEvent)
@@ -185,13 +185,13 @@ case class UserStateWorker(
 }
 
 object UserStateWorker {
-  def fromUserState(userState: UserState, resourcesMap: DSLResourcesMap): UserStateWorker = {
+  def fromUserState(userState: UserState, resourceTypesMap: Map[String, ResourceType]): UserStateWorker = {
     UserStateWorker(
       userState.userID,
       userState.latestResourceEventsSnapshot.toMutableWorker,
       userState.implicitlyIssuedSnapshot.toMutableWorker,
       IgnoredFirstResourceEventsWorker.Empty,
-      resourcesMap
+      resourceTypesMap
     )
   }
 }

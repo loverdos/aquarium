@@ -45,21 +45,7 @@ import java.util.Date
  */
 abstract class DSLTimeBoundedItem[T <: DSLTimeBoundedItem[T]](val name: String,
                                                               val overrides: Option[T],
-                                                              val effective: DSLTimeFrame)
-extends DSLItem {
+                                                              val effective: DSLTimeFrame) {
 
   def toTimeslot : Timeslot = Timeslot(effective.from,effective.to.getOrElse(new Date(Long.MaxValue)))
-
-  override def toMap(): Map[String, Any] = {
-    val data = new scala.collection.mutable.HashMap[String, Any]()
-    data +=  ("name" -> name)
-    overrides match {
-      case Some(x) => data +=  ("overrides" -> x.name)
-      case _ =>
-    }
-
-    data += ("effective" -> effective.toMap())
-
-    data.toMap
-  }
 }

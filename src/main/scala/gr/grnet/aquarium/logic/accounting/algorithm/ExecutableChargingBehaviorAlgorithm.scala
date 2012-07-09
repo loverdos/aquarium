@@ -33,32 +33,14 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
+package gr.grnet.aquarium.logic.accounting.algorithm
 
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.charging.ChargingInput
+
 
 /**
- * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
+ * An charging algorithm in executable form.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-case class Chargeslot(
-    startMillis: Long,
-    stopMillis: Long,
-    unitPrice: Double,
-    computedCredits: Option[Double] = None) {
-
-  def copyWithCredits(credits: Double) = {
-    copy(computedCredits = Some(credits))
-  }
-
-  override def toString = "%s(%s, %s, %s, %s, %s)".format(
-    shortClassNameOf(this),
-    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
-    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
-    unitPrice,
-    computedCredits
-  )
-}
+trait ExecutableChargingBehaviorAlgorithm extends (Map[ChargingInput, Any] ⇒ Double)

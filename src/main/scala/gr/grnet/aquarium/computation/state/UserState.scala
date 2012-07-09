@@ -38,12 +38,12 @@ package gr.grnet.aquarium.computation.state
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.event.model.NewWalletEntry
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.logic.accounting.dsl.DSLAgreement
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.computation.parts.RoleHistory
 import gr.grnet.aquarium.computation.state.parts.{OwnedResourcesMap, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, ImplicitlyIssuedResourceEventsSnapshot, LatestResourceEventsSnapshot}
+import gr.grnet.aquarium.policy.UserAgreementModel
 
 /**
  * A comprehensive representation of the User's state.
@@ -162,7 +162,7 @@ case class UserState(
   //
   //  def userCreationFormatedDate = new MutableDateCalc(userCreationMillis).toString
 
-  def findDSLAgreementForTime(at: Long): Option[DSLAgreement] = {
+  def findDSLAgreementForTime(at: Long): Option[UserAgreementModel] = {
     agreementHistory.findForTime(at)
   }
 
@@ -256,8 +256,7 @@ object UserState {
       userCreationMillis: Long,
       occurredMillis: Long,
       totalCredits: Double,
-      initialRole: String,
-      initialAgreement: String,
+      initialAgreement: UserAgreementModel,
       calculationReason: UserStateChangeReason = InitialUserStateSetup(None)
   ) = {
 
@@ -272,8 +271,8 @@ object UserState {
       LatestResourceEventsSnapshot.Empty,
       0L,
       totalCredits,
-      RoleHistory.initial(initialRole, userCreationMillis),
-      AgreementHistory.initial(initialAgreement, userCreationMillis),
+      RoleHistory.initial(initialAgreement.role, userCreationMillis),
+      AgreementHistory.initial(initialAgreement),
       OwnedResourcesSnapshot.Empty,
       Nil,
       occurredMillis,
@@ -292,7 +291,6 @@ object UserState {
       usb.userCreationMillis,
       occurredMillis,
       usb.initialCredits,
-      usb.initialRole,
       usb.initialAgreement,
       calculationReason
     )

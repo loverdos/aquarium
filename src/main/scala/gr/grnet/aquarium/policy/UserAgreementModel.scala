@@ -33,32 +33,31 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
+package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.Timespan
 
 /**
- * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class Chargeslot(
-    startMillis: Long,
-    stopMillis: Long,
-    unitPrice: Double,
-    computedCredits: Option[Double] = None) {
+trait UserAgreementModel {
+  def id: String
 
-  def copyWithCredits(credits: Double) = {
-    copy(computedCredits = Some(credits))
-  }
+  def idInStore: Option[Any]
 
-  override def toString = "%s(%s, %s, %s, %s, %s)".format(
-    shortClassNameOf(this),
-    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
-    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
-    unitPrice,
-    computedCredits
-  )
+  def parentID: Option[String]
+
+  def validityTimespan: Timespan
+
+  def role: String
+
+  def fullPriceTableRef: FullPriceTableRef
+
+  def timeslot = validityTimespan.toTimeslot
+
+  def validFrom = validityTimespan.fromMillis
+
+  def validTo = validityTimespan.toMillis
 }

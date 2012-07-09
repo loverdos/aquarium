@@ -37,9 +37,10 @@ package gr.grnet.aquarium.event.model
 
 import gr.grnet.aquarium.computation.Chargeslot
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLResource}
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot}
 import resource.ResourceEventModel
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.policy.ResourceType
 
 /**
  * The following equation must hold: `newTotalCredits = oldTotalCredits + entryCredits`.
@@ -67,7 +68,7 @@ case class NewWalletEntry(userId: String,
                           billingMonth: Int,
                           resourceEvents: List[ResourceEventModel], // current is at the head
                           chargeslots: List[Chargeslot],
-                          resourceDef: DSLResource,
+                          resourceDef: ResourceType,
                           isSynthetic: Boolean) {
 
   def currentResourceEvent = resourceEvents.head

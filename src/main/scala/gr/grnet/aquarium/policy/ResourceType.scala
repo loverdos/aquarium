@@ -33,32 +33,17 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
+package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.charging.ChargingBehavior
 
 /**
- * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
+ * The definition of a resource type. A resource type is a broad classification to which resource instances belong.
+ *
+ * @param name The name of this resource type. Examples are `vmtime`, `diskspace`, `bandwidth`, `diskio`.
+ * @param unit The unit we use to count the resource usage.
+ * @param chargingBehavior The charging behavior used for this resource types.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-case class Chargeslot(
-    startMillis: Long,
-    stopMillis: Long,
-    unitPrice: Double,
-    computedCredits: Option[Double] = None) {
-
-  def copyWithCredits(credits: Double) = {
-    copy(computedCredits = Some(credits))
-  }
-
-  override def toString = "%s(%s, %s, %s, %s, %s)".format(
-    shortClassNameOf(this),
-    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
-    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
-    unitPrice,
-    computedCredits
-  )
-}
+case class ResourceType(name: String, unit: String, chargingBehavior: ChargingBehavior)

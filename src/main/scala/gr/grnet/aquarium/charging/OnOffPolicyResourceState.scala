@@ -33,32 +33,41 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
+package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.AquariumException
 
 /**
- * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
+ * Encapsulates the possible states that a resource with an
+ * [[gr.grnet.aquarium.charging.OnOffChargingBehavior]]
+ * can be.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-case class Chargeslot(
-    startMillis: Long,
-    stopMillis: Long,
-    unitPrice: Double,
-    computedCredits: Option[Double] = None) {
-
-  def copyWithCredits(credits: Double) = {
-    copy(computedCredits = Some(credits))
-  }
-
-  override def toString = "%s(%s, %s, %s, %s, %s)".format(
-    shortClassNameOf(this),
-    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
-    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
-    unitPrice,
-    computedCredits
-  )
+sealed abstract class OnOffPolicyResourceState(val state: String) {
+  def isOn: Boolean = !isOff
+  def isOff: Boolean = !isOn
 }
+
+object OnResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceStateNames.on) {
+  override def isOn = true
+}
+
+object OffResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceStateNames.off) {
+  override def isOff = true
+}
+
+object OnOffPolicyResourceState {
+  def apply(name: Any): OnOffPolicyResourceState = {
+    name match {
+      case x: String if (x.equalsIgnoreCase(OnOffPolicyResourceStateNames.on))  ⇒ OnResourceState
+      case y: String if (y.equalsIgnoreCase(OnOffPolicyResourceStateNames.off)) ⇒ OffResourceState
+      case a: Double if (a == 0) => OffResourceState
+      case b: Double if (b == 1) => OnResourceState
+      case i: Int if (i == 0) => OffResourceState
+      case j: Int if (j == 1) => OnResourceState
+      case _ => throw new AquariumException("Invalid OnOffPolicyResourceState %s".format(name))
+    }
+  }
+}
+

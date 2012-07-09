@@ -37,17 +37,23 @@ package gr.grnet.aquarium.user
 
 import gr.grnet.aquarium.store.memory.MemStoreProvider
 import gr.grnet.aquarium.logic.accounting.dsl._
-import gr.grnet.aquarium.logic.accounting.Policy
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
 import gr.grnet.aquarium.simulation._
 import gr.grnet.aquarium.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
 import org.junit.{Assert, Ignore, Test}
-import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableCostPolicyAlgorithm, CostPolicyAlgorithmCompiler}
-import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder, AquariumException}
+import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableChargingBehaviorAlgorithm, CostPolicyAlgorithmCompiler}
+import gr.grnet.aquarium.{Timespan, Aquarium, ResourceLocator, AquariumBuilder, AquariumException}
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, MonthlyBillingCalculation}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.computation.state.{UserStateBootstrap, UserState}
+import gr.grnet.aquarium.charging._
+import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy, PolicyModel}
+import gr.grnet.aquarium.Timespan
+import scala.Some
+import gr.grnet.aquarium.computation.state.UserStateBootstrap
+import gr.grnet.aquarium.simulation.AquariumSim
+import gr.grnet.aquarium.simulation.ClientSim
 
 
 /**
@@ -57,137 +63,93 @@ import gr.grnet.aquarium.computation.state.{UserStateBootstrap, UserState}
 class UserStateComputationsTest extends Loggable {
   final val DoubleDelta = 0.001
 
-  final val BandwidthPriceUnit = 3.3 //
-  final val VMTimePriceUnit    = 1.5 //
-  final val DiskspacePriceUnit = 2.7 //
+  final val BandwidthUnitPrice = 3.3 //
+  final val VMTimeUnitPrice    = 1.5 //
+  final val DiskspaceUnitPrice = 2.7 //
 
-  final val OnOffPriceUnit = VMTimePriceUnit
-  final val ContinuousPriceUnit = DiskspacePriceUnit
-  final val DiscretePriceUnit = BandwidthPriceUnit
+  final val OnOffUnitPrice = VMTimeUnitPrice
+  final val ContinuousUnitPrice = DiskspaceUnitPrice
+  final val DiscreteUnitPrice = BandwidthUnitPrice
 
-  final val PolicyYAML = """
-aquariumpolicy:
-  resources:
-    - resource:
-      name: bandwidth
-      unit: MB/Hr
-      complex: false
-      costpolicy: discrete
-    - resource:
-      name: vmtime
-      unit: Hr
-      complex: true
-      costpolicy: onoff
-      descriminatorfield: vmid
-    - resource:
-      name: diskspace
-      unit: MB/hr
-      complex: false
-      costpolicy: continuous
-
-  implicitvars:
-    - price
-    - volume
-
-  algorithms:
-    - algorithm:
-      name: default
-      bandwidth: function bandwidth() {return 1;}
-      vmtime: function vmtime() {return 1;}
-      diskspace: function diskspace() {return 1;}
-      effective:
-        from: 0
-
-  pricelists:
-    - pricelist:
-      name: default
-      bandwidth: %s
-      vmtime: %s
-      diskspace: %s
-      effective:
-        from: 0
-
-  creditplans:
-    - creditplan:
-      name: default
-      credits: 100
-      at: "00 00 1 * *"
-      effective:
-        from: 0
-
-  agreements:
-    - agreement:
-      name: default
-      algorithm: default
-      pricelist: default
-      creditplan: default
-  """.format(
-    BandwidthPriceUnit,
-    VMTimePriceUnit,
-    DiskspacePriceUnit
+  final val DefaultPolicy: PolicyModel = StdPolicy(
+    id = "policy-1",
+    parentID = None,
+    validityTimespan = Timespan(0),
+    resourceTypes = Set(
+      ResourceType("bandwidth", "MB/Hr", DiscreteChargingBehavior),
+      ResourceType("vmtime",    "Hr",    OnOffChargingBehavior),
+      ResourceType("diskspace", "MB/Hr", ContinuousChargingBehavior)
+    ),
+    chargingBehaviorClasses = Set(
+      DiscreteChargingBehavior.getClass.getName,
+      OnOffChargingBehavior.getClass.getName,
+      ContinuousChargingBehavior.getClass.getName
+    ),
+    roleMapping = Map(
+      "default" -> FullPriceTable(Map(
+        "bandwidth" -> EffectivePriceTable(EffectiveUnitPrice(BandwidthUnitPrice, Nil) :: Nil),
+        "vmtime"    -> EffectivePriceTable(EffectiveUnitPrice(VMTimeUnitPrice, Nil) :: Nil),
+        "diskspace" -> EffectivePriceTable(EffectiveUnitPrice(DiskspaceUnitPrice, Nil) :: Nil)
+      ))
+    )
   )
 
   val aquarium = new AquariumBuilder(ResourceLocator.AquariumProperties).
     update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
     build()
 
-  Policy.withConfigurator(aquarium) // FIXME
-
   val ResourceEventStore = aquarium.resourceEventStore
 
   val Computations = aquarium.userStateComputations
 
-  val DSL = new DSL {}
-  val DefaultPolicy = DSL parse PolicyYAML
-
-  val DefaultAlgorithm = new ExecutableCostPolicyAlgorithm {
+  val DefaultAlgorithm = new ExecutableChargingBehaviorAlgorithm {
     def creditsForContinuous(timeDelta: Double, oldTotalAmount: Double) =
-      hrs(timeDelta) * oldTotalAmount * ContinuousPriceUnit
+      hrs(timeDelta) * oldTotalAmount * ContinuousUnitPrice
 
     final val creditsForDiskspace = creditsForContinuous(_, _)
     
     def creditsForDiscrete(currentValue: Double) =
-      currentValue * DiscretePriceUnit
+      currentValue * DiscreteUnitPrice
 
     final val creditsForBandwidth = creditsForDiscrete(_)
 
     def creditsForOnOff(timeDelta: Double) =
-      hrs(timeDelta) * OnOffPriceUnit
+      hrs(timeDelta) * OnOffUnitPrice
 
     final val creditsForVMTime = creditsForOnOff(_)
 
     @inline private[this]
     def hrs(millis: Double) = millis / 1000 / 60 / 60
 
-    def apply(vars: Map[DSLCostPolicyVar, Any]): Double = {
-      vars.apply(DSLCostPolicyNameVar) match {
-        case DSLCostPolicyNames.continuous ⇒
-          val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
-          val oldTotalAmount = vars(DSLOldTotalAmountVar).asInstanceOf[Double]
-          val timeDelta = vars(DSLTimeDeltaVar).asInstanceOf[Double]
+    def apply(vars: Map[ChargingInput, Any]): Double = {
+      vars.apply(ChargingBehaviorNameInput) match {
+        case ChargingBehaviorNames.continuous ⇒
+          val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
+          val oldTotalAmount = vars(OldTotalAmountInput).asInstanceOf[Double]
+          val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
 
-          Assert.assertEquals(ContinuousPriceUnit, unitPrice, DoubleDelta)
+          Assert.assertEquals(ContinuousUnitPrice, unitPrice, DoubleDelta)
 
           creditsForContinuous(timeDelta, oldTotalAmount)
 
-        case DSLCostPolicyNames.discrete ⇒
-          val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
-          val currentValue = vars(DSLCurrentValueVar).asInstanceOf[Double]
+        case ChargingBehaviorNames.discrete ⇒
+          val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
+          val currentValue = vars(CurrentValueInput).asInstanceOf[Double]
 
-          Assert.assertEquals(DiscretePriceUnit, unitPrice, DoubleDelta)
+          Assert.assertEquals(DiscreteUnitPrice, unitPrice, DoubleDelta)
 
           creditsForDiscrete(currentValue)
 
-        case DSLCostPolicyNames.onoff ⇒
-          val unitPrice = vars(DSLUnitPriceVar).asInstanceOf[Double]
-          val timeDelta = vars(DSLTimeDeltaVar).asInstanceOf[Double]
+        case ChargingBehaviorNames.onoff ⇒
+          val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
+          val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
 
-          Assert.assertEquals(OnOffPriceUnit, unitPrice, DoubleDelta)
+          Assert.assertEquals(OnOffUnitPrice, unitPrice, DoubleDelta)
 
           creditsForOnOff(timeDelta)
 
-        case DSLCostPolicyNames.once ⇒
-          val currentValue = vars(DSLCurrentValueVar).asInstanceOf[Double]
+        case ChargingBehaviorNames.once ⇒
+          val currentValue = vars(CurrentValueInput).asInstanceOf[Double]
           currentValue
 
         case name ⇒
@@ -197,20 +159,20 @@ aquariumpolicy:
 
     override def toString = "DefaultAlgorithm(%s)".format(
       Map(
-        DSLCostPolicyNames.continuous -> "hrs(timeDelta) * oldTotalAmount * %s".format(ContinuousPriceUnit),
-        DSLCostPolicyNames.discrete   -> "currentValue * %s".format(DiscretePriceUnit),
-        DSLCostPolicyNames.onoff      -> "hrs(timeDelta) * %s".format(OnOffPriceUnit),
-        DSLCostPolicyNames.once       -> "currentValue"))
+        ChargingBehaviorNames.continuous -> "hrs(timeDelta) * oldTotalAmount * %s".format(ContinuousUnitPrice),
+        ChargingBehaviorNames.discrete   -> "currentValue * %s".format(DiscreteUnitPrice),
+        ChargingBehaviorNames.onoff      -> "hrs(timeDelta) * %s".format(OnOffUnitPrice),
+        ChargingBehaviorNames.once       -> "currentValue"))
   }
 
   val DefaultCompiler  = new CostPolicyAlgorithmCompiler {
-    def compile(definition: String): ExecutableCostPolicyAlgorithm = {
+    def compile(definition: String): ExecutableChargingBehaviorAlgorithm = {
       DefaultAlgorithm
     }
   }
   //val DefaultAlgorithm = justForSure(DefaultCompiler.compile("")).get // hardcoded since we know exactly what this is
 
-  val VMTimeDSLResource = DefaultPolicy.findResource("vmtime").get
+  val VMTimeDSLResource = DefaultPolicy.resourceTypesMap("vmtime")
 
   // For this to work, the definitions must match those in the YAML above.
   // Those StdXXXResourceSim are just for debugging convenience anyway, so they must match by design.
@@ -238,11 +200,11 @@ aquariumpolicy:
   val policyOccurredMillis  = policyDateCalc.toMillis
   val policyValidFromMillis = policyDateCalc.copy.goPreviousYear.toMillis
   val policyValidToMillis   = policyDateCalc.copy.goNextYear.toMillis
-  aquarium.policyStore.storePolicyEntry(DefaultPolicy.toPolicyEntry(policyOccurredMillis, policyValidFromMillis,
-    policyValidToMillis))
+
+  aquarium.policyStore.insertPolicy(DefaultPolicy)
 
   val AquariumSim_ = AquariumSim(List(VMTimeResourceSim, DiskspaceResourceSim, BandwidthResourceSim), aquarium.resourceEventStore)
-  val DefaultResourcesMap = AquariumSim_.resourcesMap
+  val DefaultResourcesMap = DefaultPolicy.resourceTypesMap//AquariumSim_.resourcesMap
 
   val UserCKKL  = AquariumSim_.newUser("CKKL", UserCreationDate)
 
@@ -257,8 +219,7 @@ aquariumpolicy:
   val UserStateBootstrapper = UserStateBootstrap(
     userID = UserCKKL.userID,
     userCreationMillis = UserCreationDate.getTime(),
-    initialRole = "default",
-    initialAgreement = DSLAgreement.DefaultAgreementName,
+    initialAgreement = StdUserAgreement("", None, Timespan(0), "default", PolicyDefinedFullPriceTableRef),
     initialCredits = 0.0
   )
 
@@ -468,7 +429,7 @@ aquariumpolicy:
 
     // Policy: from 2012-01-01 to Infinity
 
-    clog.debugMap("DefaultResourcesMap", DefaultResourcesMap.map, 1)
+    clog.debugMap("DefaultResourcesMap", DefaultResourcesMap, 1)
 
     val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, BillingMonthInfoJan.monthStopMillis)
 

@@ -33,32 +33,39 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
+package gr.grnet.aquarium.store.mongodb
 
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.policy.{PolicyModel, FullPriceTable, ResourceType}
 
 /**
- * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class Chargeslot(
-    startMillis: Long,
-    stopMillis: Long,
-    unitPrice: Double,
-    computedCredits: Option[Double] = None) {
+case class MongoDBPolicy(
+    _id: String,
+    id: String,
+    parentID: Option[String],
+    validityTimespan: Timespan,
+    resourceTypes: Set[ResourceType],
+    chargingBehaviorClasses: Set[String],
+    roleMapping: Map[String/*Role*/, FullPriceTable]
+) extends PolicyModel {
 
-  def copyWithCredits(credits: Double) = {
-    copy(computedCredits = Some(credits))
+  def idInStore = Some(_id)
+}
+
+object MongoDBPolicy {
+  final def fromOther(policy: PolicyModel, _id: String): MongoDBPolicy = {
+    MongoDBPolicy(
+      _id,
+      policy.id,
+      policy.parentID,
+      policy.validityTimespan,
+      policy.resourceTypes,
+      policy.chargingBehaviorClasses,
+      policy.roleMapping
+    )
   }
-
-  override def toString = "%s(%s, %s, %s, %s, %s)".format(
-    shortClassNameOf(this),
-    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
-    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
-    unitPrice,
-    computedCredits
-  )
 }

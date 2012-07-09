@@ -33,32 +33,19 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
+package gr.grnet.aquarium
 
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
- * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class Chargeslot(
-    startMillis: Long,
-    stopMillis: Long,
-    unitPrice: Double,
-    computedCredits: Option[Double] = None) {
+case class Timespan(fromMillis: Long, toMillis: Long = Long.MaxValue) {
+  def extendsToInfinity: Boolean = toMillis == Long.MaxValue
 
-  def copyWithCredits(credits: Double) = {
-    copy(computedCredits = Some(credits))
-  }
+  def extendToInfinity: Timespan = Timespan(fromMillis, Long.MaxValue)
 
-  override def toString = "%s(%s, %s, %s, %s, %s)".format(
-    shortClassNameOf(this),
-    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
-    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
-    unitPrice,
-    computedCredits
-  )
+  def toTimeslot = Timeslot(fromMillis, toMillis)
 }

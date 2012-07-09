@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.util.xstream
 
-import com.thoughtworks.xstream.XStream
 import com.thoughtworks.xstream.converters.{MarshallingContext, UnmarshallingContext}
 import com.thoughtworks.xstream.io.{HierarchicalStreamWriter, HierarchicalStreamReader}
 import com.thoughtworks.xstream.converters.collections.AbstractCollectionConverter

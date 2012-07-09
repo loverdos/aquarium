@@ -37,11 +37,9 @@ package gr.grnet.aquarium.logic.accounting.dsl
 
 import gr.grnet.aquarium.util.shortNameOfClass
 
-import java.util.{GregorianCalendar, Date, Calendar}
+import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import collection.mutable
-import java.util
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  * Represents an effectivity timeframe.
@@ -53,7 +51,7 @@ case class DSLTimeFrame (
   to: Option[Date],
   repeat: List[DSLTimeFrameRepeat] /*,
   cronRepeat: List[DSLCronSpec]*/
-) extends DSLItem {
+) {
 
   to match {
     case Some(x) =>
@@ -76,7 +74,7 @@ case class DSLTimeFrame (
    *  */
   def intervalsOf(t:Timeslot) : List[Timeslot]=
     if(repeat.isEmpty)
-      t.overlappingTimeslots(List(Timeslot(start,end)))
+      List(t) // .overlappingTimeslots(List(Timeslot(start,end)))
     else {
       val result = new mutable.ListBuffer[Timeslot]()
       var offset = t.from
@@ -193,22 +191,6 @@ case class DSLTimeFrame (
           }
      }
 
-  override def toMap(): Map[String, Any] = {
-    val toTS = to match {
-      case Some(x) => Map(Vocabulary.to -> x.getTime)
-      case _ => Map()
-    }
-
-    val repeatMap = if (repeat.size > 0) {
-      Map(Vocabulary.repeat -> repeat.map{r => r.toMap})
-    } else {
-      Map()
-    }
-
-    toTS ++
-      Map(Vocabulary.from -> from.getTime) ++
-      repeatMap
-  }
 
   override def toString =
     //"%s(%s, %s,\n %s\n || cron: %s)".format(

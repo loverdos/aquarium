@@ -35,10 +35,10 @@
 
 package gr.grnet.aquarium.logic.accounting.dsl
 
-import gr.grnet.aquarium.util.DateUtils
-import java.util.{Date, GregorianCalendar, Calendar}
+import java.util.{Date}
 import scala.collection.immutable
-import java.util
+import gr.grnet.aquarium.policy.{EffectiveUnitPrice, AdHocFullPriceTableRef, PolicyDefinedFullPriceTableRef, PolicyModel, ResourceType, EffectivePriceTable, UserAgreementModel}
+import gr.grnet.aquarium.AquariumInternalError
 
 /**
  * Utility functions to use when working with DSL types.
@@ -46,55 +46,74 @@ import java.util
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 
-trait DSLUtils extends DateUtils {
-
-  val maxdate = new Date(Int.MaxValue * 1000L)
-
-  /**
-   * Resolves the effective algorithm for each chunk of the
-   * provided timeslot and returns it as a Map
-   */
-  def resolveEffectiveAlgorithmsForTimeslot(timeslot: Timeslot,
-                                           agr: DSLAgreement):
-  immutable.SortedMap[Timeslot, DSLAlgorithm] =
-    resolveEffective[DSLAlgorithm](timeslot, agr.algorithm)
-
+trait DSLUtils {
   /**
    * Resolves the effective price list for each chunk of the
    * provided timeslot and returns it as a Map
    */
-  def resolveEffectivePricelistsForTimeslot(timeslot: Timeslot,
-                                            agr: DSLAgreement):
-  immutable.SortedMap[Timeslot, DSLPriceList] =
-    resolveEffective[DSLPriceList](timeslot,agr.pricelist)
+  def resolveEffectiveUnitPricesForTimeslot(
+      alignedTimeslot: Timeslot,
+      policy: PolicyModel,
+      agreement: UserAgreementModel,
+      resourceType: ResourceType
+  ): immutable.SortedMap[Timeslot, Double] = {
+
+    val role = agreement.role
+    val fullPriceTable = agreement.fullPriceTableRef match {
+      case PolicyDefinedFullPriceTableRef ⇒
+        policy.roleMapping.get(role) match {
+          case Some(fullPriceTable) ⇒
+            fullPriceTable
+
+          case None ⇒
+            throw new AquariumInternalError("Unknown role %s".format(role))
+        }
+
+      case AdHocFullPriceTableRef(fullPriceTable) ⇒
+        fullPriceTable
+    }
+
+    val effectivePriceTable = fullPriceTable.perResource.get(resourceType.name) match {
+      case None ⇒
+        throw new AquariumInternalError("Unknown resource type %s".format(role))
+
+      case Some(effectivePriceTable) ⇒
+        effectivePriceTable
+    }
+
+    resolveEffective(alignedTimeslot, effectivePriceTable)
+  }
 
   /*private def printPolicy[T <: DSLTimeBoundedItem[T]](t : T) : Unit = {
-    Console.err.println("Policy " + t.name + " " + t.toTimeslot + " DETAIL : " + t.effective)
-    t.overrides match {
-      case None => Console.println
-      case Some(t) => printPolicy(t)
+      Console.err.println("Policy " + t.name + " " + t.toTimeslot + " DETAIL : " + t.effective)
+      t.overrides match {
+        case None => Console.println
+        case Some(t) => printPolicy(t)
+      }
     }
-  }
 
-  private def printMap[T <: DSLTimeBoundedItem[T]](m: immutable.SortedMap[Timeslot, T]) = {
-    Console.err.println("BEGIN MAP: ")
-    for { (t,p) <- m.toList } Console.err.println("Timeslot " + t + "\t\t" + p.name)
-    Console.err.println("END MAP")
-  } */
+    private def printMap[T <: DSLTimeBoundedItem[T]](m: immutable.SortedMap[Timeslot, T]) = {
+      Console.err.println("BEGIN MAP: ")
+      for { (t,p) <- m.toList } Console.err.println("Timeslot " + t + "\t\t" + p.name)
+      Console.err.println("END MAP")
+    } */
 
   def resolveEffective[T <: DSLTimeBoundedItem[T]](timeslot0: Timeslot,policy: T):
-  immutable.SortedMap[Timeslot, T] = {
-    //Console.err.println("\n\nInput timeslot: " + timeslot0 + "\n\n")
-    ///printPolicy(policy)
-    val ret =  resolveEffective3(timeslot0,policy) //HERE
-    //printMap(ret)
-    ret
-  }
+    immutable.SortedMap[Timeslot, T] = {
+      //Console.err.println("\n\nInput timeslot: " + timeslot0 + "\n\n")
+      ///printPolicy(policy)
+      val ret =  resolveEffective3(timeslot0,policy) //HERE
+      //printMap(ret)
+      ret
+    }
 
-  def resolveEffective3[T <: DSLTimeBoundedItem[T]](timeslot0: Timeslot,policy: T):
-  immutable.SortedMap[Timeslot, T] = {
-    assert(policy.toTimeslot contains timeslot0,"Policy does not contain timeslot")
-    val timeslot = timeslot0 //TODO: timeslot0.align(5000)
+
+  def resolveEffective3(
+      alignedTimeslot: Timeslot,
+      effectivePriceTable: EffectivePriceTable
+  ): immutable.SortedMap[Timeslot, Double/*unit price*/] = {
+//    assert(policy.toTimeslot contains timeslot0,"Policy does not contain timeslot")
+    val timeslot = alignedTimeslot //TODO: timeslot0.align(5000)
     val subtimeslots_of_this_policy = Timeslot.mergeOverlaps(policy.effective intervalsOf timeslot)
     val subtimeslots_NOT_IN_this_policy = Timeslot.mergeOverlaps(timeslot.nonOverlappingTimeslots
                                                                                           (subtimeslots_of_this_policy))
