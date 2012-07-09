@@ -87,9 +87,9 @@ class UserStateComputationsTest extends Loggable {
     ),
     roleMapping = Map(
       "default" -> FullPriceTable(Map(
-        "bandwidth" -> EffectivePriceTable(EffectiveUnitPrice(BandwidthUnitPrice, Nil) :: Nil),
-        "vmtime"    -> EffectivePriceTable(EffectiveUnitPrice(VMTimeUnitPrice, Nil) :: Nil),
-        "diskspace" -> EffectivePriceTable(EffectiveUnitPrice(DiskspaceUnitPrice, Nil) :: Nil)
+        "bandwidth" -> EffectivePriceTable(EffectiveUnitPrice(BandwidthUnitPrice, None) :: Nil),
+        "vmtime"    -> EffectivePriceTable(EffectiveUnitPrice(VMTimeUnitPrice, None) :: Nil),
+        "diskspace" -> EffectivePriceTable(EffectiveUnitPrice(DiskspaceUnitPrice, None) :: Nil)
       ))
     )
   )

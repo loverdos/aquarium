@@ -314,7 +314,7 @@ trait TimeslotComputations extends Loggable {
   }
 
     type PriceMap =  immutable.SortedMap[Timeslot, EffectiveUnitPrice]
-    type PriceList = List[EffectiveUnitPrice]
+    private type PriceList = List[EffectiveUnitPrice]
     private def emptyMap = immutable.SortedMap[Timeslot,EffectiveUnitPrice]()
 
     /**

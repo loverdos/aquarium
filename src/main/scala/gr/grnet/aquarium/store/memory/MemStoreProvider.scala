@@ -48,7 +48,7 @@ import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventMo
 import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.util.Tags
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.policy.StdPolicy
+import gr.grnet.aquarium.policy.{PolicyModel, StdPolicy}
 
 /**
  * An implementation of various stores that persists parts in memory.
@@ -268,6 +268,23 @@ extends StoreProvider
 
   def findPolicyByID(id: String) = {
     _policies.find(p => p.id == id)
+  }
+
+  /**
+   * Store an accounting policy.
+   */
+  def insertPolicy(policy: PolicyModel): Policy = {
+    val localPolicy = StdPolicy(
+      id = policy.id,
+      parentID = policy.parentID,
+      validityTimespan = policy.validityTimespan,
+      resourceTypes = policy.resourceTypes,
+      chargingBehaviorClasses = policy.chargingBehaviorClasses,
+      roleMapping = policy.roleMapping
+    )
+    _policies = localPolicy :: _policies
+
+    localPolicy
   }
 }
 
