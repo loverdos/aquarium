@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLCronSpec, DSLTimeFrame}
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.mutable
 
 /**
