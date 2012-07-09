@@ -36,27 +36,19 @@
 package gr.grnet.aquarium.computation
 
 import collection.immutable.SortedMap
-import com.ckkloverdos.maybe.{NoVal, Maybe, Just}
+import com.ckkloverdos.maybe.{NoVal, Maybe}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
+import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.logic.accounting.algorithm.SimpleExecutableChargingBehaviorAlgorithm
-import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot}
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy._
 import collection.immutable
 import com.ckkloverdos.maybe.Just
-import gr.grnet.aquarium.computation.Chargeslot
-import scala.Some
-import com.ckkloverdos.maybe.Just
-import gr.grnet.aquarium.computation.Chargeslot
-import scala.Some
-import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.policy.EffectiveUnitPrice
-import gr.grnet.aquarium.computation.Chargeslot
-import scala.Some
 
 /**
  * Methods for converting accounting events to wallet entries.
