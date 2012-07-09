@@ -157,6 +157,6 @@ object MongoDBStoreProvider {
     final val mongodbConnectionsPerHost = IntKey(PrefixAndDot + "connections.per.host")
 
     final val mongodbThreadsAllowedToBlockForConnectionMultiplier =
-      IntKey("threads.allowed.to.block.for.connection.multiplier")
+      IntKey(PrefixAndDot + "threads.allowed.to.block.for.connection.multiplier")
   }
 }
