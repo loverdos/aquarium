@@ -171,7 +171,6 @@ trait TimeslotComputations extends Loggable {
       oldTotalAmount: Double,
       newTotalAmount: Double,
       resourceType: ResourceType,
-      defaultResourceTypesMap: Map[String, ResourceType],
       agreementByTimeslot: SortedMap[Timeslot, UserAgreementModel],
       policyStore: PolicyStore,
       clogOpt: Option[ContextualLogger] = None
@@ -184,7 +183,7 @@ trait TimeslotComputations extends Loggable {
     val occurredMillis = currentResourceEvent.occurredMillis
     val chargingBehavior = resourceType.chargingBehavior
 
-    val (referenceTimeslot, relevantPolicies, previousValue) = chargingBehavior.needsPreviousEventForCreditAndAmountCalculation match {
+    val (referenceTimeslot, policyByTimeslot, previousValue) = chargingBehavior.needsPreviousEventForCreditAndAmountCalculation match {
       // We need a previous event
       case true ⇒
         previousResourceEventOpt match {
@@ -194,9 +193,9 @@ trait TimeslotComputations extends Loggable {
             // all policies within the interval from previous to current resource event
             //            clog.debug("Calling policyStore.loadAndSortPoliciesWithin(%s)", referenceTimeslot)
             // TODO: store policies in mem?
-            val relevantPolicies = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime)
+            val policyByTimeslot = policyStore.loadAndSortPoliciesWithin(referenceTimeslot.from.getTime, referenceTimeslot.to.getTime)
 
-            (referenceTimeslot, relevantPolicies, previousResourceEvent.value)
+            (referenceTimeslot, policyByTimeslot, previousResourceEvent.value)
 
           // We do not have a previous event
           case None ⇒
@@ -215,7 +214,7 @@ trait TimeslotComputations extends Loggable {
         // TODO: store policies in mem?
         val relevantPolicyOpt: Option[PolicyModel] = policyStore.loadValidPolicyAt(occurredMillis)
 
-        val relevantPolicies = relevantPolicyOpt match {
+        val policyByTimeslot = relevantPolicyOpt match {
           case Some(relevantPolicy) ⇒
             SortedMap(referenceTimeslot -> relevantPolicy)
 
@@ -223,13 +222,13 @@ trait TimeslotComputations extends Loggable {
             throw new AquariumInternalError("No relevant policy found for %s".format(referenceTimeslot))
         }
 
-        (referenceTimeslot, relevantPolicies, previousValue)
+        (referenceTimeslot, policyByTimeslot, previousValue)
     }
 
     val initialChargeslots = computeInitialChargeslots(
       referenceTimeslot,
       resourceType,
-      relevantPolicies,
+      policyByTimeslot,
       agreementByTimeslot,
       Some(clog)
     )

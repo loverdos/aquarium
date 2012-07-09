@@ -271,7 +271,6 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
               oldAmount,
               newAccumulatingAmount,
               resourceType,
-              resourceTypesMap,
               alltimeAgreements,
               policyStore,
               Some(clog)
