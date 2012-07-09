@@ -32,22 +32,50 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
+package gr.grnet.aquarium.policy
 
-package gr.grnet.aquarium.logic.accounting.dsl
-
-import java.util.{Date}
-import scala.collection.immutable
-import gr.grnet.aquarium.policy.{EffectiveUnitPrice, AdHocFullPriceTableRef, PolicyDefinedFullPriceTableRef, PolicyModel, ResourceType, EffectivePriceTable, UserAgreementModel}
-import gr.grnet.aquarium.AquariumInternalError
+import org.quartz.CronExpression
+import java.util.Date
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
- * Utility functions to use when working with DSL types.
- *
- * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-trait DSLUtils {
 
- //TODO pgerakios: REMOVE THIS FILE
+case class CronSpec(cronSpec: String) {
 
+  private val cronExpr = {
+    val e = "00 " + cronSpec.trim //IMPORTANT: WE DO NOT CARE ABOUT SECONDS!!!
+    val l = e.split(" ")
+    assert(l.size == 6,"Invalid cron specification")
+    //for {ll <- l } Console.err.println(ll)
+    (l(3),l(5))  match {
+      case ("?",_) | (_,"?") => ()
+      case (_,"*") => l.update(5,"?")
+      case ("*",_) => l.update(3,"?")
+    }
+    val e1 = l.foldLeft("") { (s,elt) => s + " " + elt}
+    //Console.err.println("e = " + e + " and e1 = " + e1)
+    new CronExpression(e1)
+  }
+
+  def includes(d:Date) : Boolean =
+    cronExpr isSatisfiedBy d
+
+  /* the next valid date cannot outlive (min,max)*/
+  def nextValidDate(t:Timeslot,d:Date) : Option[Date] =
+    (cronExpr getNextValidTimeAfter d) match {
+      case null =>
+        None
+      case d1 =>
+        val (min0,max0) = (t.from,t.to)
+        val (min,max,e) = (min0.getTime,max0.getTime,d1.getTime)
+        if(e < min || e>max)
+          None
+        else
+          Some({assert(d1.getTime>=d.getTime);d1})
+    }
+
+  override def toString : String = cronSpec
 }

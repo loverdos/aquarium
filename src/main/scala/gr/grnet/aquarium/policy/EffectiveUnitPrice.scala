@@ -35,11 +35,60 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.logic.accounting.dsl.DSLTimeFrame
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLCronSpec, DSLTimeFrame}
+import collection.mutable
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-case class EffectiveUnitPrice(unitPrice: Double, when: DSLTimeFrame) // TODO: use DSLTimeframe
+case class EffectiveUnitPrice(unitPrice: Double, when: Option[(CronSpec,CronSpec)]) { // TODO: use DSLTimeframe
+
+  /* Split a timeslot T into two *sets* S and S2 consisting of timeslots such that
+   *  (a) each element in S1,S2 is contained in T
+   *  (b) for all x in S1 and y in S2 there is no overlap between x and y.
+   *  (c) the union of all x in S1 and y S2 is T
+   *  (d) the elements of S1 satisfy the cron spec ``when''
+   *  (e) the elements of S2 do NOT satisfy the cron spec ``when''
+   */
+  def splitTimeslot(t:Timeslot) : (List[Timeslot],List[Timeslot])=
+     when match {
+       case None =>
+         (List(t),Nil)
+       case Some((start,end)) =>
+         val result = new mutable.ListBuffer[Timeslot]()
+         var offset = t.from
+         while(start.nextValidDate(t,offset) match {
+           case None =>
+             false
+           case Some(d_start) =>
+             end.nextValidDate(t,d_start) match {
+               case None =>
+                 result += Timeslot(d_start,t.to)
+                 false
+               case Some(d_end) =>
+                 result += Timeslot(d_start,d_end)
+                 offset = d_end
+                 d_end.before(t.to)
+             }
+         }) ()
+         val l = result.toList
+         val l1 = Timeslot mergeOverlaps l
+         val l2 = t nonOverlappingTimeslots l1
+         val l3 = Timeslot mergeOverlaps l2
+         (l1,l3)
+     }
+
+  private def stringOfStartCron = when match {
+    case None => "? ? ? ? ?"
+    case Some((s,_)) => s.toString
+  }
+  private def stringOfEndCron = when match {
+    case None => "? ? ? ? ?"
+    case Some((_,s)) => s.toString
+  }
+  override def toString : String = "EffectiveUnitPrice(%d,%s,%s)".
+                          format(unitPrice,stringOfStartCron,stringOfEndCron)
+ }

@@ -35,7 +35,7 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit.Test
-import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLTimeFrameRepeat, DSLTimeSpec, DSLTimeFrame}
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLTimeFrameRepeat,DSLTimeFrame}
 import gr.grnet.aquarium.util.TestMethods
 import java.util.Date
 import scala._
@@ -45,7 +45,7 @@ import scala.Some
 * Represents an effectivity timeframe.
 *
 * @author Prodromos Gerakios <pgerakios@grnet.gr>
-*/
+/**/
 class DSLTimeFrameTest extends DSLTestBase with TestMethods {
 
   private def makeRepeat(startCron:String,endCron:String): DSLTimeFrameRepeat={
@@ -88,4 +88,4 @@ class DSLTimeFrameTest extends DSLTestBase with TestMethods {
 
     //TODO: add timeslot contained in big timeslot
   }
-}
+}  */

@@ -43,8 +43,20 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.logic.accounting.algorithm.SimpleExecutableChargingBehaviorAlgorithm
-import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLUtils}
-import gr.grnet.aquarium.policy.{EffectivePriceTable, PolicyModel, ResourceType, UserAgreementModel}
+import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot}
+import gr.grnet.aquarium.policy._
+import collection.immutable
+import com.ckkloverdos.maybe.Just
+import gr.grnet.aquarium.computation.Chargeslot
+import scala.Some
+import com.ckkloverdos.maybe.Just
+import gr.grnet.aquarium.computation.Chargeslot
+import scala.Some
+import com.ckkloverdos.maybe.Just
+import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.policy.EffectiveUnitPrice
+import gr.grnet.aquarium.computation.Chargeslot
+import scala.Some
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -54,7 +66,7 @@ import gr.grnet.aquarium.policy.{EffectivePriceTable, PolicyModel, ResourceType,
  */
 trait TimeslotComputations extends Loggable {
   // TODO: favour composition over inheritance until we decide what to do with DSLUtils (and TimeslotComputations).
-  protected val dslUtils = new DSLUtils {}
+  //protected val dslUtils = new DSLUtils {}
 
   /**
    * Breaks a reference timeslot (e.g. billing period) according to policies and agreements.
@@ -98,7 +110,8 @@ trait TimeslotComputations extends Loggable {
     val clog = ContextualLogger.fromOther(clogOpt, logger, "resolveEffectiveUnitPrices()")
 
     // Note that most of the code is taken from calcChangeChunks()
-    dslUtils.resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType)
+    val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType)
+    ret map {case (t,p) => (t,p.unitPrice)}
   }
 
   protected
@@ -299,4 +312,87 @@ trait TimeslotComputations extends Loggable {
       a.head :: alignTimeslots(safeTail(a), safeTail(b))
     }
   }
+
+    type PriceMap =  immutable.SortedMap[Timeslot, EffectiveUnitPrice]
+    type PriceList = List[EffectiveUnitPrice]
+    private def emptyMap = immutable.SortedMap[Timeslot,EffectiveUnitPrice]()
+
+    /**
+     * Resolves the effective price list for each chunk of the
+     * provided timeslot and returns it as a Map
+     */
+    private def resolveEffectiveUnitPricesForTimeslot(
+                                               alignedTimeslot: Timeslot,
+                                               policy: PolicyModel,
+                                               agreement: UserAgreementModel,
+                                               resourceType: ResourceType
+                                               ): PriceMap = {
+
+      val role = agreement.role
+      val fullPriceTable = agreement.fullPriceTableRef match {
+        case PolicyDefinedFullPriceTableRef ⇒
+          policy.roleMapping.get(role) match {
+            case Some(fullPriceTable) ⇒
+              fullPriceTable
+
+            case None ⇒
+              throw new AquariumInternalError("Unknown role %s".format(role))
+          }
+
+        case AdHocFullPriceTableRef(fullPriceTable) ⇒
+          fullPriceTable
+      }
+
+      val effectivePriceTable = fullPriceTable.perResource.get(resourceType.name) match {
+        case None ⇒
+          throw new AquariumInternalError("Unknown resource type %s".format(role))
+
+        case Some(effectivePriceTable) ⇒
+          effectivePriceTable
+      }
+
+      resolveEffective(alignedTimeslot, effectivePriceTable.priceOverrides)
+    }
+
+    private def printPriceList(p: PriceList) : Unit = {
+      Console.err.println("BEGIN PRICE LIST")
+      for { p1 <- p } Console.err.println(p1)
+      Console.err.println("END PRICE LIST")
+    }
+
+    private def printPriceMap(m: PriceMap) = {
+      Console.err.println("BEGIN PRICE MAP")
+      for { (t,p) <- m.toList } Console.err.println("Timeslot " + t + "\t\t" + p)
+      Console.err.println("END PRICE MAP")
+    }
+
+    private def resolveEffective(alignedTimeslot: Timeslot,p:PriceList): PriceMap = {
+      Console.err.println("\n\nInput timeslot: " + alignedTimeslot + "\n\n")
+      printPriceList(p)
+      val ret =  resolveEffective3(alignedTimeslot,p) //HERE
+      printPriceMap(ret)
+      ret
+    }
+
+
+    private def resolveEffective3(alignedTimeslot: Timeslot, effectiveUnitPrices: PriceList): PriceMap =
+      effectiveUnitPrices match {
+        case Nil =>
+          emptyMap
+        case hd::tl =>
+          val (satisfied,notSatisfied) = hd splitTimeslot alignedTimeslot
+          val satisfiedMap = satisfied.foldLeft (emptyMap)  {(map,t) =>
+          //Console.err.println("Adding timeslot" + t +
+          // " for policy " + policy.name)
+            map + ((t,hd))
+          }
+          val notSatisfiedMap = notSatisfied.foldLeft (emptyMap) {(map,t) =>
+            val otherMap = resolveEffective3(t,tl)
+            //Console.err.println("Residual timeslot: " + t)
+            val ret = map ++ otherMap
+            ret
+          }
+          val ret = satisfiedMap ++ notSatisfiedMap
+          ret
+      }
 }
