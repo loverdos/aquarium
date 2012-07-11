@@ -1,0 +1,61 @@
+{
+  "id":"3F8A9777-8C12-4529-B8E4-256AD840BEF2",
+
+  "validityTimespan":{
+    "fromMillis":0,
+    "toMillis":9223372036854775807
+  },
+
+  "resourceTypes":[
+    {
+      "name":"bandwidth",
+      "unit":"MB/Hr",
+      "chargingBehavior":"gr.grnet.aquarium.charging.DiscreteChargingBehavior"
+    },
+    {
+      "name":"vmtime",
+      "unit":"Hr",
+      "chargingBehavior":"gr.grnet.aquarium.charging.OnOffChargingBehavior"
+    },
+    {
+      "name":"diskspace",
+      "unit":"MB/Hr",
+      "chargingBehavior":"gr.grnet.aquarium.charging.ContinuousChargingBehavior"
+    }
+  ],
+
+  "chargingBehaviors":[
+    "gr.grnet.aquarium.charging.DiscreteChargingBehavior",
+    "gr.grnet.aquarium.charging.OnOffChargingBehavior",
+    "gr.grnet.aquarium.charging.ContinuousChargingBehavior",
+    "gr.grnet.aquarium.charging.OnceChargingBehavior"
+  ],
+  
+  "roleMapping":{
+    "default":{
+      "perResource":{
+        "bandwidth":{
+          "priceOverrides":[
+            {
+              "unitPrice":0.01
+            }
+          ]
+        },
+        "vmtime":{
+          "priceOverrides":[
+            {
+              "unitPrice":0.01
+            }
+          ]
+        },
+        "diskspace":{
+          "priceOverrides":[
+            {
+              "unitPrice":0.01
+            }
+          ]
+        }
+      }
+    }
+  }
+}

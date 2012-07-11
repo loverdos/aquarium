@@ -142,7 +142,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     logger.info("CONF_HERE =  {}", HERE)
     logger.info("{} = {}", ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES, ResourceLocator.Resources.AquariumPropertiesResource)
     logger.info("{} = {}", ResourceLocator.ResourceNames.LOGBACK_XML, ResourceLocator.Resources.LogbackXMLResource)
-    logger.info("{} = {}", ResourceLocator.ResourceNames.POLICY_YAML, ResourceLocator.Resources.PolicyYAMLResource)
+    logger.info("{} = {}", ResourceLocator.ResourceNames.POLICY_JSON, ResourceLocator.Resources.PolicyJSONResource)
 
     logger.info("Runtime.getRuntime.availableProcessors() => {}", Runtime.getRuntime.availableProcessors())
   }

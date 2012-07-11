@@ -3,10 +3,9 @@ import gr.grnet.aquarium.policy.{EffectiveUnitPrice, EffectivePriceTable, FullPr
 import gr.grnet.aquarium.Timespan
 
 // Definition of our standard policy in plain Scala
-// This will be dynamically interpreted during Aquarium startup
 
 StdPolicy(
-  id = "policy-1",
+  id = "750E6309-AB60-41B4-8D4B-9FFEA6EF843C",
   parentID = None,
 
   validityTimespan = Timespan(0),
