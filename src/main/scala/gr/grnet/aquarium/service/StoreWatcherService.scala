@@ -119,6 +119,8 @@ final class StoreWatcherService extends Lifecycle with Configurable with Aquariu
     val tag = Tags.ResourceEventTag
 
     logger.info("Scheduling ping for %s store".format(tag))
+    logger.info("AQUARIUM = {}", aquarium)
+    logger.info("AQUARIUM.resourceEventStore = {}", aquarium.resourceEventStore)
 
     doSchedulePing(
       tag,

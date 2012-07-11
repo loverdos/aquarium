@@ -38,7 +38,7 @@ package gr.grnet.aquarium
 import com.ckkloverdos.env.Env
 import com.ckkloverdos.key.{IntKey, StringKey, LongKey, TypedKeySkeleton, TypedKey, BooleanKey}
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.store.{PolicyStore, UserStateStore, IMEventStore, ResourceEventStore, StoreProvider}
+import gr.grnet.aquarium.store.{StoreProvider}
 import java.io.File
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 import gr.grnet.aquarium.service.{StoreWatcherService, RabbitMQService, TimerService, EventBusService, AkkaService}
@@ -102,7 +102,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     }
   }
 
-  private[this] lazy val _allServices = Aquarium.ServiceKeys.map(this(_))
+  private[this] lazy val _allServices = Aquarium.ServiceKeys.map(this.apply(_))
 
   private[this] def startServices(): Unit = {
     for(service ← _allServices) {
@@ -278,13 +278,13 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   def defaultClassLoader = apply(EnvKeys.defaultClassLoader)
 
-  def resourceEventStore = apply(EnvKeys.resourceEventStore)
+  def resourceEventStore = apply(EnvKeys.storeProvider).resourceEventStore
 
-  def imEventStore = apply(EnvKeys.imEventStore)
+  def imEventStore = apply(EnvKeys.storeProvider).imEventStore
 
-  def userStateStore = apply(EnvKeys.userStateStore)
+  def userStateStore = apply(EnvKeys.storeProvider).userStateStore
 
-  def policyStore = apply(EnvKeys.policyStore)
+  def policyStore = apply(EnvKeys.storeProvider).policyStore
 
   def eventsStoreFolder = apply(EnvKeys.eventsStoreFolder)
 
@@ -332,7 +332,7 @@ object Aquarium {
  }
 
   final class AquariumEnvKey[T: Manifest](override val name: String) extends TypedKeySkeleton[T](name) {
-    override def toString = name
+    override def toString = "%s(%s)".format(manifest[T], name)
   }
 
   final val ServiceKeys: List[TypedKey[_ <: Lifecycle]] = List(
@@ -411,17 +411,17 @@ object Aquarium {
     final val adminCookie: TypedKey[Option[String]] =
       new AquariumEnvKey[Option[String]]("admin.cookie")
 
-    final val resourceEventStore: TypedKey[ResourceEventStore] =
-      new AquariumEnvKey[ResourceEventStore]("resource.event.store.class")
+//    final val resourceEventStore: TypedKey[ResourceEventStore] =
+//      new AquariumEnvKey[ResourceEventStore]("resource.event.store.class")
 
-    final val imEventStore: TypedKey[IMEventStore] =
-      new AquariumEnvKey[IMEventStore]("im.event.store.class")
+//    final val imEventStore: TypedKey[IMEventStore] =
+//      new AquariumEnvKey[IMEventStore]("im.event.store.class")
 
-    final val userStateStore: TypedKey[UserStateStore] =
-      new AquariumEnvKey[UserStateStore]("user.state.store.class")
+//    final val userStateStore: TypedKey[UserStateStore] =
+//      new AquariumEnvKey[UserStateStore]("user.state.store.class")
 
-    final val policyStore: TypedKey[PolicyStore] =
-      new AquariumEnvKey[PolicyStore]("policy.store.class")
+//    final val policyStore: TypedKey[PolicyStore] =
+//      new AquariumEnvKey[PolicyStore]("policy.store.class")
 
     /**
      * The class that initializes the REST service
