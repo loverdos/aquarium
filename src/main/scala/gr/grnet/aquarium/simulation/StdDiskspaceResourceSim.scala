@@ -47,7 +47,7 @@ import gr.grnet.aquarium.charging.{ContinuousChargingBehavior, ChargingBehavior}
 class StdDiskspaceResourceSim(
     name: String = StdVMTimeResourceSim.DSLNames.name,
     unit: String = StdVMTimeResourceSim.DSLNames.unit,
-    chargingBehavior: ChargingBehavior = ContinuousChargingBehavior
+    chargingBehavior: String = classOf[ContinuousChargingBehavior].getName
 ) extends ResourceSim(name, unit, chargingBehavior) {
 
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =

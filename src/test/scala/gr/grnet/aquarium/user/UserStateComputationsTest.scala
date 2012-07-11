@@ -36,24 +36,20 @@
 package gr.grnet.aquarium.user
 
 import gr.grnet.aquarium.store.memory.MemStoreProvider
-import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.util.{Loggable, ContextualLogger}
 import gr.grnet.aquarium.simulation._
 import gr.grnet.aquarium.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
 import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableChargingBehaviorAlgorithm, CostPolicyAlgorithmCompiler}
-import gr.grnet.aquarium.{Timespan, Aquarium, ResourceLocator, AquariumBuilder, AquariumException}
+import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder, AquariumException}
 import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, MonthlyBillingCalculation}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.computation.state.{UserStateBootstrap, UserState}
+import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.charging._
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy, PolicyModel}
 import gr.grnet.aquarium.Timespan
-import scala.Some
 import gr.grnet.aquarium.computation.state.UserStateBootstrap
-import gr.grnet.aquarium.simulation.AquariumSim
-import gr.grnet.aquarium.simulation.ClientSim
 
 
 /**
@@ -76,14 +72,15 @@ class UserStateComputationsTest extends Loggable {
     parentID = None,
     validityTimespan = Timespan(0),
     resourceTypes = Set(
-      ResourceType("bandwidth", "MB/Hr", DiscreteChargingBehavior),
-      ResourceType("vmtime",    "Hr",    OnOffChargingBehavior),
-      ResourceType("diskspace", "MB/Hr", ContinuousChargingBehavior)
+      ResourceType("bandwidth", "MB/Hr", classOf[DiscreteChargingBehavior].getName),
+      ResourceType("vmtime", "Hr", classOf[OnOffChargingBehavior].getName),
+      ResourceType("diskspace", "MB/Hr", classOf[ContinuousChargingBehavior].getName)
     ),
-    chargingBehaviorClasses = Set(
-      DiscreteChargingBehavior.getClass.getName,
-      OnOffChargingBehavior.getClass.getName,
-      ContinuousChargingBehavior.getClass.getName
+    chargingBehaviors = Set(
+      classOf[DiscreteChargingBehavior].getName,
+      classOf[OnOffChargingBehavior].getName,
+      classOf[ContinuousChargingBehavior].getName,
+      classOf[OnceChargingBehavior].getName
     ),
     roleMapping = Map(
       "default" -> FullPriceTable(Map(
@@ -123,7 +120,7 @@ class UserStateComputationsTest extends Loggable {
 
     def apply(vars: Map[ChargingInput, Any]): Double = {
       vars.apply(ChargingBehaviorNameInput) match {
-        case ChargingBehaviorNames.continuous ⇒
+        case ChargingBehaviorAliases.continuous ⇒
           val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
           val oldTotalAmount = vars(OldTotalAmountInput).asInstanceOf[Double]
           val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
@@ -132,7 +129,7 @@ class UserStateComputationsTest extends Loggable {
 
           creditsForContinuous(timeDelta, oldTotalAmount)
 
-        case ChargingBehaviorNames.discrete ⇒
+        case ChargingBehaviorAliases.discrete ⇒
           val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
           val currentValue = vars(CurrentValueInput).asInstanceOf[Double]
 
@@ -140,7 +137,7 @@ class UserStateComputationsTest extends Loggable {
 
           creditsForDiscrete(currentValue)
 
-        case ChargingBehaviorNames.onoff ⇒
+        case ChargingBehaviorAliases.onoff ⇒
           val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
           val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
 
@@ -148,7 +145,7 @@ class UserStateComputationsTest extends Loggable {
 
           creditsForOnOff(timeDelta)
 
-        case ChargingBehaviorNames.once ⇒
+        case ChargingBehaviorAliases.once ⇒
           val currentValue = vars(CurrentValueInput).asInstanceOf[Double]
           currentValue
 
@@ -159,10 +156,10 @@ class UserStateComputationsTest extends Loggable {
 
     override def toString = "DefaultAlgorithm(%s)".format(
       Map(
-        ChargingBehaviorNames.continuous -> "hrs(timeDelta) * oldTotalAmount * %s".format(ContinuousUnitPrice),
-        ChargingBehaviorNames.discrete   -> "currentValue * %s".format(DiscreteUnitPrice),
-        ChargingBehaviorNames.onoff      -> "hrs(timeDelta) * %s".format(OnOffUnitPrice),
-        ChargingBehaviorNames.once       -> "currentValue"))
+        ChargingBehaviorAliases.continuous -> "hrs(timeDelta) * oldTotalAmount * %s".format(ContinuousUnitPrice),
+        ChargingBehaviorAliases.discrete   -> "currentValue * %s".format(DiscreteUnitPrice),
+        ChargingBehaviorAliases.onoff      -> "hrs(timeDelta) * %s".format(OnOffUnitPrice),
+        ChargingBehaviorAliases.once       -> "currentValue"))
   }
 
   val DefaultCompiler  = new CostPolicyAlgorithmCompiler {

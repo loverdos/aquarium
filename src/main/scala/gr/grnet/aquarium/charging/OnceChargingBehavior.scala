@@ -35,12 +35,48 @@
 
 package gr.grnet.aquarium.charging
 
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.AquariumException
+
 /**
+ * A charging behavior for which resource events just carry a credit amount that will be added to the total one.
+ *
+ * Examples are: a) Give a gift of X credits to the user, b) User bought a book, so charge for the book price.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+final class OnceChargingBehavior
+    extends ChargingBehavior(
+      ChargingBehaviorAliases.once,
+      Set(ChargingBehaviorNameInput, CurrentValueInput)) {
 
-object OnOffPolicyResourceStateNames {
-  final val on  = "on"
-  final val off = "off"
+  /**
+   * This is called when we have the very first event for a particular resource instance, and we want to know
+   * if it is billable or not.
+   */
+  def isBillableFirstEvent(event: ResourceEventModel) = {
+    true
+  }
+
+  def mustGenerateDummyFirstEvent = false // no need to
+
+  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]) = {
+    oldAmount
+  }
+
+  def getResourceInstanceInitialAmount = 0.0
+
+  def supportsImplicitEvents = false
+
+  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = false
+
+  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
+    throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
+  }
+}
+
+object OnceChargingBehavior {
+  private[this] final val TheOne = new OnceChargingBehavior
+
+  def apply(): OnceChargingBehavior = TheOne
 }

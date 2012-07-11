@@ -35,8 +35,7 @@
 package gr.grnet.aquarium.logic.test
 
 import org.junit.Test
-import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot, DSLTimeFrameRepeat,DSLTimeFrame}
-import gr.grnet.aquarium.util.TestMethods
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import java.util.Date
 import scala._
 import scala.Some

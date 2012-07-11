@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.logic.test
 
-import gr.grnet.aquarium.util.TestMethods
 import org.junit.Assert._
 import org.junit.{Test}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
@@ -47,7 +46,7 @@ import gr.grnet.aquarium.util.date.MutableDateCalc
  *
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
-class TimeslotTest extends TestMethods {
+class TimeslotTest /*extends TestMethods*/ {
 
   @Test
   def testOverlappingTimeslots = {

@@ -203,7 +203,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
     resourceTypesMap.get(theResource) match {
       // We have a resource type (and thus a charging behavior)
       case Some(resourceType) ⇒
-        val chargingBehavior = resourceType.chargingBehavior
+        val chargingBehavior = aquarium.chargingBehaviorOf(resourceType)
         clog.debug("%s for %s", chargingBehavior, resourceType)
         val isBillable = chargingBehavior.isBillableEvent(currentResourceEvent)
         if(!isBillable) {
@@ -265,6 +265,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
 
             //              clog.debug("Computing full chargeslots")
             val (referenceTimeslot, fullChargeslots) = timeslotComputations.computeFullChargeslots(
+              aquarium,
               previousResourceEventOpt1,
               currentResourceEvent,
               oldCredits,
@@ -469,7 +470,7 @@ final class UserStateComputations extends AquariumAwareSkeleton with Loggable {
       // Second, for the remaining events which must contribute an implicit OFF, we collect those OFFs
       // ... in order to generate an implicit ON later (during the next billing cycle).
       val (specialEvents, theirImplicitEnds) = userStateWorker.
-        findAndRemoveGeneratorsOfImplicitEndEvents(billingMonthInfo.monthStopMillis)
+        findAndRemoveGeneratorsOfImplicitEndEvents(aquarium, billingMonthInfo.monthStopMillis)
 
       if(specialEvents.lengthCompare(1) >= 0 || theirImplicitEnds.lengthCompare(1) >= 0) {
         clog.debug("")

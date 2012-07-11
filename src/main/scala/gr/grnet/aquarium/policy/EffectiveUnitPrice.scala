@@ -89,6 +89,6 @@ case class EffectiveUnitPrice(unitPrice: Double, when: Option[(CronSpec,CronSpec
     case None => "? ? ? ? ?"
     case Some((_,s)) => s.toString
   }
-  override def toString : String = "EffectiveUnitPrice(%d,%s,%s)".
+  override def toString : String = "EffectiveUnitPrice(%f,%s,%s)".
                           format(unitPrice,stringOfStartCron,stringOfEndCron)
  }

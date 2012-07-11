@@ -40,7 +40,7 @@ import com.ckkloverdos.maybe.{NoVal, Maybe}
 import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.logic.accounting.algorithm.SimpleExecutableChargingBehaviorAlgorithm
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
@@ -170,6 +170,7 @@ trait TimeslotComputations extends Loggable {
    *
    */
   def computeFullChargeslots(
+      aquarium: Aquarium,
       previousResourceEventOpt: Option[ResourceEventModel],
       currentResourceEvent: ResourceEventModel,
       oldCredits: Double,
@@ -186,7 +187,7 @@ trait TimeslotComputations extends Loggable {
 
     val occurredDate = currentResourceEvent.occurredDate
     val occurredMillis = currentResourceEvent.occurredMillis
-    val chargingBehavior = resourceType.chargingBehavior
+    val chargingBehavior = aquarium.chargingBehaviorOf(resourceType)
 
     val (referenceTimeslot, policyByTimeslot, previousValue) = chargingBehavior.needsPreviousEventForCreditAndAmountCalculation match {
       // We need a previous event

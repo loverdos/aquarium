@@ -51,6 +51,7 @@ import gr.grnet.aquarium.ResourceLocator._
 import com.ckkloverdos.sys.SysProp
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel, ResourceType}
+import gr.grnet.aquarium.charging.ChargingBehavior
 
 /**
  *
@@ -59,6 +60,8 @@ import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreemen
 
 final class Aquarium(env: Env) extends Lifecycle with Loggable {
   import Aquarium.EnvKeys
+
+  @volatile private[this] var _chargingBehaviorMap = Map[String, ChargingBehavior]()
 
   private[this] val _isStopping = new AtomicBoolean(false)
 
@@ -179,7 +182,14 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   /**
    * Reflectively provide a new instance of a class and configure it appropriately.
    */
-  def newInstance[C <: AnyRef](_class: Class[C], className: String): C = {
+  def newInstance[C <: AnyRef](_class: Class[C]): C = {
+    newInstance(_class.getName)
+  }
+
+  /**
+   * Reflectively provide a new instance of a class and configure it appropriately.
+   */
+  def newInstance[C <: AnyRef](className: String): C = {
     val originalProps = apply(EnvKeys.originalProps)
 
     val instanceM = MaybeEither(defaultClassLoader.loadClass(className).newInstance().asInstanceOf[C])
@@ -246,6 +256,24 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   def defaultInitialUserRole: String = {
     // FIXME: Read from properties?
     "default"
+  }
+
+  def chargingBehaviorOf(resourceType: ResourceType): ChargingBehavior = {
+    val className = resourceType.chargingBehavior
+    _chargingBehaviorMap.get(className) match {
+      case Some(chargingBehavior) ⇒
+        chargingBehavior
+
+      case _ ⇒
+        // It does not matter if this is entered by multiple threads and more than one instance of the same class
+        // is created. The returned instance is not meant to be cached.
+        val chargingBehavior = newInstance[ChargingBehavior](className)
+        _chargingBehaviorMap synchronized {
+          _chargingBehaviorMap = _chargingBehaviorMap.updated(className, chargingBehavior)
+        }
+
+        chargingBehavior
+    }
   }
 
   def defaultClassLoader = apply(EnvKeys.defaultClassLoader)

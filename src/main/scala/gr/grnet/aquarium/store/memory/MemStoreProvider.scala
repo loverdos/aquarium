@@ -279,7 +279,7 @@ extends StoreProvider
       parentID = policy.parentID,
       validityTimespan = policy.validityTimespan,
       resourceTypes = policy.resourceTypes,
-      chargingBehaviorClasses = policy.chargingBehaviorClasses,
+      chargingBehaviors = policy.chargingBehaviors,
       roleMapping = policy.roleMapping
     )
     _policies = localPolicy :: _policies

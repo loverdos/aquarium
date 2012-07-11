@@ -77,7 +77,7 @@ trait PolicyModel extends JsonSupport {
    * Note than since a charging behavior is semantically attached to an implementation, a change in the set
    * of known charging behaviors normally means a change in the implementation of Aquarium.
    */
-  def chargingBehaviorClasses: Set[String/*ImplementationClassName*/]
+  def chargingBehaviors: Set[String/*ImplementationClassName*/]
 
   /**
    * Each role is mapped to a full price table.
