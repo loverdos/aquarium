@@ -49,13 +49,22 @@ import gr.grnet.aquarium.charging.ChargingBehavior
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait PolicyModel extends JsonSupport {
+trait PolicyModel extends Ordered[PolicyModel] with JsonSupport {
+  final def compare(that: PolicyModel): Int = {
+    if(this.validFrom < that.validFrom) {
+      -1
+    } else if(this.validFrom == that.validFrom) {
+      0
+    } else {
+      1
+    }
+  }
+
   def id: String
 
   def parentID: Option[String]
 
   def idInStore: Option[Any]
-
 
   /**
    * The time period within which this policy is valid.

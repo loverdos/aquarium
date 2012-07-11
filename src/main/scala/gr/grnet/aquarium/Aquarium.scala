@@ -50,7 +50,7 @@ import com.ckkloverdos.maybe._
 import gr.grnet.aquarium.ResourceLocator._
 import com.ckkloverdos.sys.SysProp
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel, ResourceType}
+import gr.grnet.aquarium.policy.{PolicyHistory, PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel, ResourceType}
 import gr.grnet.aquarium.charging.ChargingBehavior
 
 /**
@@ -62,6 +62,8 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   import Aquarium.EnvKeys
 
   @volatile private[this] var _chargingBehaviorMap = Map[String, ChargingBehavior]()
+
+  private[this] val policyHistory = new PolicyHistory
 
   private[this] val _isStopping = new AtomicBoolean(false)
 
