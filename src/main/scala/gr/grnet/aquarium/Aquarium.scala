@@ -284,7 +284,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   def userStateStore = apply(EnvKeys.storeProvider).userStateStore
 
-  def policyStore = new PolicyHistory(apply(EnvKeys.storeProvider).policyStore)
+  val policyStore = new PolicyHistory(apply(EnvKeys.storeProvider).policyStore)
 
   def eventsStoreFolder = apply(EnvKeys.eventsStoreFolder)
 
