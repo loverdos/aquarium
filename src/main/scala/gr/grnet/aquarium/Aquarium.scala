@@ -63,8 +63,6 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   @volatile private[this] var _chargingBehaviorMap = Map[String, ChargingBehavior]()
 
-  private[this] val policyHistory = new PolicyHistory
-
   private[this] val _isStopping = new AtomicBoolean(false)
 
   override def toString = "%s/v%s".format(getClass.getName, version)
@@ -286,7 +284,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   def userStateStore = apply(EnvKeys.storeProvider).userStateStore
 
-  def policyStore = apply(EnvKeys.storeProvider).policyStore
+  def policyStore = new PolicyHistory(apply(EnvKeys.storeProvider).policyStore)
 
   def eventsStoreFolder = apply(EnvKeys.eventsStoreFolder)
 

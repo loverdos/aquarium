@@ -53,12 +53,15 @@ import gr.grnet.aquarium.event.model.ExternalEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.policy.PolicyModel
 import gr.grnet.aquarium.{Aquarium, AquariumException}
+import collection.immutable.SortedMap
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  * Mongodb implementation of the various aquarium stores.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Prodromos Gerakios <pgerakio@grnet.gr>
  */
 class MongoDBStore(
     val aquarium: Aquarium,
@@ -277,6 +280,14 @@ class MongoDBStore(
   def insertPolicy(policy: PolicyModel): Policy = {
     val dbPolicy = MongoDBPolicy.fromOther(policy, new ObjectId().toStringMongod)
     MongoDBStore.insertObject(dbPolicy, policies, MongoDBStore.jsonSupportToDBObject)
+  }
+
+  def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
+    throw new UnsupportedOperationException
+  }
+
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
+    throw new UnsupportedOperationException
   }
   //-PolicyStore
 }

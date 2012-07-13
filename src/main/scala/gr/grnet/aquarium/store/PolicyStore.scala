@@ -48,29 +48,13 @@ import gr.grnet.aquarium.policy.PolicyModel
 trait PolicyStore {
   type Policy <: PolicyModel
 
-  /**
-   * Load all accounting policies valid after the specified time instance.
-   * The results are returned sorted by PolicyEntry.validFrom
-   */
-  def loadPoliciesAfter(afterMillis: Long): List[Policy]
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy]
 
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
-    // FIXME implement
-    throw new UnsupportedOperationException
-  }
-  
-  def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
-    // FIXME implement
-    throw new UnsupportedOperationException
-  }
+  def loadValidPolicyAt(atMillis: Long): Option[Policy]
 
   /**
    * Store an accounting policy.
    */
   def insertPolicy(policy: PolicyModel): Policy
 
-  /**
-   * Find a policy by its unique id.
-   */
-  def findPolicyByID(id: String): Option[Policy]
 }

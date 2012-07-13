@@ -49,6 +49,8 @@ import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.util.Tags
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.policy.{PolicyModel, StdPolicy}
+import collection.immutable.SortedMap
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  * An implementation of various stores that persists parts in memory.
@@ -57,6 +59,7 @@ import gr.grnet.aquarium.policy.{PolicyModel, StdPolicy}
  * 
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Georgios Gousios <gousiosg@gmail.com>
+ * @author Prodromos Gerakios <grnet.gr>
  */
 
 class MemStoreProvider
@@ -262,14 +265,6 @@ extends StoreProvider
   }
   //- IMEventStore
 
-  def loadPoliciesAfter(afterMillis: Long) =
-    _policies.filter(p => p.validFrom > afterMillis)
-            .sortWith((a,b) => a.validFrom < b.validFrom)
-
-  def findPolicyByID(id: String) = {
-    _policies.find(p => p.id == id)
-  }
-
   /**
    * Store an accounting policy.
    */
@@ -285,6 +280,14 @@ extends StoreProvider
     _policies = localPolicy :: _policies
 
     localPolicy
+  }
+
+  def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
+    throw new UnsupportedOperationException
+  }
+
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
+    throw new UnsupportedOperationException
   }
 }
 

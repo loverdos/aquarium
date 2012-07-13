@@ -35,36 +35,71 @@
 
 package gr.grnet.aquarium.policy
 
-import scala.collection.immutable.TreeSet
+import collection.immutable.{SortedMap, TreeSet}
 import gr.grnet.aquarium.Timespan
 import gr.grnet.aquarium.util.Lock
+import gr.grnet.aquarium.store.PolicyStore
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import collection.immutable
 
 /**
  * A mutable container of policy models.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-class PolicyHistory {
+class PolicyHistory(policyStore: PolicyStore) extends PolicyStore {
+  override type Policy = PolicyModel
   private[this] val lock = new Lock()
-  @volatile private[this] var _policies = TreeSet[PolicyModel]()
+  @volatile private[this] var _policies = TreeSet[Policy]()
+  private def emptyMap = immutable.SortedMap[Timeslot,Policy]()
 
-  def insertNewPolicy(newPolicy: PolicyModel): Unit = {
-    lock.withLock(_policies += newPolicy)
-  }
+  private[this] def synchronized[A](f: => A) : A =
+    lock.withLock {
+      if(_policies.isEmpty)
+        _policies ++= policyStore.loadAndSortPoliciesWithin(0,Long.MaxValue).values
+      f
+    }
+
+  private[this] def policyAt(s:Long) : PolicyModel =
+    new StdPolicy("", None, Timespan(s), Set(), Set(), Map())
+
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] =
+    synchronized {
+        val range = Timeslot(fromMillis,toMillis)
+        /* ``to'' method: return the subset of all policies.from <= range.to */
+        _policies.to(policyAt(range.to.getTime)).foldLeft (emptyMap) { (map,p) =>
+          if(p.validityTimespan.toTimeslot.to.getTime >= range.from.getTime)
+            map + ((p.validityTimespan.toTimeslot,p))
+          else
+            map
+        }
+    }
+
 
   /**
    * Return the last (ordered) policy that starts before timeMillis
    *
-   * @param timeMillis
+   * @param atMillis
    * @return
    */
-  def findPolicyAt(timeMillis: Long): Option[PolicyModel] = {
-    lock.withLock {
+  def loadValidPolicyAt(atMillis: Long): Option[Policy] =
+    synchronized {
       // Take the subset of all ordered policies up to the one with less than or equal start time
       // and then return the last item. This should be the policy right before the given time.
       // TODO: optimize the creation of the fake StdPolicy
-      _policies.to(new StdPolicy("", None, Timespan(timeMillis), Set(), Set(), Map())).lastOption
+      _policies.to(policyAt(atMillis)).lastOption
     }
-  }
+
+
+  /**
+   * Store an accounting policy.
+   */
+  def insertPolicy(policy: PolicyModel): Policy =
+   synchronized {
+      var p = policyStore.insertPolicy(policy)
+      _policies += p
+      p
+   }
 }
