@@ -46,7 +46,7 @@ import gr.grnet.aquarium.charging.ChargingBehavior
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class ResourceSim(val name: String, val unit: String, val chargingBehavior: ChargingBehavior ) {
+class ResourceSim(val name: String, val unit: String, val chargingBehavior: String) {
 
   def toResourceType = ResourceType(name, unit, chargingBehavior)
 
@@ -61,7 +61,7 @@ class ResourceSim(val name: String, val unit: String, val chargingBehavior: Char
 
 object ResourceSim {
   def apply(name: String, unit: String, chargingBehavior: ChargingBehavior) = {
-    new ResourceSim(name, unit, chargingBehavior)
+    new ResourceSim(name, unit, chargingBehavior.getClass.getName)
   }
 
 }

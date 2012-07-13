@@ -43,6 +43,7 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
+import gr.grnet.aquarium.policy.PolicyModel
 
 /**
  * Main method for Aquarium

@@ -41,6 +41,7 @@ import gr.grnet.aquarium.util.ContextualLogger
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.computation.state.parts.{IgnoredFirstResourceEventsWorker, ImplicitlyIssuedResourceEventsWorker, LatestResourceEventsWorker}
 import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.Aquarium
 
 /**
  * A helper object holding intermediate state/results during resource event processing.
@@ -144,6 +145,7 @@ case class UserStateWorker(
    * @see [[gr.grnet.aquarium.charging.ChargingBehavior]]
    */
   def findAndRemoveGeneratorsOfImplicitEndEvents(
+      aquarium: Aquarium,
       /**
        * The `occurredMillis` that will be recorded in the synthetic implicit OFFs.
        * Normally, this will be the end of a billing month.
@@ -159,7 +161,7 @@ case class UserStateWorker(
       for {
         resourceEvent ← resourceEvents
         resourceType ← resourceTypesMap.get(resourceEvent.safeResource)
-        chargingBehavior = resourceType.chargingBehavior
+        chargingBehavior = aquarium.chargingBehaviorOf(resourceType)
       } {
         if(chargingBehavior.supportsImplicitEvents) {
           if(chargingBehavior.mustConstructImplicitEndEventFor(resourceEvent)) {

@@ -48,7 +48,7 @@ import gr.grnet.aquarium.charging.{OnOffChargingBehavior, ChargingBehavior}
 class StdVMTimeResourceSim(
     name: String = StdVMTimeResourceSim.DSLNames.name,
     unit: String = StdVMTimeResourceSim.DSLNames.unit,
-    chargingBehavior: ChargingBehavior = OnOffChargingBehavior
+    chargingBehavior: String = classOf[OnOffChargingBehavior].getName
 ) extends ResourceSim(name, unit, chargingBehavior) {
 
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =

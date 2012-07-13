@@ -45,7 +45,7 @@ import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class ChargingBehavior(val name: String, val inputs: Set[ChargingInput]) {
+abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput]) {
 
   final lazy val inputNames = inputs.map(_.name)
 
@@ -88,7 +88,7 @@ abstract class ChargingBehavior(val name: String, val inputs: Set[ChargingInput]
       unitPrice)
   }
 
-  def isNamed(aName: String): Boolean = aName == name
+  def isNamed(aName: String): Boolean = aName == alias
 
   def needsPreviousEventForCreditAndAmountCalculation: Boolean = {
     // If we need any variable that is related to the previous event
@@ -180,23 +180,6 @@ abstract class ChargingBehavior(val name: String, val inputs: Set[ChargingInput]
 }
 
 object ChargingBehavior {
-  def apply(name: String): ChargingBehavior  = {
-    name match {
-      case null ⇒
-        throw new AquariumException("<null> charging behavior")
-
-      case name ⇒ name.toLowerCase match {
-        case ChargingBehaviorNames.onoff      ⇒ OnOffChargingBehavior
-        case ChargingBehaviorNames.discrete   ⇒ DiscreteChargingBehavior
-        case ChargingBehaviorNames.continuous ⇒ ContinuousChargingBehavior
-        case ChargingBehaviorNames.once       ⇒ ContinuousChargingBehavior
-
-        case _ ⇒
-          throw new AquariumException("Invalid charging behavior %s".format(name))
-      }
-    }
-  }
-
   def makeValueMapFor(
       chargingBehavior: ChargingBehavior,
       totalCredits: Double,
@@ -211,7 +194,7 @@ object ChargingBehavior {
     val inputs = chargingBehavior.inputs
     var map = Map[ChargingInput, Any]()
 
-    if(inputs contains ChargingBehaviorNameInput) map += ChargingBehaviorNameInput -> chargingBehavior.name
+    if(inputs contains ChargingBehaviorNameInput) map += ChargingBehaviorNameInput -> chargingBehavior.alias
     if(inputs contains TotalCreditsInput  ) map += TotalCreditsInput   -> totalCredits
     if(inputs contains OldTotalAmountInput) map += OldTotalAmountInput -> oldTotalAmount
     if(inputs contains NewTotalAmountInput) map += NewTotalAmountInput -> newTotalAmount
@@ -221,243 +204,5 @@ object ChargingBehavior {
     if(inputs contains UnitPriceInput     ) map += UnitPriceInput      -> unitPrice
 
     map
-  }
-}
-
-/**
- * A charging behavior for which resource events just carry a credit amount that will be added to the total one.
- *
- * Examples are: a) Give a gift of X credits to the user, b) User bought a book, so charge for the book price.
- *
- */
-case object OnceChargingBehavior
-extends ChargingBehavior(
-    ChargingBehaviorNames.once,
-    Set(ChargingBehaviorNameInput, CurrentValueInput)
-) {
-
-  /**
-   * This is called when we have the very first event for a particular resource instance, and we want to know
-   * if it is billable or not.
-   */
-  def isBillableFirstEvent(event: ResourceEventModel) = {
-    true
-  }
-
-  def mustGenerateDummyFirstEvent = false // no need to
-
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]) = {
-    oldAmount
-  }
-
-  def getResourceInstanceInitialAmount = 0.0
-
-  def supportsImplicitEvents = false
-
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = false
-
-  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
-    throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
-  }
-}
-
-/**
- * In practice a resource usage will be charged for the total amount of usage
- * between resource usage changes.
- *
- * Example resource that might be adept to a continuous policy
- * is diskspace.
- */
-case object ContinuousChargingBehavior
-extends ChargingBehavior(
-    ChargingBehaviorNames.continuous,
-    Set(ChargingBehaviorNameInput, UnitPriceInput, OldTotalAmountInput, TimeDeltaInput)
-) {
-
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
-    // If the total is in the details, get it, or else compute it
-    details.get("total") match {
-      case Some(total) ⇒
-        total.toDouble
-
-      case _ ⇒
-        oldAmount + newEventValue
-    }
-  }
-
-  def getResourceInstanceInitialAmount: Double = {
-    0.0
-  }
-
-  /**
-   * This is called when we have the very first event for a particular resource instance, and we want to know
-   * if it is billable or not.
-   */
-  def isBillableFirstEvent(event: ResourceEventModel) = {
-    true
-  }
-
-  def mustGenerateDummyFirstEvent = true
-
-  def supportsImplicitEvents = {
-    true
-  }
-
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
-    true
-  }
-
-  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long) = {
-    assert(supportsImplicitEvents && mustConstructImplicitEndEventFor(resourceEvent))
-
-    val details = resourceEvent.details
-    val newDetails = ResourceEventModel.setAquariumSyntheticAndImplicitEnd(details)
-
-    resourceEvent.withDetails(newDetails, newOccurredMillis)
-  }
-}
-
-/**
- * An onoff charging behavior expects a resource to be in one of the two allowed
- * states (`on` and `off`, respectively). It will charge for resource usage
- * within the timeframes specified by consecutive on and off resource events.
- * An onoff policy is the same as a continuous policy, except for
- * the timeframes within the resource is in the `off` state.
- *
- * Example resources that might be adept to onoff policies are VMs in a
- * cloud application and books in a book lending application.
- */
-case object OnOffChargingBehavior
-extends ChargingBehavior(
-    ChargingBehaviorNames.onoff,
-    Set(ChargingBehaviorNameInput, UnitPriceInput, TimeDeltaInput)
-) {
-
-  /**
-   *
-   * @param oldAmount is ignored
-   * @param newEventValue
-   * @return
-   */
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
-    newEventValue
-  }
-
-  def getResourceInstanceInitialAmount: Double = {
-    0.0
-  }
-
-  private[this]
-  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
-    import OnOffChargingBehaviorValues.{ON, OFF}
-
-    def exception(rs: OnOffPolicyResourceState) =
-      new AquariumException("Resource state transition error (%s -> %s)".format(rs, rs))
-
-    (oldAmount, newEventValue) match {
-      case (ON, ON) ⇒
-        throw exception(OnResourceState)
-      case (ON, OFF) ⇒
-        OFF
-      case (OFF, ON) ⇒
-        ON
-      case (OFF, OFF) ⇒
-        throw exception(OffResourceState)
-    }
-  }
-
-  override def isBillableEvent(event: ResourceEventModel) = {
-    // ON events do not contribute, only OFF ones.
-    OnOffChargingBehaviorValues.isOFFValue(event.value)
-  }
-
-  /**
-   * This is called when we have the very first event for a particular resource instance, and we want to know
-   * if it is billable or not.
-   */
-  def isBillableFirstEvent(event: ResourceEventModel) = {
-    false
-  }
-
-  def mustGenerateDummyFirstEvent = false // should be handled by the implicit OFFs
-
-  def supportsImplicitEvents = {
-    true
-  }
-
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
-    // If we have ON events with no OFF companions at the end of the billing period,
-    // then we must generate implicit OFF events.
-    OnOffChargingBehaviorValues.isONValue(resourceEvent.value)
-  }
-
-  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long) = {
-    assert(supportsImplicitEvents && mustConstructImplicitEndEventFor(resourceEvent))
-    assert(OnOffChargingBehaviorValues.isONValue(resourceEvent.value))
-
-    val details = resourceEvent.details
-    val newDetails = ResourceEventModel.setAquariumSyntheticAndImplicitEnd(details)
-    val newValue   = OnOffChargingBehaviorValues.OFF
-
-    resourceEvent.withDetailsAndValue(newDetails, newValue, newOccurredMillis)
-  }
-
-  def constructImplicitStartEventFor(resourceEvent: ResourceEventModel) = {
-    throw new AquariumInternalError("constructImplicitStartEventFor() Not compliant with %s".format(this))
-  }
-}
-
-object OnOffChargingBehaviorValues {
-  final val ON  = 1.0
-  final val OFF = 0.0
-
-  def isONValue (value: Double) = value == ON
-  def isOFFValue(value: Double) = value == OFF
-}
-
-/**
- * An discrete charging behavior indicates that a resource should be charged directly
- * at each resource state change, i.e. the charging is not dependent on
- * the time the resource.
- *
- * Example oneoff resources might be individual charges applied to various
- * actions (e.g. the fact that a user has created an account) or resources
- * that should be charged per volume once (e.g. the allocation of a volume)
- */
-case object DiscreteChargingBehavior
-extends ChargingBehavior(
-    ChargingBehaviorNames.discrete,
-    Set(ChargingBehaviorNameInput, UnitPriceInput, CurrentValueInput)
-) {
-
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
-    oldAmount + newEventValue
-  }
-
-  def getResourceInstanceInitialAmount: Double = {
-    0.0
-  }
-
-  /**
-   * This is called when we have the very first event for a particular resource instance, and we want to know
-   * if it is billable or not.
-   */
-  def isBillableFirstEvent(event: ResourceEventModel) = {
-    false // nope, we definitely need a  previous one.
-  }
-
-  // FIXME: Check semantics of this. I just put false until thorough study
-  def mustGenerateDummyFirstEvent = false
-
-  def supportsImplicitEvents = {
-    false
-  }
-
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
-    false
-  }
-
-  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
-    throw new AquariumInternalError("constructImplicitEndEventFor() Not compliant with %s".format(this))
   }
 }

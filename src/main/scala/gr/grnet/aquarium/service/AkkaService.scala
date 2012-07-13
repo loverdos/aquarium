@@ -223,7 +223,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
         // Create new User Actor instance
         logger.debug("Creating new UserActor instance for %s".format(userID))
         val actorRef = _actorSystem.actorOf(Props.apply({
-          aquarium.newInstance(classOf[UserActor], classOf[UserActor].getName)
+          aquarium.newInstance(classOf[UserActor])
         }), "userActor::%s".format(userID))
 
         // Cache it for subsequent calls

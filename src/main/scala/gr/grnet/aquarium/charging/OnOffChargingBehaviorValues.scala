@@ -40,9 +40,11 @@ package gr.grnet.aquarium.charging
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object ChargingBehaviorNames {
-  final val onoff      = "onoff"
-  final val discrete   = "discrete"
-  final val continuous = "continuous"
-  final val once       = "once"
+object OnOffChargingBehaviorValues {
+  final val ON  = 1.0
+  final val OFF = 0.0
+
+  def isONValue (value: Double) = value == ON
+  def isOFFValue(value: Double) = value == OFF
 }
+

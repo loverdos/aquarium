@@ -49,13 +49,22 @@ import gr.grnet.aquarium.charging.ChargingBehavior
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait PolicyModel extends JsonSupport {
+trait PolicyModel extends Ordered[PolicyModel] with JsonSupport {
+  final def compare(that: PolicyModel): Int = {
+    if(this.validFrom < that.validFrom) {
+      -1
+    } else if(this.validFrom == that.validFrom) {
+      0
+    } else {
+      1
+    }
+  }
+
   def id: String
 
   def parentID: Option[String]
 
   def idInStore: Option[Any]
-
 
   /**
    * The time period within which this policy is valid.
@@ -77,7 +86,7 @@ trait PolicyModel extends JsonSupport {
    * Note than since a charging behavior is semantically attached to an implementation, a change in the set
    * of known charging behaviors normally means a change in the implementation of Aquarium.
    */
-  def chargingBehaviorClasses: Set[String/*ImplementationClassName*/]
+  def chargingBehaviors: Set[String/*ImplementationClassName*/]
 
   /**
    * Each role is mapped to a full price table.

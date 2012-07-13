@@ -36,7 +36,6 @@ package gr.grnet.aquarium.logic.test
 
 import org.junit.Test
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.util.TestMethods
 import java.util.Date
 import scala._
 import scala.Some

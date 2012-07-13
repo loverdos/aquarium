@@ -35,22 +35,36 @@
 
 package gr.grnet.aquarium.policy
 
+import scala.collection.immutable.TreeSet
 import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.util.Lock
 
 /**
- * Standard implementation of Aquarium policy model.
+ * A mutable container of policy models.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdPolicy(
-    id: String,
-    parentID: Option[String],
-    validityTimespan: Timespan,
-    resourceTypes: Set[ResourceType],
-    chargingBehaviors: Set[String],
-    roleMapping: Map[String/*Role*/, FullPriceTable]
-) extends PolicyModel {
+class PolicyHistory {
+  private[this] val lock = new Lock()
+  @volatile private[this] var _policies = TreeSet[PolicyModel]()
 
-  def idInStore = Some(id)
+  def insertNewPolicy(newPolicy: PolicyModel): Unit = {
+    lock.withLock(_policies += newPolicy)
+  }
+
+  /**
+   * Return the last (ordered) policy that starts before timeMillis
+   *
+   * @param timeMillis
+   * @return
+   */
+  def findPolicyAt(timeMillis: Long): Option[PolicyModel] = {
+    lock.withLock {
+      // Take the subset of all ordered policies up to the one with less than or equal start time
+      // and then return the last item. This should be the policy right before the given time.
+      // TODO: optimize the creation of the fake StdPolicy
+      _policies.to(new StdPolicy("", None, Timespan(timeMillis), Set(), Set(), Map())).lastOption
+    }
+  }
 }

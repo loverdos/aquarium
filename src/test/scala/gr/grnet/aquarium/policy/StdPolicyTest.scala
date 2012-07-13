@@ -35,22 +35,51 @@
 
 package gr.grnet.aquarium.policy
 
+import org.junit.Test
 import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.charging.{OnceChargingBehavior, ContinuousChargingBehavior, OnOffChargingBehavior, DiscreteChargingBehavior}
+import gr.grnet.aquarium.converter.{StdConverters, PrettyJsonTextFormat}
 
 /**
- * Standard implementation of Aquarium policy model.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdPolicy(
-    id: String,
-    parentID: Option[String],
-    validityTimespan: Timespan,
-    resourceTypes: Set[ResourceType],
-    chargingBehaviors: Set[String],
-    roleMapping: Map[String/*Role*/, FullPriceTable]
-) extends PolicyModel {
+class StdPolicyTest {
+  final lazy val policy = StdPolicy(
+    id = "policy-1",
+    parentID = None,
 
-  def idInStore = Some(id)
+    validityTimespan = Timespan(0),
+
+    resourceTypes = Set(
+      ResourceType("bandwidth", "MB/Hr", classOf[DiscreteChargingBehavior].getName),
+      ResourceType("vmtime",    "Hr",    classOf[OnOffChargingBehavior].getName),
+      ResourceType("diskspace", "MB/Hr", classOf[ContinuousChargingBehavior].getName)
+    ),
+
+    chargingBehaviors = Set(
+      classOf[DiscreteChargingBehavior].getName,
+      classOf[OnOffChargingBehavior].getName,
+      classOf[ContinuousChargingBehavior].getName,
+      classOf[OnceChargingBehavior].getName
+    ),
+
+    roleMapping = Map(
+      "default" -> FullPriceTable(Map(
+        "bandwidth" -> EffectivePriceTable(EffectiveUnitPrice(0.01, None) :: Nil),
+        "vmtime"    -> EffectivePriceTable(EffectiveUnitPrice(0.01, None) :: Nil),
+        "diskspace" -> EffectivePriceTable(EffectiveUnitPrice(0.01, None) :: Nil)
+      ))
+    )
+  )
+
+  @Test
+  def testJson(): Unit = {
+    val converters = StdConverters.AllConverters
+    val json = converters.convertEx[PrettyJsonTextFormat](policy)
+    val obj = converters.convertEx[StdPolicy](json)
+
+    assert(policy == obj)
+  }
 }

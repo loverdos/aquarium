@@ -33,24 +33,21 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.policy
+package gr.grnet.aquarium.util
 
-import gr.grnet.aquarium.Timespan
+import java.util.concurrent.locks.ReentrantLock
 
 /**
- * Standard implementation of Aquarium policy model.
+ * A wrapper around [[java.util.concurrent.locks.ReentrantLock]]
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdPolicy(
-    id: String,
-    parentID: Option[String],
-    validityTimespan: Timespan,
-    resourceTypes: Set[ResourceType],
-    chargingBehaviors: Set[String],
-    roleMapping: Map[String/*Role*/, FullPriceTable]
-) extends PolicyModel {
+final class Lock(isFair: Boolean = false) {
+  private[this] val lock = new ReentrantLock(isFair)
 
-  def idInStore = Some(id)
+  def withLock[A](f: ⇒ A): A = {
+    lock.lock()
+    try f finally lock.unlock()
+  }
 }

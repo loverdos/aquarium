@@ -49,25 +49,18 @@ sealed abstract class OnOffPolicyResourceState(val state: String) {
   def isOff: Boolean = !isOn
 }
 
-object OnResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceStateNames.on) {
+object OnResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceState.Names.on) {
   override def isOn = true
 }
 
-object OffResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceStateNames.off) {
+object OffResourceState extends OnOffPolicyResourceState(OnOffPolicyResourceState.Names.off) {
   override def isOff = true
 }
 
 object OnOffPolicyResourceState {
-  def apply(name: Any): OnOffPolicyResourceState = {
-    name match {
-      case x: String if (x.equalsIgnoreCase(OnOffPolicyResourceStateNames.on))  ⇒ OnResourceState
-      case y: String if (y.equalsIgnoreCase(OnOffPolicyResourceStateNames.off)) ⇒ OffResourceState
-      case a: Double if (a == 0) => OffResourceState
-      case b: Double if (b == 1) => OnResourceState
-      case i: Int if (i == 0) => OffResourceState
-      case j: Int if (j == 1) => OnResourceState
-      case _ => throw new AquariumException("Invalid OnOffPolicyResourceState %s".format(name))
-    }
+  object Names {
+    final val on  = "on"
+    final val off = "off"
   }
 }
 

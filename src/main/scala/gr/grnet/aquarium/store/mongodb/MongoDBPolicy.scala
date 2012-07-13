@@ -45,14 +45,14 @@ import gr.grnet.aquarium.policy.{PolicyModel, FullPriceTable, ResourceType}
 
 case class MongoDBPolicy(
     _id: String,
-    id: String,
     parentID: Option[String],
     validityTimespan: Timespan,
     resourceTypes: Set[ResourceType],
-    chargingBehaviorClasses: Set[String],
+    chargingBehaviors: Set[String],
     roleMapping: Map[String/*Role*/, FullPriceTable]
 ) extends PolicyModel {
 
+  def id = _id
   def idInStore = Some(_id)
 }
 
@@ -60,11 +60,10 @@ object MongoDBPolicy {
   final def fromOther(policy: PolicyModel, _id: String): MongoDBPolicy = {
     MongoDBPolicy(
       _id,
-      policy.id,
       policy.parentID,
       policy.validityTimespan,
       policy.resourceTypes,
-      policy.chargingBehaviorClasses,
+      policy.chargingBehaviors,
       policy.roleMapping
     )
   }

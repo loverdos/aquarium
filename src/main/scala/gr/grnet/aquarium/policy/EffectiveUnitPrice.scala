@@ -37,7 +37,6 @@ package gr.grnet.aquarium.policy
 
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.mutable
-import java.util
 
 /**
  *
@@ -71,7 +70,7 @@ case class EffectiveUnitPrice(unitPrice: Double, when: Option[(CronSpec,CronSpec
                  false
                case Some(d_end) =>
                  result += Timeslot(d_start,d_end)
-                 offset = d_end //new util.Date(d_end.getTime + 1000L)
+                 offset = d_end
                  d_end.before(t.to)
              }
          }) ()
@@ -90,6 +89,6 @@ case class EffectiveUnitPrice(unitPrice: Double, when: Option[(CronSpec,CronSpec
     case None => "? ? ? ? ?"
     case Some((_,s)) => s.toString
   }
-  override def toString : String = "EffectiveUnitPrice(%d,%s,%s)".
+  override def toString : String = "EffectiveUnitPrice(%f,%s,%s)".
                           format(unitPrice,stringOfStartCron,stringOfEndCron)
  }

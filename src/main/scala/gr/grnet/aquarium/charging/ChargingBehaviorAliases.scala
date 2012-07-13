@@ -33,24 +33,16 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.policy
-
-import gr.grnet.aquarium.Timespan
+package gr.grnet.aquarium.charging
 
 /**
- * Standard implementation of Aquarium policy model.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class StdPolicy(
-    id: String,
-    parentID: Option[String],
-    validityTimespan: Timespan,
-    resourceTypes: Set[ResourceType],
-    chargingBehaviors: Set[String],
-    roleMapping: Map[String/*Role*/, FullPriceTable]
-) extends PolicyModel {
-
-  def idInStore = Some(id)
+object ChargingBehaviorAliases {
+  final val onoff      = "onoff"
+  final val discrete   = "discrete"
+  final val continuous = "continuous"
+  final val once       = "once"
 }

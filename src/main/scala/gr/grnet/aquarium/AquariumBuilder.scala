@@ -38,11 +38,9 @@ package gr.grnet.aquarium
 import com.ckkloverdos.key.{BooleanKey, TypedKey}
 import com.ckkloverdos.env.Env
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.maybe.{MaybeOption, Failed, MaybeEither, Just, NoVal}
+import com.ckkloverdos.maybe.{Failed, MaybeEither, Just, NoVal}
 import gr.grnet.aquarium.util.Loggable
 import java.io.File
-import gr.grnet.aquarium.store.StoreProvider
-import gr.grnet.aquarium.logic.accounting.algorithm.SimpleCostPolicyAlgorithmCompiler
 import gr.grnet.aquarium.computation.UserStateComputations
 import gr.grnet.aquarium.service.{StoreWatcherService, RabbitMQService, AkkaService, SimpleTimerService, EventBusService}
 import gr.grnet.aquarium.converter.StdConverters
@@ -159,8 +157,8 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
 
     val propName = envKey.name
     originalProps.get(propName) match {
-      case Just(propValue) ⇒
-        update(envKey, newInstance(envKey.keyType, propValue))
+      case Just(storeProviderClassName) ⇒
+        update(envKey, newInstance(envKey.keyType, storeProviderClassName))
 
       case NoVal ⇒
         throw new AquariumInternalError("No store provider is given in properties")
@@ -168,39 +166,6 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
       case Failed(e) ⇒
         throw new AquariumInternalError(e, "While obtaining value for key %s in properties".format(propName))
     }
-  }
-
-  private[this] def checkStoreOverrides: Unit = {
-    if(originalProps eq null) {
-      return
-    }
-
-    def checkOverride[S <: AnyRef : Manifest](envKey: TypedKey[S], f: StoreProvider ⇒ S): Unit = {
-      if(!_env.contains(envKey)) {
-        val propName = envKey.name
-
-        originalProps.get(propName) match {
-          case Just(propValue) ⇒
-            // Create the store reflectively
-            update(envKey, newInstance(envKey.keyType, propValue))
-
-          case NoVal ⇒
-            // Get the store from the store provider
-            val storeProvider = this.envGetEx(EnvKeys.storeProvider)
-            val propValue = f(storeProvider)
-            update(envKey, propValue)
-
-          case Failed(e) ⇒
-            throw new AquariumInternalError(e, "While obtaining value for key %s in properties".format(propName))
-        }
-      }
-    }
-
-    // If a store has not been specifically overridden, we load it from the properties
-    checkOverride(EnvKeys.resourceEventStore, _.resourceEventStore)
-    checkOverride(EnvKeys.imEventStore,       _.imEventStore)
-    checkOverride(EnvKeys.userStateStore,     _.userStateStore)
-    checkOverride(EnvKeys.policyStore,        _.policyStore)
   }
 
   private[this] def checkEventsStoreFolderOverride: Unit = {
@@ -360,7 +325,6 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
     checkNoPropsOverride(EnvKeys.converters) { _ ⇒ StdConverters.AllConverters }
 
     checkStoreProviderOverride
-    checkStoreOverrides
 
     checkEventsStoreFolderOverride
     checkEventsStoreFolderExistence

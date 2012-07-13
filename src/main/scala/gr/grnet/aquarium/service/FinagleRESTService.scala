@@ -275,7 +275,7 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
           stringResponseOK("%s\n%s\n%s\n" .format(
             ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
             ResourceLocator.ResourceNames.LOGBACK_XML,
-            ResourceLocator.ResourceNames.POLICY_YAML),
+            ResourceLocator.ResourceNames.POLICY_JSON),
           TEXT_PLAIN)
 
         case RESTPaths.ResourcesAquariumPropertiesPath() ⇒
@@ -284,8 +284,8 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
         case RESTPaths.ResourcesLogbackXMLPath() ⇒
           resourceInfoResponse(ResourceLocator.Resources.LogbackXMLResource, TEXT_PLAIN)
 
-        case RESTPaths.ResourcesPolicyYAMLPath() ⇒
-          resourceInfoResponse(ResourceLocator.Resources.PolicyYAMLResource, TEXT_PLAIN)
+        case RESTPaths.ResourcesPolicyJSONPath() ⇒
+          resourceInfoResponse(ResourceLocator.Resources.PolicyJSONResource, TEXT_PLAIN)
       }
 
       val EventsHandler: URIPF = {

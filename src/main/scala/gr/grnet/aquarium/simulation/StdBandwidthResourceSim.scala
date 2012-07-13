@@ -47,8 +47,8 @@ import gr.grnet.aquarium.charging.{DiscreteChargingBehavior, ChargingBehavior}
 class StdBandwidthResourceSim(
     name: String = StdVMTimeResourceSim.DSLNames.name,
     unit: String = StdVMTimeResourceSim.DSLNames.unit,
-    costPolicy: ChargingBehavior = DiscreteChargingBehavior
-) extends ResourceSim(name, unit, costPolicy) {
+    chargingBehavior: String = classOf[DiscreteChargingBehavior].getName
+) extends ResourceSim(name, unit, chargingBehavior) {
 
 override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
     StdBandwidthInstanceSim(this, instanceId, owner, client)

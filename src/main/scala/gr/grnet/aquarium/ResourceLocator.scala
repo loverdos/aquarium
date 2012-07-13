@@ -35,23 +35,19 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.maybe.{Failed, Just, Maybe, NoVal}
+import com.ckkloverdos.maybe.{Maybe, NoVal}
 import com.ckkloverdos.sys.{SysEnv, SysProp}
 import java.io.File
 
 import gr.grnet.aquarium.util.justForSure
-import gr.grnet.aquarium.util.isRunningTests
 import com.ckkloverdos.resource.{FileStreamResource, StreamResource, CompositeStreamResourceContext, ClassLoaderStreamResourceContext, FileStreamResourceContext}
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.convert.Converters._
 import com.ckkloverdos.maybe.Just
 import com.ckkloverdos.maybe.Failed
 import com.ckkloverdos.convert.Converters
 
 /**
  * Locates resources.
- *
- * This code was initially in [[gr.grnet.aquarium.Aquarium]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -63,8 +59,7 @@ object ResourceLocator {
 
     final val LOGBACK_XML         = "logback.xml"
     final val AQUARIUM_PROPERTIES = "aquarium.properties"
-    final val POLICY_YAML         = "policy.yaml"
-    final val ROLE_AGREEMENTS_MAP = "roles-agreements.map"
+    final val POLICY_JSON         = "policy.json"
   }
 
   final object Homes {
@@ -256,18 +251,18 @@ object ResourceLocator {
       }
     }
 
-    final lazy val PolicyYAMLResource = {
-      ResourceLocator.getResource(ResourceLocator.ResourceNames.POLICY_YAML) match {
-        case Just(policyYAML) ⇒
-          policyYAML
+    final lazy val PolicyJSONResource = {
+      ResourceLocator.getResource(ResourceLocator.ResourceNames.POLICY_JSON) match {
+        case Just(policyJSON) ⇒
+          policyJSON
 
         case NoVal ⇒
           throw new AquariumInternalError(
-            "Could not find %s".format(ResourceLocator.ResourceNames.POLICY_YAML))
+            "Could not find %s".format(ResourceLocator.ResourceNames.POLICY_JSON))
 
         case Failed(e) ⇒
           throw new AquariumInternalError(
-            "Could not find %s".format(ResourceLocator.ResourceNames.POLICY_YAML), e)
+            "Could not find %s".format(ResourceLocator.ResourceNames.POLICY_JSON), e)
       }
     }
   }

@@ -57,7 +57,7 @@ object RESTPaths {
 
   final val ResourcesLogbackXMLPath = toResourcesPath(ResourceLocator.ResourceNames.LOGBACK_XML).r
 
-  final val ResourcesPolicyYAMLPath = toResourcesPath(ResourceLocator.ResourceNames.POLICY_YAML).r
+  final val ResourcesPolicyJSONPath = toResourcesPath(ResourceLocator.ResourceNames.POLICY_JSON).r
 
   final val ResourceEventPath = toEventPath("rcevent").r
 

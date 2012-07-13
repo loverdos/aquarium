@@ -36,10 +36,8 @@
 package gr.grnet.aquarium.logic.accounting.algorithm
 
 
-import com.ckkloverdos.maybe.Maybe
-import gr.grnet.aquarium.logic.accounting.dsl._
 import gr.grnet.aquarium.AquariumException
-import gr.grnet.aquarium.charging.{CurrentValueInput, TimeDeltaInput, OldTotalAmountInput, UnitPriceInput, ChargingBehaviorNames, ChargingBehaviorNameInput, ChargingInput}
+import gr.grnet.aquarium.charging.{CurrentValueInput, TimeDeltaInput, OldTotalAmountInput, UnitPriceInput, ChargingBehaviorAliases, ChargingBehaviorNameInput, ChargingInput}
 
 /**
  * An executable charging algorithm with some simple implementation.
@@ -53,26 +51,26 @@ object SimpleExecutableChargingBehaviorAlgorithm extends ExecutableChargingBehav
 
   def apply(vars: Map[ChargingInput, Any]): Double = {
     vars.apply(ChargingBehaviorNameInput) match {
-      case ChargingBehaviorNames.continuous ⇒
+      case ChargingBehaviorAliases.continuous ⇒
         val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
         val oldTotalAmount = vars(OldTotalAmountInput).asInstanceOf[Double]
         val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
 
         hrs(timeDelta) * oldTotalAmount * unitPrice
 
-      case ChargingBehaviorNames.discrete ⇒
+      case ChargingBehaviorAliases.discrete ⇒
         val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
         val currentValue = vars(CurrentValueInput).asInstanceOf[Double]
 
         currentValue * unitPrice
 
-      case ChargingBehaviorNames.onoff ⇒
+      case ChargingBehaviorAliases.onoff ⇒
         val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
         val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
 
         hrs(timeDelta) * unitPrice
 
-      case ChargingBehaviorNames.once ⇒
+      case ChargingBehaviorAliases.once ⇒
         val currentValue = vars(CurrentValueInput).asInstanceOf[Double]
         currentValue
 
@@ -83,8 +81,8 @@ object SimpleExecutableChargingBehaviorAlgorithm extends ExecutableChargingBehav
 
   override def toString = "SimpleExecutableCostPolicyAlgorithm(%s)".format(
     Map(
-      ChargingBehaviorNames.continuous -> "hrs(timeDelta) * oldTotalAmount * unitPrice",
-      ChargingBehaviorNames.discrete   -> "currentValue * unitPrice",
-      ChargingBehaviorNames.onoff      -> "hrs(timeDelta) * unitPrice",
-      ChargingBehaviorNames.once       -> "currentValue"))
+      ChargingBehaviorAliases.continuous -> "hrs(timeDelta) * oldTotalAmount * unitPrice",
+      ChargingBehaviorAliases.discrete   -> "currentValue * unitPrice",
+      ChargingBehaviorAliases.onoff      -> "hrs(timeDelta) * unitPrice",
+      ChargingBehaviorAliases.once       -> "currentValue"))
 }
