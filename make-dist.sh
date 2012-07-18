@@ -144,8 +144,8 @@ collectconf() {
   echo
   echo Copying config files from $CONF_SRC
   echo
-  cp $CONF_SRC/policy.yaml $DIST/conf          || fail "copying policy.yaml"
-  cp $CONF_SRC/roles-agreements.map $DIST/conf || fail "copying roles-agreements.map"
+  cp $CONF_SRC/policy.json $DIST/conf          || fail "copying policy.json"
+#  cp $CONF_SRC/roles-agreements.map $DIST/conf || fail "copying roles-agreements.map"
 
   if [ -n "$P_PROPS" ]; then
     cp $P_PROPS $DIST/conf/aquarium.properties || fail "copying $P_PROPS"
