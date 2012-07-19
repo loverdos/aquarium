@@ -51,6 +51,8 @@ import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.policy.{PolicyModel, StdPolicy}
 import collection.immutable.SortedMap
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import collection.immutable
+import java.util.Date
 
 /**
  * An implementation of various stores that persists parts in memory.
@@ -283,11 +285,23 @@ extends StoreProvider
   }
 
   def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
-    throw new UnsupportedOperationException
+    var d = new Date(atMillis)
+    /* sort in reverse order  and return the first that includes this date*/
+    _policies.sortWith({(x,y)=> y.validFrom < x.validFrom}).collectFirst({
+      case t if(t.validityTimespan.toTimeslot.includes(d)) => t
+    })
   }
 
+  private def emptyMap = immutable.SortedMap[Timeslot,Policy]()
+
   def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
-    throw new UnsupportedOperationException
+    val range = Timeslot(fromMillis,toMillis)
+    _policies.foldLeft (emptyMap) { (map,p) =>
+      if(range.overlaps(p.validityTimespan.toTimeslot))
+        map + ((p.validityTimespan.toTimeslot,p))
+      else
+        map
+    }
   }
 }
 

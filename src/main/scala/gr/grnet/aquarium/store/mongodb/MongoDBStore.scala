@@ -55,6 +55,8 @@ import gr.grnet.aquarium.policy.PolicyModel
 import gr.grnet.aquarium.{Aquarium, AquariumException}
 import collection.immutable.SortedMap
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import collection.immutable
+import java.util.Date
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -263,17 +265,6 @@ class MongoDBStore(
 
 
   //+PolicyStore
-  def loadPoliciesAfter(after: Long): List[Policy] = {
-    // FIXME implement
-    throw new UnsupportedOperationException
-  }
-
-
-  def findPolicyByID(id: String) = {
-    // FIXME implement
-    throw new UnsupportedOperationException
-  }
-
   /**
    * Store an accounting policy.
    */
@@ -282,11 +273,19 @@ class MongoDBStore(
     MongoDBStore.insertObject(dbPolicy, policies, MongoDBStore.jsonSupportToDBObject)
   }
 
+  private def emptyMap = immutable.SortedMap[Timeslot,Policy]()
+
   def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
+    /*var d = new Date(atMillis)
+    /* sort in reverse order  and return the first that includes this date*/
+    policies.sortWith({(x,y)=> y.validFrom < x.validFrom}).collectFirst({
+      case t if(t.validityTimespan.toTimeslot.includes(d)) => t
+    })*/
     throw new UnsupportedOperationException
   }
 
   def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
+
     throw new UnsupportedOperationException
   }
   //-PolicyStore

@@ -73,7 +73,7 @@ final case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
    */
   def contains(t: Timeslot) : Boolean = this.start <= t.start && this.end >= t.end
 
-  private[dsl] def weakIncludes(t: Date) : Boolean = start < t.getTime &&  t.getTime < end
+  def weakIncludes(t: Date) : Boolean = start < t.getTime &&  t.getTime < end
   def weakOverlaps(t: Timeslot) : Boolean =
     contains(t) || t.contains(this) || this.weakIncludes(t.from) || this.weakIncludes(t.to)
 
@@ -84,7 +84,7 @@ final case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
   /**
    * Check whether this timeslot contains the provided time instant.
    */
-  private[dsl] def includes(t: Date) : Boolean = start <= t.getTime &&  t.getTime <= end
+  def includes(t: Date) : Boolean = start <= t.getTime &&  t.getTime <= end
 
 
   /**
