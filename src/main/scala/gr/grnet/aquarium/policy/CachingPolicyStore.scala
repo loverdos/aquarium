@@ -56,7 +56,7 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
 
   private[this] var _policies = immutable.TreeSet[Policy]()
 
-  private[this] def ensureLoaded(): Unit = {
+  private[this] def ensureLoaded[A](andThen: ⇒ A): A = {
     this.lock.withLock {
       if(_policies.isEmpty) {
         _policies ++= policyStore.loadAllPolicies
@@ -66,6 +66,8 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
          policyStore.insertPolicy(defaultPolicy)
         }
       }
+
+      andThen
     }
   }
 
@@ -94,6 +96,7 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
    */
   def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
     ensureLoaded()
+
     // Take the subset of all ordered policies up to the one with less than or equal start time
     // and then return the last item. This should be the policy right before the given time.
     // TODO: optimize the creation of the fake StdPolicy
@@ -105,7 +108,7 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
    * Store an accounting policy.
    */
   def insertPolicy(policy: PolicyModel): Policy = {
-    this.lock.withLock {
+    ensureLoaded {
       this._policies += policy
       policyStore.insertPolicy(policy)
     }
