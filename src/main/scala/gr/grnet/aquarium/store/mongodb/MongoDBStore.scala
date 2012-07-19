@@ -51,7 +51,7 @@ import gr.grnet.aquarium.event.model.ExternalEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.policy.PolicyModel
 import gr.grnet.aquarium.{Aquarium, AquariumException}
-import collection.immutable.SortedMap
+import scala.collection.immutable.{TreeMap, SortedMap}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
 import gr.grnet.aquarium.charging.state.UserStateModel
@@ -292,12 +292,11 @@ class MongoDBStore(
     policies.sortWith({(x,y)=> y.validFrom < x.validFrom}).collectFirst({
       case t if(t.validityTimespan.toTimeslot.includes(d)) => t
     })*/
-    throw new UnsupportedOperationException
+    None
   }
 
   def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
-
-    throw new UnsupportedOperationException
+    TreeMap[Timeslot, Policy]()
   }
   //-PolicyStore
 }
