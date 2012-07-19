@@ -47,7 +47,6 @@ import com.mongodb._
 import org.bson.types.ObjectId
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.converter.StdConverters
-import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.event.model.ExternalEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.policy.PolicyModel
@@ -55,7 +54,6 @@ import gr.grnet.aquarium.{Aquarium, AquariumException}
 import collection.immutable.SortedMap
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
-import java.util.Date
 import gr.grnet.aquarium.charging.state.UserStateModel
 
 /**
@@ -184,14 +182,14 @@ class MongoDBStore(
 
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
     val query = new BasicDBObjectBuilder().
-      add(UserState.JsonNames.userID, userID).
-      add(UserState.JsonNames.isFullBillingMonthState, true).
-      add(UserState.JsonNames.theFullBillingMonth_year, bmi.year).
-      add(UserState.JsonNames.theFullBillingMonth_month, bmi.month).
+      add(UserStateModel.Names.userID, userID).
+//      add(UserStateModel.Names.isFullBillingMonthState, true). FIXME
+      add(UserStateModel.Names.theFullBillingMonth_year, bmi.year).
+      add(UserStateModel.Names.theFullBillingMonth_month, bmi.month).
       get()
 
     // Descending order, so that the latest comes first
-    val sorter = new BasicDBObject(UserState.JsonNames.occurredMillis, -1)
+    val sorter = new BasicDBObject(UserStateModel.Names.occurredMillis, -1)
 
     val cursor = userStates.find(query).sort(sorter)
 
@@ -317,10 +315,10 @@ object MongoDBStore {
   final val RESOURCE_EVENTS_COLLECTION = "resevents"
 
   /**
-   * Collection holding the snapshots of [[gr.grnet.aquarium.computation.state.UserState]].
+   * Collection holding the snapshots of [[gr.grnet.aquarium.charging.state.UserStateModel]].
    *
-   * [[gr.grnet.aquarium.computation.state.UserState]] is held internally within
-   * [[gr.grnet.aquarium.actor.service.user .UserActor]]s.
+   * [[gr.grnet.aquarium.charging.state.UserStateModel]] is held internally within
+   * [[gr.grnet.aquarium.actor.service.user.UserActor]]s.
    */
   final val USER_STATES_COLLECTION = "userstates"
 
@@ -397,25 +395,6 @@ object MongoDBStore {
         case None => buff.toList
       }
     }
-  }
-
-  def storeUserState(userState: UserState, collection: DBCollection) = {
-    storeAny[UserState](userState, collection, ResourceEventNames.userID, _.userID, MongoDBStore.jsonSupportToDBObject)
-  }
-
-  def storeAny[A](any: A,
-                  collection: DBCollection,
-                  idName: String,
-                  idValueProvider: (A) => String,
-                  serializer: (A) => DBObject) : RecordID = {
-
-    val dbObject = serializer apply any
-    val _id = new ObjectId()
-    dbObject.put("_id", _id)
-    val writeResult = collection.insert(dbObject, WriteConcern.JOURNAL_SAFE)
-    writeResult.getLastError().throwOnError()
-
-    RecordID(dbObject.get("_id").toString)
   }
 
   def insertObject[A <: AnyRef](obj: A, collection: DBCollection, serializer: A ⇒ DBObject) : A = {

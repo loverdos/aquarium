@@ -33,35 +33,19 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
-package state
-package parts
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.policy.UserAgreementModel
 
 /**
- * Keeps the implicit OFF events when a billing period ends.
- * This is normally recorded in the [[gr.grnet.aquarium.computation.state.UserState]].
+ * This is used to bootstrap the [[gr.grnet.aquarium.charging.state.UserStateModel]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[ResourceEventModel]) {
-  /**
-   * The gateway to playing with mutable state.
-   *
-   * @return A fresh instance of [[gr.grnet.aquarium.computation.state.parts.ImplicitlyIssuedResourceEventsWorker]].
-   */
-  def toMutableWorker = {
-    val map = scala.collection.mutable.Map[ResourceEventModel.ResourceInstance, ResourceEventModel]()
-    for(implicitEvent <- implicitlyIssuedEvents) {
-      map(implicitEvent.safeResourceInstanceInfo) = implicitEvent
-    }
 
-    ImplicitlyIssuedResourceEventsWorker(map)
-  }
-}
-
-object ImplicitlyIssuedResourceEventsSnapshot {
-  final val Empty = ImplicitlyIssuedResourceEventsSnapshot(Nil)
-}
-
+case class UserStateBootstrap(
+    userID: String,
+    userCreationMillis: Long,
+    initialAgreement: UserAgreementModel,
+    initialCredits: Double
+)

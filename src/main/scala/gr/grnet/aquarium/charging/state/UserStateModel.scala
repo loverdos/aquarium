@@ -38,7 +38,6 @@ package gr.grnet.aquarium.charging.state
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.computation.state.parts.{ResourceInstanceAmount, AgreementHistory}
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.charging.reason.ChargingReason
 import gr.grnet.aquarium.policy.ResourceType
@@ -87,6 +86,9 @@ trait UserStateModel extends JsonSupport {
 object UserStateModel {
   trait NamesT {
     final val userID = "userID"
+    final val occurredMillis = "occurredMillis"
+    final val theFullBillingMonth_year = "theFullBillingMonth.year"
+    final val theFullBillingMonth_month = "theFullBillingMonth.month"
   }
 
   object Names extends NamesT

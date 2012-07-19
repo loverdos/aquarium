@@ -47,7 +47,7 @@ import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResp
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
 import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.computation.state.UserStateBootstrap
+import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.charging.state.{WorkingAgreementHistory, WorkingUserState, UserStateModel}
 import gr.grnet.aquarium.charging.reason.{InitialUserActorSetup, RealtimeChargingReason}
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement}
@@ -170,7 +170,7 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     if(haveAgreements) {
-      DEBUG("Initial %s", this._workingAgreementHistory.toJsonString)
+      DEBUG("Initial agreement history %s", this._workingAgreementHistory.toJsonString)
       logSeparator()
     }
   }
@@ -216,7 +216,7 @@ class UserActor extends ReflectiveRoleableActor {
     // state this._workingAgreementHistory is always the authoritative source.
     if(haveWorkingUserState) {
       this._workingUserState.workingAgreementHistory.setFrom(this._workingAgreementHistory)
-      DEBUG("Computed %s", this._workingUserState.toJsonString)
+      DEBUG("Computed working user state %s", this._workingUserState.toJsonString)
     }
   }
 
@@ -235,7 +235,7 @@ class UserActor extends ReflectiveRoleableActor {
     loadWorkingUserStateAndUpdateAgreementHistory()
 
     if(haveWorkingUserState) {
-      DEBUG("Initial %s", this._workingUserState.toJsonString)
+      DEBUG("Initial working user state %s", this._workingUserState.toJsonString)
       logSeparator()
     }
   }

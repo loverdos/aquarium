@@ -37,7 +37,6 @@ package gr.grnet.aquarium.charging.state
 
 import scala.collection.immutable
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel}
-import gr.grnet.aquarium.computation.state.parts.AgreementHistory
 import gr.grnet.aquarium.util.json.JsonSupport
 
 /**

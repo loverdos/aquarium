@@ -37,7 +37,7 @@ package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.computation.state.UserStateBootstrap
+import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.util.{Lifecycle, Loggable, ContextualLogger}
 import gr.grnet.aquarium.util.date.{MutableDateCalc, TimeHelpers}

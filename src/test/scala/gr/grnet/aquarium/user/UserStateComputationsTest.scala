@@ -44,11 +44,10 @@ import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableChargingBehaviorA
 import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder, AquariumException}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.charging._
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy, PolicyModel}
 import gr.grnet.aquarium.Timespan
-import gr.grnet.aquarium.computation.state.UserStateBootstrap
+import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.charging.reason.{NoSpecificChargingReason, MonthlyBillChargingReason}
 import gr.grnet.aquarium.charging.state.WorkingUserState
 

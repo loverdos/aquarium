@@ -36,19 +36,16 @@
 package gr.grnet.aquarium.charging.state
 
 import scala.collection.mutable
-import scala.collection.immutable
-import gr.grnet.aquarium.policy.{UserAgreementModel, ResourceType}
+import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.reason.ChargingReason
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.charging.ChargingBehavior
 import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.computation.state.parts.AgreementHistory
 
 /**
- * A mutable view of the [[gr.grnet.aquarium.computation.state.UserState]], so that intermediate computations are a
- * bit more memory friendly (and probably faster).
+ * A mutable view of the [[gr.grnet.aquarium.charging.state.UserStateModel]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

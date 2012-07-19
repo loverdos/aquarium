@@ -35,11 +35,10 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import gr.grnet.aquarium.charging.state.{WorkingUserState, UserStateModel}
+import gr.grnet.aquarium.charging.state.{AgreementHistory, WorkingUserState, UserStateModel}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.reason.ChargingReason
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.computation.state.parts.AgreementHistory
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.policy.ResourceType

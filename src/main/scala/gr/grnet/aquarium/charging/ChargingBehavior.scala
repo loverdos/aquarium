@@ -46,7 +46,7 @@ import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.computation.{TimeslotComputations, BillingMonthInfo}
-import gr.grnet.aquarium.computation.state.parts.AgreementHistory
+import gr.grnet.aquarium.charging.state.AgreementHistory
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.charging.ChargingBehavior.EnvKeys
@@ -425,9 +425,8 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
   }
 
   /**
-   * Given the old amount of a resource instance
-   * (see [[gr.grnet.aquarium.computation.state.parts.ResourceInstanceAmount]]), the
-   * value arriving in a new resource event and the new details, compute the new instance amount.
+   * Given the old amount of a resource instance, the value arriving in a new resource event and the new details,
+   * compute the new instance amount.
    *
    * Note that the `oldAmount` does not make sense for all types of [[gr.grnet.aquarium.charging.ChargingBehavior]],
    * in which case it is ignored.

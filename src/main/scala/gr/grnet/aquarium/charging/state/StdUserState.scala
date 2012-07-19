@@ -36,11 +36,9 @@
 package gr.grnet.aquarium.charging.state
 
 import scala.collection.mutable
-import gr.grnet.aquarium.computation.state.UserStateBootstrap
 import gr.grnet.aquarium.policy.{ResourceType, UserAgreementModel}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.computation.state.parts.{ResourceInstanceAmount, AgreementHistory}
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.charging.reason.{InitialUserStateSetup, ChargingReason}
 import gr.grnet.aquarium.AquariumInternalError

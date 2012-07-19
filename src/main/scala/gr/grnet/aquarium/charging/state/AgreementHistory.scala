@@ -33,40 +33,46 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
-package state
-package parts
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.util.findAndRemoveFromMap
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel.FullMutableResourceTypeMap
-
+import scala.collection.immutable
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.policy.UserAgreementModel
 
 /**
- * This is the mutable cousin of [[gr.grnet.aquarium.computation.state.parts.ImplicitlyIssuedResourceEventsSnapshot]].
+ * The whole history of of a user's agreements.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ImplicitlyIssuedResourceEventsWorker(implicitlyIssuedEventsMap: FullMutableResourceTypeMap) {
 
-  def toList: scala.List[ResourceEventModel] = {
-    implicitlyIssuedEventsMap.valuesIterator.toList
+case class AgreementHistory(agreements: List[UserAgreementModel]) {
+  def toWorkingAgreementHistory = {
+    (new WorkingAgreementHistory) ++ agreements
   }
 
-  def toImmutableSnapshot(snapshotTime: Long) =
-    ImplicitlyIssuedResourceEventsSnapshot(toList)
-
-  def findAndRemoveResourceEvent(resource: String, instanceId: String): Option[ResourceEventModel] = {
-    findAndRemoveFromMap(implicitlyIssuedEventsMap, (resource, instanceId))
+  def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel] = {
+    immutable.TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag)): _*)
   }
 
-  def size = implicitlyIssuedEventsMap.size
+  /**
+   * Returns the first, chronologically, agreement.
+   */
+  def firstAgreement: Option[UserAgreementModel] = {
+    agreementByTimeslot.valuesIterator.toList.lastOption
+  }
 
-  def foreach[U](f: ResourceEventModel => U): Unit = {
-    implicitlyIssuedEventsMap.valuesIterator.foreach(f)
+  /**
+   * Returns the last, chronologically, agreement.
+   */
+  def lastAgreement: Option[UserAgreementModel] = {
+    agreementByTimeslot.valuesIterator.toList.headOption
   }
 }
 
-object ImplicitlyIssuedResourceEventsWorker {
-  final val Empty = ImplicitlyIssuedResourceEventsWorker(scala.collection.mutable.Map())
+object AgreementHistory {
+  final val Empty = AgreementHistory(Nil)
+
+  def initial(userAgreement: UserAgreementModel): AgreementHistory = {
+    AgreementHistory(userAgreement :: Nil)
+  }
 }
