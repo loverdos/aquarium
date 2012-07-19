@@ -163,10 +163,25 @@ final object StdUserState {
       occurredMillis: Long,
       totalCredits: Double,
       initialAgreement: UserAgreementModel,
-      calculationReason: ChargingReason = InitialUserStateSetup(None)
+      chargingReason: ChargingReason = InitialUserStateSetup(None)
   ): StdUserState = {
 
-    null: StdUserState
+    StdUserState(
+      "",
+      None,
+      userID,
+      userCreationMillis,
+      totalCredits,
+      None,
+      chargingReason,
+      Nil,
+      Nil,
+      Map(),
+      Map(),
+      0L,
+      AgreementHistory.initial(initialAgreement),
+      Nil
+    )
   }
 
   def createInitialUserStateFromBootstrap(

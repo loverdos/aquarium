@@ -125,6 +125,8 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         InitialUserStateSetup(Some(chargingReason)) // we record the originating calculation reason
       )
 
+      logger.debug("Created (from bootstrap) initial user state %s".format(initialUserState0))
+
       // We always save the initial state
       val initialUserState1 = userStateRecorder.apply(initialUserState0)
 

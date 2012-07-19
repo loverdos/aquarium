@@ -36,17 +36,14 @@
 package gr.grnet.aquarium.store.memory
 
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.store._
 import scala.collection.JavaConversions._
 import collection.mutable.ConcurrentMap
 import java.util.concurrent.ConcurrentHashMap
 import gr.grnet.aquarium.Configurable
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
-import org.bson.types.ObjectId
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
-import gr.grnet.aquarium.computation.state.UserState
-import gr.grnet.aquarium.util.Tags
+import gr.grnet.aquarium.util.{Loggable, Tags}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.policy.{PolicyModel, StdPolicy}
 import collection.immutable.SortedMap
@@ -71,7 +68,8 @@ extends StoreProvider
    with Configurable
    with PolicyStore
    with ResourceEventStore
-   with IMEventStore {
+   with IMEventStore
+   with Loggable {
 
   override type IMEvent = MemIMEvent
   override type ResourceEvent = MemResourceEvent
@@ -114,6 +112,8 @@ extends StoreProvider
 
   //+ UserStateStore
   def createUserStateFromOther(model: UserStateModel): UserState = {
+    logger.info("createUserStateFromOther(%s)".format(model))
+
     if(model.isInstanceOf[StdUserState]) {
       model.asInstanceOf[StdUserState]
     }
@@ -149,12 +149,11 @@ extends StoreProvider
 
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
     val goodOnes = _userStates.filter(_.theFullBillingMonth.isDefined).filter { userState ⇒
-        val f1 = userState.userID == userID
-        val f2 = userState.theFullBillingMonth.isDefined
-        val bm = userState.theFullBillingMonth.get
-        val f3 = bm == bmi
-
-        f1 && f2 && f3
+      userState.userID == userID && {
+        userState.theFullBillingMonth.isDefined && {
+          userState.theFullBillingMonth.get == bmi
+        }
+      }
     }
     
     goodOnes.sortWith {
