@@ -35,7 +35,9 @@
 
 package gr.grnet.aquarium.service
 
-import gr.grnet.aquarium.util.{Loggable, Lifecycle}
+import java.util.{TimerTask, Timer}
+import gr.grnet.aquarium.uid.{UUIDGenerator, UIDGenerator}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable, chainOfCausesForLogging}
 
 
 /**
@@ -43,6 +45,30 @@ import gr.grnet.aquarium.util.{Loggable, Lifecycle}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait TimerService extends Lifecycle with Loggable {
-  def scheduleOnce[T](infoString: String, f: ⇒ T, delayMillis: Long, reportException: Boolean): String
+class TimerService extends Lifecycle with Loggable {
+  private[this] val timer = new Timer()
+  private[this] val uidGen: UIDGenerator[_] = UUIDGenerator
+
+  def scheduleOnce[T](infoString: String, f: ⇒ T, delayMillis: Long, reportException: Boolean): String = {
+    val uid = uidGen.nextUID()
+    val timerTask = new TimerTask {
+      def run() = {
+        try f
+        catch {
+          case e: Exception ⇒
+            logger.warn("While running task %s(%s)\n%s".format(infoString, uid, chainOfCausesForLogging(e, 1)))
+            logger.error("", e)
+        }
+      }
+    }
+    timer.schedule(timerTask, delayMillis)
+    uid
+  }
+
+  def start() = {
+  }
+
+  def stop() = {
+    timer.cancel()
+  }
 }
