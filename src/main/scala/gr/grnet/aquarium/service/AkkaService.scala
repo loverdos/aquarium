@@ -194,7 +194,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
     // If stopping, wait to stop or ignore
     this.stoppingUserActors.get(userID) match {
       case null ⇒
-        logger.debug("UserActor %s was not in 'stopping' mode (but I don't know if it exists yet)".format(userID))
+//        logger.debug("UserActor %s was not in stopping set (but I don't know if it exists yet)".format(userID))
 
       case future ⇒
         try {
@@ -202,16 +202,16 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
           val stopped = Await.result(future, Duration(1000, TimeUnit.MILLISECONDS))
           if(!stopped) {
             // TODO: Add metric
-            logger.warn("Await.result(): UserActor %s id not stop. Will remove from stopping anayway".format(userID))
+            logger.warn("Await.result(): UserActor %s id not stop. Will remove from stopping set anyway".format(userID))
           }
         }
         catch {
           case e: java.util.concurrent.TimeoutException ⇒
             // TODO: Add metric
-            logger.error("Timed-out while waiting for UserActor %s to stop. Will remove from stopping anayway".format(userID), e)
+            logger.error("Timed-out while waiting for UserActor %s to stop. Will remove from stopping set anyway".format(userID), e)
 
           case e: Throwable ⇒
-            logger.error("While Await(ing) UserActor %s to stop. Will remove from stopping anayway".format(userID), e)
+            logger.error("While Await(ing) UserActor %s to stop. Will remove from stopping set anyway".format(userID), e)
         }
         finally {
           this.stoppingUserActors.remove(userID)

@@ -35,8 +35,7 @@
 
 package gr.grnet.aquarium.charging.state
 
-import scala.collection.mutable
-import gr.grnet.aquarium.policy.{ResourceType, UserAgreementModel}
+import gr.grnet.aquarium.policy.UserAgreementModel
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.charging.reason.{InitialUserStateSetup, ChargingReason}
@@ -65,67 +64,10 @@ final case class StdUserState(
     billingPeriodOutOfSyncResourceEventsCounter: Long,
     agreementHistory: AgreementHistory,
     walletEntries: List[WalletEntry]
-) extends UserStateModel {
+) extends UserStateModelSkeleton {
 
-  def newWithChargingReason(newChargingReason: ChargingReason): UserStateModel = {
+  def newWithChargingReason(newChargingReason: ChargingReason): StdUserState = {
     this.copy(chargingReason = newChargingReason)
-  }
-
-  private[this] def mutableMap[Vin, Vout](
-      inputMap: Map[String, Vin],
-      vInOut: Vin ⇒ Vout
-  ): mutable.Map[(String, String), Vout] = {
-    val items = for {
-      (resourceAndInstanceID, vIn) ← inputMap.toSeq
-    } yield {
-      StdUserState.resourceAndInstanceIDOfString(resourceAndInstanceID) -> vInOut(vIn)
-    }
-
-    mutable.Map(items: _*)
-  }
-
-  private[this] def mutableAccumulatingAmountMap: mutable.Map[(String, String), Double] = {
-    mutableMap(accumulatingAmountOfResourceInstance, identity[Double])
-  }
-
-  private[this] def mutableChargingDataMap: mutable.Map[(String, String), mutable.Map[String, Any]] = {
-    mutableMap(chargingDataOfResourceInstance, (vIn: Map[String, Any]) ⇒ mutable.Map(vIn.toSeq: _*))
-  }
-
-  private[this] def mutableImplicitlyIssuedStartMap: mutable.Map[(String, String), ResourceEventModel] = {
-    mutable.Map(implicitlyIssuedStartEvents.map(rem ⇒ (rem.safeResource, rem.safeInstanceID) -> rem): _*)
-  }
-
-  private[this] def mutablePreviousEventsMap: mutable.Map[(String, String), ResourceEventModel] = {
-    mutable.Map(previousResourceEvents.map(rem ⇒ (rem.safeResource, rem.safeInstanceID) -> rem): _*)
-  }
-
-  private[this] def mutableWalletEntries = {
-    val buffer = new mutable.ListBuffer[WalletEntry]
-    buffer ++= this.walletEntries
-    buffer
-  }
-
-  private[this] def mutableAgreementHistory = {
-    this.agreementHistory.toWorkingAgreementHistory
-  }
-
-  def toWorkingUserState(resourceTypesMap: Map[String, ResourceType]): WorkingUserState = {
-    new WorkingUserState(
-      this.userID,
-      this.parentIDInStore,
-      this.chargingReason,
-      resourceTypesMap,
-      mutablePreviousEventsMap,
-      mutableImplicitlyIssuedStartMap,
-      mutableAccumulatingAmountMap,
-      mutableChargingDataMap,
-      this.totalCredits,
-      mutableAgreementHistory,
-      this.occurredMillis,
-      this.billingPeriodOutOfSyncResourceEventsCounter,
-      mutableWalletEntries
-    )
   }
 }
 

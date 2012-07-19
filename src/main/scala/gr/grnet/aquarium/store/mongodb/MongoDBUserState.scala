@@ -35,12 +35,11 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import gr.grnet.aquarium.charging.state.{AgreementHistory, WorkingUserState, UserStateModel}
+import gr.grnet.aquarium.charging.state.{UserStateModelSkeleton, AgreementHistory, UserStateModel}
 import gr.grnet.aquarium.charging.reason.ChargingReason
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-import gr.grnet.aquarium.policy.ResourceType
 
 /**
  *
@@ -64,13 +63,13 @@ case class MongoDBUserState(
     billingPeriodOutOfSyncResourceEventsCounter: Long,
     agreementHistory: AgreementHistory,
     walletEntries: List[WalletEntry]
-) extends UserStateModel {
+) extends UserStateModelSkeleton {
 
   def id = _id
 
-  def toWorkingUserState(resourceTypesMap: Map[String, ResourceType]): WorkingUserState = null
-
-  def newWithChargingReason(changeReason: ChargingReason): UserStateModel = null
+  def newWithChargingReason(newChargingReason: ChargingReason): MongoDBUserState = {
+    this.copy(chargingReason = newChargingReason)
+  }
 }
 
 object MongoDBUserState {

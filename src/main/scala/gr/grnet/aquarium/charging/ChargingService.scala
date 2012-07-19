@@ -321,9 +321,10 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     // specified in the parameters.
     // NOTE: The calculation reason is not the one we get from the previous user state but the one our caller specifies
 
+    clog.debug("workingUserState=%s", workingUserState)
     clog.debug("previousBillingMonthUserState(%s) = %s".format(
       previousBillingMonthInfo.toShortDebugString,
-      workingUserState.toJsonString)
+      workingUserState)
     )
 
     var _rcEventsCounter = 0

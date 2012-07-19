@@ -36,7 +36,6 @@
 package gr.grnet.aquarium.charging.state
 
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.charging.reason.ChargingReason
