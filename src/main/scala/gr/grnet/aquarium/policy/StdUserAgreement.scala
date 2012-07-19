@@ -44,11 +44,9 @@ import gr.grnet.aquarium.Timespan
 
 case class StdUserAgreement(
     id: String,
-    parentID: Option[String],
-    validityTimespan: Timespan,
+    relatedIMEventID: Option[String],
+    validFromMillis: Long,
+    validToMillis: Long,
     role: String,
     fullPriceTableRef: FullPriceTableRef
-) extends UserAgreementModel {
-
-  def idInStore: Option[Any] = None
-}
+) extends UserAgreementModel

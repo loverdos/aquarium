@@ -104,6 +104,8 @@ trait PolicyModel extends Ordered[PolicyModel] with JsonSupport {
   def roles: Set[String] = roleMapping.keySet
 
   def resourceTypesMap: Map[String, ResourceType] = Map(resourceTypes.map(rt ⇒ (rt.name, rt)).toSeq: _*)
+
+  def resourceTypeByName(resource: String): Option[ResourceType] = resourceTypes.find(_.name == resource)
 }
 
 object PolicyModel {

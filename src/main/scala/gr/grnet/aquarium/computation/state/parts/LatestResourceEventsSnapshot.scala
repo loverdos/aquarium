@@ -54,9 +54,9 @@ case class LatestResourceEventsSnapshot(resourceEvents: List[ResourceEventModel]
    * @return A fresh instance of [[gr.grnet.aquarium.computation.state.parts.LatestResourceEventsWorker]].
    */
   def toMutableWorker = {
-    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
+    val map = scala.collection.mutable.Map[ResourceEventModel.ResourceInstance, ResourceEventModel]()
     for(latestEvent <- resourceEvents) {
-      map(latestEvent.fullResourceInfo) = latestEvent
+      map(latestEvent.safeResourceInstanceInfo) = latestEvent
     }
     LatestResourceEventsWorker(map)
   }

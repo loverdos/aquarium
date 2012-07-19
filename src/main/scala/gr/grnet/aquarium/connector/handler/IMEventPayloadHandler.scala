@@ -91,7 +91,6 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
       // preSaveAction: E ⇒ Option[HandlerResult]
       imEvent ⇒ {
         val id = imEvent.id
-        val acceptMessage = None: Option[HandlerResult]
 
         // Let's decide if it is OK to store the event
         // Remember that OK == None as the returning result
@@ -113,57 +112,34 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
            Some(HandlerResultReject("Duplicate ID for %s".format(imEventDebugString)))
 
           case None ⇒
-            // 2. Check that the new event is not older than our most recent event in DB.
-            //    Sorry. We cannot tolerate out-of-order events here, since they really mess with the
-            //    agreements selection and thus with the charging procedure.
-            //
-            // 2.1 The only exception is the user creation event. We allow late arrival, since
-            //     the rest of Aquarium does nothing (but accumulate events) if the user has never
-            //     been properly created (this behavior may be helpful to devops).
-            //
-            // TODO: We really need to store these bad events anyway but somewhere else (BadEventsStore?)
-            def checkOlder(): Option[HandlerResult] = {
-              store.findLatestIMEventByUserID(imEvent.userID) match {
-                case Some(latestStoredEvent) ⇒
-                  val occurredMillis       = imEvent.occurredMillis
-                  val latestOccurredMillis = latestStoredEvent.occurredMillis
-
-                  if(occurredMillis < latestOccurredMillis) {
-                    val occurredDebugString       = new MutableDateCalc(occurredMillis).toYYYYMMDDHHMMSSSSS
-                    val latestOccurredDebugString = new MutableDateCalc(latestOccurredMillis).toYYYYMMDDHHMMSSSSS
-
-                    val formatter = (x: String) ⇒ x.format(
-                      imEventDebugString,
-                      occurredDebugString,
-                      latestOccurredDebugString
-                    )
-
-                    logger.debug(formatter("Rejecting older %s. [%s] < [%s]"))
-
-                    Some(HandlerResultReject(formatter("Older %s. [%s] < [%s]")))
-                  } else {
-                    None
-                  }
-
-                case None ⇒
-                  None
-              }
-            }
+            // No duplicate. Find the CREATE event if any
             val userID = imEvent.userID
-
-            val userHasBeenCreated = store.findCreateIMEventByUserID(userID).isDefined
-            val isCreateUser       = imEvent.isCreateUser
+            val createIMEventOpt = store.findCreateIMEventByUserID(userID)
+            val userHasBeenCreated = createIMEventOpt.isDefined
+            val isCreateUser = imEvent.isCreateUser
 
             (userHasBeenCreated, isCreateUser) match {
               case (true, true) ⇒
                 // (User CREATEd, CREATE event)
-                val reason = "User is already created. Rejecting %s".format(imEventDebugString)
-                logger.info(reason)
+                val reason = "User %s is already created. Rejecting %s".format(userID, imEventDebugString)
+                logger.warn(reason)
                 Some(HandlerResultReject(reason))
 
               case (true, false) ⇒
                 // (User CREATEd, MODIFY event)
-                checkOlder()
+                // Everything BEFORE the CREATE event is rejected
+                val createIMEvent = createIMEventOpt.get
+                if(imEvent.occurredMillis < createIMEvent.occurredMillis) {
+                  val reason = "IMEvent(id=%s) is before the creation event (id=%s). Rejecting".format(
+                    imEvent.id,
+                    createIMEvent.id
+                  )
+                  logger.warn(reason)
+                  Some(HandlerResultReject(reason))
+                }
+                else {
+                  None
+                }
 
               case (false, true) ⇒
                 // (User not CREATEd, CREATE event)

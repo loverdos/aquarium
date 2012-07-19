@@ -33,19 +33,63 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.converter
-import StdConverters.AllConverters
+package gr.grnet.aquarium.charging.state
+
+import scala.collection.immutable
+import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel}
+import gr.grnet.aquarium.computation.state.parts.AgreementHistory
 import gr.grnet.aquarium.util.json.JsonSupport
-import com.mongodb.DBObject
 
 /**
- * All the aquarium conversion should be done via appropriate methods here.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object Conversions {
-  def jsonSupportToDBObject(jsonSupport: JsonSupport) =
-    AllConverters.convertEx[DBObject](jsonSupport)
+final case class WorkingAgreementHistory(
+    var agreements: immutable.SortedSet[UserAgreementModel] = immutable.SortedSet[UserAgreementModel]()
+) extends JsonSupport {
 
+  def size = agreements.size
+
+  def setFrom(that: WorkingAgreementHistory): this.type = {
+    this.agreements = that.agreements
+    this
+  }
+
+  def +(userAgreement: UserAgreementModel): this.type = {
+    agreements += userAgreement
+    this
+  }
+
+  def +=(userAgreement: UserAgreementModel): Unit = {
+    agreements += userAgreement
+  }
+
+  def ++(userAgreements: Traversable[UserAgreementModel]): this.type = {
+    agreements ++= userAgreements
+    this
+  }
+
+  def ++=(userAgreements: Traversable[UserAgreementModel]): Unit = {
+    agreements ++= userAgreements
+  }
+
+  def oldestAgreement: Option[UserAgreementModel] = {
+    agreements.headOption
+  }
+
+  def newestAgreement: Option[UserAgreementModel] = {
+    agreements.lastOption
+  }
+
+  def agreementInEffectWhen(whenMillis: Long): Option[UserAgreementModel] = {
+    agreements.to(
+      StdUserAgreement("", None, whenMillis, Long.MaxValue, "", PolicyDefinedFullPriceTableRef)
+    ).lastOption
+  }
+
+  def toAgreementHistory = {
+    AgreementHistory(agreements.toList)
+  }
 }
+

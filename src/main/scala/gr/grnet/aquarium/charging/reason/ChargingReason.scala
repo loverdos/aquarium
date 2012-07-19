@@ -33,51 +33,39 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.reason
+package gr.grnet.aquarium.charging.reason
 
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.util.shortClassNameOf
-import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
  * Provides information explaining the reason Aquarium calculated a new
  * [[gr.grnet.aquarium.computation.state.UserState]].
  */
-case class UserStateChangeReason(
-    details: Map[String, String],
+case class ChargingReason(
+    details: Map[String, Any],
     billingMonthInfo: Option[BillingMonthInfo],
-    parentReason: Option[UserStateChangeReason]
-) extends JsonSupport {
+    parentReason: Option[ChargingReason]
+) {
 
   require(
-    details.contains(UserStateChangeReason.Names.name),
+    details.contains(ChargingReason.Names.name),
     "No name present in the details of %s".format(shortClassNameOf(this))
   )
 
   private[this] def booleanFromDetails(name: String, default: Boolean) = {
     details.get(name) match {
       case Some(value) ⇒
-        value.toBoolean
+        value.toString.toBoolean
 
       case _ ⇒
         false
     }
   }
 
-   /**
-    * Return `true` if the result of the calculation should be stored back to the
-    * [[gr.grnet.aquarium.store.UserStateStore]].
-    *
-    */
-//  def shouldStoreUserState: Boolean =
-//     booleanFromDetails(UserStateChangeReason.Names.shouldStoreUserState, false)
-
-//  def shouldStoreCalculatedWalletEntries: Boolean =
-//    booleanFromDetails(UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries, false)
-
   def calculateCreditsForImplicitlyTerminated: Boolean =
-    booleanFromDetails(UserStateChangeReason.Names.calculateCreditsForImplicitlyTerminated, false)
+    booleanFromDetails(ChargingReason.Names.calculateCreditsForImplicitlyTerminated, false)
 
   def forBillingMonthInfo(bmi: BillingMonthInfo) = {
     copy(
@@ -88,39 +76,21 @@ case class UserStateChangeReason(
 
   def name: String = {
     // This must be always present
-    details.get(UserStateChangeReason.Names.name).getOrElse("<unknown>")
+    details.get(ChargingReason.Names.name).map(_.toString).getOrElse("<unknown>")
   }
 }
 
-object UserStateChangeReason {
+object ChargingReason {
+
   object Names {
     final val name = "name"
 
     final val imEvent = "imEvent"
     final val forWhenMillis = "forWhenMillis"
 
-//    final val shouldStoreUserState = "shouldStoreUserState"
-//    final val shouldStoreCalculatedWalletEntries = "shouldStoreCalculatedWalletEntries"
     final val calculateCreditsForImplicitlyTerminated = "calculateCreditsForImplicitlyTerminated"
   }
-}
 
-sealed trait UserStateChangeReason_ {
-  def originalReason: UserStateChangeReason_
-  /**
-    * Return `true` if the result of the calculation should be stored back to the
-    * [[gr.grnet.aquarium.store.UserStateStore]].
-    *
-    */
-  def shouldStoreUserState: Boolean
-
-  def shouldStoreCalculatedWalletEntries: Boolean
-
-  def forPreviousBillingMonth: UserStateChangeReason_
-
-  def calculateCreditsForImplicitlyTerminated: Boolean
-
-  def code: UserStateChangeReasonCodes.ChangeReasonCode
 }
 
 /**
@@ -132,11 +102,10 @@ object InitialUserStateSetup {
   /**
    * When the user state is initially set up.
    */
-  def apply(parentReason: Option[UserStateChangeReason]) = {
-    UserStateChangeReason(
+  def apply(parentReason: Option[ChargingReason]) = {
+    ChargingReason(
       Map(
-        UserStateChangeReason.Names.name -> name//,
-//        UserStateChangeReason.Names.shouldStoreUserState -> true
+        ChargingReason.Names.name -> name
       ),
       None,
       parentReason
@@ -151,10 +120,9 @@ object InitialUserActorSetup {
    * When the user processing unit (actor) is initially set up.
    */
   def apply() = {
-    UserStateChangeReason(
+    ChargingReason(
       Map(
-        UserStateChangeReason.Names.name -> name//,
-//        UserStateChangeReason.Names.shouldStoreUserState -> true
+        ChargingReason.Names.name -> name
       ),
       None,
       None
@@ -162,16 +130,16 @@ object InitialUserActorSetup {
   }
 }
 
-object NoSpecificChangeReason {
-  def name = "NoSpecificChangeReason"
+object NoSpecificChargingReason {
+  def name = "NoSpecificChargingReason"
 
   /**
    * A calculation made for no specific reason. Can be for testing, for example.
    */
   def apply() = {
-    UserStateChangeReason(
+    ChargingReason(
       Map(
-        UserStateChangeReason.Names.name -> name
+        ChargingReason.Names.name -> name
       ),
       None,
       None
@@ -179,19 +147,17 @@ object NoSpecificChangeReason {
   }
 }
 
-object MonthlyBillingCalculation {
-  def name = "MonthlyBillingCalculation"
+object MonthlyBillChargingReason {
+  def name = "MonthlyBillChargingReason"
 
   /**
    * An authoritative calculation for the billing period.
    */
-  def apply(parentReason: UserStateChangeReason, billingMongthInfo: BillingMonthInfo) = {
-    UserStateChangeReason(
+  def apply(parentReason: ChargingReason, billingMongthInfo: BillingMonthInfo) = {
+    ChargingReason(
       Map(
-        UserStateChangeReason.Names.name -> name,
-//        UserStateChangeReason.Names.shouldStoreUserState -> true,
-//        UserStateChangeReason.Names.shouldStoreCalculatedWalletEntries -> true.toString,
-        UserStateChangeReason.Names.calculateCreditsForImplicitlyTerminated -> true.toString
+        ChargingReason.Names.name -> name,
+        ChargingReason.Names.calculateCreditsForImplicitlyTerminated -> true.toString
       ),
       Some(billingMongthInfo),
       Some(parentReason)
@@ -199,17 +165,17 @@ object MonthlyBillingCalculation {
   }
 }
 
-object RealtimeBillingCalculation {
-  def name = "RealtimeBillingCalculation"
+object RealtimeChargingReason {
+  def name = "RealtimeChargingReason"
 
   /**
    * Used for the real-time billing calculation.
    */
-  def apply(parentReason: Option[UserStateChangeReason], forWhenMillis: Long) = {
-    UserStateChangeReason(
+  def apply(parentReason: Option[ChargingReason], forWhenMillis: Long) = {
+    ChargingReason(
       Map(
-        UserStateChangeReason.Names.name -> name,
-        UserStateChangeReason.Names.forWhenMillis -> forWhenMillis.toString
+        ChargingReason.Names.name -> name,
+        ChargingReason.Names.forWhenMillis -> forWhenMillis.toString
       ),
       None,
       parentReason
@@ -221,11 +187,10 @@ object IMEventArrival {
   def name = "IMEventArrival"
 
   def apply(imEvent: IMEventModel) = {
-    UserStateChangeReason(
+    ChargingReason(
       Map(
-        UserStateChangeReason.Names.name -> name,
-        UserStateChangeReason.Names.imEvent -> imEvent.toJsonString//,
-//        UserStateChangeReason.Names.shouldStoreUserState -> true
+        ChargingReason.Names.name -> name,
+        ChargingReason.Names.imEvent -> imEvent.toJsonString
       ),
       None,
       None

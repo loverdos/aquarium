@@ -37,31 +37,24 @@ package gr.grnet.aquarium.computation
 package state
 package parts
 
-import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot}
-import scala.collection.immutable.{SortedMap, TreeMap}
+import scala.collection.immutable
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy.UserAgreementModel
+import gr.grnet.aquarium.charging.state.WorkingAgreementHistory
 
 /**
- * User agreement parts that will be part of UserState.
- * The provided list of agreements cannot have time gaps. This is checked at object creation type.
+ * The whole history of of a user's agreements.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 case class AgreementHistory(agreements: List[UserAgreementModel]) {
-  ensureNoGaps(agreements.sortWith((a,b) => if (b.validFrom > a.validFrom) true else false))
-
-  def ensureNoGaps(agreements: List[UserAgreementModel]): Unit = agreements match {
-    case ha :: (t @ (hb :: tail)) =>
-      assert(ha.validTo - hb.validFrom == 1);
-      ensureNoGaps(t)
-    case h :: Nil =>
-      assert(h.validTo == Long.MaxValue)
-    case Nil => ()
+  def toWorkingAgreementHistory = {
+    (new WorkingAgreementHistory) ++ agreements
   }
 
-  def agreementsByTimeslot: SortedMap[Timeslot, UserAgreementModel] = {
-    TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag)): _*)
+  def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel] = {
+    immutable.TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag)): _*)
   }
 
   /**
@@ -76,14 +69,14 @@ case class AgreementHistory(agreements: List[UserAgreementModel]) {
    * Returns the first, chronologically, agreement.
    */
   def firstAgreement: Option[UserAgreementModel] = {
-    agreementsByTimeslot.valuesIterator.toList.lastOption
+    agreementByTimeslot.valuesIterator.toList.lastOption
   }
 
   /**
    * Returns the last, chronologically, agreement.
    */
   def lastAgreement: Option[UserAgreementModel] = {
-    agreementsByTimeslot.valuesIterator.toList.headOption
+    agreementByTimeslot.valuesIterator.toList.headOption
   }
 }
 

@@ -33,32 +33,61 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.computation.state.parts.{ResourceInstanceAmount, AgreementHistory}
+import gr.grnet.aquarium.charging.wallet.WalletEntry
+import gr.grnet.aquarium.charging.reason.ChargingReason
+import gr.grnet.aquarium.policy.ResourceType
 
 /**
- * Represents a timeslot together with the algorithm and unit price that apply for this particular timeslot.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class Chargeslot(
-    startMillis: Long,
-    stopMillis: Long,
-    unitPrice: Double,
-    computedCredits: Option[Double] = None) {
+trait UserStateModel extends JsonSupport {
+  def id: String
 
-  def copyWithCredits(credits: Double) = {
-    copy(computedCredits = Some(credits))
+  def idInStore: String = id
+
+  def parentIDInStore: Option[String]
+
+  def userID: String
+
+  def occurredMillis: Long // When this user state was computed
+
+  def totalCredits: Double
+
+  def theFullBillingMonth: Option[BillingMonthInfo]
+
+  def chargingReason: ChargingReason
+
+  def previousResourceEvents: List[ResourceEventModel]
+
+  def implicitlyIssuedStartEvents: List[ResourceEventModel]
+
+  def accumulatingAmountOfResourceInstance: Map[String, Double]
+
+  def chargingDataOfResourceInstance: Map[String, Map[String, Any]]
+
+  def billingPeriodOutOfSyncResourceEventsCounter: Long
+
+  def agreementHistory: AgreementHistory
+
+  def walletEntries: List[WalletEntry]
+
+  def toWorkingUserState(resourceTypesMap: Map[String, ResourceType]): WorkingUserState
+
+  def newWithChargingReason(changeReason: ChargingReason): UserStateModel
+}
+
+object UserStateModel {
+  trait NamesT {
+    final val userID = "userID"
   }
 
-  override def toString = "%s(%s, %s, %s, %s, %s)".format(
-    shortClassNameOf(this),
-    new MutableDateCalc(startMillis).toYYYYMMDDHHMMSSSSS,
-    new MutableDateCalc(stopMillis).toYYYYMMDDHHMMSSSSS,
-    unitPrice,
-    computedCredits
-  )
+  object Names extends NamesT
 }

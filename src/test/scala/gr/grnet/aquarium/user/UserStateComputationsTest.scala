@@ -42,7 +42,6 @@ import gr.grnet.aquarium.uid.{UIDGenerator, ConcurrentVMLocalUIDGenerator}
 import org.junit.{Assert, Ignore, Test}
 import gr.grnet.aquarium.logic.accounting.algorithm.{ExecutableChargingBehaviorAlgorithm, CostPolicyAlgorithmCompiler}
 import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder, AquariumException}
-import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, MonthlyBillingCalculation}
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.computation.state.UserState
@@ -50,6 +49,8 @@ import gr.grnet.aquarium.charging._
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy, PolicyModel}
 import gr.grnet.aquarium.Timespan
 import gr.grnet.aquarium.computation.state.UserStateBootstrap
+import gr.grnet.aquarium.charging.reason.{NoSpecificChargingReason, MonthlyBillChargingReason}
+import gr.grnet.aquarium.charging.state.WorkingUserState
 
 
 /**
@@ -97,7 +98,7 @@ class UserStateComputationsTest extends Loggable {
 
   val ResourceEventStore = aquarium.resourceEventStore
 
-  val Computations = aquarium.userStateComputations
+  val ChargingService = aquarium.chargingService
 
   val DefaultAlgorithm = new ExecutableChargingBehaviorAlgorithm {
     def creditsForContinuous(timeDelta: Double, oldTotalAmount: Double) =
@@ -216,7 +217,7 @@ class UserStateComputationsTest extends Loggable {
   val UserStateBootstrapper = UserStateBootstrap(
     userID = UserCKKL.userID,
     userCreationMillis = UserCreationDate.getTime(),
-    initialAgreement = StdUserAgreement("", None, Timespan(0), "default", PolicyDefinedFullPriceTableRef),
+    initialAgreement = StdUserAgreement("", None, 0, Long.MaxValue, "default", PolicyDefinedFullPriceTableRef),
     initialCredits = 0.0
   )
 
@@ -228,22 +229,22 @@ class UserStateComputationsTest extends Loggable {
   val DiskInstanceSim      = DiskspaceResourceSim.newInstance("DISK.1", UserCKKL, Pithos)
 
   private[this]
-  def showUserState(clog: ContextualLogger, userState: UserState) {
-    val id = userState._id
-    val parentId = userState.parentUserStateIDInStore
-    val credits = userState.totalCredits
-    val newWalletEntries = userState.newWalletEntries.map(_.toDebugString)
-    val changeReason = userState.lastChangeReason
-    val implicitlyIssued = userState.implicitlyIssuedSnapshot.implicitlyIssuedEvents.map(_.toDebugString)
-    val latestResourceEvents = userState.latestResourceEventsSnapshot.resourceEvents.map(_.toDebugString)
-
-    clog.debug("_id = %s", id)
-    clog.debug("parentId = %s", parentId)
-    clog.debug("credits = %s", credits)
-    clog.debug("changeReason = %s", changeReason)
-    clog.debugSeq("implicitlyIssued", implicitlyIssued, 0)
-    clog.debugSeq("latestResourceEvents", latestResourceEvents, 0)
-    clog.debugSeq("newWalletEntries", newWalletEntries, 0)
+  def showUserState(clog: ContextualLogger, workingUserState: WorkingUserState) {
+//    val id = workingUserState.id
+//    val parentId = workingUserState.parentUserStateIDInStore
+//    val credits = workingUserState.totalCredits
+//    val newWalletEntries = workingUserState.newWalletEntries.map(_.toDebugString)
+//    val changeReason = workingUserState.lastChangeReason
+//    val implicitlyIssued = workingUserState.implicitlyIssuedSnapshot.implicitlyIssuedEvents.map(_.toDebugString)
+//    val latestResourceEvents = workingUserState.latestResourceEventsSnapshot.resourceEvents.map(_.toDebugString)
+//
+//    clog.debug("_id = %s", id)
+//    clog.debug("parentId = %s", parentId)
+//    clog.debug("credits = %s", credits)
+//    clog.debug("changeReason = %s", changeReason)
+//    clog.debugSeq("implicitlyIssued", implicitlyIssued, 0)
+//    clog.debugSeq("latestResourceEvents", latestResourceEvents, 0)
+//    clog.debugSeq("newWalletEntries", newWalletEntries, 0)
   }
 
   private[this]
@@ -265,12 +266,12 @@ class UserStateComputationsTest extends Loggable {
       billingMonthInfo: BillingMonthInfo,
       billingTimeMillis: Long) = {
 
-    Computations.doMonthBillingUpTo(
+    ChargingService.replayMonthChargingUpTo(
       billingMonthInfo,
       billingTimeMillis,
       UserStateBootstrapper,
       DefaultResourcesMap,
-      MonthlyBillingCalculation(NoSpecificChangeReason(), billingMonthInfo),
+      MonthlyBillChargingReason(NoSpecificChargingReason(), billingMonthInfo),
       aquarium.userStateStore.insertUserState,
       Some(clog)
     )
@@ -280,11 +281,11 @@ class UserStateComputationsTest extends Loggable {
   def expectCredits(
       clog: ContextualLogger,
       creditsConsumed: Double,
-      userState: UserState,
+      workingUserState: WorkingUserState,
       accuracy: Double = 0.001
   ): Unit = {
 
-    val computed = userState.totalCredits
+    val computed = workingUserState.totalCredits
     Assert.assertEquals(-creditsConsumed, computed, accuracy)
 
     clog.info("Consumed %.3f credits [accuracy = %f]", creditsConsumed, accuracy)
@@ -318,11 +319,11 @@ class UserStateComputationsTest extends Loggable {
 
     showResourceEvents(clog)
 
-    val userState = doFullMonthlyBilling(clog, BillingMonthInfoJan, BillingMonthInfoJan.monthStopMillis)
+    val workingUserState = doFullMonthlyBilling(clog, BillingMonthInfoJan, BillingMonthInfoJan.monthStopMillis)
 
-    showUserState(clog, userState)
+    showUserState(clog, workingUserState)
 
-    expectCredits(clog, credits, userState)
+    expectCredits(clog, credits, workingUserState)
 
     clog.end()
   }

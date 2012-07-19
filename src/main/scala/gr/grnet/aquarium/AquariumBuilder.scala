@@ -41,8 +41,7 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.{Failed, MaybeEither, Just, NoVal}
 import gr.grnet.aquarium.util.Loggable
 import java.io.File
-import gr.grnet.aquarium.computation.UserStateComputations
-import gr.grnet.aquarium.service.{StoreWatcherService, RabbitMQService, AkkaService, SimpleTimerService, EventBusService}
+import gr.grnet.aquarium.service.EventBusService
 import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 
@@ -99,6 +98,10 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
     assert(key ne null, "key ne null")
 
     this update (key -> value)
+  }
+
+  private[this] def newInstanceFromKey[T <: AnyRef : Manifest](envKey: TypedKey[T]): T = {
+    newInstance(envKey.keyType, envKey.keyType.erasure.getName)
   }
 
   /**
@@ -191,7 +194,6 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
 
           update(EnvKeys.eventsStoreFolder, Some(new File(folderName)))
         }
-
     }
   }
 
@@ -262,7 +264,9 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
     }
   }
 
-  private[this] def checkNoPropsOverride[T: Manifest](envKey: TypedKey[T])(f: TypedKey[T] ⇒ T): Unit = {
+  private[this] def checkNoPropsOverride[T <: AnyRef : Manifest](envKey: TypedKey[T])
+                                                                (f: TypedKey[T] ⇒ T): Unit = {
+
     if(_env.contains(envKey)) {
       return
     }
@@ -309,6 +313,14 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
     }
   }
 
+  /**
+   * Builds a fresh instance of [[gr.grnet.aquarium.Aquarium]]. The services needed by [[gr.grnet.aquarium.Aquarium]]
+   * are configured but not started yet.
+   *
+   * This is a very delicate procedure, so always change with care.
+   *
+   * @return A fresh instance of [[gr.grnet.aquarium.Aquarium]].
+   */
   def build(): Aquarium = {
     if(this._aquarium ne null) {
       return this._aquarium
@@ -332,25 +344,15 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
 
     checkRestServiceOverride
 
-    checkNoPropsOverride(EnvKeys.timerService) { envKey ⇒
-      newInstance(envKey.keyType, classOf[SimpleTimerService].getName)
-    }
+    checkNoPropsOverride(EnvKeys.timerService) { newInstanceFromKey(_) }
 
-    checkNoPropsOverride(EnvKeys.userStateComputations) { envKey ⇒
-      newInstance(envKey.keyType, classOf[UserStateComputations].getName)
-    }
+    checkNoPropsOverride(EnvKeys.chargingService) { newInstanceFromKey(_) }
 
-    checkNoPropsOverride(EnvKeys.akkaService) { envKey ⇒
-      newInstance(envKey.keyType, classOf[AkkaService].getName)
-    }
+    checkNoPropsOverride(EnvKeys.akkaService) { newInstanceFromKey(_) }
 
-    checkNoPropsOverride(EnvKeys.rabbitMQService) { envKey ⇒
-      newInstance(envKey.keyType, classOf[RabbitMQService].getName)
-    }
+    checkNoPropsOverride(EnvKeys.rabbitMQService) { newInstanceFromKey(_) }
 
-    checkNoPropsOverride(EnvKeys.storeWatcherService) { envKey ⇒
-      newInstance(envKey.keyType, classOf[StoreWatcherService].getName)
-    }
+    checkNoPropsOverride(EnvKeys.storeWatcherService) { newInstanceFromKey(_) }
 
     checkPropsOverride(EnvKeys.userStateTimestampThreshold) { (envKey, propValue) ⇒
       propValue.toLong

@@ -35,8 +35,8 @@
 
 package gr.grnet.aquarium.store
 
-import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.charging.state.UserStateModel
 
 /**
  * A store for user state snapshots.
@@ -47,11 +47,14 @@ import gr.grnet.aquarium.computation.BillingMonthInfo
  */
 
 trait UserStateStore {
+  type UserState <: UserStateModel
+
+  def createUserStateFromOther(userState: UserStateModel): UserState
 
   /**
    * Stores a user state.
    */
-  def insertUserState(userState: UserState): UserState
+  def insertUserState(userState: UserStateModel): UserState
 
   /**
    * Finds a state by user ID

@@ -53,6 +53,7 @@ import collection.immutable.SortedMap
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
 import java.util.Date
+import gr.grnet.aquarium.charging.state.{UserStateModel, StdUserState}
 
 /**
  * An implementation of various stores that persists parts in memory.
@@ -75,6 +76,7 @@ extends StoreProvider
   override type IMEvent = MemIMEvent
   override type ResourceEvent = MemResourceEvent
   override type Policy = StdPolicy
+  override type UserState = StdUserState
 
   private[this] var _userStates = List[UserState]()
   private[this] var _policies  = List[Policy]()
@@ -111,9 +113,34 @@ extends StoreProvider
 
 
   //+ UserStateStore
-  def insertUserState(userState: UserState): UserState = {
-    _userStates = userState.copy(_id = new ObjectId().toString) :: _userStates
-    userState
+  def createUserStateFromOther(model: UserStateModel): UserState = {
+    if(model.isInstanceOf[StdUserState]) {
+      model.asInstanceOf[StdUserState]
+    }
+    else {
+      new StdUserState(
+        model.id,
+        model.parentIDInStore,
+        model.userID,
+        model.occurredMillis,
+        model.totalCredits,
+        model.theFullBillingMonth,
+        model.chargingReason,
+        model.previousResourceEvents,
+        model.implicitlyIssuedStartEvents,
+        model.accumulatingAmountOfResourceInstance,
+        model.chargingDataOfResourceInstance,
+        model.billingPeriodOutOfSyncResourceEventsCounter,
+        model.agreementHistory,
+        model.walletEntries
+      )
+    }
+  }
+
+  def insertUserState(userState: UserStateModel): UserState = {
+    val localUserState = createUserStateFromOther(userState)
+    _userStates ::= localUserState
+    localUserState
   }
 
   def findUserStateByUserID(userID: String) = {
@@ -123,7 +150,7 @@ extends StoreProvider
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
     val goodOnes = _userStates.filter(_.theFullBillingMonth.isDefined).filter { userState ⇒
         val f1 = userState.userID == userID
-        val f2 = userState.isFullBillingMonthState
+        val f2 = userState.theFullBillingMonth.isDefined
         val bm = userState.theFullBillingMonth.get
         val f3 = bm == bmi
 

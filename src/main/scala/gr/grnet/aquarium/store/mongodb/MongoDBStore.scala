@@ -36,7 +36,6 @@
 package gr.grnet.aquarium.store.mongodb
 
 import com.mongodb.util.JSON
-import gr.grnet.aquarium.computation.state.UserState.{JsonNames ⇒ UserStateJsonNames}
 import gr.grnet.aquarium.util.json.JsonSupport
 import collection.mutable.ListBuffer
 import gr.grnet.aquarium.event.model.im.IMEventModel
@@ -47,7 +46,7 @@ import gr.grnet.aquarium.store._
 import com.mongodb._
 import org.bson.types.ObjectId
 import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.converter.Conversions
+import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.computation.state.UserState
 import gr.grnet.aquarium.event.model.ExternalEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
@@ -57,6 +56,7 @@ import collection.immutable.SortedMap
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
 import java.util.Date
+import gr.grnet.aquarium.charging.state.UserStateModel
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -80,6 +80,7 @@ class MongoDBStore(
   override type IMEvent = MongoDBIMEvent
   override type ResourceEvent = MongoDBResourceEvent
   override type Policy = MongoDBPolicy
+  override type UserState = MongoDBUserState
 
   private[store] lazy val resourceEvents = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
   private[store] lazy val userStates = getCollection(MongoDBStore.USER_STATES_COLLECTION)
@@ -175,7 +176,7 @@ class MongoDBStore(
   }
 
   def findUserStateByUserID(userID: String): Option[UserState] = {
-    val query = new BasicDBObject(UserStateJsonNames.userID, userID)
+    val query = new BasicDBObject(UserStateModel.Names.userID, userID)
     val cursor = userStates find query
 
     MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
@@ -195,6 +196,18 @@ class MongoDBStore(
     val cursor = userStates.find(query).sort(sorter)
 
     MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
+  }
+
+  def createUserStateFromOther(userState: UserStateModel) = {
+    MongoDBUserState.fromOther(userState, new ObjectId().toStringMongod)
+  }
+
+  /**
+   * Stores a user state.
+   */
+  def insertUserState(userState: UserStateModel): UserState = {
+    val localUserState = createUserStateFromOther(userState)
+    MongoDBStore.insertObject(localUserState, userStates, MongoDBStore.jsonSupportToDBObject)
   }
   //- UserStateStore
 
@@ -323,8 +336,8 @@ object MongoDBStore {
    */
   final val POLICY_COLLECTION = "policies"
 
-  def dbObjectToUserState(dbObj: DBObject): UserState = {
-    UserState.fromJson(JSON.serialize(dbObj))
+  def dbObjectToUserState(dbObj: DBObject): MongoDBUserState = {
+    MongoDBUserState.fromJSONString(JSON.serialize(dbObj))
   }
 
   def firstResultIfExists[A](cursor: DBCursor, f: DBObject ⇒ A): Option[A] = {
@@ -411,7 +424,7 @@ object MongoDBStore {
   }
 
   def jsonSupportToDBObject(jsonSupport: JsonSupport) = {
-    Conversions.jsonSupportToDBObject(jsonSupport)
+    StdConverters.AllConverters.convertEx[DBObject](jsonSupport)
   }
 
   final def isLocalIMEvent(event: IMEventModel) = event match {
@@ -424,7 +437,7 @@ object MongoDBStore {
   }
 
   final def createIMEventFromOther(event: IMEventModel) = {
-    MongoDBIMEvent.fromOther(event, null)
+    MongoDBIMEvent.fromOther(event, new ObjectId().toStringMongod)
   }
 
   final def createIMEventFromJsonBytes(jsonBytes: Array[Byte]) = {

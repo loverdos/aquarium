@@ -52,9 +52,9 @@ case class ImplicitlyIssuedResourceEventsSnapshot(implicitlyIssuedEvents: List[R
    * @return A fresh instance of [[gr.grnet.aquarium.computation.state.parts.ImplicitlyIssuedResourceEventsWorker]].
    */
   def toMutableWorker = {
-    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
+    val map = scala.collection.mutable.Map[ResourceEventModel.ResourceInstance, ResourceEventModel]()
     for(implicitEvent <- implicitlyIssuedEvents) {
-      map(implicitEvent.fullResourceInfo) = implicitEvent
+      map(implicitEvent.safeResourceInstanceInfo) = implicitEvent
     }
 
     ImplicitlyIssuedResourceEventsWorker(map)

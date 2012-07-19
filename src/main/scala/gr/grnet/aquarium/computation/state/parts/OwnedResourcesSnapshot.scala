@@ -42,10 +42,10 @@ package parts
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class OwnedResourcesSnapshot(resourceInstanceSnapshots: List[ResourceInstanceSnapshot]) {
+case class OwnedResourcesSnapshot(resourceInstanceSnapshots: List[ResourceInstanceAmount]) {
 
   def toResourcesMap: OwnedResourcesMap = {
-    val tuples = for(rc <- resourceInstanceSnapshots) yield ((rc.resource, rc.instanceId), (rc.instanceAmount))
+    val tuples = for(rc <- resourceInstanceSnapshots) yield ((rc.resource, rc.instanceID), (rc.instanceAmount))
 
     new OwnedResourcesMap(Map(tuples.toSeq: _*))
   }
@@ -56,8 +56,8 @@ case class OwnedResourcesSnapshot(resourceInstanceSnapshots: List[ResourceInstan
     resourceInstanceSnapshots.filterNot(_.isSameResourceInstance(resource, instanceId))
   }
 
-  def findResourceInstanceSnapshot(resource: String, instanceId: String): Option[ResourceInstanceSnapshot] = {
-    resourceInstanceSnapshots.find(x => resource == x.resource && instanceId == x.instanceId)
+  def findResourceInstanceSnapshot(resource: String, instanceId: String): Option[ResourceInstanceAmount] = {
+    resourceInstanceSnapshots.find(x => resource == x.resource && instanceId == x.instanceID)
   }
 
   def getResourceInstanceAmount(resource: String, instanceId: String, defaultValue: Double): Double = {
@@ -68,10 +68,10 @@ case class OwnedResourcesSnapshot(resourceInstanceSnapshots: List[ResourceInstan
                                      instanceId: String, // resource instance id
                                      newAmount: Double,
                                      snapshotTime: Long): (OwnedResourcesSnapshot,
-                                                          Option[ResourceInstanceSnapshot],
-    ResourceInstanceSnapshot) = {
+                                                          Option[ResourceInstanceAmount],
+    ResourceInstanceAmount) = {
 
-    val newResourceInstance = ResourceInstanceSnapshot(resource, instanceId, newAmount)
+    val newResourceInstance = ResourceInstanceAmount(resource, instanceId, newAmount)
     val oldResourceInstanceOpt = this.findResourceInstanceSnapshot(resource, instanceId)
 
     val newResourceInstances = oldResourceInstanceOpt match {

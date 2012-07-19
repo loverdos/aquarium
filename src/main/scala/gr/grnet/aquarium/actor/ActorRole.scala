@@ -34,10 +34,10 @@
  */
 package gr.grnet.aquarium.actor
 
-import service.user.{UserActor}
+import service.user.UserActor
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
 import gr.grnet.aquarium.actor.message.{GetUserStateRequest, GetUserBalanceRequest}
-import gr.grnet.aquarium.actor.message.config.{InitializeUserState, AquariumPropertiesLoaded, ActorConfigurationMessage}
+import gr.grnet.aquarium.actor.message.config.{InitializeUserActorState, AquariumPropertiesLoaded, ActorConfigurationMessage}
 
 /**
  * Each actor within Aquarium plays one role.
@@ -90,5 +90,5 @@ case object UserActorRole
                           classOf[ProcessIMEvent],
                           classOf[GetUserBalanceRequest],
                           classOf[GetUserStateRequest]),
-                      Set(classOf[InitializeUserState],
+                      Set(classOf[InitializeUserActorState],
                           classOf[AquariumPropertiesLoaded]))

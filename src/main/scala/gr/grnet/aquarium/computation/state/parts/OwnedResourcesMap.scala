@@ -52,6 +52,6 @@ class OwnedResourcesMap(resourcesMap: Map[(String, String), Double]) {
     OwnedResourcesSnapshot(
       resourcesMap map {
         case ((name, instanceId), value) ⇒
-          ResourceInstanceSnapshot(name, instanceId, value) } toList
+          ResourceInstanceAmount(name, instanceId, value) } toList
     )
 }

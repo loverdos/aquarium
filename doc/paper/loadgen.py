@@ -24,10 +24,10 @@ def msg():
     msg['eventVersion']   = str(1)
 
     if msg['resource'] == 'vmtime':
-        msg['instanceId'] = str(random.randrange(1, 4000))
+        msg['instanceID'] = str(random.randrange(1, 4000))
         msg['value']    = random.randrange(0, 2)
     else:
-        msg['instanceId'] = 1 
+        msg['instanceID'] = 1
         msg['value'] = random.randrange(1, 5000)
     msg['details'] = {} 
     return msg

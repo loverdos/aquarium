@@ -58,4 +58,8 @@ object TimeHelpers {
     val ms1 = nowMillis()
     (ms0, ms1, u)
   }
+
+ def toYYYYMMDDHHMMSSSSS(millis: Long): String = {
+   new MutableDateCalc(millis).toYYYYMMDDHHMMSSSSS
+ }
 }

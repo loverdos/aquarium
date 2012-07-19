@@ -33,21 +33,24 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.computation.reason
+package gr.grnet.aquarium.actor.message.config
+
+import gr.grnet.aquarium.actor.message.ActorMessage
+import gr.grnet.aquarium.util.shortClassNameOf
+import gr.grnet.aquarium.util.date.MutableDateCalc
+
 
 /**
- * Codes that characterize reasons for user state change.
+ * This is sent to a [[gr.grnet.aquarium.actor.service.user.UserActor]] in order to initialize its internal state.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object UserStateChangeReasonCodes {
-  type ChangeReasonCode = Int
+case class InitializeUserActorState(userID: String, referenceTimeMillis: Long)
+extends ActorMessage
+   with ActorConfigurationMessage {
 
-  final val InitialSetupCode      = 1
-  final val NoSpecificChangeCode  = 2
-  final val MonthlyBillingCode    = 3
-  final val RealtimeBillingCode   = 4
-  final val IMEventArrivalCode    = 5
-  final val InitialUserActorSetup = 6
+  override def toString = {
+    "%s(%s, %s)".format(shortClassNameOf(this), userID, new MutableDateCalc(referenceTimeMillis).toString)
+  }
 }

@@ -33,25 +33,41 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.algorithm
-
-import com.ckkloverdos.maybe.{Just, Maybe}
-
+package gr.grnet.aquarium.computation
+package state
+package parts
 
 /**
- * Compiles the textual representation of a cost policy charging algorithm to an executable form.
+ * Maintains the current state of a resource instance owned by the user.
+ *
+ * In order to have a uniform representation of the resource state for all
+ * resource types (complex or simple) the following convention applies:
+ *
+ *  - If the resource is complex, the (name, instanceID) is (DSLResource.name, instance-id)
+ *  - If the resource is simple,  the (name, instanceID) is (DSLResource.name, "1")
+ *
+ * @param resource        Same as `resource` of [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]
+ * @param instanceID      Same as `instanceID` of [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]
+ * @param instanceAmount  This is the amount kept for the resource instance.
+*                         The general rule is that an amount saved in a
+ *                        [[gr.grnet.aquarium.computation.parts. ResourceInstanceSnapshot]]
+ *                        represents a total value, while a value appearing in a
+ *                        [[gr.grnet.aquarium.event .model.resource.ResourceEventModel]]
+ *                        represents a difference. How these two values are combined to form the new amount is dictated
+ *                        by the underlying [[gr.grnet.aquarium.charging.ChargingBehavior]]
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+case class ResourceInstanceAmount(
+    resource: String,
+    instanceID: String,
+    instanceAmount: Double
+) {
 
-object SimpleCostPolicyAlgorithmCompiler extends CostPolicyAlgorithmCompiler {
-  /**
-   * Compiles the textual representation of a cost policy charging algorithm to an executable form.
-   *
-   * @param definition the textual representation of the algorithm
-   * @return the executable form of the algorithm
-   */
-  def compile(definition: String): ExecutableChargingBehaviorAlgorithm = {
-    SimpleExecutableChargingBehaviorAlgorithm
+  def isSameResourceInstance(resource: String, instanceId: String) = {
+    this.resource == resource &&
+    this.instanceID == instanceId
   }
+
+  def toResourceInstanceAmountMapElement = (resource, instanceID) -> this
 }

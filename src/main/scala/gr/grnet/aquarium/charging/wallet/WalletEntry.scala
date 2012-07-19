@@ -33,22 +33,20 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.event.model
+package gr.grnet.aquarium.charging
+package wallet
 
-import gr.grnet.aquarium.computation.Chargeslot
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot}
-import resource.ResourceEventModel
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
- * The following equation must hold: `newTotalCredits = oldTotalCredits + entryCredits`.
+ * The following equation must hold: `newTotalCredits = oldTotalCredits - sumOfCreditsToSubtract`.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- *
- * @param userId The user ID this wallet entry is related to.
- * @param entryCredits The credit amount generated for this wallet entry.
+ * @param userID The user ID this wallet entry is related to.
+ * @param sumOfCreditsToSubtract The credit amount generated for this wallet entry.
  * @param oldTotalCredits
  * @param newTotalCredits
  * @param whenComputedMillis When the computation took place
@@ -56,26 +54,36 @@ import gr.grnet.aquarium.policy.ResourceType
  * @param billingMonth
  * @param resourceEvents
  * @param chargeslots The details of the credit computation
- * @param resourceDef
+ * @param resourceType
+ *
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class NewWalletEntry(userId: String,
-                          entryCredits: Double,
-                          oldTotalCredits: Double,
-                          newTotalCredits: Double,
-                          whenComputedMillis: Long,
-                          referenceTimeslot: Timeslot,
-                          yearOfBillingMonth: Int,
-                          billingMonth: Int,
-                          resourceEvents: List[ResourceEventModel], // current is at the head
-                          chargeslots: List[Chargeslot],
-                          resourceDef: ResourceType,
-                          isSynthetic: Boolean) {
+case class WalletEntry(
+    userID: String,
+    sumOfCreditsToSubtract: Double,
+    oldTotalCredits: Double,
+    newTotalCredits: Double,
+    whenComputedMillis: Long,
+    referenceTimeslot: Timeslot,
+    yearOfBillingMonth: Int,
+    billingMonth: Int,
+    resourceEvents: List[ResourceEventModel], // current is the last one
+    chargeslots: List[Chargeslot],
+    resourceType: ResourceType,
+    isSynthetic: Boolean
+) {
 
-  def currentResourceEvent = resourceEvents.head
+  def currentResourceEvent = resourceEvents match {
+    case previous :: current :: Nil ⇒
+      current
 
-  def resource = currentResourceEvent.resource
+    case list ⇒
+      list.head
+  }
 
-  def instanceId = currentResourceEvent.instanceID
+  def resource = currentResourceEvent.safeResource
+
+  def instanceID = currentResourceEvent.safeInstanceID
 
   def chargslotCount = chargeslots.length
 
@@ -84,9 +92,9 @@ case class NewWalletEntry(userId: String,
   def toDebugString = "%s%s(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(
     if(isSynthetic) "*" else "",
     gr.grnet.aquarium.util.shortClassNameOf(this),
-    userId,
+    userID,
     referenceTimeslot,
-    entryCredits,
+    sumOfCreditsToSubtract,
     oldTotalCredits,
     newTotalCredits,
     new MutableDateCalc(whenComputedMillis).toYYYYMMDDHHMMSSSSS,
@@ -94,19 +102,18 @@ case class NewWalletEntry(userId: String,
     billingMonth,
     resourceEvents,
     chargeslots,
-    resourceDef
+    resourceType
   )
 }
 
-object NewWalletEntry {
-  def fromJson(json: String): NewWalletEntry = {
-    StdConverters.AllConverters.convertEx[NewWalletEntry](JsonTextFormat(json))
+object WalletEntry {
+  def fromJson(json: String): WalletEntry = {
+    StdConverters.AllConverters.convertEx[WalletEntry](JsonTextFormat(json))
   }
 
   object JsonNames {
-    final val _id = "_id"
     final val id = "id"
-    final val entryCredits = "entryCredits"
+    final val sumOfCreditsToSubtract = "sumOfCreditsToSubtract"
     final val oldTotalCredits = "oldTotalCredits"
     final val newTotalCredits = "newTotalCredits"
     final val whenComputedMillis = "whenComputedMillis"

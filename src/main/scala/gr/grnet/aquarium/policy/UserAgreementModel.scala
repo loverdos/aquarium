@@ -42,14 +42,16 @@ import gr.grnet.aquarium.Timespan
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UserAgreementModel {
+trait UserAgreementModel extends Ordered[UserAgreementModel] {
+  /**
+   * By convention, the id is the id of the IMEvent that made the agreement change.
+   * @return
+   */
   def id: String
 
-  def idInStore: Option[Any]
+  def relatedIMEventID: Option[String]
 
-  def parentID: Option[String]
-
-  def validityTimespan: Timespan
+  def validityTimespan = Timespan(validFromMillis, validToMillis)
 
   def role: String
 
@@ -57,7 +59,19 @@ trait UserAgreementModel {
 
   def timeslot = validityTimespan.toTimeslot
 
-  def validFrom = validityTimespan.fromMillis
+  def validFromMillis: Long
 
-  def validTo = validityTimespan.toMillis
+  def validToMillis: Long
+
+  def compare(that: UserAgreementModel): Int = {
+    if(this.validFromMillis < that.validFromMillis) {
+      -1
+    }
+    else if(this.validFromMillis == that.validFromMillis) {
+      0
+    }
+    else {
+      1
+    }
+  }
 }

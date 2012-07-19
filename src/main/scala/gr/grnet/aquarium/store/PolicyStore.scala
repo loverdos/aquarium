@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.store
 
 import collection.immutable.SortedMap
+import collection.immutable.SortedSet
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy.PolicyModel
 
@@ -47,6 +48,12 @@ import gr.grnet.aquarium.policy.PolicyModel
  */
 trait PolicyStore {
   type Policy <: PolicyModel
+
+  def loadAllPolicies: SortedSet[PolicyModel] = {
+    val all = loadAndSortPoliciesWithin(0, Long.MaxValue)
+    val set = SortedSet[PolicyModel]()
+    set ++ all.valuesIterator
+  }
 
   def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy]
 

@@ -82,7 +82,7 @@ case object NewTotalAmountInput extends ChargingInput("newTotalAmount")
 
 /**
  * The type of [[gr.grnet.aquarium.charging.ChargingInput]] that holds the time delta between two
- * consecutive resource events of the same type (same `resource` and `instanceId`). Time is measured in milliseconds.
+ * consecutive resource events of the same type (same `resource` and `instanceID`). Time is measured in milliseconds.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

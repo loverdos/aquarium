@@ -73,9 +73,9 @@ trait ResourceEventModel extends ExternalEventModel {
   def withDetailsAndValue(newDetails: Map[String, String], newValue: Double, newOccurredMillis: Long): ResourceEventModel
 
   def safeResource   = if(resource eq null)   "" else resource
-  def safeInstanceId = if(instanceID eq null) "" else instanceID
+  def safeInstanceID = if(instanceID eq null) "" else instanceID
 
-  def fullResourceInfo = (safeResource, safeInstanceId)
+  def safeResourceInstanceInfo = (safeResource, safeInstanceID)
 
   def occurredDate = new Date(occurredMillis)
 
@@ -151,11 +151,13 @@ trait ResourceEventModel extends ExternalEventModel {
 }
 
 object ResourceEventModel {
-  type ResourceType = String
-  type ResourceIdType = String
-  type FullResourceType = (ResourceType, ResourceIdType)
-  type FullResourceTypeMap = Map[FullResourceType, ResourceEventModel]
-  type FullMutableResourceTypeMap = scala.collection.mutable.Map[FullResourceType, ResourceEventModel]
+  /**
+   * A `ResourceInstance` is the type of a specific resource instance and it is contains the name of the
+   * [[gr.grnet.aquarium.policy.ResourceType]] and the instance `ID`.
+   */
+  type ResourceInstance = (String, String)
+  type FullResourceTypeMap = Map[ResourceInstance, ResourceEventModel]
+  type FullMutableResourceTypeMap = scala.collection.mutable.Map[ResourceInstance, ResourceEventModel]
 
   trait NamesT extends ExternalEventModel.NamesT {
     final val clientID = "clientID"

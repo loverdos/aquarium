@@ -45,7 +45,7 @@ import com.google.common.cache.{CacheStats, RemovalNotification, RemovalListener
 import com.ckkloverdos.props.{Props ⇒ KKProps}
 import gr.grnet.aquarium.actor.service.user.UserActor
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import gr.grnet.aquarium.actor.message.config.InitializeUserState
+import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
 import gr.grnet.aquarium.util.date.TimeHelpers
 import java.util.concurrent.{TimeUnit, ConcurrentHashMap, Callable}
 import akka.dispatch.{Await, Future}
@@ -159,8 +159,8 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
   }
 
   def notifyUserActorPostStop(userActor: UserActor): Unit = {
-    logger.debug("Removing UserActor %s from stopping set (after postStop())".format(userActor.userID))
-    this.stoppingUserActors.remove(userActor.userID)
+    logger.debug("Removing UserActor %s from stopping set (after postStop())".format(userActor.unsafeUserID))
+    this.stoppingUserActors.remove(userActor.unsafeUserID)
   }
 
   private[this] def gracefullyStopUserActor(userID: String, actorRef: ActorRef): Unit = {
@@ -176,7 +176,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
       return
     }
 
-    val userID = userActor.userID
+    val userID = userActor.unsafeUserID
     val actorRef = userActor.self
 
     this._userActorCache.invalidate(userID)
@@ -194,7 +194,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
     // If stopping, wait to stop or ignore
     this.stoppingUserActors.get(userID) match {
       case null ⇒
-        logger.debug("UserActor %s was not stopping (don't know if it exists yet)".format(userID))
+        logger.debug("UserActor %s was not in 'stopping' mode (but I don't know if it exists yet)".format(userID))
 
       case future ⇒
         try {
@@ -230,7 +230,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
         _userActorCache.put(userID, actorRef)
 
         // Send the initialization message
-        actorRef ! InitializeUserState(userID, TimeHelpers.nowMillis())
+        actorRef ! InitializeUserActorState(userID, TimeHelpers.nowMillis())
 
         actorRef
       }

@@ -46,9 +46,9 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 case class IgnoredFirstResourceEventsSnapshot(ignoredFirstEvents: List[ResourceEventModel]) {
   def toMutableWorker = {
-    val map = scala.collection.mutable.Map[ResourceEventModel.FullResourceType, ResourceEventModel]()
+    val map = scala.collection.mutable.Map[ResourceEventModel.ResourceInstance, ResourceEventModel]()
     for(ignoredFirstEvent <- ignoredFirstEvents) {
-      map(ignoredFirstEvent.fullResourceInfo) = ignoredFirstEvent
+      map(ignoredFirstEvent.safeResourceInstanceInfo) = ignoredFirstEvent
     }
 
     IgnoredFirstResourceEventsWorker(map)

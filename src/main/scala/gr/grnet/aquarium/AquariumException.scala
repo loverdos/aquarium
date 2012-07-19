@@ -36,15 +36,22 @@
 package gr.grnet.aquarium
 
 /**
- * Should be the base of all Aquarium-related exceptions.
+ * An exception thrown from Aquarium application code.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class AquariumException(cause: Throwable, message: String) extends Exception(message, cause) {
+class AquariumException(
+    cause: Throwable,
+    message: String,
+    args: Any*
+) extends Exception(message.format(args:_*), cause) {
+
   if(message eq null) throw new IllegalArgumentException("Null message in exception")
 
   def this(cause: Throwable) = this(cause, "")
-  def this(message: String)  = this(null, message)
+
+  def this(message: String, args: Any*) = this(null: Throwable, message, args:_*)
+
   def this(message: String, cause: Throwable) = this(cause, message)
 }

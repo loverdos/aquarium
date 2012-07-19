@@ -33,24 +33,43 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor.message.config
+package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.actor.message.ActorMessage
 import gr.grnet.aquarium.util.shortClassNameOf
-import gr.grnet.aquarium.util.date.MutableDateCalc
-
+import gr.grnet.aquarium.util.date.TimeHelpers.toYYYYMMDDHHMMSSSSS
 
 /**
- * This is sent to a [[gr.grnet.aquarium.actor.service.user.UserActor]] in order to initialize its internal state.
+ * A credit value computed for a particular time period, using a specific unit price.
+ *
+ * @param startMillis
+ * @param stopMillis
+ * @param unitPrice
+ * @param creditsToSubtract The computed amount of credits to subtract from the total user credits. If this is
+ *                          an infinite number, then the convention is that no credits have been specified.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class InitializeUserState(userID: String, referenceTimeMillis: Long)
-extends ActorMessage
-   with ActorConfigurationMessage {
+case class Chargeslot(
+    startMillis: Long,
+    stopMillis: Long,
+    unitPrice: Double,
+    creditsToSubtract: Double = Double.NaN
+) {
 
-  override def toString = {
-    "%s(%s, %s)".format(shortClassNameOf(this), userID, new MutableDateCalc(referenceTimeMillis).toString)
+  def hasCreditsToSubtract: Boolean = {
+    !creditsToSubtract.isInfinite
   }
+
+  def copyWithCreditsToSubtract(credits: Double) = {
+    copy(creditsToSubtract = credits)
+  }
+
+  override def toString = "%s(%s, %s, %s, %s, %s)".format(
+    shortClassNameOf(this),
+    toYYYYMMDDHHMMSSSSS(startMillis),
+    toYYYYMMDDHHMMSSSSS(stopMillis),
+    unitPrice,
+    creditsToSubtract
+  )
 }

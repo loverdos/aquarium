@@ -173,7 +173,7 @@ case class UserStateWorker(
             }
 
             // remove it anyway
-            map.remove((resourceEvent.safeResource, resourceEvent.safeInstanceId))
+            map.remove((resourceEvent.safeResource, resourceEvent.safeInstanceID))
           }
         }
       }

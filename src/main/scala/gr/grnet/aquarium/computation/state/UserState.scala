@@ -36,14 +36,14 @@
 package gr.grnet.aquarium.computation.state
 
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-import gr.grnet.aquarium.event.model.NewWalletEntry
+import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.computation.reason.{NoSpecificChangeReason, UserStateChangeReason, InitialUserStateSetup}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.computation.parts.RoleHistory
-import gr.grnet.aquarium.computation.state.parts.{OwnedResourcesMap, ResourceInstanceSnapshot, OwnedResourcesSnapshot, AgreementHistory, ImplicitlyIssuedResourceEventsSnapshot, LatestResourceEventsSnapshot}
+import gr.grnet.aquarium.computation.state.parts.{OwnedResourcesMap, ResourceInstanceAmount, OwnedResourcesSnapshot, AgreementHistory, ImplicitlyIssuedResourceEventsSnapshot, LatestResourceEventsSnapshot}
 import gr.grnet.aquarium.policy.UserAgreementModel
+import gr.grnet.aquarium.charging.reason.{InitialUserStateSetup, NoSpecificChargingReason, ChargingReason}
 
 /**
  * A comprehensive representation of the User's state.
@@ -77,7 +77,7 @@ import gr.grnet.aquarium.policy.UserAgreementModel
  * The wallet entries computed. Not all user states need to holds wallet entries,
  * only those that refer to billing periods (end of billing period).
  * @param lastChangeReason
- * The [[gr.grnet.aquarium.computation.reason.UserStateChangeReason]] for which the usr state has changed.
+ * The [[gr.grnet.aquarium.charging.reason.ChargingReason]] for which the usr state has changed.
  * @param parentUserStateIDInStore
  * The `ID` of the parent state. The parent state is the one used as a reference point in order to calculate
  * this user state.
@@ -141,12 +141,12 @@ case class UserState(
 
     ownedResourcesSnapshot: OwnedResourcesSnapshot,
 
-    newWalletEntries: List[NewWalletEntry],
+    newWalletEntries: List[WalletEntry],
 
     occurredMillis: Long, // When this user state was computed
 
     // The last known change reason for this userState
-    lastChangeReason: UserStateChangeReason = NoSpecificChangeReason(),
+    lastChangeReason: ChargingReason = NoSpecificChargingReason(),
     // The user state we used to compute this one. Normally the (cached)
     // state at the beginning of the billing period.
     parentUserStateIDInStore: Option[String] = None,
@@ -166,7 +166,7 @@ case class UserState(
     agreementHistory.findForTime(at)
   }
 
-  def findResourceInstanceSnapshot(resource: String, instanceId: String): Option[ResourceInstanceSnapshot] = {
+  def findResourceInstanceSnapshot(resource: String, instanceId: String): Option[ResourceInstanceAmount] = {
     ownedResourcesSnapshot.findResourceInstanceSnapshot(resource, instanceId)
   }
 
@@ -189,7 +189,7 @@ case class UserState(
     )
   }
 
-  def newWithChangeReason(changeReason: UserStateChangeReason) = {
+  def newWithChangeReason(changeReason: ChargingReason) = {
     this.copy(
       isInitial = false,
       lastChangeReason = changeReason,
@@ -197,7 +197,7 @@ case class UserState(
     )
   }
 
-  def newWithRoleHistory(newRoleHistory: RoleHistory, changeReason: UserStateChangeReason) = {
+  def newWithRoleHistory(newRoleHistory: RoleHistory, changeReason: ChargingReason) = {
     // FIXME: Also update agreement
     this.copy(
       isInitial = false,
@@ -257,7 +257,7 @@ object UserState {
       occurredMillis: Long,
       totalCredits: Double,
       initialAgreement: UserAgreementModel,
-      calculationReason: UserStateChangeReason = InitialUserStateSetup(None)
+      calculationReason: ChargingReason = InitialUserStateSetup(None)
   ) = {
 
     UserState(
@@ -283,7 +283,7 @@ object UserState {
   def createInitialUserStateFromBootstrap(
       usb: UserStateBootstrap,
       occurredMillis: Long,
-      calculationReason: UserStateChangeReason
+      calculationReason: ChargingReason
   ): UserState = {
 
     createInitialUserState(
