@@ -60,7 +60,14 @@ trait UserStateModel extends JsonSupport {
 
   def totalCredits: Double
 
-  def theFullBillingMonth: Option[BillingMonthInfo]
+  /**
+   * True iff this user state represents a full billing month.
+   */
+  def isFullBillingMonth: Boolean
+
+  def billingYear: Int
+
+  def billingMonth: Int
 
   def chargingReason: ChargingReason
 
@@ -87,8 +94,9 @@ object UserStateModel {
   trait NamesT {
     final val userID = "userID"
     final val occurredMillis = "occurredMillis"
-    final val theFullBillingMonth_year = "theFullBillingMonth.year"
-    final val theFullBillingMonth_month = "theFullBillingMonth.month"
+    final val isFullBillingMonth = "isFullBillingMonth"
+    final val billingYear = "billingYear"
+    final val billingMonth = "billingMonth"
   }
 
   object Names extends NamesT

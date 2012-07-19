@@ -108,14 +108,21 @@ final class WorkingUserState(
     this.workingAgreementHistory.toAgreementHistory
   }
 
-  def toUserState(theFullBillingMonth: Option[BillingMonthInfo], idOpt: Option[String]) = {
+  def toUserState(
+      isFullBillingMonth: Boolean,
+      billingYear: Int,
+      billingMonth: Int,
+      idOpt: Option[String]
+   ) = {
     new StdUserState(
       idOpt.getOrElse(""),
       this.parentUserStateIDInStore,
       this.userID,
       this.occurredMillis,
       this.totalCredits,
-      theFullBillingMonth,
+      isFullBillingMonth,
+      billingYear,
+      billingMonth,
       this.chargingReason,
       immutablePreviousResourceEvents,
       immutableImplicitlyIssuedStartEvents,

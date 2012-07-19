@@ -36,7 +36,6 @@
 package gr.grnet.aquarium.store.mongodb
 
 import gr.grnet.aquarium.charging.state.{AgreementHistory, WorkingUserState, UserStateModel}
-import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.reason.ChargingReason
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
@@ -54,7 +53,9 @@ case class MongoDBUserState(
     userID: String,
     occurredMillis: Long,
     totalCredits: Double,
-    theFullBillingMonth: Option[BillingMonthInfo],
+    isFullBillingMonth: Boolean,
+    billingYear: Int,
+    billingMonth: Int,
     chargingReason: ChargingReason,
     previousResourceEvents: List[ResourceEventModel],
     implicitlyIssuedStartEvents: List[ResourceEventModel],
@@ -84,7 +85,9 @@ object MongoDBUserState {
       model.userID,
       model.occurredMillis,
       model.totalCredits,
-      model.theFullBillingMonth,
+      model.isFullBillingMonth,
+      model.billingYear,
+      model.billingMonth,
       model.chargingReason,
       model.previousResourceEvents,
       model.implicitlyIssuedStartEvents,

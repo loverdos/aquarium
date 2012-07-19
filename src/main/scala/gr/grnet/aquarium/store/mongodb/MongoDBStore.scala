@@ -183,9 +183,9 @@ class MongoDBStore(
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
     val query = new BasicDBObjectBuilder().
       add(UserStateModel.Names.userID, userID).
-//      add(UserStateModel.Names.isFullBillingMonthState, true). FIXME
-      add(UserStateModel.Names.theFullBillingMonth_year, bmi.year).
-      add(UserStateModel.Names.theFullBillingMonth_month, bmi.month).
+      add(UserStateModel.Names.isFullBillingMonth, true).
+      add(UserStateModel.Names.billingYear, bmi.year).
+      add(UserStateModel.Names.billingMonth, bmi.month).
       get()
 
     // Descending order, so that the latest comes first

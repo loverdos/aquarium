@@ -37,11 +37,11 @@ package gr.grnet.aquarium.charging.state
 
 import scala.collection.mutable
 import gr.grnet.aquarium.policy.{ResourceType, UserAgreementModel}
-import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.charging.reason.{InitialUserStateSetup, ChargingReason}
 import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.computation.BillingMonthInfo
 
 /**
  *
@@ -54,7 +54,9 @@ final case class StdUserState(
     userID: String,
     occurredMillis: Long,
     totalCredits: Double,
-    theFullBillingMonth: Option[BillingMonthInfo],
+    isFullBillingMonth: Boolean,
+    billingYear: Int,
+    billingMonth: Int,
     chargingReason: ChargingReason,
     previousResourceEvents: List[ResourceEventModel],
     implicitlyIssuedStartEvents: List[ResourceEventModel],
@@ -164,13 +166,17 @@ final object StdUserState {
       chargingReason: ChargingReason = InitialUserStateSetup(None)
   ): StdUserState = {
 
+    val bmi = BillingMonthInfo.fromMillis(occurredMillis)
+
     StdUserState(
       "",
       None,
       userID,
       userCreationMillis,
       totalCredits,
-      None,
+      false,
+      bmi.year,
+      bmi.month,
       chargingReason,
       Nil,
       Nil,

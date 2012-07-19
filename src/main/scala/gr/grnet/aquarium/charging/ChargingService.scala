@@ -97,7 +97,12 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
 
       val newChargingReason = MonthlyBillChargingReason(chargingReason, billingMonthInfo)
       workingUserState.chargingReason = newChargingReason
-      val monthlyUserState0 = workingUserState.toUserState(Some(billingMonthInfo), None)
+      val monthlyUserState0 = workingUserState.toUserState(
+        true,
+        billingMonthInfo.year,
+        billingMonthInfo.month,
+        None
+      )
 
       // We always save the state when it is a full month billing
       val monthlyUserState1 = userStateRecorder.apply(monthlyUserState0)

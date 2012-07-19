@@ -124,7 +124,9 @@ extends StoreProvider
         model.userID,
         model.occurredMillis,
         model.totalCredits,
-        model.theFullBillingMonth,
+        model.isFullBillingMonth,
+        model.billingYear,
+        model.billingMonth,
         model.chargingReason,
         model.previousResourceEvents,
         model.implicitlyIssuedStartEvents,
@@ -148,12 +150,11 @@ extends StoreProvider
   }
 
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
-    val goodOnes = _userStates.filter(_.theFullBillingMonth.isDefined).filter { userState ⇒
-      userState.userID == userID && {
-        userState.theFullBillingMonth.isDefined && {
-          userState.theFullBillingMonth.get == bmi
-        }
-      }
+    val goodOnes = _userStates.filter { userState ⇒
+      userState.userID == userID &&
+      userState.isFullBillingMonth &&
+      userState.billingYear == bmi.year &&
+      userState.billingMonth == bmi.month
     }
     
     goodOnes.sortWith {
