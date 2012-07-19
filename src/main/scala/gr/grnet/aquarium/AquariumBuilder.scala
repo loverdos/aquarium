@@ -44,6 +44,7 @@ import java.io.File
 import gr.grnet.aquarium.service.EventBusService
 import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
+import gr.grnet.aquarium.policy.PolicyModel
 
 /**
  * Create a tailored Aquarium.
@@ -53,7 +54,11 @@ import gr.grnet.aquarium.service.event.AquariumCreatedEvent
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final class AquariumBuilder(val originalProps: Props) extends Loggable {
+final class AquariumBuilder(
+    val originalProps: Props,
+    val defaultPolicyModel: PolicyModel
+) extends Loggable {
+
   if(originalProps eq null) {
     throw new AquariumInternalError("props is null")
   }
@@ -369,6 +374,8 @@ final class AquariumBuilder(val originalProps: Props) extends Loggable {
     checkOptionalPropsOverride(EnvKeys.adminCookie) { (envKey, propValue) ⇒
       Some(propValue)
     }
+
+    update(EnvKeys.defaultPolicyModel, defaultPolicyModel)
 
     this._aquarium = new Aquarium(_env)
 

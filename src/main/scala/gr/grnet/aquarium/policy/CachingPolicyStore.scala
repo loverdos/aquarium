@@ -35,7 +35,6 @@
 
 package gr.grnet.aquarium.policy
 
-import collection.immutable.{SortedMap, TreeSet}
 import gr.grnet.aquarium.Timespan
 import gr.grnet.aquarium.util.Lock
 import gr.grnet.aquarium.store.PolicyStore
@@ -43,39 +42,48 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
 
 /**
- * A mutable container of policy models.
+ * A caching [[gr.grnet.aquarium.store.PolicyStore]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-class PolicyHistory(policyStore: PolicyStore) extends PolicyStore {
+class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) extends PolicyStore {
   override type Policy = PolicyModel
-  private[this] val lock = new Lock()
-  @volatile private[this] var _policies = TreeSet[Policy]()
-  private def emptyMap = immutable.SortedMap[Timeslot,Policy]()
 
-  private[this] def synchronized[A](f: => A) : A =
-    lock.withLock {
-      if(_policies.isEmpty)
-        _policies ++= policyStore.loadAndSortPoliciesWithin(0,Long.MaxValue).values
-      f
+  private[this] final val lock = new Lock()
+  private[this] final val EmptyPolicyByTimeslotMap = immutable.SortedMap[Timeslot, Policy]()
+
+  private[this] var _policies = immutable.TreeSet[Policy]()
+
+  private[this] def ensureLoaded(): Unit = {
+    this.lock.withLock {
+      if(_policies.isEmpty) {
+        _policies ++= policyStore.loadAllPolicies
+
+        if(_policies.isEmpty) {
+          _policies += defaultPolicy
+         policyStore.insertPolicy(defaultPolicy)
+        }
+      }
     }
+  }
 
   private[this] def policyAt(s:Long) : PolicyModel =
     new StdPolicy("", None, Timespan(s), Set(), Set(), Map())
 
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] =
-    synchronized {
-        val range = Timeslot(fromMillis,toMillis)
-        /* ``to'' method: return the subset of all policies.from <= range.to */
-        _policies.to(policyAt(range.to.getTime)).foldLeft (emptyMap) { (map,p) =>
-          if(p.validityTimespan.toTimeslot.to.getTime >= range.from.getTime)
-            map + ((p.validityTimespan.toTimeslot,p))
-          else
-            map
-        }
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, Policy] = {
+    ensureLoaded()
+
+    val range = Timeslot(fromMillis,toMillis)
+    /* ``to'' method: return the subset of all policies.from <= range.to */
+    _policies.to(policyAt(range.to.getTime)).foldLeft (EmptyPolicyByTimeslotMap) { (map,p) =>
+      if(p.validityTimespan.toTimeslot.to.getTime >= range.from.getTime)
+        map + ((p.validityTimespan.toTimeslot,p))
+      else
+        map
     }
+  }
 
 
   /**
@@ -84,22 +92,22 @@ class PolicyHistory(policyStore: PolicyStore) extends PolicyStore {
    * @param atMillis
    * @return
    */
-  def loadValidPolicyAt(atMillis: Long): Option[Policy] =
-    synchronized {
-      // Take the subset of all ordered policies up to the one with less than or equal start time
-      // and then return the last item. This should be the policy right before the given time.
-      // TODO: optimize the creation of the fake StdPolicy
-      _policies.to(policyAt(atMillis)).lastOption
-    }
+  def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
+    ensureLoaded()
+    // Take the subset of all ordered policies up to the one with less than or equal start time
+    // and then return the last item. This should be the policy right before the given time.
+    // TODO: optimize the creation of the fake StdPolicy
+    _policies.to(policyAt(atMillis)).lastOption
+  }
 
 
   /**
    * Store an accounting policy.
    */
-  def insertPolicy(policy: PolicyModel): Policy =
-   synchronized {
-      var p = policyStore.insertPolicy(policy)
-      _policies += p
-      p
-   }
+  def insertPolicy(policy: PolicyModel): Policy = {
+    this.lock.withLock {
+      this._policies += policy
+      policyStore.insertPolicy(policy)
+    }
+  }
 }

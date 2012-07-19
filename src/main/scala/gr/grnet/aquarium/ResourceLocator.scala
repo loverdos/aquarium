@@ -45,6 +45,8 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.maybe.Just
 import com.ckkloverdos.maybe.Failed
 import com.ckkloverdos.convert.Converters
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.policy.StdPolicy
 
 /**
  * Locates resources.
@@ -287,6 +289,26 @@ object ResourceLocator {
             ResourceLocator.ResourceNames.AQUARIUM_PROPERTIES,
             Resources.AquariumPropertiesResource),
           e)
+    }
+  }
+
+  final lazy val DefaultPolicyModel = {
+    val maybePolicyJSON = Resources.PolicyJSONResource.stringContent
+    maybePolicyJSON match {
+      case NoVal ⇒
+        throw new AquariumInternalError(
+          "Could not load %s from %s".format(
+            ResourceLocator.ResourceNames.POLICY_JSON,
+            Resources.PolicyJSONResource))
+
+      case Failed(e) ⇒
+        throw new AquariumInternalError(e,
+          "Could not load %s from %s".format(
+            ResourceLocator.ResourceNames.POLICY_JSON,
+            Resources.PolicyJSONResource))
+
+      case Just(jsonString) ⇒
+        StdConverters.AllConverters.convertEx[StdPolicy](JsonTextFormat(jsonString))
     }
   }
 

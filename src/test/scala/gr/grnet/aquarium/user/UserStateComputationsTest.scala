@@ -92,7 +92,7 @@ class UserStateComputationsTest extends Loggable {
     )
   )
 
-  val aquarium = new AquariumBuilder(ResourceLocator.AquariumProperties).
+  val aquarium = new AquariumBuilder(ResourceLocator.AquariumProperties, ResourceLocator.DefaultPolicyModel).
     update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
     build()
 

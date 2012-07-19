@@ -94,7 +94,10 @@ object Main extends LazyLoggable {
 
     val ms0 = TimeHelpers.nowMillis()
     try {
-      val aquarium = new AquariumBuilder(ResourceLocator.AquariumProperties).build()
+      val aquarium = new AquariumBuilder(
+        ResourceLocator.AquariumProperties,
+        ResourceLocator.DefaultPolicyModel
+      ).build()
       aquarium.start()
 
       val ms1 = TimeHelpers.nowMillis()

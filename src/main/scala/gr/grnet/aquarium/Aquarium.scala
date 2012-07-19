@@ -38,7 +38,7 @@ package gr.grnet.aquarium
 import com.ckkloverdos.env.Env
 import com.ckkloverdos.key.{IntKey, StringKey, LongKey, TypedKeySkeleton, TypedKey, BooleanKey}
 import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.store.{StoreProvider}
+import gr.grnet.aquarium.store.{PolicyStore, StoreProvider}
 import java.io.File
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 import gr.grnet.aquarium.service.{StoreWatcherService, RabbitMQService, TimerService, EventBusService, AkkaService}
@@ -48,7 +48,7 @@ import org.slf4j.{LoggerFactory, Logger}
 import com.ckkloverdos.maybe._
 import com.ckkloverdos.sys.SysProp
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import gr.grnet.aquarium.policy.{FullPriceTable, PolicyModel, PolicyHistory, PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel, ResourceType}
+import gr.grnet.aquarium.policy.{FullPriceTable, PolicyModel, CachingPolicyStore, PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel, ResourceType}
 import gr.grnet.aquarium.charging.{ChargingService, ChargingBehavior}
 import gr.grnet.aquarium.util.date.TimeHelpers
 
@@ -61,6 +61,11 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   import Aquarium.EnvKeys
 
   @volatile private[this] var _chargingBehaviorMap = Map[String, ChargingBehavior]()
+
+  private[this] lazy val cachingPolicyStore = new CachingPolicyStore(
+    apply(EnvKeys.defaultPolicyModel),
+    apply(EnvKeys.storeProvider).policyStore
+  )
 
   private[this] val _isStopping = new AtomicBoolean(false)
 
@@ -309,6 +314,8 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     }
   }
 
+  def defaultPolicyModel = apply(EnvKeys.defaultPolicyModel)
+
   def defaultClassLoader = apply(EnvKeys.defaultClassLoader)
 
   def resourceEventStore = apply(EnvKeys.storeProvider).resourceEventStore
@@ -317,7 +324,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   def userStateStore = apply(EnvKeys.storeProvider).userStateStore
 
-  val policyStore = new PolicyHistory(apply(EnvKeys.storeProvider).policyStore)
+  def policyStore = this.cachingPolicyStore
 
   def eventsStoreFolder = apply(EnvKeys.eventsStoreFolder)
 
@@ -474,5 +481,7 @@ object Aquarium {
     final val defaultClassLoader: TypedKey[ClassLoader] =
       new AquariumEnvKey[ClassLoader]("default.class.loader")
 
+    final val defaultPolicyModel: TypedKey[PolicyModel] =
+      new AquariumEnvKey[PolicyModel]("default.policy.model")
   }
 }
