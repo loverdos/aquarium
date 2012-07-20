@@ -131,6 +131,8 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
       logger.info("{} = {}", EnvKeys.eventsStoreFolder.name, folder)
     }
     this.eventsStoreFolder.throwMe // on error
+
+    logger.info("default policy = {}", defaultPolicyModel.toJsonString)
   }
 
   private[this] def addShutdownHooks(): Unit = {

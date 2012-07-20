@@ -54,6 +54,7 @@ case class Chargeslot(
     startMillis: Long,
     stopMillis: Long,
     unitPrice: Double,
+    explanation: String = "",
     creditsToSubtract: Double = Double.NaN
 ) {
 
@@ -61,8 +62,8 @@ case class Chargeslot(
     !creditsToSubtract.isInfinite
   }
 
-  def copyWithCreditsToSubtract(credits: Double) = {
-    copy(creditsToSubtract = credits)
+  def copyWithCreditsToSubtract(credits: Double, _explanation: String) = {
+    copy(creditsToSubtract = credits, explanation = _explanation)
   }
 
   override def toString = "%s(%s, %s, %s, %s, %s)".format(
@@ -70,6 +71,7 @@ case class Chargeslot(
     toYYYYMMDDHHMMSSSSS(startMillis),
     toYYYYMMDDHHMMSSSSS(stopMillis),
     unitPrice,
+    explanation,
     creditsToSubtract
   )
 }

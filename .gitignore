@@ -46,3 +46,4 @@ aquarium.home_IS_UNDEFINED
 .gradle/
 logs/
 History.md
+npm-debug.log

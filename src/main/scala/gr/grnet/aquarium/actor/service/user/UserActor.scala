@@ -43,7 +43,7 @@ import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEve
 import gr.grnet.aquarium.actor.message.config.{InitializeUserActorState, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.actor.message.{GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
+import gr.grnet.aquarium.actor.message.{GetUserWalletResponseData, GetUserWalletResponse, GetUserWalletRequest, GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
 import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.computation.BillingMonthInfo
@@ -51,6 +51,7 @@ import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.charging.state.{WorkingAgreementHistory, WorkingUserState, UserStateModel}
 import gr.grnet.aquarium.charging.reason.{InitialUserActorSetup, RealtimeChargingReason}
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement}
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  *
@@ -155,6 +156,10 @@ class UserActor extends ReflectiveRoleableActor {
 
   private[this] def updateLatestIMEventIDFrom(imEvent: IMEventModel): Unit = {
     this._latestIMEventID = imEvent.id
+  }
+
+  private[this] def updateLatestResourceEventIDFrom(rcEvent: ResourceEventModel): Unit = {
+    this._latestResourceEventID = rcEvent.id
   }
 
   /**
@@ -306,35 +311,69 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     val now = TimeHelpers.nowMillis()
-    val billingMonthInfo = BillingMonthInfo.fromMillis(now)
     val currentResourcesMap = aquarium.currentResourceTypesMap
-    val calculationReason = RealtimeChargingReason(None, now)
-    val eventOccurredMillis = rcEvent.occurredMillis
+    val chargingReason = RealtimeChargingReason(None, now)
 
-//    DEBUG("Using %s", currentResourceTypesMap.toJsonString)
-    if(rcEvent.occurredMillis >= _workingUserState.occurredMillis) {
-      chargingService.processResourceEvent(
-        rcEvent,
-        this._workingUserState,
-        calculationReason,
-        billingMonthInfo,
-        None
-      )
-    }
-    else {
-      // Oops. Event is OUT OF SYNC
-      DEBUG("OUT OF SYNC %s", rcEvent.toDebugString)
+    val nowBillingMonthInfo = BillingMonthInfo.fromMillis(now)
+    val nowYear = nowBillingMonthInfo.year
+    val nowMonth = nowBillingMonthInfo.month
+
+    val eventOccurredMillis = rcEvent.occurredMillis
+    val eventBillingMonthInfo = BillingMonthInfo.fromMillis(eventOccurredMillis)
+    val eventYear = eventBillingMonthInfo.year
+    val eventMonth = eventBillingMonthInfo.month
+
+    def computeBatch(): Unit = {
+      DEBUG("Going for out of sync charging")
       this._workingUserState = chargingService.replayMonthChargingUpTo(
-        billingMonthInfo,
+        nowBillingMonthInfo,
         // Take into account that the event may be out-of-sync.
         // TODO: Should we use this._latestResourceEventOccurredMillis instead of now?
         now max eventOccurredMillis,
         this._userStateBootstrap,
         currentResourcesMap,
-        calculationReason,
+        chargingReason,
         stdUserStateStoreFunc,
         None
       )
+
+      updateLatestResourceEventIDFrom(rcEvent)
+    }
+
+    def computeRealtime(): Unit = {
+      DEBUG("Going for in sync charging")
+      chargingService.processResourceEvent(
+        rcEvent,
+        this._workingUserState,
+        chargingReason,
+        nowBillingMonthInfo,
+        None,
+        true
+      )
+
+      updateLatestResourceEventIDFrom(rcEvent)
+    }
+
+    // FIXME check these
+    if(nowYear != eventYear || nowMonth != eventMonth) {
+      DEBUG(
+        "nowYear(%s) != eventYear(%s) || nowMonth(%s) != eventMonth(%s)",
+        nowYear, eventYear,
+        nowMonth, eventMonth
+      )
+      computeBatch()
+    }
+    else if(this._workingUserState.latestResourceEventOccurredMillis < rcEvent.occurredMillis) {
+      DEBUG("this._workingUserState.latestResourceEventOccurredMillis < rcEvent.occurredMillis")
+      DEBUG(
+        "%s < %s",
+        TimeHelpers.toYYYYMMDDHHMMSSSSS(this._workingUserState.latestResourceEventOccurredMillis),
+        TimeHelpers.toYYYYMMDDHHMMSSSSS(rcEvent.occurredMillis)
+      )
+      computeRealtime()
+    }
+    else {
+      computeBatch()
     }
 
     DEBUG("Updated %s", this._workingUserState)
@@ -378,6 +417,38 @@ class UserActor extends ReflectiveRoleableActor {
 
       case false ⇒
         sender ! GetUserStateResponse(Left("No state for user %s [AQU-STA-0006]".format(event.userID)), 404)
+    }
+  }
+
+  def onGetUserWalletRequest(event: GetUserWalletRequest): Unit = {
+    haveWorkingUserState match {
+      case true ⇒
+        DEBUG("haveWorkingUserState: %s", event)
+        sender ! GetUserWalletResponse(
+          Right(
+            GetUserWalletResponseData(
+              this._userID,
+              this._workingUserState.totalCredits,
+              this._workingUserState.walletEntries.toList
+        )))
+
+      case false ⇒
+        DEBUG("!haveWorkingUserState: %s", event)
+        haveUserCreationIMEvent match {
+          case true ⇒
+            DEBUG("haveUserCreationIMEvent: %s", event)
+            sender ! GetUserWalletResponse(
+              Right(
+                GetUserWalletResponseData(
+                  this._userID,
+                  aquarium.initialUserBalance(this._userCreationIMEvent.role, this._userCreationIMEvent.occurredMillis),
+                  Nil
+            )))
+
+          case false ⇒
+            DEBUG("!haveUserCreationIMEvent: %s", event)
+            sender ! GetUserWalletResponse(Left("No wallet for user %s [AQU-WAL-00 8]".format(event.userID)), 404)
+        }
     }
   }
 

@@ -52,6 +52,7 @@ final case class StdUserState(
     parentIDInStore: Option[String],
     userID: String,
     occurredMillis: Long,
+    latestResourceEventOccurredMillis: Long,
     totalCredits: Double,
     isFullBillingMonth: Boolean,
     billingYear: Int,
@@ -115,6 +116,7 @@ final object StdUserState {
       None,
       userID,
       userCreationMillis,
+      0L, // FIXME is this correct?
       totalCredits,
       false,
       bmi.year,

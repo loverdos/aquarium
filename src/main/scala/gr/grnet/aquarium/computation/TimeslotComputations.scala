@@ -122,7 +122,7 @@ object TimeslotComputations extends Loggable {
     }
 
     // 1. Round ONE: split time according to overlapping policies and agreements.
-    val alignedTimeslots = splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList, Just(clog))
+    val alignedTimeslots = List(referenceTimeslot) //splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList, Just(clog))
 
     // 2. Round TWO: Use the aligned timeslots of Round ONE to produce even more
     //    fine-grained timeslots according to applicable algorithms.
@@ -131,9 +131,9 @@ object TimeslotComputations extends Loggable {
     val allChargeslots = for {
       alignedTimeslot <- alignedTimeslots
     } yield {
-      val policy = getPolicyWithin(alignedTimeslot)
+      val policy = policyByTimeslot.valuesIterator.next()//getPolicyWithin(alignedTimeslot)
       //      clog.debug("dslPolicy = %s", dslPolicy)
-      val userAgreement = getAgreementWithin(alignedTimeslot)
+      val userAgreement = agreementByTimeslot.valuesIterator.next()//getAgreementWithin(alignedTimeslot)
 
       // TODO: Factor this out, just like we did with:
       // TODO:  val alignedTimeslots = splitTimeslotByPoliciesAndAgreements
@@ -238,7 +238,8 @@ object TimeslotComputations extends Loggable {
           effectivePriceTable
       }
 
-      resolveEffective(alignedTimeslot, effectivePriceTable.priceOverrides)
+      //resolveEffective(alignedTimeslot, effectivePriceTable.priceOverrides)
+      immutable.SortedMap(alignedTimeslot -> effectivePriceTable.priceOverrides.head)
     }
 
     private def printPriceList(p: PriceList) : Unit = {

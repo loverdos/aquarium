@@ -71,10 +71,17 @@ final class WorkingUserState(
     val chargingDataOfResourceInstance: mutable.Map[(String, String), mutable.Map[String, Any]],
     var totalCredits: Double,
     val workingAgreementHistory: WorkingAgreementHistory,
-    var occurredMillis: Long,
+    var latestUpdateMillis: Long, // last update of this working user state
+    var latestResourceEventOccurredMillis: Long,
     var billingPeriodOutOfSyncResourceEventsCounter: Long,
     val walletEntries: mutable.ListBuffer[WalletEntry]
 ) extends JsonSupport {
+
+  def updateLatestResourceEventOccurredMillis(millis: Long): Unit = {
+    if(millis > this.latestResourceEventOccurredMillis) {
+      this.latestResourceEventOccurredMillis = millis
+    }
+  }
 
   private[this] def immutablePreviousResourceEvents: List[ResourceEventModel] = {
     previousEventOfResourceInstance.valuesIterator.toList
@@ -118,7 +125,8 @@ final class WorkingUserState(
       idOpt.getOrElse(""),
       this.parentUserStateIDInStore,
       this.userID,
-      this.occurredMillis,
+      this.latestUpdateMillis,
+      this.latestResourceEventOccurredMillis,
       this.totalCredits,
       isFullBillingMonth,
       billingYear,
@@ -149,7 +157,8 @@ final class WorkingUserState(
       this.chargingDataOfResourceInstance,
       this.totalCredits,
       this.workingAgreementHistory,
-      this.occurredMillis,
+      this.latestUpdateMillis,
+      this.latestResourceEventOccurredMillis,
       this.billingPeriodOutOfSyncResourceEventsCounter,
       this.walletEntries
     )

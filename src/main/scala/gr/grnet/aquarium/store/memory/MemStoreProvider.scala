@@ -123,6 +123,7 @@ extends StoreProvider
         model.parentIDInStore,
         model.userID,
         model.occurredMillis,
+        model.latestResourceEventOccurredMillis,
         model.totalCredits,
         model.isFullBillingMonth,
         model.billingYear,

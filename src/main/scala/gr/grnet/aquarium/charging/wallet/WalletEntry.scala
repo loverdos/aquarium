@@ -41,6 +41,7 @@ import gr.grnet.aquarium.logic.accounting.dsl.{Timeslot}
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
  * The following equation must hold: `newTotalCredits = oldTotalCredits - sumOfCreditsToSubtract`.
@@ -50,7 +51,7 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
  * @param oldTotalCredits
  * @param newTotalCredits
  * @param whenComputedMillis When the computation took place
- * @param yearOfBillingMonth
+ * @param billingYear
  * @param billingMonth
  * @param resourceEvents
  * @param chargeslots The details of the credit computation
@@ -65,13 +66,13 @@ case class WalletEntry(
     newTotalCredits: Double,
     whenComputedMillis: Long,
     referenceTimeslot: Timeslot,
-    yearOfBillingMonth: Int,
+    billingYear: Int,
     billingMonth: Int,
-    resourceEvents: List[ResourceEventModel], // current is the last one
     chargeslots: List[Chargeslot],
+    resourceEvents: List[ResourceEventModel], // current is the last one
     resourceType: ResourceType,
     isSynthetic: Boolean
-) {
+) extends JsonSupport {
 
   def currentResourceEvent = resourceEvents match {
     case previous :: current :: Nil ⇒
@@ -87,7 +88,7 @@ case class WalletEntry(
 
   def chargslotCount = chargeslots.length
 
-  def isOutOfSync = currentResourceEvent.isOutOfSyncForBillingMonth(yearOfBillingMonth, billingMonth)
+  def isOutOfSync = currentResourceEvent.isOutOfSyncForBillingMonth(billingYear, billingMonth)
 
   def toDebugString = "%s%s(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)".format(
     if(isSynthetic) "*" else "",
@@ -98,7 +99,7 @@ case class WalletEntry(
     oldTotalCredits,
     newTotalCredits,
     new MutableDateCalc(whenComputedMillis).toYYYYMMDDHHMMSSSSS,
-    yearOfBillingMonth,
+    billingYear,
     billingMonth,
     resourceEvents,
     chargeslots,

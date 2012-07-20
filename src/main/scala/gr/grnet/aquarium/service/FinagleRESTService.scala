@@ -51,7 +51,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.{Executors, TimeUnit}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
-import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, GetUserStateRequest, GetUserBalanceRequest, UserActorResponseMessage}
+import gr.grnet.aquarium.actor.message.{GetUserWalletRequest, UserActorRequestMessage, GetUserStateRequest, GetUserBalanceRequest, UserActorResponseMessage}
 import com.ckkloverdos.resource.StreamResource
 import com.ckkloverdos.maybe.{Just, Failed}
 import gr.grnet.aquarium.event.model.ExternalEventModel
@@ -194,6 +194,8 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
       actorRouterService(requestMessage).transform { tryResponse ⇒
         tryResponse match {
           case TReturn(responseMessage: UserActorResponseMessage[_]) ⇒
+            logger.debug("{}", responseMessage)
+            logger.debug("{}", responseMessage.responseToJsonString)
             val statusCode = responseMessage.suggestedHTTPStatus
             val status = THttpResponseStatus.valueOf(statusCode)
 
@@ -208,7 +210,7 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
                 stringResponse(status, errorMessage, TEXT_PLAIN)
 
               case Right(_) ⇒
-                stringResponse(status, responseMessage.toJsonString, APPLICATION_JSON)
+                stringResponse(status, responseMessage.responseToJsonString, APPLICATION_JSON)
             }
 
           case TThrow(throwable) ⇒
@@ -301,9 +303,13 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
           // /user/(.+)/balance/?
           callUserActor(GetUserBalanceRequest(userID, millis))
 
-        case RESTPaths.UserStatePath(userId) ⇒
+        case RESTPaths.UserStatePath(userID) ⇒
           // /user/(.+)/state/?
-          callUserActor(GetUserStateRequest(userId, millis))
+          callUserActor(GetUserStateRequest(userID, millis))
+
+        case RESTPaths.UserWalletPath(userID) ⇒
+          // /user/(.+)/wallet/?
+          callUserActor(GetUserWalletRequest(userID, millis))
       }
 
       val DefaultHandler: URIPF = {

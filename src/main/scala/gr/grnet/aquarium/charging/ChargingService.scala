@@ -202,7 +202,8 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       workingUserState: WorkingUserState,
       chargingReason: ChargingReason,
       billingMonthInfo: BillingMonthInfo,
-      clogOpt: Option[ContextualLogger]
+      clogOpt: Option[ContextualLogger],
+      updateLatestMiilis: Boolean
   ): Unit = {
 
     val resourceTypeName = resourceEvent.resource
@@ -220,6 +221,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       resourceEvent,
       resourceType,
       billingMonthInfo,
+      workingUserState.previousEventOfResourceInstance.get(resourceAndInstanceInfo),
       workingUserState.workingAgreementHistory.toAgreementHistory,
       workingUserState.getChargingDataForResourceEvent(resourceAndInstanceInfo),
       workingUserState.totalCredits,
@@ -227,6 +229,12 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       clogOpt
     )
 
+    if(updateLatestMiilis) {
+      workingUserState.latestUpdateMillis = TimeHelpers.nowMillis()
+    }
+
+    workingUserState.updateLatestResourceEventOccurredMillis(resourceEvent.occurredMillis)
+    workingUserState.previousEventOfResourceInstance(resourceAndInstanceInfo) = resourceEvent
     workingUserState.totalCredits = newTotalCredits
   }
 
@@ -238,14 +246,22 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       clogOpt: Option[ContextualLogger] = None
   ): Unit = {
 
+    var _counter = 0
     for(currentResourceEvent ← resourceEvents) {
       processResourceEvent(
         currentResourceEvent,
         workingUserState,
         chargingReason,
         billingMonthInfo,
-        clogOpt
+        clogOpt,
+        false
       )
+
+      _counter += 1
+    }
+
+    if(_counter > 0) {
+      workingUserState.latestUpdateMillis = TimeHelpers.nowMillis()
     }
   }
 
@@ -341,10 +357,15 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         workingUserState,
         chargingReason,
         billingMonthInfo,
-        clogSome
+        clogSome,
+        false
       )
 
       _rcEventsCounter += 1
+    }
+
+    if(_rcEventsCounter > 0) {
+      workingUserState.latestUpdateMillis = TimeHelpers.nowMillis()
     }
 
     clog.debug("Found %s resource events for month %s".format(_rcEventsCounter, billingMonthInfo.toShortDebugString))

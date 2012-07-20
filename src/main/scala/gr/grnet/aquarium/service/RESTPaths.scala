@@ -74,6 +74,8 @@ object RESTPaths {
    */
   final val UserStatePath = "/user/([^/]+)/state/?".r
 
+  final val UserWalletPath = "/user/([^/]+)/wallet/?".r
+
   final val UserActorCacheContentsPath = (AdminPrefix + "/cache/actor/user/contents").r
   final val UserActorCacheCountPath    = (AdminPrefix + "/cache/actor/user/size").r
   final val UserActorCacheStatsPath    = (AdminPrefix + "/cache/actor/user/stats").r

@@ -33,66 +33,27 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.event.model
-package im
+package gr.grnet.aquarium.actor.message
 
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.MutableDateCalc
+import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.charging.wallet.WalletEntry
 
 /**
- * The model of any event sent from the `Identity Management` (IM) external system.
- *
- * By definition, this is the model agreed upon between Aquarium and IM.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait IMEventModel extends ExternalEventModel {
-  def clientID: String
+case class GetUserWalletResponse(
+    state: Either[String, GetUserWalletResponseData],
+    override val suggestedHTTPStatus: Int = 200)
+extends UserActorResponseMessage(state, suggestedHTTPStatus) {
+  def userID = state match {
+    case Left(error) ⇒
+      throw new AquariumInternalError("Could not obtain userID. %s".format(error))
 
-  def isActive: Boolean
-
-  def role: String
-
-  def eventType: String
-
-  def isStateActive = isActive
-
-  def isStateSuspended = !isActive
-
-  def isCreateUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.create)
-
-  def isModifyUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.modify)
-
-  def userCreationMillisOption = if(isCreateUser) Some(this.occurredMillis) else None
-
-  override def toDebugString = {
-    "%s(userID=%s, id=%s, isActive=%s, role='%s', occurred=%s, type=%s)".format(
-      shortClassNameOf(this),
-      userID,
-      id,
-      isActive,
-      role,
-      new MutableDateCalc(occurredMillis).toString,
-      eventType
-    )
+    case Right(data) ⇒
+      data.userID
   }
 }
 
-object IMEventModel {
-  trait NamesT extends ExternalEventModel.NamesT {
-    final val clientID = "clientID"
-    final val isActive = "isActive"
-    final val role = "role"
-    final val eventType = "eventType"
-  }
-
-  object Names extends NamesT
-
-  trait EventTypeNamesT {
-    final val create = "create"
-    final val modify = "modify"
-  }
-
-  object EventTypeNames extends EventTypeNamesT
-}
+case class GetUserWalletResponseData(userID: String, credits: Double, walletEntries: List[WalletEntry])

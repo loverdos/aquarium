@@ -57,6 +57,8 @@ trait UserStateModel extends JsonSupport {
 
   def occurredMillis: Long // When this user state was computed
 
+  def latestResourceEventOccurredMillis: Long
+
   def totalCredits: Double
 
   /**

@@ -62,44 +62,6 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
 
   final lazy val inputNames = inputs.map(_.name)
 
-  /**
-   *
-   * @param aquarium
-   * @param resourceEvent
-   * @param resourceType
-   * @param billingMonthInfo
-   * @param userAgreements
-   * @param chargingData
-   * @param totalCredits
-   * @param walletEntryRecorder
-   * @param clogOpt
-   * @return The number of wallet entries recorded and the new total credits
-   */
-  def chargeResourceEvent(
-      aquarium: Aquarium,
-      resourceEvent: ResourceEventModel,
-      resourceType: ResourceType,
-      billingMonthInfo: BillingMonthInfo,
-      userAgreements: AgreementHistory,
-      chargingData: mutable.Map[String, Any],
-      totalCredits: Double,
-      walletEntryRecorder: WalletEntry ⇒ Unit,
-      clogOpt: Option[ContextualLogger] = None
-  ): (Int, Double) = {
-
-    genericChargeResourceEvent(
-      aquarium,
-      resourceEvent,
-      resourceType,
-      billingMonthInfo,
-      userAgreements,
-      chargingData,
-      totalCredits,
-      walletEntryRecorder,
-      clogOpt
-    )
-  }
-
   @inline private[this] def hrs(millis: Double) = {
     val hours = millis / 1000 / 60 / 60
     val roundedHours = hours
@@ -115,19 +77,35 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
       currentValue: Double,
       unitPrice: Double,
       details: Map[String, String]
-  ): Double = {
+  ): (Double, String) = {
     alias match {
      case ChargingBehaviorAliases.continuous ⇒
-       hrs(timeDeltaMillis) * oldAccumulatingAmount * unitPrice
+       val credits = hrs(timeDeltaMillis) * oldAccumulatingAmount * unitPrice
+       val explanation = "Time(%s) * OldTotal(%s) * Unit(%s)".format(
+         hrs(timeDeltaMillis),
+         oldAccumulatingAmount,
+         unitPrice
+       )
+
+       (credits, explanation)
 
      case ChargingBehaviorAliases.discrete ⇒
-       currentValue * unitPrice
+       val credits = currentValue * unitPrice
+       val explanation = "Value(%s) * Unit(%s)".format(currentValue, unitPrice)
+
+       (credits, explanation)
 
      case ChargingBehaviorAliases.onoff ⇒
-       hrs(timeDeltaMillis) * unitPrice
+       val credits = hrs(timeDeltaMillis) * unitPrice
+       val explanation = "Time(%s) * Unit(%s)".format(hrs(timeDeltaMillis), unitPrice)
+
+       (credits, explanation)
 
      case ChargingBehaviorAliases.once ⇒
-       currentValue
+       val credits = currentValue
+       val explanation = "Value(%s)".format(currentValue)
+
+       (credits, explanation)
 
      case name ⇒
        throw new AquariumInternalError("Cannot compute credit diff for charging behavior %s".format(name))
@@ -194,10 +172,10 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
     )
 
     val fullChargeslots = initialChargeslots.map {
-      case chargeslot@Chargeslot(startMillis, stopMillis, unitPrice, _) ⇒
+      case chargeslot@Chargeslot(startMillis, stopMillis, unitPrice, _, _) ⇒
         val timeDeltaMillis = stopMillis - startMillis
 
-        val creditsToSubtract = this.computeCreditsToSubtract(
+        val (creditsToSubtract, explanation) = this.computeCreditsToSubtract(
           _oldTotalCredits,       // FIXME ??? Should recalculate ???
           _oldAccumulatingAmount, // FIXME ??? Should recalculate ???
           _newAccumulatingAmount, // FIXME ??? Should recalculate ???
@@ -208,7 +186,7 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
           currentDetails
         )
 
-        val newChargeslot = chargeslot.copyWithCreditsToSubtract(creditsToSubtract)
+        val newChargeslot = chargeslot.copyWithCreditsToSubtract(creditsToSubtract, explanation)
         newChargeslot
     }
 
@@ -228,11 +206,13 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
       referenceTimeslot,
       billingMonthInfo.year,
       billingMonthInfo.month,
-      previousResourceEventOpt.map(List(_, currentResourceEvent)).getOrElse(List(currentResourceEvent)),
       fullChargeslots,
+      previousResourceEventOpt.map(List(_, currentResourceEvent)).getOrElse(List(currentResourceEvent)),
       resourceType,
       currentResourceEvent.isSynthetic
     )
+
+    logger.debug("newWalletEntry = {}", newWalletEntry.toJsonString)
 
     walletEntryRecorder.apply(newWalletEntry)
 
@@ -270,6 +250,7 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
    * @param currentResourceEvent
    * @param resourceType
    * @param billingMonthInfo
+   * @param previousResourceEventOpt
    * @param userAgreements
    * @param chargingData
    * @param totalCredits
@@ -277,18 +258,18 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
    * @param clogOpt
    * @return The number of wallet entries recorded and the new total credits
    */
-  protected def genericChargeResourceEvent(
+  def chargeResourceEvent(
       aquarium: Aquarium,
       currentResourceEvent: ResourceEventModel,
       resourceType: ResourceType,
       billingMonthInfo: BillingMonthInfo,
+      previousResourceEventOpt: Option[ResourceEventModel],
       userAgreements: AgreementHistory,
       chargingData: mutable.Map[String, Any],
       totalCredits: Double,
       walletEntryRecorder: WalletEntry ⇒ Unit,
       clogOpt: Option[ContextualLogger] = None
   ): (Int, Double) = {
-    import ChargingBehavior.EnvKeys
 
     val clog = ContextualLogger.fromOther(clogOpt, logger, "chargeResourceEvent(%s)", currentResourceEvent.id)
     val currentResourceEventDebugInfo = rcDebugInfo(currentResourceEvent)
@@ -303,11 +284,11 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
       // Find the previous event if needed.
       // This is (potentially) needed to calculate new credit amount and new resource instance amount
       if(this.needsPreviousEventForCreditAndAmountCalculation) {
-        val previousResourceEventOpt = removeChargingData(chargingData, EnvKeys.PreviousEvent)
-
         if(previousResourceEventOpt.isDefined) {
           val previousResourceEvent = previousResourceEventOpt.get
           val previousValue = previousResourceEvent.value
+
+          clog.debug("I have previous event %s", previousResourceEvent.toDebugString)
 
           computeChargeslots(
             chargingData,
@@ -327,11 +308,12 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
           // Let's see if we can create a dummy previous event.
           val actualFirstEvent = currentResourceEvent
 
+          // FIXME: Why && ?
           if(this.isBillableFirstEvent(actualFirstEvent) && this.mustGenerateDummyFirstEvent) {
             clog.debug("First event of its kind %s", currentResourceEventDebugInfo)
 
             val dummyFirst = this.constructDummyFirstEventFor(currentResourceEvent, billingMonthInfo.monthStartMillis)
-            clog.debug("Dummy first event %s", rcDebugInfo(dummyFirst))
+            clog.debug("Dummy first event %s", dummyFirst.toDebugString)
 
             val previousResourceEvent = dummyFirst
             val previousValue = previousResourceEvent.value
@@ -372,9 +354,6 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
         )
       }
     }
-
-    // After processing, all events billable or not update the previous state
-    setChargingData(chargingData, EnvKeys.PreviousEvent, currentResourceEvent)
 
     retval
   }
@@ -466,7 +445,7 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
    *
    * The only exception to the rule is ON events for [[gr.grnet.aquarium.charging.OnOffChargingBehavior]].
    */
-  def isBillableEvent(event: ResourceEventModel): Boolean = false
+  def isBillableEvent(event: ResourceEventModel): Boolean = true
 
   /**
    * This is called when we have the very first event for a particular resource instance, and we want to know
@@ -480,7 +459,7 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
 
   def constructDummyFirstEventFor(actualFirst: ResourceEventModel, newOccurredMillis: Long): ResourceEventModel = {
     if(!mustGenerateDummyFirstEvent) {
-      throw new AquariumException("constructDummyFirstEventFor() Not compliant with %s".format(this))
+      throw new AquariumInternalError("constructDummyFirstEventFor() Not compliant with %s", this)
     }
 
     val newDetails = Map(
@@ -517,8 +496,6 @@ object ChargingBehavior {
    * Keys used to save information between calls of `chargeResourceEvent`
    */
   object EnvKeys {
-    final val PreviousEvent = ChargingBehaviorKey[ResourceEventModel]("previous.event")
-
     final val ResourceInstanceAccumulatingAmount = ChargingBehaviorKey[Double]("resource.instance.accumulating.amount")
   }
 
