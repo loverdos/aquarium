@@ -74,18 +74,17 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
   private[this] def policyAt(s:Long) : PolicyModel =
     new StdPolicy("", None, Timespan(s), Set(), Set(), Map())
 
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, Policy] = {
-    ensureLoaded()
-
-    val range = Timeslot(fromMillis,toMillis)
-    /* ``to'' method: return the subset of all policies.from <= range.to */
-    _policies.to(policyAt(range.to.getTime)).foldLeft (EmptyPolicyByTimeslotMap) { (map,p) =>
-      if(p.validityTimespan.toTimeslot.to.getTime >= range.from.getTime)
-        map + ((p.validityTimespan.toTimeslot,p))
-      else
-        map
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, Policy] =
+    ensureLoaded {
+      val range = Timeslot(fromMillis,toMillis)
+      /* ``to'' method: return the subset of all policies.from <= range.to */
+      _policies.to(policyAt(range.to.getTime)).foldLeft (EmptyPolicyByTimeslotMap) { (map,p) =>
+        if(p.validityTimespan.toTimeslot.to.getTime >= range.from.getTime)
+          map + ((p.validityTimespan.toTimeslot,p))
+        else
+          map
+      }
     }
-  }
 
 
   /**
@@ -94,14 +93,13 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
    * @param atMillis
    * @return
    */
-  def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
-    ensureLoaded()
-
+  def loadValidPolicyAt(atMillis: Long): Option[Policy] =
+    ensureLoaded {
     // Take the subset of all ordered policies up to the one with less than or equal start time
     // and then return the last item. This should be the policy right before the given time.
     // TODO: optimize the creation of the fake StdPolicy
-    _policies.to(policyAt(atMillis)).lastOption
-  }
+      _policies.to(policyAt(atMillis)).lastOption
+    }
 
 
   /**
