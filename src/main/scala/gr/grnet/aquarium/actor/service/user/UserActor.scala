@@ -263,28 +263,33 @@ class UserActor extends ReflectiveRoleableActor {
     val hadUserCreationIMEvent = haveUserCreationIMEvent
 
     if(!haveAgreements) {
-      // This is an error. Should have been initialized from somewhere ...
-      throw new AquariumInternalError("No agreements. Cannot process %s", processEvent)
+      // This IMEvent has arrived after any ResourceEvents
+      INFO("Arrived after any ResourceEvent: %s", imEvent.toDebugString)
+      initializeStateOfIMEvents()
     }
+    else {
+      if(this._latestIMEventID == imEvent.id) {
+        // This happens when the actor is brought to life, then immediately initialized, and then
+        // sent the first IM event. But from the initialization procedure, this IM event will have
+        // already been loaded from DB!
+        INFO("Ignoring first %s", imEvent.toDebugString)
+        logSeparator()
 
-    if(this._latestIMEventID == imEvent.id) {
-      // This happens when the actor is brought to life, then immediately initialized, and then
-      // sent the first IM event. But from the initialization procedure, this IM event will have
-      // already been loaded from DB!
-      INFO("Ignoring first %s", imEvent.toDebugString)
-      logSeparator()
+        //this._latestIMEventID = imEvent.id
+        return
+      }
 
-      //this._latestIMEventID = imEvent.id
-      return
+      updateAgreementHistoryFrom(imEvent)
+      updateLatestIMEventIDFrom(imEvent)
     }
-
-    updateAgreementHistoryFrom(imEvent)
-    updateLatestIMEventIDFrom(imEvent)
 
     // Must also update user state if we know when in history the life of a user begins
     if(!hadUserCreationIMEvent && haveUserCreationIMEvent) {
+      INFO("Processing user state, since we had a CREATE IMEvent")
       loadWorkingUserStateAndUpdateAgreementHistory()
     }
+
+    logSeparator()
   }
 
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
