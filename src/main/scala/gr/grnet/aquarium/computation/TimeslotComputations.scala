@@ -258,10 +258,10 @@ object TimeslotComputations extends Loggable {
     }
 
     private def resolveEffective(alignedTimeslot: Timeslot,p:PriceList): PriceMap = {
-      Console.err.println("\n\nInput timeslot: " + alignedTimeslot + "\n\n")
-      printPriceList(p)
+      //Console.err.println("\n\nInput timeslot: " + alignedTimeslot + "\n\n")
+      //printPriceList(p)
       val ret =  resolveEffective3(alignedTimeslot,p) //HERE
-      printPriceMap(ret)
+      //printPriceMap(ret)
       ret
     }
 
