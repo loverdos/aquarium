@@ -217,5 +217,7 @@ object RabbitMQKeys {
      * Format is `exchange:routing.key:queue-name,...`
      */
     final val imevents_queues = p("imevents.queues")
+
+    final val imevents_credit = p("imevents.credit")
   }
 }
