@@ -15,7 +15,7 @@
     {
       "name":"vmtime",
       "unit":"Hr",
-      "chargingBehavior":"gr.grnet.aquarium.charging.OnOffChargingBehavior"
+      "chargingBehavior":"gr.grnet.aquarium.charging.VMChargingBehavior"
     },
     {
       "name":"diskspace",
@@ -26,7 +26,7 @@
 
   "chargingBehaviors":[
     "gr.grnet.aquarium.charging.DiscreteChargingBehavior",
-    "gr.grnet.aquarium.charging.OnOffChargingBehavior",
+    "gr.grnet.aquarium.charging.VMChargingBehavior",
     "gr.grnet.aquarium.charging.ContinuousChargingBehavior",
     "gr.grnet.aquarium.charging.OnceChargingBehavior"
   ],

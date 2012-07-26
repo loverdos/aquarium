@@ -37,7 +37,7 @@ package gr.grnet.aquarium.policy
 
 import org.junit.Test
 import gr.grnet.aquarium.Timespan
-import gr.grnet.aquarium.charging.{OnceChargingBehavior, ContinuousChargingBehavior, OnOffChargingBehavior, DiscreteChargingBehavior}
+import gr.grnet.aquarium.charging.{OnceChargingBehavior, ContinuousChargingBehavior, VMChargingBehavior}
 import gr.grnet.aquarium.converter.{StdConverters, PrettyJsonTextFormat}
 
 /**
@@ -53,23 +53,21 @@ class StdPolicyTest {
     validityTimespan = Timespan(0),
 
     resourceTypes = Set(
-      ResourceType("bandwidth", "MB/Hr", classOf[DiscreteChargingBehavior].getName),
-      ResourceType("vmtime",    "Hr",    classOf[OnOffChargingBehavior].getName),
-      ResourceType("diskspace", "MB/Hr", classOf[ContinuousChargingBehavior].getName)
+      ResourceType("diskspace", "MB/Hr", classOf[ContinuousChargingBehavior].getName),
+      ResourceType("vmtime",    "Hr",    classOf[VMChargingBehavior].getName)
     ),
 
     chargingBehaviors = Set(
-      classOf[DiscreteChargingBehavior].getName,
-      classOf[OnOffChargingBehavior].getName,
+      classOf[VMChargingBehavior].getName,
       classOf[ContinuousChargingBehavior].getName,
       classOf[OnceChargingBehavior].getName
     ),
 
     roleMapping = Map(
       "default" -> FullPriceTable(Map(
-        "bandwidth" -> EffectivePriceTable(EffectiveUnitPrice(0.01, None) :: Nil),
-        "vmtime"    -> EffectivePriceTable(EffectiveUnitPrice(0.01, None) :: Nil),
-        "diskspace" -> EffectivePriceTable(EffectiveUnitPrice(0.01, None) :: Nil)
+        "bandwidth" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)),
+        "diskspace" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)),
+        "vmtime"    -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil))
       ))
     )
   )

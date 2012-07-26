@@ -45,7 +45,7 @@ import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder, AquariumEx
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging._
-import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy, PolicyModel}
+import gr.grnet.aquarium.policy.{IsEffectivePriceTable, PolicyDefinedFullPriceTableRef, StdUserAgreement, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy, PolicyModel}
 import gr.grnet.aquarium.Timespan
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.charging.reason.{NoSpecificChargingReason, MonthlyBillChargingReason}
@@ -72,21 +72,19 @@ class UserStateComputationsTest extends Loggable {
     parentID = None,
     validityTimespan = Timespan(0),
     resourceTypes = Set(
-      ResourceType("bandwidth", "MB/Hr", classOf[DiscreteChargingBehavior].getName),
-      ResourceType("vmtime", "Hr", classOf[OnOffChargingBehavior].getName),
+      ResourceType("vmtime", "Hr", classOf[VMChargingBehavior].getName),
       ResourceType("diskspace", "MB/Hr", classOf[ContinuousChargingBehavior].getName)
     ),
     chargingBehaviors = Set(
-      classOf[DiscreteChargingBehavior].getName,
-      classOf[OnOffChargingBehavior].getName,
+      classOf[VMChargingBehavior].getName,
       classOf[ContinuousChargingBehavior].getName,
       classOf[OnceChargingBehavior].getName
     ),
     roleMapping = Map(
       "default" -> FullPriceTable(Map(
-        "bandwidth" -> EffectivePriceTable(EffectiveUnitPrice(BandwidthUnitPrice, None) :: Nil),
-        "vmtime"    -> EffectivePriceTable(EffectiveUnitPrice(VMTimeUnitPrice, None) :: Nil),
-        "diskspace" -> EffectivePriceTable(EffectiveUnitPrice(DiskspaceUnitPrice, None) :: Nil)
+        "bandwidth" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(BandwidthUnitPrice) :: Nil)),
+        "diskspace" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(DiskspaceUnitPrice) :: Nil)),
+        "vmtime"    -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(VMTimeUnitPrice) :: Nil))
       ))
     )
   )
@@ -137,7 +135,7 @@ class UserStateComputationsTest extends Loggable {
 
           creditsForDiscrete(currentValue)
 
-        case ChargingBehaviorAliases.onoff ⇒
+        case ChargingBehaviorAliases.vmtime ⇒
           val unitPrice = vars(UnitPriceInput).asInstanceOf[Double]
           val timeDelta = vars(TimeDeltaInput).asInstanceOf[Double]
 
@@ -158,7 +156,7 @@ class UserStateComputationsTest extends Loggable {
       Map(
         ChargingBehaviorAliases.continuous -> "hrs(timeDelta) * oldTotalAmount * %s".format(ContinuousUnitPrice),
         ChargingBehaviorAliases.discrete   -> "currentValue * %s".format(DiscreteUnitPrice),
-        ChargingBehaviorAliases.onoff      -> "hrs(timeDelta) * %s".format(OnOffUnitPrice),
+        ChargingBehaviorAliases.vmtime      -> "hrs(timeDelta) * %s".format(OnOffUnitPrice),
         ChargingBehaviorAliases.once       -> "currentValue"))
   }
 
@@ -175,7 +173,6 @@ class UserStateComputationsTest extends Loggable {
   // Those StdXXXResourceSim are just for debugging convenience anyway, so they must match by design.
   val VMTimeResourceSim    = StdVMTimeResourceSim.fromPolicy(DefaultPolicy)
   val DiskspaceResourceSim = StdDiskspaceResourceSim.fromPolicy(DefaultPolicy)
-  val BandwidthResourceSim = StdBandwidthResourceSim.fromPolicy(DefaultPolicy)
 
   // There are two client services, synnefo and pithos.
   val TheUIDGenerator: UIDGenerator[_] = new ConcurrentVMLocalUIDGenerator
@@ -200,7 +197,7 @@ class UserStateComputationsTest extends Loggable {
 
   aquarium.policyStore.insertPolicy(DefaultPolicy)
 
-  val AquariumSim_ = AquariumSim(List(VMTimeResourceSim, DiskspaceResourceSim, BandwidthResourceSim), aquarium.resourceEventStore)
+  val AquariumSim_ = AquariumSim(List(VMTimeResourceSim, DiskspaceResourceSim), aquarium.resourceEventStore)
   val DefaultResourcesMap = DefaultPolicy.resourceTypesMap//AquariumSim_.resourcesMap
 
   val UserCKKL  = AquariumSim_.newUser("CKKL", UserCreationDate)
@@ -224,7 +221,6 @@ class UserStateComputationsTest extends Loggable {
   // - synnefo is for VMTime and Bandwidth
   // - pithos is for Diskspace
   val VMTimeInstanceSim    = VMTimeResourceSim.newInstance   ("VM.1",   UserCKKL, Synnefo)
-  val BandwidthInstanceSim = BandwidthResourceSim.newInstance("3G.1",   UserCKKL, Synnefo)
   val DiskInstanceSim      = DiskspaceResourceSim.newInstance("DISK.1", UserCKKL, Pithos)
 
   private[this]
@@ -407,10 +403,6 @@ class UserStateComputationsTest extends Loggable {
     // ... and two diskspace changes
     DiskInstanceSim.consumeMB(diskConsumptionDate1, 99)
     DiskInstanceSim.consumeMB(diskConsumptionDate2, 23)
-
-    // 100MB 3G bandwidth
-    val bwDateCalc = diskConsumptionDateCalc2.copy.goPlusDays(1)
-    BandwidthInstanceSim.useBandwidth(bwDateCalc.toDate, 100.0)
 
     // ... and one "future" event
     DiskInstanceSim.consumeMB(

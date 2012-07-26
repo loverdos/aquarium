@@ -36,13 +36,14 @@
 package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import scala.collection.mutable
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  * In practice a resource usage will be charged for the total amount of usage
  * between resource usage changes.
  *
- * Example resource that might be adept to a continuous policy
- * is diskspace.
+ * Example resource that might be adept to a continuous policy is diskspace, as in Pithos+ service.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -50,6 +51,18 @@ final class ContinuousChargingBehavior
     extends ChargingBehavior(
       ChargingBehaviorAliases.continuous,
       Set(ChargingBehaviorNameInput, UnitPriceInput, OldTotalAmountInput, TimeDeltaInput)) {
+
+  protected def computeSelectorPath(
+      chargingData: mutable.Map[String, Any],
+      currentResourceEvent: ResourceEventModel,
+      referenceTimeslot: Timeslot,
+      previousValue: Double,
+      totalCredits: Double,
+      oldAccumulatingAmount: Double,
+      newAccumulatingAmount: Double
+  ): List[String] = {
+    Nil
+  }
 
   def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]): Double = {
     // If the total is in the details, get it, or else compute it

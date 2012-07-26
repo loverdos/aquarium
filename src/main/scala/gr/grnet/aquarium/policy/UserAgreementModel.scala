@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.{AquariumInternalError, Timespan}
 
 /**
  *
@@ -73,5 +73,28 @@ trait UserAgreementModel extends Ordered[UserAgreementModel] {
     else {
       1
     }
+  }
+
+  def effectivePriceTableOfResourceTypeForSelector(
+      resource: String,
+      selectorPath: List[String],
+      policy: PolicyModel
+  ): EffectivePriceTable = {
+
+    val fullPriceTable = this.fullPriceTableRef match {
+      case PolicyDefinedFullPriceTableRef ⇒
+        policy.roleMapping.get(role) match {
+          case Some(fullPriceTable) ⇒
+            fullPriceTable
+
+          case None ⇒
+            throw new AquariumInternalError("Unknown role '%s' in policy".format(role))
+        }
+
+      case AdHocFullPriceTableRef(fullPriceTable) ⇒
+        fullPriceTable
+    }
+
+    fullPriceTable.effectivePriceTableOfSelector(selectorPath, resource)
   }
 }

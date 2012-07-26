@@ -35,18 +35,73 @@
 
 package gr.grnet.aquarium.policy
 
+import gr.grnet.aquarium.AquariumInternalError
+import scala.annotation.tailrec
+import gr.grnet.aquarium.util.shortNameOfType
+
 /**
  * A full price table provides detailed pricing information for all resources.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class FullPriceTable(perResource: Map[String/*Resource*/, EffectivePriceTable]) {
-  def effectivePriceTableForResourceType(resourceType: String): Option[EffectivePriceTable] = {
-    perResource.get(resourceType)
-  }
+case class FullPriceTable(perResource: Map[String/*Resource*/, SelectorMapOrEffectivePriceTable]) {
+  def effectivePriceTableOfSelector(selectorPath: List[String], resource: String): EffectivePriceTable = {
+    @tailrec
+    def find(
+        selectorPath: List[String],
+        soeOfResource: SelectorMapOrEffectivePriceTable
+    ): EffectivePriceTable = {
 
-  def effectivePriceTableForResourceType(resourceType: ResourceType): Option[EffectivePriceTable] = {
-    perResource.get(resourceType.name)
+      selectorPath match {
+        case Nil ⇒
+          if(soeOfResource.isSelectorMap) {
+            throw new AquariumInternalError("Expecting an %s but got a selector", shortNameOfType[EffectivePriceTable])
+          }
+          soeOfResource.effectivePriceTable
+
+        case key :: tailSelectorPath ⇒
+          if(!soeOfResource.isSelectorMap) {
+            throw new AquariumInternalError("Expecting a selector but got an %s", shortNameOfType[EffectivePriceTable])
+          }
+
+          val selctorMap = soeOfResource.selectorMap
+          val selectedOpt = selctorMap.get(key)
+          if(selectedOpt.isEmpty) {
+            throw new AquariumInternalError("Could not find selector '%s'", key)
+          }
+
+         find(tailSelectorPath, selectedOpt.get)
+      }
+    }
+
+    val soeOfResourceOpt = perResource.get(resource)
+    if(soeOfResourceOpt.isEmpty) {
+      throw new AquariumInternalError("Unknown resource type '%s'", resource)
+    }
+
+    find(selectorPath, soeOfResourceOpt.get)
   }
+}
+
+sealed trait SelectorMapOrEffectivePriceTable {
+  def isSelectorMap: Boolean
+
+  def selectorMap: Map[String, SelectorMapOrEffectivePriceTable]
+
+  def effectivePriceTable: EffectivePriceTable
+}
+
+case class IsSelectorMap(selectorMap: Map[String, SelectorMapOrEffectivePriceTable]) extends SelectorMapOrEffectivePriceTable {
+  def isSelectorMap = true
+
+  def effectivePriceTable =
+    throw new AquariumInternalError("Accessed effectivePriceTable of %s", shortNameOfType[IsSelectorMap])
+}
+
+case class IsEffectivePriceTable(effectivePriceTable: EffectivePriceTable) extends SelectorMapOrEffectivePriceTable {
+  def isSelectorMap = false
+
+  def selectorMap =
+    throw new AquariumInternalError("Accessed selector of %s", shortNameOfType[IsEffectivePriceTable])
 }

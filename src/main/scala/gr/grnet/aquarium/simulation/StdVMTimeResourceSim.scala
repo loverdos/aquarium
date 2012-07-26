@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.simulation
 
 import gr.grnet.aquarium.policy.PolicyModel
-import gr.grnet.aquarium.charging.{OnOffChargingBehavior, ChargingBehavior}
+import gr.grnet.aquarium.charging.{VMChargingBehavior, ChargingBehavior}
 
 
 /**
@@ -48,7 +48,7 @@ import gr.grnet.aquarium.charging.{OnOffChargingBehavior, ChargingBehavior}
 class StdVMTimeResourceSim(
     name: String = StdVMTimeResourceSim.DSLNames.name,
     unit: String = StdVMTimeResourceSim.DSLNames.unit,
-    chargingBehavior: String = classOf[OnOffChargingBehavior].getName
+    chargingBehavior: String = classOf[VMChargingBehavior].getName
 ) extends ResourceSim(name, unit, chargingBehavior) {
 
   override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =

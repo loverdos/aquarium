@@ -38,7 +38,7 @@ package gr.grnet.aquarium.simulation
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.charging.OnOffChargingBehaviorValues
+import gr.grnet.aquarium.charging.VMChargingBehaviorValues
 
 /**
  * A simulator for an instance of the standard `vmtime` resource.
@@ -62,7 +62,7 @@ case class StdVMTimeInstanceSim(
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
-      OnOffChargingBehaviorValues.ON,
+      VMChargingBehaviorValues.ON,
       details,
       eventVersion
     )
@@ -77,7 +77,7 @@ case class StdVMTimeInstanceSim(
     newResourceEvent(
       occurredDate.getTime,
       occurredDate.getTime,
-      OnOffChargingBehaviorValues.OFF,
+      VMChargingBehaviorValues.OFF,
       details,
       eventVersion
     )
@@ -105,7 +105,7 @@ case class StdVMTimeInstanceSim(
     newResourceEvent(
       occurredTime,
       receivedTime,
-      OnOffChargingBehaviorValues.OFF,
+      VMChargingBehaviorValues.OFF,
       details,
       eventVersion
     )

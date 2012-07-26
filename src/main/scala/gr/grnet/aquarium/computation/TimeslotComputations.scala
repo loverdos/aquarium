@@ -45,7 +45,7 @@ import collection.immutable
 import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.policy.EffectiveUnitPrice
-import gr.grnet.aquarium.charging.Chargeslot
+import gr.grnet.aquarium.charging.{ChargingBehavior, Chargeslot}
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -91,13 +91,14 @@ object TimeslotComputations extends Loggable {
       policy: PolicyModel,
       agreement: UserAgreementModel,
       resourceType: ResourceType,
+      selectorPath: List[String],
       clogOpt: Option[ContextualLogger] = None
   ): SortedMap[Timeslot, Double] = {
 
     val clog = ContextualLogger.fromOther(clogOpt, logger, "resolveEffectiveUnitPrices()")
 
     // Note that most of the code is taken from calcChangeChunks()
-    val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType)
+    val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType, selectorPath)
     ret map {case (t,p) => (t,p.unitPrice)}
   }
 
@@ -106,6 +107,7 @@ object TimeslotComputations extends Loggable {
       resourceType: ResourceType,
       policyByTimeslot: SortedMap[Timeslot, PolicyModel],
       agreementByTimeslot: SortedMap[Timeslot, UserAgreementModel],
+      selectorPath: List[String],
       clogOpt: Option[ContextualLogger] = None
   ): List[Chargeslot] = {
 
@@ -138,10 +140,14 @@ object TimeslotComputations extends Loggable {
       //val userAgreement = agreementByTimeslot.valuesIterator.next()//getAgreementWithin(alignedTimeslot)
       val userAgreement = getAgreementWithin(alignedTimeslot)
 
-      // TODO: Factor this out, just like we did with:
-      // TODO:  val alignedTimeslots = splitTimeslotByPoliciesAndAgreements
-      // Note that most of the code is already taken from calcChangeChunks()
-      val unitPriceByTimeslot = resolveEffectiveUnitPrices(alignedTimeslot, policy, userAgreement, resourceType, Some(clog))
+      val unitPriceByTimeslot = resolveEffectiveUnitPrices(
+        alignedTimeslot,
+        policy,
+        userAgreement,
+        resourceType,
+        selectorPath,
+        Some(clog)
+      )
 
       // Now, the timeslots must be the same
       val finegrainedTimeslots = unitPriceByTimeslot.keySet
@@ -212,34 +218,18 @@ object TimeslotComputations extends Loggable {
      * provided timeslot and returns it as a Map
      */
     private def resolveEffectiveUnitPricesForTimeslot(
-                                               alignedTimeslot: Timeslot,
-                                               policy: PolicyModel,
-                                               agreement: UserAgreementModel,
-                                               resourceType: ResourceType
-                                               ): PriceMap = {
+        alignedTimeslot: Timeslot,
+        policy: PolicyModel,
+        agreement: UserAgreementModel,
+        resourceType: ResourceType,
+        selectorPath: List[String]
+    ): PriceMap = {
 
-      val role = agreement.role
-      val fullPriceTable = agreement.fullPriceTableRef match {
-        case PolicyDefinedFullPriceTableRef ⇒
-          policy.roleMapping.get(role) match {
-            case Some(fullPriceTable) ⇒
-              fullPriceTable
-
-            case None ⇒
-              throw new AquariumInternalError("Unknown role %s".format(role))
-          }
-
-        case AdHocFullPriceTableRef(fullPriceTable) ⇒
-          fullPriceTable
-      }
-
-      val effectivePriceTable = fullPriceTable.perResource.get(resourceType.name) match {
-        case None ⇒
-          throw new AquariumInternalError("Unknown resource type %s".format(role))
-
-        case Some(effectivePriceTable) ⇒
-          effectivePriceTable
-      }
+      val effectivePriceTable = agreement.effectivePriceTableOfResourceTypeForSelector(
+        resourceType.name,
+        selectorPath,
+        policy
+      )
 
       resolveEffective(alignedTimeslot, effectivePriceTable.priceOverrides)
       //immutable.SortedMap(alignedTimeslot -> effectivePriceTable.priceOverrides.head)
