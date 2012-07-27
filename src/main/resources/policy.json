@@ -1,17 +1,11 @@
 {
-  "id":"750E6309-AB60-41B4-8D4B-9FFEA6EF843C",
-
+  "id":"policy-1",
   "validityTimespan":{
     "fromMillis":0,
     "toMillis":9223372036854775807
   },
 
   "resourceTypes":[
-    {
-      "name":"bandwidth",
-      "unit":"MB/Hr",
-      "chargingBehavior":"gr.grnet.aquarium.charging.DiscreteChargingBehavior"
-    },
     {
       "name":"vmtime",
       "unit":"Hr",
@@ -25,7 +19,6 @@
   ],
 
   "chargingBehaviors":[
-    "gr.grnet.aquarium.charging.DiscreteChargingBehavior",
     "gr.grnet.aquarium.charging.VMChargingBehavior",
     "gr.grnet.aquarium.charging.ContinuousChargingBehavior",
     "gr.grnet.aquarium.charging.OnceChargingBehavior"
@@ -34,27 +27,8 @@
   "roleMapping":{
     "default":{
       "perResource":{
-        "bandwidth":{
-          "priceOverrides":[
-            {
-              "unitPrice":0.01
-            }
-          ]
-        },
-        "vmtime":{
-          "priceOverrides":[
-            {
-              "unitPrice":0.01
-            }
-          ]
-        },
-        "diskspace":{
-          "priceOverrides":[
-            {
-              "unitPrice":0.01
-            }
-          ]
-        }
+        "vmtime":    { "priceOverrides":[ { "unitPrice":0.01 } ] },
+        "diskspace": { "priceOverrides":[ { "unitPrice":0.01 } ] }
       }
     }
   }

@@ -95,6 +95,6 @@ trait UserAgreementModel extends Ordered[UserAgreementModel] {
         fullPriceTable
     }
 
-    fullPriceTable.effectivePriceTableOfSelector(selectorPath, resource)
+    fullPriceTable.effectivePriceTableOfSelectorForResource(selectorPath, resource)
   }
 }

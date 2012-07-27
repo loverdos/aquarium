@@ -1,6 +1,9 @@
-import gr.grnet.aquarium.charging.{OnceChargingBehavior, ContinuousChargingBehavior, VMChargingBehavior, DiscreteChargingBehavior}
-import gr.grnet.aquarium.policy.{IsSelectorMap, IsEffectivePriceTable, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy}
+import gr.grnet.aquarium.charging.VMChargingBehavior.Selectors.Power
+import gr.grnet.aquarium.charging.{OnceChargingBehavior, ContinuousChargingBehavior, VMChargingBehavior}
+import gr.grnet.aquarium.policy.FullPriceTable._
+import gr.grnet.aquarium.policy.{EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy}
 import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.util.nameOfClass
 
 // Definition of our standard policy in plain Scala
 
@@ -11,28 +14,25 @@ StdPolicy(
   validityTimespan = Timespan(0),
 
   resourceTypes = Set(
-    ResourceType("bandwidth", "MB/Hr", classOf[DiscreteChargingBehavior].getName),
-    ResourceType("vmtime", "Hr", classOf[VMChargingBehavior].getName),
-    ResourceType("diskspace", "MB/Hr", classOf[ContinuousChargingBehavior].getName)
+    ResourceType("vmtime", "Hr", nameOfClass[VMChargingBehavior]),
+    ResourceType("diskspace", "MB/Hr", nameOfClass[ContinuousChargingBehavior])
   ),
 
   chargingBehaviors = Set(
-    classOf[DiscreteChargingBehavior].getName,
-    classOf[VMChargingBehavior].getName,
-    classOf[ContinuousChargingBehavior].getName,
-    classOf[OnceChargingBehavior].getName
+    nameOfClass[VMChargingBehavior],
+    nameOfClass[ContinuousChargingBehavior],
+    nameOfClass[OnceChargingBehavior]
   ),
 
   roleMapping = Map(
     "default" -> FullPriceTable(Map(
-      "bandwidth" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)),
-      "diskspace" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)),
-      "vmtime"    -> IsSelector(Map(
-        VMChargingBehavior.Selectors._1.powerOn ->
-          IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.02) :: Nil)),
-        VMChargingBehavior.Selectors._1.powerOff ->
-          IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)) // powerOff is cheaper!
-      ))
+      "diskspace" -> Map(
+        DefaultSelectorKey -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)
+      ),
+      "vmtime" -> Map(
+        Power.powerOn  -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil),
+        Power.powerOff -> EffectivePriceTable(EffectiveUnitPrice(0.001) :: Nil) // cheaper when the VM is OFF
+      )
     ))
   )
 )

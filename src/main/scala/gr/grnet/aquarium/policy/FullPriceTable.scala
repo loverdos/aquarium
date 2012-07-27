@@ -45,63 +45,59 @@ import gr.grnet.aquarium.util.shortNameOfType
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class FullPriceTable(perResource: Map[String/*Resource*/, SelectorMapOrEffectivePriceTable]) {
-  def effectivePriceTableOfSelector(selectorPath: List[String], resource: String): EffectivePriceTable = {
+case class FullPriceTable(
+    perResource: Map[String/*Resource*/,
+                     Map[String/*Per-ChargingBehavior Key, "default" is the default*/, Any]]
+) {
+
+  def effectivePriceTableOfSelectorForResource(
+      selectorPath: List[String],
+      resource: String
+  ): EffectivePriceTable = {
+
     @tailrec
     def find(
         selectorPath: List[String],
-        soeOfResource: SelectorMapOrEffectivePriceTable
+        selectorData: Any
     ): EffectivePriceTable = {
 
       selectorPath match {
         case Nil ⇒
-          if(soeOfResource.isSelectorMap) {
-            throw new AquariumInternalError("Expecting an %s but got a selector", shortNameOfType[EffectivePriceTable])
+          // End of selector path. This means that the data must be an EffectivePriceTable
+          selectorData match {
+            case ept: EffectivePriceTable ⇒
+              ept
+
+            case _ ⇒
+              // TODO more informative error message (include selector path, resource?)
+              throw new AquariumInternalError("Got %s instead of an %s", selectorData, shortNameOfType[EffectivePriceTable])
           }
-          soeOfResource.effectivePriceTable
 
         case key :: tailSelectorPath ⇒
-          if(!soeOfResource.isSelectorMap) {
-            throw new AquariumInternalError("Expecting a selector but got an %s", shortNameOfType[EffectivePriceTable])
-          }
+          // Intermediate path. This means we have another round of Map[String, Any]
+          selectorData match {
+            case selectorMap: Map[_, _] ⇒
+              selectorMap.asInstanceOf[Map[String, _]].get(key) match {
+                case None ⇒
+                  throw new AquariumInternalError("Did not find value for selector %s", key)
 
-          val selctorMap = soeOfResource.selectorMap
-          val selectedOpt = selctorMap.get(key)
-          if(selectedOpt.isEmpty) {
-            throw new AquariumInternalError("Could not find selector '%s'", key)
+                case Some(nextSelectorData) ⇒
+                  find(tailSelectorPath, nextSelectorData)
+              }
           }
-
-         find(tailSelectorPath, selectedOpt.get)
       }
     }
 
-    val soeOfResourceOpt = perResource.get(resource)
-    if(soeOfResourceOpt.isEmpty) {
+    val selectorDataOpt = perResource.get(resource)
+    if(selectorDataOpt.isEmpty) {
       throw new AquariumInternalError("Unknown resource type '%s'", resource)
     }
+    val selectorData = selectorDataOpt.get
 
-    find(selectorPath, soeOfResourceOpt.get)
+    find(selectorPath, selectorData)
   }
 }
 
-sealed trait SelectorMapOrEffectivePriceTable {
-  def isSelectorMap: Boolean
-
-  def selectorMap: Map[String, SelectorMapOrEffectivePriceTable]
-
-  def effectivePriceTable: EffectivePriceTable
-}
-
-case class IsSelectorMap(selectorMap: Map[String, SelectorMapOrEffectivePriceTable]) extends SelectorMapOrEffectivePriceTable {
-  def isSelectorMap = true
-
-  def effectivePriceTable =
-    throw new AquariumInternalError("Accessed effectivePriceTable of %s", shortNameOfType[IsSelectorMap])
-}
-
-case class IsEffectivePriceTable(effectivePriceTable: EffectivePriceTable) extends SelectorMapOrEffectivePriceTable {
-  def isSelectorMap = false
-
-  def selectorMap =
-    throw new AquariumInternalError("Accessed selector of %s", shortNameOfType[IsEffectivePriceTable])
+object FullPriceTable {
+  final val DefaultSelectorKey = "default"
 }

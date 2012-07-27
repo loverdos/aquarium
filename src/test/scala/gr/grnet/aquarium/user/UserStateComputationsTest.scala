@@ -45,11 +45,20 @@ import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder, AquariumEx
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging._
-import gr.grnet.aquarium.policy.{IsEffectivePriceTable, PolicyDefinedFullPriceTableRef, StdUserAgreement, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, StdPolicy, PolicyModel}
-import gr.grnet.aquarium.Timespan
-import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, FullPriceTable, PolicyModel}
 import gr.grnet.aquarium.charging.reason.{NoSpecificChargingReason, MonthlyBillChargingReason}
 import gr.grnet.aquarium.charging.state.WorkingUserState
+import gr.grnet.aquarium.policy.FullPriceTable._
+import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.simulation.AquariumSim
+import scala.Some
+import gr.grnet.aquarium.policy.EffectiveUnitPrice
+import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.policy.StdUserAgreement
+import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import gr.grnet.aquarium.policy.EffectivePriceTable
+import gr.grnet.aquarium.policy.StdPolicy
+import gr.grnet.aquarium.simulation.ClientSim
 
 
 /**
@@ -82,9 +91,9 @@ class UserStateComputationsTest extends Loggable {
     ),
     roleMapping = Map(
       "default" -> FullPriceTable(Map(
-        "bandwidth" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(BandwidthUnitPrice) :: Nil)),
-        "diskspace" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(DiskspaceUnitPrice) :: Nil)),
-        "vmtime"    -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(VMTimeUnitPrice) :: Nil))
+        "bandwidth" -> Map(DefaultSelectorKey -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)),
+        "diskspace" -> Map(DefaultSelectorKey -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)),
+        "vmtime"    -> Map(DefaultSelectorKey -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil))
       ))
     )
   )

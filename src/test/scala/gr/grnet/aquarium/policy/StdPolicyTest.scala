@@ -38,7 +38,9 @@ package gr.grnet.aquarium.policy
 import org.junit.Test
 import gr.grnet.aquarium.Timespan
 import gr.grnet.aquarium.charging.{OnceChargingBehavior, ContinuousChargingBehavior, VMChargingBehavior}
-import gr.grnet.aquarium.converter.{StdConverters, PrettyJsonTextFormat}
+import gr.grnet.aquarium.charging.VMChargingBehavior.Selectors.Power
+import gr.grnet.aquarium.util.nameOfClass
+import FullPriceTable.DefaultSelectorKey
 
 /**
  *
@@ -53,30 +55,35 @@ class StdPolicyTest {
     validityTimespan = Timespan(0),
 
     resourceTypes = Set(
-      ResourceType("diskspace", "MB/Hr", classOf[ContinuousChargingBehavior].getName),
-      ResourceType("vmtime",    "Hr",    classOf[VMChargingBehavior].getName)
+      ResourceType("diskspace", "MB/Hr", nameOfClass[ContinuousChargingBehavior]),
+      ResourceType("vmtime",    "Hr",    nameOfClass[VMChargingBehavior])
     ),
 
     chargingBehaviors = Set(
-      classOf[VMChargingBehavior].getName,
-      classOf[ContinuousChargingBehavior].getName,
-      classOf[OnceChargingBehavior].getName
+      nameOfClass[VMChargingBehavior],
+      nameOfClass[ContinuousChargingBehavior],
+      nameOfClass[OnceChargingBehavior]
     ),
 
     roleMapping = Map(
       "default" -> FullPriceTable(Map(
-        "bandwidth" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)),
-        "diskspace" -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)),
-        "vmtime"    -> IsEffectivePriceTable(EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil))
+        "diskspace" -> Map(
+          DefaultSelectorKey -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)
+        ),
+        "vmtime" -> Map(
+          Power.powerOn  -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil),
+          Power.powerOff -> EffectivePriceTable(EffectiveUnitPrice(0.001) :: Nil) // cheaper when the VM is OFF
+        )
       ))
     )
   )
 
   @Test
   def testJson(): Unit = {
-    val converters = StdConverters.AllConverters
-    val json = converters.convertEx[PrettyJsonTextFormat](policy)
-    val obj = converters.convertEx[StdPolicy](json)
+    val json = policy.toJsonString
+    println(json)
+
+    val obj = PolicyModel.fromJsonString(json)
 
     assert(policy == obj)
   }

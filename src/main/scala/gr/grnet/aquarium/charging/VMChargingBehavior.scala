@@ -39,15 +39,10 @@ import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import scala.collection.mutable
+import VMChargingBehavior.Selectors.Power
+
 /**
- * An onoff charging behavior expects a resource to be in one of the two allowed
- * states (`on` and `off`, respectively). It will charge for resource usage
- * within the timeframes specified by consecutive on and off resource events.
- * An onoff policy is the same as a continuous policy, except for
- * the timeframes within the resource is in the `off` state.
- *
- * Example resources that might be adept to onoff policies are VMs in a
- * cloud application and books in a book lending application.
+ * The new [[gr.grnet.aquarium.charging.ChargingBehavior]] for VMs usage.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -55,7 +50,7 @@ final class VMChargingBehavior
     extends ChargingBehavior(
       ChargingBehaviorAliases.vmtime,
       Set(ChargingBehaviorNameInput, UnitPriceInput, TimeDeltaInput),
-      List(List(VMChargingBehavior.Selectors._1.powerOn, VMChargingBehavior.Selectors._1.powerOff))) {
+      List(List(Power.powerOn, Power.powerOff))) {
 
   protected def computeSelectorPath(
      chargingData: mutable.Map[String, Any],
@@ -67,7 +62,7 @@ final class VMChargingBehavior
      newAccumulatingAmount: Double
  ): List[String] = {
     // FIXME
-    List(VMChargingBehavior.Selectors._1.powerOn) // compute prices for power-on state
+    List(Power.powerOn) // compute prices for power-on state
   }
   /**
    *
@@ -126,7 +121,7 @@ final class VMChargingBehavior
 
 object VMChargingBehavior {
   object Selectors {
-    object _1 {
+    object Power {
       // When the VM is powered on
       final val powerOn = "powerOn"
       // When the VM is powered off

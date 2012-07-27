@@ -38,6 +38,7 @@ package gr.grnet.aquarium.policy
 import gr.grnet.aquarium.{AquariumInternalError, Timespan}
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.charging.ChargingBehavior
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
 /**
  * A policy is the fundamental business-related configuration of Aquarium.
@@ -114,4 +115,8 @@ object PolicyModel {
   }
 
   final object Names extends NamesT
+
+  def fromJsonString(json: String): PolicyModel = {
+    StdConverters.AllConverters.convertEx[StdPolicy](JsonTextFormat(json))
+  }
 }

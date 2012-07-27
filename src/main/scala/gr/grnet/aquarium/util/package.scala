@@ -77,9 +77,11 @@ package object util {
   }
 
   @inline
-  def StartStopErrorHandler[S](logger: Logger,
-                               message: String,
-                               onException: ⇒ Unit = {}): PartialFunction[Throwable, Unit] = {
+  def StartStopErrorHandler[S](
+      logger: Logger,
+      message: String,
+      onException: ⇒ Unit = {}
+  ): PartialFunction[Throwable, Unit] = {
 
     case e: Throwable ⇒
       safeUnit(onException)
@@ -135,6 +137,8 @@ package object util {
     afterLastIndexOf(".", manifest[C].toString)
   }
 
+  def nameOfClass[C: ClassManifest] = classManifest[C].erasure.getName
+
   /**
    * Compute the class name excluding any leading packages and any `$` prefixes.
    *
@@ -178,34 +182,6 @@ package object util {
 
   def displayableObjectInfo(obj: AnyRef): String = {
     "[%s] %s".format(obj.getClass, obj)
-  }
-
-  /**
-   * This basically turns an [[scala.Option]] into a [[com.ckkloverdos.maybe.Maybe]] when asking a
-   * [[scala.collection.Map]] for a key.
-   *
-   * @param map The input map.
-   * @param key The key we are interested in.
-   * @tparam A The type of keys.
-   * @tparam B The type of values.
-   *
-   * @return A [[com.ckkloverdos.maybe.Just]] if a value was found, a
-   *           [[com.ckkloverdos.maybe.NoVal]] if nothing was found and a
-   *           [[com.ckkloverdos.maybe.Failed]] if some error happened.
-   */
-  @inline
-  def findFromMapAsMaybe[A, B <: AnyRef](map: scala.collection.Map[A, B], key: A): Maybe[B] = Maybe {
-    map.get(key) match {
-      case Some(value) ⇒
-        value
-      case None ⇒
-        null.asInstanceOf[B]
-    }
-  }
-
-  @inline
-  def findAndRemoveFromMap[A, B <: AnyRef](map: scala.collection.mutable.Map[A, B], key: A): Option[B] = {
-    map.remove(key)
   }
 
   // Dear scalac. Optimize this.
