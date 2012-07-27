@@ -45,7 +45,7 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.event.model.im.IMEventModel
 import gr.grnet.aquarium.actor.message.{GetUserWalletResponseData, GetUserWalletResponse, GetUserWalletRequest, GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
-import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.charging.state.{WorkingAgreementHistory, WorkingUserState, UserStateModel}
@@ -380,7 +380,10 @@ class UserActor extends ReflectiveRoleableActor {
     else {
       computeBatch()
     }
-
+    aquarium(Aquarium.EnvKeys.rabbitMQProducer).
+    sendMessage("{userid: \"%s\", state: %s}".
+                  format(this._userID,
+                  this._workingUserState.totalCredits >= 0.0))
     DEBUG("Updated %s", this._workingUserState)
     logSeparator()
   }

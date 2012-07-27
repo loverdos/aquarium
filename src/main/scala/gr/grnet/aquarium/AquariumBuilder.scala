@@ -357,6 +357,8 @@ final class AquariumBuilder(
 
     checkNoPropsOverride(EnvKeys.rabbitMQService) { newInstanceFromKey(_) }
 
+    checkNoPropsOverride(EnvKeys.rabbitMQProducer) { newInstanceFromKey(_) }
+
     checkNoPropsOverride(EnvKeys.storeWatcherService) { newInstanceFromKey(_) }
 
     checkPropsOverride(EnvKeys.userStateTimestampThreshold) { (envKey, propValue) ⇒
