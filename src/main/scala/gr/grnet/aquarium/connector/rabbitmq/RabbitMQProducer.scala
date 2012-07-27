@@ -120,7 +120,7 @@ object RabbitMQProducer {
 
   def main(args: Array[String]) = {
     aquarium(Aquarium.EnvKeys.rabbitMQProducer).
-    sendMessage("{userid: \"pgerakios@grnet.gr\", state:true}")
+    sendMessage("{\"userid\": \"pgerakios@grnet.gr\", \"state\":true}")
     Console.err.println("Message sent")
     aquarium.stop()
     ()

@@ -381,7 +381,7 @@ class UserActor extends ReflectiveRoleableActor {
       computeBatch()
     }
     aquarium(Aquarium.EnvKeys.rabbitMQProducer).
-    sendMessage("{userid: \"%s\", state: %s}".
+    sendMessage("{\"userid\": \"%s\", \"state\": %s}".
                   format(this._userID,
                   this._workingUserState.totalCredits >= 0.0))
     DEBUG("Updated %s", this._workingUserState)
