@@ -38,6 +38,7 @@ package gr.grnet.aquarium
 import com.ckkloverdos.env.Env
 import com.ckkloverdos.key.{IntKey, StringKey, LongKey, TypedKeySkeleton, TypedKey, BooleanKey}
 import com.ckkloverdos.props.Props
+import connector.rabbitmq.RabbitMQProducer
 import gr.grnet.aquarium.store.{PolicyStore, StoreProvider}
 import java.io.File
 import gr.grnet.aquarium.util.{Loggable, Lifecycle}
@@ -470,6 +471,9 @@ object Aquarium {
 
     final val rabbitMQService: TypedKey[RabbitMQService] =
       new AquariumEnvKey[RabbitMQService]("rabbitmq.service")
+
+    final val rabbitMQProducer: TypedKey[RabbitMQProducer] =
+      new AquariumEnvKey[RabbitMQProducer]("rabbitmq.client")
 
     final val storeWatcherService: TypedKey[StoreWatcherService] =
       new AquariumEnvKey[StoreWatcherService]("store.watcher.service")
