@@ -36,7 +36,7 @@ package gr.grnet.aquarium.actor
 
 import service.user.UserActor
 import gr.grnet.aquarium.actor.message.event.{ProcessIMEvent, ProcessResourceEvent}
-import gr.grnet.aquarium.actor.message.{GetUserWalletRequest, GetUserStateRequest, GetUserBalanceRequest}
+import message.{GetUserBillRequest, GetUserWalletRequest, GetUserStateRequest, GetUserBalanceRequest}
 import gr.grnet.aquarium.actor.message.config.{InitializeUserActorState, AquariumPropertiesLoaded, ActorConfigurationMessage}
 
 /**
@@ -90,6 +90,7 @@ case object UserActorRole
                           classOf[ProcessIMEvent],
                           classOf[GetUserWalletRequest],
                           classOf[GetUserBalanceRequest],
+                          classOf[GetUserBillRequest],
                           classOf[GetUserStateRequest]),
                       Set(classOf[InitializeUserActorState],
                           classOf[AquariumPropertiesLoaded]))

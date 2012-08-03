@@ -1,9 +1,10 @@
 package gr.grnet.aquarium.connector.rabbitmq
 
 import conf.RabbitMQConsumerConf
+import conf.RabbitMQConsumerConf
 import conf.{RabbitMQKeys, RabbitMQConsumerConf}
 import conf.RabbitMQKeys.{RabbitMQConfKeys, RabbitMQConKeys}
-import gr.grnet.aquarium.{Configurable, ResourceLocator, AquariumBuilder, Aquarium}
+import gr.grnet.aquarium._
 import com.rabbitmq.client._
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import com.ckkloverdos.props.Props
@@ -12,6 +13,7 @@ import gr.grnet.aquarium.util.{Lock, Tags}
 import gr.grnet.aquarium.store.memory.MemStoreProvider
 import java.io.File
 import com.ckkloverdos.resource.FileStreamResource
+import scala.Some
 
 
 /*
@@ -49,6 +51,11 @@ import com.ckkloverdos.resource.FileStreamResource
  * or implied, of GRNET S.A.
  */
 
+/**
+ *
+ * @author Prodromos Gerakios <pgerakios@grnet.gr>
+ */
+
 class RabbitMQProducer extends Configurable {
   private[this] var _conf: RabbitMQConsumerConf = _
   private[this] var _factory: ConnectionFactory = _
@@ -56,33 +63,29 @@ class RabbitMQProducer extends Configurable {
   private[this] var _channel: Channel = _
   private[this] var _servers : Array[Address] = _
   private[this] final val lock = new Lock()
+  private[this] var _exchangeName : String = _
+  private[this] var _routingKey :String = _
 
   def propertyPrefix: Option[String] = Some(RabbitMQKeys.PropertiesPrefix)
   //  Some(RabbitMQConfKeys.imevents_credit)
 
 
   def configure(props: Props): Unit = {
-    var prop = props.get(RabbitMQConfKeys.imevents_credit).getOr("")
-    // Console.println("Prop: " + prop)
-    val Array(exchange, routing) = prop.split(":")
-    //Console.println("ex: " + exchange + " routing: " + routing)
-     _conf = RabbitMQConsumerConf(
-      tag = Tags.IMEventTag,
-      exchangeName = exchange,
-      routingKey = routing,
-      queueName = "",
-      connectionConf = RabbitMQKeys.makeConnectionConf(props),
-      exchangeConf = RabbitMQKeys.DefaultExchangeConf,
-      channelConf = RabbitMQKeys.DefaultChannelConf,
-      queueConf = RabbitMQKeys.DefaultQueueConf
-    )
+    val propName = RabbitMQConfKeys.imevents_credit
+    def exn () = throw new AquariumInternalError(new Exception, "While obtaining value for key %s in properties".format(propName))
+    val prop = props.get(propName).getOr(exn())
+    if (prop.isEmpty) exn()
+    val connectionConf = RabbitMQKeys.makeConnectionConf(props)
+    val Array(exchangeName, routingKey) = prop.split(":")
+    _exchangeName = exchangeName
+    _routingKey = routingKey
     _factory = new ConnectionFactory
-    _factory.setConnectionTimeout(_conf.connectionConf(RabbitMQConKeys.reconnect_period_millis).toInt)
-    _factory.setUsername(_conf.connectionConf(RabbitMQConKeys.username))
-    _factory.setPassword(_conf.connectionConf(RabbitMQConKeys.password))
-    _factory.setVirtualHost(_conf.connectionConf(RabbitMQConKeys.vhost))
-    _factory.setRequestedHeartbeat(_conf.connectionConf(RabbitMQConKeys.reconnect_period_millis).toInt)
-    _servers = _conf.connectionConf(RabbitMQConKeys.servers)
+    _factory.setConnectionTimeout(connectionConf(RabbitMQConKeys.reconnect_period_millis).toInt)
+    _factory.setUsername(connectionConf(RabbitMQConKeys.username))
+    _factory.setPassword(connectionConf(RabbitMQConKeys.password))
+    _factory.setVirtualHost(connectionConf(RabbitMQConKeys.vhost))
+    _factory.setRequestedHeartbeat(connectionConf(RabbitMQConKeys.reconnect_period_millis).toInt)
+    _servers = connectionConf(RabbitMQConKeys.servers)
   }
 
   private[this] def withChannel[A]( next : => A) = {
@@ -103,26 +106,8 @@ class RabbitMQProducer extends Configurable {
 
   def sendMessage(payload:String) =
     withChannel {
-      _channel.basicPublish(_conf.exchangeName, _conf.routingKey,
+      _channel.basicPublish(_exchangeName,_routingKey,
         MessageProperties.PERSISTENT_TEXT_PLAIN,
         payload.getBytes)
     }
-}
-
-object RabbitMQProducer {
-  val propsfile = new FileStreamResource(new File("aquarium.properties"))
-  @volatile private[this] var _props: Props = Props(propsfile)(StdConverters.AllConverters).getOr(Props()(StdConverters.AllConverters))
-  val aquarium = new AquariumBuilder(_props, ResourceLocator.DefaultPolicyModel).
-                update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
-                update(Aquarium.EnvKeys.eventsStoreFolder,Some(new File(".."))).
-                build()
-
-
-  def main(args: Array[String]) = {
-    aquarium(Aquarium.EnvKeys.rabbitMQProducer).
-    sendMessage("{\"userid\": \"pgerakios@grnet.gr\", \"state\":true}")
-    Console.err.println("Message sent")
-    aquarium.stop()
-    ()
-  }
 }

@@ -42,8 +42,12 @@ import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
 import gr.grnet.aquarium.actor.message.config.{InitializeUserActorState, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.actor.message.{GetUserWalletResponseData, GetUserWalletResponse, GetUserWalletRequest, GetUserStateResponse, GetUserBalanceResponseData, GetUserBalanceResponse, GetUserStateRequest, GetUserBalanceRequest}
+import gr.grnet.aquarium.event.model.im.{BalanceEvent, IMEventModel}
+import message._
+import config.AquariumPropertiesLoaded
+import config.InitializeUserActorState
+import event.ProcessIMEvent
+import event.ProcessResourceEvent
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
 import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
 import gr.grnet.aquarium.computation.BillingMonthInfo
@@ -52,6 +56,21 @@ import gr.grnet.aquarium.charging.state.{WorkingAgreementHistory, WorkingUserSta
 import gr.grnet.aquarium.charging.reason.{InitialUserActorSetup, RealtimeChargingReason}
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import message.GetUserBalanceRequest
+import message.GetUserBalanceResponse
+import message.GetUserBalanceResponseData
+import message.GetUserStateRequest
+import message.GetUserStateResponse
+import message.GetUserWalletRequest
+import message.GetUserWalletResponse
+import message.GetUserWalletResponseData
+import scala.Left
+import gr.grnet.aquarium.charging.state.WorkingAgreementHistory
+import scala.Some
+import scala.Right
+import gr.grnet.aquarium.policy.StdUserAgreement
+import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import gr.grnet.aquarium.charging.bill.BillEntry
 
 /**
  *
@@ -359,6 +378,7 @@ class UserActor extends ReflectiveRoleableActor {
       updateLatestResourceEventIDFrom(rcEvent)
     }
 
+    var oldTotalCredits = this._workingUserState.totalCredits
     // FIXME check these
     if(nowYear != eventYear || nowMonth != eventMonth) {
       DEBUG(
@@ -380,12 +400,25 @@ class UserActor extends ReflectiveRoleableActor {
     else {
       computeBatch()
     }
-    aquarium(Aquarium.EnvKeys.rabbitMQProducer).
-    sendMessage("{\"userid\": \"%s\", \"state\": %s}".
-                  format(this._userID,
-                  this._workingUserState.totalCredits >= 0.0))
+    if(oldTotalCredits * this._workingUserState.totalCredits < 0)
+      BalanceEvent.send(aquarium,this._workingUserState.userID,
+                        this._workingUserState.totalCredits>=0)
     DEBUG("Updated %s", this._workingUserState)
     logSeparator()
+  }
+
+  def onGetUserBillRequest(event: GetUserBillRequest): Unit = {
+    try{
+      val timeslot = event.timeslot
+      val state= if(haveWorkingUserState) Some(this._workingUserState) else None
+      val billEntry = BillEntry.fromWorkingUserState(timeslot,state)
+      val billData = GetUserBillResponseData(this._userID,billEntry)
+      sender ! GetUserBillResponse(Right(billData))
+    } catch {
+      case e:Exception =>
+       e.printStackTrace()
+       sender ! GetUserBillResponse(Left("Internal Server Error [AQU-BILL-0001]"), 500)
+    }
   }
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {

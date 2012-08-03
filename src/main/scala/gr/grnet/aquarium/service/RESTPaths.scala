@@ -57,24 +57,26 @@ object RESTPaths {
 
   final val ResourcesLogbackXMLPath = toResourcesPath(ResourceLocator.ResourceNames.LOGBACK_XML).r
 
-  final val ResourcesPolicyJSONPath = toResourcesPath(ResourceLocator.ResourceNames.POLICY_JSON).r
+    final val ResourcesPolicyJSONPath = toResourcesPath(ResourceLocator.ResourceNames.POLICY_JSON).r
 
-  final val ResourceEventPath = toEventPath("rcevent").r
+    final val ResourceEventPath = toEventPath("rcevent").r
 
-  final val IMEventPath = toEventPath("imevent").r
+    final val IMEventPath = toEventPath("imevent").r
 
-  /**
-   * Use this URI path to query for the user balance. The parenthesized regular expression part
-   * represents the user ID.
-   */
-  final val UserBalancePath = "/user/([^/]+)/balance/?".r
+    /**
+     * Use this URI path to query for the user balance. The parenthesized regular expression part
+     * represents the user ID.
+     */
+    final val UserBalancePath = "/user/([^/]+)/balance/?".r
 
-  /**
-   * Use this URI path to query for the user state.
-   */
-  final val UserStatePath = "/user/([^/]+)/state/?".r
+    /**
+     * Use this URI path to query for the user state.
+     */
+    final val UserStatePath = "/user/([^/]+)/state/?".r
 
-  final val UserWalletPath = "/user/([^/]+)/wallet/?".r
+    final val UserWalletPath = "/user/([^/]+)/wallet/?".r
+
+    final val UserBillPath = "/user/([^/]+)/bill/([0-9]+)/([0-9]+)/?".r
 
   final val UserActorCacheContentsPath = (AdminPrefix + "/cache/actor/user/contents").r
   final val UserActorCacheCountPath    = (AdminPrefix + "/cache/actor/user/size").r

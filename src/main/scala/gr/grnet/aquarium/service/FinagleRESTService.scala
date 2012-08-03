@@ -51,7 +51,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.{Executors, TimeUnit}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
-import gr.grnet.aquarium.actor.message.{GetUserWalletRequest, UserActorRequestMessage, GetUserStateRequest, GetUserBalanceRequest, UserActorResponseMessage}
+import gr.grnet.aquarium.actor.message._
 import com.ckkloverdos.resource.StreamResource
 import com.ckkloverdos.maybe.{Just, Failed}
 import gr.grnet.aquarium.event.model.ExternalEventModel
@@ -59,6 +59,15 @@ import akka.util.{Timeout ⇒ ATimeout, Duration ⇒ ADuration}
 import akka.dispatch.{Future ⇒ AFuture}
 import com.fasterxml.jackson.databind.ObjectMapper
 import java.util
+import scala.Left
+import scala.Some
+import com.ckkloverdos.maybe.Failed
+import gr.grnet.aquarium.actor.message.GetUserStateRequest
+import scala.Right
+import com.ckkloverdos.maybe.Just
+import gr.grnet.aquarium.actor.message.GetUserBalanceRequest
+import gr.grnet.aquarium.actor.message.GetUserWalletRequest
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  *
@@ -310,6 +319,12 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
         case RESTPaths.UserWalletPath(userID) ⇒
           // /user/(.+)/wallet/?
           callUserActor(GetUserWalletRequest(userID, millis))
+
+        case RESTPaths.UserBillPath(userID,st1,st2) ⇒
+          val t1 = st1.toLong
+          val t2 = st2.toLong
+          val t = Timeslot(t1,if(t2==0)Long.MaxValue else t2)
+          callUserActor(GetUserBillRequest(userID,t,millis))
       }
 
       val DefaultHandler: URIPF = {
