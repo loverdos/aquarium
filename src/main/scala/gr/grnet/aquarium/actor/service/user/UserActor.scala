@@ -42,7 +42,8 @@ import gr.grnet.aquarium.actor._
 import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
 import gr.grnet.aquarium.actor.message.config.{InitializeUserActorState, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.event.model.im.{BalanceEvent, IMEventModel}
+import gr.grnet.aquarium.service.event.BalanceEvent
+import gr.grnet.aquarium.event.model.im.IMEventModel
 import message._
 import config.AquariumPropertiesLoaded
 import config.InitializeUserActorState
@@ -401,8 +402,8 @@ class UserActor extends ReflectiveRoleableActor {
       computeBatch()
     }
     if(oldTotalCredits * this._workingUserState.totalCredits < 0)
-      BalanceEvent.send(aquarium,this._workingUserState.userID,
-                        this._workingUserState.totalCredits>=0)
+      aquarium.eventBus ! new BalanceEvent(this._workingUserState.userID,
+                                           this._workingUserState.totalCredits>=0)
     DEBUG("Updated %s", this._workingUserState)
     logSeparator()
   }

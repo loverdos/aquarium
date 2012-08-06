@@ -37,16 +37,17 @@ package gr.grnet.aquarium.service
 
 import com.ckkloverdos.props.Props
 import com.google.common.eventbus.Subscribe
-import gr.grnet.aquarium.{AquariumAwareSkeleton, Configurable}
+import gr.grnet.aquarium.{Aquarium, AquariumAwareSkeleton, Configurable}
 import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
 import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle}
 import gr.grnet.aquarium.util.sameTags
-import gr.grnet.aquarium.service.event.{AquariumCreatedEvent, StoreIsAliveBusEvent, StoreIsDeadBusEvent}
+import event.{BalanceEvent, AquariumCreatedEvent, StoreIsAliveBusEvent, StoreIsDeadBusEvent}
 import gr.grnet.aquarium.connector.rabbitmq.service.PayloadHandlerPostNotifier
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys.RabbitMQConfKeys
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys
 import gr.grnet.aquarium.connector.handler.{SynchronousPayloadHandlerExecutor, ResourceEventPayloadHandler, IMEventPayloadHandler}
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
  * The service that is responsible to handle `RabbitMQ` connecrivity.
@@ -196,6 +197,11 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
         consumer.safeStop()
       } {}
     }
+  }
+
+  @Subscribe
+  def handleUserBalance(event:BalanceEvent): Unit = {
+    aquarium(Aquarium.EnvKeys.rabbitMQProducer).sendMessage(event.toJsonString)
   }
 
   @Subscribe
