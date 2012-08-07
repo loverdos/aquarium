@@ -1,21 +1,17 @@
 package gr.grnet.aquarium.connector.rabbitmq
 
-import conf.RabbitMQConsumerConf
-import conf.RabbitMQConsumerConf
 import conf.{RabbitMQKeys, RabbitMQConsumerConf}
 import conf.RabbitMQKeys.{RabbitMQConfKeys, RabbitMQConKeys}
 import gr.grnet.aquarium._
 import com.rabbitmq.client._
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.converter.StdConverters
-import gr.grnet.aquarium.util.{Lock, Tags}
+import gr.grnet.aquarium.util.Lock
 import gr.grnet.aquarium.store.memory.MemStoreProvider
 import java.io.File
 import com.ckkloverdos.resource.FileStreamResource
 import scala.Some
-import collection.immutable.{TreeMap, SortedSet, TreeSet}
-import java.util.Collections
+import collection.immutable.{TreeMap, TreeSet}
 
 
 /*
@@ -166,7 +162,7 @@ object RabbitMQProducer  {
     build()
     aquarium(Aquarium.EnvKeys.rabbitMQProducer).sendMessage("Test string !!!!")
     Console.err.println("Message sent")
-    aquarium.stop()
+    //aquarium.start()
     ()
   }
 }

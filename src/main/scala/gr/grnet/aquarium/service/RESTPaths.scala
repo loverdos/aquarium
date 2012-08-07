@@ -43,7 +43,10 @@ import gr.grnet.aquarium.ResourceLocator
  * @author Christos KK Loverdos <loverdos@gmail.com>.
  */
 object RESTPaths {
-  final val PingPath = "/ping".r
+  final val AquariumPingPath = "/ping/aquarium".r
+  final val RabbitMQPingPath = "/ping/rabbitmq".r
+  final val IMStorePingPath = "/ping/imstore".r
+  final val RCStorePingPath = "/ping/rcstore".r
 
   final val AdminPrefix = "/admin"
 

@@ -64,6 +64,8 @@ trait IMEventModel extends ExternalEventModel {
 
   def isModifyUser = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.modify)
 
+  def isAddCredits = eventType.equalsIgnoreCase(IMEventModel.EventTypeNames.addcredits)
+
   def userCreationMillisOption = if(isCreateUser) Some(this.occurredMillis) else None
 
   override def toDebugString = {
@@ -92,7 +94,14 @@ object IMEventModel {
   trait EventTypeNamesT {
     final val create = "create"
     final val modify = "modify"
+    final val addcredits = "addcredits"
   }
 
   object EventTypeNames extends EventTypeNamesT
+
+  trait DetailsNamesT {
+    final val credits = "credits"
+  }
+  object DetailsNames extends DetailsNamesT
+
 }

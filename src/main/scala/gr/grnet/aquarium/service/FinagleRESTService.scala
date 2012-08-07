@@ -236,12 +236,21 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
       logger.debug("%s %s %s".format(method, request.getProtocolVersion, uri))
 
       type URIPF = PartialFunction[String, TFuture[THttpResponse]]
-
+      def pong(ok:Boolean) = {
+        val now = TimeHelpers.nowMillis()
+        val nowFormatted = ISODateTimeFormat.dateTime().print(now)
+        val reply = if(ok) "PONG" else "DOWN"
+        stringResponseOK("%s\n%s\n%s".format(reply,now, nowFormatted), TEXT_PLAIN)
+      }
       val PingHandler: URIPF = {
-        case RESTPaths.PingPath() ⇒
-          val now = TimeHelpers.nowMillis()
-          val nowFormatted = ISODateTimeFormat.dateTime().print(now)
-          stringResponseOK("PONG\n%s\n%s".format(now, nowFormatted), TEXT_PLAIN)
+        case RESTPaths.AquariumPingPath() ⇒
+          pong(true)
+        case RESTPaths.RabbitMQPingPath() ⇒
+          pong(aquarium(Aquarium.EnvKeys.rabbitMQService).areConsumersLive)
+        case RESTPaths.IMStorePingPath() ⇒
+          pong(aquarium(Aquarium.EnvKeys.storeWatcherService).isIMAlive)
+        case RESTPaths.RCStorePingPath() ⇒
+          pong(aquarium(Aquarium.EnvKeys.storeWatcherService).isRCAlive)
       }
 
       val UserActorCacheHandler: URIPF = {

@@ -165,7 +165,7 @@ final case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
    * contained in the timeslot are trimmed to this timeslot's
    * start and end time.
    */
-  def align(l: List[Timeslot]): List[Timeslot] = {
+  private[this] def align0(l: List[Timeslot]): List[Timeslot] = {
     if (l.isEmpty) return List()
 
     val result : Option[Timeslot] =
@@ -179,6 +179,10 @@ final case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
       case Some(x) => x :: align(l.tail)
       case None => align(l.tail)
     }
+  }
+
+  def align(l: List[Timeslot]): List[Timeslot] = {
+    Timeslot.mergeOverlaps(align0(l))
   }
 
   /* align a time slot in "bound_size" boundaries so that

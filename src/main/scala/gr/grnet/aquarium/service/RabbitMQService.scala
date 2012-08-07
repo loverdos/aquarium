@@ -187,6 +187,13 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
     }
   }
 
+  def areConsumersLive() : Boolean = {
+    for(consumer ← this._consumers)
+      if(!consumer.isAlive())  return false
+    return true
+  }
+
+
   def stop() = {
     safeStop()
   }

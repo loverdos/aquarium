@@ -8,6 +8,11 @@
 
   "resourceTypes":[
     {
+      "name":"addcredits",
+      "unit":"credits",
+      "chargingBehavior":"gr.grnet.aquarium.charging.OnceChargingBehavior"
+    },
+    {
       "name":"bandwidth",
       "unit":"MB/Hr",
       "chargingBehavior":"gr.grnet.aquarium.charging.DiscreteChargingBehavior"
@@ -52,6 +57,13 @@
           "priceOverrides":[
             {
               "unitPrice":0.01
+            }
+          ]
+        }
+        "addcredits":{
+          "priceOverrides":[
+            {
+              "unitPrice":1
             }
           ]
         }

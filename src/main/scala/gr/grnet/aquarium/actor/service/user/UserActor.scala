@@ -56,7 +56,7 @@ import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.charging.state.{WorkingAgreementHistory, WorkingUserState, UserStateModel}
 import gr.grnet.aquarium.charging.reason.{InitialUserActorSetup, RealtimeChargingReason}
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement}
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import message.GetUserBalanceRequest
 import message.GetUserBalanceResponse
 import message.GetUserBalanceResponseData
@@ -298,9 +298,15 @@ class UserActor extends ReflectiveRoleableActor {
         //this._latestIMEventID = imEvent.id
         return
       }
+      if(imEvent.isAddCredits)  {
+        if(!hadUserCreationIMEvent && haveUserCreationIMEvent)
+        loadWorkingUserStateAndUpdateAgreementHistory()
+        onHandleAddCreditsEvent(imEvent)
 
+      } else {
       updateAgreementHistoryFrom(imEvent)
       updateLatestIMEventIDFrom(imEvent)
+      }
     }
 
     // Must also update user state if we know when in history the life of a user begins
@@ -310,6 +316,29 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     logSeparator()
+  }
+
+  /* Convert astakos message for adding credits
+    to a regular RESOURCE message */
+  def onHandleAddCreditsEvent(imEvent : IMEventModel) = {
+    val credits = -imEvent.details(IMEventModel.DetailsNames.credits).toInt.toDouble
+    val event = new StdResourceEvent(
+      imEvent.id,
+      imEvent.occurredMillis,
+      imEvent.receivedMillis,
+      imEvent.userID,
+      imEvent.clientID,
+      imEvent.eventType,
+      imEvent.eventType,
+      credits,
+      imEvent.eventVersion,
+      imEvent.details
+    )
+    //Console.err.println("Event: " + event)
+    //Console.err.println("Total credits before: " + _workingUserState.totalCredits)
+    onProcessResourceEvent(new ProcessResourceEvent(event))
+    //Console.err.println("Total credits after: " + _workingUserState.totalCredits)
+    //Console.err.println("OK.")
   }
 
   def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
@@ -401,9 +430,10 @@ class UserActor extends ReflectiveRoleableActor {
     else {
       computeBatch()
     }
-    if(oldTotalCredits * this._workingUserState.totalCredits < 0)
+    var newTotal = this._workingUserState.totalCredits
+    if(oldTotalCredits * newTotal < 0)
       aquarium.eventBus ! new BalanceEvent(this._workingUserState.userID,
-                                           this._workingUserState.totalCredits>=0)
+                                           newTotal>=0)
     DEBUG("Updated %s", this._workingUserState)
     logSeparator()
   }

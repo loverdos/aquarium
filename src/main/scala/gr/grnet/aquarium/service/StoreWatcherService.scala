@@ -58,6 +58,9 @@ final class StoreWatcherService extends Lifecycle with Configurable with Aquariu
 
   def propertyPrefix = Some(StoreProvider.Prefix)
 
+  def isRCAlive() : Boolean = _rcIsAlive.get
+  def isIMAlive() : Boolean = _imIsAlive.get
+
   /**
    * Configure this instance with the provided properties.
    *
