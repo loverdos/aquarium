@@ -39,6 +39,7 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.AquariumException
 import scala.collection.mutable
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.policy.FullPriceTable
 
 /**
  * A charging behavior for which resource events just carry a credit amount that will be added to the total one.
@@ -61,7 +62,7 @@ final class OnceChargingBehavior
       oldAccumulatingAmount: Double,
       newAccumulatingAmount: Double
   ): List[String] = {
-    Nil
+    List(FullPriceTable.DefaultSelectorKey)
   }
   /**
    * This is called when we have the very first event for a particular resource instance, and we want to know

@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.policy
 
 import gr.grnet.aquarium.{AquariumInternalError, Timespan}
+import gr.grnet.aquarium.charging.ChargingBehavior
 
 /**
  *
@@ -75,13 +76,8 @@ trait UserAgreementModel extends Ordered[UserAgreementModel] {
     }
   }
 
-  def effectivePriceTableOfResourceTypeForSelector(
-      resource: String,
-      selectorPath: List[String],
-      policy: PolicyModel
-  ): EffectivePriceTable = {
-
-    val fullPriceTable = this.fullPriceTableRef match {
+  def computeFullPriceTable(policy: PolicyModel): FullPriceTable = {
+    this.fullPriceTableRef match {
       case PolicyDefinedFullPriceTableRef ⇒
         policy.roleMapping.get(role) match {
           case Some(fullPriceTable) ⇒
@@ -94,7 +90,5 @@ trait UserAgreementModel extends Ordered[UserAgreementModel] {
       case AdHocFullPriceTableRef(fullPriceTable) ⇒
         fullPriceTable
     }
-
-    fullPriceTable.effectivePriceTableOfSelectorForResource(selectorPath, resource)
   }
 }

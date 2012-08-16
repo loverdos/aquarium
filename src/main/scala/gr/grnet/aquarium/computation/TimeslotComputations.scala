@@ -91,14 +91,14 @@ object TimeslotComputations extends Loggable {
       policy: PolicyModel,
       agreement: UserAgreementModel,
       resourceType: ResourceType,
-      selectorPath: List[String],
+      effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable,
       clogOpt: Option[ContextualLogger] = None
   ): SortedMap[Timeslot, Double] = {
 
     val clog = ContextualLogger.fromOther(clogOpt, logger, "resolveEffectiveUnitPrices()")
 
     // Note that most of the code is taken from calcChangeChunks()
-    val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType, selectorPath)
+    val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType, effectivePriceTableSelector)
     ret map {case (t,p) => (t,p.unitPrice)}
   }
 
@@ -107,7 +107,7 @@ object TimeslotComputations extends Loggable {
       resourceType: ResourceType,
       policyByTimeslot: SortedMap[Timeslot, PolicyModel],
       agreementByTimeslot: SortedMap[Timeslot, UserAgreementModel],
-      selectorPath: List[String],
+      effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable,
       clogOpt: Option[ContextualLogger] = None
   ): List[Chargeslot] = {
 
@@ -145,7 +145,7 @@ object TimeslotComputations extends Loggable {
         policy,
         userAgreement,
         resourceType,
-        selectorPath,
+        effectivePriceTableSelector,
         Some(clog)
       )
 
@@ -217,19 +217,16 @@ object TimeslotComputations extends Loggable {
      * Resolves the effective price list for each chunk of the
      * provided timeslot and returns it as a Map
      */
-    private def resolveEffectiveUnitPricesForTimeslot(
+    private[this] def resolveEffectiveUnitPricesForTimeslot(
         alignedTimeslot: Timeslot,
         policy: PolicyModel,
         agreement: UserAgreementModel,
         resourceType: ResourceType,
-        selectorPath: List[String]
+        effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
     ): PriceMap = {
 
-      val effectivePriceTable = agreement.effectivePriceTableOfResourceTypeForSelector(
-        resourceType.name,
-        selectorPath,
-        policy
-      )
+      val fullPriceTable = agreement.computeFullPriceTable(policy)
+      val effectivePriceTable = effectivePriceTableSelector(fullPriceTable)
 
       resolveEffective(alignedTimeslot, effectivePriceTable.priceOverrides)
       //immutable.SortedMap(alignedTimeslot -> effectivePriceTable.priceOverrides.head)

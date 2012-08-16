@@ -1,22 +1,23 @@
-{
-  "id":"policy-1",
+{ "jsonClass":"gr.grnet.aquarium.policy.StdPolicy",
+
+  "id":"default-policy",
+
   "validityTimespan":{
     "fromMillis":0,
     "toMillis":9223372036854775807
   },
 
-  "resourceTypes":[
-    {
-      "name":"vmtime",
-      "unit":"Hr",
-      "chargingBehavior":"gr.grnet.aquarium.charging.VMChargingBehavior"
-    },
-    {
-      "name":"diskspace",
-      "unit":"MB/Hr",
-      "chargingBehavior":"gr.grnet.aquarium.charging.ContinuousChargingBehavior"
-    }
-  ],
+  "resourceTypes":[{
+    "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
+    "name":"diskspace",
+    "unit":"MB/Hr",
+    "chargingBehavior":"gr.grnet.aquarium.charging.ContinuousChargingBehavior"
+  },{
+    "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
+    "name":"vmtime",
+    "unit":"Hr",
+    "chargingBehavior":"gr.grnet.aquarium.charging.VMChargingBehavior"
+  }],
 
   "chargingBehaviors":[
     "gr.grnet.aquarium.charging.VMChargingBehavior",
@@ -26,9 +27,29 @@
 
   "roleMapping":{
     "default":{
+      "jsonClass":"gr.grnet.aquarium.policy.FullPriceTable",
+
       "perResource":{
-        "vmtime":    { "priceOverrides":[ { "unitPrice":0.01 } ] },
-        "diskspace": { "priceOverrides":[ { "unitPrice":0.01 } ] }
+        "diskspace":{
+          "default":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
+            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
+              "unitPrice":0.01
+            }]
+          }
+        },
+
+        "vmtime":{
+          "powerOn":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
+            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
+              "unitPrice":0.01
+            }]
+          },
+          "powerOff":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
+            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
+              "unitPrice":0.0010
+            }]
+          }
+        }
       }
     }
   }

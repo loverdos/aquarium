@@ -33,58 +33,23 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.policy
+package gr.grnet.aquarium.event.model
 
 import org.junit.Test
-import gr.grnet.aquarium.Timespan
-import gr.grnet.aquarium.charging.{OnceChargingBehavior, ContinuousChargingBehavior, VMChargingBehavior}
-import gr.grnet.aquarium.charging.VMChargingBehavior.Selectors.Power
-import gr.grnet.aquarium.util.nameOfClass
-import FullPriceTable.DefaultSelectorKey
+import gr.grnet.aquarium.event.model.resource.StdResourceEvent
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class StdPolicyTest {
-  final lazy val policy = StdPolicy(
-    id = "default-policy",
-    parentID = None,
-
-    validityTimespan = Timespan(0),
-
-    resourceTypes = Set(
-      ResourceType("diskspace", "MB/Hr", nameOfClass[ContinuousChargingBehavior]),
-      ResourceType("vmtime",    "Hr",    nameOfClass[VMChargingBehavior])
-    ),
-
-    chargingBehaviors = Set(
-      nameOfClass[VMChargingBehavior],
-      nameOfClass[ContinuousChargingBehavior],
-      nameOfClass[OnceChargingBehavior]
-    ),
-
-    roleMapping = Map(
-      "default" -> FullPriceTable(Map(
-        "diskspace" -> Map(
-          DefaultSelectorKey -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)
-        ),
-        "vmtime" -> Map(
-          Power.powerOn  -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil),
-          Power.powerOff -> EffectivePriceTable(EffectiveUnitPrice(0.001) :: Nil) // cheaper when the VM is OFF
-        )
-      ))
-    )
-  )
-
+class StdResourceEventTest {
   @Test
-  def testJson(): Unit = {
-    val json = policy.toJsonString
-    val obj = PolicyModel.fromJsonString(json)
+  def testJson() {
+    val rc = StdResourceEvent("id-2", 1000L, 1000L, "luv@g.com", "pithos", "disk", "/disk1", 1.0, "1.0", Map())
+    val json = rc.toJsonString
+    val obj  = StdResourceEvent.fromJsonString(json)
 
-    println(json)
-
-    assert(policy == obj)
+    assert(rc == obj)
   }
 }

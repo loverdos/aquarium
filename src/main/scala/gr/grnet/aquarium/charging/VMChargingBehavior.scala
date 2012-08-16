@@ -40,6 +40,7 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import scala.collection.mutable
 import VMChargingBehavior.Selectors.Power
+import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable}
 
 /**
  * The new [[gr.grnet.aquarium.charging.ChargingBehavior]] for VMs usage.

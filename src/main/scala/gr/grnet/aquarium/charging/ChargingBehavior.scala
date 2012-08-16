@@ -40,7 +40,7 @@ import scala.collection.mutable
 
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.{Aquarium, AquariumInternalError, AquariumException}
-import gr.grnet.aquarium.policy.{UserAgreementModel, ResourceType}
+import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable, UserAgreementModel, ResourceType}
 import com.ckkloverdos.key.{TypedKey, TypedKeySkeleton}
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.util.date.TimeHelpers
@@ -177,22 +177,25 @@ abstract class ChargingBehavior(
       referenceTimeslot.to.getTime
     )
 
-    val selectorPath = computeSelectorPath(
-      chargingData,
-      currentResourceEvent,
-      referenceTimeslot,
-      previousValue,
-      totalCredits,
-      _oldAccumulatingAmount,
-      _newAccumulatingAmount
-    )
+    val effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable = fullPriceTable ⇒ {
+      this.selectEffectivePriceTable(
+        fullPriceTable,
+        chargingData,
+        currentResourceEvent,
+        referenceTimeslot,
+        previousValue,
+        totalCredits,
+        _oldAccumulatingAmount,
+        _newAccumulatingAmount
+      )
+    }
 
     val initialChargeslots = TimeslotComputations.computeInitialChargeslots(
       referenceTimeslot,
       resourceType,
       policyByTimeslot,
       agreementByTimeslot,
-      selectorPath
+      effectivePriceTableSelector
     )
 
     val fullChargeslots = initialChargeslots.map {
@@ -266,6 +269,30 @@ abstract class ChargingBehavior(
   ) = {
 
     chargingData(envKey.name) = value
+  }
+
+  def selectEffectivePriceTable(
+      fullPriceTable: FullPriceTable,
+      chargingData: mutable.Map[String, Any],
+      currentResourceEvent: ResourceEventModel,
+      referenceTimeslot: Timeslot,
+      previousValue: Double,
+      totalCredits: Double,
+      oldAccumulatingAmount: Double,
+      newAccumulatingAmount: Double
+  ): EffectivePriceTable = {
+
+    val selectorPath = computeSelectorPath(
+      chargingData,
+      currentResourceEvent,
+      referenceTimeslot,
+      previousValue,
+      totalCredits,
+      oldAccumulatingAmount,
+      newAccumulatingAmount
+    )
+
+    fullPriceTable.effectivePriceTableOfSelectorForResource(selectorPath, currentResourceEvent.safeResource)
   }
 
   /**
