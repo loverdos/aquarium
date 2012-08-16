@@ -35,7 +35,8 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.{AquariumInternalError, Timespan}
+import gr.grnet.aquarium.charging.ChargingBehavior
 
 /**
  *
@@ -72,6 +73,22 @@ trait UserAgreementModel extends Ordered[UserAgreementModel] {
     }
     else {
       1
+    }
+  }
+
+  def computeFullPriceTable(policy: PolicyModel): FullPriceTable = {
+    this.fullPriceTableRef match {
+      case PolicyDefinedFullPriceTableRef ⇒
+        policy.roleMapping.get(role) match {
+          case Some(fullPriceTable) ⇒
+            fullPriceTable
+
+          case None ⇒
+            throw new AquariumInternalError("Unknown role '%s' in policy".format(role))
+        }
+
+      case AdHocFullPriceTableRef(fullPriceTable) ⇒
+        fullPriceTable
     }
   }
 }

@@ -35,18 +35,69 @@
 
 package gr.grnet.aquarium.policy
 
+import gr.grnet.aquarium.AquariumInternalError
+import scala.annotation.tailrec
+import gr.grnet.aquarium.util.shortNameOfType
+
 /**
  * A full price table provides detailed pricing information for all resources.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class FullPriceTable(perResource: Map[String/*Resource*/, EffectivePriceTable]) {
-  def effectivePriceTableForResourceType(resourceType: String): Option[EffectivePriceTable] = {
-    perResource.get(resourceType)
-  }
+case class FullPriceTable(
+    perResource: Map[String/*Resource*/,
+                     Map[String/*Per-ChargingBehavior Key, "default" is the default*/, Any]]
+) {
 
-  def effectivePriceTableForResourceType(resourceType: ResourceType): Option[EffectivePriceTable] = {
-    perResource.get(resourceType.name)
+  def effectivePriceTableOfSelectorForResource(
+      selectorPath: List[String],
+      resource: String
+  ): EffectivePriceTable = {
+
+    @tailrec
+    def find(
+        selectorPath: List[String],
+        selectorData: Any
+    ): EffectivePriceTable = {
+
+      selectorPath match {
+        case Nil ⇒
+          // End of selector path. This means that the data must be an EffectivePriceTable
+          selectorData match {
+            case ept: EffectivePriceTable ⇒
+              ept
+
+            case _ ⇒
+              // TODO more informative error message (include selector path, resource?)
+              throw new AquariumInternalError("Got %s instead of an %s", selectorData, shortNameOfType[EffectivePriceTable])
+          }
+
+        case key :: tailSelectorPath ⇒
+          // Intermediate path. This means we have another round of Map[String, Any]
+          selectorData match {
+            case selectorMap: Map[_, _] ⇒
+              selectorMap.asInstanceOf[Map[String, _]].get(key) match {
+                case None ⇒
+                  throw new AquariumInternalError("Did not find value for selector %s", key)
+
+                case Some(nextSelectorData) ⇒
+                  find(tailSelectorPath, nextSelectorData)
+              }
+          }
+      }
+    }
+
+    val selectorDataOpt = perResource.get(resource)
+    if(selectorDataOpt.isEmpty) {
+      throw new AquariumInternalError("Unknown resource type '%s'", resource)
+    }
+    val selectorData = selectorDataOpt.get
+
+    find(selectorPath, selectorData)
   }
+}
+
+object FullPriceTable {
+  final val DefaultSelectorKey = "default"
 }

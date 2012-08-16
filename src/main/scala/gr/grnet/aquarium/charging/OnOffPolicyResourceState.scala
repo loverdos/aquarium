@@ -39,7 +39,7 @@ import gr.grnet.aquarium.AquariumException
 
 /**
  * Encapsulates the possible states that a resource with an
- * [[gr.grnet.aquarium.charging.OnOffChargingBehavior]]
+ * [[gr.grnet.aquarium.charging.VMChargingBehavior]]
  * can be.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
