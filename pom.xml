@@ -405,6 +405,8 @@
         <artifactId>scala-maven-plugin</artifactId>
         <version>3.1.0</version>
         <configuration>
+          <recompileMode>incremental</recompileMode>
+          
           <charset>${project.build.sourceEncoding}</charset>
           <jvmArgs>
             <jvmArg>-Xmx1024m</jvmArg>
