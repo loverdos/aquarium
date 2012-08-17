@@ -49,7 +49,7 @@ import gr.grnet.aquarium.policy.FullPriceTable
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 final class OnceChargingBehavior
-    extends ChargingBehavior(
+    extends ChargingBehaviorSkeleton(
       ChargingBehaviorAliases.once,
       Set(ChargingBehaviorNameInput, CurrentValueInput)) {
 

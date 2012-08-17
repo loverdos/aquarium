@@ -36,16 +36,13 @@
 package gr.grnet.aquarium.computation
 
 import collection.immutable.SortedMap
-import com.ckkloverdos.maybe.{NoVal, Maybe}
-import gr.grnet.aquarium.util.{ContextualLogger, Loggable}
-import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy._
 import collection.immutable
-import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.policy.EffectiveUnitPrice
-import gr.grnet.aquarium.charging.{ChargingBehavior, Chargeslot}
+import gr.grnet.aquarium.charging.Chargeslot
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -67,8 +64,7 @@ object TimeslotComputations extends Loggable {
   def splitTimeslotByPoliciesAndAgreements(
       referenceTimeslot: Timeslot,
       policyTimeslots: List[Timeslot],
-      agreementTimeslots: List[Timeslot],
-      clogM: Maybe[ContextualLogger] = NoVal
+      agreementTimeslots: List[Timeslot]
   ): List[Timeslot] = {
 
     // Align policy and agreement validity timeslots to the referenceTimeslot
@@ -91,11 +87,8 @@ object TimeslotComputations extends Loggable {
       policy: PolicyModel,
       agreement: UserAgreementModel,
       resourceType: ResourceType,
-      effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable,
-      clogOpt: Option[ContextualLogger] = None
+      effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
   ): SortedMap[Timeslot, Double] = {
-
-    val clog = ContextualLogger.fromOther(clogOpt, logger, "resolveEffectiveUnitPrices()")
 
     // Note that most of the code is taken from calcChangeChunks()
     val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType, effectivePriceTableSelector)
@@ -107,11 +100,8 @@ object TimeslotComputations extends Loggable {
       resourceType: ResourceType,
       policyByTimeslot: SortedMap[Timeslot, PolicyModel],
       agreementByTimeslot: SortedMap[Timeslot, UserAgreementModel],
-      effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable,
-      clogOpt: Option[ContextualLogger] = None
+      effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
   ): List[Chargeslot] = {
-
-    val clog = ContextualLogger.fromOther(clogOpt, logger, "computeInitialChargeslots()")
 
     val policyTimeslots = policyByTimeslot.keySet
     val agreementTimeslots = agreementByTimeslot.keySet
@@ -125,7 +115,7 @@ object TimeslotComputations extends Loggable {
 
     // 1. Round ONE: split time according to overlapping policies and agreements.
     //val alignedTimeslots = List(referenceTimeslot) //splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList, Just(clog))
-    val alignedTimeslots = splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList, Just(clog))
+    val alignedTimeslots = splitTimeslotByPoliciesAndAgreements(referenceTimeslot, policyTimeslots.toList, agreementTimeslots.toList)
 
     // 2. Round TWO: Use the aligned timeslots of Round ONE to produce even more
     //    fine-grained timeslots according to applicable algorithms.
@@ -145,8 +135,7 @@ object TimeslotComputations extends Loggable {
         policy,
         userAgreement,
         resourceType,
-        effectivePriceTableSelector,
-        Some(clog)
+        effectivePriceTableSelector
       )
 
       // Now, the timeslots must be the same

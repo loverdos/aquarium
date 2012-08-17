@@ -81,9 +81,7 @@ class StdPolicyTest {
   @Test
   def testJson(): Unit = {
     val json = policy.toJsonString
-    val obj = PolicyModel.fromJsonString(json)
-
-    println(json)
+    val obj = StdPolicy.fromJsonString(json)
 
     assert(policy == obj)
   }

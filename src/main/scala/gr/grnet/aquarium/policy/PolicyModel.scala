@@ -111,12 +111,10 @@ trait PolicyModel extends Ordered[PolicyModel] with JsonSupport {
 
 object PolicyModel {
   trait NamesT {
-    final val a = 1
+    final val id = "id"
+    final val parentID = "parentID"
+    final val idInStore = "idInStore"
   }
 
   final object Names extends NamesT
-
-  def fromJsonString(json: String): PolicyModel = {
-    StdConverters.AllConverters.convertEx[StdPolicy](JsonTextFormat(json))
-  }
 }

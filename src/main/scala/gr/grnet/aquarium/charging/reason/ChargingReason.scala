@@ -41,7 +41,7 @@ import gr.grnet.aquarium.util.shortClassNameOf
 
 /**
  * Provides information explaining the reason Aquarium calculated a new
- * [[gr.grnet.aquarium.computation.state.UserState]].
+ * [[gr.grnet.aquarium.charging.state.UserStateModel]].
  */
 case class ChargingReason(
     details: Map[String, Any],

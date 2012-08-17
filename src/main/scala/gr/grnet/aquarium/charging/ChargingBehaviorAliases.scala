@@ -42,7 +42,6 @@ package gr.grnet.aquarium.charging
 
 object ChargingBehaviorAliases {
   final val vmtime     = "vmtime"
-  final val discrete   = "discrete"
   final val continuous = "continuous"
   final val once       = "once"
 }

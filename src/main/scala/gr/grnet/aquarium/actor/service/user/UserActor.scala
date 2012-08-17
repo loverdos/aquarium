@@ -232,8 +232,7 @@ class UserActor extends ReflectiveRoleableActor {
       this._userStateBootstrap,
       aquarium.currentResourceTypesMap,
       InitialUserActorSetup(),
-      aquarium.userStateStore.insertUserState,
-      None
+      aquarium.userStateStore.insertUserState
     )
 
     // Final touch: Update agreement history in the working user state.
@@ -387,8 +386,7 @@ class UserActor extends ReflectiveRoleableActor {
         this._userStateBootstrap,
         currentResourcesMap,
         chargingReason,
-        stdUserStateStoreFunc,
-        None
+        stdUserStateStoreFunc
       )
 
       updateLatestResourceEventIDFrom(rcEvent)
@@ -401,7 +399,6 @@ class UserActor extends ReflectiveRoleableActor {
         this._workingUserState,
         chargingReason,
         nowBillingMonthInfo,
-        None,
         true
       )
 

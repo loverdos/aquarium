@@ -39,7 +39,10 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.policy.ResourceType
-import gr.grnet.aquarium.util.{Lifecycle, Loggable, ContextualLogger}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable}
+import gr.grnet.aquarium.util.LogHelpers.Debug
+import gr.grnet.aquarium.util.LogHelpers.Warn
+import gr.grnet.aquarium.util.LogHelpers.DebugSeq
 import gr.grnet.aquarium.util.date.{MutableDateCalc, TimeHelpers}
 import gr.grnet.aquarium.{AquariumInternalError, AquariumAwareSkeleton}
 import gr.grnet.aquarium.charging.state.{WorkingUserState, UserStateModel, StdUserState}
@@ -73,17 +76,8 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       userStateBootstrap: UserStateBootstrap,
       defaultResourceTypesMap: Map[String, ResourceType],
       chargingReason: ChargingReason,
-      userStateRecorder: UserStateModel ⇒ UserStateModel,
-      clogOpt: Option[ContextualLogger]
+      userStateRecorder: UserStateModel ⇒ UserStateModel
   ): WorkingUserState = {
-
-    val clog = ContextualLogger.fromOther(
-      clogOpt,
-      logger,
-      "findOrCalculateWorkingUserStateAtEndOfBillingMonth(%s)", billingMonthInfo.toShortDebugString)
-    clog.begin()
-
-    lazy val clogSome = Some(clog)
 
     def computeFullMonthBillingAndSaveState(): WorkingUserState = {
       val workingUserState = replayFullMonthBilling(
@@ -91,8 +85,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         billingMonthInfo,
         defaultResourceTypesMap,
         chargingReason,
-        userStateRecorder,
-        clogSome
+        userStateRecorder
       )
 
       val newChargingReason = MonthlyBillChargingReason(chargingReason, billingMonthInfo)
@@ -107,7 +100,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       // We always save the state when it is a full month billing
       val monthlyUserState1 = userStateRecorder.apply(monthlyUserState0)
 
-      clog.debug("Stored full %s %s", billingMonthInfo.toDebugString, monthlyUserState1.toJsonString)
+      Debug(logger, "Stored full %s %s", billingMonthInfo.toDebugString, monthlyUserState1.toJsonString)
 
       workingUserState
     }
@@ -120,7 +113,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
 
     if(billingMonthStopMillis < userCreationMillis) {
       // If the user did not exist for this billing month, piece of cake
-      clog.debug("User did not exist before %s", userCreationDateCalc)
+      Debug(logger, "User did not exist before %s", userCreationDateCalc)
 
       // TODO: The initial user state might have already been created.
       //       First ask if it exists and compute only if not
@@ -130,13 +123,12 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         InitialUserStateSetup(Some(chargingReason)) // we record the originating calculation reason
       )
 
-      logger.debug("Created (from bootstrap) initial user state %s".format(initialUserState0))
+      Debug(logger, "Created (from bootstrap) initial user state %s", initialUserState0)
 
       // We always save the initial state
       val initialUserState1 = userStateRecorder.apply(initialUserState0)
 
-      clog.debug("Stored initial state = %s", initialUserState1.toJsonString)
-      clog.end()
+      Debug(logger, "Stored initial state = %s", initialUserState1.toJsonString)
 
       return initialUserState1.toWorkingUserState(defaultResourceTypesMap)
     }
@@ -149,10 +141,8 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     latestUserStateOpt match {
       case None ⇒
         // Not found, must compute
-        clog.debug("No user state found from cache, will have to (re)compute")
-        val result = computeFullMonthBillingAndSaveState
-        clog.end()
-        result
+        Debug(logger, "No user state found from cache, will have to (re)compute")
+        computeFullMonthBillingAndSaveState
 
       case Some(latestUserState) ⇒
         // Found a "latest" user state but need to see if it is indeed the true and one latest.
@@ -169,21 +159,18 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
           case 0 ⇒
             // NOTE: Keep the caller's calculation reason
             val userStateModel = latestUserState.newWithChargingReason(chargingReason)
-            clog.end()
             userStateModel.toWorkingUserState(defaultResourceTypesMap)
 
           // We had more, so must recompute
           case n if n > 0 ⇒
-            clog.debug(
+            Debug(logger,
               "Found %s out of sync events (%s more), will have to (re)compute user state", actualOOSEventsCounter, n)
-            val workingUserState = computeFullMonthBillingAndSaveState
-            clog.end()
-            workingUserState
+            computeFullMonthBillingAndSaveState
 
           // We had less????
           case n if n < 0 ⇒
             val errMsg = "Found %s out of sync events (%s less). DB must be inconsistent".format(actualOOSEventsCounter, n)
-            clog.warn(errMsg)
+            Warn(logger, errMsg)
             throw new AquariumInternalError(errMsg)
         }
     }
@@ -195,15 +182,13 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
    * @param workingUserState
    * @param chargingReason
    * @param billingMonthInfo
-   * @param clogOpt
    */
   def processResourceEvent(
       resourceEvent: ResourceEventModel,
       workingUserState: WorkingUserState,
       chargingReason: ChargingReason,
       billingMonthInfo: BillingMonthInfo,
-      clogOpt: Option[ContextualLogger],
-      updateLatestMiilis: Boolean
+      updateLatestMillis: Boolean
   ): Unit = {
 
     val resourceTypeName = resourceEvent.resource
@@ -225,11 +210,10 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       workingUserState.workingAgreementHistory.toAgreementHistory,
       workingUserState.getChargingDataForResourceEvent(resourceAndInstanceInfo),
       workingUserState.totalCredits,
-      workingUserState.walletEntries += _,
-      clogOpt
+      workingUserState.walletEntries += _
     )
 
-    if(updateLatestMiilis) {
+    if(updateLatestMillis) {
       workingUserState.latestUpdateMillis = TimeHelpers.nowMillis()
     }
 
@@ -242,8 +226,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       resourceEvents: Traversable[ResourceEventModel],
       workingUserState: WorkingUserState,
       chargingReason: ChargingReason,
-      billingMonthInfo: BillingMonthInfo,
-      clogOpt: Option[ContextualLogger] = None
+      billingMonthInfo: BillingMonthInfo
   ): Unit = {
 
     var _counter = 0
@@ -253,7 +236,6 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         workingUserState,
         chargingReason,
         billingMonthInfo,
-        clogOpt,
         false
       )
 
@@ -270,8 +252,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       billingMonthInfo: BillingMonthInfo,
       defaultResourceTypesMap: Map[String, ResourceType],
       chargingReason: ChargingReason,
-      userStateRecorder: UserStateModel ⇒ UserStateModel,
-      clogOpt: Option[ContextualLogger]
+      userStateRecorder: UserStateModel ⇒ UserStateModel
   ): WorkingUserState = {
 
     replayMonthChargingUpTo(
@@ -280,8 +261,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       userStateBootstrap,
       defaultResourceTypesMap,
       chargingReason,
-      userStateRecorder,
-      clogOpt
+      userStateRecorder
     )
   }
 
@@ -295,7 +275,6 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
    * @param resourceTypesMap
    * @param chargingReason
    * @param userStateRecorder
-   * @param clogOpt
    * @return
    */
   def replayMonthChargingUpTo(
@@ -304,22 +283,13 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       userStateBootstrap: UserStateBootstrap,
       resourceTypesMap: Map[String, ResourceType],
       chargingReason: ChargingReason,
-      userStateRecorder: UserStateModel ⇒ UserStateModel,
-      clogOpt: Option[ContextualLogger]
+      userStateRecorder: UserStateModel ⇒ UserStateModel
   ): WorkingUserState = {
 
     val isFullMonthBilling = billingEndTimeMillis == billingMonthInfo.monthStopMillis
     val userID = userStateBootstrap.userID
 
-    val clog = ContextualLogger.fromOther(
-      clogOpt,
-      logger,
-      "replayMonthChargingUpTo(%s)", TimeHelpers.toYYYYMMDDHHMMSSSSS(billingEndTimeMillis))
-    clog.begin()
-
-    clog.debug("%s", chargingReason)
-
-    val clogSome = Some(clog)
+    Debug(logger, "%s", chargingReason)
 
     // In order to replay the full month, we start with the state at the beginning of the month.
     val previousBillingMonthInfo = billingMonthInfo.previousMonth
@@ -328,8 +298,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       userStateBootstrap,
       resourceTypesMap,
       chargingReason,
-      userStateRecorder,
-      clogSome
+      userStateRecorder
     )
 
     // FIXME the below comments
@@ -337,10 +306,10 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     // specified in the parameters.
     // NOTE: The calculation reason is not the one we get from the previous user state but the one our caller specifies
 
-    clog.debug("workingUserState=%s", workingUserState)
-    clog.debug("previousBillingMonthUserState(%s) = %s".format(
+    Debug(logger, "workingUserState=%s", workingUserState)
+    Debug(logger, "previousBillingMonthUserState(%s) = %s",
       previousBillingMonthInfo.toShortDebugString,
-      workingUserState)
+      workingUserState
     )
 
     var _rcEventsCounter = 0
@@ -350,14 +319,13 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       billingEndTimeMillis               // to requested time
     ) { currentResourceEvent ⇒
 
-      clog.debug("Processing %s".format(currentResourceEvent))
+      Debug(logger, "Processing %s", currentResourceEvent)
 
       processResourceEvent(
         currentResourceEvent,
         workingUserState,
         chargingReason,
         billingMonthInfo,
-        clogSome,
         false
       )
 
@@ -368,7 +336,10 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       workingUserState.latestUpdateMillis = TimeHelpers.nowMillis()
     }
 
-    clog.debug("Found %s resource events for month %s".format(_rcEventsCounter, billingMonthInfo.toShortDebugString))
+    Debug(logger, "Found %s resource events for month %s",
+      _rcEventsCounter,
+      billingMonthInfo.toShortDebugString
+    )
 
     if(isFullMonthBilling) {
       // For the remaining events which must contribute an implicit OFF, we collect those OFFs
@@ -379,10 +350,10 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       )
 
       if(generatorsOfImplicitEnds.lengthCompare(1) >= 0 || theirImplicitEnds.lengthCompare(1) >= 0) {
-        clog.debug("")
-        clog.debug("Process implicitly issued events")
-        clog.debugSeq("generatorsOfImplicitEnds", generatorsOfImplicitEnds, 0)
-        clog.debugSeq("theirImplicitEnds", theirImplicitEnds, 0)
+        Debug(logger, "")
+        Debug(logger, "Process implicitly issued events")
+        DebugSeq(logger, "generatorsOfImplicitEnds", generatorsOfImplicitEnds, 0)
+        DebugSeq(logger, "theirImplicitEnds", theirImplicitEnds, 0)
       }
 
       // Now, the previous and implicitly started must be our base for the following computation, so we create an
@@ -395,15 +366,13 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         theirImplicitEnds,
         specialWorkingUserState,
         chargingReason,
-        billingMonthInfo,
-        clogSome
+        billingMonthInfo
       )
 
       workingUserState.walletEntries ++= specialWorkingUserState.walletEntries
       workingUserState.totalCredits    = specialWorkingUserState.totalCredits
     }
 
-    clog.end()
     workingUserState
   }
 }

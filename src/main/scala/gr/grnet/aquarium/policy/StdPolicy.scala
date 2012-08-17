@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.policy
 
 import gr.grnet.aquarium.Timespan
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
 /**
  * Standard implementation of Aquarium policy model.
@@ -53,4 +54,10 @@ case class StdPolicy(
 ) extends PolicyModel {
 
   def idInStore = Some(id)
+}
+
+object StdPolicy {
+  def fromJsonString(json: String): StdPolicy = {
+    StdConverters.AllConverters.convertEx[StdPolicy](JsonTextFormat(json))
+  }
 }

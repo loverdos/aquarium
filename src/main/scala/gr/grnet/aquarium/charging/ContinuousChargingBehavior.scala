@@ -48,7 +48,7 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 final class ContinuousChargingBehavior
-    extends ChargingBehavior(
+    extends ChargingBehaviorSkeleton(
       ChargingBehaviorAliases.continuous,
       Set(ChargingBehaviorNameInput, UnitPriceInput, OldTotalAmountInput, TimeDeltaInput)) {
 

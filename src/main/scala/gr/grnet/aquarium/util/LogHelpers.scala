@@ -84,4 +84,84 @@ object LogHelpers {
     logger.error(message + "\n{}", chainOfCausesForLogging(t))
     logger.error(message, t)
   }
+
+  @inline
+  final def Debug(logger: Logger, fmt: String, args: Any*): Unit = {
+    if(logger.isDebugEnabled) {
+      logger.debug(fmt.format(args:_*))
+    }
+  }
+
+  @inline
+  final def Info(logger: Logger, fmt: String, args: Any*): Unit = {
+    if(logger.isInfoEnabled) {
+      logger.info(fmt.format(args:_*))
+    }
+  }
+
+  @inline
+  final def Warn(logger: Logger, fmt: String, args: Any*): Unit = {
+    if(logger.isWarnEnabled) {
+      logger.warn(fmt.format(args:_*))
+    }
+  }
+
+  @inline
+  final def Error(logger: Logger, fmt: String, args: Any*): Unit = {
+    if(logger.isErrorEnabled) {
+      logger.error(fmt.format(args:_*))
+    }
+  }
+
+  @inline
+  final def Error(logger: Logger, t: Throwable, fmt: String, args: Any*): Unit = {
+    if(logger.isErrorEnabled) {
+      logger.error(fmt.format(args:_*), t)
+    }
+  }
+
+  final def DebugMap[K, V](
+      logger: Logger,
+      name: String,
+      map: scala.collection.Map[K, V],
+      oneLineLimit: Int = 3
+  ): Unit = {
+
+    if(logger.isDebugEnabled) {
+      val mapSize = map.size
+      if(mapSize <= oneLineLimit) {
+        Debug(logger, "%s [#=%s] = %s", name, mapSize, map)
+      } else {
+        logger.debug("%s [#=%s]:", name, mapSize)
+        val maxKeySize = maxStringSize(map.keySet)
+        for((k, v) <- map) {
+          this.Debug(logger, "%s -> %s", rpad(k.toString, maxKeySize), v)
+        }
+      }
+    }
+  }
+
+  final def DebugSeq[T](logger: Logger, name: String, seq: scala.collection.Seq[T], oneLineLimit: Int = 3): Unit = {
+    if(logger.isDebugEnabled) {
+      val seqSize = seq.size
+      if(seqSize <= oneLineLimit) {
+        Debug(logger, "%s [#=%s] = %s", name, seqSize, seq)
+      } else {
+        Debug(logger, "%s [#=%s]: ", name, seqSize)
+        seq.foreach(Debug(logger, "%s", _))
+      }
+    }
+  }
+
+  final def DebugSet[T](logger: Logger, name: String, set: scala.collection.Set[T], oneLineLimit: Int = 3): Unit = {
+    if(logger.isDebugEnabled) {
+      val setSize = set.size
+      if(setSize <= oneLineLimit) {
+        Debug(logger, "%s [#=%s] = %s", name, setSize, set)
+      } else {
+        Debug(logger, "%s [#=%s]: ", name, setSize)
+        set.foreach(Debug(logger, "%s", _))
+      }
+    }
+  }
 }

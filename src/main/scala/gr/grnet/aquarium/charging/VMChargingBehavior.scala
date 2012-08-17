@@ -35,12 +35,11 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
+import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import scala.collection.mutable
 import VMChargingBehavior.Selectors.Power
-import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable}
 
 /**
  * The new [[gr.grnet.aquarium.charging.ChargingBehavior]] for VMs usage.
@@ -48,7 +47,7 @@ import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 final class VMChargingBehavior
-    extends ChargingBehavior(
+    extends ChargingBehaviorSkeleton(
       ChargingBehaviorAliases.vmtime,
       Set(ChargingBehaviorNameInput, UnitPriceInput, TimeDeltaInput),
       List(List(Power.powerOn, Power.powerOff))) {
