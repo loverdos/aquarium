@@ -405,7 +405,7 @@ class UserActor extends ReflectiveRoleableActor {
       updateLatestResourceEventIDFrom(rcEvent)
     }
 
-    var oldTotalCredits = this._workingUserState.totalCredits
+    val oldTotalCredits = this._workingUserState.totalCredits
     // FIXME check these
     if(nowYear != eventYear || nowMonth != eventMonth) {
       DEBUG(
@@ -427,10 +427,10 @@ class UserActor extends ReflectiveRoleableActor {
     else {
       computeBatch()
     }
-    var newTotal = this._workingUserState.totalCredits
-    if(oldTotalCredits * newTotal < 0)
+    val newTotalCredits = this._workingUserState.totalCredits
+    if(oldTotalCredits * newTotalCredits < 0)
       aquarium.eventBus ! new BalanceEvent(this._workingUserState.userID,
-                                           newTotal>=0)
+                                           newTotalCredits>=0)
     DEBUG("Updated %s", this._workingUserState)
     logSeparator()
   }
