@@ -1,13 +1,3 @@
-package gr.grnet.aquarium.service.event
-
-import gr.grnet.aquarium.{ResourceLocator, AquariumBuilder, Aquarium}
-import com.ckkloverdos.resource.FileStreamResource
-import java.io.File
-import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.converter.StdConverters
-import gr.grnet.aquarium.store.memory.MemStoreProvider
-import gr.grnet.aquarium.util.json.JsonSupport
-
 /*
  * Copyright 2011-2012 GRNET S.A. All rights reserved.
  *
@@ -43,8 +33,12 @@ import gr.grnet.aquarium.util.json.JsonSupport
  * or implied, of GRNET S.A.
  */
 
+package gr.grnet.aquarium.service.event
+
+import gr.grnet.aquarium.util.json.JsonSupport
+
 /**
  *
  * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
-class BalanceEvent(userid: String, state: Boolean) extends BusEvent with JsonSupport {}
+class BalanceEvent(userID: String, state: Boolean) extends BusEvent with JsonSupport {}
