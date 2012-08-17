@@ -321,7 +321,7 @@ class UserActor extends ReflectiveRoleableActor {
   /* Convert astakos message for adding credits
     to a regular RESOURCE message */
   def onHandleAddCreditsEvent(imEvent : IMEventModel) = {
-    val credits = -imEvent.details(IMEventModel.DetailsNames.credits).toInt.toDouble
+    val credits = imEvent.details(IMEventModel.DetailsNames.credits).toInt.toDouble
     val event = new StdResourceEvent(
       imEvent.id,
       imEvent.occurredMillis,
@@ -442,7 +442,7 @@ class UserActor extends ReflectiveRoleableActor {
     try{
       val timeslot = event.timeslot
       val state= if(haveWorkingUserState) Some(this._workingUserState) else None
-      val billEntry = BillEntry.fromWorkingUserState(timeslot,state)
+      val billEntry = BillEntry.fromWorkingUserState(timeslot,this._userID,state)
       val billData = GetUserBillResponseData(this._userID,billEntry)
       sender ! GetUserBillResponse(Right(billData))
     } catch {

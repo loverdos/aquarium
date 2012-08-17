@@ -110,14 +110,14 @@ class RabbitMQProducer extends Configurable {
 
       def handleAck(seqNo:Long,multiple:Boolean) = {
         withChannel {
-          Console.err.println("Received ack for msg " + _unconfirmedMessages.get(seqNo) )
+          //Console.err.println("Received ack for msg " + _unconfirmedMessages.get(seqNo) )
           subset(seqNo,multiple)
         }
       }
 
       def handleNack(seqNo:Long,multiple:Boolean) = {
         withChannel {
-          Console.err.println("Received Nack for msg " + _unconfirmedMessages.get(seqNo) )
+          //Console.err.println("Received Nack for msg " + _unconfirmedMessages.get(seqNo) )
           for { (_,msg) <- subset(seqNo,multiple) }
             sendMessage(msg)
         }
