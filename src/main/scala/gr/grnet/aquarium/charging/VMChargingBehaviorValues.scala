@@ -33,41 +33,20 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation
-import gr.grnet.aquarium.policy.PolicyModel
-import gr.grnet.aquarium.charging.{DiscreteChargingBehavior, ChargingBehavior}
-
+package gr.grnet.aquarium.charging
 
 /**
- * A simulator for the standard `bandwidth` resource.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class StdBandwidthResourceSim(
-    name: String = StdVMTimeResourceSim.DSLNames.name,
-    unit: String = StdVMTimeResourceSim.DSLNames.unit,
-    chargingBehavior: String = classOf[DiscreteChargingBehavior].getName
-) extends ResourceSim(name, unit, chargingBehavior) {
+object VMChargingBehaviorValues {
+  final val DESTROY = 2.0
+  final val ON      = 1.0
+  final val OFF     = 0.0
 
-override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
-    StdBandwidthInstanceSim(this, instanceId, owner, client)
-}
-
-
-object StdBandwidthResourceSim {
-  object DSLNames {
-    final val name = "bandwidth"
-    final val unit = "MB/Hr"
-  }
-
-  def fromPolicy(policy: PolicyModel): StdBandwidthResourceSim = {
-    val resourceType = policy.resourceTypesMap(DSLNames.name)
-    new StdBandwidthResourceSim(
-      resourceType.name,
-      resourceType.unit,
-      resourceType.chargingBehavior
-    )
-  }
+  def isDESTROYValue(value: Double) = value == DESTROY
+  def isONValue     (value: Double) = value == ON
+  def isOFFValue    (value: Double) = value == OFF
 }
 

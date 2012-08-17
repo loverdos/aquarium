@@ -39,6 +39,8 @@ package resource
 import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.event.model.ExternalEventModel
+import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.policy.StdPolicy
 
 /**
  * The model of any resource event.

@@ -37,24 +37,34 @@ package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.{AquariumInternalError, AquariumException}
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import scala.collection.mutable
+import VMChargingBehavior.Selectors.Power
+import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable}
 
 /**
- * An onoff charging behavior expects a resource to be in one of the two allowed
- * states (`on` and `off`, respectively). It will charge for resource usage
- * within the timeframes specified by consecutive on and off resource events.
- * An onoff policy is the same as a continuous policy, except for
- * the timeframes within the resource is in the `off` state.
- *
- * Example resources that might be adept to onoff policies are VMs in a
- * cloud application and books in a book lending application.
+ * The new [[gr.grnet.aquarium.charging.ChargingBehavior]] for VMs usage.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-final class OnOffChargingBehavior
+final class VMChargingBehavior
     extends ChargingBehavior(
-      ChargingBehaviorAliases.onoff,
-      Set(ChargingBehaviorNameInput, UnitPriceInput, TimeDeltaInput)) {
+      ChargingBehaviorAliases.vmtime,
+      Set(ChargingBehaviorNameInput, UnitPriceInput, TimeDeltaInput),
+      List(List(Power.powerOn, Power.powerOff))) {
 
+  protected def computeSelectorPath(
+     chargingData: mutable.Map[String, Any],
+     currentResourceEvent: ResourceEventModel,
+     referenceTimeslot: Timeslot,
+     previousValue: Double,
+     totalCredits: Double,
+     oldAccumulatingAmount: Double,
+     newAccumulatingAmount: Double
+ ): List[String] = {
+    // FIXME
+    List(Power.powerOn) // compute prices for power-on state
+  }
   /**
    *
    * @param oldAmount is ignored
@@ -69,28 +79,9 @@ final class OnOffChargingBehavior
     0.0
   }
 
-  private[this]
-  def getValueForCreditCalculation(oldAmount: Double, newEventValue: Double): Double = {
-    import OnOffChargingBehaviorValues.{ON, OFF}
-
-    def exception(rs: OnOffPolicyResourceState) =
-      new AquariumException("Resource state transition error (%s -> %s)".format(rs, rs))
-
-    (oldAmount, newEventValue) match {
-      case (ON, ON) ⇒
-        throw exception(OnResourceState)
-      case (ON, OFF) ⇒
-        OFF
-      case (OFF, ON) ⇒
-        ON
-      case (OFF, OFF) ⇒
-        throw exception(OffResourceState)
-    }
-  }
-
   override def isBillableEvent(event: ResourceEventModel) = {
     // ON events do not contribute, only OFF ones.
-    OnOffChargingBehaviorValues.isOFFValue(event.value)
+    VMChargingBehaviorValues.isOFFValue(event.value)
   }
 
   /**
@@ -110,16 +101,16 @@ final class OnOffChargingBehavior
   def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = {
     // If we have ON events with no OFF companions at the end of the billing period,
     // then we must generate implicit OFF events.
-    OnOffChargingBehaviorValues.isONValue(resourceEvent.value)
+    VMChargingBehaviorValues.isONValue(resourceEvent.value)
   }
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long) = {
     assert(supportsImplicitEvents && mustConstructImplicitEndEventFor(resourceEvent))
-    assert(OnOffChargingBehaviorValues.isONValue(resourceEvent.value))
+    assert(VMChargingBehaviorValues.isONValue(resourceEvent.value))
 
     val details = resourceEvent.details
     val newDetails = ResourceEventModel.setAquariumSyntheticAndImplicitEnd(details)
-    val newValue   = OnOffChargingBehaviorValues.OFF
+    val newValue   = VMChargingBehaviorValues.OFF
 
     resourceEvent.withDetailsAndValue(newDetails, newValue, newOccurredMillis)
   }
@@ -129,8 +120,13 @@ final class OnOffChargingBehavior
   }
 }
 
-object OnOffChargingBehavior {
-  private[this] final val TheOne = new OnOffChargingBehavior
-
-  def apply(): OnOffChargingBehavior = TheOne
+object VMChargingBehavior {
+  object Selectors {
+    object Power {
+      // When the VM is powered on
+      final val powerOn = "powerOn"
+      // When the VM is powered off
+      final val powerOff = "powerOff"
+    }
+  }
 }

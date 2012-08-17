@@ -37,6 +37,9 @@ package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.AquariumException
+import scala.collection.mutable
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.policy.FullPriceTable
 
 /**
  * A charging behavior for which resource events just carry a credit amount that will be added to the total one.
@@ -50,6 +53,17 @@ final class OnceChargingBehavior
       ChargingBehaviorAliases.once,
       Set(ChargingBehaviorNameInput, CurrentValueInput)) {
 
+  protected def computeSelectorPath(
+      chargingData: mutable.Map[String, Any],
+      currentResourceEvent: ResourceEventModel,
+      referenceTimeslot: Timeslot,
+      previousValue: Double,
+      totalCredits: Double,
+      oldAccumulatingAmount: Double,
+      newAccumulatingAmount: Double
+  ): List[String] = {
+    List(FullPriceTable.DefaultSelectorKey)
+  }
   /**
    * This is called when we have the very first event for a particular resource instance, and we want to know
    * if it is billable or not.

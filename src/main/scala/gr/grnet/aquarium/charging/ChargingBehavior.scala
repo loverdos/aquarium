@@ -40,7 +40,7 @@ import scala.collection.mutable
 
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.{Aquarium, AquariumInternalError, AquariumException}
-import gr.grnet.aquarium.policy.{UserAgreementModel, ResourceType}
+import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable, UserAgreementModel, ResourceType}
 import com.ckkloverdos.key.{TypedKey, TypedKeySkeleton}
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.util.date.TimeHelpers
@@ -58,9 +58,12 @@ import gr.grnet.aquarium.charging.ChargingBehavior.EnvKeys
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput]) extends Loggable {
+abstract class ChargingBehavior(
+    final val alias: String,
+    final val inputs: Set[ChargingInput],
+    final val selectorHierarchy: List[List[String]] = Nil) extends Loggable {
 
-  final lazy val inputNames = inputs.map(_.name)
+  final val inputNames = inputs.map(_.name)
 
   @inline private[this] def hrs(millis: Double) = {
     val hours = millis / 1000 / 60 / 60
@@ -95,7 +98,7 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
 
        (credits, explanation)
 
-     case ChargingBehaviorAliases.onoff ⇒
+     case ChargingBehaviorAliases.vmtime ⇒
        val credits = hrs(timeDeltaMillis) * unitPrice
        val explanation = "Time(%s) * Unit(%s)".format(hrs(timeDeltaMillis), unitPrice)
 
@@ -115,6 +118,16 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
   protected def rcDebugInfo(rcEvent: ResourceEventModel) = {
     rcEvent.toDebugString
   }
+
+  protected def computeSelectorPath(
+      chargingData: mutable.Map[String, Any],
+      currentResourceEvent: ResourceEventModel,
+      referenceTimeslot: Timeslot,
+      previousValue: Double,
+      totalCredits: Double,
+      oldAccumulatingAmount: Double,
+      newAccumulatingAmount: Double
+  ): List[String]
 
   /**
    *
@@ -164,11 +177,25 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
       referenceTimeslot.to.getTime
     )
 
+    val effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable = fullPriceTable ⇒ {
+      this.selectEffectivePriceTable(
+        fullPriceTable,
+        chargingData,
+        currentResourceEvent,
+        referenceTimeslot,
+        previousValue,
+        totalCredits,
+        _oldAccumulatingAmount,
+        _newAccumulatingAmount
+      )
+    }
+
     val initialChargeslots = TimeslotComputations.computeInitialChargeslots(
       referenceTimeslot,
       resourceType,
       policyByTimeslot,
-      agreementByTimeslot
+      agreementByTimeslot,
+      effectivePriceTableSelector
     )
 
     val fullChargeslots = initialChargeslots.map {
@@ -242,6 +269,30 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
   ) = {
 
     chargingData(envKey.name) = value
+  }
+
+  def selectEffectivePriceTable(
+      fullPriceTable: FullPriceTable,
+      chargingData: mutable.Map[String, Any],
+      currentResourceEvent: ResourceEventModel,
+      referenceTimeslot: Timeslot,
+      previousValue: Double,
+      totalCredits: Double,
+      oldAccumulatingAmount: Double,
+      newAccumulatingAmount: Double
+  ): EffectivePriceTable = {
+
+    val selectorPath = computeSelectorPath(
+      chargingData,
+      currentResourceEvent,
+      referenceTimeslot,
+      previousValue,
+      totalCredits,
+      oldAccumulatingAmount,
+      newAccumulatingAmount
+    )
+
+    fullPriceTable.effectivePriceTableOfSelectorForResource(selectorPath, currentResourceEvent.safeResource)
   }
 
   /**
@@ -443,7 +494,7 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
    * Typically all events are billable by default and indeed this is the default implementation
    * provided here.
    *
-   * The only exception to the rule is ON events for [[gr.grnet.aquarium.charging.OnOffChargingBehavior]].
+   * The only exception to the rule is ON events for [[gr.grnet.aquarium.charging.VMChargingBehavior]].
    */
   def isBillableEvent(event: ResourceEventModel): Boolean = true
 
@@ -476,7 +527,7 @@ abstract class ChargingBehavior(val alias: String, val inputs: Set[ChargingInput
    * There are resources (cost policies) for which implicit events must be generated at the end of the billing period
    * and also at the beginning of the next one. For these cases, this method must return `true`.
    *
-   * The motivating example comes from the [[gr.grnet.aquarium.charging.OnOffChargingBehavior]] for which we
+   * The motivating example comes from the [[gr.grnet.aquarium.charging.VMChargingBehavior]] for which we
    * must implicitly assume `OFF` events at the end of the billing period and `ON` events at the beginning of the next
    * one.
    *

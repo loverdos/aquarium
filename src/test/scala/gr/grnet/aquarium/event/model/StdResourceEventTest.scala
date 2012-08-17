@@ -33,18 +33,23 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.charging
+package gr.grnet.aquarium.event.model
+
+import org.junit.Test
+import gr.grnet.aquarium.event.model.resource.StdResourceEvent
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object OnOffChargingBehaviorValues {
-  final val ON  = 1.0
-  final val OFF = 0.0
+class StdResourceEventTest {
+  @Test
+  def testJson() {
+    val rc = StdResourceEvent("id-2", 1000L, 1000L, "luv@g.com", "pithos", "disk", "/disk1", 1.0, "1.0", Map())
+    val json = rc.toJsonString
+    val obj  = StdResourceEvent.fromJsonString(json)
 
-  def isONValue (value: Double) = value == ON
-  def isOFFValue(value: Double) = value == OFF
+    assert(rc == obj)
+  }
 }
-

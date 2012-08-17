@@ -1,71 +1,67 @@
-{
-  "id":"750E6309-AB60-41B4-8D4B-9FFEA6EF843C",
+{ "jsonClass":"gr.grnet.aquarium.policy.StdPolicy",
+
+  "id":"default-policy",
 
   "validityTimespan":{
     "fromMillis":0,
     "toMillis":9223372036854775807
   },
 
-  "resourceTypes":[
-    {
-      "name":"addcredits",
-      "unit":"credits",
-      "chargingBehavior":"gr.grnet.aquarium.charging.OnceChargingBehavior"
-    },
-    {
-      "name":"bandwidth",
-      "unit":"MB/Hr",
-      "chargingBehavior":"gr.grnet.aquarium.charging.DiscreteChargingBehavior"
-    },
-    {
-      "name":"vmtime",
-      "unit":"Hr",
-      "chargingBehavior":"gr.grnet.aquarium.charging.OnOffChargingBehavior"
-    },
-    {
-      "name":"diskspace",
-      "unit":"MB/Hr",
-      "chargingBehavior":"gr.grnet.aquarium.charging.ContinuousChargingBehavior"
-    }
-  ],
+  "resourceTypes":[{
+    "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
+    "name":"diskspace",
+    "unit":"MB/Hr",
+    "chargingBehavior":"gr.grnet.aquarium.charging.ContinuousChargingBehavior"
+  },{
+    "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
+    "name":"vmtime",
+    "unit":"Hr",
+    "chargingBehavior":"gr.grnet.aquarium.charging.VMChargingBehavior"
+  },{
+    "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
+    "name":"addcredits",
+    "unit":"credits",
+    "chargingBehavior":"gr.grnet.aquarium.charging.OnceChargingBehavior"
+    }],
 
   "chargingBehaviors":[
-    "gr.grnet.aquarium.charging.DiscreteChargingBehavior",
-    "gr.grnet.aquarium.charging.OnOffChargingBehavior",
+    "gr.grnet.aquarium.charging.VMChargingBehavior",
     "gr.grnet.aquarium.charging.ContinuousChargingBehavior",
     "gr.grnet.aquarium.charging.OnceChargingBehavior"
   ],
 
   "roleMapping":{
     "default":{
+      "jsonClass":"gr.grnet.aquarium.policy.FullPriceTable",
+
       "perResource":{
-        "bandwidth":{
-          "priceOverrides":[
-            {
-              "unitPrice":0.01
-            }
-          ]
-        },
-        "vmtime":{
-          "priceOverrides":[
-            {
-              "unitPrice":0.01
-            }
-          ]
-        },
         "diskspace":{
-          "priceOverrides":[
-            {
+          "default":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
+            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
               "unitPrice":0.01
-            }
-          ]
-        }
+            }]
+          }
+        },
+
+        "vmtime":{
+          "powerOn":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
+            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
+              "unitPrice":0.01
+            }]
+          },
+          "powerOff":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
+            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
+              "unitPrice":0.0010
+            }]
+          }
+        },
+
         "addcredits":{
-          "priceOverrides":[
-            {
-              "unitPrice":1
-            }
-          ]
+          "default":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
+            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
+              "unitPrice":-1.0
+            }]
+          }
         }
       }
     }

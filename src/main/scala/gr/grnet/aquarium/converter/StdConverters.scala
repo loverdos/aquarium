@@ -41,7 +41,8 @@ import gr.grnet.aquarium.util.json.JsonSupport
 import com.mongodb.util.JSON
 import com.mongodb.DBObject
 import xml.NodeSeq
-import net.liftweb.json.Xml
+import net.liftweb.json.{Printer, JsonAST, Extraction, Xml}
+import gr.grnet.aquarium.policy.PolicyModel
 
 
 /**
@@ -54,6 +55,15 @@ object StdConverters {
   private[this] final lazy val builder: ConvertersBuilder = {
     val builder: ConvertersBuilder = new StdConvertersBuilder().registerDefaultConversions()
 
+    // PolicyModel ⇒ JValue
+//    builder.registerConverter(PolicyModelToJValueConverter)
+
+    // PolicyModel ⇒ PrettyJsonTextFormat
+//    builder.registerConverter(PolicyModelToPrettyJsonTextFormatConverter)
+
+    // PolicyModel ⇒ CompactJsonTextFormat
+//    builder.registerConverter(PolicyModelToCompactJsonTextFormatConverter)
+
     // Any ⇒ JValue
     builder.registerConverter(AnyToJValueConverter)
 
@@ -62,6 +72,9 @@ object StdConverters {
 
     // Any ⇒ CompactJsonTextFormat
     builder.registerConverter(AnyToCompactJsonTextConverter)
+
+    // JsonTextFormat ⇒ PolicyModel
+//    builder.registerConverter(JsonTextToPolicyModelConverter)
 
     // JsonTextFormat ⇒ AnyRef
     builder.registerConverter(JsonTextToObjectConverter)
@@ -80,6 +93,31 @@ object StdConverters {
 
     builder
   }
+
+//  object  PolicyModelToJValueConverter
+//  extends NonStrictSourceConverterSkeleton[PolicyModel, JValue] {
+//    protected def convertEx_(sourceValue: PolicyModel): JValue = {
+//      Extraction.decompose(sourceValue)(JsonConversions.FullFormats)
+//    }
+//  }
+
+//  object  PolicyModelToPrettyJsonTextFormatConverter
+//  extends NonStrictSourceConverterSkeleton[PolicyModel, PrettyJsonTextFormat] {
+//    protected def convertEx_(sourceValue: PolicyModel): PrettyJsonTextFormat = {
+//      val jValue = Extraction.decompose(sourceValue)(JsonConversions.FullFormats)
+//      val jDoc = JsonAST.render(jValue)
+//      PrettyJsonTextFormat(Printer.pretty(jDoc))
+//    }
+//  }
+
+//  object  PolicyModelToCompactJsonTextFormatConverter
+//  extends NonStrictSourceConverterSkeleton[PolicyModel, CompactJsonTextFormat] {
+//    protected def convertEx_(sourceValue: PolicyModel): CompactJsonTextFormat = {
+//      val jValue = Extraction.decompose(sourceValue)(JsonConversions.FullFormats)
+//      val jDoc = JsonAST.render(jValue)
+//      CompactJsonTextFormat(Printer.compact(jDoc))
+//    }
+//  }
 
   object ByteArrayToJsonTextConverter extends StrictSourceConverterSkeleton[Array[Byte], JsonTextFormat] {
     @throws(classOf[ConverterException])
@@ -122,6 +160,20 @@ object StdConverters {
       JsonConversions.jsonToObject[T](sourceValue.asInstanceOf[JsonTextFormat].value)(manifest[T], JsonConversions.Formats)
     }
   }
+
+//  object JsonTextToPolicyModelConverter extends Converter {
+//   def isStrictSource = false
+//
+//   def canConvertType[S: Type, T: Type] = {
+//     erasureOf[JsonTextFormat].isAssignableFrom(erasureOf[S])
+//   }
+//
+//   @throws(classOf[ConverterException])
+//   def convertEx[T: Type](sourceValue: Any) = {
+//     // Generic deserializer from json string to a business logic model
+//     JsonConversions.jsonToObject[T](sourceValue.asInstanceOf[JsonTextFormat].value)(manifest[T], JsonConversions.FullFormats)
+//   }
+// }
 
   object JsonSupportToDBObjectConverter extends NonStrictSourceConverterSkeleton[JsonSupport, DBObject] {
     @throws(classOf[ConverterException])
