@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.service
 
-import akka.actor.{Props, ActorRef, ActorSystem}
+import akka.actor.{Actor, Props, ActorRef, ActorSystem}
 import gr.grnet.aquarium.util.{Loggable, Lifecycle, shortClassNameOf}
 import gr.grnet.aquarium.ResourceLocator.SysEnvs
 import gr.grnet.aquarium.{AquariumAwareSkeleton, Configurable, AquariumException, AquariumInternalError}
@@ -182,6 +182,9 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
     this._userActorCache.invalidate(userID)
     gracefullyStopUserActor(userID, actorRef)
   }
+
+  def createNamedActor[T <: Actor:ClassManifest](name:String) : ActorRef=
+     this.actorSystem.actorOf(Props[T],name)
 
   def getOrCreateUserActor(userID: String): ActorRef = {
     if(this.isShuttingDown.get()) {

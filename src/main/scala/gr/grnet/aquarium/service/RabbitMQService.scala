@@ -37,7 +37,7 @@ package gr.grnet.aquarium.service
 
 import com.ckkloverdos.props.Props
 import com.google.common.eventbus.Subscribe
-import gr.grnet.aquarium.{Aquarium, AquariumAwareSkeleton, Configurable}
+import gr.grnet.aquarium.{AquariumInternalError, Aquarium, AquariumAwareSkeleton, Configurable}
 import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.connector.rabbitmq.RabbitMQConsumer
 import gr.grnet.aquarium.util.{Tags, Loggable, Lifecycle}
@@ -68,6 +68,10 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
   def imEventStore = aquarium.imEventStore
 
   def converters = aquarium.converters
+
+  private[this] var _creditExchangeName : String = ""
+  private[this] var _creditRoutingKey   : String = ""
+
 
   /**
    * Configure this instance with the provided properties.
@@ -167,6 +171,15 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
     lg("Got %s consumers".format(this._consumers.size))
 
     this._consumers.foreach(logger.debug("Configured {}", _))
+
+    val propName = RabbitMQConfKeys.imevents_credit
+    def exn () =
+      throw new AquariumInternalError(new Exception, "While obtaining value for key %s in properties".format(propName))
+    val prop = _props.get(propName).getOr(exn())
+    if (prop.isEmpty) exn()
+    val Array(exchangeName, routingKey) = prop.split(":")
+    _creditExchangeName = exchangeName
+    _creditRoutingKey = routingKey
   }
 
   def start() = {
@@ -208,7 +221,8 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
 
   @Subscribe
   def handleUserBalance(event:BalanceEvent): Unit = {
-    aquarium(Aquarium.EnvKeys.rabbitMQProducer).sendMessage(event.toJsonString)
+    aquarium(Aquarium.EnvKeys.rabbitMQProducer).
+    sendMessage(this._creditExchangeName,this._creditRoutingKey,event.toJsonString)
   }
 
   @Subscribe
