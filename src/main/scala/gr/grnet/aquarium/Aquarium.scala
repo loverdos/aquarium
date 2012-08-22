@@ -294,21 +294,19 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   }
 
   def chargingBehaviorOf(resourceType: ResourceType): ChargingBehavior = {
+    // A resource type never changes charging behavior. By definition.
     val className = resourceType.chargingBehavior
     _chargingBehaviorMap.get(className) match {
       case Some(chargingBehavior) ⇒
         chargingBehavior
 
       case _ ⇒
-        // It does not matter if this is entered by multiple threads and more than one instance of the same class
-        // is created. The returned instance is not meant to be cached.
         try {
-          val chargingBehavior = newInstance[ChargingBehavior](className)
           _chargingBehaviorMap synchronized {
+            val chargingBehavior = newInstance[ChargingBehavior](className)
             _chargingBehaviorMap = _chargingBehaviorMap.updated(className, chargingBehavior)
+            chargingBehavior
           }
-
-          chargingBehavior
         }
         catch {
           case e: Exception ⇒

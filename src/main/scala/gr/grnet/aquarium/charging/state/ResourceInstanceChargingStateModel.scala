@@ -33,26 +33,28 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import com.google.common.eventbus.Subscribe
-import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.util.LogHelpers.Debug
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+trait ResourceInstanceChargingStateModel {
+  def details: scala.collection.Map[String, Any]
 
-trait AquariumAwareSkeleton extends AquariumAware { this: Loggable ⇒
-  private var _aquarium: Aquarium = _
+  def previousEvents: List[ResourceEventModel]
 
-  final protected def aquarium = _aquarium
+  // the implicitly issued resource event at the beginning of the billing period.
+  def implicitlyIssuedStartEvent: List[ResourceEventModel]
 
-  @Subscribe
-  def awareOfAquarium(event: AquariumCreatedEvent) = {
-    this._aquarium = event.aquarium
-    Debug(logger, "Aware of Aquarium: %s", this._aquarium)
-  }
+  // Always the new accumulating amount
+  def accumulatingAmount: Double
+
+  def oldAccumulatingAmount: Double
+
+  def previousValue: Double
+
+  def currentValue: Double
 }

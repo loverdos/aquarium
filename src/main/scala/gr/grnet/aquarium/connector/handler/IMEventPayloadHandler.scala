@@ -41,8 +41,7 @@ import gr.grnet.aquarium.converter.JsonTextFormat
 import gr.grnet.aquarium.store.{IMEventStore, LocalFSEventStore}
 import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
-import gr.grnet.aquarium.util.date.MutableDateCalc
-import gr.grnet.aquarium.util.{LogHelpers, Tags, shortClassNameOf}
+import gr.grnet.aquarium.util.{LogHelpers, Tags}
 
 /**
  * A [[gr.grnet.aquarium.connector.handler.PayloadHandler]] for

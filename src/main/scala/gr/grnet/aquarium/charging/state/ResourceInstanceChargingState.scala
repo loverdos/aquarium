@@ -33,23 +33,38 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.algorithm
+package gr.grnet.aquarium.charging.state
 
-import com.ckkloverdos.maybe.{Just, Maybe}
+import scala.collection.mutable
 
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
- * Compiles the textual representation of a cost policy charging algorithm to an executable form.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+case class ResourceInstanceChargingState(
+    details: Map[String, Any],
+    previousEvents: List[ResourceEventModel],
+    // the implicitly issued resource event at the beginning of the billing period.
+    implicitlyIssuedStartEvent: List[ResourceEventModel],
+    accumulatingAmount: Double,
+    oldAccumulatingAmount: Double,
+    previousValue: Double,
+    currentValue: Double
+) extends ResourceInstanceChargingStateModel {
 
-trait CostPolicyAlgorithmCompiler {
-  /**
-   * Compiles the textual representation of a cost policy charging algorithm to an executable form.
-   *
-   * @param definition the textual representation of the algorithm
-   * @return the executable form of the algorithm
-   */
-  def compile(definition: String): ExecutableChargingBehaviorAlgorithm
+  def mutableDetails = mutable.Map(this.details.toSeq:_*)
+
+  def toWorkingResourceInstanceChargingState = {
+    new WorkingResourceInstanceChargingState(
+      details = mutableDetails,
+      previousEvents = this.previousEvents,
+      implicitlyIssuedStartEvent = this.implicitlyIssuedStartEvent,
+      accumulatingAmount = this.accumulatingAmount,
+      oldAccumulatingAmount = this.oldAccumulatingAmount,
+      previousValue = this.previousValue,
+      currentValue = this.currentValue
+    )
+  }
 }

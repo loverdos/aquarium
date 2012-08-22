@@ -35,9 +35,8 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import gr.grnet.aquarium.charging.state.{UserStateModelSkeleton, AgreementHistory, UserStateModel}
+import gr.grnet.aquarium.charging.state.{ResourcesChargingState, UserStateModelSkeleton, AgreementHistory, UserStateModel}
 import gr.grnet.aquarium.charging.reason.ChargingReason
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
@@ -57,10 +56,7 @@ case class MongoDBUserState(
     billingYear: Int,
     billingMonth: Int,
     chargingReason: ChargingReason,
-    previousResourceEvents: List[ResourceEventModel],
-    implicitlyIssuedStartEvents: List[ResourceEventModel],
-    accumulatingAmountOfResourceInstance: Map[String, Double],
-    chargingDataOfResourceInstance: Map[String, Map[String, Any]],
+    stateOfResources: Map[String, ResourcesChargingState],
     billingPeriodOutOfSyncResourceEventsCounter: Long,
     agreementHistory: AgreementHistory,
     walletEntries: List[WalletEntry]
@@ -90,10 +86,7 @@ object MongoDBUserState {
       model.billingYear,
       model.billingMonth,
       model.chargingReason,
-      model.previousResourceEvents,
-      model.implicitlyIssuedStartEvents,
-      model.accumulatingAmountOfResourceInstance,
-      model.chargingDataOfResourceInstance,
+      model.stateOfResources,
       model.billingPeriodOutOfSyncResourceEventsCounter,
       model.agreementHistory,
       model.walletEntries

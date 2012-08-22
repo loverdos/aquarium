@@ -40,7 +40,6 @@ import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy._
 import collection.immutable
-import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.policy.EffectiveUnitPrice
 import gr.grnet.aquarium.charging.Chargeslot
 
@@ -86,18 +85,16 @@ object TimeslotComputations extends Loggable {
       alignedTimeslot: Timeslot,
       policy: PolicyModel,
       agreement: UserAgreementModel,
-      resourceType: ResourceType,
       effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
   ): SortedMap[Timeslot, Double] = {
 
     // Note that most of the code is taken from calcChangeChunks()
-    val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, resourceType, effectivePriceTableSelector)
+    val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, effectivePriceTableSelector)
     ret map {case (t,p) => (t,p.unitPrice)}
   }
 
   def computeInitialChargeslots(
       referenceTimeslot: Timeslot,
-      resourceType: ResourceType,
       policyByTimeslot: SortedMap[Timeslot, PolicyModel],
       agreementByTimeslot: SortedMap[Timeslot, UserAgreementModel],
       effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
@@ -134,7 +131,6 @@ object TimeslotComputations extends Loggable {
         alignedTimeslot,
         policy,
         userAgreement,
-        resourceType,
         effectivePriceTableSelector
       )
 
@@ -210,7 +206,6 @@ object TimeslotComputations extends Loggable {
         alignedTimeslot: Timeslot,
         policy: PolicyModel,
         agreement: UserAgreementModel,
-        resourceType: ResourceType,
         effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
     ): PriceMap = {
 

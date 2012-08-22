@@ -36,7 +36,6 @@
 package gr.grnet.aquarium.charging.state
 
 import scala.collection.mutable
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.policy.ResourceType
 
@@ -47,33 +46,9 @@ import gr.grnet.aquarium.policy.ResourceType
  */
 
 abstract class UserStateModelSkeleton extends UserStateModel {
-  protected def mutableMap[Vin, Vout](
-      inputMap: Map[String, Vin],
-      vInOut: Vin ⇒ Vout
-  ): mutable.Map[(String, String), Vout] = {
-    val items = for {
-      (resourceAndInstanceID, vIn) ← inputMap.toSeq
-    } yield {
-      StdUserState.resourceAndInstanceIDOfString(resourceAndInstanceID) -> vInOut(vIn)
-    }
-
-    mutable.Map(items: _*)
-  }
-
-  protected def mutableAccumulatingAmountMap: mutable.Map[(String, String), Double] = {
-    mutableMap(accumulatingAmountOfResourceInstance, identity[Double])
-  }
-
-  protected def mutableChargingDataMap: mutable.Map[(String, String), mutable.Map[String, Any]] = {
-    mutableMap(chargingDataOfResourceInstance, (vIn: Map[String, Any]) ⇒ mutable.Map(vIn.toSeq: _*))
-  }
-
-  protected def mutableImplicitlyIssuedStartMap: mutable.Map[(String, String), ResourceEventModel] = {
-    mutable.Map(implicitlyIssuedStartEvents.map(rem ⇒ (rem.safeResource, rem.safeInstanceID) -> rem): _*)
-  }
-
-  protected def mutablePreviousEventsMap: mutable.Map[(String, String), ResourceEventModel] = {
-    mutable.Map(previousResourceEvents.map(rem ⇒ (rem.safeResource, rem.safeInstanceID) -> rem): _*)
+  protected def mutableStateOfChargingBehavior: mutable.Map[String, WorkingResourcesChargingState] = {
+    val contents = for((k, v) ← stateOfResources) yield (k, v.toWorkingResourcesChargingState)
+    mutable.Map(contents.toSeq: _*)
   }
 
   protected def mutableWalletEntries = {
@@ -92,10 +67,7 @@ abstract class UserStateModelSkeleton extends UserStateModel {
       this.parentIDInStore,
       this.chargingReason,
       resourceTypesMap,
-      mutablePreviousEventsMap,
-      mutableImplicitlyIssuedStartMap,
-      mutableAccumulatingAmountMap,
-      mutableChargingDataMap,
+      mutableStateOfChargingBehavior,
       this.totalCredits,
       mutableAgreementHistory,
       this.occurredMillis,

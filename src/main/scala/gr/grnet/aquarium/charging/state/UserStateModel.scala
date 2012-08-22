@@ -72,13 +72,7 @@ trait UserStateModel extends JsonSupport {
 
   def chargingReason: ChargingReason
 
-  def previousResourceEvents: List[ResourceEventModel]
-
-  def implicitlyIssuedStartEvents: List[ResourceEventModel]
-
-  def accumulatingAmountOfResourceInstance: Map[String, Double]
-
-  def chargingDataOfResourceInstance: Map[String, Map[String, Any]]
+  def stateOfResources: Map[String, ResourcesChargingState]
 
   def billingPeriodOutOfSyncResourceEventsCounter: Long
 

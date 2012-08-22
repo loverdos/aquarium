@@ -37,38 +37,32 @@ package gr.grnet.aquarium.actor
 package service
 package user
 
-import gr.grnet.aquarium.actor._
-
-import gr.grnet.aquarium.actor.message.event.{ProcessResourceEvent, ProcessIMEvent}
-import gr.grnet.aquarium.actor.message.config.{InitializeUserActorState, AquariumPropertiesLoaded}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.service.event.BalanceEvent
 import gr.grnet.aquarium.event.model.im.IMEventModel
-import message._
-import config.AquariumPropertiesLoaded
-import config.InitializeUserActorState
-import event.ProcessIMEvent
-import event.ProcessResourceEvent
+import gr.grnet.aquarium.actor.message.config.AquariumPropertiesLoaded
+import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
+import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
+import gr.grnet.aquarium.actor.message.event.ProcessResourceEvent
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
-import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
+import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.charging.state.UserStateBootstrap
-import gr.grnet.aquarium.charging.state.{WorkingAgreementHistory, WorkingUserState, UserStateModel}
+import gr.grnet.aquarium.charging.state.{WorkingUserState, UserStateModel}
 import gr.grnet.aquarium.charging.reason.{InitialUserActorSetup, RealtimeChargingReason}
-import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement}
+import gr.grnet.aquarium.policy.PolicyDefinedFullPriceTableRef
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
-import message.GetUserBalanceRequest
-import message.GetUserBalanceResponse
-import message.GetUserBalanceResponseData
-import message.GetUserStateRequest
-import message.GetUserStateResponse
-import message.GetUserWalletRequest
-import message.GetUserWalletResponse
-import message.GetUserWalletResponseData
-import scala.Left
+import gr.grnet.aquarium.actor.message.GetUserBalanceRequest
+import gr.grnet.aquarium.actor.message.GetUserBalanceResponse
+import gr.grnet.aquarium.actor.message.GetUserBalanceResponseData
+import gr.grnet.aquarium.actor.message.GetUserStateRequest
+import gr.grnet.aquarium.actor.message.GetUserStateResponse
+import gr.grnet.aquarium.actor.message.GetUserWalletRequest
+import gr.grnet.aquarium.actor.message.GetUserWalletResponse
+import gr.grnet.aquarium.actor.message.GetUserWalletResponseData
+import gr.grnet.aquarium.actor.message.GetUserBillRequest
+import gr.grnet.aquarium.actor.message.GetUserBillResponse
+import gr.grnet.aquarium.actor.message.GetUserBillResponseData
 import gr.grnet.aquarium.charging.state.WorkingAgreementHistory
-import scala.Some
-import scala.Right
 import gr.grnet.aquarium.policy.StdUserAgreement
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.charging.bill.BillEntry
@@ -364,6 +358,9 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     val now = TimeHelpers.nowMillis()
+    // TODO: Review this and its usage in user state.
+    // TODO: The assumption is that the resource set increases all the time,
+    // TODO: so the current map contains everything ever known (assuming we do not run backwards in time).
     val currentResourcesMap = aquarium.currentResourceTypesMap
     val chargingReason = RealtimeChargingReason(None, now)
 

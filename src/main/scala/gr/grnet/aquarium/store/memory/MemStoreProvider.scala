@@ -129,10 +129,7 @@ extends StoreProvider
         model.billingYear,
         model.billingMonth,
         model.chargingReason,
-        model.previousResourceEvents,
-        model.implicitlyIssuedStartEvents,
-        model.accumulatingAmountOfResourceInstance,
-        model.chargingDataOfResourceInstance,
+        model.stateOfResources,
         model.billingPeriodOutOfSyncResourceEventsCounter,
         model.agreementHistory,
         model.walletEntries

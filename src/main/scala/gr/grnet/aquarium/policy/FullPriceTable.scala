@@ -40,14 +40,19 @@ import scala.annotation.tailrec
 import gr.grnet.aquarium.util.shortNameOfType
 
 /**
- * A full price table provides detailed pricing information for all resources.
+ * A full price table provides detailed pricing information for all resource types.
  *
- * @author Christos KK Loverdos <loverdos@gmail.com>
+ * @param perResource The key is some [[gr.grnet.aquarium.policy.ResourceType]]`.name`.
+ *                    The value is a Map from selector to either an [[gr.grnet.aquarium.policy.EffectivePriceTable]]
+ *                    or another Map (that designates another level of search path).
+ *                    See `policy.json` for samples.
+ *
+ *@author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 case class FullPriceTable(
-    perResource: Map[String/*Resource*/,
-                     Map[String/*Per-ChargingBehavior Key, "default" is the default*/, Any]]
+    perResource: Map[String /* The key is some ResourceType.name */,
+                     Map[String /* Use "default" for the simple cases */, Any]]
 ) {
 
   def effectivePriceTableOfSelectorForResource(
@@ -55,36 +60,109 @@ case class FullPriceTable(
       resource: String
   ): EffectivePriceTable = {
 
+    // Most of the code is for exceptional cases, which we identify in detail.
     @tailrec
     def find(
-        selectorPath: List[String],
-        selectorData: Any
+        partialSelectorPath: List[String],
+        partialSelectorData: Any
     ): EffectivePriceTable = {
 
-      selectorPath match {
-        case Nil ⇒
-          // End of selector path. This means that the data must be an EffectivePriceTable
-          selectorData match {
-            case ept: EffectivePriceTable ⇒
-              ept
+      partialSelectorPath match {
+        case selector :: Nil ⇒
+          // One selector, meaning that the selectorData must be a Map[String, EffectivePriceTable]
+          partialSelectorData match {
+            case selectorMap: Map[_,_] ⇒
+              // The selectorData is a map indeed
+              selectorMap.asInstanceOf[Map[String, _]].get(selector) match {
+                case Some(selected: EffectivePriceTable) ⇒
+                  // Yes, it is a map of the right type (OK, we assume keys are always Strings)
+                  // (we only check the value type)
+                  selected
 
-            case _ ⇒
-              // TODO more informative error message (include selector path, resource?)
-              throw new AquariumInternalError("Got %s instead of an %s", selectorData, shortNameOfType[EffectivePriceTable])
-          }
+                case Some(badSelected) ⇒
+                  // The selectorData is a map but the value is not of the required type
+                  throw new AquariumInternalError(
+                    "[AQU-SEL-001] Cannot select path %s for resource %s. Found %s instead of an %s at partial selector path %s".format(
+                      selectorPath.mkString("/"),
+                      resource,
+                      badSelected,
+                      shortNameOfType[EffectivePriceTable],
+                      partialSelectorPath.mkString("/")
+                    )
+                  )
 
-        case key :: tailSelectorPath ⇒
-          // Intermediate path. This means we have another round of Map[String, Any]
-          selectorData match {
-            case selectorMap: Map[_, _] ⇒
-              selectorMap.asInstanceOf[Map[String, _]].get(key) match {
                 case None ⇒
-                  throw new AquariumInternalError("Did not find value for selector %s", key)
-
-                case Some(nextSelectorData) ⇒
-                  find(tailSelectorPath, nextSelectorData)
+                  // The selectorData is a map but it does nto contain the selector
+                  throw new AquariumInternalError(
+                    "[AQU-SEL-002] Cannot select path %s for resource %s. Nothing found at partial selector path %s".format(
+                      selectorPath.mkString("/"),
+                      resource,
+                      partialSelectorPath.mkString("/")
+                    )
+                  )
               }
+
+
+            case badData ⇒
+              // The selectorData is not a map. So we have just one final selector but no map to select from.
+              throw new AquariumInternalError(
+                "[AQU-SEL-003] Cannot select path %s for resource %s. Found %s instead of a Map at partial selector path %s".format(
+                  selectorPath.mkString("/"),
+                  resource,
+                  badData,
+                  partialSelectorPath.mkString("/")
+                )
+              )
           }
+
+        case selector :: selectorTail ⇒
+          // More than one selector in the path, meaning that the selectorData must be a Map[String, Map[String, _]]
+          partialSelectorData match {
+            case selectorMap: Map[_,_] ⇒
+             // The selectorData is a map indeed
+              selectorMap.asInstanceOf[Map[String,_]].get(selector) match {
+                case Some(furtherSelectorMap: Map[_,_]) ⇒
+                  // The selectorData is a map and we found the respective value for the selector to be a map.
+                  find(selectorTail, furtherSelectorMap)
+
+                case Some(furtherBad) ⇒
+                  // The selectorData is a map but the respective value is not a map, so that
+                  // the selectorTail path cannot be used.
+                  throw new AquariumInternalError(
+                    "[AQU-SEL-004] Cannot select path %s for resource %s. Found %s instead of a Map at partial selector path %s".format(
+                      selectorPath.mkString("/"),
+                      resource,
+                      furtherBad,
+                      partialSelectorPath.mkString("/")
+                     )
+                  )
+
+                case None ⇒
+                  // The selectorData is a map but it does not contain the selector
+                  throw new AquariumInternalError(
+                    "[AQU-SEL-005] Cannot select path %s for resource %s. Nothing found at partial selector path %s".format(
+                      selectorPath.mkString("/"),
+                      resource,
+                      partialSelectorPath.mkString("/")
+                    )
+                  )
+              }
+
+            case badData ⇒
+              // The selectorData is not a Map. So we have more than one selectors but no map to select from.
+              throw new AquariumInternalError(
+                "[AQU-SEL-006] Cannot select path %s for resource %s. Found %s instead of a Map at partial selector path %s".format(
+                  selectorPath.mkString("/"),
+                  resource,
+                  badData,
+                  partialSelectorPath.mkString("/")
+                )
+              )
+          }
+
+        case Nil ⇒
+          throw new AquariumInternalError("")
+
       }
     }
 

@@ -33,26 +33,35 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import com.google.common.eventbus.Subscribe
-import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.util.LogHelpers.Debug
+import scala.collection.mutable
 
 /**
+ * Working (mutable state) for a resource instances of the same resource type.
+ *
+ * @param details Generic state related to the type of resource as a whole
+ * @param stateOfResourceInstance A map from `instanceID` to
+ *                                [[gr.grnet.aquarium.charging.state.WorkingResourceInstanceChargingState]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+final class WorkingResourcesChargingState(
+    val details: mutable.Map[String, Any],
+    val stateOfResourceInstance: mutable.Map[String, WorkingResourceInstanceChargingState]
+) {
 
-trait AquariumAwareSkeleton extends AquariumAware { this: Loggable ⇒
-  private var _aquarium: Aquarium = _
+  def immutableDetails = Map(this.details.toSeq: _*)
 
-  final protected def aquarium = _aquarium
+  def immutableStateOfResourceInstance = Map((
+      for((k, v) ← this.stateOfResourceInstance)
+        yield (k, v.toResourceInstanceChargingState)
+    ).toSeq:_*)
 
-  @Subscribe
-  def awareOfAquarium(event: AquariumCreatedEvent) = {
-    this._aquarium = event.aquarium
-    Debug(logger, "Aware of Aquarium: %s", this._aquarium)
+  def toResourcesChargingState = {
+    ResourcesChargingState(
+      details = immutableDetails,
+      stateOfResourceInstance = immutableStateOfResourceInstance
+    )
   }
 }

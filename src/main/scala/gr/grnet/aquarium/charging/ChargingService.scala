@@ -35,17 +35,16 @@
 
 package gr.grnet.aquarium.charging
 
+import scala.collection.mutable
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import gr.grnet.aquarium.charging.state.{WorkingResourcesChargingState, UserStateBootstrap, WorkingUserState, UserStateModel, StdUserState}
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import gr.grnet.aquarium.util.LogHelpers.Warn
-import gr.grnet.aquarium.util.LogHelpers.DebugSeq
 import gr.grnet.aquarium.util.date.{MutableDateCalc, TimeHelpers}
 import gr.grnet.aquarium.{AquariumInternalError, AquariumAwareSkeleton}
-import gr.grnet.aquarium.charging.state.{WorkingUserState, UserStateModel, StdUserState}
 import gr.grnet.aquarium.charging.reason.{MonthlyBillChargingReason, InitialUserStateSetup, ChargingReason}
 
 /**
@@ -59,9 +58,9 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
   lazy val resourceEventStore = aquarium.resourceEventStore
 
   //+ Lifecycle
-  def start() = ()
+  def start() {}
 
-  def stop() = ()
+  def stop() {}
   //- Lifecycle
 
 
@@ -94,7 +93,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         true,
         billingMonthInfo.year,
         billingMonthInfo.month,
-        None
+        ""
       )
 
       // We always save the state when it is a full month billing
@@ -176,7 +175,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     }
   }
   /**
-   * Processes one resource event and computes relevant charges.
+   * Processes one resource event and computes relevant, incremental charges.
    *
    * @param resourceEvent
    * @param workingUserState
@@ -189,37 +188,53 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       chargingReason: ChargingReason,
       billingMonthInfo: BillingMonthInfo,
       updateLatestMillis: Boolean
-  ): Unit = {
+  ): Boolean = {
 
     val resourceTypeName = resourceEvent.resource
     val resourceTypeOpt = workingUserState.findResourceType(resourceTypeName)
     if(resourceTypeOpt.isEmpty) {
-      return
+      // Unknown (yet) resource, ignoring event.
+      return false
     }
     val resourceType = resourceTypeOpt.get
-    val resourceAndInstanceInfo = resourceEvent.safeResourceInstanceInfo
 
     val chargingBehavior = aquarium.chargingBehaviorOf(resourceType)
+    val workingResourcesState = workingUserState.workingStateOfResources.get(resourceTypeName) match {
+      case Some(existingState) ⇒
+        existingState
 
-    val (walletEntriesCount, newTotalCredits) = chargingBehavior.chargeResourceEvent(
+      case None ⇒
+        // First time for this ChargingBehavior.
+        val newState = new WorkingResourcesChargingState(
+          details = mutable.Map(chargingBehavior.initialChargingDetails.toSeq:_*),
+          stateOfResourceInstance = mutable.Map()
+        )
+
+        workingUserState.workingStateOfResources(resourceTypeName) = newState
+        newState
+    }
+
+    val m0 = TimeHelpers.nowMillis()
+    val (walletEntriesCount, newTotalCredits) = chargingBehavior.processResourceEvent(
       aquarium,
       resourceEvent,
       resourceType,
       billingMonthInfo,
-      workingUserState.previousEventOfResourceInstance.get(resourceAndInstanceInfo),
-      workingUserState.workingAgreementHistory.toAgreementHistory,
-      workingUserState.getChargingDataForResourceEvent(resourceAndInstanceInfo),
+      workingResourcesState,
+      workingUserState.workingAgreementHistory,
       workingUserState.totalCredits,
       workingUserState.walletEntries += _
     )
+    val m1 = TimeHelpers.nowMillis()
 
     if(updateLatestMillis) {
-      workingUserState.latestUpdateMillis = TimeHelpers.nowMillis()
+      workingUserState.latestUpdateMillis = m1
     }
 
     workingUserState.updateLatestResourceEventOccurredMillis(resourceEvent.occurredMillis)
-    workingUserState.previousEventOfResourceInstance(resourceAndInstanceInfo) = resourceEvent
     workingUserState.totalCredits = newTotalCredits
+
+    true
   }
 
   def processResourceEvents(
@@ -341,7 +356,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       billingMonthInfo.toShortDebugString
     )
 
-    if(isFullMonthBilling) {
+    /*if(isFullMonthBilling) {
       // For the remaining events which must contribute an implicit OFF, we collect those OFFs
       // ... in order to generate an implicit ON later (during the next billing cycle).
       val (generatorsOfImplicitEnds, theirImplicitEnds) = workingUserState.findAndRemoveGeneratorsOfImplicitEndEvents(
@@ -371,7 +386,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
 
       workingUserState.walletEntries ++= specialWorkingUserState.walletEntries
       workingUserState.totalCredits    = specialWorkingUserState.totalCredits
-    }
+    }*/
 
     workingUserState
   }

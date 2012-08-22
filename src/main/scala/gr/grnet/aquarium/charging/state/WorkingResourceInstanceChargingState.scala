@@ -33,26 +33,50 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import com.google.common.eventbus.Subscribe
-import gr.grnet.aquarium.util.Loggable
-import gr.grnet.aquarium.util.LogHelpers.Debug
+import scala.collection.mutable
+
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
+ * Working (mutable) state of a resource instance, that is a `(resourceType, instanceID)`.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+final class WorkingResourceInstanceChargingState(
+    val details: mutable.Map[String, Any],
+    var previousEvents: List[ResourceEventModel],
+    // the implicitly issued resource event at the beginning of the billing period.
+    var implicitlyIssuedStartEvent: List[ResourceEventModel],
+    // Always the new accumulating amount
+    var accumulatingAmount: Double,
+    var oldAccumulatingAmount: Double,
+    var previousValue: Double,
+    var currentValue: Double
+) extends ResourceInstanceChargingStateModel {
 
-trait AquariumAwareSkeleton extends AquariumAware { this: Loggable ⇒
-  private var _aquarium: Aquarium = _
+  def toResourceInstanceChargingState = {
+    new ResourceInstanceChargingState(
+      details = immutableDetails,
+      previousEvents = this.previousEvents,
+      implicitlyIssuedStartEvent = this.implicitlyIssuedStartEvent,
+      accumulatingAmount = this.accumulatingAmount,
+      oldAccumulatingAmount = this.oldAccumulatingAmount,
+      previousValue = this.previousValue,
+      currentValue = this.currentValue
+    )
+  }
 
-  final protected def aquarium = _aquarium
+  def immutableDetails = this.details.toMap
 
-  @Subscribe
-  def awareOfAquarium(event: AquariumCreatedEvent) = {
-    this._aquarium = event.aquarium
-    Debug(logger, "Aware of Aquarium: %s", this._aquarium)
+  def setNewAccumulatingAmount(amount: Double) {
+    this.oldAccumulatingAmount = this.accumulatingAmount
+    this.accumulatingAmount = amount
+  }
+
+  def setNewCurrentValue(value: Double) {
+    this.previousValue = this.currentValue
+    this.currentValue = value
   }
 }

@@ -45,7 +45,7 @@ import gr.grnet.aquarium.policy.UserAgreementModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class AgreementHistory(agreements: List[UserAgreementModel]) {
+case class AgreementHistory(agreements: List[UserAgreementModel]) extends AgreementHistoryModel {
   def toWorkingAgreementHistory = {
     (new WorkingAgreementHistory) ++ agreements
   }

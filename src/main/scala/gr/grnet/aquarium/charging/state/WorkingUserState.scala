@@ -38,7 +38,6 @@ package gr.grnet.aquarium.charging.state
 import scala.collection.mutable
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.reason.ChargingReason
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.charging.ChargingBehavior
@@ -55,26 +54,13 @@ final class WorkingUserState(
     var parentUserStateIDInStore: Option[String],
     var chargingReason: ChargingReason,
     val resourceTypesMap: Map[String, ResourceType],
-
-    /**
-     * This is a collection of all the latest resource events.
-     * We want these in order to correlate incoming resource events with their previous (in `occurredMillis` time)
-     * ones. Will be updated on processing the next resource event.
-     */
-    val previousEventOfResourceInstance: mutable.Map[(String, String), ResourceEventModel],
-
-    /**
-     * the implicitly issued resource events at the beginning of the billing period.
-     */
-    val implicitlyIssuedStartEventOfResourceInstance: mutable.Map[(String, String), ResourceEventModel],
-    val accumulatingAmountOfResourceInstance: mutable.Map[(String, String), Double],
-    val chargingDataOfResourceInstance: mutable.Map[(String, String), mutable.Map[String, Any]],
+    val workingStateOfResources: mutable.Map[String /* resourceType.name */, WorkingResourcesChargingState],
     var totalCredits: Double,
     val workingAgreementHistory: WorkingAgreementHistory,
     var latestUpdateMillis: Long, // last update of this working user state
     var latestResourceEventOccurredMillis: Long,
     var billingPeriodOutOfSyncResourceEventsCounter: Long,
-    val walletEntries: mutable.ListBuffer[WalletEntry]
+    val walletEntries: mutable.ListBuffer[WalletEntry] // FIXME: not all in memory
 ) extends JsonSupport {
 
   def updateLatestResourceEventOccurredMillis(millis: Long): Unit = {
@@ -83,46 +69,24 @@ final class WorkingUserState(
     }
   }
 
-  private[this] def immutablePreviousResourceEvents: List[ResourceEventModel] = {
-    previousEventOfResourceInstance.valuesIterator.toList
-  }
-
-  private[this] def immutableImplicitlyIssuedStartEvents: List[ResourceEventModel] = {
-    implicitlyIssuedStartEventOfResourceInstance.valuesIterator.toList
-  }
-
-  private[this] def immutableAccumulatingAmountMap: Map[String, Double] = {
-    val items = for {
-      ((resource, instanceID), accumulatingAmount) ← accumulatingAmountOfResourceInstance.toSeq
-    } yield {
-      StdUserState.stringOfResourceAndInstanceID(resource, instanceID) -> accumulatingAmount
-    }
-
-    Map(items: _*)
-  }
-
-  private[this] def immutableChargingDataMap: Map[String, Map[String, Any]] = {
-    val items = for {
-      ((resource, instanceID), mapValue) ← chargingDataOfResourceInstance.toSeq
-    } yield {
-      StdUserState.stringOfResourceAndInstanceID(resource, instanceID) -> Map(mapValue.toSeq: _*)
-    }
-
-    Map(items: _*)
-  }
-
-  private[this] def immutableAgreementHistory = {
+  def immutableAgreementHistory = {
     this.workingAgreementHistory.toAgreementHistory
   }
 
+  def immutableChargingBehaviorState = {
+    val contents = for((k, v) ← this.workingStateOfResources) yield (k, v.toResourcesChargingState)
+    Map(contents.toSeq:_*)
+  }
+
+  // TODO: Connect this user state to an originating parent working user state (if applicable) => new attribute
   def toUserState(
       isFullBillingMonth: Boolean,
       billingYear: Int,
       billingMonth: Int,
-      idOpt: Option[String]
+      id: String
    ) = {
     new StdUserState(
-      idOpt.getOrElse(""),
+      id,
       this.parentUserStateIDInStore,
       this.userID,
       this.latestUpdateMillis,
@@ -132,61 +96,58 @@ final class WorkingUserState(
       billingYear,
       billingMonth,
       this.chargingReason,
-      immutablePreviousResourceEvents,
-      immutableImplicitlyIssuedStartEvents,
-      immutableAccumulatingAmountMap,
-      immutableChargingDataMap,
+      immutableChargingBehaviorState,
       billingPeriodOutOfSyncResourceEventsCounter,
       immutableAgreementHistory,
       walletEntries.toList
     )
   }
 
-  def newForImplicitEndsAsPreviousEvents(
-      previousResourceEvents: mutable.Map[(String, String), ResourceEventModel]
-  ) = {
-
-    new WorkingUserState(
-      this.userID,
-      this.parentUserStateIDInStore,
-      this.chargingReason,
-      this.resourceTypesMap,
-      previousResourceEvents,
-      this.implicitlyIssuedStartEventOfResourceInstance,
-      this.accumulatingAmountOfResourceInstance,
-      this.chargingDataOfResourceInstance,
-      this.totalCredits,
-      this.workingAgreementHistory,
-      this.latestUpdateMillis,
-      this.latestResourceEventOccurredMillis,
-      this.billingPeriodOutOfSyncResourceEventsCounter,
-      this.walletEntries
-    )
-  }
+//  def newForImplicitEndsAsPreviousEvents(
+//      previousResourceEvents: mutable.Map[(String, String), ResourceEventModel]
+//  ) = {
+//
+//    new WorkingUserState(
+//      this.userID,
+//      this.parentUserStateIDInStore,
+//      this.chargingReason,
+//      this.resourceTypesMap,
+//      previousResourceEvents,
+//      this.implicitlyIssuedStartEventOfResourceInstance,
+//      this.accumulatingAmountOfResourceInstance,
+//      this.chargingDataOfResourceInstance,
+//      this.totalCredits,
+//      this.workingAgreementHistory,
+//      this.latestUpdateMillis,
+//      this.latestResourceEventOccurredMillis,
+//      this.billingPeriodOutOfSyncResourceEventsCounter,
+//      this.walletEntries
+//    )
+//  }
 
   def findResourceType(name: String): Option[ResourceType] = {
     resourceTypesMap.get(name)
   }
 
-  def getChargingDataForResourceEvent(resourceAndInstanceInfo: (String, String)): mutable.Map[String, Any] = {
-    chargingDataOfResourceInstance.get(resourceAndInstanceInfo) match {
-      case Some(map) ⇒
-        map
+//  def getChargingDataForResourceEvent(resourceAndInstanceInfo: (String, String)): mutable.Map[String, Any] = {
+//    chargingDataOfResourceInstance.get(resourceAndInstanceInfo) match {
+//      case Some(map) ⇒
+//        map
+//
+//      case None ⇒
+//        val map = mutable.Map[String, Any]()
+//        chargingDataOfResourceInstance(resourceAndInstanceInfo) = map
+//        map
+//
+//    }
+//  }
 
-      case None ⇒
-        val map = mutable.Map[String, Any]()
-        chargingDataOfResourceInstance(resourceAndInstanceInfo) = map
-        map
-
-    }
-  }
-
-  def setChargingDataForResourceEvent(
-      resourceAndInstanceInfo: (String, String),
-      data: mutable.Map[String, Any]
-  ): Unit = {
-    chargingDataOfResourceInstance(resourceAndInstanceInfo) = data
-  }
+//  def setChargingDataForResourceEvent(
+//      resourceAndInstanceInfo: (String, String),
+//      data: mutable.Map[String, Any]
+//  ): Unit = {
+//    chargingDataOfResourceInstance(resourceAndInstanceInfo) = data
+//  }
 
   /**
   * Find those events from `implicitlyIssuedStartEvents` and `previousResourceEvents` that will generate implicit
@@ -195,46 +156,46 @@ final class WorkingUserState(
   *
   * @see [[gr.grnet.aquarium.charging.ChargingBehavior]]
   */
- def findAndRemoveGeneratorsOfImplicitEndEvents(
-     chargingBehaviorOfResourceType: ResourceType ⇒ ChargingBehavior,
-     /**
-      * The `occurredMillis` that will be recorded in the synthetic implicit OFFs.
-      * Normally, this will be the end of a billing month.
-      */
-     newOccuredMillis: Long
- ): (List[ResourceEventModel], List[ResourceEventModel]) = {
-
-   val buffer = mutable.ListBuffer[(ResourceEventModel, ResourceEventModel)]()
-   val checkSet = mutable.Set[ResourceEventModel]()
-
-   def doItFor(map: mutable.Map[(String, String), ResourceEventModel]): Unit = {
-     val resourceEvents = map.valuesIterator
-     for {
-       resourceEvent ← resourceEvents
-       resourceType ← resourceTypesMap.get(resourceEvent.safeResource)
-       chargingBehavior = chargingBehaviorOfResourceType.apply(resourceType)
-     } {
-       if(chargingBehavior.supportsImplicitEvents) {
-         if(chargingBehavior.mustConstructImplicitEndEventFor(resourceEvent)) {
-           val implicitEnd = chargingBehavior.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
-
-           if(!checkSet.contains(resourceEvent)) {
-             checkSet.add(resourceEvent)
-             buffer append ((resourceEvent, implicitEnd))
-           }
-
-           // remove it anyway
-           map.remove((resourceEvent.safeResource, resourceEvent.safeInstanceID))
-         }
-       }
-     }
-   }
-
-   doItFor(previousEventOfResourceInstance) // we give priority for previous events
-   doItFor(implicitlyIssuedStartEventOfResourceInstance) // ... over implicitly issued ones ...
-
-   (buffer.view.map(_._1).toList, buffer.view.map(_._2).toList)
- }
+// def findAndRemoveGeneratorsOfImplicitEndEvents(
+//     chargingBehaviorOfResourceType: ResourceType ⇒ ChargingBehavior,
+//     /**
+//      * The `occurredMillis` that will be recorded in the synthetic implicit OFFs.
+//      * Normally, this will be the end of a billing month.
+//      */
+//     newOccuredMillis: Long
+// ): (List[ResourceEventModel], List[ResourceEventModel]) = {
+//
+//   val buffer = mutable.ListBuffer[(ResourceEventModel, ResourceEventModel)]()
+//   val checkSet = mutable.Set[ResourceEventModel]()
+//
+//   def doItFor(map: mutable.Map[(String, String), ResourceEventModel]): Unit = {
+//     val resourceEvents = map.valuesIterator
+//     for {
+//       resourceEvent ← resourceEvents
+//       resourceType ← resourceTypesMap.get(resourceEvent.safeResource)
+//       chargingBehavior = chargingBehaviorOfResourceType.apply(resourceType)
+//     } {
+//       if(chargingBehavior.supportsImplicitEvents) {
+//         if(chargingBehavior.mustConstructImplicitEndEventFor(resourceEvent)) {
+//           val implicitEnd = chargingBehavior.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
+//
+//           if(!checkSet.contains(resourceEvent)) {
+//             checkSet.add(resourceEvent)
+//             buffer append ((resourceEvent, implicitEnd))
+//           }
+//
+//           // remove it anyway
+//           map.remove((resourceEvent.safeResource, resourceEvent.safeInstanceID))
+//         }
+//       }
+//     }
+//   }
+//
+//   doItFor(previousEventOfResourceInstance) // we give priority for previous events
+//   doItFor(implicitlyIssuedStartEventOfResourceInstance) // ... over implicitly issued ones ...
+//
+//   (buffer.view.map(_._1).toList, buffer.view.map(_._2).toList)
+// }
 }
 
 object WorkingUserState {

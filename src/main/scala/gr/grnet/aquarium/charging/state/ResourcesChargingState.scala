@@ -33,15 +33,31 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.charging
+package gr.grnet.aquarium.charging.state
+
+import scala.collection.mutable
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+case class ResourcesChargingState(
+    details: Map[String, Any],
+    stateOfResourceInstance: Map[String /* InstanceID */, ResourceInstanceChargingState]
+) {
 
-object ChargingBehaviorAliases {
-  final val vmtime     = "vmtime"
-  final val continuous = "continuous"
-  final val once       = "once"
+  def mutableDetails = mutable.Map(this.details.toSeq:_*)
+
+  def mutableStateOfResourceInstance = mutable.Map((
+      for((k, v) ← this.stateOfResourceInstance)
+        yield (k, v.toWorkingResourceInstanceChargingState)
+      ).toSeq: _*
+  )
+
+  def toWorkingResourcesChargingState = {
+    new WorkingResourcesChargingState(
+      details = mutableDetails,
+      stateOfResourceInstance = mutableStateOfResourceInstance
+    )
+  }
 }

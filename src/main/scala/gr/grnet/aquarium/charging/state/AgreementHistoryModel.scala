@@ -33,14 +33,20 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.algorithm
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.charging.ChargingInput
-
+import gr.grnet.aquarium.policy.UserAgreementModel
+import scala.collection.immutable
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
- * An charging algorithm in executable form.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait ExecutableChargingBehaviorAlgorithm extends (Map[ChargingInput, Any] ⇒ Double)
+trait AgreementHistoryModel {
+  def size = agreements.size
+
+  def agreements: Traversable[UserAgreementModel]
+
+  def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel]
+}
