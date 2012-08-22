@@ -478,6 +478,23 @@
           <preparationGoals>clean verify</preparationGoals>
         </configuration>
       </plugin>
+
+      <!--<plugin>-->
+        <!--<groupId>org.apache.maven.plugins</groupId>-->
+        <!--<artifactId>maven-shade-plugin</artifactId>-->
+        <!--<version>1.7.1</version>-->
+        <!--<configuration>-->
+          <!--&lt;!&ndash; put your configurations here &ndash;&gt;-->
+        <!--</configuration>-->
+        <!--<executions>-->
+          <!--<execution>-->
+            <!--<phase>package</phase>-->
+            <!--<goals>-->
+              <!--<goal>shade</goal>-->
+            <!--</goals>-->
+          <!--</execution>-->
+        <!--</executions>-->
+      <!--</plugin>-->
     </plugins>
   </build>
 </project>
