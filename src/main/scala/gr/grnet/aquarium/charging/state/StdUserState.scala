@@ -37,9 +37,9 @@ package gr.grnet.aquarium.charging.state
 
 import gr.grnet.aquarium.policy.UserAgreementModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.charging.reason.{InitialUserStateSetup, ChargingReason}
 import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.converter.{StdConverters, JsonTextFormat}
 
 /**
  *
@@ -56,21 +56,24 @@ final case class StdUserState(
     isFullBillingMonth: Boolean,
     billingYear: Int,
     billingMonth: Int,
-    chargingReason: ChargingReason,
     stateOfResources: Map[String, ResourcesChargingState],
     billingPeriodOutOfSyncResourceEventsCounter: Long,
     agreementHistory: AgreementHistory,
     walletEntries: List[WalletEntry]
 ) extends UserStateModelSkeleton {
-
-  def newWithChargingReason(newChargingReason: ChargingReason): StdUserState = {
-    this.copy(chargingReason = newChargingReason)
-  }
 }
 
 final object StdUserState {
   final val ResourceInstanceSeparator = "<:/:>"
   final val ResourceInstanceSeparatorLength = ResourceInstanceSeparator.length
+
+  final def fromJsonTextFormat(jsonTextFormat: JsonTextFormat): StdUserState = {
+    StdConverters.AllConverters.convertEx[StdUserState](jsonTextFormat)
+  }
+
+  final def fromJsonString(json: String): StdUserState = {
+    fromJsonTextFormat(JsonTextFormat(json))
+  }
 
   final def stringOfResourceAndInstanceID(resource: String, instanceID: String): String = {
     def check(key: String, value: String) = {
@@ -101,8 +104,7 @@ final object StdUserState {
       userCreationMillis: Long,
       occurredMillis: Long,
       totalCredits: Double,
-      initialAgreement: UserAgreementModel,
-      chargingReason: ChargingReason = InitialUserStateSetup(None)
+      initialAgreement: UserAgreementModel
   ): StdUserState = {
 
     val bmi = BillingMonthInfo.fromMillis(occurredMillis)
@@ -117,7 +119,6 @@ final object StdUserState {
       false,
       bmi.year,
       bmi.month,
-      chargingReason,
       Map(),
       0L,
       AgreementHistory.initial(initialAgreement),
@@ -127,8 +128,7 @@ final object StdUserState {
 
   def createInitialUserStateFromBootstrap(
       usb: UserStateBootstrap,
-      occurredMillis: Long,
-      chargingReason: ChargingReason
+      occurredMillis: Long
   ): StdUserState = {
 
     createInitialUserState(
@@ -136,8 +136,7 @@ final object StdUserState {
       usb.userCreationMillis,
       occurredMillis,
       usb.initialCredits,
-      usb.initialAgreement,
-      chargingReason
+      usb.initialAgreement
     )
   }
 }

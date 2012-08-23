@@ -42,7 +42,8 @@ import ext.JodaTimeSerializers
 import gr.grnet.aquarium.util.{makeString, UTF_8_Charset}
 import java.nio.charset.Charset
 import gr.grnet.aquarium.policy.{ResourceType, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, StdPolicy}
-import gr.grnet.aquarium.charging.state.WorkingUserState
+import gr.grnet.aquarium.charging.state.{StdUserState, ResourceInstanceChargingState, ResourcesChargingState, WorkingUserState}
+import gr.grnet.aquarium.computation.BillingMonthInfo
 
 /**
  * Provides conversion methods from and to JSON.
@@ -59,6 +60,7 @@ object JsonConversions {
 //  implicit final val Formats = (DefaultFormats ++ JodaTimeSerializers.all)
   final val StdPolicyFormats = Serialization.formats(FullTypeHints(List(
     // gather here all the "difficult" classes
+//    classOf[AnyRef]
 
     // [[PolicyModel]]
     classOf[StdPolicy],
@@ -67,12 +69,18 @@ object JsonConversions {
     classOf[EffectivePriceTable],
     classOf[EffectiveUnitPrice],
 
+    // [[UserStateModel]]
+    classOf[StdUserState],
+    classOf[BillingMonthInfo],
+    classOf[ResourcesChargingState],
+    classOf[ResourceInstanceChargingState],
+
     // [[WorkingUserState]]
     classOf[WorkingUserState]
   )))
   final val JodaFormats = JodaTimeSerializers.all
-//  implicit final val Formats = (DefaultFormats.withHints(FullTypeHints(List(classOf[AnyRef]))) ++ JodaTimeSerializers.all)
-  implicit final val Formats: Formats = StdPolicyFormats ++ JodaFormats
+  implicit final val Formats = (DefaultFormats.withHints(FullTypeHints(List(classOf[AnyRef]))) ++ JodaTimeSerializers.all)
+//  implicit final val Formats: Formats = StdPolicyFormats ++ JodaFormats
 //  Serialization.formats(FullTypeHints(List(classOf[AnyRef])))
 //  final val PolicyModelSerializer: Serializer[PolicyModel] = new Serializer[PolicyModel] {
 //    def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, _root_.net.liftweb.json.JValue), PolicyModel] = {

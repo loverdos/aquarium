@@ -48,7 +48,6 @@ import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
 import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.state.{WorkingUserState, UserStateModel}
-import gr.grnet.aquarium.charging.reason.{InitialUserActorSetup, RealtimeChargingReason}
 import gr.grnet.aquarium.policy.PolicyDefinedFullPriceTableRef
 import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.actor.message.GetUserBalanceRequest
@@ -225,7 +224,6 @@ class UserActor extends ReflectiveRoleableActor {
       now,
       this._userStateBootstrap,
       aquarium.currentResourceTypesMap,
-      InitialUserActorSetup(),
       aquarium.userStateStore.insertUserState
     )
 
@@ -362,7 +360,6 @@ class UserActor extends ReflectiveRoleableActor {
     // TODO: The assumption is that the resource set increases all the time,
     // TODO: so the current map contains everything ever known (assuming we do not run backwards in time).
     val currentResourcesMap = aquarium.currentResourceTypesMap
-    val chargingReason = RealtimeChargingReason(None, now)
 
     val nowBillingMonthInfo = BillingMonthInfo.fromMillis(now)
     val nowYear = nowBillingMonthInfo.year
@@ -382,7 +379,6 @@ class UserActor extends ReflectiveRoleableActor {
         now max eventOccurredMillis,
         this._userStateBootstrap,
         currentResourcesMap,
-        chargingReason,
         stdUserStateStoreFunc
       )
 
@@ -394,7 +390,6 @@ class UserActor extends ReflectiveRoleableActor {
       chargingService.processResourceEvent(
         rcEvent,
         this._workingUserState,
-        chargingReason,
         nowBillingMonthInfo,
         true
       )

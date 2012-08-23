@@ -38,9 +38,7 @@ package gr.grnet.aquarium.charging.state
 import scala.collection.mutable
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.charging.reason.ChargingReason
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.charging.ChargingBehavior
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 
 /**
@@ -52,7 +50,6 @@ import gr.grnet.aquarium.charging.wallet.WalletEntry
 final class WorkingUserState(
     val userID: String,
     var parentUserStateIDInStore: Option[String],
-    var chargingReason: ChargingReason,
     val resourceTypesMap: Map[String, ResourceType],
     val workingStateOfResources: mutable.Map[String /* resourceType.name */, WorkingResourcesChargingState],
     var totalCredits: Double,
@@ -95,7 +92,6 @@ final class WorkingUserState(
       isFullBillingMonth,
       billingYear,
       billingMonth,
-      this.chargingReason,
       immutableChargingBehaviorState,
       billingPeriodOutOfSyncResourceEventsCounter,
       immutableAgreementHistory,

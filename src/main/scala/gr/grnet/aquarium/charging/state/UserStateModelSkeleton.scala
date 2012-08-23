@@ -65,7 +65,6 @@ abstract class UserStateModelSkeleton extends UserStateModel {
     new WorkingUserState(
       this.userID,
       this.parentIDInStore,
-      this.chargingReason,
       resourceTypesMap,
       mutableStateOfChargingBehavior,
       this.totalCredits,

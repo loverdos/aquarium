@@ -33,56 +33,35 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.charging.state.{ResourcesChargingState, UserStateModelSkeleton, AgreementHistory, UserStateModel}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import org.junit.Test
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.computation.BillingMonthInfo
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-case class MongoDBUserState(
-    _id: String,
-    parentIDInStore: Option[String],
-    userID: String,
-    occurredMillis: Long,
-    latestResourceEventOccurredMillis: Long,
-    totalCredits: Double,
-    isFullBillingMonth: Boolean,
-    billingYear: Int,
-    billingMonth: Int,
-    stateOfResources: Map[String, ResourcesChargingState],
-    billingPeriodOutOfSyncResourceEventsCounter: Long,
-    agreementHistory: AgreementHistory,
-    walletEntries: List[WalletEntry]
-) extends UserStateModelSkeleton {
-
-  def id = _id
-}
-
-object MongoDBUserState {
-  def fromJSONString(json: String): MongoDBUserState = {
-    StdConverters.AllConverters.convertEx[MongoDBUserState](JsonTextFormat(json))
-  }
-
-  def fromOther(model: UserStateModel, _id: String): MongoDBUserState = {
-    MongoDBUserState(
-      _id,
-      model.parentIDInStore,
-      model.userID,
-      model.occurredMillis,
-      model.latestResourceEventOccurredMillis,
-      model.totalCredits,
-      model.isFullBillingMonth,
-      model.billingYear,
-      model.billingMonth,
-      model.stateOfResources,
-      model.billingPeriodOutOfSyncResourceEventsCounter,
-      model.agreementHistory,
-      model.walletEntries
+class StdUserStateTest {
+  @Test
+  def testJson() {
+    val now = TimeHelpers.nowMillis()
+    val bmi = BillingMonthInfo.fromMillis(now)
+    val state = StdUserState(
+      "id-1", None, "user@grnet.gr",
+      now, 0, 1000.0, false,
+      bmi.year, bmi.month,
+      Map(),
+      0L,
+      AgreementHistory.Empty,
+      Nil
     )
+
+    val json = state.toJsonString
+    println(json)
+    val obj = StdUserState.fromJsonString(json)
+
+    assert(state == obj)
   }
 }

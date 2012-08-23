@@ -128,7 +128,6 @@ extends StoreProvider
         model.isFullBillingMonth,
         model.billingYear,
         model.billingMonth,
-        model.chargingReason,
         model.stateOfResources,
         model.billingPeriodOutOfSyncResourceEventsCounter,
         model.agreementHistory,
