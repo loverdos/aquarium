@@ -284,7 +284,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
       0,
       Long.MaxValue,
       role,
-      PolicyDefinedFullPriceTableRef
+      PolicyDefinedFullPriceTableRef()
     )
   }
 

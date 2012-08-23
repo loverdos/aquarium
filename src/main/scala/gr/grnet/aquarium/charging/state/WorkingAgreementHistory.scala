@@ -86,7 +86,7 @@ final case class WorkingAgreementHistory(
 
   def agreementInEffectWhen(whenMillis: Long): Option[UserAgreementModel] = {
     agreements.to(
-      StdUserAgreement("", None, whenMillis, Long.MaxValue, "", PolicyDefinedFullPriceTableRef)
+      StdUserAgreement("", None, whenMillis, Long.MaxValue, "", PolicyDefinedFullPriceTableRef())
     ).lastOption
   }
 

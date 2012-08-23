@@ -161,7 +161,7 @@ class UserActor extends ReflectiveRoleableActor {
       effectiveFromMillis,
       Long.MaxValue,
       role,
-      PolicyDefinedFullPriceTableRef
+      PolicyDefinedFullPriceTableRef()
     )
 
     this._workingAgreementHistory += newAgreement

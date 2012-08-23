@@ -41,7 +41,7 @@ import ext.JodaTimeSerializers
 
 import gr.grnet.aquarium.util.{makeString, UTF_8_Charset}
 import java.nio.charset.Charset
-import gr.grnet.aquarium.policy.{ResourceType, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, StdPolicy}
+import gr.grnet.aquarium.policy.{AdHocFullPriceTableRef, PolicyDefinedFullPriceTableRef, FullPriceTableRef, ResourceType, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, StdPolicy}
 import gr.grnet.aquarium.charging.state.{StdUserState, ResourceInstanceChargingState, ResourcesChargingState, WorkingUserState}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 
@@ -76,7 +76,11 @@ object JsonConversions {
     classOf[ResourceInstanceChargingState],
 
     // [[WorkingUserState]]
-    classOf[WorkingUserState]
+    classOf[WorkingUserState],
+
+    classOf[FullPriceTableRef],
+    classOf[PolicyDefinedFullPriceTableRef],
+    classOf[AdHocFullPriceTableRef]
   )))
   final val JodaFormats = JodaTimeSerializers.all
   implicit final val Formats = (DefaultFormats.withHints(FullTypeHints(List(classOf[AnyRef]))) ++ JodaTimeSerializers.all)
