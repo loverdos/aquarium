@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.actor.message
 
 import gr.grnet.aquarium.AquariumInternalError
-import gr.grnet.aquarium.charging.bill.BillEntry
+import gr.grnet.aquarium.charging.bill.{AbstractBillEntry, BillEntry}
 
 /**
  *
@@ -59,4 +59,4 @@ case class GetUserBillResponse(
   }
 }
 
-case class GetUserBillResponseData(userID: String, billEntry: BillEntry)
+case class GetUserBillResponseData(userID: String, billEntry: AbstractBillEntry)

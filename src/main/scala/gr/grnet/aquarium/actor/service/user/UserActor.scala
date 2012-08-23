@@ -71,7 +71,7 @@ import scala.Some
 import scala.Right
 import gr.grnet.aquarium.policy.StdUserAgreement
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
-import gr.grnet.aquarium.charging.bill.BillEntry
+import gr.grnet.aquarium.charging.bill.{AbstractBillEntry, BillEntry}
 
 /**
  *
@@ -439,7 +439,7 @@ class UserActor extends ReflectiveRoleableActor {
     try{
       val timeslot = event.timeslot
       val state= if(haveWorkingUserState) Some(this._workingUserState) else None
-      val billEntry = BillEntry.fromWorkingUserState(timeslot,this._userID,state)
+      val billEntry = AbstractBillEntry.fromWorkingUserState(timeslot,this._userID,state)
       val billData = GetUserBillResponseData(this._userID,billEntry)
       sender ! GetUserBillResponse(Right(billData))
     } catch {

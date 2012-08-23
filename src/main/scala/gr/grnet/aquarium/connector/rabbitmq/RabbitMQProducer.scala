@@ -56,9 +56,9 @@ import collection.mutable
 
 private class RabbitMQProducerActor extends Actor {
   def receive = {
-    case sendMessage:(() => Unit) =>
+    case sendMessage:Function1[_,_] =>
       //Console.err.println("Executing msg ... " + sendMessage.hashCode)
-      sendMessage()
+      sendMessage.asInstanceOf[()=>Unit]()
     case x  : AnyRef     =>
       //Console.err.println("Dammit  ..." + x.getClass.getSimpleName)
       ()
