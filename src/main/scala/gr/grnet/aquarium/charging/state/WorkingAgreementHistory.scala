@@ -38,6 +38,7 @@ package gr.grnet.aquarium.charging.state
 import scala.collection.immutable
 import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel}
 import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  *
@@ -46,9 +47,11 @@ import gr.grnet.aquarium.util.json.JsonSupport
 
 final case class WorkingAgreementHistory(
     var agreements: immutable.SortedSet[UserAgreementModel] = immutable.SortedSet[UserAgreementModel]()
-) extends JsonSupport {
+) extends AgreementHistoryModel with JsonSupport {
 
-  def size = agreements.size
+  def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel] = {
+    immutable.TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag)).toSeq: _*)
+  }
 
   def setFrom(that: WorkingAgreementHistory): this.type = {
     this.agreements = that.agreements
@@ -83,7 +86,7 @@ final case class WorkingAgreementHistory(
 
   def agreementInEffectWhen(whenMillis: Long): Option[UserAgreementModel] = {
     agreements.to(
-      StdUserAgreement("", None, whenMillis, Long.MaxValue, "", PolicyDefinedFullPriceTableRef)
+      StdUserAgreement("", None, whenMillis, Long.MaxValue, "", PolicyDefinedFullPriceTableRef())
     ).lastOption
   }
 

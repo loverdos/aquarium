@@ -38,6 +38,7 @@ package gr.grnet.aquarium
 import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 import com.google.common.eventbus.Subscribe
 import gr.grnet.aquarium.util.Loggable
+import gr.grnet.aquarium.util.LogHelpers.Debug
 
 /**
  *
@@ -45,13 +46,13 @@ import gr.grnet.aquarium.util.Loggable
  */
 
 trait AquariumAwareSkeleton extends AquariumAware { this: Loggable ⇒
-  @volatile private var _aquarium: Aquarium = null
+  private var _aquarium: Aquarium = _
 
   final protected def aquarium = _aquarium
 
   @Subscribe
   def awareOfAquarium(event: AquariumCreatedEvent) = {
     this._aquarium = event.aquarium
-    logger.debug("Aware of Aquarium: %s".format(this._aquarium))
+    Debug(logger, "Aware of Aquarium: %s", this._aquarium)
   }
 }

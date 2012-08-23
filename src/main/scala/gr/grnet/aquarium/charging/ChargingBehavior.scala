@@ -36,95 +36,76 @@
 package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.policy.{ResourceType, EffectivePriceTable, FullPriceTable}
-import scala.collection.mutable
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.charging.state.AgreementHistory
+import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, AgreementHistoryModel, WorkingResourcesChargingState}
 import gr.grnet.aquarium.charging.wallet.WalletEntry
-import com.ckkloverdos.key.TypedKeySkeleton
+import scala.collection.mutable
 
 /**
  * A charging behavior indicates how charging for a resource will be done
- * wrt the various states a resource instance can be.
+ * wrt the various states a resource instance can be in.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 trait ChargingBehavior {
-  def alias: String
+  def selectorLabelsHierarchy: List[String]
 
-  def inputs: Set[ChargingInput]
+  /**
+   * Provides some initial charging details that will be part of the mutable charging state
+   * ([[gr.grnet.aquarium.charging.state.WorkingResourcesChargingState]]).
+   */
+  def initialChargingDetails: Map[String, Any]
+
+  def computeSelectorPath(
+      workingChargingBehaviorDetails: mutable.Map[String, Any],
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
+      currentResourceEvent: ResourceEventModel,
+      referenceTimeslot: Timeslot,
+      totalCredits: Double
+  ): List[String]
 
   def selectEffectivePriceTable(
       fullPriceTable: FullPriceTable,
-      chargingData: mutable.Map[String, Any],
+      workingChargingBehaviorDetails: mutable.Map[String, Any],
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
       currentResourceEvent: ResourceEventModel,
       referenceTimeslot: Timeslot,
-      previousValue: Double,
-      totalCredits: Double,
-      oldAccumulatingAmount: Double,
-      newAccumulatingAmount: Double
+      totalCredits: Double
   ): EffectivePriceTable
-
 
   /**
    *
-   * @return The number of wallet entries recorded and the new total credits
+   * @return The number of wallet entries recorded and the credit difference generated during processing (these are
+   *         the credits to subtract from the total credits).
    */
-  def chargeResourceEvent(
+  def processResourceEvent(
       aquarium: Aquarium,
       currentResourceEvent: ResourceEventModel,
       resourceType: ResourceType,
       billingMonthInfo: BillingMonthInfo,
-      previousResourceEventOpt: Option[ResourceEventModel],
-      userAgreements: AgreementHistory,
-      chargingData: mutable.Map[String, Any],
+      workingResourcesChargingState: WorkingResourcesChargingState,
+      userAgreements: AgreementHistoryModel,
       totalCredits: Double,
       walletEntryRecorder: WalletEntry ⇒ Unit
   ): (Int, Double)
 
-  def supportsImplicitEvents: Boolean
-
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel): Boolean
-
-  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccuredMillis: Long): ResourceEventModel
-}
-
-object ChargingBehavior {
-  final case class ChargingBehaviorKey[T: Manifest](override val name: String) extends TypedKeySkeleton[T](name)
+  def computeCreditsToSubtract(
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
+      oldCredits: Double,
+      timeDeltaMillis: Long,
+      unitPrice: Double
+  ): (Double /* credits */, String /* explanation */)
 
   /**
-   * Keys used to save information between calls of `chargeResourceEvent`
+   * Given the charging state of a resource instance and the details of the incoming message, compute the new
+   * accumulating amount.
    */
-  object EnvKeys {
-    final val ResourceInstanceAccumulatingAmount = ChargingBehaviorKey[Double]("resource.instance.accumulating.amount")
-  }
-
-  def makeValueMapFor(
-      chargingBehavior: ChargingBehavior,
-      totalCredits: Double,
-      oldTotalAmount: Double,
-      newTotalAmount: Double,
-      timeDelta: Double,
-      previousValue: Double,
-      currentValue: Double,
-      unitPrice: Double
-  ): Map[ChargingInput, Any] = {
-
-    val inputs = chargingBehavior.inputs
-    var map = Map[ChargingInput, Any]()
-
-    if(inputs contains ChargingBehaviorNameInput) map += ChargingBehaviorNameInput -> chargingBehavior.alias
-    if(inputs contains TotalCreditsInput        ) map += TotalCreditsInput   -> totalCredits
-    if(inputs contains OldTotalAmountInput      ) map += OldTotalAmountInput -> oldTotalAmount
-    if(inputs contains NewTotalAmountInput      ) map += NewTotalAmountInput -> newTotalAmount
-    if(inputs contains TimeDeltaInput           ) map += TimeDeltaInput      -> timeDelta
-    if(inputs contains PreviousValueInput       ) map += PreviousValueInput  -> previousValue
-    if(inputs contains CurrentValueInput        ) map += CurrentValueInput   -> currentValue
-    if(inputs contains UnitPriceInput           ) map += UnitPriceInput      -> unitPrice
-
-    map
-  }
+  def computeNewAccumulatingAmount(
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
+      eventDetails: Map[String, String]
+  ): Double
 }

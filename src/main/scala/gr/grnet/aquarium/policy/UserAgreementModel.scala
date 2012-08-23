@@ -78,7 +78,7 @@ trait UserAgreementModel extends Ordered[UserAgreementModel] {
 
   def computeFullPriceTable(policy: PolicyModel): FullPriceTable = {
     this.fullPriceTableRef match {
-      case PolicyDefinedFullPriceTableRef ⇒
+      case PolicyDefinedFullPriceTableRef() ⇒
         policy.roleMapping.get(role) match {
           case Some(fullPriceTable) ⇒
             fullPriceTable

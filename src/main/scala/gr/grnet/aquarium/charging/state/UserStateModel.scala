@@ -35,11 +35,9 @@
 
 package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.charging.reason.ChargingReason
 import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
  *
@@ -70,15 +68,7 @@ trait UserStateModel extends JsonSupport {
 
   def billingMonth: Int
 
-  def chargingReason: ChargingReason
-
-  def previousResourceEvents: List[ResourceEventModel]
-
-  def implicitlyIssuedStartEvents: List[ResourceEventModel]
-
-  def accumulatingAmountOfResourceInstance: Map[String, Double]
-
-  def chargingDataOfResourceInstance: Map[String, Map[String, Any]]
+  def stateOfResources: Map[String, ResourcesChargingState]
 
   def billingPeriodOutOfSyncResourceEventsCounter: Long
 
@@ -87,8 +77,6 @@ trait UserStateModel extends JsonSupport {
   def walletEntries: List[WalletEntry]
 
   def toWorkingUserState(resourceTypesMap: Map[String, ResourceType]): WorkingUserState
-
-  def newWithChargingReason(changeReason: ChargingReason): UserStateModel
 }
 
 object UserStateModel {

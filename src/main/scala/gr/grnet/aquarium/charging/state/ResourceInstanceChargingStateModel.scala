@@ -33,56 +33,28 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.charging.state.{ResourcesChargingState, UserStateModelSkeleton, AgreementHistory, UserStateModel}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+trait ResourceInstanceChargingStateModel {
+  def details: scala.collection.Map[String, Any]
 
-case class MongoDBUserState(
-    _id: String,
-    parentIDInStore: Option[String],
-    userID: String,
-    occurredMillis: Long,
-    latestResourceEventOccurredMillis: Long,
-    totalCredits: Double,
-    isFullBillingMonth: Boolean,
-    billingYear: Int,
-    billingMonth: Int,
-    stateOfResources: Map[String, ResourcesChargingState],
-    billingPeriodOutOfSyncResourceEventsCounter: Long,
-    agreementHistory: AgreementHistory,
-    walletEntries: List[WalletEntry]
-) extends UserStateModelSkeleton {
+  def previousEvents: List[ResourceEventModel]
 
-  def id = _id
-}
+  // the implicitly issued resource event at the beginning of the billing period.
+  def implicitlyIssuedStartEvent: List[ResourceEventModel]
 
-object MongoDBUserState {
-  def fromJSONString(json: String): MongoDBUserState = {
-    StdConverters.AllConverters.convertEx[MongoDBUserState](JsonTextFormat(json))
-  }
+  // Always the new accumulating amount
+  def accumulatingAmount: Double
 
-  def fromOther(model: UserStateModel, _id: String): MongoDBUserState = {
-    MongoDBUserState(
-      _id,
-      model.parentIDInStore,
-      model.userID,
-      model.occurredMillis,
-      model.latestResourceEventOccurredMillis,
-      model.totalCredits,
-      model.isFullBillingMonth,
-      model.billingYear,
-      model.billingMonth,
-      model.stateOfResources,
-      model.billingPeriodOutOfSyncResourceEventsCounter,
-      model.agreementHistory,
-      model.walletEntries
-    )
-  }
+  def oldAccumulatingAmount: Double
+
+  def previousValue: Double
+
+  def currentValue: Double
 }

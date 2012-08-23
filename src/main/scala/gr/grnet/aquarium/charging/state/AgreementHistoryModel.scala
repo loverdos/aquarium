@@ -33,56 +33,20 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.charging.state.{ResourcesChargingState, UserStateModelSkeleton, AgreementHistory, UserStateModel}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import gr.grnet.aquarium.policy.UserAgreementModel
+import scala.collection.immutable
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+trait AgreementHistoryModel {
+  def size = agreements.size
 
-case class MongoDBUserState(
-    _id: String,
-    parentIDInStore: Option[String],
-    userID: String,
-    occurredMillis: Long,
-    latestResourceEventOccurredMillis: Long,
-    totalCredits: Double,
-    isFullBillingMonth: Boolean,
-    billingYear: Int,
-    billingMonth: Int,
-    stateOfResources: Map[String, ResourcesChargingState],
-    billingPeriodOutOfSyncResourceEventsCounter: Long,
-    agreementHistory: AgreementHistory,
-    walletEntries: List[WalletEntry]
-) extends UserStateModelSkeleton {
+  def agreements: Traversable[UserAgreementModel]
 
-  def id = _id
-}
-
-object MongoDBUserState {
-  def fromJSONString(json: String): MongoDBUserState = {
-    StdConverters.AllConverters.convertEx[MongoDBUserState](JsonTextFormat(json))
-  }
-
-  def fromOther(model: UserStateModel, _id: String): MongoDBUserState = {
-    MongoDBUserState(
-      _id,
-      model.parentIDInStore,
-      model.userID,
-      model.occurredMillis,
-      model.latestResourceEventOccurredMillis,
-      model.totalCredits,
-      model.isFullBillingMonth,
-      model.billingYear,
-      model.billingMonth,
-      model.stateOfResources,
-      model.billingPeriodOutOfSyncResourceEventsCounter,
-      model.agreementHistory,
-      model.walletEntries
-    )
-  }
+  def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel]
 }

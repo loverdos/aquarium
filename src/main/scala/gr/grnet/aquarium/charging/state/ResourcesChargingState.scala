@@ -33,56 +33,31 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.charging.state.{ResourcesChargingState, UserStateModelSkeleton, AgreementHistory, UserStateModel}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import scala.collection.mutable
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+case class ResourcesChargingState(
+    details: Map[String, Any],
+    stateOfResourceInstance: Map[String /* InstanceID */, ResourceInstanceChargingState]
+) {
 
-case class MongoDBUserState(
-    _id: String,
-    parentIDInStore: Option[String],
-    userID: String,
-    occurredMillis: Long,
-    latestResourceEventOccurredMillis: Long,
-    totalCredits: Double,
-    isFullBillingMonth: Boolean,
-    billingYear: Int,
-    billingMonth: Int,
-    stateOfResources: Map[String, ResourcesChargingState],
-    billingPeriodOutOfSyncResourceEventsCounter: Long,
-    agreementHistory: AgreementHistory,
-    walletEntries: List[WalletEntry]
-) extends UserStateModelSkeleton {
+  def mutableDetails = mutable.Map(this.details.toSeq:_*)
 
-  def id = _id
-}
+  def mutableStateOfResourceInstance = mutable.Map((
+      for((k, v) ← this.stateOfResourceInstance)
+        yield (k, v.toWorkingResourceInstanceChargingState)
+      ).toSeq: _*
+  )
 
-object MongoDBUserState {
-  def fromJSONString(json: String): MongoDBUserState = {
-    StdConverters.AllConverters.convertEx[MongoDBUserState](JsonTextFormat(json))
-  }
-
-  def fromOther(model: UserStateModel, _id: String): MongoDBUserState = {
-    MongoDBUserState(
-      _id,
-      model.parentIDInStore,
-      model.userID,
-      model.occurredMillis,
-      model.latestResourceEventOccurredMillis,
-      model.totalCredits,
-      model.isFullBillingMonth,
-      model.billingYear,
-      model.billingMonth,
-      model.stateOfResources,
-      model.billingPeriodOutOfSyncResourceEventsCounter,
-      model.agreementHistory,
-      model.walletEntries
+  def toWorkingResourcesChargingState = {
+    new WorkingResourcesChargingState(
+      details = mutableDetails,
+      stateOfResourceInstance = mutableStateOfResourceInstance
     )
   }
 }

@@ -33,14 +33,35 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.logic.accounting.algorithm
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.charging.ChargingInput
-
+import org.junit.Test
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.computation.BillingMonthInfo
 
 /**
- * An charging algorithm in executable form.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait ExecutableChargingBehaviorAlgorithm extends (Map[ChargingInput, Any] ⇒ Double)
+class StdUserStateTest {
+  @Test
+  def testJson() {
+    val now = TimeHelpers.nowMillis()
+    val bmi = BillingMonthInfo.fromMillis(now)
+    val state = StdUserState(
+      "id-1", None, "user@grnet.gr",
+      now, 0, 1000.0, false,
+      bmi.year, bmi.month,
+      Map(),
+      0L,
+      AgreementHistory.Empty,
+      Nil
+    )
+
+    val json = state.toJsonString
+    println(json)
+    val obj = StdUserState.fromJsonString(json)
+
+    assert(state == obj)
+  }
+}

@@ -33,56 +33,45 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
+package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.charging.state.{ResourcesChargingState, UserStateModelSkeleton, AgreementHistory, UserStateModel}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import scala.collection.mutable
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
+ * Working (mutable state) for resource instances of the same resource type.
+ *
+ * @param details Generic state related to the type of resource as a whole
+ * @param stateOfResourceInstance A map from `instanceID` to
+ *                                [[gr.grnet.aquarium.charging.state.WorkingResourceInstanceChargingState]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+final class WorkingResourcesChargingState(
+    val details: mutable.Map[String /* any string */, Any],
+    val stateOfResourceInstance: mutable.Map[String /* InstanceID */, WorkingResourceInstanceChargingState]
+) {
 
-case class MongoDBUserState(
-    _id: String,
-    parentIDInStore: Option[String],
-    userID: String,
-    occurredMillis: Long,
-    latestResourceEventOccurredMillis: Long,
-    totalCredits: Double,
-    isFullBillingMonth: Boolean,
-    billingYear: Int,
-    billingMonth: Int,
-    stateOfResources: Map[String, ResourcesChargingState],
-    billingPeriodOutOfSyncResourceEventsCounter: Long,
-    agreementHistory: AgreementHistory,
-    walletEntries: List[WalletEntry]
-) extends UserStateModelSkeleton {
+  def immutableDetails = Map(this.details.toSeq: _*)
 
-  def id = _id
-}
+  def immutableStateOfResourceInstance = Map((
+      for((k, v) ← this.stateOfResourceInstance)
+        yield (k, v.toResourceInstanceChargingState)
+    ).toSeq:_*)
 
-object MongoDBUserState {
-  def fromJSONString(json: String): MongoDBUserState = {
-    StdConverters.AllConverters.convertEx[MongoDBUserState](JsonTextFormat(json))
-  }
-
-  def fromOther(model: UserStateModel, _id: String): MongoDBUserState = {
-    MongoDBUserState(
-      _id,
-      model.parentIDInStore,
-      model.userID,
-      model.occurredMillis,
-      model.latestResourceEventOccurredMillis,
-      model.totalCredits,
-      model.isFullBillingMonth,
-      model.billingYear,
-      model.billingMonth,
-      model.stateOfResources,
-      model.billingPeriodOutOfSyncResourceEventsCounter,
-      model.agreementHistory,
-      model.walletEntries
+  def toResourcesChargingState = {
+    ResourcesChargingState(
+      details = immutableDetails,
+      stateOfResourceInstance = immutableStateOfResourceInstance
     )
   }
+
+  /**
+   * Find the most recent (latest) holder of a resource event.
+   */
+//  def findResourceInstanceOfLatestEvent: Option[WorkingResourceInstanceChargingState] = {
+//    stateOfResourceInstance.values.toArray.sortWith { (a, b) ⇒
+//      (a.previousEvents, b.previousEvents
+//    }
+//  }
 }

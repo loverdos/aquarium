@@ -36,10 +36,13 @@
 package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.AquariumException
+import gr.grnet.aquarium.{Aquarium, AquariumException}
 import scala.collection.mutable
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.policy.FullPriceTable
+import gr.grnet.aquarium.policy.{ResourceType, FullPriceTable}
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, AgreementHistoryModel, WorkingResourcesChargingState}
+import gr.grnet.aquarium.charging.wallet.WalletEntry
 
 /**
  * A charging behavior for which resource events just carry a credit amount that will be added to the total one.
@@ -48,44 +51,78 @@ import gr.grnet.aquarium.policy.FullPriceTable
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-final class OnceChargingBehavior
-    extends ChargingBehaviorSkeleton(
-      ChargingBehaviorAliases.once,
-      Set(ChargingBehaviorNameInput, CurrentValueInput)) {
+final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
+  def computeCreditsToSubtract(
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
+      oldCredits: Double,
+      timeDeltaMillis: Long,
+      unitPrice: Double
+  ): (Double /* credits */, String /* explanation */) = {
 
-  protected def computeSelectorPath(
-      chargingData: mutable.Map[String, Any],
+    val currentValue = workingResourceInstanceChargingState.currentValue
+    // Always remember to multiply with the `unitPrice`, since it scales the credits, depending on
+    // the particular resource type tha applies.
+    val credits = currentValue * unitPrice
+    val explanation = "Value(%s) * UnitPrice(%s)".format(currentValue, unitPrice)
+
+    (credits, explanation)
+  }
+
+  def computeSelectorPath(
+      workingChargingBehaviorDetails: mutable.Map[String, Any],
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
       currentResourceEvent: ResourceEventModel,
       referenceTimeslot: Timeslot,
-      previousValue: Double,
-      totalCredits: Double,
-      oldAccumulatingAmount: Double,
-      newAccumulatingAmount: Double
+      totalCredits: Double
   ): List[String] = {
     List(FullPriceTable.DefaultSelectorKey)
   }
-  /**
-   * This is called when we have the very first event for a particular resource instance, and we want to know
-   * if it is billable or not.
-   */
-  def isBillableFirstEvent(event: ResourceEventModel) = {
-    true
+
+  override def processResourceEvent(
+      aquarium: Aquarium,
+      resourceEvent: ResourceEventModel,
+      resourceType: ResourceType,
+      billingMonthInfo: BillingMonthInfo,
+      workingResourcesChargingState: WorkingResourcesChargingState,
+      userAgreements: AgreementHistoryModel,
+      totalCredits: Double,
+      walletEntryRecorder: WalletEntry ⇒ Unit
+  ): (Int, Double) = {
+    // The credits are given in the value
+    // But we cannot just apply them, since we also need to take into account the unit price.
+    // Normally, the unit price is 1.0 but we have the flexibility to allow more stuff).
+
+    // 1. Ensure proper initial state per resource and per instance
+    ensureInitializedWorkingState(workingResourcesChargingState, resourceEvent)
+
+    // 2. Fill in data from the new event
+    val stateOfResourceInstance = workingResourcesChargingState.stateOfResourceInstance
+    val workingResourcesChargingStateDetails = workingResourcesChargingState.details
+    val instanceID = resourceEvent.instanceID
+    val workingResourceInstanceChargingState = stateOfResourceInstance(instanceID)
+    fillWorkingResourceInstanceChargingStateFromEvent(workingResourceInstanceChargingState, resourceEvent)
+
+    computeWalletEntriesForNewEvent(
+      resourceEvent,
+      resourceType,
+      billingMonthInfo,
+      totalCredits,
+      Timeslot(resourceEvent.occurredMillis, resourceEvent.occurredMillis + 1), // single point in time
+      userAgreements.agreementByTimeslot,
+      workingResourcesChargingStateDetails,
+      workingResourceInstanceChargingState,
+      aquarium.policyStore,
+      walletEntryRecorder
+    )
   }
 
-  def mustGenerateDummyFirstEvent = false // no need to
+  def initialChargingDetails: Map[String, Any] = Map()
 
-  def computeNewAccumulatingAmount(oldAmount: Double, newEventValue: Double, details: Map[String, String]) = {
-    oldAmount
-  }
-
-  def getResourceInstanceInitialAmount = 0.0
-
-  def supportsImplicitEvents = false
-
-  def mustConstructImplicitEndEventFor(resourceEvent: ResourceEventModel) = false
-
-  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, occurredMillis: Long) = {
-    throw new AquariumException("constructImplicitEndEventFor() Not compliant with %s".format(this))
+  def computeNewAccumulatingAmount(
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
+      eventDetails: Map[String, String]
+  ): Double = {
+    workingResourceInstanceChargingState.oldAccumulatingAmount
   }
 }
 
