@@ -180,12 +180,12 @@ object AbstractBillEntry {
     val walletEntries = w.walletEntries
     for { i <- walletEntries} {
       if(t.contains(i.referenceTimeslot) && i.sumOfCreditsToSubtract != 0.0){
-        //Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)
+        Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)
         sum += i.sumOfCreditsToSubtract
         ret += toResourceEntry(i)
       } else {
-        //Console.err.println("WALLET ENTERY : " + i + "\n" +
-          //           t + "  does not contain " +  i.referenceTimeslot + "  !!!!")
+        Console.err.println("WALLET ENTERY : " + i + "\n" +
+                     t + "  does not contain " +  i.referenceTimeslot + "  !!!!")
       }
     }
     (ret.toList,sum)
@@ -232,7 +232,7 @@ object AbstractBillEntry {
 
   val jsonSample = "{\n  \"id\":\"2\",\n  \"userID\":\"loverdos@grnet.gr\",\n  \"status\":\"ok\",\n  \"remainingCredits\":\"3130.0000027777783\",\n  \"deductedCredits\":\"5739.9999944444435\",\n  \"startTime\":\"1341090000000\",\n  \"endTime\":\"1343768399999\",\n  \"bill\":[{\n    \"resourceName\":\"diskspace\",\n    \"resourceType\":\"diskspace\",\n    \"unitName\":\"MB/Hr\",\n    \"totalCredits\":\"2869.9999972222217\",\n    \"eventType\":\"object update@/Papers/GOTO_HARMFUL.PDF\",\n\t    \"details\":[\n\t     {\"totalCredits\":\"2869.9999972222217\",\n\t      \"details\":[{\n\t      \"id\":\"0\",\n\t      \"unitPrice\":\"0.01\",\n\t      \"startTime\":\"1342735200000\",\n\t      \"endTime\":\"1343768399999\",\n\t      \"ellapsedTime\":\"1033199999\",\n\t      \"credits\":\"2869.9999972222217\"\n\t    \t}]\n\t    }\n\t  ]\n  },{\n    \"resourceName\":\"diskspace\",\n    \"resourceType\":\"diskspace\",\n    \"unitName\":\"MB/Hr\",\n    \"totalCredits\":\"2869.9999972222217\",\n    \"eventType\":\"object update@/Papers/GOTO_HARMFUL.PDF\",\n    \"details\":[\t     {\"totalCredits\":\"2869.9999972222217\",\n\t      \"details\":[{\n\t      \"id\":\"0\",\n\t      \"unitPrice\":\"0.01\",\n\t      \"startTime\":\"1342735200000\",\n\t      \"endTime\":\"1343768399999\",\n\t      \"ellapsedTime\":\"1033199999\",\n\t      \"credits\":\"2869.9999972222217\"\n\t    \t}]\n\t    }\n\t]\n  }]\n}"
 
-  def main(args: Array[String]) = {
+  def main0(args: Array[String]) = {
      val b : BillEntry = StdConverters.AllConverters.convertEx[BillEntry](CompactJsonTextFormat(jsonSample))
      val l0 = b.bill
      val l1 = aggregateResourceEntries(l0)
@@ -249,7 +249,7 @@ object AbstractBillEntry {
   }
 
   //
-  def main0(args: Array[String]) = {
+  def main(args: Array[String]) = {
     //Console.err.println("JSON: " +  (new BillEntry).toJsonString)
     val propsfile = new FileStreamResource(new File("aquarium.properties"))
     var _props: Props = Props(propsfile)(StdConverters.AllConverters).getOr(Props()(StdConverters.AllConverters))

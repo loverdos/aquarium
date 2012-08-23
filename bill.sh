@@ -2,7 +2,7 @@
 rm -f logs/aquarium.log  aquarium.home_IS_UNDEFINED/logs/aquarium.log
 mongo aquarium --eval "db.resevents.remove(); db.imevents.remove() ; db.policies.remove() ; db.userstates.remove()"
 
-BILLREQUEST="http://localhost:8888/user/loverdos@grnet.gr/bill/1341090000000/1343768399999"
+BILLREQUEST="http://localhost:8888/user/loverdos@grnet.gr/bill/1343768400000/1346446799000"
 
 USERCREATE="{
     \"id\": \"im.1.create.loverdos\",
@@ -13,8 +13,8 @@ USERCREATE="{
     \"eventType\": \"create\", 
     \"eventVersion\": \"1\", 
     \"isActive\": false, 
-    \"occurredMillis\":  1342731600000, 
-    \"receivedMillis\": 1342731600000, 
+    \"occurredMillis\":  1343772000000, 
+    \"receivedMillis\":  1343772000000, 
     \"role\": \"default\", 
     \"userID\": \"loverdos@grnet.gr\"
 }"
@@ -28,16 +28,34 @@ ADDCREDITS="{
  \"eventType\": \"addcredits\",
  \"eventVersion\": \"1\",
  \"isActive\": false,
- \"occurredMillis\": 1344345437000,
- \"receivedMillis\": 1344345437000,
+ \"occurredMillis\": 1343858400000,
+ \"receivedMillis\": 1343858400000,
  \"role\": \"default\",
  \"userID\": \"loverdos@grnet.gr\"
 }"
 
 RESOURCE1="{
   \"id\": \"rc.1.loverdos\",
-  \"occurredMillis\": 1342735200000,
-  \"receivedMillis\": 1342735200000,
+  \"occurredMillis\": 1343858400000,
+  \"receivedMillis\": 1343858400000,
+  \"userID\": \"loverdos@grnet.gr\",
+  \"clientID\":   \"pithos\",
+  \"resource\":   \"diskspace\",
+  \"instanceID\": \"1\",
+  \"value\":  1000.0,
+  \"eventVersion\":   \"1.0\",
+  \"details\": {
+    \"action\":   \"object update\",
+    \"total\":    \"1000.0\",
+    \"user\":     \"loverdos@grnet.gr\",
+    \"path\":     \"/Papers/GOTO_HARMFUL.PDF\"
+  }
+}"
+
+RESOURCE2="{
+  \"id\": \"rc.2.loverdos\",
+  \"occurredMillis\": 1345413600000,
+  \"receivedMillis\": 1345413600000,
   \"userID\": \"loverdos@grnet.gr\",
   \"clientID\":   \"pithos\",
   \"resource\":   \"diskspace\",
@@ -57,8 +75,12 @@ RESOURCE1="{
 #rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=pithos.resource.diskspace exchange=pithos < __rc.1.loverdos.json
 
  echo $USERCREATE | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=astakos.user exchange=astakos
+# sleep 1
  echo $ADDCREDITS | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=astakos.user exchange=astakos 
+# sleep 1
  echo $RESOURCE1  | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=pithos.resource.diskspace exchange=pithos
+# sleep 1
+ echo $RESOURCE2  | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=pithos.resource.diskspace exchange=pithos
 
 #read
 MAINCLASS=gr.grnet.aquarium.charging.bill.BillEntry
