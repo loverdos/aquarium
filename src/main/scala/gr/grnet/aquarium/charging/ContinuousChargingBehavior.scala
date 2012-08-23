@@ -35,14 +35,15 @@
 
 package gr.grnet.aquarium.charging
 
+import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.charging.state.{AgreementHistoryModel, WorkingResourcesChargingState, WorkingResourceInstanceChargingState}
+import gr.grnet.aquarium.charging.wallet.WalletEntry
+import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.policy.ResourceType
-import gr.grnet.aquarium.charging.state.{AgreementHistoryModel, WorkingResourcesChargingState, WorkingResourceInstanceChargingState}
+import gr.grnet.aquarium.policy.{FullPriceTable, ResourceType}
+import gr.grnet.aquarium.util.LogHelpers.Debug
 import scala.collection.mutable
-import gr.grnet.aquarium.Aquarium
-import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.charging.wallet.WalletEntry
 
 /**
  * In practice a resource usage will be charged for the total amount of usage
@@ -63,7 +64,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
     val oldAccumulatingAmount = workingResourceInstanceChargingState.oldAccumulatingAmount
     val credits = hrs(timeDeltaMillis) * oldAccumulatingAmount * unitPrice
-    val explanation = "Time(%s) * OldTotal(%s) * Unit(%s)".format(
+    val explanation = "Time(%s) * OldTotal(%s) * UnitPrice(%s)".format(
       hrs(timeDeltaMillis),
       oldAccumulatingAmount,
       unitPrice
@@ -80,7 +81,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       referenceTimeslot: Timeslot,
       totalCredits: Double
   ): List[String] = {
-    Nil
+    List(FullPriceTable.DefaultSelectorKey)
   }
 
   def initialChargingDetails: Map[String, Any] = Map()
@@ -102,7 +103,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
   override def processResourceEvent(
        aquarium: Aquarium,
-       currentResourceEvent: ResourceEventModel,
+       resourceEvent: ResourceEventModel,
        resourceType: ResourceType,
        billingMonthInfo: BillingMonthInfo,
        workingResourcesChargingState: WorkingResourcesChargingState,
@@ -110,7 +111,64 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
        totalCredits: Double,
        walletEntryRecorder: WalletEntry ⇒ Unit
    ): (Int, Double) = {
-    (0,0)
+
+    // 1. Ensure proper initial state per resource and per instance
+    ensureInitializedWorkingState(workingResourcesChargingState, resourceEvent)
+
+    // 2. Fill in data from the new event
+    val stateOfResourceInstance = workingResourcesChargingState.stateOfResourceInstance
+    val workingResourcesChargingStateDetails = workingResourcesChargingState.details
+    val instanceID = resourceEvent.instanceID
+    val workingResourceInstanceChargingState = stateOfResourceInstance(instanceID)
+    fillWorkingResourceInstanceChargingStateFromEvent(workingResourceInstanceChargingState, resourceEvent)
+
+    val previousEvent = workingResourceInstanceChargingState.previousEvents.headOption match {
+      case Some(previousEvent) ⇒
+        Debug(logger, "I have previous event %s", previousEvent.toDebugString)
+        previousEvent
+
+
+      case None ⇒
+        // We do not have the needed previous event, so this must be the first resource event of its kind, ever.
+        // Let's see if we can create a dummy previous event.
+        Debug(logger, "First event of its kind %s", resourceEvent.toDebugString)
+
+        val dummyFirstEventDetails = Map(
+            ResourceEventModel.Names.details_aquarium_is_synthetic   -> "true",
+            ResourceEventModel.Names.details_aquarium_is_dummy_first -> "true",
+            ResourceEventModel.Names.details_aquarium_reference_event_id -> resourceEvent.id,
+            ResourceEventModel.Names.details_aquarium_reference_event_id_in_store -> resourceEvent.stringIDInStoreOrEmpty
+        )
+
+        val dummyFirstEventValue = 0.0 // TODO From configuration
+        val dummyFirstEvent = resourceEvent.withDetailsAndValue(
+            dummyFirstEventDetails,
+            dummyFirstEventValue,
+            billingMonthInfo.monthStartMillis // TODO max(billingMonthInfo.monthStartMillis, userAgreementModel.validFromMillis)
+        )
+
+        Debug(logger, "Dummy first event %s", dummyFirstEvent.toDebugString)
+
+        dummyFirstEvent
+    }
+
+    val retval = computeWalletEntriesForNewEvent(
+      resourceEvent,
+      resourceType,
+      billingMonthInfo,
+      totalCredits,
+      Timeslot(previousEvent.occurredMillis, resourceEvent.occurredMillis),
+      userAgreements.agreementByTimeslot,
+      workingResourcesChargingStateDetails,
+      workingResourceInstanceChargingState,
+      aquarium.policyStore,
+      walletEntryRecorder
+    )
+
+    // We need just one previous event, so we update it
+    workingResourceInstanceChargingState.setOnePreviousEvent(resourceEvent)
+
+    retval
   }
 }
 

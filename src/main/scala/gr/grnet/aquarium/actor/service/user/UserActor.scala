@@ -312,6 +312,8 @@ class UserActor extends ReflectiveRoleableActor {
   /* Convert astakos message for adding credits
     to a regular RESOURCE message */
   def onHandleAddCreditsEvent(imEvent : IMEventModel) = {
+    DEBUG("Got %s", imEvent.toJsonString)
+
     val credits = imEvent.details(IMEventModel.DetailsNames.credits).toInt.toDouble
     val event = new StdResourceEvent(
       imEvent.id,
@@ -325,10 +327,11 @@ class UserActor extends ReflectiveRoleableActor {
       imEvent.eventVersion,
       imEvent.details
     )
-    //Console.err.println("Event: " + event)
-    //Console.err.println("Total credits before: " + _workingUserState.totalCredits)
+    DEBUG("Transformed to %s", event)
+    DEBUG("Total credits before: %s", _workingUserState.totalCredits)
+    aquarium.resourceEventStore.insertResourceEvent(event)
     onProcessResourceEvent(new ProcessResourceEvent(event))
-    //Console.err.println("Total credits after: " + _workingUserState.totalCredits)
+    DEBUG("Total credits after: %s", _workingUserState.totalCredits)
     //Console.err.println("OK.")
   }
 

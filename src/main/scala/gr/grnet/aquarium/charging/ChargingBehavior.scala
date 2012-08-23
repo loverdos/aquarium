@@ -79,7 +79,8 @@ trait ChargingBehavior {
 
   /**
    *
-   * @return The number of wallet entries recorded and the new total credits
+   * @return The number of wallet entries recorded and the credit difference generated during processing (these are
+   *         the credits to subtract from the total credits).
    */
   def processResourceEvent(
       aquarium: Aquarium,

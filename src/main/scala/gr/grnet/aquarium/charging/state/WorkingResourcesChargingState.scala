@@ -36,9 +36,10 @@
 package gr.grnet.aquarium.charging.state
 
 import scala.collection.mutable
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 
 /**
- * Working (mutable state) for a resource instances of the same resource type.
+ * Working (mutable state) for resource instances of the same resource type.
  *
  * @param details Generic state related to the type of resource as a whole
  * @param stateOfResourceInstance A map from `instanceID` to
@@ -47,8 +48,8 @@ import scala.collection.mutable
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 final class WorkingResourcesChargingState(
-    val details: mutable.Map[String, Any],
-    val stateOfResourceInstance: mutable.Map[String, WorkingResourceInstanceChargingState]
+    val details: mutable.Map[String /* any string */, Any],
+    val stateOfResourceInstance: mutable.Map[String /* InstanceID */, WorkingResourceInstanceChargingState]
 ) {
 
   def immutableDetails = Map(this.details.toSeq: _*)
@@ -64,4 +65,13 @@ final class WorkingResourcesChargingState(
       stateOfResourceInstance = immutableStateOfResourceInstance
     )
   }
+
+  /**
+   * Find the most recent (latest) holder of a resource event.
+   */
+//  def findResourceInstanceOfLatestEvent: Option[WorkingResourceInstanceChargingState] = {
+//    stateOfResourceInstance.values.toArray.sortWith { (a, b) ⇒
+//      (a.previousEvents, b.previousEvents
+//    }
+//  }
 }

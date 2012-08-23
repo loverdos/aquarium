@@ -60,7 +60,7 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
   ): (Double /* credits */, String /* explanation */) = {
 
     val credits = hrs(timeDeltaMillis) * unitPrice
-    val explanation = "Time(%s) * Unit(%s)".format(hrs(timeDeltaMillis), unitPrice)
+    val explanation = "Time(%s) * UnitPrice(%s)".format(hrs(timeDeltaMillis), unitPrice)
 
     (credits, explanation)
 

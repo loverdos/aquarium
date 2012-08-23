@@ -60,8 +60,10 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
   ): (Double /* credits */, String /* explanation */) = {
 
     val currentValue = workingResourceInstanceChargingState.currentValue
-    val credits = currentValue
-    val explanation = "Value(%s)".format(currentValue)
+    // Always remember to multiply with the `unitPrice`, since it scales the credits, depending on
+    // the particular resource type tha applies.
+    val credits = currentValue * unitPrice
+    val explanation = "Value(%s) * UnitPrice(%s)".format(currentValue, unitPrice)
 
     (credits, explanation)
   }
@@ -90,16 +92,15 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
     // But we cannot just apply them, since we also need to take into account the unit price.
     // Normally, the unit price is 1.0 but we have the flexibility to allow more stuff).
 
-    val instanceID = resourceEvent.instanceID
+    // 1. Ensure proper initial state per resource and per instance
+    ensureInitializedWorkingState(workingResourcesChargingState, resourceEvent)
+
+    // 2. Fill in data from the new event
     val stateOfResourceInstance = workingResourcesChargingState.stateOfResourceInstance
-
-    // 0. Ensure proper state per resource and per instance
-    ensureWorkingState(workingResourcesChargingState, resourceEvent)
-
-    // 1. Find the unit price at the moment of the event
-
     val workingResourcesChargingStateDetails = workingResourcesChargingState.details
+    val instanceID = resourceEvent.instanceID
     val workingResourceInstanceChargingState = stateOfResourceInstance(instanceID)
+    fillWorkingResourceInstanceChargingStateFromEvent(workingResourceInstanceChargingState, resourceEvent)
 
     computeWalletEntriesForNewEvent(
       resourceEvent,

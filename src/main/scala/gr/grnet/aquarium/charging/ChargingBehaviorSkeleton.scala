@@ -35,19 +35,19 @@
 
 package gr.grnet.aquarium.charging
 
+import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, WorkingResourcesChargingState, AgreementHistoryModel}
+import gr.grnet.aquarium.charging.wallet.WalletEntry
+import gr.grnet.aquarium.computation.{TimeslotComputations, BillingMonthInfo}
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable, UserAgreementModel, ResourceType}
+import gr.grnet.aquarium.store.PolicyStore
+import gr.grnet.aquarium.util._
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
 import scala.collection.immutable
 import scala.collection.mutable
 
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
-import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable, UserAgreementModel, ResourceType}
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.computation.{TimeslotComputations, BillingMonthInfo}
-import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, WorkingResourcesChargingState, AgreementHistoryModel}
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.store.PolicyStore
 
 /**
  * A charging behavior indicates how charging for a resource will be done
@@ -82,19 +82,17 @@ abstract class ChargingBehaviorSkeleton(
     )
   }
 
-  final protected def ensureWorkingState(
+  final protected def ensureInitializedWorkingState(
       workingResourcesChargingState: WorkingResourcesChargingState,
       resourceEvent: ResourceEventModel
   ) {
-    ensureResourcesChargingStateDetails(workingResourcesChargingState.details)
-    ensureResourceInstanceChargingState(workingResourcesChargingState, resourceEvent)
+    ensureInitializedResourcesChargingStateDetails(workingResourcesChargingState.details)
+    ensureInitializedResourceInstanceChargingState(workingResourcesChargingState, resourceEvent)
   }
 
-  protected def ensureResourcesChargingStateDetails(
-    details: mutable.Map[String, Any]
-  ) {}
+  protected def ensureInitializedResourcesChargingStateDetails(details: mutable.Map[String, Any]) {}
 
-  protected def ensureResourceInstanceChargingState(
+  protected def ensureInitializedResourceInstanceChargingState(
       workingResourcesChargingState: WorkingResourcesChargingState,
       resourceEvent: ResourceEventModel
   ) {
@@ -108,6 +106,14 @@ abstract class ChargingBehaviorSkeleton(
 
       case _ ⇒
     }
+  }
+
+  protected def fillWorkingResourceInstanceChargingStateFromEvent(
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
+      resourceEvent: ResourceEventModel
+  ) {
+
+    workingResourceInstanceChargingState.currentValue = resourceEvent.value
   }
 
   protected def computeWalletEntriesForNewEvent(
@@ -196,7 +202,7 @@ abstract class ChargingBehaviorSkeleton(
 
     walletEntryRecorder.apply(newWalletEntry)
 
-    (1, newTotalCredits)
+    (1, sumOfCreditsToSubtract)
   }
 
 
@@ -217,7 +223,7 @@ abstract class ChargingBehaviorSkeleton(
       totalCredits
     )
 
-    fullPriceTable.effectivePriceTableOfSelectorForResource(selectorPath, currentResourceEvent.safeResource)
+    fullPriceTable.effectivePriceTableOfSelectorForResource(selectorPath, currentResourceEvent.safeResource, logger)
   }
 
   /**

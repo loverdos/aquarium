@@ -79,4 +79,8 @@ final class WorkingResourceInstanceChargingState(
     this.previousValue = this.currentValue
     this.currentValue = value
   }
+
+  def setOnePreviousEvent(event: ResourceEventModel) {
+    this.previousEvents = event :: Nil
+  }
 }

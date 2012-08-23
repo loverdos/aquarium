@@ -206,7 +206,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     }
 
     val m0 = TimeHelpers.nowMillis()
-    val (walletEntriesCount, newTotalCredits) = chargingBehavior.processResourceEvent(
+    val (walletEntriesCount, creditsToSubtract) = chargingBehavior.processResourceEvent(
       aquarium,
       resourceEvent,
       resourceType,
@@ -223,7 +223,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     }
 
     workingUserState.updateLatestResourceEventOccurredMillis(resourceEvent.occurredMillis)
-    workingUserState.totalCredits = newTotalCredits
+    workingUserState.totalCredits -= creditsToSubtract
 
     true
   }

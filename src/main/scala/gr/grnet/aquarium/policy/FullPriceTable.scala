@@ -36,8 +36,10 @@
 package gr.grnet.aquarium.policy
 
 import gr.grnet.aquarium.AquariumInternalError
-import scala.annotation.tailrec
 import gr.grnet.aquarium.util.shortNameOfType
+import gr.grnet.aquarium.util.LogHelpers.Debug
+import org.slf4j.Logger
+import scala.annotation.tailrec
 
 /**
  * A full price table provides detailed pricing information for all resource types.
@@ -57,7 +59,8 @@ case class FullPriceTable(
 
   def effectivePriceTableOfSelectorForResource(
       selectorPath: List[String],
-      resource: String
+      resource: String,
+      logger: Logger
   ): EffectivePriceTable = {
 
     // Most of the code is for exceptional cases, which we identify in detail.
@@ -66,6 +69,10 @@ case class FullPriceTable(
         partialSelectorPath: List[String],
         partialSelectorData: Any
     ): EffectivePriceTable = {
+
+      Debug(logger, "find: ")
+      Debug(logger, "  partialSelectorPath = %s", partialSelectorPath.mkString("/"))
+      Debug(logger, "  partialSelectorData = %s", partialSelectorData)
 
       partialSelectorPath match {
         case selector :: Nil ⇒
@@ -161,10 +168,15 @@ case class FullPriceTable(
           }
 
         case Nil ⇒
-          throw new AquariumInternalError("")
+          throw new AquariumInternalError(
+            "[AQU-SEL-007] No selector path for resource %s".format(resource)
+          )
 
       }
     }
+
+    Debug(logger, "effectivePriceTableOfSelectorForResource:")
+    Debug(logger, "  selectorPath = %s", selectorPath.mkString("/"))
 
     val selectorDataOpt = perResource.get(resource)
     if(selectorDataOpt.isEmpty) {
@@ -172,6 +184,7 @@ case class FullPriceTable(
     }
     val selectorData = selectorDataOpt.get
 
+    Debug(logger, "  selectorData = %s", selectorData)
     find(selectorPath, selectorData)
   }
 }

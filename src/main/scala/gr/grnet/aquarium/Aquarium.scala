@@ -290,7 +290,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   def initialUserBalance(role: String, referenceTimeMillis: Long): Double = {
     // FIXME: Where is the mapping?
-    1000.0
+    0.0
   }
 
   def chargingBehaviorOf(resourceType: ResourceType): ChargingBehavior = {
