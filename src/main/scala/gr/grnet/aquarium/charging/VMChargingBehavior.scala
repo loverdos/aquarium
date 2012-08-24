@@ -59,8 +59,8 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       unitPrice: Double
   ): (Double /* credits */, String /* explanation */) = {
 
-    val credits = hrs(timeDeltaMillis) * unitPrice
-    val explanation = "Time(%s) * UnitPrice(%s)".format(hrs(timeDeltaMillis), unitPrice)
+    val credits = HrsOfMillis(timeDeltaMillis) * unitPrice
+    val explanation = "Hours(%s) * UnitPrice(%s)".format(HrsOfMillis(timeDeltaMillis), unitPrice)
 
     (credits, explanation)
 
@@ -115,10 +115,20 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       walletEntryRecorder: WalletEntry ⇒ Unit
   ): (Int, Double) = {
 
-
+    // FIXME Implement
     (0,0)
   }
 
+  def createVirtualEventsForRealtimeComputation(
+      userID: String,
+      resourceTypeName: String,
+      resourceInstanceID: String,
+      eventOccurredMillis: Long,
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState
+  ): List[ResourceEventModel] = {
+    // FIXME Implement
+    Nil
+  }
 }
 
 object VMChargingBehavior {

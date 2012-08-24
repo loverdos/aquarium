@@ -39,11 +39,12 @@ import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.charging.state.{AgreementHistoryModel, WorkingResourcesChargingState, WorkingResourceInstanceChargingState}
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy.{FullPriceTable, ResourceType}
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import scala.collection.mutable
+import gr.grnet.aquarium.event.model.EventModel
 
 /**
  * In practice a resource usage will be charged for the total amount of usage
@@ -63,15 +64,14 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
   ): (Double /* credits */, String /* explanation */) = {
 
     val oldAccumulatingAmount = workingResourceInstanceChargingState.oldAccumulatingAmount
-    val credits = hrs(timeDeltaMillis) * oldAccumulatingAmount * unitPrice
-    val explanation = "Time(%s) * OldTotal(%s) * UnitPrice(%s)".format(
-      hrs(timeDeltaMillis),
-      oldAccumulatingAmount,
+    val credits = HrsOfMillis(timeDeltaMillis) * oldAccumulatingAmount * unitPrice
+    val explanation = "Hours(%s) * MBs(%s) * UnitPrice(%s)".format(
+      HrsOfMillis(timeDeltaMillis),
+      MBsOfBytes(oldAccumulatingAmount),
       unitPrice
     )
 
     (credits, explanation)
-
   }
 
   def computeSelectorPath(
@@ -169,6 +169,30 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
     workingResourceInstanceChargingState.setOnePreviousEvent(resourceEvent)
 
     retval
+  }
+
+  def createVirtualEventsForRealtimeComputation(
+      userID: String,
+      resourceTypeName: String,
+      resourceInstanceID: String,
+      eventOccurredMillis: Long,
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState
+  ): List[ResourceEventModel] = {
+    StdResourceEvent(
+      ChargingBehavior.VirtualEventsIDGen.nextUID(),
+      eventOccurredMillis,
+      eventOccurredMillis,
+      userID,
+      "aquarium",
+      resourceTypeName,
+      resourceInstanceID,
+      0.0,
+      EventModel.EventVersion_1_0,
+      Map(
+        ResourceEventModel.Names.details_aquarium_is_synthetic   -> "true",
+        ResourceEventModel.Names.details_aquarium_is_realtime_virtual -> "true"
+      )
+    ) :: Nil
   }
 }
 

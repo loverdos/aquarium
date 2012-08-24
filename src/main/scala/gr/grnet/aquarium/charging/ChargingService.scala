@@ -69,6 +69,39 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
   }
   //- Utility methods
 
+  def calculateRealtimeWorkingUserState(
+      workingUserState: WorkingUserState,
+      billingMonthInfo: BillingMonthInfo,
+      realtimeMillis: Long
+  ) {
+    for( (resourceTypeName, workingResourcesState) ← workingUserState.workingStateOfResources) {
+      workingUserState.findResourceType(resourceTypeName) match {
+        case None ⇒
+          // Ignore
+
+        case Some(resourceType) ⇒
+          val chargingBehavior = aquarium.chargingBehaviorOf(resourceType)
+
+          for((resourceInstanceID, workingResourceInstanceState) ← workingResourcesState.stateOfResourceInstance) {
+            val virtualEvents = chargingBehavior.createVirtualEventsForRealtimeComputation(
+              workingUserState.userID,
+              resourceTypeName,
+              resourceInstanceID,
+              realtimeMillis,
+              workingResourceInstanceState
+            )
+
+            processResourceEvents(
+              virtualEvents,
+              workingUserState,
+              billingMonthInfo,
+              realtimeMillis
+            )
+          }
+      }
+    }
+  }
+
   def findOrCalculateWorkingUserStateAtEndOfBillingMonth(
       billingMonthInfo: BillingMonthInfo,
       userStateBootstrap: UserStateBootstrap,
@@ -231,7 +264,8 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
   def processResourceEvents(
       resourceEvents: Traversable[ResourceEventModel],
       workingUserState: WorkingUserState,
-      billingMonthInfo: BillingMonthInfo
+      billingMonthInfo: BillingMonthInfo,
+      latestUpdateMillis: Long
   ): Unit = {
 
     var _counter = 0
@@ -247,7 +281,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     }
 
     if(_counter > 0) {
-      workingUserState.latestUpdateMillis = TimeHelpers.nowMillis()
+      workingUserState.latestUpdateMillis = latestUpdateMillis
     }
   }
 
@@ -337,6 +371,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       billingMonthInfo.toShortDebugString
     )
 
+    // FIXME Reuse the logic here...Do not erase the comment...
     /*if(isFullMonthBilling) {
       // For the remaining events which must contribute an implicit OFF, we collect those OFFs
       // ... in order to generate an implicit ON later (during the next billing cycle).

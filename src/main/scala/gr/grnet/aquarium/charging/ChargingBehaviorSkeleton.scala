@@ -60,10 +60,14 @@ abstract class ChargingBehaviorSkeleton(
     final val selectorLabelsHierarchy: List[String]
 ) extends ChargingBehavior with Loggable {
 
-  protected def hrs(millis: Double) = {
-    val hours = millis / 1000 / 60 / 60
+  protected def HrsOfMillis(millis: Double) = {
+    val hours = millis / (1000 * 60 * 60).toDouble
     val roundedHours = hours
     roundedHours
+  }
+
+  protected def MBsOfBytes(bytes: Double) = {
+    bytes / (1024 * 1024).toDouble
   }
 
   protected def rcDebugInfo(rcEvent: ResourceEventModel) = {

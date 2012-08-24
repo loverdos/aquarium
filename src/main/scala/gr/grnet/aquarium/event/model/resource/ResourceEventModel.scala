@@ -36,11 +36,9 @@
 package gr.grnet.aquarium.event.model
 package resource
 
-import java.util.Date
-import gr.grnet.aquarium.util.date.MutableDateCalc
 import gr.grnet.aquarium.event.model.ExternalEventModel
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-import gr.grnet.aquarium.policy.StdPolicy
+import gr.grnet.aquarium.util.date.MutableDateCalc
+import java.util.Date
 
 /**
  * The model of any resource event.
@@ -175,6 +173,8 @@ object ResourceEventModel {
     final val details_aquarium_is_implicit_end = "__aquarium_is_implicit_end__"
 
     final val details_aquarium_is_dummy_first = "__aquarium_is_dummy_first__"
+
+    final val details_aquarium_is_realtime_virtual = "__aquarium_is_realtime_virtual__"
 
     final val details_aquarium_reference_event_id = "__aquarium_reference_event_id__"
 

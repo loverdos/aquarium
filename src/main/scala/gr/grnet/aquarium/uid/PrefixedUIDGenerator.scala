@@ -33,54 +33,12 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.event.model
+package gr.grnet.aquarium.uid
 
 /**
- * Basic properties for all events.
- * An event represents some state change, where state is specific to the use-case.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-trait EventModel {
-  /**
-   * The unique event id. The responsibility for the id generation is to the event generator.
-   */
-  def id: String
-
-  /**
-   * The Unix time of the state change occurrence that this event represents.
-   */
-  def occurredMillis: Long
-
-  /**
-   * The ID given to this event if/when persisted to a store.
-   * The exact type of the id is store-specific.
-   */
-  def idInStore: Option[AnyRef] = None
-
-  def stringIDInStoreOrEmpty = idInStore.map(_.toString).getOrElse("")
-
-  def eventVersion: String
-
-  /**
-   * An extension point that provides even more properties.
-   */
-  def details: Map[String, String]
-
-  def withDetails(newDetails: Map[String, String], newOccurredMillis: Long): EventModel
-}
-
-object EventModel {
-  final val EventVersion_1_0 = "1.0"
-
-  trait NamesT {
-    final val id = "id"
-    final val occurredMillis = "occurredMillis"
-    final val storeID = "storeID"
-    final val eventVersion = "eventVersion"
-    final val details = "details"
-  }
-
-  object Names extends NamesT
+class PrefixedUIDGenerator(prefix: String, source: UIDGenerator[_]) extends UIDGenerator[String] {
+  def nextUIDObject() = prefix + source.nextUID()
 }
