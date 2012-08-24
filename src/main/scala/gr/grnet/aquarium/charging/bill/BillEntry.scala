@@ -180,24 +180,23 @@ object AbstractBillEntry {
     val walletEntries = w.walletEntries
     for { i <- walletEntries} {
       if(t.contains(i.referenceTimeslot) && i.sumOfCreditsToSubtract != 0.0){
-        Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)
-        sum += i.sumOfCreditsToSubtract
+        //Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)
+        if(i.sumOfCreditsToSubtract > 0.0D) sum += i.sumOfCreditsToSubtract
         ret += toResourceEntry(i)
       } else {
-        Console.err.println("WALLET ENTERY : " + i + "\n" +
-                     t + "  does not contain " +  i.referenceTimeslot + "  !!!!")
+        //Console.err.println("WALLET ENTERY : " + i + "\n" +
+        //             t + "  does not contain " +  i.referenceTimeslot + "  !!!!")
       }
     }
     (ret.toList,sum)
   }
 
-  private[this] def addResourceEntries(a:ResourceEntry,b:ResourceEntry) : ResourceEntry = {
-    assert(a.resourceName == b.resourceName)
-    val totalCredits = (a.totalCredits.toDouble+b.totalCredits.toDouble).toString
-    a.copy(a.resourceName,a.resourceType,a.unitName,totalCredits,a.details ::: b.details)
-  }
-
-  private[this] def aggregateResourceEntries(re:List[ResourceEntry]) : List[ResourceEntry] =
+  private[this] def aggregateResourceEntries(re:List[ResourceEntry]) : List[ResourceEntry] = {
+    def addResourceEntries(a:ResourceEntry,b:ResourceEntry) : ResourceEntry = {
+      assert(a.resourceName == b.resourceName)
+      val totalCredits = (a.totalCredits.toDouble+b.totalCredits.toDouble).toString
+      a.copy(a.resourceName,a.resourceType,a.unitName,totalCredits,a.details ::: b.details)
+    }
     re.foldLeft(TreeMap[String,ResourceEntry]()){ (map,r1) =>
       map.get(r1.resourceName) match {
         case None => map + ((r1.resourceName,r1))
@@ -205,6 +204,7 @@ object AbstractBillEntry {
                          ((r0.resourceName, addResourceEntries(r0,r1)))
       }
     }.values.toList
+  }
 
   def fromWorkingUserState(t:Timeslot,userID:String,w:Option[WorkingUserState]) : AbstractBillEntry = {
     val ret = w match {
@@ -223,8 +223,7 @@ object AbstractBillEntry {
                       w.totalCredits.toString,
                       rcEntriesCredits.toString,
                       t.from.getTime.toString,t.to.getTime.toString,
-                      resMap
-                     )
+                      resMap)
     }
     //Console.err.println("JSON: " +  ret.toJsonString)
     ret
