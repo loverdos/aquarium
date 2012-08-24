@@ -450,6 +450,13 @@ class UserActor extends ReflectiveRoleableActor {
     (haveUserCreationIMEvent, haveWorkingUserState) match {
       case (true, true) ⇒
         // (User CREATEd, with balance state)
+        val realtimeMillis = TimeHelpers.nowMillis()
+        chargingService.calculateRealtimeWorkingUserState(
+          this._workingUserState,
+          BillingMonthInfo.fromMillis(realtimeMillis),
+          realtimeMillis
+        )
+
         sender ! GetUserBalanceResponse(Right(GetUserBalanceResponseData(this._userID, this._workingUserState.totalCredits)))
 
       case (true, false) ⇒
@@ -477,6 +484,13 @@ class UserActor extends ReflectiveRoleableActor {
   def onGetUserStateRequest(event: GetUserStateRequest): Unit = {
     haveWorkingUserState match {
       case true ⇒
+        val realtimeMillis = TimeHelpers.nowMillis()
+        chargingService.calculateRealtimeWorkingUserState(
+          this._workingUserState,
+          BillingMonthInfo.fromMillis(realtimeMillis),
+          realtimeMillis
+        )
+
         sender ! GetUserStateResponse(Right(this._workingUserState))
 
       case false ⇒
@@ -488,6 +502,13 @@ class UserActor extends ReflectiveRoleableActor {
     haveWorkingUserState match {
       case true ⇒
         DEBUG("haveWorkingUserState: %s", event)
+        val realtimeMillis = TimeHelpers.nowMillis()
+        chargingService.calculateRealtimeWorkingUserState(
+          this._workingUserState,
+          BillingMonthInfo.fromMillis(realtimeMillis),
+          realtimeMillis
+        )
+
         sender ! GetUserWalletResponse(
           Right(
             GetUserWalletResponseData(

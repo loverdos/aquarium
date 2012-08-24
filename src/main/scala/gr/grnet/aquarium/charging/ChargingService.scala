@@ -42,6 +42,7 @@ import gr.grnet.aquarium.charging.state.{WorkingResourcesChargingState, UserStat
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.util.LogHelpers.Debug
+import gr.grnet.aquarium.util.LogHelpers.DebugSeq
 import gr.grnet.aquarium.util.LogHelpers.Warn
 import gr.grnet.aquarium.util.date.{MutableDateCalc, TimeHelpers}
 import gr.grnet.aquarium.{AquariumInternalError, AquariumAwareSkeleton}
@@ -83,6 +84,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
           val chargingBehavior = aquarium.chargingBehaviorOf(resourceType)
 
           for((resourceInstanceID, workingResourceInstanceState) ← workingResourcesState.stateOfResourceInstance) {
+            Debug(logger, "Realtime calculation for %s, %s", resourceTypeName, resourceInstanceID)
             val virtualEvents = chargingBehavior.createVirtualEventsForRealtimeComputation(
               workingUserState.userID,
               resourceTypeName,
@@ -90,6 +92,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
               realtimeMillis,
               workingResourceInstanceState
             )
+            DebugSeq(logger, "virtualEvents", virtualEvents, 1)
 
             processResourceEvents(
               virtualEvents,
