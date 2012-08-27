@@ -418,14 +418,20 @@
         <version>3.1.0</version>
         <configuration>
           <recompileMode>incremental</recompileMode>
+          <javacArgs>
+            <!--<javacArg>-Xlint:unchecked</javacArg>-->
+            <javacArg>-Xlint:deprecation</javacArg>
+          </javacArgs>
 
           <charset>${project.build.sourceEncoding}</charset>
+
           <jvmArgs>
             <jvmArg>-Xmx1024m</jvmArg>
             <jvmArg>
               -DpackageLinkDefs=file://${project.build.directory}/packageLinkDefs.properties
             </jvmArg>
           </jvmArgs>
+
           <args>
             <arg>-deprecation</arg>
             <arg>-unchecked</arg>
