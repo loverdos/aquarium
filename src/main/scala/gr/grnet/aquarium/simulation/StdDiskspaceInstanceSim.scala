@@ -35,10 +35,8 @@
 
 package gr.grnet.aquarium.simulation
 
-import gr.grnet.aquarium.store.RecordID
-import com.ckkloverdos.maybe.Maybe
-import java.util.Date
 import gr.grnet.aquarium.util.date.MutableDateCalc
+import java.util.Date
 
 /**
  * A simulator for an instance of the standard `diskspace` resource.
