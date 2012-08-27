@@ -35,11 +35,11 @@
 
 @namespace("gr.grnet.aquarium.message.avro")
 protocol AquariumEvents {
-  enum EventVersion {
+  enum _EventVersion {
     VERSION_1_0
   }
 
-  record AnyValue {
+  record _AnyValue {
     union {
       null,
       int,
@@ -51,30 +51,30 @@ protocol AquariumEvents {
     } anyValue;
   }
 
-  record ResourceEvent {
+  record _ResourceEvent {
     string @aliases(["ID"]) originalID;
     string @aliased(["_id, idInStore"]) inStoreID;
     long occurredMillis;
     long receivedMillis;
     string userID;
     string clientID;
-    EventVersion eventVersion;
+    _EventVersion eventVersion;
     string @aliases(["resource"]) resourceType;
     string instanceID;
     string value;
-    map<AnyValue> details;
+    map<_AnyValue> details;
   }
 
-  record IMEvent {
+  record _IMEvent {
     string @aliases(["ID"]) originalID;
-    string @aliased(["_id, idInStore"]) inStoreID;
+    string @aliases(["_id, idInStore"]) inStoreID;
     long occurredMillis;
     long receivedMillis;
     string userID;
     string clientID;
-    EventVersion eventVersion;
+    _EventVersion eventVersion;
     boolean isActive;
     string role;
-    map<AnyValue> details;
+    map<_AnyValue> details;
   }
 }

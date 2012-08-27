@@ -5,8 +5,8 @@
  */
 package gr.grnet.aquarium.message.avro;  
 @SuppressWarnings("all")
-public class SelectorValue extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"SelectorValue\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTable\",\"fields\":[]},{\"type\":\"map\",\"values\":\"SelectorValue\"}]}]}");
+public class _SelectorValue extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_SelectorValue\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"_EffectivePriceTable\",\"fields\":[]},{\"type\":\"map\",\"values\":\"_SelectorValue\"}]}]}");
   @Deprecated public java.lang.Object selectorValue;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
@@ -40,42 +40,42 @@ public class SelectorValue extends org.apache.avro.specific.SpecificRecordBase i
     this.selectorValue = value;
   }
 
-  /** Creates a new SelectorValue RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.SelectorValue.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.SelectorValue.Builder();
+  /** Creates a new _SelectorValue RecordBuilder */
+  public static gr.grnet.aquarium.message.avro._SelectorValue.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro._SelectorValue.Builder();
   }
   
-  /** Creates a new SelectorValue RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.SelectorValue.Builder newBuilder(gr.grnet.aquarium.message.avro.SelectorValue.Builder other) {
-    return new gr.grnet.aquarium.message.avro.SelectorValue.Builder(other);
+  /** Creates a new _SelectorValue RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro._SelectorValue.Builder newBuilder(gr.grnet.aquarium.message.avro._SelectorValue.Builder other) {
+    return new gr.grnet.aquarium.message.avro._SelectorValue.Builder(other);
   }
   
-  /** Creates a new SelectorValue RecordBuilder by copying an existing SelectorValue instance */
-  public static gr.grnet.aquarium.message.avro.SelectorValue.Builder newBuilder(gr.grnet.aquarium.message.avro.SelectorValue other) {
-    return new gr.grnet.aquarium.message.avro.SelectorValue.Builder(other);
+  /** Creates a new _SelectorValue RecordBuilder by copying an existing _SelectorValue instance */
+  public static gr.grnet.aquarium.message.avro._SelectorValue.Builder newBuilder(gr.grnet.aquarium.message.avro._SelectorValue other) {
+    return new gr.grnet.aquarium.message.avro._SelectorValue.Builder(other);
   }
   
   /**
-   * RecordBuilder for SelectorValue instances.
+   * RecordBuilder for _SelectorValue instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<SelectorValue>
-    implements org.apache.avro.data.RecordBuilder<SelectorValue> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_SelectorValue>
+    implements org.apache.avro.data.RecordBuilder<_SelectorValue> {
 
     private java.lang.Object selectorValue;
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.SelectorValue.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro._SelectorValue.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.SelectorValue.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro._SelectorValue.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing SelectorValue instance */
-    private Builder(gr.grnet.aquarium.message.avro.SelectorValue other) {
-            super(gr.grnet.aquarium.message.avro.SelectorValue.SCHEMA$);
+    /** Creates a Builder by copying an existing _SelectorValue instance */
+    private Builder(gr.grnet.aquarium.message.avro._SelectorValue other) {
+            super(gr.grnet.aquarium.message.avro._SelectorValue.SCHEMA$);
       if (isValidValue(fields()[0], other.selectorValue)) {
         this.selectorValue = (java.lang.Object) data().deepCopy(fields()[0].schema(), other.selectorValue);
         fieldSetFlags()[0] = true;
@@ -88,7 +88,7 @@ public class SelectorValue extends org.apache.avro.specific.SpecificRecordBase i
     }
     
     /** Sets the value of the 'selectorValue' field */
-    public gr.grnet.aquarium.message.avro.SelectorValue.Builder setSelectorValue(java.lang.Object value) {
+    public gr.grnet.aquarium.message.avro._SelectorValue.Builder setSelectorValue(java.lang.Object value) {
       validate(fields()[0], value);
       this.selectorValue = value;
       fieldSetFlags()[0] = true;
@@ -101,16 +101,16 @@ public class SelectorValue extends org.apache.avro.specific.SpecificRecordBase i
     }
     
     /** Clears the value of the 'selectorValue' field */
-    public gr.grnet.aquarium.message.avro.SelectorValue.Builder clearSelectorValue() {
+    public gr.grnet.aquarium.message.avro._SelectorValue.Builder clearSelectorValue() {
       selectorValue = null;
       fieldSetFlags()[0] = false;
       return this;
     }
 
     @Override
-    public SelectorValue build() {
+    public _SelectorValue build() {
       try {
-        SelectorValue record = new SelectorValue();
+        _SelectorValue record = new _SelectorValue();
         record.selectorValue = fieldSetFlags()[0] ? this.selectorValue : (java.lang.Object) defaultValue(fields()[0]);
         return record;
       } catch (Exception e) {

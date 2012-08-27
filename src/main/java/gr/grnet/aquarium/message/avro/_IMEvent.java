@@ -5,18 +5,18 @@
  */
 package gr.grnet.aquarium.message.avro;  
 @SuppressWarnings("all")
-public class IMEvent extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"IMEvent\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"originalID\",\"type\":\"string\",\"aliases\":[\"ID\"]},{\"name\":\"inStoreID\",\"type\":\"string\"},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\"},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"clientID\",\"type\":\"string\"},{\"name\":\"eventVersion\",\"type\":{\"type\":\"enum\",\"name\":\"EventVersion\",\"symbols\":[\"VERSION_1_0\"]}},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"role\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValue\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}}}]}");
+public class _IMEvent extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_IMEvent\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"originalID\",\"type\":\"string\",\"aliases\":[\"ID\"]},{\"name\":\"inStoreID\",\"type\":\"string\",\"aliases\":[\"_id, idInStore\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\"},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"clientID\",\"type\":\"string\"},{\"name\":\"eventVersion\",\"type\":{\"type\":\"enum\",\"name\":\"_EventVersion\",\"symbols\":[\"VERSION_1_0\"]}},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"role\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_AnyValue\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}}}]}");
   @Deprecated public java.lang.CharSequence originalID;
   @Deprecated public java.lang.CharSequence inStoreID;
   @Deprecated public long occurredMillis;
   @Deprecated public long receivedMillis;
   @Deprecated public java.lang.CharSequence userID;
   @Deprecated public java.lang.CharSequence clientID;
-  @Deprecated public gr.grnet.aquarium.message.avro.EventVersion eventVersion;
+  @Deprecated public gr.grnet.aquarium.message.avro._EventVersion eventVersion;
   @Deprecated public boolean isActive;
   @Deprecated public java.lang.CharSequence role;
-  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue> details;
+  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue> details;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -44,10 +44,10 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     case 3: receivedMillis = (java.lang.Long)value$; break;
     case 4: userID = (java.lang.CharSequence)value$; break;
     case 5: clientID = (java.lang.CharSequence)value$; break;
-    case 6: eventVersion = (gr.grnet.aquarium.message.avro.EventVersion)value$; break;
+    case 6: eventVersion = (gr.grnet.aquarium.message.avro._EventVersion)value$; break;
     case 7: isActive = (java.lang.Boolean)value$; break;
     case 8: role = (java.lang.CharSequence)value$; break;
-    case 9: details = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue>)value$; break;
+    case 9: details = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -145,7 +145,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
   /**
    * Gets the value of the 'eventVersion' field.
    */
-  public gr.grnet.aquarium.message.avro.EventVersion getEventVersion() {
+  public gr.grnet.aquarium.message.avro._EventVersion getEventVersion() {
     return eventVersion;
   }
 
@@ -153,7 +153,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
    * Sets the value of the 'eventVersion' field.
    * @param value the value to set.
    */
-  public void setEventVersion(gr.grnet.aquarium.message.avro.EventVersion value) {
+  public void setEventVersion(gr.grnet.aquarium.message.avro._EventVersion value) {
     this.eventVersion = value;
   }
 
@@ -190,7 +190,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
   /**
    * Gets the value of the 'details' field.
    */
-  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue> getDetails() {
+  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue> getDetails() {
     return details;
   }
 
@@ -198,30 +198,30 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
    * Sets the value of the 'details' field.
    * @param value the value to set.
    */
-  public void setDetails(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue> value) {
+  public void setDetails(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue> value) {
     this.details = value;
   }
 
-  /** Creates a new IMEvent RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.IMEvent.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.IMEvent.Builder();
+  /** Creates a new _IMEvent RecordBuilder */
+  public static gr.grnet.aquarium.message.avro._IMEvent.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro._IMEvent.Builder();
   }
   
-  /** Creates a new IMEvent RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.IMEvent.Builder newBuilder(gr.grnet.aquarium.message.avro.IMEvent.Builder other) {
-    return new gr.grnet.aquarium.message.avro.IMEvent.Builder(other);
+  /** Creates a new _IMEvent RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro._IMEvent.Builder newBuilder(gr.grnet.aquarium.message.avro._IMEvent.Builder other) {
+    return new gr.grnet.aquarium.message.avro._IMEvent.Builder(other);
   }
   
-  /** Creates a new IMEvent RecordBuilder by copying an existing IMEvent instance */
-  public static gr.grnet.aquarium.message.avro.IMEvent.Builder newBuilder(gr.grnet.aquarium.message.avro.IMEvent other) {
-    return new gr.grnet.aquarium.message.avro.IMEvent.Builder(other);
+  /** Creates a new _IMEvent RecordBuilder by copying an existing _IMEvent instance */
+  public static gr.grnet.aquarium.message.avro._IMEvent.Builder newBuilder(gr.grnet.aquarium.message.avro._IMEvent other) {
+    return new gr.grnet.aquarium.message.avro._IMEvent.Builder(other);
   }
   
   /**
-   * RecordBuilder for IMEvent instances.
+   * RecordBuilder for _IMEvent instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<IMEvent>
-    implements org.apache.avro.data.RecordBuilder<IMEvent> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_IMEvent>
+    implements org.apache.avro.data.RecordBuilder<_IMEvent> {
 
     private java.lang.CharSequence originalID;
     private java.lang.CharSequence inStoreID;
@@ -229,24 +229,24 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     private long receivedMillis;
     private java.lang.CharSequence userID;
     private java.lang.CharSequence clientID;
-    private gr.grnet.aquarium.message.avro.EventVersion eventVersion;
+    private gr.grnet.aquarium.message.avro._EventVersion eventVersion;
     private boolean isActive;
     private java.lang.CharSequence role;
-    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue> details;
+    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue> details;
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.IMEvent.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro._IMEvent.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.IMEvent.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro._IMEvent.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing IMEvent instance */
-    private Builder(gr.grnet.aquarium.message.avro.IMEvent other) {
-            super(gr.grnet.aquarium.message.avro.IMEvent.SCHEMA$);
+    /** Creates a Builder by copying an existing _IMEvent instance */
+    private Builder(gr.grnet.aquarium.message.avro._IMEvent other) {
+            super(gr.grnet.aquarium.message.avro._IMEvent.SCHEMA$);
       if (isValidValue(fields()[0], other.originalID)) {
         this.originalID = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.originalID);
         fieldSetFlags()[0] = true;
@@ -272,7 +272,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
         fieldSetFlags()[5] = true;
       }
       if (isValidValue(fields()[6], other.eventVersion)) {
-        this.eventVersion = (gr.grnet.aquarium.message.avro.EventVersion) data().deepCopy(fields()[6].schema(), other.eventVersion);
+        this.eventVersion = (gr.grnet.aquarium.message.avro._EventVersion) data().deepCopy(fields()[6].schema(), other.eventVersion);
         fieldSetFlags()[6] = true;
       }
       if (isValidValue(fields()[7], other.isActive)) {
@@ -284,7 +284,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
         fieldSetFlags()[8] = true;
       }
       if (isValidValue(fields()[9], other.details)) {
-        this.details = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue>) data().deepCopy(fields()[9].schema(), other.details);
+        this.details = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue>) data().deepCopy(fields()[9].schema(), other.details);
         fieldSetFlags()[9] = true;
       }
     }
@@ -295,7 +295,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'originalID' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setOriginalID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setOriginalID(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.originalID = value;
       fieldSetFlags()[0] = true;
@@ -308,7 +308,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'originalID' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearOriginalID() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearOriginalID() {
       originalID = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -320,7 +320,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'inStoreID' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setInStoreID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setInStoreID(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.inStoreID = value;
       fieldSetFlags()[1] = true;
@@ -333,7 +333,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'inStoreID' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearInStoreID() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearInStoreID() {
       inStoreID = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -345,7 +345,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'occurredMillis' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setOccurredMillis(long value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setOccurredMillis(long value) {
       validate(fields()[2], value);
       this.occurredMillis = value;
       fieldSetFlags()[2] = true;
@@ -358,7 +358,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'occurredMillis' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearOccurredMillis() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearOccurredMillis() {
       fieldSetFlags()[2] = false;
       return this;
     }
@@ -369,7 +369,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'receivedMillis' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setReceivedMillis(long value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setReceivedMillis(long value) {
       validate(fields()[3], value);
       this.receivedMillis = value;
       fieldSetFlags()[3] = true;
@@ -382,7 +382,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'receivedMillis' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearReceivedMillis() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearReceivedMillis() {
       fieldSetFlags()[3] = false;
       return this;
     }
@@ -393,7 +393,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setUserID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setUserID(java.lang.CharSequence value) {
       validate(fields()[4], value);
       this.userID = value;
       fieldSetFlags()[4] = true;
@@ -406,7 +406,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearUserID() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearUserID() {
       userID = null;
       fieldSetFlags()[4] = false;
       return this;
@@ -418,7 +418,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'clientID' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setClientID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setClientID(java.lang.CharSequence value) {
       validate(fields()[5], value);
       this.clientID = value;
       fieldSetFlags()[5] = true;
@@ -431,19 +431,19 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'clientID' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearClientID() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearClientID() {
       clientID = null;
       fieldSetFlags()[5] = false;
       return this;
     }
 
     /** Gets the value of the 'eventVersion' field */
-    public gr.grnet.aquarium.message.avro.EventVersion getEventVersion() {
+    public gr.grnet.aquarium.message.avro._EventVersion getEventVersion() {
       return eventVersion;
     }
     
     /** Sets the value of the 'eventVersion' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setEventVersion(gr.grnet.aquarium.message.avro.EventVersion value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setEventVersion(gr.grnet.aquarium.message.avro._EventVersion value) {
       validate(fields()[6], value);
       this.eventVersion = value;
       fieldSetFlags()[6] = true;
@@ -456,7 +456,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'eventVersion' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearEventVersion() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearEventVersion() {
       eventVersion = null;
       fieldSetFlags()[6] = false;
       return this;
@@ -468,7 +468,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'isActive' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setIsActive(boolean value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setIsActive(boolean value) {
       validate(fields()[7], value);
       this.isActive = value;
       fieldSetFlags()[7] = true;
@@ -481,7 +481,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'isActive' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearIsActive() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearIsActive() {
       fieldSetFlags()[7] = false;
       return this;
     }
@@ -492,7 +492,7 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'role' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setRole(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setRole(java.lang.CharSequence value) {
       validate(fields()[8], value);
       this.role = value;
       fieldSetFlags()[8] = true;
@@ -505,19 +505,19 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'role' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearRole() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearRole() {
       role = null;
       fieldSetFlags()[8] = false;
       return this;
     }
 
     /** Gets the value of the 'details' field */
-    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue> getDetails() {
+    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue> getDetails() {
       return details;
     }
     
     /** Sets the value of the 'details' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder setDetails(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue> value) {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder setDetails(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue> value) {
       validate(fields()[9], value);
       this.details = value;
       fieldSetFlags()[9] = true;
@@ -530,26 +530,26 @@ public class IMEvent extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'details' field */
-    public gr.grnet.aquarium.message.avro.IMEvent.Builder clearDetails() {
+    public gr.grnet.aquarium.message.avro._IMEvent.Builder clearDetails() {
       details = null;
       fieldSetFlags()[9] = false;
       return this;
     }
 
     @Override
-    public IMEvent build() {
+    public _IMEvent build() {
       try {
-        IMEvent record = new IMEvent();
+        _IMEvent record = new _IMEvent();
         record.originalID = fieldSetFlags()[0] ? this.originalID : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.inStoreID = fieldSetFlags()[1] ? this.inStoreID : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.occurredMillis = fieldSetFlags()[2] ? this.occurredMillis : (java.lang.Long) defaultValue(fields()[2]);
         record.receivedMillis = fieldSetFlags()[3] ? this.receivedMillis : (java.lang.Long) defaultValue(fields()[3]);
         record.userID = fieldSetFlags()[4] ? this.userID : (java.lang.CharSequence) defaultValue(fields()[4]);
         record.clientID = fieldSetFlags()[5] ? this.clientID : (java.lang.CharSequence) defaultValue(fields()[5]);
-        record.eventVersion = fieldSetFlags()[6] ? this.eventVersion : (gr.grnet.aquarium.message.avro.EventVersion) defaultValue(fields()[6]);
+        record.eventVersion = fieldSetFlags()[6] ? this.eventVersion : (gr.grnet.aquarium.message.avro._EventVersion) defaultValue(fields()[6]);
         record.isActive = fieldSetFlags()[7] ? this.isActive : (java.lang.Boolean) defaultValue(fields()[7]);
         record.role = fieldSetFlags()[8] ? this.role : (java.lang.CharSequence) defaultValue(fields()[8]);
-        record.details = fieldSetFlags()[9] ? this.details : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.AnyValue>) defaultValue(fields()[9]);
+        record.details = fieldSetFlags()[9] ? this.details : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro._AnyValue>) defaultValue(fields()[9]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

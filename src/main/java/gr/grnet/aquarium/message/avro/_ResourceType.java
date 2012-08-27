@@ -5,8 +5,8 @@
  */
 package gr.grnet.aquarium.message.avro;  
 @SuppressWarnings("all")
-public class ResourceType extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ResourceType\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}");
+public class _ResourceType extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_ResourceType\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}");
   @Deprecated public java.lang.CharSequence name;
   @Deprecated public java.lang.CharSequence unit;
   @Deprecated public java.lang.CharSequence chargingBehaviorClass;
@@ -76,26 +76,26 @@ public class ResourceType extends org.apache.avro.specific.SpecificRecordBase im
     this.chargingBehaviorClass = value;
   }
 
-  /** Creates a new ResourceType RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.ResourceType.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.ResourceType.Builder();
+  /** Creates a new _ResourceType RecordBuilder */
+  public static gr.grnet.aquarium.message.avro._ResourceType.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro._ResourceType.Builder();
   }
   
-  /** Creates a new ResourceType RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.ResourceType.Builder newBuilder(gr.grnet.aquarium.message.avro.ResourceType.Builder other) {
-    return new gr.grnet.aquarium.message.avro.ResourceType.Builder(other);
+  /** Creates a new _ResourceType RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro._ResourceType.Builder newBuilder(gr.grnet.aquarium.message.avro._ResourceType.Builder other) {
+    return new gr.grnet.aquarium.message.avro._ResourceType.Builder(other);
   }
   
-  /** Creates a new ResourceType RecordBuilder by copying an existing ResourceType instance */
-  public static gr.grnet.aquarium.message.avro.ResourceType.Builder newBuilder(gr.grnet.aquarium.message.avro.ResourceType other) {
-    return new gr.grnet.aquarium.message.avro.ResourceType.Builder(other);
+  /** Creates a new _ResourceType RecordBuilder by copying an existing _ResourceType instance */
+  public static gr.grnet.aquarium.message.avro._ResourceType.Builder newBuilder(gr.grnet.aquarium.message.avro._ResourceType other) {
+    return new gr.grnet.aquarium.message.avro._ResourceType.Builder(other);
   }
   
   /**
-   * RecordBuilder for ResourceType instances.
+   * RecordBuilder for _ResourceType instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<ResourceType>
-    implements org.apache.avro.data.RecordBuilder<ResourceType> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_ResourceType>
+    implements org.apache.avro.data.RecordBuilder<_ResourceType> {
 
     private java.lang.CharSequence name;
     private java.lang.CharSequence unit;
@@ -103,17 +103,17 @@ public class ResourceType extends org.apache.avro.specific.SpecificRecordBase im
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.ResourceType.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro._ResourceType.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.ResourceType.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro._ResourceType.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing ResourceType instance */
-    private Builder(gr.grnet.aquarium.message.avro.ResourceType other) {
-            super(gr.grnet.aquarium.message.avro.ResourceType.SCHEMA$);
+    /** Creates a Builder by copying an existing _ResourceType instance */
+    private Builder(gr.grnet.aquarium.message.avro._ResourceType other) {
+            super(gr.grnet.aquarium.message.avro._ResourceType.SCHEMA$);
       if (isValidValue(fields()[0], other.name)) {
         this.name = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.name);
         fieldSetFlags()[0] = true;
@@ -134,7 +134,7 @@ public class ResourceType extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'name' field */
-    public gr.grnet.aquarium.message.avro.ResourceType.Builder setName(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro._ResourceType.Builder setName(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.name = value;
       fieldSetFlags()[0] = true;
@@ -147,7 +147,7 @@ public class ResourceType extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'name' field */
-    public gr.grnet.aquarium.message.avro.ResourceType.Builder clearName() {
+    public gr.grnet.aquarium.message.avro._ResourceType.Builder clearName() {
       name = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -159,7 +159,7 @@ public class ResourceType extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'unit' field */
-    public gr.grnet.aquarium.message.avro.ResourceType.Builder setUnit(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro._ResourceType.Builder setUnit(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.unit = value;
       fieldSetFlags()[1] = true;
@@ -172,7 +172,7 @@ public class ResourceType extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'unit' field */
-    public gr.grnet.aquarium.message.avro.ResourceType.Builder clearUnit() {
+    public gr.grnet.aquarium.message.avro._ResourceType.Builder clearUnit() {
       unit = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -184,7 +184,7 @@ public class ResourceType extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'chargingBehaviorClass' field */
-    public gr.grnet.aquarium.message.avro.ResourceType.Builder setChargingBehaviorClass(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro._ResourceType.Builder setChargingBehaviorClass(java.lang.CharSequence value) {
       validate(fields()[2], value);
       this.chargingBehaviorClass = value;
       fieldSetFlags()[2] = true;
@@ -197,16 +197,16 @@ public class ResourceType extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'chargingBehaviorClass' field */
-    public gr.grnet.aquarium.message.avro.ResourceType.Builder clearChargingBehaviorClass() {
+    public gr.grnet.aquarium.message.avro._ResourceType.Builder clearChargingBehaviorClass() {
       chargingBehaviorClass = null;
       fieldSetFlags()[2] = false;
       return this;
     }
 
     @Override
-    public ResourceType build() {
+    public _ResourceType build() {
       try {
-        ResourceType record = new ResourceType();
+        _ResourceType record = new _ResourceType();
         record.name = fieldSetFlags()[0] ? this.name : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.unit = fieldSetFlags()[1] ? this.unit : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.chargingBehaviorClass = fieldSetFlags()[2] ? this.chargingBehaviorClass : (java.lang.CharSequence) defaultValue(fields()[2]);

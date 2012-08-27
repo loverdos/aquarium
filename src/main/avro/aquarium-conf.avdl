@@ -35,11 +35,11 @@
 
 @namespace("gr.grnet.aquarium.message.avro")
 protocol AquariumConf {
-  enum EventVersion {
+  enum _EventVersion {
     VERSION_1_0
   }
 
-  record AnyValue {
+  record _AnyValue {
     union {
       null,
       int,
@@ -51,33 +51,33 @@ protocol AquariumConf {
     } anyValue;
   }
 
-  record ResourceType {
+  record _ResourceType {
     string name;
     string unit;
     string chargingBehaviorClass;
   }
 
-  record EffectivePriceTable {
+  record _EffectivePriceTable {
   }
 
-  record SelectorValue {
+  record _SelectorValue {
     union {
-      EffectivePriceTable,
-      map<SelectorValue>
+      _EffectivePriceTable,
+      map<_SelectorValue>
     } selectorValue;
   }
 
-  record FullPriceTable {
-    map<map<SelectorValue>> perResource;
+  record _FullPriceTable {
+    map<map<_SelectorValue>> perResource;
   }
 
-  record Policy {
+  record _Policy {
     string @aliases(["id, _id, idInStore, inStoreID"]) ID;
     string parentID;
     long validFromMillis;
     long validToMillis;
-    array<ResourceType> resourceTypes;
+    array<_ResourceType> resourceTypes;
     array<string> chargingBehaviors;
-    map<FullPriceTable> roleMapping;
+    map<_FullPriceTable> roleMapping;
   }
 }
