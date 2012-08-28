@@ -35,7 +35,12 @@
 
 package gr.grnet.aquarium.message.avro
 
+import java.io.ByteArrayOutputStream
+import org.apache.avro.io.{EncoderFactory, Encoder, JsonEncoder}
+import org.apache.avro.specific.SpecificDatumWriter
 import org.junit.{Assert, Test}
+import java.util
+import org.codehaus.jackson.{JsonEncoding, JsonFactory}
 
 /**
  *
@@ -43,28 +48,29 @@ import org.junit.{Assert, Test}
  */
 class ResourceEventTest {
   @Test
-  def testJSON() {
+  def testJSONSchema() {
     val rcEvent = new _ResourceEvent()
     val schema = rcEvent.getSchema
     val generatedPrettySchema = schema.toString(true)
     val goodJSONSchema =
-    """{
+      """{
         |  "type" : "record",
         |  "name" : "_ResourceEvent",
         |  "namespace" : "gr.grnet.aquarium.message.avro",
         |  "fields" : [ {
-        |    "name" : "originalID",
+        |    "name" : "id",
         |    "type" : "string",
-        |    "aliases" : [ "ID" ]
+        |    "aliases" : [ "originalID", "ID" ]
         |  }, {
-        |    "name" : "inStoreID",
+        |    "name" : "idInStore",
         |    "type" : "string"
         |  }, {
         |    "name" : "occurredMillis",
         |    "type" : "long"
         |  }, {
         |    "name" : "receivedMillis",
-        |    "type" : "long"
+        |    "type" : "long",
+        |    "default" : 0
         |  }, {
         |    "name" : "userID",
         |    "type" : "string"
@@ -73,15 +79,12 @@ class ResourceEventTest {
         |    "type" : "string"
         |  }, {
         |    "name" : "eventVersion",
-        |    "type" : {
-        |      "type" : "enum",
-        |      "name" : "_EventVersion",
-        |      "symbols" : [ "VERSION_1_0" ]
-        |    }
-        |  }, {
-        |    "name" : "resourceType",
         |    "type" : "string",
-        |    "aliases" : [ "resource" ]
+        |    "default" : "1.0"
+        |  }, {
+        |    "name" : "resource",
+        |    "type" : "string",
+        |    "aliases" : [ "resourceType" ]
         |  }, {
         |    "name" : "instanceID",
         |    "type" : "string"
@@ -105,5 +108,53 @@ class ResourceEventTest {
         |}""".stripMargin
 
     Assert.assertEquals(goodJSONSchema, generatedPrettySchema)
+  }
+
+  @Test
+  def testJSONObjectOutput() {
+    val rcEvent = _ResourceEvent.newBuilder().
+      setId("id-1").
+      setClientID("client-1").
+      setResource("diskspace").
+      setInstanceID("1").
+      setIdInStore("").
+      setOccurredMillis(1000L).
+      setUserID("foouser").
+      setValue("123.32").
+      setDetails(new util.HashMap[CharSequence, _AnyValue]()).
+    build()
+
+    val schema = rcEvent.getSchema
+    val out = new ByteArrayOutputStream()
+    val encoder = EncoderFactory.get().jsonEncoder(schema, out)
+    val jsonGenerator = new JsonFactory().
+      createJsonGenerator(out, JsonEncoding.UTF8).
+      useDefaultPrettyPrinter()
+    encoder.configure(jsonGenerator)
+    val writer = new SpecificDatumWriter[_ResourceEvent](schema)
+
+    writer.write(rcEvent, encoder)
+
+    encoder.flush()
+
+    val generatedJSON = out.toString
+
+    val goodJSONString =
+      """{
+        |  "id" : "id-1",
+        |  "idInStore" : "",
+        |  "occurredMillis" : 1000,
+        |  "receivedMillis" : 0,
+        |  "userID" : "foouser",
+        |  "clientID" : "client-1",
+        |  "eventVersion" : "1.0",
+        |  "resource" : "diskspace",
+        |  "instanceID" : "1",
+        |  "value" : "123.32",
+        |  "details" : {
+        |  }
+        |}""".stripMargin
+
+    Assert.assertEquals(goodJSONString, generatedJSON)
   }
 }
