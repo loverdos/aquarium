@@ -33,38 +33,51 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation
-
-import gr.grnet.aquarium.policy.PolicyModel
-import gr.grnet.aquarium.charging.{VMChargingBehavior, ChargingBehavior}
-
-
-/**
- * A simulator for the standard `vmtime` resource.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- */
-
-class StdVMTimeResourceSim(
-    name: String = StdVMTimeResourceSim.DSLNames.name,
-    unit: String = StdVMTimeResourceSim.DSLNames.unit,
-    chargingBehavior: String = classOf[VMChargingBehavior].getName
-) extends ResourceSim(name, unit, chargingBehavior) {
-
-  override def newInstance(instanceId: String, owner: UserSim, client: ClientSim) =
-    StdVMTimeInstanceSim(this, instanceId, owner, client)
-}
-
-
-object StdVMTimeResourceSim {
-  object DSLNames {
-    final val name = "vmtime"
-    final val unit = "Hr"
+@namespace("gr.grnet.aquarium.message.avro")
+protocol AquariumConf {
+  enum _EventVersion {
+    VERSION_1_0
   }
 
-  def fromPolicy(policy: PolicyModel): StdVMTimeResourceSim = {
-    val resourceType = policy.resourceTypesMap(DSLNames.name)
+  record _AnyValue {
+    union {
+      null,
+      int,
+      long,
+      boolean,
+      double,
+      bytes,
+      string
+    } anyValue;
+  }
 
-    new StdVMTimeResourceSim(resourceType.name, resourceType.unit)
+  record _ResourceType {
+    string name;
+    string unit;
+    string chargingBehaviorClass;
+  }
+
+  record _EffectivePriceTable {
+  }
+
+  record _SelectorValue {
+    union {
+      _EffectivePriceTable,
+      map<_SelectorValue>
+    } selectorValue;
+  }
+
+  record _FullPriceTable {
+    map<map<_SelectorValue>> perResource;
+  }
+
+  record _Policy {
+    string @aliases(["id, _id, idInStore, inStoreID"]) ID;
+    string parentID;
+    long validFromMillis;
+    long validToMillis;
+    array<_ResourceType> resourceTypes;
+    array<string> chargingBehaviors;
+    map<_FullPriceTable> roleMapping;
   }
 }

@@ -35,13 +35,14 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.policy.{ResourceType, EffectivePriceTable, FullPriceTable}
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.Aquarium
-import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, AgreementHistoryModel, WorkingResourcesChargingState}
 import gr.grnet.aquarium.charging.wallet.WalletEntry
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.policy.{ResourceType, EffectivePriceTable, FullPriceTable}
+import gr.grnet.aquarium.uid.{PrefixedUIDGenerator, ConcurrentVMLocalUIDGenerator, UIDGenerator}
 import scala.collection.mutable
 
 /**
@@ -108,4 +109,16 @@ trait ChargingBehavior {
       workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
       eventDetails: Map[String, String]
   ): Double
+
+  def createVirtualEventsForRealtimeComputation(
+      userID: String,
+      resourceTypeName: String,
+      resourceInstanceID: String,
+      eventOccurredMillis: Long,
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState
+  ): List[ResourceEventModel]
+}
+
+object ChargingBehavior {
+  final val VirtualEventsIDGen = new PrefixedUIDGenerator("virt-", new ConcurrentVMLocalUIDGenerator(0L))
 }

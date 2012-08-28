@@ -124,6 +124,18 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
   ): Double = {
     workingResourceInstanceChargingState.oldAccumulatingAmount
   }
+
+  def createVirtualEventsForRealtimeComputation(
+      userID: String,
+      resourceTypeName: String,
+      resourceInstanceID: String,
+      eventOccurredMillis: Long,
+      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState
+  ): List[ResourceEventModel] = {
+
+    // We optimize and generate no virtual event
+    Nil
+  }
 }
 
 object OnceChargingBehavior {

@@ -33,48 +33,12 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.simulation
-
-import gr.grnet.aquarium.event.model.resource.StdResourceEvent
-
+package gr.grnet.aquarium.uid
 
 /**
- * A simulator for a resource instance.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-class ResourceInstanceSim (val resource: ResourceSim,
-                           val instanceId: String,
-                           val owner: UserSim,
-                           val client: ClientSim) {
-
-  def uidGen = client.uidGen
-
-  def newResourceEvent(occurredMillis: Long,
-                       receivedMillis: Long,
-                       value: Double,
-                       details: Map[String, String],
-                       eventVersion: String = "1.0") = {
-
-    val event = StdResourceEvent(
-      uidGen.nextUID(),
-      occurredMillis,
-      receivedMillis,
-      owner.userID,
-      client.clientId,
-      resource.name,
-      instanceId,
-      value,
-      eventVersion,
-      details
-    )
-
-    owner._addResourceEvent(event)
-  }
-}
-
-object ResourceInstanceSim {
-  def apply(resource: ResourceSim, instanceId: String, owner: UserSim, client: ClientSim) =
-    new ResourceInstanceSim(resource, instanceId, owner, client)
+class PrefixedUIDGenerator(prefix: String, source: UIDGenerator[_]) extends UIDGenerator[String] {
+  def nextUIDObject() = prefix + source.nextUID()
 }

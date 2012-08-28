@@ -72,6 +72,8 @@ trait EventModel {
 }
 
 object EventModel {
+  final val EventVersion_1_0 = "1.0"
+
   trait NamesT {
     final val id = "id"
     final val occurredMillis = "occurredMillis"

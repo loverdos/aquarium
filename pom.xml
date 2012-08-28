@@ -372,6 +372,18 @@
           <artifactId>quartz-jboss</artifactId>
           <version>2.1.5</version>
       </dependency>
+
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>1.7.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro-ipc</artifactId>
+      <version>1.7.1</version>
+    </dependency>
   </dependencies>
 
   <!--Build configuration-->
@@ -406,14 +418,20 @@
         <version>3.1.0</version>
         <configuration>
           <recompileMode>incremental</recompileMode>
+          <javacArgs>
+            <!--<javacArg>-Xlint:unchecked</javacArg>-->
+            <javacArg>-Xlint:deprecation</javacArg>
+          </javacArgs>
 
           <charset>${project.build.sourceEncoding}</charset>
+
           <jvmArgs>
             <jvmArg>-Xmx1024m</jvmArg>
             <jvmArg>
               -DpackageLinkDefs=file://${project.build.directory}/packageLinkDefs.properties
             </jvmArg>
           </jvmArgs>
+
           <args>
             <arg>-deprecation</arg>
             <arg>-unchecked</arg>
@@ -479,6 +497,32 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro-maven-plugin</artifactId>
+        <version>1.7.1</version>
+        <executions>
+          <execution>
+            <id>schemas</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>schema</goal>
+              <goal>protocol</goal>
+              <goal>idl-protocol</goal>
+            </goals>
+            <configuration>
+              <excludes>
+                <exclude>**/mapred/tether/**</exclude>
+              </excludes>
+              <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+              <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
+              <!--<outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>-->
+              <testSourceDirectory>${project.basedir}/src/test/avro/</testSourceDirectory>
+              <testOutputDirectory>${project.basedir}/src/test/java/</testOutputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!--<plugin>-->
         <!--<groupId>org.apache.maven.plugins</groupId>-->
         <!--<artifactId>maven-shade-plugin</artifactId>-->

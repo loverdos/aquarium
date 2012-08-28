@@ -32,54 +32,49 @@
  * interpreted as representing official policies, either expressed
  * or implied, of GRNET S.A.
  */
-package gr.grnet.aquarium.simulation
 
-import java.util.Date
-import math.Ordering
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-
-/**
- * A simulator for a user.
- *
- * @author Christos KK Loverdos <loverdos@gmail.com>
- */
-
-case class UserSim(userID: String, userCreationDate: Date, aquarium: AquariumSim) { userSelf ⇒
-  private[this]
-  def resourceEventStore = aquarium.resourceEventStore
-
-  private[simulation]
-  def _addResourceEvent(resourceEvent: ResourceEventModel): ResourceEventModel = {
-    resourceEventStore.insertResourceEvent(resourceEvent)
+@namespace("gr.grnet.aquarium.message.avro")
+protocol AquariumEvents {
+  enum _EventVersion {
+    VERSION_1_0
   }
 
-  def myResourceEvents: List[ResourceEventModel] = {
-    resourceEventStore.findResourceEventsByUserID(userID)(None)
+  record _AnyValue {
+    union {
+      null,
+      int,
+      long,
+      boolean,
+      double,
+      bytes,
+      string
+    } anyValue;
   }
 
-  def myResourceEventsByReceivedDate: List[ResourceEventModel] = {
-    myResourceEvents.sorted(new Ordering[ResourceEventModel] {
-      def compare(x: ResourceEventModel, y: ResourceEventModel) = {
-        if(x.receivedMillis < y.receivedMillis)
-          -1
-        else if(x.receivedMillis == y.receivedMillis)
-          0
-        else
-          1
-      }
-    })
+  record _ResourceEvent {
+    string @aliases(["ID"]) originalID;
+    string @aliased(["_id, idInStore"]) inStoreID;
+    long occurredMillis;
+    long receivedMillis;
+    string userID;
+    string clientID;
+    _EventVersion eventVersion;
+    string @aliases(["resource"]) resourceType;
+    string instanceID;
+    string value;
+    map<_AnyValue> details;
   }
 
-  def myResourceEventsByOccurredDate: List[ResourceEventModel] = {
-    myResourceEvents.sorted(new Ordering[ResourceEventModel] {
-      def compare(x: ResourceEventModel, y: ResourceEventModel) = {
-        if(x.occurredMillis < y.occurredMillis)
-          -1
-        else if(x.occurredMillis == y.occurredMillis)
-          0
-        else
-          1
-      }
-    })
+  record _IMEvent {
+    string @aliases(["ID"]) originalID;
+    string @aliases(["_id, idInStore"]) inStoreID;
+    long occurredMillis;
+    long receivedMillis;
+    string userID;
+    string clientID;
+    _EventVersion eventVersion;
+    boolean isActive;
+    string role;
+    map<_AnyValue> details;
   }
 }
