@@ -56,12 +56,13 @@ import collection.mutable
 
 private class RabbitMQProducerActor extends Actor {
   def receive = {
-    case sendMessage:Function1[_,_] =>
+    case sendMessage: Function0[_] =>
       //Console.err.println("Executing msg ... " + sendMessage.hashCode)
       sendMessage.asInstanceOf[()=>Unit]()
-    case x  : AnyRef     =>
-      //Console.err.println("Dammit  ..." + x.getClass.getSimpleName)
-      ()
+    case x : AnyRef =>
+      //Console.err.println("Dammit  ..." + x.getClass.getSuperclass.getName)
+      throw new Exception("Unexpected value in RabbitMQProducerActor with type: " +
+                          x.getClass.getSuperclass.getName)
   }
 }
 
@@ -107,7 +108,7 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
         _actorRef =  aquarium.akkaService.createNamedActor[RabbitMQProducerActor]("RabbitMQProducerActor")
       }
       if(_actorRef != null){
-       //Console.err.println("RabbitMQProducer Timer --> messages ...")
+      // Console.err.println("RabbitMQProducer Timer --> messages ...")
        var msgs : mutable.Queue[()=>Unit] = null
        lock.withLock {
           if(isChannelOpen) {
@@ -119,7 +120,7 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
          //if(msgs.length>0) Console.err.println("RabbitMQProducer Timer --> messages ..." + msgs.length)
          for {msg <- msgs} {
           // Console.err.println("RabbitMQProducer Timer sending message .." + msg.hashCode)
-           _actorRef ! msg
+           _actorRef ! (msg:()=>Unit)
          }
        }
       } else {
@@ -163,7 +164,6 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
         ret
        }
 
-
       def handleAck(seqNo:Long,multiple:Boolean) = {
         //Console.err.println("Received ack for  " + seqNo)
         cutSubset(seqNo,multiple)
@@ -171,7 +171,7 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
 
       def handleNack(seqNo:Long,multiple:Boolean) = {
         //Console.err.println("Received Nack for msg for " + seqNo)
-        for {msg <- cutSubset(seqNo,multiple)} _actorRef ! msg
+        for {(_,msg) <- cutSubset(seqNo,multiple)} _actorRef ! (msg:()=>Unit)
       }
     })
   }
@@ -193,7 +193,7 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
     def msg () : Unit =
       lock.withLock {
         try {
-             if(isChannelOpen) {
+            if(isChannelOpen) {
               var seq : Long = _channel.getNextPublishSeqNo()
               _unconfirmedSet += seq
               _unconfirmedMessages += ((seq,msg))
@@ -212,7 +212,7 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
         }
       }
     if(_actorRef != null)
-      _actorRef ! msg
+      _actorRef ! (msg:()=>Unit)
     else
       lock.withLock(_unsentMessages += msg)
  }

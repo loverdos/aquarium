@@ -400,7 +400,11 @@ class UserActor extends ReflectiveRoleableActor {
       updateLatestResourceEventIDFrom(rcEvent)
     }
 
-    val oldTotalCredits = this._workingUserState.totalCredits
+    val oldTotalCredits =
+      if(this._workingUserState!=null)
+        this._workingUserState.totalCredits
+      else
+        0.0D
     // FIXME check these
     if(nowYear != eventYear || nowMonth != eventMonth) {
       DEBUG(

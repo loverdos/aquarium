@@ -74,13 +74,13 @@ RESOURCE2="{
 #rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=astakos.user exchange=astakos < __addcredits.json
 #rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=pithos.resource.diskspace exchange=pithos < __rc.1.loverdos.json
 
- echo $USERCREATE | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=astakos.user exchange=astakos
+ echo "$USERCREATE" | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=astakos.user exchange=astakos
 # sleep 1
- echo $ADDCREDITS | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=astakos.user exchange=astakos 
+ echo "$ADDCREDITS" | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=astakos.user exchange=astakos 
 # sleep 1
- echo $RESOURCE1  | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=pithos.resource.diskspace exchange=pithos
+ echo "$RESOURCE1"  | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=pithos.resource.diskspace exchange=pithos
 # sleep 1
- echo $RESOURCE2  | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=pithos.resource.diskspace exchange=pithos
+ echo "$RESOURCE2"  | rabbitmqadmin -H dev82.dev.grnet.gr -P 55672 -u rabbit -p r@bb1t publish  routing_key=pithos.resource.diskspace exchange=pithos
 
 #read
 MAINCLASS=gr.grnet.aquarium.charging.bill.BillEntry
@@ -89,6 +89,6 @@ PID=$!
 echo "PID: $PID"
 sleep 2
 curl -s "$BILLREQUEST"
-kill -9 $!
+kill -9 $PID 
 echo -e "\nKilling aquarium. Success (0=ok)  => $?" 
 #sleep 1
