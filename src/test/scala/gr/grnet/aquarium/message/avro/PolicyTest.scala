@@ -35,11 +35,10 @@
 
 package gr.grnet.aquarium.message.avro
 
-import org.junit.Test
-import scala.collection.JavaConverters.seqAsJavaListConverter
-import scala.collection.JavaConverters.mapAsJavaMapConverter
 import gr.grnet.aquarium.charging.VMChargingBehavior
-import java.io.ByteArrayOutputStream
+import gr.grnet.aquarium.message.avro.MessageFactory._
+import gr.grnet.aquarium.util.nameOfClass
+import org.junit.Test
 
 /**
  *
@@ -49,72 +48,37 @@ class PolicyTest {
   @Test
   def testOne() {
     val policyConf = _Policy.newBuilder().
-      setChargingBehaviors(
-        List[CharSequence](
-          "gr.grnet.aquarium.charging.VMChargingBehavior",
-          "gr.grnet.aquarium.charging.ContinuousChargingBehavior",
-          "gr.grnet.aquarium.charging.OnceChargingBehavior"
-        ).asJava).
+      setChargingBehaviors(newChargingBehaviors(
+        nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior],
+        nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior],
+        nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior])
+      ).
       setID("default-policy").
       setParentID("").
       setValidFromMillis(0L).
       setValidToMillis(Long.MaxValue).
-      setResourceTypes(
-        List(
-          _ResourceType.newBuilder().
-            setName("diskspace").
-            setUnit("MB/Hr").
-            setChargingBehaviorClass("gr.grnet.aquarium.charging.ContinuousChargingBehavior").
-          build(),
-          _ResourceType.newBuilder().
-            setName("vmtime").
-            setUnit("Hr").
-            setChargingBehaviorClass("gr.grnet.aquarium.charging.VMChargingBehavior").
-          build(),
-          _ResourceType.newBuilder().
-            setName("addcredits").
-            setUnit("Credits").
-            setChargingBehaviorClass("gr.grnet.aquarium.charging.OnceChargingBehavior").
-          build()
-        ).asJava).
-      setRoleMapping(
-        Map[CharSequence, _FullPriceTable](
-            "default" -> _FullPriceTable.newBuilder().
-              setPerResource(
-                Map(
-                  ("diskspace": CharSequence) -> Map[CharSequence, _SelectorValue](
-                    "default" -> _SelectorValue.newBuilder().
-                      setSelectorValue(_EffectiveUnitPrice.newBuilder().
-                        setUnitPrice(0.01).
-                        setWhen(null)
-                      build()).
-                    build()
-                  ).asJava,
-                  ("vmtime": CharSequence) -> Map[CharSequence, _SelectorValue](
-                    VMChargingBehavior.Selectors.Power.powerOn -> _SelectorValue.newBuilder().
-                      setSelectorValue(_EffectiveUnitPrice.newBuilder().
-                        setUnitPrice(0.01).
-                        setWhen(null)
-                      build()).
-                    build(),
-                    VMChargingBehavior.Selectors.Power.powerOff -> _SelectorValue.newBuilder().
-                      setSelectorValue(_EffectiveUnitPrice.newBuilder().
-                        setUnitPrice(0.01).
-                        setWhen(null)
-                      build()).
-                    build()
-                  ).asJava,
-                  ("addcredits": CharSequence) -> Map[CharSequence, _SelectorValue](
-                    "default" -> _SelectorValue.newBuilder().
-                      setSelectorValue(_EffectiveUnitPrice.newBuilder().
-                        setUnitPrice(-1.0).
-                        setWhen(null)
-                      build()).
-                    build()
-                  ).asJava
-                ).asJava
-            ).build()
-        ).asJava).
+      setResourceTypes(newResourceTypes(
+        newResourceType("diskspace", "MB/Hr", nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior]),
+        newResourceType("vmtime", "Hr", nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior]),
+        newResourceType("addcredits", "Credits", nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior]))
+      ).
+      setRoleMapping(newRoleMapping(
+        "default" -> newFullPriceTable(
+          "diskspace" -> Map(
+            "default" -> newSelectorValue(newEffectivePriceTable(newEffectiveUnitPrice(0.01)))
+          ),
+
+          "vmtime" -> Map(
+            VMChargingBehavior.Selectors.Power.powerOff ->
+              newSelectorValue(newEffectivePriceTable(newEffectiveUnitPrice(0.001))),
+            VMChargingBehavior.Selectors.Power.powerOn ->
+              newSelectorValue(newEffectivePriceTable(newEffectiveUnitPrice(0.01)))
+          ),
+          "addcredits" -> Map(
+            "default" -> newSelectorValue(newEffectivePriceTable(newEffectiveUnitPrice(-1.0)))
+          )
+        )
+      )).
     build()
 
     val generatedJSON = AvroHelpers.jsonStringOfSpecificRecord(policyConf)

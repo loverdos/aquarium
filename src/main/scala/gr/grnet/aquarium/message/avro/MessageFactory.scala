@@ -49,21 +49,67 @@ object MessageFactory {
     build()
   }
 
-  def newEffectivePriceTable(priceOverrides: List[_EffectiveUnitPrice]) = {
+  def newEffectivePriceTable(priceOverrides: _EffectiveUnitPrice*) = {
     _EffectivePriceTable.newBuilder().
       setPriceOverrides(priceOverrides.asJava).
     build()
   }
 
-  def newSelectorValue(ept: _EffectivePriceTable) = {
+  def newSelectorValue(ept: _EffectivePriceTable): _SelectorValue = {
     _SelectorValue.newBuilder().
       setSelectorValue(ept).
     build()
   }
 
-  def newSelectorValue(map: Map[String, _SelectorValue]) = {
+  def newSelectorValue(map: Map[CharSequence, _SelectorValue]): _SelectorValue = {
     _SelectorValue.newBuilder().
       setSelectorValue(map.asJava).
     build()
+  }
+
+  def newSelectorValue(pairs: (CharSequence, _SelectorValue)*): _SelectorValue = {
+    _SelectorValue.newBuilder().
+      setSelectorValue(Map(pairs:_*).asJava).
+    build()
+  }
+
+//  def newFullPriceTable(perResource: Map[CharSequence, Map[CharSequence, _SelectorValue]]) = {
+//    _FullPriceTable.newBuilder().
+//      setPerResource(
+//        (for((k, v) ← perResource) yield (k, v.asJava)).asJava
+//      ).
+//    build()
+//  }
+
+  def newFullPriceTable(perResource: (CharSequence, Map[CharSequence, _SelectorValue])*) = {
+    _FullPriceTable.newBuilder().
+      setPerResource(
+        Map((for((k, v) ← perResource) yield (k, v.asJava)):_*).asJava
+      ).
+    build()
+  }
+
+  def newRoleMapping(map: Map[CharSequence, _FullPriceTable]): java.util.Map[CharSequence, _FullPriceTable] = {
+    map.asJava
+  }
+
+  def newRoleMapping(pairs: (CharSequence, _FullPriceTable)*): java.util.Map[CharSequence, _FullPriceTable] = {
+    Map(pairs:_*).asJava
+  }
+
+  def newResourceType(name: CharSequence, unit: CharSequence, chargingBehavior: CharSequence) = {
+    _ResourceType.newBuilder().
+      setName(name).
+      setUnit(unit).
+      setChargingBehaviorClass(chargingBehavior).
+    build()
+  }
+
+  def newResourceTypes(rts: _ResourceType*) = {
+    rts.asJava
+  }
+
+  def newChargingBehaviors(cbs: CharSequence*) = {
+    cbs.asJava
   }
 }
