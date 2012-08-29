@@ -40,7 +40,7 @@ import gr.grnet.aquarium.{ResourceLocator, Aquarium, Configurable, AquariumAware
 import com.ckkloverdos.props.Props
 import com.twitter.finagle.{Service, SimpleFilter}
 import org.jboss.netty.handler.codec.http.{HttpResponseStatus ⇒ THttpResponseStatus, DefaultHttpResponse ⇒ TDefaultHttpResponse, HttpResponse ⇒ THttpResponse, HttpRequest ⇒ THttpRequest}
-import com.twitter.util.{Future ⇒ TFuture, FuturePool ⇒ TFuturePool, Promise ⇒ TPromise, Return ⇒ TReturn, Throw ⇒ TThrow, Duration}
+import com.twitter.util.{Future ⇒ TFuture, Promise ⇒ TPromise, Return ⇒ TReturn, Throw ⇒ TThrow, Duration}
 import com.twitter.finagle.builder.ServerBuilder
 import com.twitter.finagle.http.Http
 import org.jboss.netty.handler.codec.http.HttpResponseStatus._
@@ -53,17 +53,13 @@ import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
 import gr.grnet.aquarium.actor.message._
 import com.ckkloverdos.resource.StreamResource
-import com.ckkloverdos.maybe.{Just, Failed}
 import gr.grnet.aquarium.event.model.ExternalEventModel
 import akka.util.{Timeout ⇒ ATimeout, Duration ⇒ ADuration}
 import akka.dispatch.{Future ⇒ AFuture}
-import com.fasterxml.jackson.databind.ObjectMapper
-import java.util
-import scala.Left
-import scala.Some
+import gr.grnet.aquarium.util.json.JsonHelpers
+
 import com.ckkloverdos.maybe.Failed
 import gr.grnet.aquarium.actor.message.GetUserStateRequest
-import scala.Right
 import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.actor.message.GetUserBalanceRequest
 import gr.grnet.aquarium.actor.message.GetUserWalletRequest
@@ -258,9 +254,6 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
           val cacheSize = aquarium.akkaService.cacheSize
           val stats = aquarium.akkaService.cacheStats
 
-          val mapper = new ObjectMapper()
-          val writer = mapper.writerWithDefaultPrettyPrinter()
-          
           val map = new java.util.LinkedHashMap[String, Any]
           map.put("cacheSize", cacheSize)
           map.put("requestCount", stats.requestCount())
@@ -276,9 +269,8 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
           map.put("totalLoadTime", stats.totalLoadTime())
           map.put("averageLoadPenalty", stats.averageLoadPenalty())
 
-          val json = writer.writeValueAsString(map)
+          val json = JsonHelpers.jsonStringOfJavaMap(map)
           stringResponseOK(json, APPLICATION_JSON)
-
 
         case RESTPaths.UserActorCacheContentsPath() ⇒
           val buffer = new scala.collection.mutable.ArrayBuffer[String]()
