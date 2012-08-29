@@ -131,23 +131,23 @@ object AbstractBillEntry {
 
   private[this] def toResourceEntry(w:WalletEntry) : ResourceEntry = {
     assert(w.sumOfCreditsToSubtract==0.0 || w.chargslotCount > 0)
-    val rcName = w.currentResourceEvent.clientID match {
-            case "pithos" =>
+    val rcType =  w.resourceType.name
+    val rcName = rcType match {
+            case "diskspace" =>
               w.currentResourceEvent.details("path")
             case _ =>
               w.currentResourceEvent.instanceID
         }
-    val rcType =  w.resourceType.name
     val rcUnitName = w.resourceType.unit
     val eventEntry = new ListBuffer[EventEntry]
     val credits = w.sumOfCreditsToSubtract
     val eventType = //TODO: This is hardcoded; find a better solution
-        w.currentResourceEvent.clientID match {
-          case "pithos" =>
+        rcType match {
+          case "diskspace" =>
             val action = w.currentResourceEvent.details("action")
             val path = w.currentResourceEvent.details("path")
             "%s@%s".format(action,path)
-          case "cyclades" =>
+          case "vmtime" =>
             w.currentResourceEvent.value.toInt match {
               case 0 => // OFF
                   "offOn"
@@ -158,7 +158,7 @@ object AbstractBillEntry {
               case _ =>
                  "BUG"
             }
-          case "astakos" =>
+          case "addcredits" =>
             "once"
         }
 

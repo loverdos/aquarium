@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import VMChargingBehavior.Selectors.Power
 import VMChargingBehavior.SelectorLabels.PowerStatus
@@ -45,6 +45,10 @@ import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, WorkingResourcesChargingState, AgreementHistoryModel}
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import scala.collection.mutable
+import gr.grnet.aquarium.event.model.EventModel
+import gr.grnet.aquarium.util.LogHelpers._
+import scala.Some
+import gr.grnet.aquarium.policy.ResourceType
 
 /**
  * The new [[gr.grnet.aquarium.charging.ChargingBehavior]] for VMs usage.
@@ -73,8 +77,24 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       referenceTimeslot: Timeslot,
       totalCredits: Double
   ): List[String] = {
-    // FIXME
-    List(Power.powerOn) // compute prices for power-on state
+    (currentResourceEvent.value.toInt,workingResourceInstanceChargingState.previousEvents) match {
+      case (1,Nil) => // create --> on
+        //List(Power.create)
+        Nil
+      case (x,hd::_) =>  (x,hd.value.toInt) match {
+        case (1,0) => // off ---> on
+          List(Power.powerOff)
+        case (0,1) => // on ---> off
+          List(Power.powerOn)
+        case (2,1) => // off --> destroy
+          //List(Power.powerOff,Power.destroy)
+          Nil
+        case _ =>
+          throw new Exception("Invalid state")
+      }
+      case _ =>
+        throw new Exception("Invalid state")
+    }
   }
 
   def initialChargingDetails: Map[String, Any] = Map()
@@ -106,17 +126,46 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
    */
   override def processResourceEvent(
       aquarium: Aquarium,
-      currentResourceEvent: ResourceEventModel,
+      resourceEvent: ResourceEventModel,
       resourceType: ResourceType,
       billingMonthInfo: BillingMonthInfo,
-      workingState: WorkingResourcesChargingState,
+      workingResourcesChargingState: WorkingResourcesChargingState,
       userAgreements: AgreementHistoryModel,
       totalCredits: Double,
       walletEntryRecorder: WalletEntry ⇒ Unit
   ): (Int, Double) = {
 
-    // FIXME Implement
-    (0,0)
+    // 1. Ensure proper initial state per resource and per instance
+    ensureInitializedWorkingState(workingResourcesChargingState,resourceEvent)
+
+    // 2. Fill in data from the new event
+    val stateOfResourceInstance = workingResourcesChargingState.stateOfResourceInstance
+    val workingResourcesChargingStateDetails = workingResourcesChargingState.details
+    val instanceID = resourceEvent.instanceID
+    val workingResourceInstanceChargingState = stateOfResourceInstance(instanceID)
+    fillWorkingResourceInstanceChargingStateFromEvent(workingResourceInstanceChargingState, resourceEvent)
+
+    val retVal = workingResourceInstanceChargingState.previousEvents.headOption match {
+      case Some(previousEvent) ⇒
+        Debug(logger, "I have previous event %s", previousEvent.toDebugString)
+        computeWalletEntriesForNewEvent(
+          resourceEvent,
+          resourceType,
+          billingMonthInfo,
+          totalCredits,
+          Timeslot(previousEvent.occurredMillis, resourceEvent.occurredMillis),
+          userAgreements.agreementByTimeslot,
+          workingResourcesChargingStateDetails,
+          workingResourceInstanceChargingState,
+          aquarium.policyStore,
+          walletEntryRecorder
+        )
+      case None ⇒
+        (0,0.0D)
+    }
+    // We need just one previous event, so we update it
+    workingResourceInstanceChargingState.setOnePreviousEvent(resourceEvent)
+    retVal
   }
 
   def createVirtualEventsForRealtimeComputation(
@@ -126,8 +175,32 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       eventOccurredMillis: Long,
       workingResourceInstanceChargingState: WorkingResourceInstanceChargingState
   ): List[ResourceEventModel] = {
-    // FIXME Implement
-    Nil
+    //
+    def vmEvent(value:Long) : List[ResourceEventModel] =
+      StdResourceEvent(
+        ChargingBehavior.VirtualEventsIDGen.nextUID(),
+        eventOccurredMillis,
+        eventOccurredMillis,
+        userID,
+        "aquarium",
+        resourceTypeName,
+        resourceInstanceID,
+        value.toDouble,
+        EventModel.EventVersion_1_0,
+        Map(
+          ResourceEventModel.Names.details_aquarium_is_synthetic   -> "true",
+          ResourceEventModel.Names.details_aquarium_is_realtime_virtual -> "true"
+        )
+      ) :: Nil
+    //
+    workingResourceInstanceChargingState.previousEvents.headOption match {
+      case None =>  Nil
+      case Some(hd) => hd.value.toInt match {
+       case 0 =>  vmEvent(1) //produce an on event
+       case 1 =>  vmEvent(0) //produce an off event
+       case 2 =>  vmEvent(0) //produce an off event
+      }
+    }
   }
 }
 
@@ -138,8 +211,15 @@ object VMChargingBehavior {
 
   object Selectors {
     object Power {
+      // When the VM is created
+      //final val create = "create"
+
+      // When the VM is destroyed
+      //final val destroy = "destroy"
+
       // When the VM is powered on
       final val powerOn = "powerOn"
+
       // When the VM is powered off
       final val powerOff = "powerOff"
     }
