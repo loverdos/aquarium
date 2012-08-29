@@ -6,7 +6,7 @@
 package gr.grnet.aquarium.message.avro;  
 @SuppressWarnings("all")
 public class _SelectorValue extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_SelectorValue\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"_EffectivePriceTable\",\"fields\":[]},{\"type\":\"map\",\"values\":\"_SelectorValue\"}]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_SelectorValue\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"_EffectivePriceTable\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_EffectiveUnitPrice\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"_CronSpecTuple\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"_SelectorValue\"}]}]}");
   @Deprecated public java.lang.Object selectorValue;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 

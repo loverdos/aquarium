@@ -6,11 +6,13 @@
 package gr.grnet.aquarium.message.avro;  
 @SuppressWarnings("all")
 public class _EffectivePriceTable extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_EffectivePriceTable\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_EffectivePriceTable\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_EffectiveUnitPrice\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"_CronSpecTuple\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}}}]}");
+  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice> priceOverrides;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
     switch (field$) {
+    case 0: return priceOverrides;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -18,8 +20,24 @@ public class _EffectivePriceTable extends org.apache.avro.specific.SpecificRecor
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
+    case 0: priceOverrides = (java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
+  }
+
+  /**
+   * Gets the value of the 'priceOverrides' field.
+   */
+  public java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice> getPriceOverrides() {
+    return priceOverrides;
+  }
+
+  /**
+   * Sets the value of the 'priceOverrides' field.
+   * @param value the value to set.
+   */
+  public void setPriceOverrides(java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice> value) {
+    this.priceOverrides = value;
   }
 
   /** Creates a new _EffectivePriceTable RecordBuilder */
@@ -43,6 +61,7 @@ public class _EffectivePriceTable extends org.apache.avro.specific.SpecificRecor
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_EffectivePriceTable>
     implements org.apache.avro.data.RecordBuilder<_EffectivePriceTable> {
 
+    private java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice> priceOverrides;
 
     /** Creates a new Builder */
     private Builder() {
@@ -57,12 +76,42 @@ public class _EffectivePriceTable extends org.apache.avro.specific.SpecificRecor
     /** Creates a Builder by copying an existing _EffectivePriceTable instance */
     private Builder(gr.grnet.aquarium.message.avro._EffectivePriceTable other) {
             super(gr.grnet.aquarium.message.avro._EffectivePriceTable.SCHEMA$);
+      if (isValidValue(fields()[0], other.priceOverrides)) {
+        this.priceOverrides = (java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice>) data().deepCopy(fields()[0].schema(), other.priceOverrides);
+        fieldSetFlags()[0] = true;
+      }
+    }
+
+    /** Gets the value of the 'priceOverrides' field */
+    public java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice> getPriceOverrides() {
+      return priceOverrides;
+    }
+    
+    /** Sets the value of the 'priceOverrides' field */
+    public gr.grnet.aquarium.message.avro._EffectivePriceTable.Builder setPriceOverrides(java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice> value) {
+      validate(fields()[0], value);
+      this.priceOverrides = value;
+      fieldSetFlags()[0] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'priceOverrides' field has been set */
+    public boolean hasPriceOverrides() {
+      return fieldSetFlags()[0];
+    }
+    
+    /** Clears the value of the 'priceOverrides' field */
+    public gr.grnet.aquarium.message.avro._EffectivePriceTable.Builder clearPriceOverrides() {
+      priceOverrides = null;
+      fieldSetFlags()[0] = false;
+      return this;
     }
 
     @Override
     public _EffectivePriceTable build() {
       try {
         _EffectivePriceTable record = new _EffectivePriceTable();
+        record.priceOverrides = fieldSetFlags()[0] ? this.priceOverrides : (java.util.List<gr.grnet.aquarium.message.avro._EffectiveUnitPrice>) defaultValue(fields()[0]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

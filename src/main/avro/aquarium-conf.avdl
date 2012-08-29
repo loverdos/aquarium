@@ -57,7 +57,18 @@ protocol AquariumConf {
     string chargingBehaviorClass;
   }
 
+  record _CronSpecTuple {
+    string a;
+    string b;
+  }
+
+  record _EffectiveUnitPrice {
+    double unitPrice;
+    union {_CronSpecTuple, null} when;
+  }
+
   record _EffectivePriceTable {
+    array<_EffectiveUnitPrice> priceOverrides;
   }
 
   record _SelectorValue {
