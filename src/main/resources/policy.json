@@ -20,7 +20,7 @@
   },{
     "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
     "name":"addcredits",
-    "unit":"credits",
+    "unit":"Credits",
     "chargingBehavior":"gr.grnet.aquarium.charging.OnceChargingBehavior"
     }],
 
