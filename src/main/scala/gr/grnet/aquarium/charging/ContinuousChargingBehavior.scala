@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
 import gr.grnet.aquarium.charging.state.{AgreementHistoryModel, WorkingResourcesChargingState, WorkingResourceInstanceChargingState}
 import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.computation.BillingMonthInfo
@@ -45,6 +45,7 @@ import gr.grnet.aquarium.policy.{FullPriceTable, ResourceType}
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import scala.collection.mutable
 import gr.grnet.aquarium.event.model.EventModel
+import java.util.Date
 
 /**
  * In practice a resource usage will be charged for the total amount of usage
@@ -141,14 +142,21 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
         )
 
         val dummyFirstEventValue = 0.0 // TODO From configuration
+
+        val millis = userAgreements.agreementByTimeslot.headOption match {
+          case None =>
+            throw new AquariumInternalError("No agreement!!!")
+          case Some((_,aggr)) =>
+            val millisAgg = aggr.timeslot.from.getTime
+            val millisMon = billingMonthInfo.monthStartMillis
+            if(millisAgg>millisMon) millisAgg else millisMon
+        }
+
         val dummyFirstEvent = resourceEvent.withDetailsAndValue(
             dummyFirstEventDetails,
             dummyFirstEventValue,
-            billingMonthInfo.monthStartMillis // TODO max(billingMonthInfo.monthStartMillis, userAgreementModel.validFromMillis)
-        )
-
+            millis)
         Debug(logger, "Dummy first event %s", dummyFirstEvent.toDebugString)
-
         dummyFirstEvent
     }
 

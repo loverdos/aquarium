@@ -146,7 +146,8 @@ object AbstractBillEntry {
           case "diskspace" =>
             val action = w.currentResourceEvent.details("action")
             val path = w.currentResourceEvent.details("path")
-            "%s@%s".format(action,path)
+            //"%s@%s".format(action,path)
+            action
           case "vmtime" =>
             w.currentResourceEvent.value.toInt match {
               case 0 => // OFF
@@ -178,14 +179,18 @@ object AbstractBillEntry {
     var sum = 0.0
     //Console.err.println("Wallet entries: " + w.walletEntries)
     val walletEntries = w.walletEntries
+    /*Console.err.println("Wallet entries ")
+    for { i <- walletEntries }
+      Console.err.println("WALLET ENTRY\n%s\nEND WALLET ENTRY".format(i.toJsonString))
+    Console.err.println("End wallet entries")*/
     for { i <- walletEntries} {
       if(t.contains(i.referenceTimeslot) && i.sumOfCreditsToSubtract != 0.0){
-        //Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)
+        /*Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)*/
         if(i.sumOfCreditsToSubtract > 0.0D) sum += i.sumOfCreditsToSubtract
         ret += toResourceEntry(i)
       } else {
-        //Console.err.println("WALLET ENTERY : " + i + "\n" +
-        //             t + "  does not contain " +  i.referenceTimeslot + "  !!!!")
+        /*Console.err.println("WALLET ENTERY : " + i.toJsonString + "\n" +
+                     t + "  does not contain " +  i.referenceTimeslot + "  !!!!")*/
       }
     }
     (ret.toList,sum)
@@ -218,6 +223,7 @@ object AbstractBillEntry {
       case Some(w) =>
         val (rcEntries,rcEntriesCredits) = resourceEntriesAt(t,w)
         val resMap = aggregateResourceEntries(rcEntries)
+        Console.err.println("Working user state: %s".format(w.toString))
         new BillEntry(counter.getAndIncrement.toString,
                       userID,"ok",
                       w.totalCredits.toString,

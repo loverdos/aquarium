@@ -74,7 +74,7 @@ object BillTest extends Loggable {
       exec("mongo aquarium --eval db.resevents.remove();db.imevents.remove();db.policies.remove();db.userstates.remove()",
            Console.err.println(_))
       new AquariumBuilder(props, ResourceLocator.DefaultPolicyModel).
-      update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
+      //update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
       update(Aquarium.EnvKeys.eventsStoreFolder,Some(new File(".."))).
       build()
   }
@@ -136,7 +136,7 @@ object BillTest extends Loggable {
     val eventType = "addcredits"
     new StdIMEvent(id,occurredMillis,receivedMillis,userID,
                    clientID,isActive,role,eventVersion,eventType,
-                   Map()).toJsonString
+                   Map("credits" -> amount.toString)).toJsonString
   }
 
   private [this] def makePithos(date:DATE,uid:UID,path:String,
@@ -225,11 +225,11 @@ object BillTest extends Loggable {
     val creationDate = "15/00/00/03/08/2012"
     /* ADD CREDITS */
     val addCreditsDate = "18/15/00/05/08/2012"
-    val creditsToAdd = 5000
+    val creditsToAdd = 6000
     /* Pithos STUFF */
     val pithosPath = "/Papers/GOTO_HARMFUL.PDF"
 
-    val pithosDate1 = "08/30/00/05/08/2012"
+    val pithosDate1 = "20/30/00/05/08/2012"
     val pithosAction1 = "update"
     val pithosValue1 = 2000
 
@@ -238,14 +238,25 @@ object BillTest extends Loggable {
     val pithosAction2 = "update"
     val pithosValue2 = 4000
 
+
+    val pithosDate3 = "08/05/00/20/08/2012"
+    val pithosAction3 = "update"
+    val pithosValue3 = 100
+
     val id =
       sendCreate(creationDate)
+      //Thread.sleep(5000)
       sendAddCredits(addCreditsDate,id,creditsToAdd)
+      //Thread.sleep(5000)
       sendPithos(pithosDate1,id,pithosPath,pithosValue1,pithosAction1)
+      //Thread.sleep(5000)
       sendPithos(pithosDate2,id,pithosPath,pithosValue2,pithosAction2)
+      //
+      sendPithos(pithosDate3,id,pithosPath,pithosValue3,pithosAction3)
+
 
     Console.err.println("Waiting for stuff to be processed")
-    Thread.sleep(2000)
+    Thread.sleep(5000)
 
     var resp = ""
     var count = 0
@@ -263,6 +274,7 @@ object BillTest extends Loggable {
   def runTestCase(f: => JSON) = {
     var json = ""
     aquarium.start
+    Thread.sleep(2000)
     try{
       json = f
     }  catch{
@@ -270,6 +282,7 @@ object BillTest extends Loggable {
         e.printStackTrace
     }
     aquarium.stop
+    Thread.sleep(1000)
     Console.err.println("Response : " + json )
   }
 

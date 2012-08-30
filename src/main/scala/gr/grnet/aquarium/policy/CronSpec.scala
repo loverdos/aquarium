@@ -42,7 +42,11 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
  * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-
+/*
+ *  Format:
+ *  minutes hours day-of-month Month Day-of-Week (we do not specify seconds)
+ *  see: http://quartz-scheduler.org/api/2.0.0/org/quartz/CronExpression.html
+ * */
 case class CronSpec(cronSpec: String) {
 
   private val cronExpr = {

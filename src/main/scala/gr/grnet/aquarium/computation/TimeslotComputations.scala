@@ -180,7 +180,7 @@ object TimeslotComputations extends Loggable {
 
     if(a.isEmpty) return b
     if(b.isEmpty) return a
-
+    if(a.head.from != b.head.from)
     assert(a.head.from == b.head.from)
 
     if(a.head.endsAfter(b.head)) {

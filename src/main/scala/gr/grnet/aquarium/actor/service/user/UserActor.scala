@@ -297,6 +297,7 @@ class UserActor extends ReflectiveRoleableActor {
       } else {
       updateAgreementHistoryFrom(imEvent)
       updateLatestIMEventIDFrom(imEvent)
+        //Thread.sleep(3000)
       }
     }
 
