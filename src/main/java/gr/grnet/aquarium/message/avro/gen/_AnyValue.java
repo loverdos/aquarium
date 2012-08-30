@@ -3,10 +3,10 @@
  * 
  * DO NOT EDIT DIRECTLY
  */
-package gr.grnet.aquarium.message.avro;  
+package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class _AnyValue extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_AnyValue\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_AnyValue\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}");
   @Deprecated public java.lang.Object anyValue;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
@@ -41,18 +41,18 @@ public class _AnyValue extends org.apache.avro.specific.SpecificRecordBase imple
   }
 
   /** Creates a new _AnyValue RecordBuilder */
-  public static gr.grnet.aquarium.message.avro._AnyValue.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro._AnyValue.Builder();
+  public static gr.grnet.aquarium.message.avro.gen._AnyValue.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro.gen._AnyValue.Builder();
   }
   
   /** Creates a new _AnyValue RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro._AnyValue.Builder newBuilder(gr.grnet.aquarium.message.avro._AnyValue.Builder other) {
-    return new gr.grnet.aquarium.message.avro._AnyValue.Builder(other);
+  public static gr.grnet.aquarium.message.avro.gen._AnyValue.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._AnyValue.Builder other) {
+    return new gr.grnet.aquarium.message.avro.gen._AnyValue.Builder(other);
   }
   
   /** Creates a new _AnyValue RecordBuilder by copying an existing _AnyValue instance */
-  public static gr.grnet.aquarium.message.avro._AnyValue.Builder newBuilder(gr.grnet.aquarium.message.avro._AnyValue other) {
-    return new gr.grnet.aquarium.message.avro._AnyValue.Builder(other);
+  public static gr.grnet.aquarium.message.avro.gen._AnyValue.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._AnyValue other) {
+    return new gr.grnet.aquarium.message.avro.gen._AnyValue.Builder(other);
   }
   
   /**
@@ -65,17 +65,17 @@ public class _AnyValue extends org.apache.avro.specific.SpecificRecordBase imple
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro._AnyValue.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro.gen._AnyValue.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro._AnyValue.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro.gen._AnyValue.Builder other) {
       super(other);
     }
     
     /** Creates a Builder by copying an existing _AnyValue instance */
-    private Builder(gr.grnet.aquarium.message.avro._AnyValue other) {
-            super(gr.grnet.aquarium.message.avro._AnyValue.SCHEMA$);
+    private Builder(gr.grnet.aquarium.message.avro.gen._AnyValue other) {
+            super(gr.grnet.aquarium.message.avro.gen._AnyValue.SCHEMA$);
       if (isValidValue(fields()[0], other.anyValue)) {
         this.anyValue = (java.lang.Object) data().deepCopy(fields()[0].schema(), other.anyValue);
         fieldSetFlags()[0] = true;
@@ -88,7 +88,7 @@ public class _AnyValue extends org.apache.avro.specific.SpecificRecordBase imple
     }
     
     /** Sets the value of the 'anyValue' field */
-    public gr.grnet.aquarium.message.avro._AnyValue.Builder setAnyValue(java.lang.Object value) {
+    public gr.grnet.aquarium.message.avro.gen._AnyValue.Builder setAnyValue(java.lang.Object value) {
       validate(fields()[0], value);
       this.anyValue = value;
       fieldSetFlags()[0] = true;
@@ -101,7 +101,7 @@ public class _AnyValue extends org.apache.avro.specific.SpecificRecordBase imple
     }
     
     /** Clears the value of the 'anyValue' field */
-    public gr.grnet.aquarium.message.avro._AnyValue.Builder clearAnyValue() {
+    public gr.grnet.aquarium.message.avro.gen._AnyValue.Builder clearAnyValue() {
       anyValue = null;
       fieldSetFlags()[0] = false;
       return this;

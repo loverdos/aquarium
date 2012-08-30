@@ -35,8 +35,10 @@
 
 package gr.grnet.aquarium.message.avro
 
-import scala.collection.JavaConverters.seqAsJavaListConverter
+import gr.grnet.aquarium.message.avro.gen._
 import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.collection.JavaConverters.seqAsJavaListConverter
+
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>

@@ -33,7 +33,7 @@
  * or implied, of GRNET S.A.
  */
 
-@namespace("gr.grnet.aquarium.message.avro")
+@namespace("gr.grnet.aquarium.message.avro.gen")
 protocol AquariumEvents {
   record _AnyValue {
     union {

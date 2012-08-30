@@ -3,12 +3,12 @@
  * 
  * DO NOT EDIT DIRECTLY
  */
-package gr.grnet.aquarium.message.avro;  
+package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_EffectiveUnitPrice\",\"namespace\":\"gr.grnet.aquarium.message.avro\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"_CronSpecTuple\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_EffectiveUnitPrice\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"_CronSpecTuple\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}");
   @Deprecated public double unitPrice;
-  @Deprecated public gr.grnet.aquarium.message.avro._CronSpecTuple when;
+  @Deprecated public gr.grnet.aquarium.message.avro.gen._CronSpecTuple when;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -23,7 +23,7 @@ public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecord
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
     case 0: unitPrice = (java.lang.Double)value$; break;
-    case 1: when = (gr.grnet.aquarium.message.avro._CronSpecTuple)value$; break;
+    case 1: when = (gr.grnet.aquarium.message.avro.gen._CronSpecTuple)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -46,7 +46,7 @@ public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecord
   /**
    * Gets the value of the 'when' field.
    */
-  public gr.grnet.aquarium.message.avro._CronSpecTuple getWhen() {
+  public gr.grnet.aquarium.message.avro.gen._CronSpecTuple getWhen() {
     return when;
   }
 
@@ -54,23 +54,23 @@ public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecord
    * Sets the value of the 'when' field.
    * @param value the value to set.
    */
-  public void setWhen(gr.grnet.aquarium.message.avro._CronSpecTuple value) {
+  public void setWhen(gr.grnet.aquarium.message.avro.gen._CronSpecTuple value) {
     this.when = value;
   }
 
   /** Creates a new _EffectiveUnitPrice RecordBuilder */
-  public static gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder();
+  public static gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder();
   }
   
   /** Creates a new _EffectiveUnitPrice RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder newBuilder(gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder other) {
-    return new gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder(other);
+  public static gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder other) {
+    return new gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder(other);
   }
   
   /** Creates a new _EffectiveUnitPrice RecordBuilder by copying an existing _EffectiveUnitPrice instance */
-  public static gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder newBuilder(gr.grnet.aquarium.message.avro._EffectiveUnitPrice other) {
-    return new gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder(other);
+  public static gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice other) {
+    return new gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder(other);
   }
   
   /**
@@ -80,27 +80,27 @@ public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecord
     implements org.apache.avro.data.RecordBuilder<_EffectiveUnitPrice> {
 
     private double unitPrice;
-    private gr.grnet.aquarium.message.avro._CronSpecTuple when;
+    private gr.grnet.aquarium.message.avro.gen._CronSpecTuple when;
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro._EffectiveUnitPrice.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder other) {
       super(other);
     }
     
     /** Creates a Builder by copying an existing _EffectiveUnitPrice instance */
-    private Builder(gr.grnet.aquarium.message.avro._EffectiveUnitPrice other) {
-            super(gr.grnet.aquarium.message.avro._EffectiveUnitPrice.SCHEMA$);
+    private Builder(gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice other) {
+            super(gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.SCHEMA$);
       if (isValidValue(fields()[0], other.unitPrice)) {
         this.unitPrice = (java.lang.Double) data().deepCopy(fields()[0].schema(), other.unitPrice);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.when)) {
-        this.when = (gr.grnet.aquarium.message.avro._CronSpecTuple) data().deepCopy(fields()[1].schema(), other.when);
+        this.when = (gr.grnet.aquarium.message.avro.gen._CronSpecTuple) data().deepCopy(fields()[1].schema(), other.when);
         fieldSetFlags()[1] = true;
       }
     }
@@ -111,7 +111,7 @@ public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecord
     }
     
     /** Sets the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder setUnitPrice(double value) {
+    public gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder setUnitPrice(double value) {
       validate(fields()[0], value);
       this.unitPrice = value;
       fieldSetFlags()[0] = true;
@@ -124,18 +124,18 @@ public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecord
     }
     
     /** Clears the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder clearUnitPrice() {
+    public gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder clearUnitPrice() {
       fieldSetFlags()[0] = false;
       return this;
     }
 
     /** Gets the value of the 'when' field */
-    public gr.grnet.aquarium.message.avro._CronSpecTuple getWhen() {
+    public gr.grnet.aquarium.message.avro.gen._CronSpecTuple getWhen() {
       return when;
     }
     
     /** Sets the value of the 'when' field */
-    public gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder setWhen(gr.grnet.aquarium.message.avro._CronSpecTuple value) {
+    public gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder setWhen(gr.grnet.aquarium.message.avro.gen._CronSpecTuple value) {
       validate(fields()[1], value);
       this.when = value;
       fieldSetFlags()[1] = true;
@@ -148,7 +148,7 @@ public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecord
     }
     
     /** Clears the value of the 'when' field */
-    public gr.grnet.aquarium.message.avro._EffectiveUnitPrice.Builder clearWhen() {
+    public gr.grnet.aquarium.message.avro.gen._EffectiveUnitPrice.Builder clearWhen() {
       when = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -159,7 +159,7 @@ public class _EffectiveUnitPrice extends org.apache.avro.specific.SpecificRecord
       try {
         _EffectiveUnitPrice record = new _EffectiveUnitPrice();
         record.unitPrice = fieldSetFlags()[0] ? this.unitPrice : (java.lang.Double) defaultValue(fields()[0]);
-        record.when = fieldSetFlags()[1] ? this.when : (gr.grnet.aquarium.message.avro._CronSpecTuple) defaultValue(fields()[1]);
+        record.when = fieldSetFlags()[1] ? this.when : (gr.grnet.aquarium.message.avro.gen._CronSpecTuple) defaultValue(fields()[1]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

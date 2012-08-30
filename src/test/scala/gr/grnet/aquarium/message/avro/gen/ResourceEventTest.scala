@@ -33,7 +33,7 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.message.avro
+package gr.grnet.aquarium.message.avro.gen
 
 import java.io.ByteArrayOutputStream
 import org.apache.avro.io.{EncoderFactory, Encoder, JsonEncoder}
@@ -122,7 +122,7 @@ class ResourceEventTest {
       setUserID("foouser").
       setValue("123.32").
       setDetails(new util.HashMap[CharSequence, _AnyValue]()).
-    build()
+      build()
 
     val schema = rcEvent.getSchema
     val out = new ByteArrayOutputStream()
