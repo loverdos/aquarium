@@ -35,22 +35,6 @@
 
 @namespace("gr.grnet.aquarium.message.avro.gen")
 protocol AquariumConf {
-  enum _EventVersion {
-    VERSION_1_0
-  }
-
-  record _AnyValue {
-    union {
-      null,
-      int,
-      long,
-      boolean,
-      double,
-      bytes,
-      string
-    } anyValue;
-  }
-
   record _ResourceType {
     string name;
     string unit;

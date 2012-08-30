@@ -35,17 +35,7 @@
 
 @namespace("gr.grnet.aquarium.message.avro.gen")
 protocol AquariumEvents {
-  record _AnyValue {
-    union {
-      null,
-      int,
-      long,
-      boolean,
-      double,
-      bytes,
-      string
-    } anyValue;
-  }
+  import idl "aquarium-anyvalue.avdl";
 
   record _ResourceEvent {
     string @aliases(["originalID", "ID"]) id;

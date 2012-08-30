@@ -53,7 +53,7 @@ import scala.collection.mutable
  */
 
 trait ChargingBehavior {
-  def selectorLabelsHierarchy: List[String]
+  def selectorLabelsHierarchy: List[CharSequence]
 
   /**
    * Provides some initial charging details that will be part of the mutable charging state

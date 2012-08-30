@@ -48,7 +48,7 @@ final class WorkingResourceInstanceChargingState(
     val details: mutable.Map[String, Any],
     var previousEvents: List[ResourceEventModel],
     // the implicitly issued resource event at the beginning of the billing period.
-    var implicitlyIssuedStartEvent: List[ResourceEventModel],
+    var implicitlyIssuedStartEvents: List[ResourceEventModel],
     // Always the new accumulating amount
     var accumulatingAmount: Double,
     var oldAccumulatingAmount: Double,
@@ -60,7 +60,7 @@ final class WorkingResourceInstanceChargingState(
     new ResourceInstanceChargingState(
       details = immutableDetails,
       previousEvents = this.previousEvents,
-      implicitlyIssuedStartEvent = this.implicitlyIssuedStartEvent,
+      implicitlyIssuedStartEvents = this.implicitlyIssuedStartEvents,
       accumulatingAmount = this.accumulatingAmount,
       oldAccumulatingAmount = this.oldAccumulatingAmount,
       previousValue = this.previousValue,

@@ -47,7 +47,7 @@ trait ResourceInstanceChargingStateModel {
   def previousEvents: List[ResourceEventModel]
 
   // the implicitly issued resource event at the beginning of the billing period.
-  def implicitlyIssuedStartEvent: List[ResourceEventModel]
+  def implicitlyIssuedStartEvents: List[ResourceEventModel]
 
   // Always the new accumulating amount
   def accumulatingAmount: Double
