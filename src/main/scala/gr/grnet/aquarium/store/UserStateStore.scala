@@ -41,28 +41,26 @@ import gr.grnet.aquarium.charging.state.UserStateModel
 /**
  * A store for user state snapshots.
  *
- * This is used to hold snapshots of [[gr.grnet.aquarium.computation.state.UserState]].
+ * This is used to hold snapshots of [[gr.grnet.aquarium.charging.state.UserStateModel]].
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 trait UserStateStore {
-  type UserState <: UserStateModel
-
-  def createUserStateFromOther(userState: UserStateModel): UserState
+  def createUserStateFromOther(userState: UserStateModel): UserStateModel
 
   /**
    * Stores a user state.
    */
-  def insertUserState(userState: UserStateModel): UserState
+  def insertUserState(userState: UserStateModel): UserStateModel
 
   /**
    * Finds a state by user ID
    */
-  def findUserStateByUserID(userID: String): Option[UserState]
+  def findUserStateByUserID(userID: String): Option[UserStateModel]
 
   /**
    * Finds the most up-to-date user state for the particular billing period.
    */
-  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState]
+  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserStateModel]
 }

@@ -51,7 +51,7 @@ import gr.grnet.aquarium.util._
  */
 
 class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
-  extends GenericPayloadHandler[ResourceEventModel, ResourceEventStore#ResourceEvent](
+  extends GenericPayloadHandler[ResourceEventModel, ResourceEventModel](
       // jsonParser: Array[Byte] ⇒ JsonTextFormat
       payload ⇒ {
         aquarium.converters.convertEx[JsonTextFormat](payload)

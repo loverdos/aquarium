@@ -45,9 +45,7 @@ import gr.grnet.aquarium.AquariumInternalError
  * @author Georgios Gousios <gousiosg@gmail.com>.
  */
 trait ResourceEventStore {
-  type ResourceEvent <: ResourceEventModel
-
-  def createResourceEventFromOther(event: ResourceEventModel): ResourceEvent
+  def createResourceEventFromOther(event: ResourceEventModel): ResourceEventModel
 
   def clearResourceEvents(): Unit = {
     // This method is implemented only in MemStoreProvider.
@@ -56,11 +54,11 @@ trait ResourceEventStore {
 
   def pingResourceEventStore(): Unit
 
-  def insertResourceEvent(event: ResourceEventModel): ResourceEvent
+  def insertResourceEvent(event: ResourceEventModel): ResourceEventModel
 
-  def findResourceEventByID(id: String): Option[ResourceEvent]
+  def findResourceEventByID(id: String): Option[ResourceEventModel]
 
-  def findResourceEventsByUserID(userID: String)(sortWith: Option[(ResourceEvent, ResourceEvent) ⇒ Boolean]): List[ResourceEvent]
+  def findResourceEventsByUserID(userID: String)(sortWith: Option[(ResourceEventModel, ResourceEventModel) ⇒ Boolean]): List[ResourceEventModel]
 
   /**
    * Counts and returns the number of "out of sync" events for a billing period.
@@ -72,5 +70,5 @@ trait ResourceEventStore {
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEvent ⇒ Unit): Unit
+  )(f: ResourceEventModel ⇒ Unit): Unit
 }

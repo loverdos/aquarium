@@ -75,11 +75,6 @@ class MongoDBStore(
   with PolicyStore
   with Loggable {
 
-  override type IMEvent = MongoDBIMEvent
-  override type ResourceEvent = MongoDBResourceEvent
-  override type Policy = MongoDBPolicy
-  override type UserState = MongoDBUserState
-
   private[store] lazy val resourceEvents = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
   private[store] lazy val userStates = getCollection(MongoDBStore.USER_STATES_COLLECTION)
   private[store] lazy val imEvents = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
@@ -95,7 +90,7 @@ class MongoDBStore(
   }
 
   //+ResourceEventStore
-  def createResourceEventFromOther(event: ResourceEventModel): ResourceEvent = {
+  def createResourceEventFromOther(event: ResourceEventModel): ResourceEventModel = {
     MongoDBResourceEvent.fromOther(event, null)
   }
 
@@ -109,12 +104,12 @@ class MongoDBStore(
     localEvent
   }
 
-  def findResourceEventByID(id: String): Option[ResourceEvent] = {
+  def findResourceEventByID(id: String): Option[ResourceEventModel] = {
     MongoDBStore.findBy(ResourceEventNames.id, id, resourceEvents, MongoDBResourceEvent.fromDBObject)
   }
 
   def findResourceEventsByUserID(userId: String)
-                                (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
+                                (sortWith: Option[(ResourceEventModel, ResourceEventModel) => Boolean]): List[ResourceEventModel] = {
     val query = new BasicDBObject(ResourceEventNames.userID, userId)
 
     MongoDBStore.runQuery(query, resourceEvents)(MongoDBResourceEvent.fromDBObject)(sortWith)
@@ -142,7 +137,7 @@ class MongoDBStore(
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEvent ⇒ Unit): Unit = {
+  )(f: ResourceEventModel ⇒ Unit): Unit = {
 
     val query = new BasicDBObjectBuilder().
       add(ResourceEventModel.Names.userID, userID).
@@ -165,22 +160,14 @@ class MongoDBStore(
   //-ResourceEventStore
 
   //+ UserStateStore
-  def insertUserState(userState: UserState) = {
-    MongoDBStore.insertObject(
-      userState.copy(_id = new ObjectId().toString),
-      userStates,
-      MongoDBStore.jsonSupportToDBObject
-    )
-  }
-
-  def findUserStateByUserID(userID: String): Option[UserState] = {
+  def findUserStateByUserID(userID: String): Option[UserStateModel] = {
     val query = new BasicDBObject(UserStateModel.Names.userID, userID)
     val cursor = userStates find query
 
     MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
   }
 
-  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
+  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserStateModel] = {
     val query = new BasicDBObjectBuilder().
       add(UserStateModel.Names.userID, userID).
       add(UserStateModel.Names.isFullBillingMonth, true).
@@ -203,7 +190,7 @@ class MongoDBStore(
   /**
    * Stores a user state.
    */
-  def insertUserState(userState: UserStateModel): UserState = {
+  def insertUserState(userState: UserStateModel): UserStateModel = {
     val localUserState = createUserStateFromOther(userState)
     MongoDBStore.insertObject(localUserState, userStates, MongoDBStore.jsonSupportToDBObject)
   }
@@ -222,13 +209,13 @@ class MongoDBStore(
     MongoDBStore.ping(mongo)
   }
 
-  def insertIMEvent(event: IMEventModel): IMEvent = {
+  def insertIMEvent(event: IMEventModel): IMEventModel = {
     val localEvent = MongoDBIMEvent.fromOther(event, new ObjectId().toStringMongod)
     MongoDBStore.insertObject(localEvent, imEvents, MongoDBStore.jsonSupportToDBObject)
     localEvent
   }
 
-  def findIMEventByID(id: String): Option[IMEvent] = {
+  def findIMEventByID(id: String): Option[IMEventModel] = {
     MongoDBStore.findBy(IMEventNames.id, id, imEvents, MongoDBIMEvent.fromDBObject)
   }
 
@@ -236,7 +223,7 @@ class MongoDBStore(
   /**
    * Find the `CREATE` even for the given user. Note that there must be only one such event.
    */
-  def findCreateIMEventByUserID(userID: String): Option[IMEvent] = {
+  def findCreateIMEventByUserID(userID: String): Option[IMEventModel] = {
     val query = new BasicDBObjectBuilder().
       add(IMEventNames.userID, userID).
       add(IMEventNames.eventType, IMEventModel.EventTypeNames.create).get()
@@ -247,7 +234,7 @@ class MongoDBStore(
     MongoDBStore.firstResultIfExists(cursor, MongoDBIMEvent.fromDBObject)
   }
 
-  def findLatestIMEventByUserID(userID: String): Option[IMEvent] = {
+  def findLatestIMEventByUserID(userID: String): Option[IMEventModel] = {
     val query = new BasicDBObject(IMEventNames.userID, userID)
     val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, -1))
 
@@ -260,7 +247,7 @@ class MongoDBStore(
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEvent) => Unit) = {
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventModel) => Unit) = {
     val query = new BasicDBObject(IMEventNames.userID, userID)
     val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
 
@@ -279,14 +266,14 @@ class MongoDBStore(
   /**
    * Store an accounting policy.
    */
-  def insertPolicy(policy: PolicyModel): Policy = {
+  def insertPolicy(policy: PolicyModel): PolicyModel = {
     val dbPolicy = MongoDBPolicy.fromOther(policy, new ObjectId().toStringMongod)
     MongoDBStore.insertObject(dbPolicy, policies, MongoDBStore.jsonSupportToDBObject)
   }
 
-  private def emptyMap = immutable.SortedMap[Timeslot,Policy]()
+  private def emptyMap = immutable.SortedMap[Timeslot,PolicyModel]()
 
-  def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
+  def loadValidPolicyAt(atMillis: Long): Option[PolicyModel] = {
     /*var d = new Date(atMillis)
     /* sort in reverse order  and return the first that includes this date*/
     policies.sortWith({(x,y)=> y.validFrom < x.validFrom}).collectFirst({
@@ -295,8 +282,8 @@ class MongoDBStore(
     None
   }
 
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
-    TreeMap[Timeslot, Policy]()
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyModel] = {
+    TreeMap[Timeslot, PolicyModel]()
   }
   //-PolicyStore
 }

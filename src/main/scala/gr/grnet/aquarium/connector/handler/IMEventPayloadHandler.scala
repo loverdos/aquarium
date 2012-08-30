@@ -51,7 +51,7 @@ import gr.grnet.aquarium.util.{LogHelpers, Tags}
  */
 
 class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
-  extends GenericPayloadHandler[IMEventModel, IMEventStore#IMEvent](
+  extends GenericPayloadHandler[IMEventModel, IMEventModel](
       // jsonParser: Array[Byte] ⇒ JsonTextFormat
       payload ⇒ {
         aquarium.converters.convertEx[JsonTextFormat](payload)

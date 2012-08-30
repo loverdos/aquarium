@@ -49,12 +49,10 @@ import collection.immutable
  */
 
 class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) extends PolicyStore {
-  override type Policy = PolicyModel
-
   private[this] final val lock = new Lock()
-  private[this] final val EmptyPolicyByTimeslotMap = immutable.SortedMap[Timeslot, Policy]()
+  private[this] final val EmptyPolicyByTimeslotMap = immutable.SortedMap[Timeslot, PolicyModel]()
 
-  private[this] var _policies = immutable.TreeSet[Policy]()
+  private[this] var _policies = immutable.TreeSet[PolicyModel]()
 
   private[this] def ensureLoaded[A](andThen: ⇒ A): A = {
     this.lock.withLock {
@@ -74,7 +72,7 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
   private[this] def policyAt(s:Long) : PolicyModel =
     new StdPolicy("", None, Timespan(s), Set(), Set(), Map())
 
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, Policy] =
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyModel] =
     ensureLoaded {
       val range = Timeslot(fromMillis,toMillis)
       /* ``to'' method: return the subset of all policies.from <= range.to */
@@ -93,7 +91,7 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
    * @param atMillis
    * @return
    */
-  def loadValidPolicyAt(atMillis: Long): Option[Policy] =
+  def loadValidPolicyAt(atMillis: Long): Option[PolicyModel] =
     ensureLoaded {
     // Take the subset of all ordered policies up to the one with less than or equal start time
     // and then return the last item. This should be the policy right before the given time.
@@ -105,7 +103,7 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
   /**
    * Store an accounting policy.
    */
-  def insertPolicy(policy: PolicyModel): Policy = {
+  def insertPolicy(policy: PolicyModel): PolicyModel = {
     ensureLoaded {
       this._policies += policy
       policyStore.insertPolicy(policy)

@@ -71,14 +71,9 @@ extends StoreProvider
    with IMEventStore
    with Loggable {
 
-  override type IMEvent = MemIMEvent
-  override type ResourceEvent = MemResourceEvent
-  override type Policy = StdPolicy
-  override type UserState = StdUserState
-
-  private[this] var _userStates = List[UserState]()
-  private[this] var _policies  = List[Policy]()
-  private[this] var _resourceEvents = List[ResourceEvent]()
+  private[this] var _userStates = List[UserStateModel]()
+  private[this] var _policies  = List[PolicyModel]()
+  private[this] var _resourceEvents = List[ResourceEventModel]()
 
   private[this] val imEventById: ConcurrentMap[String, MemIMEvent] = new ConcurrentHashMap[String, MemIMEvent]()
 
@@ -111,7 +106,7 @@ extends StoreProvider
 
 
   //+ UserStateStore
-  def createUserStateFromOther(model: UserStateModel): UserState = {
+  def createUserStateFromOther(model: UserStateModel): UserStateModel = {
     logger.info("createUserStateFromOther(%s)".format(model))
 
     if(model.isInstanceOf[StdUserState]) {
@@ -136,7 +131,7 @@ extends StoreProvider
     }
   }
 
-  def insertUserState(userState: UserStateModel): UserState = {
+  def insertUserState(userState: UserStateModel): UserStateModel = {
     val localUserState = createUserStateFromOther(userState)
     _userStates ::= localUserState
     localUserState
@@ -146,7 +141,7 @@ extends StoreProvider
     _userStates.find(_.userID == userID)
   }
 
-  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserState] = {
+  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserStateModel] = {
     val goodOnes = _userStates.filter { userState ⇒
       userState.userID == userID &&
       userState.isFullBillingMonth &&
@@ -167,7 +162,7 @@ extends StoreProvider
   //- UserStateStore
 
   //+ ResourceEventStore
-  def createResourceEventFromOther(event: ResourceEventModel): ResourceEvent = {
+  def createResourceEventFromOther(event: ResourceEventModel): ResourceEventModel = {
     if(event.isInstanceOf[MemResourceEvent]) event.asInstanceOf[MemResourceEvent]
     else {
       import event._
@@ -205,7 +200,7 @@ extends StoreProvider
   }
 
   def findResourceEventsByUserID(userId: String)
-                                (sortWith: Option[(ResourceEvent, ResourceEvent) => Boolean]): List[ResourceEvent] = {
+                                (sortWith: Option[(ResourceEventModel, ResourceEventModel) => Boolean]): List[ResourceEventModel] = {
     val byUserId = _resourceEvents.filter(_.userID == userId).toArray
     val sorted = sortWith match {
       case Some(sorter) ⇒
@@ -231,7 +226,7 @@ extends StoreProvider
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEvent ⇒ Unit): Unit = {
+  )(f: ResourceEventModel ⇒ Unit): Unit = {
     _resourceEvents.filter { case ev ⇒
       ev.userID == userID &&
       ev.isOccurredWithinMillis(startMillis, stopMillis)
@@ -263,7 +258,7 @@ extends StoreProvider
   /**
    * Find the `CREATE` even for the given user. Note that there must be only one such event.
    */
-  def findCreateIMEventByUserID(userID: String): Option[IMEvent] = {
+  def findCreateIMEventByUserID(userID: String): Option[IMEventModel] = {
     imEventById.valuesIterator.filter { e ⇒
       e.userID == userID && e.isCreateUser
     }.toList.sortWith { case (e1, e2) ⇒
@@ -271,7 +266,7 @@ extends StoreProvider
     } headOption
   }
 
-  def findLatestIMEventByUserID(userID: String): Option[IMEvent] = {
+  def findLatestIMEventByUserID(userID: String): Option[IMEventModel] = {
     imEventById.valuesIterator.filter(_.userID == userID).toList.sortWith {
       case (us1, us2) ⇒
         us1.occurredMillis > us2.occurredMillis
@@ -284,7 +279,7 @@ extends StoreProvider
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEvent) => Unit) = {
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventModel) => Unit) = {
     imEventById.valuesIterator.filter(_.userID == userID).toSeq.sortWith {
       case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis
     } foreach(f)
@@ -294,7 +289,7 @@ extends StoreProvider
   /**
    * Store an accounting policy.
    */
-  def insertPolicy(policy: PolicyModel): Policy = {
+  def insertPolicy(policy: PolicyModel): PolicyModel = {
     val localPolicy = StdPolicy(
       id = policy.id,
       parentID = policy.parentID,
@@ -308,7 +303,7 @@ extends StoreProvider
     localPolicy
   }
 
-  def loadValidPolicyAt(atMillis: Long): Option[Policy] = {
+  def loadValidPolicyAt(atMillis: Long): Option[PolicyModel] = {
     var d = new Date(atMillis)
     /* sort in reverse order  and return the first that includes this date*/
     _policies.sortWith({(x,y)=> y.validFrom < x.validFrom}).collectFirst({
@@ -316,9 +311,9 @@ extends StoreProvider
     })
   }
 
-  private def emptyMap = immutable.SortedMap[Timeslot,Policy]()
+  private def emptyMap = immutable.SortedMap[Timeslot, PolicyModel]()
 
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy] = {
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyModel] = {
     val range = Timeslot(fromMillis,toMillis)
     _policies.foldLeft (emptyMap) { (map,p) =>
       if(range.overlaps(p.validityTimespan.toTimeslot))

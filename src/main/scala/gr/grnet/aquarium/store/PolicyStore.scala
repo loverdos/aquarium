@@ -47,21 +47,19 @@ import gr.grnet.aquarium.policy.PolicyModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 trait PolicyStore {
-  type Policy <: PolicyModel
-
   def loadAllPolicies: SortedSet[PolicyModel] = {
     val all = loadAndSortPoliciesWithin(0, Long.MaxValue)
     val set = SortedSet[PolicyModel]()
     set ++ all.valuesIterator
   }
 
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, Policy]
+  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyModel]
 
-  def loadValidPolicyAt(atMillis: Long): Option[Policy]
+  def loadValidPolicyAt(atMillis: Long): Option[PolicyModel]
 
   /**
    * Store an accounting policy.
    */
-  def insertPolicy(policy: PolicyModel): Policy
+  def insertPolicy(policy: PolicyModel): PolicyModel
 
 }
