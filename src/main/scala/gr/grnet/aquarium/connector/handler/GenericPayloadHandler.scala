@@ -46,7 +46,6 @@ import gr.grnet.aquarium.util.{LogHelpers, Loggable, safeUnit, shortInfoOf, shor
  * We first parse them to JSON ([[gr.grnet.aquarium.converter.JsonTextFormat]]) and an appropriate event model
  * (`E <:` [[gr.grnet.aquarium.event.model.ExternalEventModel]]),
  * then store them to DB
- * (`S <:` [[gr.grnet.aquarium.event.model.ExternalEventModel]])
  * and then forward them to business logic.
  *
  * All the above actions are given polymorphically via appropriate functions.
@@ -54,7 +53,7 @@ import gr.grnet.aquarium.util.{LogHelpers, Loggable, safeUnit, shortInfoOf, shor
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel](
+class GenericPayloadHandler[E <: ExternalEventModel](
     /**
      * Parses payload bytes to a JSON string.
      * The incoming payload must be in UTF-8.
@@ -97,12 +96,12 @@ class GenericPayloadHandler[E <: ExternalEventModel, S <: ExternalEventModel](
     /**
      * Saves the parsed domain object to DB. Returns the saved domain object.
      */
-    saveAction: E ⇒ S,
+    saveAction: E ⇒ E,
 
     /**
      * Forwards the saved domain object for further processing.
      */
-    forwardAction: S ⇒ Unit) extends PayloadHandler with Loggable {
+    forwardAction: E ⇒ Unit) extends PayloadHandler with Loggable {
 
   /**
    * This is the core business logic that Aquarium applies to an incoming event.

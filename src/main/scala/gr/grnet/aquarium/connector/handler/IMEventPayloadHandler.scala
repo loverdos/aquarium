@@ -36,12 +36,12 @@
 package gr.grnet.aquarium.connector.handler
 
 import gr.grnet.aquarium.Aquarium
-import org.slf4j.Logger
-import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.store.{IMEventStore, LocalFSEventStore}
-import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
 import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
+import gr.grnet.aquarium.converter.JsonTextFormat
+import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util.{LogHelpers, Tags}
+import org.slf4j.Logger
 
 /**
  * A [[gr.grnet.aquarium.connector.handler.PayloadHandler]] for
@@ -51,7 +51,7 @@ import gr.grnet.aquarium.util.{LogHelpers, Tags}
  */
 
 class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
-  extends GenericPayloadHandler[IMEventModel, IMEventModel](
+  extends GenericPayloadHandler[IMEventModel](
       // jsonParser: Array[Byte] ⇒ JsonTextFormat
       payload ⇒ {
         aquarium.converters.convertEx[JsonTextFormat](payload)
