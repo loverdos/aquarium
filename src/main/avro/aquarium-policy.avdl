@@ -34,7 +34,7 @@
  */
 
 @namespace("gr.grnet.aquarium.message.avro.gen")
-protocol AquariumConf {
+protocol AquariumPolicy {
   record _ResourceType {
     string name;
     string unit;
@@ -68,7 +68,7 @@ protocol AquariumConf {
 
   record _Policy {
     string @aliases(["id, _id, idInStore, inStoreID"]) ID;
-    string parentID;
+    union {string, null} parentID;
     long validFromMillis;
     long validToMillis;
     array<_ResourceType> resourceTypes;

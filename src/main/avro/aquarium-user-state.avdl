@@ -35,7 +35,7 @@
 
 @namespace("gr.grnet.aquarium.message.avro.gen")
 protocol AquariumUserState {
-  import idl "aquarium-conf.avdl";
+  import idl "aquarium-policy.avdl";
   import idl "aquarium-anyvalue.avdl";
   import idl "aquarium-events.avdl";
 
