@@ -2,8 +2,8 @@
   "originalID":"default-policy",
   "inStoreID":null,
   "parentID":null,
-  "validFromMillis":"0",
-  "validToMillis":"9223372036854775807",
+  "validFromMillis": 0,
+  "validToMillis": 9223372036854775807,
 
   "resourceTypes":[
     {
@@ -37,7 +37,7 @@
               "gr.grnet.aquarium.message.avro.gen.EffectivePriceTableMsg":{
                 "priceOverrides":[
                   {
-                    "unitPrice":"0.01",
+                    "unitPrice": 0.01,
                     "when":null
                   }
                 ]
@@ -52,7 +52,7 @@
               "gr.grnet.aquarium.message.avro.gen.EffectivePriceTableMsg":{
                 "priceOverrides":[
                   {
-                    "unitPrice":"0.0010",
+                    "unitPrice": 0.0010,
                     "when":null
                   }
                 ]
@@ -64,7 +64,7 @@
               "gr.grnet.aquarium.message.avro.gen.EffectivePriceTableMsg":{
                 "priceOverrides":[
                   {
-                    "unitPrice":"0.01",
+                    "unitPrice": 0.01,
                     "when":null
                   }
                 ]
@@ -79,7 +79,7 @@
               "gr.grnet.aquarium.message.avro.gen.EffectivePriceTableMsg":{
                 "priceOverrides":[
                   {
-                    "unitPrice":"-1.0",
+                    "unitPrice": -1.0,
                     "when":null
                   }
                 ]

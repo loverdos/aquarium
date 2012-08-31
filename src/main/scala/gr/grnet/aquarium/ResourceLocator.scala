@@ -310,7 +310,14 @@ object ResourceLocator {
             Resources.PolicyJSONResource))
 
       case Just(jsonString) ⇒
-        AvroHelpers.specificRecordOfJsonString(jsonString, new PolicyMsg)
+        try AvroHelpers.specificRecordOfJsonString(jsonString, new PolicyMsg)
+        catch {
+          case error: Error ⇒
+            throw error.asInstanceOf[Error]
+
+          case t: Throwable ⇒
+            throw new AquariumInternalError(t, "Cannot load default policy %s", Resources.PolicyJSONResource)
+        }
     }
   }
 
