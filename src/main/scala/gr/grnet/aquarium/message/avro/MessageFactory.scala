@@ -44,74 +44,66 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object MessageFactory {
-  def newEffectiveUnitPrice(unitPrice: Double, whenOpt: Option[_CronSpecTuple] = None) = {
-    _EffectiveUnitPrice.newBuilder().
+  def newEffectiveUnitPriceMsg(unitPrice: Double, whenOpt: Option[CronSpecTupleMsg] = None) = {
+    EffectiveUnitPriceMsg.newBuilder().
       setUnitPrice(unitPrice).
       setWhen(whenOpt.getOrElse(null)).
     build()
   }
 
-  def newEffectivePriceTable(priceOverrides: _EffectiveUnitPrice*) = {
-    _EffectivePriceTable.newBuilder().
+  def newEffectivePriceTableMsg(priceOverrides: EffectiveUnitPriceMsg*) = {
+    EffectivePriceTableMsg.newBuilder().
       setPriceOverrides(priceOverrides.asJava).
     build()
   }
 
-  def newSelectorValue(ept: _EffectivePriceTable): _SelectorValue = {
-    _SelectorValue.newBuilder().
+  def newSelectorValueMsg(ept: EffectivePriceTableMsg): SelectorValueMsg = {
+    SelectorValueMsg.newBuilder().
       setSelectorValue(ept).
     build()
   }
 
-  def newSelectorValue(map: Map[CharSequence, _SelectorValue]): _SelectorValue = {
-    _SelectorValue.newBuilder().
+  def newSelectorValueMsg(map: Map[CharSequence, SelectorValueMsg]): SelectorValueMsg = {
+    SelectorValueMsg.newBuilder().
       setSelectorValue(map.asJava).
     build()
   }
 
-  def newSelectorValue(pairs: (CharSequence, _SelectorValue)*): _SelectorValue = {
-    _SelectorValue.newBuilder().
+  def newSelectorValueMsg(pairs: (CharSequence, SelectorValueMsg)*): SelectorValueMsg = {
+    SelectorValueMsg.newBuilder().
       setSelectorValue(Map(pairs:_*).asJava).
     build()
   }
 
-//  def newFullPriceTable(perResource: Map[CharSequence, Map[CharSequence, _SelectorValue]]) = {
-//    _FullPriceTable.newBuilder().
-//      setPerResource(
-//        (for((k, v) ← perResource) yield (k, v.asJava)).asJava
-//      ).
-//    build()
-//  }
-
-  def newFullPriceTable(perResource: (CharSequence, Map[CharSequence, _SelectorValue])*) = {
-    _FullPriceTable.newBuilder().
+  def newFullPriceTableMsg(perResource: (CharSequence, Map[CharSequence, SelectorValueMsg])*) = {
+    FullPriceTableMsg.newBuilder().
       setPerResource(
         Map((for((k, v) ← perResource) yield (k, v.asJava)):_*).asJava
       ).
     build()
   }
 
-  def newRoleMapping(map: Map[CharSequence, _FullPriceTable]): java.util.Map[CharSequence, _FullPriceTable] = {
+  def newRoleMappingMsg(map: Map[CharSequence, FullPriceTableMsg]): java.util.Map[CharSequence, FullPriceTableMsg] = {
     map.asJava
   }
 
-  def newRoleMapping(pairs: (CharSequence, _FullPriceTable)*): java.util.Map[CharSequence, _FullPriceTable] = {
+  def newRoleMappingMsg(pairs: (CharSequence, FullPriceTableMsg)*): java.util.Map[CharSequence, FullPriceTableMsg] = {
     Map(pairs:_*).asJava
   }
 
-  def newResourceType(name: CharSequence, unit: CharSequence, chargingBehavior: CharSequence) = {
-    _ResourceType.newBuilder().
+  def newResourceTypeMsg(name: CharSequence, unit: CharSequence, chargingBehavior: CharSequence) = {
+    ResourceTypeMsg.newBuilder().
       setName(name).
       setUnit(unit).
       setChargingBehaviorClass(chargingBehavior).
     build()
   }
 
-  def newResourceTypes(rts: _ResourceType*) = {
+  def newResourceTypeMsgs(rts: ResourceTypeMsg*) = {
     rts.asJava
   }
 
-  def newChargingBehaviors(cbs: CharSequence*) = {
+  def newChargingBehaviorMsgs(cbs: CharSequence*) = {
     cbs.asJava
   }
 }

@@ -46,17 +46,17 @@ import org.codehaus.jackson.{JsonEncoding, JsonFactory}
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class ResourceEventTest {
+class ResourceEventMsgTest {
   @Test
   def testJSONSchema() {
-    val rcEvent = new _ResourceEvent()
+    val rcEvent = new ResourceEventMsg()
     val schema = rcEvent.getSchema
     val generatedPrettySchema = schema.toString(true)
     val goodJSONSchema =
       """{
         |  "type" : "record",
-        |  "name" : "_ResourceEvent",
-        |  "namespace" : "gr.grnet.aquarium.message.avro",
+        |  "name" : "ResourceEventMsg",
+        |  "namespace" : "gr.grnet.aquarium.message.avro.gen",
         |  "fields" : [ {
         |    "name" : "id",
         |    "type" : "string",
@@ -97,7 +97,7 @@ class ResourceEventTest {
         |      "type" : "map",
         |      "values" : {
         |        "type" : "record",
-        |        "name" : "_AnyValue",
+        |        "name" : "AnyValueMsg",
         |        "fields" : [ {
         |          "name" : "anyValue",
         |          "type" : [ "null", "int", "long", "boolean", "double", "bytes", "string" ]
@@ -112,7 +112,7 @@ class ResourceEventTest {
 
   @Test
   def testJSONObjectOutput() {
-    val rcEvent = _ResourceEvent.newBuilder().
+    val rcEvent = ResourceEventMsg.newBuilder().
       setId("id-1").
       setClientID("client-1").
       setResource("diskspace").
@@ -121,7 +121,7 @@ class ResourceEventTest {
       setOccurredMillis(1000L).
       setUserID("foouser").
       setValue("123.32").
-      setDetails(new util.HashMap[CharSequence, _AnyValue]()).
+      setDetails(new util.HashMap[CharSequence, AnyValueMsg]()).
       build()
 
     val schema = rcEvent.getSchema
@@ -131,7 +131,7 @@ class ResourceEventTest {
       createJsonGenerator(out, JsonEncoding.UTF8).
       useDefaultPrettyPrinter()
     encoder.configure(jsonGenerator)
-    val writer = new SpecificDatumWriter[_ResourceEvent](schema)
+    val writer = new SpecificDatumWriter[ResourceEventMsg](schema)
 
     writer.write(rcEvent, encoder)
 

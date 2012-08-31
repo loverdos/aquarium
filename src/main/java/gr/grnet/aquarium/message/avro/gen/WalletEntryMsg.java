@@ -5,8 +5,8 @@
  */
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
-public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_WalletEntry\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"sumOfCreditsToSubtract\",\"type\":\"double\"},{\"name\":\"oldTotalCredits\",\"type\":\"double\"},{\"name\":\"newTotalCredits\",\"type\":\"double\"},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_Chargeslot\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\"}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_ResourceEvent\",\"fields\":[{\"name\":\"id\",\"type\":\"string\",\"aliases\":[\"originalID\",\"ID\"]},{\"name\":\"idInStore\",\"type\":\"string\"},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"clientID\",\"type\":\"string\"},{\"name\":\"eventVersion\",\"type\":\"string\",\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":\"string\",\"aliases\":[\"resourceType\"]},{\"name\":\"instanceID\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_AnyValue\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}}}]}}},{\"name\":\"resourceType\",\"type\":{\"type\":\"record\",\"name\":\"_ResourceType\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false}]}");
+public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"WalletEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"sumOfCreditsToSubtract\",\"type\":\"double\"},{\"name\":\"oldTotalCredits\",\"type\":\"double\"},{\"name\":\"newTotalCredits\",\"type\":\"double\"},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\"}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"id\",\"type\":\"string\",\"aliases\":[\"originalID\",\"ID\"]},{\"name\":\"idInStore\",\"type\":\"string\"},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"clientID\",\"type\":\"string\"},{\"name\":\"eventVersion\",\"type\":\"string\",\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":\"string\",\"aliases\":[\"resourceType\"]},{\"name\":\"instanceID\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}}}]}}},{\"name\":\"resourceType\",\"type\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false}]}");
   @Deprecated public java.lang.CharSequence userID;
   @Deprecated public double sumOfCreditsToSubtract;
   @Deprecated public double oldTotalCredits;
@@ -17,9 +17,9 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
   @Deprecated public int billingYear;
   @Deprecated public int billingMonth;
   @Deprecated public int billingDay;
-  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot> chargeslots;
-  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent> resourceEvents;
-  @Deprecated public gr.grnet.aquarium.message.avro.gen._ResourceType resourceType;
+  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> chargeslots;
+  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> resourceEvents;
+  @Deprecated public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg resourceType;
   @Deprecated public boolean isSynthetic;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
@@ -56,9 +56,9 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     case 7: billingYear = (java.lang.Integer)value$; break;
     case 8: billingMonth = (java.lang.Integer)value$; break;
     case 9: billingDay = (java.lang.Integer)value$; break;
-    case 10: chargeslots = (java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot>)value$; break;
-    case 11: resourceEvents = (java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent>)value$; break;
-    case 12: resourceType = (gr.grnet.aquarium.message.avro.gen._ResourceType)value$; break;
+    case 10: chargeslots = (java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg>)value$; break;
+    case 11: resourceEvents = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>)value$; break;
+    case 12: resourceType = (gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg)value$; break;
     case 13: isSynthetic = (java.lang.Boolean)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
@@ -217,7 +217,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
   /**
    * Gets the value of the 'chargeslots' field.
    */
-  public java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot> getChargeslots() {
+  public java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> getChargeslots() {
     return chargeslots;
   }
 
@@ -225,14 +225,14 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'chargeslots' field.
    * @param value the value to set.
    */
-  public void setChargeslots(java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot> value) {
+  public void setChargeslots(java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> value) {
     this.chargeslots = value;
   }
 
   /**
    * Gets the value of the 'resourceEvents' field.
    */
-  public java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent> getResourceEvents() {
+  public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> getResourceEvents() {
     return resourceEvents;
   }
 
@@ -240,14 +240,14 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'resourceEvents' field.
    * @param value the value to set.
    */
-  public void setResourceEvents(java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent> value) {
+  public void setResourceEvents(java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> value) {
     this.resourceEvents = value;
   }
 
   /**
    * Gets the value of the 'resourceType' field.
    */
-  public gr.grnet.aquarium.message.avro.gen._ResourceType getResourceType() {
+  public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg getResourceType() {
     return resourceType;
   }
 
@@ -255,7 +255,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'resourceType' field.
    * @param value the value to set.
    */
-  public void setResourceType(gr.grnet.aquarium.message.avro.gen._ResourceType value) {
+  public void setResourceType(gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg value) {
     this.resourceType = value;
   }
 
@@ -274,26 +274,26 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     this.isSynthetic = value;
   }
 
-  /** Creates a new _WalletEntry RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder();
+  /** Creates a new WalletEntryMsg RecordBuilder */
+  public static gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder();
   }
   
-  /** Creates a new _WalletEntry RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder other) {
-    return new gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder(other);
+  /** Creates a new WalletEntryMsg RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder other) {
+    return new gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder(other);
   }
   
-  /** Creates a new _WalletEntry RecordBuilder by copying an existing _WalletEntry instance */
-  public static gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._WalletEntry other) {
-    return new gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder(other);
+  /** Creates a new WalletEntryMsg RecordBuilder by copying an existing WalletEntryMsg instance */
+  public static gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.WalletEntryMsg other) {
+    return new gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder(other);
   }
   
   /**
-   * RecordBuilder for _WalletEntry instances.
+   * RecordBuilder for WalletEntryMsg instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_WalletEntry>
-    implements org.apache.avro.data.RecordBuilder<_WalletEntry> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<WalletEntryMsg>
+    implements org.apache.avro.data.RecordBuilder<WalletEntryMsg> {
 
     private java.lang.CharSequence userID;
     private double sumOfCreditsToSubtract;
@@ -305,24 +305,24 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     private int billingYear;
     private int billingMonth;
     private int billingDay;
-    private java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot> chargeslots;
-    private java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent> resourceEvents;
-    private gr.grnet.aquarium.message.avro.gen._ResourceType resourceType;
+    private java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> chargeslots;
+    private java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> resourceEvents;
+    private gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg resourceType;
     private boolean isSynthetic;
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.gen._WalletEntry.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing _WalletEntry instance */
-    private Builder(gr.grnet.aquarium.message.avro.gen._WalletEntry other) {
-            super(gr.grnet.aquarium.message.avro.gen._WalletEntry.SCHEMA$);
+    /** Creates a Builder by copying an existing WalletEntryMsg instance */
+    private Builder(gr.grnet.aquarium.message.avro.gen.WalletEntryMsg other) {
+            super(gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.userID)) {
         this.userID = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.userID);
         fieldSetFlags()[0] = true;
@@ -364,15 +364,15 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
         fieldSetFlags()[9] = true;
       }
       if (isValidValue(fields()[10], other.chargeslots)) {
-        this.chargeslots = (java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot>) data().deepCopy(fields()[10].schema(), other.chargeslots);
+        this.chargeslots = (java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg>) data().deepCopy(fields()[10].schema(), other.chargeslots);
         fieldSetFlags()[10] = true;
       }
       if (isValidValue(fields()[11], other.resourceEvents)) {
-        this.resourceEvents = (java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent>) data().deepCopy(fields()[11].schema(), other.resourceEvents);
+        this.resourceEvents = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>) data().deepCopy(fields()[11].schema(), other.resourceEvents);
         fieldSetFlags()[11] = true;
       }
       if (isValidValue(fields()[12], other.resourceType)) {
-        this.resourceType = (gr.grnet.aquarium.message.avro.gen._ResourceType) data().deepCopy(fields()[12].schema(), other.resourceType);
+        this.resourceType = (gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg) data().deepCopy(fields()[12].schema(), other.resourceType);
         fieldSetFlags()[12] = true;
       }
       if (isValidValue(fields()[13], other.isSynthetic)) {
@@ -387,7 +387,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setUserID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setUserID(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.userID = value;
       fieldSetFlags()[0] = true;
@@ -400,7 +400,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearUserID() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearUserID() {
       userID = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -412,7 +412,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'sumOfCreditsToSubtract' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setSumOfCreditsToSubtract(double value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setSumOfCreditsToSubtract(double value) {
       validate(fields()[1], value);
       this.sumOfCreditsToSubtract = value;
       fieldSetFlags()[1] = true;
@@ -425,7 +425,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'sumOfCreditsToSubtract' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearSumOfCreditsToSubtract() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearSumOfCreditsToSubtract() {
       fieldSetFlags()[1] = false;
       return this;
     }
@@ -436,7 +436,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'oldTotalCredits' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setOldTotalCredits(double value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setOldTotalCredits(double value) {
       validate(fields()[2], value);
       this.oldTotalCredits = value;
       fieldSetFlags()[2] = true;
@@ -449,7 +449,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'oldTotalCredits' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearOldTotalCredits() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearOldTotalCredits() {
       fieldSetFlags()[2] = false;
       return this;
     }
@@ -460,7 +460,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'newTotalCredits' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setNewTotalCredits(double value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setNewTotalCredits(double value) {
       validate(fields()[3], value);
       this.newTotalCredits = value;
       fieldSetFlags()[3] = true;
@@ -473,7 +473,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'newTotalCredits' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearNewTotalCredits() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearNewTotalCredits() {
       fieldSetFlags()[3] = false;
       return this;
     }
@@ -484,7 +484,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'whenComputedMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setWhenComputedMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setWhenComputedMillis(long value) {
       validate(fields()[4], value);
       this.whenComputedMillis = value;
       fieldSetFlags()[4] = true;
@@ -497,7 +497,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'whenComputedMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearWhenComputedMillis() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearWhenComputedMillis() {
       fieldSetFlags()[4] = false;
       return this;
     }
@@ -508,7 +508,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'referenceStartMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setReferenceStartMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setReferenceStartMillis(long value) {
       validate(fields()[5], value);
       this.referenceStartMillis = value;
       fieldSetFlags()[5] = true;
@@ -521,7 +521,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'referenceStartMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearReferenceStartMillis() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearReferenceStartMillis() {
       fieldSetFlags()[5] = false;
       return this;
     }
@@ -532,7 +532,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'referenceStopMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setReferenceStopMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setReferenceStopMillis(long value) {
       validate(fields()[6], value);
       this.referenceStopMillis = value;
       fieldSetFlags()[6] = true;
@@ -545,7 +545,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'referenceStopMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearReferenceStopMillis() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearReferenceStopMillis() {
       fieldSetFlags()[6] = false;
       return this;
     }
@@ -556,7 +556,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'billingYear' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setBillingYear(int value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setBillingYear(int value) {
       validate(fields()[7], value);
       this.billingYear = value;
       fieldSetFlags()[7] = true;
@@ -569,7 +569,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'billingYear' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearBillingYear() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearBillingYear() {
       fieldSetFlags()[7] = false;
       return this;
     }
@@ -580,7 +580,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'billingMonth' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setBillingMonth(int value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setBillingMonth(int value) {
       validate(fields()[8], value);
       this.billingMonth = value;
       fieldSetFlags()[8] = true;
@@ -593,7 +593,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'billingMonth' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearBillingMonth() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearBillingMonth() {
       fieldSetFlags()[8] = false;
       return this;
     }
@@ -604,7 +604,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'billingDay' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setBillingDay(int value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setBillingDay(int value) {
       validate(fields()[9], value);
       this.billingDay = value;
       fieldSetFlags()[9] = true;
@@ -617,18 +617,18 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'billingDay' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearBillingDay() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearBillingDay() {
       fieldSetFlags()[9] = false;
       return this;
     }
 
     /** Gets the value of the 'chargeslots' field */
-    public java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot> getChargeslots() {
+    public java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> getChargeslots() {
       return chargeslots;
     }
     
     /** Sets the value of the 'chargeslots' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setChargeslots(java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot> value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setChargeslots(java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> value) {
       validate(fields()[10], value);
       this.chargeslots = value;
       fieldSetFlags()[10] = true;
@@ -641,19 +641,19 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'chargeslots' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearChargeslots() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearChargeslots() {
       chargeslots = null;
       fieldSetFlags()[10] = false;
       return this;
     }
 
     /** Gets the value of the 'resourceEvents' field */
-    public java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent> getResourceEvents() {
+    public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> getResourceEvents() {
       return resourceEvents;
     }
     
     /** Sets the value of the 'resourceEvents' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setResourceEvents(java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent> value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setResourceEvents(java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> value) {
       validate(fields()[11], value);
       this.resourceEvents = value;
       fieldSetFlags()[11] = true;
@@ -666,19 +666,19 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'resourceEvents' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearResourceEvents() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearResourceEvents() {
       resourceEvents = null;
       fieldSetFlags()[11] = false;
       return this;
     }
 
     /** Gets the value of the 'resourceType' field */
-    public gr.grnet.aquarium.message.avro.gen._ResourceType getResourceType() {
+    public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg getResourceType() {
       return resourceType;
     }
     
     /** Sets the value of the 'resourceType' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setResourceType(gr.grnet.aquarium.message.avro.gen._ResourceType value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setResourceType(gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg value) {
       validate(fields()[12], value);
       this.resourceType = value;
       fieldSetFlags()[12] = true;
@@ -691,7 +691,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'resourceType' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearResourceType() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearResourceType() {
       resourceType = null;
       fieldSetFlags()[12] = false;
       return this;
@@ -703,7 +703,7 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'isSynthetic' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder setIsSynthetic(boolean value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setIsSynthetic(boolean value) {
       validate(fields()[13], value);
       this.isSynthetic = value;
       fieldSetFlags()[13] = true;
@@ -716,15 +716,15 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'isSynthetic' field */
-    public gr.grnet.aquarium.message.avro.gen._WalletEntry.Builder clearIsSynthetic() {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearIsSynthetic() {
       fieldSetFlags()[13] = false;
       return this;
     }
 
     @Override
-    public _WalletEntry build() {
+    public WalletEntryMsg build() {
       try {
-        _WalletEntry record = new _WalletEntry();
+        WalletEntryMsg record = new WalletEntryMsg();
         record.userID = fieldSetFlags()[0] ? this.userID : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.sumOfCreditsToSubtract = fieldSetFlags()[1] ? this.sumOfCreditsToSubtract : (java.lang.Double) defaultValue(fields()[1]);
         record.oldTotalCredits = fieldSetFlags()[2] ? this.oldTotalCredits : (java.lang.Double) defaultValue(fields()[2]);
@@ -735,9 +735,9 @@ public class _WalletEntry extends org.apache.avro.specific.SpecificRecordBase im
         record.billingYear = fieldSetFlags()[7] ? this.billingYear : (java.lang.Integer) defaultValue(fields()[7]);
         record.billingMonth = fieldSetFlags()[8] ? this.billingMonth : (java.lang.Integer) defaultValue(fields()[8]);
         record.billingDay = fieldSetFlags()[9] ? this.billingDay : (java.lang.Integer) defaultValue(fields()[9]);
-        record.chargeslots = fieldSetFlags()[10] ? this.chargeslots : (java.util.List<gr.grnet.aquarium.message.avro.gen._Chargeslot>) defaultValue(fields()[10]);
-        record.resourceEvents = fieldSetFlags()[11] ? this.resourceEvents : (java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceEvent>) defaultValue(fields()[11]);
-        record.resourceType = fieldSetFlags()[12] ? this.resourceType : (gr.grnet.aquarium.message.avro.gen._ResourceType) defaultValue(fields()[12]);
+        record.chargeslots = fieldSetFlags()[10] ? this.chargeslots : (java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg>) defaultValue(fields()[10]);
+        record.resourceEvents = fieldSetFlags()[11] ? this.resourceEvents : (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>) defaultValue(fields()[11]);
+        record.resourceType = fieldSetFlags()[12] ? this.resourceType : (gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg) defaultValue(fields()[12]);
         record.isSynthetic = fieldSetFlags()[13] ? this.isSynthetic : (java.lang.Boolean) defaultValue(fields()[13]);
         return record;
       } catch (Exception e) {

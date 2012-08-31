@@ -5,8 +5,8 @@
  */
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
-public class _CronSpecTuple extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_CronSpecTuple\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]}");
+public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]}");
   @Deprecated public java.lang.CharSequence a;
   @Deprecated public java.lang.CharSequence b;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
@@ -58,43 +58,43 @@ public class _CronSpecTuple extends org.apache.avro.specific.SpecificRecordBase 
     this.b = value;
   }
 
-  /** Creates a new _CronSpecTuple RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder();
+  /** Creates a new CronSpecTupleMsg RecordBuilder */
+  public static gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder();
   }
   
-  /** Creates a new _CronSpecTuple RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder other) {
-    return new gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder(other);
+  /** Creates a new CronSpecTupleMsg RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder other) {
+    return new gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder(other);
   }
   
-  /** Creates a new _CronSpecTuple RecordBuilder by copying an existing _CronSpecTuple instance */
-  public static gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._CronSpecTuple other) {
-    return new gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder(other);
+  /** Creates a new CronSpecTupleMsg RecordBuilder by copying an existing CronSpecTupleMsg instance */
+  public static gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg other) {
+    return new gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder(other);
   }
   
   /**
-   * RecordBuilder for _CronSpecTuple instances.
+   * RecordBuilder for CronSpecTupleMsg instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_CronSpecTuple>
-    implements org.apache.avro.data.RecordBuilder<_CronSpecTuple> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<CronSpecTupleMsg>
+    implements org.apache.avro.data.RecordBuilder<CronSpecTupleMsg> {
 
     private java.lang.CharSequence a;
     private java.lang.CharSequence b;
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.gen._CronSpecTuple.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing _CronSpecTuple instance */
-    private Builder(gr.grnet.aquarium.message.avro.gen._CronSpecTuple other) {
-            super(gr.grnet.aquarium.message.avro.gen._CronSpecTuple.SCHEMA$);
+    /** Creates a Builder by copying an existing CronSpecTupleMsg instance */
+    private Builder(gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg other) {
+            super(gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.a)) {
         this.a = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.a);
         fieldSetFlags()[0] = true;
@@ -111,7 +111,7 @@ public class _CronSpecTuple extends org.apache.avro.specific.SpecificRecordBase 
     }
     
     /** Sets the value of the 'a' field */
-    public gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder setA(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder setA(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.a = value;
       fieldSetFlags()[0] = true;
@@ -124,7 +124,7 @@ public class _CronSpecTuple extends org.apache.avro.specific.SpecificRecordBase 
     }
     
     /** Clears the value of the 'a' field */
-    public gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder clearA() {
+    public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder clearA() {
       a = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -136,7 +136,7 @@ public class _CronSpecTuple extends org.apache.avro.specific.SpecificRecordBase 
     }
     
     /** Sets the value of the 'b' field */
-    public gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder setB(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder setB(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.b = value;
       fieldSetFlags()[1] = true;
@@ -149,16 +149,16 @@ public class _CronSpecTuple extends org.apache.avro.specific.SpecificRecordBase 
     }
     
     /** Clears the value of the 'b' field */
-    public gr.grnet.aquarium.message.avro.gen._CronSpecTuple.Builder clearB() {
+    public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder clearB() {
       b = null;
       fieldSetFlags()[1] = false;
       return this;
     }
 
     @Override
-    public _CronSpecTuple build() {
+    public CronSpecTupleMsg build() {
       try {
-        _CronSpecTuple record = new _CronSpecTuple();
+        CronSpecTupleMsg record = new CronSpecTupleMsg();
         record.a = fieldSetFlags()[0] ? this.a : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.b = fieldSetFlags()[1] ? this.b : (java.lang.CharSequence) defaultValue(fields()[1]);
         return record;
