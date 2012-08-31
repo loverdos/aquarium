@@ -113,11 +113,10 @@ class ResourceEventMsgTest {
   @Test
   def testJSONObjectOutput() {
     val rcEvent = ResourceEventMsg.newBuilder().
-      setId("id-1").
+      setOriginalID("id-1").
       setClientID("client-1").
       setResource("diskspace").
       setInstanceID("1").
-      setIdInStore("").
       setOccurredMillis(1000L).
       setUserID("foouser").
       setValue("123.32").

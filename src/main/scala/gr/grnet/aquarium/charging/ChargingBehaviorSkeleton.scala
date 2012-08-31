@@ -142,7 +142,7 @@ abstract class ChargingBehaviorSkeleton(
     // It will also update the old one inside the data structure.
     workingResourceInstanceChargingState.setNewAccumulatingAmount(_newAccumulatingAmount)
 
-    val policyByTimeslot = policyStore.loadAndSortPoliciesWithin(
+    val policyByTimeslot = policyStore.loadSortedPolicyModelsWithin(
       referenceTimeslot.from.getTime,
       referenceTimeslot.to.getTime
     )

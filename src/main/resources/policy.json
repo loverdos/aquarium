@@ -1,66 +1,90 @@
-{ "jsonClass":"gr.grnet.aquarium.policy.StdPolicy",
+{
+  "originalID":"default-policy",
+  "inStoreID":null,
+  "parentID":null,
+  "validFromMillis":"0",
+  "validToMillis":"9223372036854775807",
 
-  "id":"default-policy",
-
-  "validityTimespan":{
-    "fromMillis":0,
-    "toMillis":9223372036854775807
-  },
-
-  "resourceTypes":[{
-    "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
-    "name":"diskspace",
-    "unit":"MB/Hr",
-    "chargingBehavior":"gr.grnet.aquarium.charging.ContinuousChargingBehavior"
-  },{
-    "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
-    "name":"vmtime",
-    "unit":"Hr",
-    "chargingBehavior":"gr.grnet.aquarium.charging.VMChargingBehavior"
-  },{
-    "jsonClass":"gr.grnet.aquarium.policy.ResourceType",
-    "name":"addcredits",
-    "unit":"Credits",
-    "chargingBehavior":"gr.grnet.aquarium.charging.OnceChargingBehavior"
-    }],
+  "resourceTypes":[
+    {
+      "name":"diskspace",
+      "unit":"MB/Hr",
+      "chargingBehaviorClass":"gr.grnet.aquarium.charging.ContinuousChargingBehavior"
+    },
+    {
+      "name":"vmtime",
+      "unit":"Hr",
+      "chargingBehaviorClass":"gr.grnet.aquarium.charging.VMChargingBehavior"
+    },
+    {
+      "name":"addcredits",
+      "unit":"Credits",
+      "chargingBehaviorClass":"gr.grnet.aquarium.charging.OnceChargingBehavior"
+    }
+  ],
 
   "chargingBehaviors":[
     "gr.grnet.aquarium.charging.VMChargingBehavior",
     "gr.grnet.aquarium.charging.ContinuousChargingBehavior",
-    "gr.grnet.aquarium.charging.OnceChargingBehavior"
-  ],
+    "gr.grnet.aquarium.charging.OnceChargingBehavior" ],
 
   "roleMapping":{
     "default":{
-      "jsonClass":"gr.grnet.aquarium.policy.FullPriceTable",
-
       "perResource":{
         "diskspace":{
-          "default":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
-            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
-              "unitPrice":0.01
-            }]
+          "default":{
+            "selectorValue":{
+              "gr.grnet.aquarium.message.avro.gen.EffectivePriceTableMsg":{
+                "priceOverrides":[
+                  {
+                    "unitPrice":"0.01",
+                    "when":null
+                  }
+                ]
+              }
+            }
           }
         },
 
         "vmtime":{
-          "powerOn":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
-            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
-              "unitPrice":0.01
-            }]
+          "powerOff":{
+            "selectorValue":{
+              "gr.grnet.aquarium.message.avro.gen.EffectivePriceTableMsg":{
+                "priceOverrides":[
+                  {
+                    "unitPrice":"0.0010",
+                    "when":null
+                  }
+                ]
+              }
+            }
           },
-          "powerOff":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
-            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
-              "unitPrice":0.0010
-            }]
+          "powerOn":{
+            "selectorValue":{
+              "gr.grnet.aquarium.message.avro.gen.EffectivePriceTableMsg":{
+                "priceOverrides":[
+                  {
+                    "unitPrice":"0.01",
+                    "when":null
+                  }
+                ]
+              }
+            }
           }
         },
 
         "addcredits":{
-          "default":{ "jsonClass":"gr.grnet.aquarium.policy.EffectivePriceTable",
-            "priceOverrides":[{ "jsonClass":"gr.grnet.aquarium.policy.EffectiveUnitPrice",
-              "unitPrice":-1.0
-            }]
+          "default":{
+            "selectorValue":{
+              "gr.grnet.aquarium.message.avro.gen.EffectivePriceTableMsg":{
+                "priceOverrides":[
+                  {
+                    "unitPrice":"-1.0",
+                    "when":null
+                  }
+                ]
+              }
+            }
           }
         }
       }

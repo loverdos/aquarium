@@ -47,6 +47,8 @@ import com.ckkloverdos.maybe.Failed
 import com.ckkloverdos.convert.Converters
 import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.policy.StdPolicy
+import gr.grnet.aquarium.message.avro.AvroHelpers
+import gr.grnet.aquarium.message.avro.gen.PolicyMsg
 
 /**
  * Locates resources.
@@ -292,7 +294,7 @@ object ResourceLocator {
     }
   }
 
-  final lazy val DefaultPolicyModel = {
+  final lazy val DefaultPolicyMsg = {
     val maybePolicyJSON = Resources.PolicyJSONResource.stringContent
     maybePolicyJSON match {
       case NoVal ⇒
@@ -308,7 +310,7 @@ object ResourceLocator {
             Resources.PolicyJSONResource))
 
       case Just(jsonString) ⇒
-        StdConverters.AllConverters.convertEx[StdPolicy](JsonTextFormat(jsonString))
+        AvroHelpers.specificRecordOfJsonString(jsonString, new PolicyMsg)
     }
   }
 

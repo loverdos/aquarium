@@ -51,6 +51,8 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
 import java.util.Date
 import gr.grnet.aquarium.charging.state.{UserStateModel, StdUserState}
+import gr.grnet.aquarium.message.avro.gen.PolicyMsg
+import gr.grnet.aquarium.message.avro.{DummyHelpers, OrderingHelpers}
 
 /**
  * An implementation of various stores that persists parts in memory.
@@ -72,7 +74,7 @@ extends StoreProvider
    with Loggable {
 
   private[this] var _userStates = List[UserStateModel]()
-  private[this] var _policies  = List[PolicyModel]()
+  private[this] var _policies = immutable.TreeSet[PolicyMsg]()(OrderingHelpers.DefaultPolicyMsgOrdering)
   private[this] var _resourceEvents = List[ResourceEventModel]()
 
   private[this] val imEventById: ConcurrentMap[String, MemIMEvent] = new ConcurrentHashMap[String, MemIMEvent]()
@@ -286,42 +288,29 @@ extends StoreProvider
   }
   //- IMEventStore
 
-  /**
-   * Store an accounting policy.
-   */
-  def insertPolicy(policy: PolicyModel): PolicyModel = {
-    val localPolicy = StdPolicy(
-      id = policy.id,
-      parentID = policy.parentID,
-      validityTimespan = policy.validityTimespan,
-      resourceTypes = policy.resourceTypes,
-      chargingBehaviors = policy.chargingBehaviors,
-      roleMapping = policy.roleMapping
+  //+ PolicyStore
+  def insertPolicy(policy: PolicyMsg): PolicyMsg = synchronized {
+    _policies += policy
+
+    policy
+  }
+
+  def loadPolicyAt(atMillis: Long): Option[PolicyMsg] = synchronized {
+    _policies.to(DummyHelpers.dummyPolicyMsgAt(atMillis)).lastOption
+  }
+
+  def loadSortedPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyMsg] = {
+    immutable.SortedMap(_policies.
+      from(DummyHelpers.dummyPolicyMsgAt(fromMillis)).
+      to(DummyHelpers.dummyPolicyMsgAt(toMillis)).toSeq.
+      map(p ⇒ (Timeslot(p.getValidFromMillis, p.getValidToMillis), p)): _*
     )
-    _policies = localPolicy :: _policies
-
-    localPolicy
   }
 
-  def loadValidPolicyAt(atMillis: Long): Option[PolicyModel] = {
-    var d = new Date(atMillis)
-    /* sort in reverse order  and return the first that includes this date*/
-    _policies.sortWith({(x,y)=> y.validFrom < x.validFrom}).collectFirst({
-      case t if(t.validityTimespan.toTimeslot.includes(d)) => t
-    })
+  def foreachPolicy[U](f: (PolicyMsg) ⇒ U) {
+    _policies.foreach(f)
   }
-
-  private def emptyMap = immutable.SortedMap[Timeslot, PolicyModel]()
-
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyModel] = {
-    val range = Timeslot(fromMillis,toMillis)
-    _policies.foldLeft (emptyMap) { (map,p) =>
-      if(range.overlaps(p.validityTimespan.toTimeslot))
-        map + ((p.validityTimespan.toTimeslot,p))
-      else
-        map
-    }
-  }
+  //- PolicyStore
 }
 
 object MemStoreProvider {

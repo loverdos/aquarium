@@ -39,8 +39,8 @@ import gr.grnet.aquarium.util.json.JsonHelpers
 import java.io.{OutputStream, ByteArrayOutputStream}
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericRecord, GenericDatumWriter}
-import org.apache.avro.io.{JsonEncoder, EncoderFactory}
-import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
+import org.apache.avro.io.{JsonDecoder, DecoderFactory, JsonEncoder, EncoderFactory}
+import org.apache.avro.specific.{SpecificDatumReader, SpecificDatumWriter, SpecificRecord}
 
 
 /**
@@ -49,10 +49,24 @@ import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object AvroHelpers {
+  private[this] final val DefaultEncoderFactory = EncoderFactory.get()
+  private[this] final val DefaultDecoderFactory = DecoderFactory.get()
+
   def getJsonEncoder(schema: Schema, out: OutputStream): JsonEncoder = {
-    val encoder = EncoderFactory.get().jsonEncoder(schema, out)
+    val encoder = DefaultEncoderFactory.jsonEncoder(schema, out)
     val jsonGenerator = JsonHelpers.getJsonGenerator(out)
     encoder.configure(jsonGenerator)
+  }
+
+  def getJsonDecoder(schema: Schema, in: String): JsonDecoder = {
+    DefaultDecoderFactory.jsonDecoder(schema, in)
+  }
+
+  def specificRecordOfJsonString[R <: SpecificRecord](json: String, fresh: R): R = {
+    val schema = fresh.getSchema
+    val decoder = getJsonDecoder(schema, json)
+    val reader = new SpecificDatumReader[R](schema)
+    reader.read(fresh, decoder)
   }
 
   def jsonStringOfSpecificRecord[T <: SpecificRecord](t: T): String = {
@@ -75,5 +89,22 @@ object AvroHelpers {
     writer.write(t, encoder)
     encoder.flush()
     out.toString
+  }
+
+  def bytesOfSpecificRecord[R <: SpecificRecord](r: R): Array[Byte] = {
+    val schema = r.getSchema
+    val out = new ByteArrayOutputStream()
+    val encoder = EncoderFactory.get().binaryEncoder(out, null)
+    val writer = new SpecificDatumWriter[R](schema)
+
+    writer.write(r, encoder)
+    encoder.flush()
+    out.toByteArray
+  }
+
+  def specificRecordOfBytes[R <: SpecificRecord](bytes: Array[Byte], fresh: R): R = {
+    val decoder = DefaultDecoderFactory.binaryDecoder(bytes, null)
+    val reader = new SpecificDatumReader[R](fresh.getSchema)
+    reader.read(fresh, decoder)
   }
 }

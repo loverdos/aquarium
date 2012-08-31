@@ -33,38 +33,25 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
+package gr.grnet.aquarium.message.avro
 
-import gr.grnet.aquarium.Timespan
-import gr.grnet.aquarium.policy.{PolicyModel, FullPriceTable, ResourceType}
+import gr.grnet.aquarium.message.avro.gen.PolicyMsg
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-
-case class MongoDBPolicy(
-    _id: String,
-    parentID: Option[String],
-    validityTimespan: Timespan,
-    resourceTypes: Set[ResourceType],
-    chargingBehaviors: Set[String],
-    roleMapping: Map[String/*Role*/, FullPriceTable]
-) extends PolicyModel {
-
-  def id = _id
-  def idInStore = Some(_id)
-}
-
-object MongoDBPolicy {
-  final def fromOther(policy: PolicyModel, _id: String): MongoDBPolicy = {
-    MongoDBPolicy(
-      _id,
-      policy.parentID,
-      policy.validityTimespan,
-      policy.resourceTypes,
-      policy.chargingBehaviors,
-      policy.roleMapping
-    )
+object OrderingHelpers {
+  final val DefaultPolicyMsgOrdering = new Ordering[PolicyMsg] {
+    def compare(x: PolicyMsg, y: PolicyMsg): Int = {
+      if(x.getValidFromMillis < y.getValidFromMillis) {
+        -1
+      }
+      else if (x.getValidFromMillis == y.getValidFromMillis) {
+        0
+      } else {
+        1
+      }
+    }
   }
 }

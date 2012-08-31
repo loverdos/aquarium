@@ -96,7 +96,7 @@ object Main extends LazyLoggable {
     try {
       val aquarium = new AquariumBuilder(
         ResourceLocator.AquariumProperties,
-        ResourceLocator.DefaultPolicyModel
+        ResourceLocator.DefaultPolicyMsg
       ).build()
       aquarium.start()
 

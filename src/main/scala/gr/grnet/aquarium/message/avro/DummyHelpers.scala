@@ -33,35 +33,26 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store
+package gr.grnet.aquarium.message.avro
 
-import collection.immutable
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.message.avro.gen.PolicyMsg
-import gr.grnet.aquarium.policy.PolicyModel
-import gr.grnet.aquarium.message.avro.ModelFactory
+import gr.grnet.aquarium.message.avro.gen.{FullPriceTableMsg, ResourceTypeMsg, PolicyMsg}
+import java.{util ⇒ ju}
 
 /**
- * A store for serialized policy models.
  *
- * @author Georgios Gousios <gousiosg@gmail.com>
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-trait PolicyStore {
-  def foreachPolicy[U](f: PolicyMsg ⇒ U): Unit
-
-  def loadSortedPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyMsg]
-
-  def loadSortedPolicyModelsWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyModel] = {
-    loadSortedPoliciesWithin(fromMillis, toMillis).map { case (timeslot, msg) ⇒
-      (timeslot, ModelFactory.newPolicyModel(msg))
-    }
+object DummyHelpers {
+  def dummyPolicyMsgAt(millis: Long) : PolicyMsg = {
+    PolicyMsg.newBuilder().
+      setOriginalID("").
+      setInStoreID(null).
+      setParentID(null).
+      setValidFromMillis(millis).
+      setValidToMillis(Long.MaxValue).
+      setChargingBehaviors(new ju.ArrayList[CharSequence]()).
+      setResourceTypes(new ju.ArrayList[ResourceTypeMsg]()).
+      setRoleMapping(new ju.HashMap[CharSequence, FullPriceTableMsg]()).
+      build()
   }
-
-  def loadPolicyAt(atMillis: Long): Option[PolicyMsg]
-
-  /**
-   * Store an accounting policy.
-   */
-  def insertPolicy(policy: PolicyMsg): PolicyMsg
 }

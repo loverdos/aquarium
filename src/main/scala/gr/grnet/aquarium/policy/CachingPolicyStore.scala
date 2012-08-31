@@ -35,11 +35,12 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.Timespan
-import gr.grnet.aquarium.util.Lock
-import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import collection.immutable
+import gr.grnet.aquarium.message.avro.gen.PolicyMsg
+import gr.grnet.aquarium.message.avro.{DummyHelpers, OrderingHelpers}
+import gr.grnet.aquarium.store.PolicyStore
+import gr.grnet.aquarium.util.Lock
+import scala.collection.immutable
 
 /**
  * A caching [[gr.grnet.aquarium.store.PolicyStore]].
@@ -48,16 +49,21 @@ import collection.immutable
  * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) extends PolicyStore {
+class CachingPolicyStore(defaultPolicy: PolicyMsg, policyStore: PolicyStore) extends PolicyStore {
   private[this] final val lock = new Lock()
-  private[this] final val EmptyPolicyByTimeslotMap = immutable.SortedMap[Timeslot, PolicyModel]()
 
-  private[this] var _policies = immutable.TreeSet[PolicyModel]()
+  private[this] var _policies = immutable.TreeSet[PolicyMsg]()(OrderingHelpers.DefaultPolicyMsgOrdering)
+
+  def foreachPolicy[U](f: (PolicyMsg) ⇒ U) {
+    ensureLoaded {
+      _policies.foreach(f)
+    }
+  }
 
   private[this] def ensureLoaded[A](andThen: ⇒ A): A = {
     this.lock.withLock {
       if(_policies.isEmpty) {
-        _policies ++= policyStore.loadAllPolicies
+        policyStore.foreachPolicy(_policies += _)
 
         if(_policies.isEmpty) {
           _policies += defaultPolicy
@@ -69,21 +75,13 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
     }
   }
 
-  private[this] def policyAt(s:Long) : PolicyModel =
-    new StdPolicy("", None, Timespan(s), Set(), Set(), Map())
-
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyModel] =
-    ensureLoaded {
-      val range = Timeslot(fromMillis,toMillis)
-      /* ``to'' method: return the subset of all policies.from <= range.to */
-      _policies.to(policyAt(range.to.getTime)).foldLeft (EmptyPolicyByTimeslotMap) { (map,p) =>
-        if(p.validityTimespan.toTimeslot.to.getTime >= range.from.getTime)
-          map + ((p.validityTimespan.toTimeslot,p))
-        else
-          map
-      }
-    }
-
+  def loadSortedPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyMsg] = {
+    immutable.SortedMap(_policies.
+      from(DummyHelpers.dummyPolicyMsgAt(fromMillis)).
+      to(DummyHelpers.dummyPolicyMsgAt(toMillis)).toSeq.
+      map(p ⇒ (Timeslot(p.getValidFromMillis, p.getValidToMillis), p)): _*
+    )
+  }
 
   /**
    * Return the last (ordered) policy that starts before timeMillis
@@ -91,19 +89,19 @@ class CachingPolicyStore(defaultPolicy: PolicyModel, policyStore: PolicyStore) e
    * @param atMillis
    * @return
    */
-  def loadValidPolicyAt(atMillis: Long): Option[PolicyModel] =
+  def loadPolicyAt(atMillis: Long): Option[PolicyMsg] =
     ensureLoaded {
     // Take the subset of all ordered policies up to the one with less than or equal start time
     // and then return the last item. This should be the policy right before the given time.
     // TODO: optimize the creation of the fake StdPolicy
-      _policies.to(policyAt(atMillis)).lastOption
+      _policies.to(DummyHelpers.dummyPolicyMsgAt(atMillis)).lastOption
     }
 
 
   /**
    * Store an accounting policy.
    */
-  def insertPolicy(policy: PolicyModel): PolicyModel = {
+  def insertPolicy(policy: PolicyMsg): PolicyMsg = {
     ensureLoaded {
       this._policies += policy
       policyStore.insertPolicy(policy)

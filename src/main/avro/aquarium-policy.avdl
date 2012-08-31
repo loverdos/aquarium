@@ -67,7 +67,8 @@ protocol AquariumPolicy {
   }
 
   record PolicyMsg {
-    string @aliases(["id, _id, idInStore, inStoreID"]) ID;
+    string @aliases(["id"]) originalID; // From message creator (e.g. this is present for the default policy.json)
+    union {string, null} @aliases(["_id", "idInStore"]) inStoreID; // From Aquarium (message recipient)
     union {string, null} parentID;
     long validFromMillis;
     long validToMillis;

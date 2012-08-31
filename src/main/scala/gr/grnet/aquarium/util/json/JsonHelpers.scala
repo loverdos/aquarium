@@ -46,14 +46,14 @@ import org.codehaus.jackson.map.ObjectMapper
 object JsonHelpers {
   final val DefaultObjectCodec = new ObjectMapper()
   final val DefaultJsonFactory = {
-    new JsonFactory(DefaultObjectCodec).
+    new JsonFactory(DefaultObjectCodec)/*.
       enable(JsonGenerator.Feature.ESCAPE_NON_ASCII).
       enable(JsonGenerator.Feature.QUOTE_FIELD_NAMES).
       enable(JsonGenerator.Feature.QUOTE_NON_NUMERIC_NUMBERS).
       enable(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS).
       enable(JsonParser.Feature.CANONICALIZE_FIELD_NAMES).
       enable(JsonParser.Feature.ALLOW_COMMENTS).
-      enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)
+      enable(JsonParser.Feature.ALLOW_SINGLE_QUOTES)*/
   }
 
   def getJsonGenerator(out: OutputStream): JsonGenerator = {

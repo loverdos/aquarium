@@ -73,7 +73,7 @@ object BillTest extends Loggable {
   val aquarium = {
       exec("mongo aquarium --eval db.resevents.remove();db.imevents.remove();db.policies.remove();db.userstates.remove()",
            Console.err.println(_))
-      new AquariumBuilder(props, ResourceLocator.DefaultPolicyModel).
+      new AquariumBuilder(props, ResourceLocator.DefaultPolicyMsg).
       //update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
       update(Aquarium.EnvKeys.eventsStoreFolder,Some(new File(".."))).
       build()

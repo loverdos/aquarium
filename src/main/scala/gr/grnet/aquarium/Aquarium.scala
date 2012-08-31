@@ -52,6 +52,8 @@ import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 import gr.grnet.aquarium.policy.{FullPriceTable, PolicyModel, CachingPolicyStore, PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel, ResourceType}
 import gr.grnet.aquarium.charging.{ChargingService, ChargingBehavior}
 import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.message.avro.gen.PolicyMsg
+import gr.grnet.aquarium.message.avro.{ModelFactory, AvroHelpers}
 
 /**
  *
@@ -64,7 +66,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   @volatile private[this] var _chargingBehaviorMap = Map[String, ChargingBehavior]()
 
   private[this] lazy val cachingPolicyStore = new CachingPolicyStore(
-    apply(EnvKeys.defaultPolicyModel),
+    apply(EnvKeys.defaultPolicyMsg),
     apply(EnvKeys.storeProvider).policyStore
   )
 
@@ -133,7 +135,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     }
     this.eventsStoreFolder.throwMe // on error
 
-    logger.info("default policy = {}", defaultPolicyModel.toJsonString)
+    logger.info("default policy = {}", AvroHelpers.jsonStringOfSpecificRecord(defaultPolicyMsg))
   }
 
   private[this] def addShutdownHooks(): Unit = {
@@ -228,23 +230,25 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   }
 
   def currentResourceTypesMap: Map[String, ResourceType] = {
-    val policyOpt = policyStore.loadValidPolicyAt(TimeHelpers.nowMillis())
-    if(policyOpt.isEmpty) {
+    val policyMspOpt = policyStore.loadPolicyAt(TimeHelpers.nowMillis())
+    if(policyMspOpt.isEmpty) {
       throw new AquariumInternalError("Not even the default policy found")
     }
 
-    policyOpt.get.resourceTypesMap
+    val policyMsg = policyMspOpt.get
+    // TODO optimize
+    ModelFactory.newPolicyModel(policyMsg).resourceTypesMap
   }
 
   def unsafeValidPolicyAt(referenceTimeMillis: Long): PolicyModel = {
-    policyStore.loadValidPolicyAt(referenceTimeMillis) match {
+    policyStore.loadPolicyAt(referenceTimeMillis) match {
       case None ⇒
         throw new AquariumInternalError(
           "No policy found at %s".format(TimeHelpers.toYYYYMMDDHHMMSSSSS(referenceTimeMillis))
         )
 
-      case Some(policy) ⇒
-        policy
+      case Some(policyMsg) ⇒
+        ModelFactory.newPolicyModel(policyMsg)
     }
   }
 
@@ -315,7 +319,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     }
   }
 
-  def defaultPolicyModel = apply(EnvKeys.defaultPolicyModel)
+  def defaultPolicyMsg = apply(EnvKeys.defaultPolicyMsg)
 
   def defaultClassLoader = apply(EnvKeys.defaultClassLoader)
 
@@ -485,7 +489,7 @@ object Aquarium {
     final val defaultClassLoader: TypedKey[ClassLoader] =
       new AquariumEnvKey[ClassLoader]("default.class.loader")
 
-    final val defaultPolicyModel: TypedKey[PolicyModel] =
-      new AquariumEnvKey[PolicyModel]("default.policy.model")
+    final val defaultPolicyMsg: TypedKey[PolicyMsg] =
+      new AquariumEnvKey[PolicyMsg]("default.policy.msg")
   }
 }

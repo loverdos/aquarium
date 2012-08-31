@@ -35,8 +35,6 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.Timespan
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
 /**
  * Standard implementation of Aquarium policy model.
@@ -45,19 +43,12 @@ import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
  */
 
 case class StdPolicy(
-    id: String,
+    originalID: String,
+    inStoreID: Option[String],
     parentID: Option[String],
-    validityTimespan: Timespan,
+    validFromMillis: Long,
+    validToMillis: Long,
     resourceTypes: Set[ResourceType],
     chargingBehaviors: Set[String],
-    roleMapping: Map[String/*Role*/, FullPriceTable]
-) extends PolicyModel {
-
-  def idInStore = Some(id)
-}
-
-object StdPolicy {
-  def fromJsonString(json: String): StdPolicy = {
-    StdConverters.AllConverters.convertEx[StdPolicy](JsonTextFormat(json))
-  }
-}
+    roleMapping: Map[String/* role name */, FullPriceTable]
+) extends PolicyModel

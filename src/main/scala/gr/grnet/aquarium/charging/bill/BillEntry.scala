@@ -258,7 +258,7 @@ object AbstractBillEntry {
     //Console.err.println("JSON: " +  (new BillEntry).toJsonString)
     val propsfile = new FileStreamResource(new File("aquarium.properties"))
     var _props: Props = Props(propsfile)(StdConverters.AllConverters).getOr(Props()(StdConverters.AllConverters))
-    val aquarium = new AquariumBuilder(_props, ResourceLocator.DefaultPolicyModel).
+    val aquarium = new AquariumBuilder(_props, ResourceLocator.DefaultPolicyMsg).
       update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
       update(Aquarium.EnvKeys.eventsStoreFolder,Some(new File(".."))).
       build()

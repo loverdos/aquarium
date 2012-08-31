@@ -33,56 +33,36 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.policy
+package gr.grnet.aquarium.store
 
-import org.junit.Test
-import gr.grnet.aquarium.Timespan
-import gr.grnet.aquarium.charging.{OnceChargingBehavior, ContinuousChargingBehavior, VMChargingBehavior}
-import gr.grnet.aquarium.charging.VMChargingBehavior.Selectors.Power
-import gr.grnet.aquarium.util.nameOfClass
-import FullPriceTable.DefaultSelectorKey
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.message.avro.ModelFactory
+import gr.grnet.aquarium.policy.PolicyModel
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
+ * Provides helper methods for the policy store.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+object PolicyStoreHelpers {
+  def loadAllPoliciesToSortedModels(store: PolicyStore): SortedSet[PolicyModel] = {
+    var set = SortedSet[PolicyModel]()
+    store.foreachPolicy { msg ⇒
+      val policyModel = ModelFactory.newPolicyModel(msg)
+      set += policyModel
+    }
 
-class StdPolicyTest {
-  final lazy val policy = StdPolicy(
-    id = "default-policy",
-    parentID = None,
+    set
+  }
 
-    validityTimespan = Timespan(0),
-
-    resourceTypes = Set(
-      ResourceType("diskspace", "MB/Hr", nameOfClass[ContinuousChargingBehavior]),
-      ResourceType("vmtime",    "Hr",    nameOfClass[VMChargingBehavior])
-    ),
-
-    chargingBehaviors = Set(
-      nameOfClass[VMChargingBehavior],
-      nameOfClass[ContinuousChargingBehavior],
-      nameOfClass[OnceChargingBehavior]
-    ),
-
-    roleMapping = Map(
-      "default" -> FullPriceTable(Map(
-        "diskspace" -> Map(
-          DefaultSelectorKey -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil)
-        ),
-        "vmtime" -> Map(
-          Power.powerOn  -> EffectivePriceTable(EffectiveUnitPrice(0.01) :: Nil),
-          Power.powerOff -> EffectivePriceTable(EffectiveUnitPrice(0.001) :: Nil) // cheaper when the VM is OFF
-        )
-      ))
-    )
-  )
-
-  @Test
-  def testJson(): Unit = {
-    val json = policy.toJsonString
-    val obj = StdPolicy.fromJsonString(json)
-
-    assert(policy == obj)
+  def loadSortedPolicyModelsWithin(
+      store: PolicyStore,
+      fromMillis: Long,
+      toMillis: Long
+  ): SortedMap[Timeslot, PolicyModel] = {
+    store.loadSortedPoliciesWithin(fromMillis, toMillis).map { case (timeslot, policy) ⇒
+      (timeslot, ModelFactory.newPolicyModel(policy))
+    }
   }
 }

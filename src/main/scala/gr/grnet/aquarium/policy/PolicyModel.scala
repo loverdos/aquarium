@@ -52,29 +52,27 @@ import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
 
 trait PolicyModel extends Ordered[PolicyModel] with JsonSupport {
   final def compare(that: PolicyModel): Int = {
-    if(this.validFrom < that.validFrom) {
+    if(this.validFromMillis < that.validFromMillis) {
       -1
-    } else if(this.validFrom == that.validFrom) {
+    } else if(this.validFromMillis == that.validFromMillis) {
       0
     } else {
       1
     }
   }
 
-  def id: String
+  def originalID: String
 
   def parentID: Option[String]
 
-  def idInStore: Option[Any]
+  def inStoreID: Option[String]
 
+  def validFromMillis: Long
+  def validToMillis: Long
   /**
    * The time period within which this policy is valid.
    */
-  def validityTimespan: Timespan
-
-  final def validFrom: Long = validityTimespan.fromMillis
-
-  final def validTo: Long = validityTimespan.toMillis
+  def validityTimespan: Timespan = Timespan(validFromMillis, validToMillis)
 
   /**
    * All known resource types for the policy's validity period.
@@ -110,11 +108,30 @@ trait PolicyModel extends Ordered[PolicyModel] with JsonSupport {
 }
 
 object PolicyModel {
-  trait NamesT {
-    final val id = "id"
-    final val parentID = "parentID"
-    final val idInStore = "idInStore"
+  def fromJsonString(json: String): StdPolicy = {
+    StdConverters.AllConverters.convertEx[StdPolicy](JsonTextFormat(json))
   }
 
-  final object Names extends NamesT
+  def apply(
+      originalID: String,
+      inStoreID: Option[String],
+      parentID: Option[String],
+      validFromMillis: Long,
+      validToMillis: Long,
+      resourceTypes: Set[ResourceType],
+      chargingBehaviors: Set[String],
+      roleMapping: Map[String /* role name */, FullPriceTable]
+  ): PolicyModel = {
+
+    StdPolicy(
+      originalID,
+      inStoreID,
+      parentID,
+      validFromMillis,
+      validToMillis,
+      resourceTypes,
+      chargingBehaviors,
+      roleMapping
+    )
+  }
 }

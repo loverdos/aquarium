@@ -55,6 +55,8 @@ import scala.collection.immutable.{TreeMap, SortedMap}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
 import gr.grnet.aquarium.charging.state.UserStateModel
+import gr.grnet.aquarium.message.avro.gen.PolicyMsg
+import gr.grnet.aquarium.message.avro.{DummyHelpers, OrderingHelpers, AvroHelpers}
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -263,34 +265,59 @@ class MongoDBStore(
 
 
   //+PolicyStore
-  /**
-   * Store an accounting policy.
-   */
-  def insertPolicy(policy: PolicyModel): PolicyModel = {
-    val dbPolicy = MongoDBPolicy.fromOther(policy, new ObjectId().toStringMongod)
-    MongoDBStore.insertObject(dbPolicy, policies, MongoDBStore.jsonSupportToDBObject)
+  def foreachPolicy[U](f: PolicyMsg ⇒ U) {
+    val cursor = policies.find()
+    withCloseable(cursor) { cursor ⇒
+      val dbObject = cursor.next()
+      val payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
+      val policy = AvroHelpers.specificRecordOfBytes(payload, new PolicyMsg)
+      f(policy)
+    }
   }
 
-  private def emptyMap = immutable.SortedMap[Timeslot,PolicyModel]()
+  def insertPolicy(policy: PolicyMsg): PolicyMsg = {
+    val mongoID = new ObjectId()
+    policy.setInStoreID(mongoID.toStringMongod)
+    val dbObject = new BasicDBObjectBuilder().
+      add(MongoDBStore.JsonNames._id, mongoID).
+      add(MongoDBStore.JsonNames.validFromMillis, policy.getValidFromMillis).
+      add(MongoDBStore.JsonNames.validToMillis, policy.getValidToMillis).
+      add(MongoDBStore.JsonNames.payload, AvroHelpers.bytesOfSpecificRecord(policy)).
+    get()
 
-  def loadValidPolicyAt(atMillis: Long): Option[PolicyModel] = {
-    /*var d = new Date(atMillis)
-    /* sort in reverse order  and return the first that includes this date*/
-    policies.sortWith({(x,y)=> y.validFrom < x.validFrom}).collectFirst({
-      case t if(t.validityTimespan.toTimeslot.includes(d)) => t
-    })*/
-    None
+    MongoDBStore.insertDBObject(dbObject, policies)
+    policy
   }
 
-  def loadAndSortPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyModel] = {
-    TreeMap[Timeslot, PolicyModel]()
+  def loadPolicyAt(atMillis: Long): Option[PolicyMsg] = {
+    // FIXME Inefficient
+    var _policies = immutable.TreeSet[PolicyMsg]()(OrderingHelpers.DefaultPolicyMsgOrdering)
+    foreachPolicy(_policies += _)
+    _policies.to(DummyHelpers.dummyPolicyMsgAt(atMillis)).lastOption
+  }
+
+  def loadSortedPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyMsg] = {
+    // FIXME Inefficient
+    var _policies = immutable.TreeSet[PolicyMsg]()(OrderingHelpers.DefaultPolicyMsgOrdering)
+    foreachPolicy(_policies += _)
+
+    immutable.SortedMap(_policies.
+      from(DummyHelpers.dummyPolicyMsgAt(fromMillis)).
+      to(DummyHelpers.dummyPolicyMsgAt(toMillis)).toSeq.
+      map(p ⇒ (Timeslot(p.getValidFromMillis, p.getValidToMillis), p)): _*
+    )
   }
   //-PolicyStore
 }
 
 object MongoDBStore {
   object JsonNames {
+    final val payload = "payload"
     final val _id = "_id"
+    final val occuredMillis = "occuredMillis"
+    final val receivedMillis = "receivedMillis"
+    final val validFromMillis = "validFromMillis"
+    final val validToMillis = "validToMillis"
   }
 
   /**
@@ -386,6 +413,10 @@ object MongoDBStore {
   def insertObject[A <: AnyRef](obj: A, collection: DBCollection, serializer: A ⇒ DBObject) : A = {
     collection.insert(serializer apply obj, WriteConcern.JOURNAL_SAFE)
     obj
+  }
+
+  def insertDBObject(dbObj: DBObject, collection: DBCollection) {
+    collection.insert(dbObj, WriteConcern.JOURNAL_SAFE)
   }
 
   def jsonSupportToDBObject(jsonSupport: JsonSupport) = {

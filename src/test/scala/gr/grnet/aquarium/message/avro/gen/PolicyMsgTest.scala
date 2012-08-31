@@ -49,20 +49,21 @@ class PolicyMsgTest {
   @Test
   def testOne() {
     val policyConf = PolicyMsg.newBuilder().
-      setChargingBehaviors(newChargingBehaviorMsgs(
-      nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior],
-      nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior],
-      nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior])
-    ).
-      setID("default-policy").
-      setParentID("").
+      setOriginalID("default-policy").
+      setInStoreID(null).
+      setParentID(null).
       setValidFromMillis(0L).
       setValidToMillis(Long.MaxValue).
       setResourceTypes(newResourceTypeMsgs(
-      newResourceTypeMsg("diskspace", "MB/Hr", nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior]),
-      newResourceTypeMsg("vmtime", "Hr", nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior]),
-      newResourceTypeMsg("addcredits", "Credits", nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior]))
-    ).
+        newResourceTypeMsg("diskspace", "MB/Hr", nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior]),
+        newResourceTypeMsg("vmtime", "Hr", nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior]),
+        newResourceTypeMsg("addcredits", "Credits", nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior]))
+      ).
+      setChargingBehaviors(newChargingBehaviorMsgs(
+        nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior],
+        nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior],
+        nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior])
+      ).
       setRoleMapping(newRoleMappingMsg(
       "default" -> newFullPriceTableMsg(
         "diskspace" -> Map(

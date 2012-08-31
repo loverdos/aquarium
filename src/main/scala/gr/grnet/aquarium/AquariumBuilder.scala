@@ -35,16 +35,16 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.key.{BooleanKey, TypedKey}
 import com.ckkloverdos.env.Env
-import com.ckkloverdos.props.Props
+import com.ckkloverdos.key.{BooleanKey, TypedKey}
 import com.ckkloverdos.maybe.{Failed, MaybeEither, Just, NoVal}
+import com.ckkloverdos.props.Props
+import gr.grnet.aquarium.converter.StdConverters
+import gr.grnet.aquarium.message.avro.gen.PolicyMsg
+import gr.grnet.aquarium.service.EventBusService
+import gr.grnet.aquarium.service.event.AquariumCreatedEvent
 import gr.grnet.aquarium.util.Loggable
 import java.io.File
-import gr.grnet.aquarium.service.EventBusService
-import gr.grnet.aquarium.converter.StdConverters
-import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import gr.grnet.aquarium.policy.PolicyModel
 
 /**
  * Create a tailored Aquarium.
@@ -56,7 +56,7 @@ import gr.grnet.aquarium.policy.PolicyModel
 
 final class AquariumBuilder(
     val originalProps: Props,
-    val defaultPolicyModel: PolicyModel
+    val defaultPolicyMsg: PolicyMsg
 ) extends Loggable {
 
   if(originalProps eq null) {
@@ -377,7 +377,7 @@ final class AquariumBuilder(
       Some(propValue)
     }
 
-    update(EnvKeys.defaultPolicyModel, defaultPolicyModel)
+    update(EnvKeys.defaultPolicyMsg, defaultPolicyMsg)
 
     this._aquarium = new Aquarium(_env)
 

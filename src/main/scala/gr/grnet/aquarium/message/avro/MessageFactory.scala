@@ -40,6 +40,7 @@ import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
 /**
+ * Provides helper methods that construct avro messages.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
@@ -104,6 +105,15 @@ object MessageFactory {
   }
 
   def newChargingBehaviorMsgs(cbs: CharSequence*) = {
-    cbs.asJava
+    val ret = cbs.asJava
+    println(cbs.toList)
+    println("========")
+    var i = 0
+    while(i < ret.size()) {
+      println(ret.get(i))
+      i += 1
+    }
+
+    ret
   }
 }
