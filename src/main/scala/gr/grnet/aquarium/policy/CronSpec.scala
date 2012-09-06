@@ -77,8 +77,10 @@ case class CronSpec(cronSpec: String) {
         val (min,max,e) = (min0.getTime,max0.getTime,d1.getTime)
         if(e < min || e>max)
           None
-        else
-          Some({assert(d1.getTime>=d.getTime);d1})
+        else {
+          assert(d1.getTime>=d.getTime)
+          Some(d1)
+        }
     }
 
   override def toString : String = cronSpec
