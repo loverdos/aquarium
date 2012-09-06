@@ -44,6 +44,7 @@ import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 
 
 /**
+ * Provides helper methods for generic Avro-related facilities.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

@@ -35,7 +35,7 @@
 
 @namespace("gr.grnet.aquarium.message.avro.gen")
 protocol AquariumAny {
-  record _AnyValue {
+  record AnyValueMsg {
     union {
       null,
       int,

@@ -34,45 +34,45 @@
  */
 
 @namespace("gr.grnet.aquarium.message.avro.gen")
-protocol AquariumConf {
-  record _ResourceType {
+protocol AquariumPolicy {
+  record ResourceTypeMsg {
     string name;
     string unit;
     string chargingBehaviorClass;
   }
 
-  record _CronSpecTuple {
+  record CronSpecTupleMsg {
     string a;
     string b;
   }
 
-  record _EffectiveUnitPrice {
+  record EffectiveUnitPriceMsg {
     double unitPrice;
-    union {_CronSpecTuple, null} when;
+    union {CronSpecTupleMsg, null} when;
   }
 
-  record _EffectivePriceTable {
-    array<_EffectiveUnitPrice> priceOverrides;
+  record EffectivePriceTableMsg {
+    array<EffectiveUnitPriceMsg> priceOverrides;
   }
 
-  record _SelectorValue {
+  record SelectorValueMsg {
     union {
-      _EffectivePriceTable,
-      map<_SelectorValue>
+      EffectivePriceTableMsg,
+      map<SelectorValueMsg>
     } selectorValue;
   }
 
-  record _FullPriceTable {
-    map<map<_SelectorValue>> perResource;
+  record FullPriceTableMsg {
+    map<map<SelectorValueMsg>> perResource;
   }
 
-  record _Policy {
+  record PolicyMsg {
     string @aliases(["id, _id, idInStore, inStoreID"]) ID;
-    string parentID;
+    union {string, null} parentID;
     long validFromMillis;
     long validToMillis;
-    array<_ResourceType> resourceTypes;
+    array<ResourceTypeMsg> resourceTypes;
     array<string> chargingBehaviors;
-    map<_FullPriceTable> roleMapping;
+    map<FullPriceTableMsg> roleMapping;
   }
 }

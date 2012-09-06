@@ -35,39 +35,39 @@
 
 @namespace("gr.grnet.aquarium.message.avro.gen")
 protocol AquariumUserState {
-  import idl "aquarium-conf.avdl";
+  import idl "aquarium-policy.avdl";
   import idl "aquarium-anyvalue.avdl";
   import idl "aquarium-events.avdl";
 
-  record _UserAgreement {
+  record UserAgreementMsg {
     string id;
     union {string, null} relatedIMEventID;
     long @order("ascending") validFromMillis;
     long validToMillis;
     string role;
-    union {_FullPriceTable, null} fullPriceTableRef; // If null, then get from aquarium policy
+    union {FullPriceTableMsg, null} fullPriceTableRef; // If null, then get from aquarium policy
   }
 
-  record _WorkingResourceInstanceChargingState {
-    map<_AnyValue> details;
-    array<_ResourceEvent> previousEvents;
-    array<_ResourceEvent> implicitlyIssuedStartEvents;
+  record WorkingResourceInstanceChargingStateMsg {
+    map<AnyValueMsg> details;
+    array<ResourceEventMsg> previousEvents;
+    array<ResourceEventMsg> implicitlyIssuedStartEvents;
     double accumulatingAmount;
     double oldAccumulatingAmount;
     double previousValue;
     double currentValue;
   }
 
-  record _WorkingResourcesChargingState {
-    map<_AnyValue> details;
-    map<_WorkingResourceInstanceChargingState> stateOfResourceInstance;
+  record WorkingResourcesChargingStateMsg {
+    map<AnyValueMsg> details;
+    map<WorkingResourceInstanceChargingStateMsg> stateOfResourceInstance;
   }
 
-  record _WorkingAgreementHistory {
-    array<_UserAgreement> agreements;
+  record WorkingAgreementHistoryMsg {
+    array<UserAgreementMsg> agreements;
   }
 
-  record _Chargeslot {
+  record ChargeslotMsg {
     long startMillis;
     long stopMillis;
     double unitPrice;
@@ -75,7 +75,7 @@ protocol AquariumUserState {
     double creditsToSubtract;
   }
 
-  record _WalletEntry {
+  record WalletEntryMsg {
     string userID;
     double sumOfCreditsToSubtract;
     double oldTotalCredits;
@@ -86,22 +86,22 @@ protocol AquariumUserState {
     int billingYear;
     int billingMonth;
     int billingDay;
-    array<_Chargeslot> chargeslots;
-    array<_ResourceEvent> resourceEvents; // current is the last one
-    _ResourceType resourceType;
+    array<ChargeslotMsg> chargeslots;
+    array<ResourceEventMsg> resourceEvents; // current is the last one
+    ResourceTypeMsg resourceType;
     boolean isSynthetic = false;
   }
 
-  record _WorkingUserState {
+  record WorkingUserStateMsg {
     string userID;
     union {string, null} parentUserStateIDInStore;
-    map<_ResourceType> resourceTypesMap;
-    map<_WorkingResourcesChargingState> workingStateOfResources;
+    map<ResourceTypeMsg> resourceTypesMap;
+    map<WorkingResourcesChargingStateMsg> workingStateOfResources;
     double totalCredits;
-    _WorkingAgreementHistory workingAgreementHistory;
+    WorkingAgreementHistoryMsg workingAgreementHistory;
     long latestUpdateMillis;
     long latestResourceEventOccurredMillis;
     long billingPeriodOutOfSyncResourceEventsCounter;
-    array<_WalletEntry> walletEntries;
+    array<WalletEntryMsg> walletEntries;
   }
 }

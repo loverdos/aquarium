@@ -5,15 +5,15 @@
  */
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
-public class _Policy extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_Policy\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"ID\",\"type\":\"string\",\"aliases\":[\"id, _id, idInStore, inStoreID\"]},{\"name\":\"parentID\",\"type\":\"string\"},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"resourceTypes\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_ResourceType\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}}},{\"name\":\"chargingBehaviors\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"roleMapping\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_FullPriceTable\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_SelectorValue\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"_EffectivePriceTable\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_EffectiveUnitPrice\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"_CronSpecTuple\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"_SelectorValue\"}]}]}}}}]}}}]}");
+public class PolicyMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"PolicyMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"ID\",\"type\":\"string\",\"aliases\":[\"id, _id, idInStore, inStoreID\"]},{\"name\":\"parentID\",\"type\":[\"string\",\"null\"]},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"resourceTypes\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}}},{\"name\":\"chargingBehaviors\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"roleMapping\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"FullPriceTableMsg\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"SelectorValueMsg\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"SelectorValueMsg\"}]}]}}}}]}}}]}");
   @Deprecated public java.lang.CharSequence ID;
   @Deprecated public java.lang.CharSequence parentID;
   @Deprecated public long validFromMillis;
   @Deprecated public long validToMillis;
-  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType> resourceTypes;
+  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> resourceTypes;
   @Deprecated public java.util.List<java.lang.CharSequence> chargingBehaviors;
-  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable> roleMapping;
+  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg> roleMapping;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -36,9 +36,9 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     case 1: parentID = (java.lang.CharSequence)value$; break;
     case 2: validFromMillis = (java.lang.Long)value$; break;
     case 3: validToMillis = (java.lang.Long)value$; break;
-    case 4: resourceTypes = (java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType>)value$; break;
+    case 4: resourceTypes = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>)value$; break;
     case 5: chargingBehaviors = (java.util.List<java.lang.CharSequence>)value$; break;
-    case 6: roleMapping = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable>)value$; break;
+    case 6: roleMapping = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -106,7 +106,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
   /**
    * Gets the value of the 'resourceTypes' field.
    */
-  public java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType> getResourceTypes() {
+  public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> getResourceTypes() {
     return resourceTypes;
   }
 
@@ -114,7 +114,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
    * Sets the value of the 'resourceTypes' field.
    * @param value the value to set.
    */
-  public void setResourceTypes(java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType> value) {
+  public void setResourceTypes(java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> value) {
     this.resourceTypes = value;
   }
 
@@ -136,7 +136,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
   /**
    * Gets the value of the 'roleMapping' field.
    */
-  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable> getRoleMapping() {
+  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg> getRoleMapping() {
     return roleMapping;
   }
 
@@ -144,52 +144,52 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
    * Sets the value of the 'roleMapping' field.
    * @param value the value to set.
    */
-  public void setRoleMapping(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable> value) {
+  public void setRoleMapping(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg> value) {
     this.roleMapping = value;
   }
 
-  /** Creates a new _Policy RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.gen._Policy.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.gen._Policy.Builder();
+  /** Creates a new PolicyMsg RecordBuilder */
+  public static gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder();
   }
   
-  /** Creates a new _Policy RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.gen._Policy.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._Policy.Builder other) {
-    return new gr.grnet.aquarium.message.avro.gen._Policy.Builder(other);
+  /** Creates a new PolicyMsg RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder other) {
+    return new gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder(other);
   }
   
-  /** Creates a new _Policy RecordBuilder by copying an existing _Policy instance */
-  public static gr.grnet.aquarium.message.avro.gen._Policy.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._Policy other) {
-    return new gr.grnet.aquarium.message.avro.gen._Policy.Builder(other);
+  /** Creates a new PolicyMsg RecordBuilder by copying an existing PolicyMsg instance */
+  public static gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.PolicyMsg other) {
+    return new gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder(other);
   }
   
   /**
-   * RecordBuilder for _Policy instances.
+   * RecordBuilder for PolicyMsg instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_Policy>
-    implements org.apache.avro.data.RecordBuilder<_Policy> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<PolicyMsg>
+    implements org.apache.avro.data.RecordBuilder<PolicyMsg> {
 
     private java.lang.CharSequence ID;
     private java.lang.CharSequence parentID;
     private long validFromMillis;
     private long validToMillis;
-    private java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType> resourceTypes;
+    private java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> resourceTypes;
     private java.util.List<java.lang.CharSequence> chargingBehaviors;
-    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable> roleMapping;
+    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg> roleMapping;
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.gen._Policy.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro.gen.PolicyMsg.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.gen._Policy.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing _Policy instance */
-    private Builder(gr.grnet.aquarium.message.avro.gen._Policy other) {
-            super(gr.grnet.aquarium.message.avro.gen._Policy.SCHEMA$);
+    /** Creates a Builder by copying an existing PolicyMsg instance */
+    private Builder(gr.grnet.aquarium.message.avro.gen.PolicyMsg other) {
+            super(gr.grnet.aquarium.message.avro.gen.PolicyMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.ID)) {
         this.ID = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.ID);
         fieldSetFlags()[0] = true;
@@ -207,7 +207,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
         fieldSetFlags()[3] = true;
       }
       if (isValidValue(fields()[4], other.resourceTypes)) {
-        this.resourceTypes = (java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType>) data().deepCopy(fields()[4].schema(), other.resourceTypes);
+        this.resourceTypes = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>) data().deepCopy(fields()[4].schema(), other.resourceTypes);
         fieldSetFlags()[4] = true;
       }
       if (isValidValue(fields()[5], other.chargingBehaviors)) {
@@ -215,7 +215,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
         fieldSetFlags()[5] = true;
       }
       if (isValidValue(fields()[6], other.roleMapping)) {
-        this.roleMapping = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable>) data().deepCopy(fields()[6].schema(), other.roleMapping);
+        this.roleMapping = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg>) data().deepCopy(fields()[6].schema(), other.roleMapping);
         fieldSetFlags()[6] = true;
       }
     }
@@ -226,7 +226,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'ID' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder setID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder setID(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.ID = value;
       fieldSetFlags()[0] = true;
@@ -239,7 +239,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'ID' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder clearID() {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder clearID() {
       ID = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -251,7 +251,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'parentID' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder setParentID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder setParentID(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.parentID = value;
       fieldSetFlags()[1] = true;
@@ -264,7 +264,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'parentID' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder clearParentID() {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder clearParentID() {
       parentID = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -276,7 +276,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'validFromMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder setValidFromMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder setValidFromMillis(long value) {
       validate(fields()[2], value);
       this.validFromMillis = value;
       fieldSetFlags()[2] = true;
@@ -289,7 +289,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'validFromMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder clearValidFromMillis() {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder clearValidFromMillis() {
       fieldSetFlags()[2] = false;
       return this;
     }
@@ -300,7 +300,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'validToMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder setValidToMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder setValidToMillis(long value) {
       validate(fields()[3], value);
       this.validToMillis = value;
       fieldSetFlags()[3] = true;
@@ -313,18 +313,18 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'validToMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder clearValidToMillis() {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder clearValidToMillis() {
       fieldSetFlags()[3] = false;
       return this;
     }
 
     /** Gets the value of the 'resourceTypes' field */
-    public java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType> getResourceTypes() {
+    public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> getResourceTypes() {
       return resourceTypes;
     }
     
     /** Sets the value of the 'resourceTypes' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder setResourceTypes(java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType> value) {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder setResourceTypes(java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> value) {
       validate(fields()[4], value);
       this.resourceTypes = value;
       fieldSetFlags()[4] = true;
@@ -337,7 +337,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'resourceTypes' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder clearResourceTypes() {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder clearResourceTypes() {
       resourceTypes = null;
       fieldSetFlags()[4] = false;
       return this;
@@ -349,7 +349,7 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Sets the value of the 'chargingBehaviors' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder setChargingBehaviors(java.util.List<java.lang.CharSequence> value) {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder setChargingBehaviors(java.util.List<java.lang.CharSequence> value) {
       validate(fields()[5], value);
       this.chargingBehaviors = value;
       fieldSetFlags()[5] = true;
@@ -362,19 +362,19 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'chargingBehaviors' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder clearChargingBehaviors() {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder clearChargingBehaviors() {
       chargingBehaviors = null;
       fieldSetFlags()[5] = false;
       return this;
     }
 
     /** Gets the value of the 'roleMapping' field */
-    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable> getRoleMapping() {
+    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg> getRoleMapping() {
       return roleMapping;
     }
     
     /** Sets the value of the 'roleMapping' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder setRoleMapping(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable> value) {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder setRoleMapping(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg> value) {
       validate(fields()[6], value);
       this.roleMapping = value;
       fieldSetFlags()[6] = true;
@@ -387,23 +387,23 @@ public class _Policy extends org.apache.avro.specific.SpecificRecordBase impleme
     }
     
     /** Clears the value of the 'roleMapping' field */
-    public gr.grnet.aquarium.message.avro.gen._Policy.Builder clearRoleMapping() {
+    public gr.grnet.aquarium.message.avro.gen.PolicyMsg.Builder clearRoleMapping() {
       roleMapping = null;
       fieldSetFlags()[6] = false;
       return this;
     }
 
     @Override
-    public _Policy build() {
+    public PolicyMsg build() {
       try {
-        _Policy record = new _Policy();
+        PolicyMsg record = new PolicyMsg();
         record.ID = fieldSetFlags()[0] ? this.ID : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.parentID = fieldSetFlags()[1] ? this.parentID : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.validFromMillis = fieldSetFlags()[2] ? this.validFromMillis : (java.lang.Long) defaultValue(fields()[2]);
         record.validToMillis = fieldSetFlags()[3] ? this.validToMillis : (java.lang.Long) defaultValue(fields()[3]);
-        record.resourceTypes = fieldSetFlags()[4] ? this.resourceTypes : (java.util.List<gr.grnet.aquarium.message.avro.gen._ResourceType>) defaultValue(fields()[4]);
+        record.resourceTypes = fieldSetFlags()[4] ? this.resourceTypes : (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>) defaultValue(fields()[4]);
         record.chargingBehaviors = fieldSetFlags()[5] ? this.chargingBehaviors : (java.util.List<java.lang.CharSequence>) defaultValue(fields()[5]);
-        record.roleMapping = fieldSetFlags()[6] ? this.roleMapping : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._FullPriceTable>) defaultValue(fields()[6]);
+        record.roleMapping = fieldSetFlags()[6] ? this.roleMapping : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg>) defaultValue(fields()[6]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

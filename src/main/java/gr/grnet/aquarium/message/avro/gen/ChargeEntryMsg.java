@@ -5,8 +5,8 @@
  */
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
-public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_ChargeEntry\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"unitPrice\",\"type\":\"string\"},{\"name\":\"startTime\",\"type\":\"string\"},{\"name\":\"endTime\",\"type\":\"string\"},{\"name\":\"ellapsedTime\",\"type\":\"string\"},{\"name\":\"credits\",\"type\":\"string\"}]}");
+public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"unitPrice\",\"type\":\"string\"},{\"name\":\"startTime\",\"type\":\"string\"},{\"name\":\"endTime\",\"type\":\"string\"},{\"name\":\"ellapsedTime\",\"type\":\"string\"},{\"name\":\"credits\",\"type\":\"string\"}]}");
   @Deprecated public java.lang.CharSequence id;
   @Deprecated public java.lang.CharSequence unitPrice;
   @Deprecated public java.lang.CharSequence startTime;
@@ -130,26 +130,26 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     this.credits = value;
   }
 
-  /** Creates a new _ChargeEntry RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder();
+  /** Creates a new ChargeEntryMsg RecordBuilder */
+  public static gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder();
   }
   
-  /** Creates a new _ChargeEntry RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder other) {
-    return new gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder(other);
+  /** Creates a new ChargeEntryMsg RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder other) {
+    return new gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder(other);
   }
   
-  /** Creates a new _ChargeEntry RecordBuilder by copying an existing _ChargeEntry instance */
-  public static gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._ChargeEntry other) {
-    return new gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder(other);
+  /** Creates a new ChargeEntryMsg RecordBuilder by copying an existing ChargeEntryMsg instance */
+  public static gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg other) {
+    return new gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder(other);
   }
   
   /**
-   * RecordBuilder for _ChargeEntry instances.
+   * RecordBuilder for ChargeEntryMsg instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_ChargeEntry>
-    implements org.apache.avro.data.RecordBuilder<_ChargeEntry> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<ChargeEntryMsg>
+    implements org.apache.avro.data.RecordBuilder<ChargeEntryMsg> {
 
     private java.lang.CharSequence id;
     private java.lang.CharSequence unitPrice;
@@ -160,17 +160,17 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.gen._ChargeEntry.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing _ChargeEntry instance */
-    private Builder(gr.grnet.aquarium.message.avro.gen._ChargeEntry other) {
-            super(gr.grnet.aquarium.message.avro.gen._ChargeEntry.SCHEMA$);
+    /** Creates a Builder by copying an existing ChargeEntryMsg instance */
+    private Builder(gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg other) {
+            super(gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.id)) {
         this.id = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.id);
         fieldSetFlags()[0] = true;
@@ -203,7 +203,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'id' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder setId(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setId(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.id = value;
       fieldSetFlags()[0] = true;
@@ -216,7 +216,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'id' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder clearId() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearId() {
       id = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -228,7 +228,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder setUnitPrice(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setUnitPrice(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.unitPrice = value;
       fieldSetFlags()[1] = true;
@@ -241,7 +241,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder clearUnitPrice() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearUnitPrice() {
       unitPrice = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -253,7 +253,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'startTime' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder setStartTime(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setStartTime(java.lang.CharSequence value) {
       validate(fields()[2], value);
       this.startTime = value;
       fieldSetFlags()[2] = true;
@@ -266,7 +266,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'startTime' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder clearStartTime() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearStartTime() {
       startTime = null;
       fieldSetFlags()[2] = false;
       return this;
@@ -278,7 +278,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'endTime' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder setEndTime(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setEndTime(java.lang.CharSequence value) {
       validate(fields()[3], value);
       this.endTime = value;
       fieldSetFlags()[3] = true;
@@ -291,7 +291,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'endTime' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder clearEndTime() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearEndTime() {
       endTime = null;
       fieldSetFlags()[3] = false;
       return this;
@@ -303,7 +303,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'ellapsedTime' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder setEllapsedTime(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setEllapsedTime(java.lang.CharSequence value) {
       validate(fields()[4], value);
       this.ellapsedTime = value;
       fieldSetFlags()[4] = true;
@@ -316,7 +316,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'ellapsedTime' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder clearEllapsedTime() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearEllapsedTime() {
       ellapsedTime = null;
       fieldSetFlags()[4] = false;
       return this;
@@ -328,7 +328,7 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Sets the value of the 'credits' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder setCredits(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setCredits(java.lang.CharSequence value) {
       validate(fields()[5], value);
       this.credits = value;
       fieldSetFlags()[5] = true;
@@ -341,16 +341,16 @@ public class _ChargeEntry extends org.apache.avro.specific.SpecificRecordBase im
     }
     
     /** Clears the value of the 'credits' field */
-    public gr.grnet.aquarium.message.avro.gen._ChargeEntry.Builder clearCredits() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearCredits() {
       credits = null;
       fieldSetFlags()[5] = false;
       return this;
     }
 
     @Override
-    public _ChargeEntry build() {
+    public ChargeEntryMsg build() {
       try {
-        _ChargeEntry record = new _ChargeEntry();
+        ChargeEntryMsg record = new ChargeEntryMsg();
         record.id = fieldSetFlags()[0] ? this.id : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.unitPrice = fieldSetFlags()[1] ? this.unitPrice : (java.lang.CharSequence) defaultValue(fields()[1]);
         record.startTime = fieldSetFlags()[2] ? this.startTime : (java.lang.CharSequence) defaultValue(fields()[2]);

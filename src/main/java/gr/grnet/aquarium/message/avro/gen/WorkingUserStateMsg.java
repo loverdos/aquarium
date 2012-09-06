@@ -5,18 +5,18 @@
  */
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
-public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_WorkingUserState\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"parentUserStateIDInStore\",\"type\":[\"string\",\"null\"]},{\"name\":\"resourceTypesMap\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_ResourceType\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}}},{\"name\":\"workingStateOfResources\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_WorkingResourcesChargingState\",\"fields\":[{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_AnyValue\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}}},{\"name\":\"stateOfResourceInstance\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_WorkingResourceInstanceChargingState\",\"fields\":[{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"_AnyValue\"}},{\"name\":\"previousEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_ResourceEvent\",\"fields\":[{\"name\":\"id\",\"type\":\"string\",\"aliases\":[\"originalID\",\"ID\"]},{\"name\":\"idInStore\",\"type\":\"string\"},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"clientID\",\"type\":\"string\"},{\"name\":\"eventVersion\",\"type\":\"string\",\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":\"string\",\"aliases\":[\"resourceType\"]},{\"name\":\"instanceID\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"_AnyValue\"}}]}}},{\"name\":\"implicitlyIssuedStartEvents\",\"type\":{\"type\":\"array\",\"items\":\"_ResourceEvent\"}},{\"name\":\"accumulatingAmount\",\"type\":\"double\"},{\"name\":\"oldAccumulatingAmount\",\"type\":\"double\"},{\"name\":\"previousValue\",\"type\":\"double\"},{\"name\":\"currentValue\",\"type\":\"double\"}]}}}]}}},{\"name\":\"totalCredits\",\"type\":\"double\"},{\"name\":\"workingAgreementHistory\",\"type\":{\"type\":\"record\",\"name\":\"_WorkingAgreementHistory\",\"fields\":[{\"name\":\"agreements\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_UserAgreement\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"relatedIMEventID\",\"type\":[\"string\",\"null\"]},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"role\",\"type\":\"string\"},{\"name\":\"fullPriceTableRef\",\"type\":[{\"type\":\"record\",\"name\":\"_FullPriceTable\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"_SelectorValue\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"_EffectivePriceTable\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_EffectiveUnitPrice\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"_CronSpecTuple\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"_SelectorValue\"}]}]}}}}]},\"null\"]}]}}}]}},{\"name\":\"latestUpdateMillis\",\"type\":\"long\"},{\"name\":\"latestResourceEventOccurredMillis\",\"type\":\"long\"},{\"name\":\"billingPeriodOutOfSyncResourceEventsCounter\",\"type\":\"long\"},{\"name\":\"walletEntries\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_WalletEntry\",\"fields\":[{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"sumOfCreditsToSubtract\",\"type\":\"double\"},{\"name\":\"oldTotalCredits\",\"type\":\"double\"},{\"name\":\"newTotalCredits\",\"type\":\"double\"},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"_Chargeslot\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\"}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":\"_ResourceEvent\"}},{\"name\":\"resourceType\",\"type\":\"_ResourceType\"},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false}]}}}]}");
+public class WorkingUserStateMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"WorkingUserStateMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"parentUserStateIDInStore\",\"type\":[\"string\",\"null\"]},{\"name\":\"resourceTypesMap\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}}},{\"name\":\"workingStateOfResources\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"WorkingResourcesChargingStateMsg\",\"fields\":[{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}}},{\"name\":\"stateOfResourceInstance\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"WorkingResourceInstanceChargingStateMsg\",\"fields\":[{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\"}},{\"name\":\"previousEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"id\",\"type\":\"string\",\"aliases\":[\"originalID\",\"ID\"]},{\"name\":\"idInStore\",\"type\":\"string\"},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"clientID\",\"type\":\"string\"},{\"name\":\"eventVersion\",\"type\":\"string\",\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":\"string\",\"aliases\":[\"resourceType\"]},{\"name\":\"instanceID\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\"}}]}}},{\"name\":\"implicitlyIssuedStartEvents\",\"type\":{\"type\":\"array\",\"items\":\"ResourceEventMsg\"}},{\"name\":\"accumulatingAmount\",\"type\":\"double\"},{\"name\":\"oldAccumulatingAmount\",\"type\":\"double\"},{\"name\":\"previousValue\",\"type\":\"double\"},{\"name\":\"currentValue\",\"type\":\"double\"}]}}}]}}},{\"name\":\"totalCredits\",\"type\":\"double\"},{\"name\":\"workingAgreementHistory\",\"type\":{\"type\":\"record\",\"name\":\"WorkingAgreementHistoryMsg\",\"fields\":[{\"name\":\"agreements\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"UserAgreementMsg\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"relatedIMEventID\",\"type\":[\"string\",\"null\"]},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"role\",\"type\":\"string\"},{\"name\":\"fullPriceTableRef\",\"type\":[{\"type\":\"record\",\"name\":\"FullPriceTableMsg\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"SelectorValueMsg\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"SelectorValueMsg\"}]}]}}}}]},\"null\"]}]}}}]}},{\"name\":\"latestUpdateMillis\",\"type\":\"long\"},{\"name\":\"latestResourceEventOccurredMillis\",\"type\":\"long\"},{\"name\":\"billingPeriodOutOfSyncResourceEventsCounter\",\"type\":\"long\"},{\"name\":\"walletEntries\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"WalletEntryMsg\",\"fields\":[{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"sumOfCreditsToSubtract\",\"type\":\"double\"},{\"name\":\"oldTotalCredits\",\"type\":\"double\"},{\"name\":\"newTotalCredits\",\"type\":\"double\"},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\"}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":\"ResourceEventMsg\"}},{\"name\":\"resourceType\",\"type\":\"ResourceTypeMsg\"},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false}]}}}]}");
   @Deprecated public java.lang.CharSequence userID;
   @Deprecated public java.lang.CharSequence parentUserStateIDInStore;
-  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType> resourceTypesMap;
-  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState> workingStateOfResources;
+  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> resourceTypesMap;
+  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg> workingStateOfResources;
   @Deprecated public double totalCredits;
-  @Deprecated public gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory workingAgreementHistory;
+  @Deprecated public gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg workingAgreementHistory;
   @Deprecated public long latestUpdateMillis;
   @Deprecated public long latestResourceEventOccurredMillis;
   @Deprecated public long billingPeriodOutOfSyncResourceEventsCounter;
-  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry> walletEntries;
+  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> walletEntries;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -40,14 +40,14 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     switch (field$) {
     case 0: userID = (java.lang.CharSequence)value$; break;
     case 1: parentUserStateIDInStore = (java.lang.CharSequence)value$; break;
-    case 2: resourceTypesMap = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType>)value$; break;
-    case 3: workingStateOfResources = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState>)value$; break;
+    case 2: resourceTypesMap = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>)value$; break;
+    case 3: workingStateOfResources = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg>)value$; break;
     case 4: totalCredits = (java.lang.Double)value$; break;
-    case 5: workingAgreementHistory = (gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory)value$; break;
+    case 5: workingAgreementHistory = (gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg)value$; break;
     case 6: latestUpdateMillis = (java.lang.Long)value$; break;
     case 7: latestResourceEventOccurredMillis = (java.lang.Long)value$; break;
     case 8: billingPeriodOutOfSyncResourceEventsCounter = (java.lang.Long)value$; break;
-    case 9: walletEntries = (java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry>)value$; break;
+    case 9: walletEntries = (java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -85,7 +85,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
   /**
    * Gets the value of the 'resourceTypesMap' field.
    */
-  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType> getResourceTypesMap() {
+  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> getResourceTypesMap() {
     return resourceTypesMap;
   }
 
@@ -93,14 +93,14 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
    * Sets the value of the 'resourceTypesMap' field.
    * @param value the value to set.
    */
-  public void setResourceTypesMap(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType> value) {
+  public void setResourceTypesMap(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> value) {
     this.resourceTypesMap = value;
   }
 
   /**
    * Gets the value of the 'workingStateOfResources' field.
    */
-  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState> getWorkingStateOfResources() {
+  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg> getWorkingStateOfResources() {
     return workingStateOfResources;
   }
 
@@ -108,7 +108,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
    * Sets the value of the 'workingStateOfResources' field.
    * @param value the value to set.
    */
-  public void setWorkingStateOfResources(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState> value) {
+  public void setWorkingStateOfResources(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg> value) {
     this.workingStateOfResources = value;
   }
 
@@ -130,7 +130,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
   /**
    * Gets the value of the 'workingAgreementHistory' field.
    */
-  public gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory getWorkingAgreementHistory() {
+  public gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg getWorkingAgreementHistory() {
     return workingAgreementHistory;
   }
 
@@ -138,7 +138,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
    * Sets the value of the 'workingAgreementHistory' field.
    * @param value the value to set.
    */
-  public void setWorkingAgreementHistory(gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory value) {
+  public void setWorkingAgreementHistory(gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg value) {
     this.workingAgreementHistory = value;
   }
 
@@ -190,7 +190,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
   /**
    * Gets the value of the 'walletEntries' field.
    */
-  public java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry> getWalletEntries() {
+  public java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> getWalletEntries() {
     return walletEntries;
   }
 
@@ -198,55 +198,55 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
    * Sets the value of the 'walletEntries' field.
    * @param value the value to set.
    */
-  public void setWalletEntries(java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry> value) {
+  public void setWalletEntries(java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> value) {
     this.walletEntries = value;
   }
 
-  /** Creates a new _WorkingUserState RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder();
+  /** Creates a new WorkingUserStateMsg RecordBuilder */
+  public static gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder();
   }
   
-  /** Creates a new _WorkingUserState RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder other) {
-    return new gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder(other);
+  /** Creates a new WorkingUserStateMsg RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder other) {
+    return new gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder(other);
   }
   
-  /** Creates a new _WorkingUserState RecordBuilder by copying an existing _WorkingUserState instance */
-  public static gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._WorkingUserState other) {
-    return new gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder(other);
+  /** Creates a new WorkingUserStateMsg RecordBuilder by copying an existing WorkingUserStateMsg instance */
+  public static gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg other) {
+    return new gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder(other);
   }
   
   /**
-   * RecordBuilder for _WorkingUserState instances.
+   * RecordBuilder for WorkingUserStateMsg instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_WorkingUserState>
-    implements org.apache.avro.data.RecordBuilder<_WorkingUserState> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<WorkingUserStateMsg>
+    implements org.apache.avro.data.RecordBuilder<WorkingUserStateMsg> {
 
     private java.lang.CharSequence userID;
     private java.lang.CharSequence parentUserStateIDInStore;
-    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType> resourceTypesMap;
-    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState> workingStateOfResources;
+    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> resourceTypesMap;
+    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg> workingStateOfResources;
     private double totalCredits;
-    private gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory workingAgreementHistory;
+    private gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg workingAgreementHistory;
     private long latestUpdateMillis;
     private long latestResourceEventOccurredMillis;
     private long billingPeriodOutOfSyncResourceEventsCounter;
-    private java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry> walletEntries;
+    private java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> walletEntries;
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.gen._WorkingUserState.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing _WorkingUserState instance */
-    private Builder(gr.grnet.aquarium.message.avro.gen._WorkingUserState other) {
-            super(gr.grnet.aquarium.message.avro.gen._WorkingUserState.SCHEMA$);
+    /** Creates a Builder by copying an existing WorkingUserStateMsg instance */
+    private Builder(gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg other) {
+            super(gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.userID)) {
         this.userID = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.userID);
         fieldSetFlags()[0] = true;
@@ -256,11 +256,11 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.resourceTypesMap)) {
-        this.resourceTypesMap = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType>) data().deepCopy(fields()[2].schema(), other.resourceTypesMap);
+        this.resourceTypesMap = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>) data().deepCopy(fields()[2].schema(), other.resourceTypesMap);
         fieldSetFlags()[2] = true;
       }
       if (isValidValue(fields()[3], other.workingStateOfResources)) {
-        this.workingStateOfResources = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState>) data().deepCopy(fields()[3].schema(), other.workingStateOfResources);
+        this.workingStateOfResources = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg>) data().deepCopy(fields()[3].schema(), other.workingStateOfResources);
         fieldSetFlags()[3] = true;
       }
       if (isValidValue(fields()[4], other.totalCredits)) {
@@ -268,7 +268,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
         fieldSetFlags()[4] = true;
       }
       if (isValidValue(fields()[5], other.workingAgreementHistory)) {
-        this.workingAgreementHistory = (gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory) data().deepCopy(fields()[5].schema(), other.workingAgreementHistory);
+        this.workingAgreementHistory = (gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg) data().deepCopy(fields()[5].schema(), other.workingAgreementHistory);
         fieldSetFlags()[5] = true;
       }
       if (isValidValue(fields()[6], other.latestUpdateMillis)) {
@@ -284,7 +284,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
         fieldSetFlags()[8] = true;
       }
       if (isValidValue(fields()[9], other.walletEntries)) {
-        this.walletEntries = (java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry>) data().deepCopy(fields()[9].schema(), other.walletEntries);
+        this.walletEntries = (java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg>) data().deepCopy(fields()[9].schema(), other.walletEntries);
         fieldSetFlags()[9] = true;
       }
     }
@@ -295,7 +295,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Sets the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setUserID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setUserID(java.lang.CharSequence value) {
       validate(fields()[0], value);
       this.userID = value;
       fieldSetFlags()[0] = true;
@@ -308,7 +308,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearUserID() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearUserID() {
       userID = null;
       fieldSetFlags()[0] = false;
       return this;
@@ -320,7 +320,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Sets the value of the 'parentUserStateIDInStore' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setParentUserStateIDInStore(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setParentUserStateIDInStore(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.parentUserStateIDInStore = value;
       fieldSetFlags()[1] = true;
@@ -333,19 +333,19 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'parentUserStateIDInStore' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearParentUserStateIDInStore() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearParentUserStateIDInStore() {
       parentUserStateIDInStore = null;
       fieldSetFlags()[1] = false;
       return this;
     }
 
     /** Gets the value of the 'resourceTypesMap' field */
-    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType> getResourceTypesMap() {
+    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> getResourceTypesMap() {
       return resourceTypesMap;
     }
     
     /** Sets the value of the 'resourceTypesMap' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setResourceTypesMap(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType> value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setResourceTypesMap(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> value) {
       validate(fields()[2], value);
       this.resourceTypesMap = value;
       fieldSetFlags()[2] = true;
@@ -358,19 +358,19 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'resourceTypesMap' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearResourceTypesMap() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearResourceTypesMap() {
       resourceTypesMap = null;
       fieldSetFlags()[2] = false;
       return this;
     }
 
     /** Gets the value of the 'workingStateOfResources' field */
-    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState> getWorkingStateOfResources() {
+    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg> getWorkingStateOfResources() {
       return workingStateOfResources;
     }
     
     /** Sets the value of the 'workingStateOfResources' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setWorkingStateOfResources(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState> value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setWorkingStateOfResources(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg> value) {
       validate(fields()[3], value);
       this.workingStateOfResources = value;
       fieldSetFlags()[3] = true;
@@ -383,7 +383,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'workingStateOfResources' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearWorkingStateOfResources() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearWorkingStateOfResources() {
       workingStateOfResources = null;
       fieldSetFlags()[3] = false;
       return this;
@@ -395,7 +395,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Sets the value of the 'totalCredits' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setTotalCredits(double value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setTotalCredits(double value) {
       validate(fields()[4], value);
       this.totalCredits = value;
       fieldSetFlags()[4] = true;
@@ -408,18 +408,18 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'totalCredits' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearTotalCredits() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearTotalCredits() {
       fieldSetFlags()[4] = false;
       return this;
     }
 
     /** Gets the value of the 'workingAgreementHistory' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory getWorkingAgreementHistory() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg getWorkingAgreementHistory() {
       return workingAgreementHistory;
     }
     
     /** Sets the value of the 'workingAgreementHistory' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setWorkingAgreementHistory(gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setWorkingAgreementHistory(gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg value) {
       validate(fields()[5], value);
       this.workingAgreementHistory = value;
       fieldSetFlags()[5] = true;
@@ -432,7 +432,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'workingAgreementHistory' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearWorkingAgreementHistory() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearWorkingAgreementHistory() {
       workingAgreementHistory = null;
       fieldSetFlags()[5] = false;
       return this;
@@ -444,7 +444,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Sets the value of the 'latestUpdateMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setLatestUpdateMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setLatestUpdateMillis(long value) {
       validate(fields()[6], value);
       this.latestUpdateMillis = value;
       fieldSetFlags()[6] = true;
@@ -457,7 +457,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'latestUpdateMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearLatestUpdateMillis() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearLatestUpdateMillis() {
       fieldSetFlags()[6] = false;
       return this;
     }
@@ -468,7 +468,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Sets the value of the 'latestResourceEventOccurredMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setLatestResourceEventOccurredMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setLatestResourceEventOccurredMillis(long value) {
       validate(fields()[7], value);
       this.latestResourceEventOccurredMillis = value;
       fieldSetFlags()[7] = true;
@@ -481,7 +481,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'latestResourceEventOccurredMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearLatestResourceEventOccurredMillis() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearLatestResourceEventOccurredMillis() {
       fieldSetFlags()[7] = false;
       return this;
     }
@@ -492,7 +492,7 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Sets the value of the 'billingPeriodOutOfSyncResourceEventsCounter' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setBillingPeriodOutOfSyncResourceEventsCounter(long value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setBillingPeriodOutOfSyncResourceEventsCounter(long value) {
       validate(fields()[8], value);
       this.billingPeriodOutOfSyncResourceEventsCounter = value;
       fieldSetFlags()[8] = true;
@@ -505,18 +505,18 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'billingPeriodOutOfSyncResourceEventsCounter' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearBillingPeriodOutOfSyncResourceEventsCounter() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearBillingPeriodOutOfSyncResourceEventsCounter() {
       fieldSetFlags()[8] = false;
       return this;
     }
 
     /** Gets the value of the 'walletEntries' field */
-    public java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry> getWalletEntries() {
+    public java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> getWalletEntries() {
       return walletEntries;
     }
     
     /** Sets the value of the 'walletEntries' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder setWalletEntries(java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry> value) {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder setWalletEntries(java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> value) {
       validate(fields()[9], value);
       this.walletEntries = value;
       fieldSetFlags()[9] = true;
@@ -529,26 +529,26 @@ public class _WorkingUserState extends org.apache.avro.specific.SpecificRecordBa
     }
     
     /** Clears the value of the 'walletEntries' field */
-    public gr.grnet.aquarium.message.avro.gen._WorkingUserState.Builder clearWalletEntries() {
+    public gr.grnet.aquarium.message.avro.gen.WorkingUserStateMsg.Builder clearWalletEntries() {
       walletEntries = null;
       fieldSetFlags()[9] = false;
       return this;
     }
 
     @Override
-    public _WorkingUserState build() {
+    public WorkingUserStateMsg build() {
       try {
-        _WorkingUserState record = new _WorkingUserState();
+        WorkingUserStateMsg record = new WorkingUserStateMsg();
         record.userID = fieldSetFlags()[0] ? this.userID : (java.lang.CharSequence) defaultValue(fields()[0]);
         record.parentUserStateIDInStore = fieldSetFlags()[1] ? this.parentUserStateIDInStore : (java.lang.CharSequence) defaultValue(fields()[1]);
-        record.resourceTypesMap = fieldSetFlags()[2] ? this.resourceTypesMap : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._ResourceType>) defaultValue(fields()[2]);
-        record.workingStateOfResources = fieldSetFlags()[3] ? this.workingStateOfResources : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen._WorkingResourcesChargingState>) defaultValue(fields()[3]);
+        record.resourceTypesMap = fieldSetFlags()[2] ? this.resourceTypesMap : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>) defaultValue(fields()[2]);
+        record.workingStateOfResources = fieldSetFlags()[3] ? this.workingStateOfResources : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.WorkingResourcesChargingStateMsg>) defaultValue(fields()[3]);
         record.totalCredits = fieldSetFlags()[4] ? this.totalCredits : (java.lang.Double) defaultValue(fields()[4]);
-        record.workingAgreementHistory = fieldSetFlags()[5] ? this.workingAgreementHistory : (gr.grnet.aquarium.message.avro.gen._WorkingAgreementHistory) defaultValue(fields()[5]);
+        record.workingAgreementHistory = fieldSetFlags()[5] ? this.workingAgreementHistory : (gr.grnet.aquarium.message.avro.gen.WorkingAgreementHistoryMsg) defaultValue(fields()[5]);
         record.latestUpdateMillis = fieldSetFlags()[6] ? this.latestUpdateMillis : (java.lang.Long) defaultValue(fields()[6]);
         record.latestResourceEventOccurredMillis = fieldSetFlags()[7] ? this.latestResourceEventOccurredMillis : (java.lang.Long) defaultValue(fields()[7]);
         record.billingPeriodOutOfSyncResourceEventsCounter = fieldSetFlags()[8] ? this.billingPeriodOutOfSyncResourceEventsCounter : (java.lang.Long) defaultValue(fields()[8]);
-        record.walletEntries = fieldSetFlags()[9] ? this.walletEntries : (java.util.List<gr.grnet.aquarium.message.avro.gen._WalletEntry>) defaultValue(fields()[9]);
+        record.walletEntries = fieldSetFlags()[9] ? this.walletEntries : (java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg>) defaultValue(fields()[9]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

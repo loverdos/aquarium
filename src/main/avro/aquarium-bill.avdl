@@ -36,7 +36,7 @@
 @namespace("gr.grnet.aquarium.message.avro.gen")
 protocol AquariumBill {
 
-  record _ChargeEntry {
+  record ChargeEntryMsg {
     string id;
     string unitPrice;
     string startTime;
@@ -45,20 +45,20 @@ protocol AquariumBill {
     string credits;
   }
 
-  record _EventEntry {
+  record EventEntryMsg {
     string eventType;
-    array<_ChargeEntry> details;
+    array<ChargeEntryMsg> details;
   }
 
-  record _ResourceEntry {
+  record ResourceEntryMsg {
     string resourceName;
     string resourceType;
     string unitName;
     string totalCredits;
-    array<_EventEntry> details;
+    array<EventEntryMsg> details;
   }
 
-  record _BillEntry {
+  record BillEntryMsg {
     string id;
     string userID;
     string status;
@@ -66,6 +66,6 @@ protocol AquariumBill {
     string deductedCredits;
     string startTime; // what is this? millis? date?
     string endTime;
-    array<_ResourceEntry> bill;
+    array<ResourceEntryMsg> bill;
   }
 }

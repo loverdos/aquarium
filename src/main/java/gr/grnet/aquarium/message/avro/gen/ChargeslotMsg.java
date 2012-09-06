@@ -5,8 +5,8 @@
  */
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
-public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"_Chargeslot\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\"}]}");
+public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\"}]}");
   @Deprecated public long startMillis;
   @Deprecated public long stopMillis;
   @Deprecated public double unitPrice;
@@ -112,26 +112,26 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     this.creditsToSubtract = value;
   }
 
-  /** Creates a new _Chargeslot RecordBuilder */
-  public static gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder newBuilder() {
-    return new gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder();
+  /** Creates a new ChargeslotMsg RecordBuilder */
+  public static gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder newBuilder() {
+    return new gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder();
   }
   
-  /** Creates a new _Chargeslot RecordBuilder by copying an existing Builder */
-  public static gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder other) {
-    return new gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder(other);
+  /** Creates a new ChargeslotMsg RecordBuilder by copying an existing Builder */
+  public static gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder other) {
+    return new gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder(other);
   }
   
-  /** Creates a new _Chargeslot RecordBuilder by copying an existing _Chargeslot instance */
-  public static gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder newBuilder(gr.grnet.aquarium.message.avro.gen._Chargeslot other) {
-    return new gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder(other);
+  /** Creates a new ChargeslotMsg RecordBuilder by copying an existing ChargeslotMsg instance */
+  public static gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder newBuilder(gr.grnet.aquarium.message.avro.gen.ChargeslotMsg other) {
+    return new gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder(other);
   }
   
   /**
-   * RecordBuilder for _Chargeslot instances.
+   * RecordBuilder for ChargeslotMsg instances.
    */
-  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<_Chargeslot>
-    implements org.apache.avro.data.RecordBuilder<_Chargeslot> {
+  public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<ChargeslotMsg>
+    implements org.apache.avro.data.RecordBuilder<ChargeslotMsg> {
 
     private long startMillis;
     private long stopMillis;
@@ -141,17 +141,17 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
 
     /** Creates a new Builder */
     private Builder() {
-      super(gr.grnet.aquarium.message.avro.gen._Chargeslot.SCHEMA$);
+      super(gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder other) {
+    private Builder(gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder other) {
       super(other);
     }
     
-    /** Creates a Builder by copying an existing _Chargeslot instance */
-    private Builder(gr.grnet.aquarium.message.avro.gen._Chargeslot other) {
-            super(gr.grnet.aquarium.message.avro.gen._Chargeslot.SCHEMA$);
+    /** Creates a Builder by copying an existing ChargeslotMsg instance */
+    private Builder(gr.grnet.aquarium.message.avro.gen.ChargeslotMsg other) {
+            super(gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.startMillis)) {
         this.startMillis = (java.lang.Long) data().deepCopy(fields()[0].schema(), other.startMillis);
         fieldSetFlags()[0] = true;
@@ -180,7 +180,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Sets the value of the 'startMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder setStartMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setStartMillis(long value) {
       validate(fields()[0], value);
       this.startMillis = value;
       fieldSetFlags()[0] = true;
@@ -193,7 +193,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Clears the value of the 'startMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder clearStartMillis() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder clearStartMillis() {
       fieldSetFlags()[0] = false;
       return this;
     }
@@ -204,7 +204,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Sets the value of the 'stopMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder setStopMillis(long value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setStopMillis(long value) {
       validate(fields()[1], value);
       this.stopMillis = value;
       fieldSetFlags()[1] = true;
@@ -217,7 +217,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Clears the value of the 'stopMillis' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder clearStopMillis() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder clearStopMillis() {
       fieldSetFlags()[1] = false;
       return this;
     }
@@ -228,7 +228,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Sets the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder setUnitPrice(double value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setUnitPrice(double value) {
       validate(fields()[2], value);
       this.unitPrice = value;
       fieldSetFlags()[2] = true;
@@ -241,7 +241,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Clears the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder clearUnitPrice() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder clearUnitPrice() {
       fieldSetFlags()[2] = false;
       return this;
     }
@@ -252,7 +252,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Sets the value of the 'explanation' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder setExplanation(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setExplanation(java.lang.CharSequence value) {
       validate(fields()[3], value);
       this.explanation = value;
       fieldSetFlags()[3] = true;
@@ -265,7 +265,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Clears the value of the 'explanation' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder clearExplanation() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder clearExplanation() {
       explanation = null;
       fieldSetFlags()[3] = false;
       return this;
@@ -277,7 +277,7 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Sets the value of the 'creditsToSubtract' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder setCreditsToSubtract(double value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setCreditsToSubtract(double value) {
       validate(fields()[4], value);
       this.creditsToSubtract = value;
       fieldSetFlags()[4] = true;
@@ -290,15 +290,15 @@ public class _Chargeslot extends org.apache.avro.specific.SpecificRecordBase imp
     }
     
     /** Clears the value of the 'creditsToSubtract' field */
-    public gr.grnet.aquarium.message.avro.gen._Chargeslot.Builder clearCreditsToSubtract() {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder clearCreditsToSubtract() {
       fieldSetFlags()[4] = false;
       return this;
     }
 
     @Override
-    public _Chargeslot build() {
+    public ChargeslotMsg build() {
       try {
-        _Chargeslot record = new _Chargeslot();
+        ChargeslotMsg record = new ChargeslotMsg();
         record.startMillis = fieldSetFlags()[0] ? this.startMillis : (java.lang.Long) defaultValue(fields()[0]);
         record.stopMillis = fieldSetFlags()[1] ? this.stopMillis : (java.lang.Long) defaultValue(fields()[1]);
         record.unitPrice = fieldSetFlags()[2] ? this.unitPrice : (java.lang.Double) defaultValue(fields()[2]);

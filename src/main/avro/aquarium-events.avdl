@@ -37,7 +37,7 @@
 protocol AquariumEvents {
   import idl "aquarium-anyvalue.avdl";
 
-  record _ResourceEvent {
+  record ResourceEventMsg {
     string @aliases(["originalID", "ID"]) id;
     string @aliased(["_id", "inStoreID"]) idInStore;
     long occurredMillis;
@@ -48,10 +48,10 @@ protocol AquariumEvents {
     string @aliases(["resourceType"]) resource;
     string instanceID;
     string value;
-    map<_AnyValue> details;
+    map<AnyValueMsg> details;
   }
 
-  record _IMEvent {
+  record IMEventMsg {
     string @aliases(["originalID", "ID"]) id;
     string @aliased(["_id", "inStoreID"]) idInStore;
     long occurredMillis;
@@ -61,6 +61,6 @@ protocol AquariumEvents {
     string eventVersion = "1.0";
     boolean isActive;
     string role;
-    map<_AnyValue> details;
+    map<AnyValueMsg> details;
   }
 }

@@ -45,11 +45,11 @@ import gr.grnet.aquarium.message.avro.AvroHelpers
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class PolicyTest {
+class PolicyMsgTest {
   @Test
   def testOne() {
-    val policyConf = _Policy.newBuilder().
-      setChargingBehaviors(newChargingBehaviors(
+    val policyConf = PolicyMsg.newBuilder().
+      setChargingBehaviors(newChargingBehaviorMsgs(
       nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior],
       nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior],
       nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior])
@@ -58,25 +58,25 @@ class PolicyTest {
       setParentID("").
       setValidFromMillis(0L).
       setValidToMillis(Long.MaxValue).
-      setResourceTypes(newResourceTypes(
-      newResourceType("diskspace", "MB/Hr", nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior]),
-      newResourceType("vmtime", "Hr", nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior]),
-      newResourceType("addcredits", "Credits", nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior]))
+      setResourceTypes(newResourceTypeMsgs(
+      newResourceTypeMsg("diskspace", "MB/Hr", nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior]),
+      newResourceTypeMsg("vmtime", "Hr", nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior]),
+      newResourceTypeMsg("addcredits", "Credits", nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior]))
     ).
-      setRoleMapping(newRoleMapping(
-      "default" -> newFullPriceTable(
+      setRoleMapping(newRoleMappingMsg(
+      "default" -> newFullPriceTableMsg(
         "diskspace" -> Map(
-          "default" -> newSelectorValue(newEffectivePriceTable(newEffectiveUnitPrice(0.01)))
+          "default" -> newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.01)))
         ),
 
         "vmtime" -> Map(
           VMChargingBehavior.Selectors.Power.powerOff ->
-            newSelectorValue(newEffectivePriceTable(newEffectiveUnitPrice(0.001))),
+            newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.001))),
           VMChargingBehavior.Selectors.Power.powerOn ->
-            newSelectorValue(newEffectivePriceTable(newEffectiveUnitPrice(0.01)))
+            newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.01)))
         ),
         "addcredits" -> Map(
-          "default" -> newSelectorValue(newEffectivePriceTable(newEffectiveUnitPrice(-1.0)))
+          "default" -> newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(-1.0)))
         )
       )
     )).
