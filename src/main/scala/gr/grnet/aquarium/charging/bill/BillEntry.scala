@@ -134,7 +134,11 @@ object AbstractBillEntry {
     val rcType =  w.resourceType.name
     val rcName = rcType match {
             case "diskspace" =>
-              w.currentResourceEvent.details("path")
+              w.currentResourceEvent.details.get("path") match {
+                case Some(path) => path
+                case None =>
+                  w.currentResourceEvent.instanceID
+              }
             case _ =>
               w.currentResourceEvent.instanceID
         }
