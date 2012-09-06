@@ -382,7 +382,8 @@ object Aquarium {
     EnvKeys.eventBus,
     EnvKeys.restService,
     EnvKeys.rabbitMQService,
-    EnvKeys.storeWatcherService
+    EnvKeys.storeWatcherService,
+    EnvKeys.rabbitMQProducer
   )
 
   object EnvKeys {

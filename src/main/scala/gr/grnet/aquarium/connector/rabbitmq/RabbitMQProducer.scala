@@ -6,7 +6,7 @@ import gr.grnet.aquarium._
 import com.rabbitmq.client._
 import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.converter.StdConverters
-import util.{Loggable, Lock}
+import util.{Lifecycle, Loggable, Lock}
 import gr.grnet.aquarium.store.memory.MemStoreProvider
 import java.io.File
 import com.ckkloverdos.resource.FileStreamResource
@@ -71,7 +71,7 @@ private class RabbitMQProducerActor extends Actor {
  * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Loggable  {
+class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Loggable with Lifecycle {
   private[this] var _conf: RabbitMQConsumerConf = _
   private[this] var _factory: ConnectionFactory = _
   private[this] var _connection: Connection = _
@@ -91,12 +91,59 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
   @volatile private[this] var _actorRef : ActorRef = _
   private[this] var _resendPeriodMillis = 1000L
 
+  def start() = {
+    try{
+      _connection =_factory.newConnection(_servers)
+      _channel = _connection.createChannel
+      _channel.confirmSelect
+      _channel.addConfirmListener(new ConfirmListener {
+        private [this] def cutSubset(seqNo:Long,multiple:Boolean) : TreeMap[Long,()=>Unit] =
+          lock.withLock {
+            val set = if (multiple)
+              _unconfirmedSet.range(0,seqNo+1)
+            else
+              _unconfirmedSet.range(seqNo,seqNo)
+            _unconfirmedSet = _unconfirmedSet -- set
+            val ret : TreeMap[Long,()=>Unit] = set.foldLeft(TreeMap[Long,()=>Unit]())({(map,seq)=>
+              _unconfirmedMessages.get(seq) match{
+                case None => map
+                case Some(s) => map + ((seq,s))
+              }})
+            _unconfirmedMessages = _unconfirmedMessages -- set
+            ret
+          }
+        def handleAck(seqNo:Long,multiple:Boolean) = {
+          //Console.err.println("Received ack for  " + seqNo)
+          cutSubset(seqNo,multiple)
+        }
+        def handleNack(seqNo:Long,multiple:Boolean) = {
+          //Console.err.println("Received Nack for msg for " + seqNo)
+          for {(_,msg) <- cutSubset(seqNo,multiple)} _actorRef ! (msg:()=>Unit)
+        }
+      })
+
+      _actorRef =  aquarium.akkaService.createNamedActor[RabbitMQProducerActor]("RabbitMQProducerActor")
+      resendMessages        // start our daemon
+    } catch {
+      case e:Exception =>
+        logger.error("RabbitMQProducer error:",e)
+    }
+  }
+
+  def stop() = {
+    try{
+      _channel.close
+      _connection.close
+    } catch {
+      case e:Exception =>
+        logger.error("RabbitMQProducer error:",e)
+    }
+  }
 
   @Subscribe
   override def awareOfAquarium(event: AquariumCreatedEvent) = {
     super.awareOfAquarium(event)
-    assert(aquarium!=null && aquarium.akkaService != null)
-    resendMessages        // start our daemon
+    //assert(aquarium!=null && aquarium.akkaService != null)
   }
 
   private[this] def resendMessages() : Unit = {
@@ -104,10 +151,10 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
     "RabbitMQProducer.resendMessages",
     {
       //Console.err.println("RabbitMQProducer Timer ...")
-      if(_actorRef==null) {
+      /*if(_actorRef==null) {
         _actorRef =  aquarium.akkaService.createNamedActor[RabbitMQProducerActor]("RabbitMQProducerActor")
-      }
-      if(_actorRef != null){
+      } */
+      //if(_actorRef != null){
       // Console.err.println("RabbitMQProducer Timer --> messages ...")
        var msgs : mutable.Queue[()=>Unit] = null
        lock.withLock {
@@ -123,9 +170,9 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
            _actorRef ! (msg:()=>Unit)
          }
        }
-      } else {
+      /*//} else {
         //Console.err.println("Akka ActorSystem is null. Waiting ...")
-      }
+      } */
       resendMessages()
     },
     this._resendPeriodMillis,
@@ -143,37 +190,6 @@ class RabbitMQProducer extends AquariumAwareSkeleton with Configurable with Logg
     _factory.setVirtualHost(connectionConf(RabbitMQConKeys.vhost))
     _factory.setRequestedHeartbeat(connectionConf(RabbitMQConKeys.reconnect_period_millis).toInt)
     _servers = connectionConf(RabbitMQConKeys.servers)
-    _connection =_factory.newConnection(_servers)
-    _channel = _connection.createChannel
-    _channel.confirmSelect
-    _channel.addConfirmListener(new ConfirmListener {
-
-      private [this] def cutSubset(seqNo:Long,multiple:Boolean) : TreeMap[Long,()=>Unit] =
-        lock.withLock {
-         val set = if (multiple)
-                    _unconfirmedSet.range(0,seqNo+1)
-                   else
-                    _unconfirmedSet.range(seqNo,seqNo)
-         _unconfirmedSet = _unconfirmedSet -- set
-         val ret : TreeMap[Long,()=>Unit] = set.foldLeft(TreeMap[Long,()=>Unit]())({(map,seq)=>
-           _unconfirmedMessages.get(seq) match{
-             case None => map
-             case Some(s) => map + ((seq,s))
-         }})
-         _unconfirmedMessages = _unconfirmedMessages -- set
-        ret
-       }
-
-      def handleAck(seqNo:Long,multiple:Boolean) = {
-        //Console.err.println("Received ack for  " + seqNo)
-        cutSubset(seqNo,multiple)
-      }
-
-      def handleNack(seqNo:Long,multiple:Boolean) = {
-        //Console.err.println("Received Nack for msg for " + seqNo)
-        for {(_,msg) <- cutSubset(seqNo,multiple)} _actorRef ! (msg:()=>Unit)
-      }
-    })
   }
 
   private[this] def isChannelOpen: Boolean =
