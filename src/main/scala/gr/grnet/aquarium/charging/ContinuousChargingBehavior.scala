@@ -198,7 +198,9 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       EventModel.EventVersion_1_0,
       Map(
         ResourceEventModel.Names.details_aquarium_is_synthetic   -> "true",
-        ResourceEventModel.Names.details_aquarium_is_realtime_virtual -> "true"
+        ResourceEventModel.Names.details_aquarium_is_realtime_virtual -> "true",
+        "path" -> workingResourceInstanceChargingState.previousEvents.headOption.map(_.details.get("path").getOrElse("unknown")).getOrElse("unknown"),
+        "action" -> workingResourceInstanceChargingState.previousEvents.headOption.map(_.details.get("action").getOrElse("unknown")).getOrElse("update")
       )
     ) :: Nil
   }
