@@ -21,6 +21,7 @@ import gr.grnet.aquarium.charging.Chargeslot
 import scala.collection.immutable.TreeMap
 import scala.Some
 import gr.grnet.aquarium.charging.Chargeslot
+import gr.grnet.aquarium.util.Lock
 
 
 /*
@@ -189,8 +190,8 @@ object AbstractBillEntry {
         if(i.sumOfCreditsToSubtract > 0.0D) sum += i.sumOfCreditsToSubtract
         ret += toResourceEntry(i)
       } else {
-        /*Console.err.println("WALLET ENTERY : " + i.toJsonString + "\n" +
-                     t + "  does not contain " +  i.referenceTimeslot + "  !!!!")*/
+        Console.err.println("IGNORING WALLET ENTRY : " + i.toJsonString + "\n" +
+                     t + "  does not contain " +  i.referenceTimeslot + "  !!!!")
       }
     }
     (ret.toList,sum)
@@ -211,7 +212,10 @@ object AbstractBillEntry {
     }.values.toList
   }
 
-  def fromWorkingUserState(t:Timeslot,userID:String,w:Option[WorkingUserState]) : AbstractBillEntry = {
+  def fromWorkingUserState(t0:Timeslot,userID:String,w:Option[WorkingUserState]) : AbstractBillEntry = {
+    val t = t0.roundMilliseconds /* we do not care about milliseconds */
+    //Console.err.println("Timeslot: " + t0)
+    //Console.err.println("After rounding timeslot: " + t)
     val ret = w match {
       case None =>
           new BillEntry(counter.getAndIncrement.toString,
@@ -221,9 +225,9 @@ object AbstractBillEntry {
                         t.from.getTime.toString,t.to.getTime.toString,
                         Nil)
       case Some(w) =>
+        Console.err.println("Working user state: %s".format(w.toJsonString))
         val (rcEntries,rcEntriesCredits) = resourceEntriesAt(t,w)
         val resMap = aggregateResourceEntries(rcEntries)
-        Console.err.println("Working user state: %s".format(w.toString))
         new BillEntry(counter.getAndIncrement.toString,
                       userID,"ok",
                       w.totalCredits.toString,

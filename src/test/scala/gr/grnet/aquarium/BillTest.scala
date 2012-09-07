@@ -1,7 +1,8 @@
 package gr.grnet.aquarium
 
+import charging.bill.BillEntry
 import com.ckkloverdos.resource.FileStreamResource
-import converter.StdConverters
+import converter.{CompactJsonTextFormat, StdConverters}
 import event.model.ExternalEventModel
 import event.model.im.StdIMEvent
 import event.model.resource.StdResourceEvent
@@ -12,11 +13,12 @@ import store.memory.MemStoreProvider
 import java.util.concurrent.atomic.AtomicLong
 import java.text.SimpleDateFormat
 import java.net.{URLConnection, URL}
-import util.Loggable
+import util.{Lock, Loggable}
 import java.util.{GregorianCalendar, Date,Calendar}
 import gr.grnet.aquarium.policy.CronSpec
 import scala.Tuple2
 import scala.Tuple2
+import collection.SortedMap
 
 /*
 * Copyright 2011-2012 GRNET S.A. All rights reserved.
@@ -114,15 +116,15 @@ object AquariumInstance {
       update(Aquarium.EnvKeys.eventsStoreFolder,Some(new File(".."))).
       build()
   }
-  def run(f : => String) : String = {
+  def run(billWait:Int, stop:Int)(f : => String) : String = {
     var _ret = ""
     aquarium.start
-    Thread.sleep(4)
+    Thread.sleep(billWait)
     try{
       _ret = f
     } finally {
       Console.err.println("Stopping aquarium")
-      Thread.sleep(15)
+      Thread.sleep(stop)
       Console.err.println("Stopping aquarium --- DONE")
       aquarium.stop
     }
@@ -130,6 +132,17 @@ object AquariumInstance {
   }
 }
 
+object JsonLog {
+  private[this] final val lock = new Lock()
+  private[this] var _log : List[String] = Nil
+  def add(json:String) =  lock.withLock(_log = _log ::: List(json))
+  def get() : List[String] = lock.withLock(_log.toList)
+}
+
+/*object MessageQueue {
+  private[this] final val lock = new Lock()
+  private[this] var _sortedMsgs  = SortedMap[Timeslot,(String,String,String)]
+} */
 
 abstract class Message {
   val dbg = true
@@ -137,7 +150,7 @@ abstract class Message {
   var _range : Timeslot = null
   var _cronSpec : CronSpec = null
   var _messagesSent = 0
-  var _done = false
+  //var _done = false
   var _map = Map[String,String]()
 
   def updateMap(args:Tuple2[String,String]*) : Message  =
@@ -163,10 +176,12 @@ abstract class Message {
     this
   }
 
-  def done = _done
+  //def done = _done
   def sentMessages = _messagesSent
 
-  def nextTime : Option[Long] = {
+  def nextTime : Option[Long] = nextTime(false)
+
+  def nextTime(update:Boolean) : Option[Long] = {
     _cronSpec match{
       case null =>
         None
@@ -174,7 +189,7 @@ abstract class Message {
         _cronSpec.nextValidDate(_range,cal.getTime) match {
           case Some(d) =>
             val millis = d.getTime
-            cal.setTimeInMillis(millis)
+            if(update) cal.setTimeInMillis(millis)
             Some(millis)
           case None    =>
             None
@@ -214,7 +229,7 @@ abstract class Message {
     send(args.foldLeft(Map[String,String]())({(map,arg)=> map + arg}))
 
   def send(map:Map[String,String]) : Boolean = {
-    nextTime match {
+    nextTime(true) match {
       case Some(millis) =>
         updateMap(map)
         val event = makeEvent(millis,_map)
@@ -235,11 +250,12 @@ abstract class Message {
         val json = event.toJsonString
         AquariumInstance.aquarium(Aquarium.EnvKeys.rabbitMQProducer).
         sendMessage(exchangeName,routingKey,json)
-        if(dbg)Console.err.println("Sent message:\n%s\n".format(json))
+        if(dbg)Console.err.println("Sent message:\n%s - %s\n".format(new Date(millis).toString,json))
+        JsonLog.add(new Date(millis).toString + " ---- " + json)
         _messagesSent += 1
         true
       case None =>
-        _done = true
+        //_done = true
         false
     }
   }
@@ -417,18 +433,22 @@ class User(serverAndPort:String,month:Int) {
     add(1,"credits","month"->month.toString,"uid"->uid,"spec"->spec,"amount"->amount.toString)
   }
 
-  def run(minFile:Int,maxFile:Int,minAmount:Int,maxAmount:Int,maxJSONRetry:Int=10) : String =  {
+  def run(ordered:Boolean,wait:Int,minFile:Int,maxFile:Int,minAmount:Int,maxAmount:Int,maxJSONRetry:Int=10) : String =  {
     _creationMessage.send("month"->month.toString,"uid"->uid,"spec"->"0 0 * %d ?".format(month)) // send once!
     var iter = _resources.toList
-    var done = false
-    while(!iter.isEmpty){
-      iter = _resources.filterNot(_.done)
-      for{i<-iter}
-        i.send("value"->UID.random(minFile,maxFile).toString,
-               "amount"->UID.random(minAmount,maxAmount).toString //,
-               //"status" -> UID.random(List("off","on"))
-               )
-    }
+    while(!iter.isEmpty)
+      iter = (if(!ordered) iter
+       else iter.sortWith{(m1,m2) => (m1.nextTime,m2.nextTime) match {
+        case (Some(l1),Some(l2)) => l1 <= l2
+        case (None,None) => true
+        case (None,Some(l)) => true
+        case (Some(l),None) => false
+      }}).filter(_.send("value"->UID.random(minFile,maxFile).toString,
+          "amount"->UID.random(minAmount,maxAmount).toString //,
+          //"status" -> UID.random(List("off","on"))
+        ))
+
+    Thread.sleep(wait)
     getJSON(maxJSONRetry)
   }
 
@@ -459,6 +479,11 @@ class User(serverAndPort:String,month:Int) {
       if(count > 0) Console.err.println("Retrying for bill request.")
       resp = get()
       if(resp.isEmpty) Thread.sleep(1000)
+      val b  = StdConverters.AllConverters.convertEx[BillEntry](CompactJsonTextFormat(resp))
+      if(b.status == "processing"){
+        Thread.sleep(1000)
+        resp = ""
+      }
       //sleep(1000L)
       count += 1
     }
@@ -476,15 +501,18 @@ object UserTest extends Loggable {
     val (minUserCredits,maxUserCredits) = (10000,10000)
     //Cron spec  minutes hours day-of-month Month Day-of-Week (we do not specify seconds)
 
-   val json =AquariumInstance.run {
+   val json =AquariumInstance.run(3000,3000) {
           user.
-                    addCredits(10000,"00 00 ? 9 Sat").
-                    addFiles(1,"update",2000,1000,3000,"00 18 ? 9 Tue").
+                    addCredits(10000,"00 00 14,29 9 ?").
+                    addFiles(1,"update",2000,1000,3000,"00 18 15,30 9 ?").
                     //addVMs(1,"on","00 18 ? 9 Mon").
                     //addVMs(5,"on","00 18 ? 9 Tue")
-                    run(minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)
+                    run(true,15000,minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)
    }
    Thread.sleep(2000)
+   Console.err.println("Messages sent:")
+   for { m <- JsonLog.get}
+     Console.err.println("\n==============\n%s\n===============".format(m))
    Console.err.println("Response:\n" + json)
  }
 
