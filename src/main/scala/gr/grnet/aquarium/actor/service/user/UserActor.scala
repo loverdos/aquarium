@@ -120,7 +120,7 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   @inline private[this] def haveAgreements = {
-    this._userAgreementHistoryModel.size > 0
+    (this._userAgreementHistoryModel ne null) && this._userAgreementHistoryModel.size > 0
   }
 
   @inline private[this] def haveWorkingUserState = {
