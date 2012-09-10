@@ -111,7 +111,7 @@ object ModelFactory {
   }
 
   def newSelectorValue(v: SelectorValueMsg): Any /* either a selector (String) or a map */ = {
-    v match {
+    v.getSelectorValue match {
       case effectivePriceTableMsg: EffectivePriceTableMsg ⇒
         newEffectivePriceTable(effectivePriceTableMsg)
 
