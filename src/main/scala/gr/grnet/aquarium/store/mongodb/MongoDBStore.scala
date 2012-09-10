@@ -35,28 +35,20 @@
 
 package gr.grnet.aquarium.store.mongodb
 
-import com.mongodb.util.JSON
-import gr.grnet.aquarium.util.json.JsonSupport
-import collection.mutable.ListBuffer
-import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.event.model.im.IMEventModel.{Names ⇒ IMEventNames}
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel.{Names ⇒ ResourceEventNames}
-import gr.grnet.aquarium.store._
-import com.mongodb._
-import org.bson.types.ObjectId
-import gr.grnet.aquarium.util._
-import gr.grnet.aquarium.converter.StdConverters
-import gr.grnet.aquarium.event.model.ExternalEventModel
-import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.policy.PolicyModel
-import gr.grnet.aquarium.{Aquarium, AquariumException}
-import scala.collection.immutable.{TreeMap, SortedMap}
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
-import gr.grnet.aquarium.charging.state.UserStateModel
-import gr.grnet.aquarium.message.avro.gen.PolicyMsg
-import gr.grnet.aquarium.message.avro.{DummyHelpers, OrderingHelpers, AvroHelpers}
+import com.mongodb._
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.converter.StdConverters
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.message.MessageConstants
+import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
+import gr.grnet.aquarium.message.avro.{MessageFactory, OrderingHelpers, AvroHelpers}
+import gr.grnet.aquarium.store._
+import gr.grnet.aquarium.util._
+import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.{Aquarium, AquariumException}
+import org.apache.avro.specific.SpecificRecord
+import org.bson.types.ObjectId
 
 /**
  * Mongodb implementation of the various aquarium stores.
@@ -77,10 +69,10 @@ class MongoDBStore(
   with PolicyStore
   with Loggable {
 
-  private[store] lazy val resourceEvents = getCollection(MongoDBStore.RESOURCE_EVENTS_COLLECTION)
-  private[store] lazy val userStates = getCollection(MongoDBStore.USER_STATES_COLLECTION)
-  private[store] lazy val imEvents = getCollection(MongoDBStore.IM_EVENTS_COLLECTION)
-  private[store] lazy val policies = getCollection(MongoDBStore.POLICY_COLLECTION)
+  private[store] lazy val resourceEvents = getCollection(MongoDBStore.ResourceEventCollection)
+  private[store] lazy val userStates = getCollection(MongoDBStore.UserStateCollection)
+  private[store] lazy val imEvents = getCollection(MongoDBStore.IMEventCollection)
+  private[store] lazy val policies = getCollection(MongoDBStore.PolicyCollection)
 
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
@@ -92,42 +84,46 @@ class MongoDBStore(
   }
 
   //+ResourceEventStore
-  def createResourceEventFromOther(event: ResourceEventModel): ResourceEventModel = {
-    MongoDBResourceEvent.fromOther(event, null)
-  }
-
   def pingResourceEventStore(): Unit = synchronized {
     MongoDBStore.ping(mongo)
   }
 
-  def insertResourceEvent(event: ResourceEventModel) = {
-    val localEvent = MongoDBResourceEvent.fromOther(event, new ObjectId().toStringMongod)
-    MongoDBStore.insertObject(localEvent, resourceEvents, MongoDBStore.jsonSupportToDBObject)
-    localEvent
+  def insertResourceEvent(event: ResourceEventMsg) = {
+    val mongoID = new ObjectId()
+    event.setInStoreID(mongoID.toStringMongod)
+
+    val dbObject = new BasicDBObjectBuilder().
+      add(MongoDBStore.JsonNames._id, mongoID).
+      add(MongoDBStore.JsonNames.payload, AvroHelpers.bytesOfSpecificRecord(event)).
+      add(MongoDBStore.JsonNames.userID, event.getUserID).
+      add(MongoDBStore.JsonNames.occurredMillis, event.getOccurredMillis).
+      add(MongoDBStore.JsonNames.receivedMillis, event.getReceivedMillis).
+    get()
+
+    MongoDBStore.insertDBObject(dbObject, resourceEvents)
+    event
   }
 
-  def findResourceEventByID(id: String): Option[ResourceEventModel] = {
-    MongoDBStore.findBy(ResourceEventNames.id, id, resourceEvents, MongoDBResourceEvent.fromDBObject)
-  }
-
-  def findResourceEventsByUserID(userId: String)
-                                (sortWith: Option[(ResourceEventModel, ResourceEventModel) => Boolean]): List[ResourceEventModel] = {
-    val query = new BasicDBObject(ResourceEventNames.userID, userId)
-
-    MongoDBStore.runQuery(query, resourceEvents)(MongoDBResourceEvent.fromDBObject)(sortWith)
+  def findResourceEventByID(id: String): Option[ResourceEventMsg] = {
+    val dbObjectOpt = MongoDBStore.findOneByAttribute(resourceEvents, MongoDBStore.JsonNames.id, id)
+    for {
+      dbObject ← dbObjectOpt
+      payload = dbObject.get(MongoDBStore.JsonNames.payload)
+      msg = AvroHelpers.specificRecordOfBytes(payload.asInstanceOf[Array[Byte]], new ResourceEventMsg)
+    } yield msg
   }
 
   def countOutOfSyncResourceEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long = {
     val query = new BasicDBObjectBuilder().
-      add(ResourceEventModel.Names.userID, userID).
+      add(MongoDBStore.JsonNames.userID, userID).
       // received within the period
-      add(ResourceEventModel.Names.receivedMillis, new BasicDBObject("$gte", startMillis)).
-      add(ResourceEventModel.Names.receivedMillis, new BasicDBObject("$lte", stopMillis)).
+      add(MongoDBStore.JsonNames.receivedMillis, new BasicDBObject("$gte", startMillis)).
+      add(MongoDBStore.JsonNames.receivedMillis, new BasicDBObject("$lte", stopMillis)).
       // occurred outside the period
       add("$or", {
         val dbList = new BasicDBList()
-        dbList.add(0, new BasicDBObject(ResourceEventModel.Names.occurredMillis, new BasicDBObject("$lt", startMillis)))
-        dbList.add(1, new BasicDBObject(ResourceEventModel.Names.occurredMillis, new BasicDBObject("$gt", stopMillis)))
+        dbList.add(0, new BasicDBObject(MongoDBStore.JsonNames.occurredMillis, new BasicDBObject("$lt", startMillis)))
+        dbList.add(1, new BasicDBObject(MongoDBStore.JsonNames.occurredMillis, new BasicDBObject("$gt", stopMillis)))
         dbList
       }).
       get()
@@ -139,21 +135,22 @@ class MongoDBStore(
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEventModel ⇒ Unit): Unit = {
+  )(f: ResourceEventMsg ⇒ Unit): Unit = {
 
     val query = new BasicDBObjectBuilder().
-      add(ResourceEventModel.Names.userID, userID).
-      add(ResourceEventModel.Names.occurredMillis, new BasicDBObject("$gte", startMillis)).
-      add(ResourceEventModel.Names.occurredMillis, new BasicDBObject("$lte", stopMillis)).
+      add(MongoDBStore.JsonNames.userID, userID).
+      add(MongoDBStore.JsonNames.occurredMillis, new BasicDBObject("$gte", startMillis)).
+      add(MongoDBStore.JsonNames.occurredMillis, new BasicDBObject("$lte", stopMillis)).
       get()
 
-    val sorter = new BasicDBObject(ResourceEventModel.Names.occurredMillis, 1)
+    val sorter = new BasicDBObject(MongoDBStore.JsonNames.occurredMillis, 1)
     val cursor = resourceEvents.find(query).sort(sorter)
 
     withCloseable(cursor) { cursor ⇒
       while(cursor.hasNext) {
         val nextDBObject = cursor.next()
-        val nextEvent = MongoDBResourceEvent.fromDBObject(nextDBObject)
+        val payload = nextDBObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
+        val nextEvent = AvroHelpers.specificRecordOfBytes(payload, new ResourceEventMsg)
 
         f(nextEvent)
       }
@@ -162,85 +159,118 @@ class MongoDBStore(
   //-ResourceEventStore
 
   //+ UserStateStore
-  def findUserStateByUserID(userID: String): Option[UserStateModel] = {
-    val query = new BasicDBObject(UserStateModel.Names.userID, userID)
-    val cursor = userStates find query
-
-    MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
+  def findUserStateByUserID(userID: String) = {
+    val dbObjectOpt = MongoDBStore.findOneByAttribute(userStates, MongoDBStore.JsonNames.userID, userID)
+    for {
+      dbObject <- dbObjectOpt
+      payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
+      msg = AvroHelpers.specificRecordOfBytes(payload, new UserStateMsg)
+    } yield {
+      msg
+    }
   }
 
-  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserStateModel] = {
+  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo) = {
     val query = new BasicDBObjectBuilder().
-      add(UserStateModel.Names.userID, userID).
-      add(UserStateModel.Names.isFullBillingMonth, true).
-      add(UserStateModel.Names.billingYear, bmi.year).
-      add(UserStateModel.Names.billingMonth, bmi.month).
+      add(MongoDBStore.JsonNames.userID, userID).
+      add(MongoDBStore.JsonNames.isFullBillingMonth, true).
+      add(MongoDBStore.JsonNames.billingYear, bmi.year).
+      add(MongoDBStore.JsonNames.billingMonth, bmi.month).
       get()
 
     // Descending order, so that the latest comes first
-    val sorter = new BasicDBObject(UserStateModel.Names.occurredMillis, -1)
+    val sorter = new BasicDBObject(MongoDBStore.JsonNames.occurredMillis, -1)
 
     val cursor = userStates.find(query).sort(sorter)
 
-    MongoDBStore.firstResultIfExists(cursor, MongoDBStore.dbObjectToUserState)
-  }
-
-  def createUserStateFromOther(userState: UserStateModel) = {
-    MongoDBUserState.fromOther(userState, new ObjectId().toStringMongod)
+    withCloseable(cursor) { cursor ⇒
+      MongoDBStore.findNextPayloadRecord(cursor, new UserStateMsg)
+    }
   }
 
   /**
    * Stores a user state.
    */
-  def insertUserState(userState: UserStateModel): UserStateModel = {
-    val localUserState = createUserStateFromOther(userState)
-    MongoDBStore.insertObject(localUserState, userStates, MongoDBStore.jsonSupportToDBObject)
+  def insertUserState(event: UserStateMsg)= {
+    val mongoID = new ObjectId()
+    event.setInStoreID(mongoID.toStringMongod)
+
+    val dbObject = new BasicDBObjectBuilder().
+      add(MongoDBStore.JsonNames._id, mongoID).
+      add(MongoDBStore.JsonNames.payload, AvroHelpers.bytesOfSpecificRecord(event)).
+      add(MongoDBStore.JsonNames.userID, event.getUserID).
+      add(MongoDBStore.JsonNames.occurredMillis, event.getOccurredMillis).
+      add(MongoDBStore.JsonNames.isFullBillingMonth, event.getIsFullBillingMonth).
+      add(MongoDBStore.JsonNames.billingYear, event.getBillingYear).
+      add(MongoDBStore.JsonNames.billingMonth, event.getBillingMonth).
+      add(MongoDBStore.JsonNames.billingMonthDay, event.getBillingMonthDay).
+    get()
+
+    MongoDBStore.insertDBObject(dbObject, userStates)
+    event
   }
   //- UserStateStore
 
   //+IMEventStore
-  def createIMEventFromJson(json: String) = {
-    MongoDBStore.createIMEventFromJson(json)
-  }
-
-  def createIMEventFromOther(event: IMEventModel) = {
-    MongoDBStore.createIMEventFromOther(event)
-  }
-
   def pingIMEventStore(): Unit = {
     MongoDBStore.ping(mongo)
   }
 
-  def insertIMEvent(event: IMEventModel): IMEventModel = {
-    val localEvent = MongoDBIMEvent.fromOther(event, new ObjectId().toStringMongod)
-    MongoDBStore.insertObject(localEvent, imEvents, MongoDBStore.jsonSupportToDBObject)
-    localEvent
+  def insertIMEvent(event: IMEventMsg) = {
+    val mongoID = new ObjectId()
+    event.setInStoreID(mongoID.toStringMongod)
+
+    val dbObject = new BasicDBObjectBuilder().
+      add(MongoDBStore.JsonNames._id, mongoID).
+      add(MongoDBStore.JsonNames.payload, AvroHelpers.bytesOfSpecificRecord(event)).
+      add(MongoDBStore.JsonNames.userID, event.getUserID).
+      add(MongoDBStore.JsonNames.eventType, event.getEventType().toLowerCase).
+      add(MongoDBStore.JsonNames.occurredMillis, event.getOccurredMillis).
+      add(MongoDBStore.JsonNames.receivedMillis, event.getReceivedMillis).
+    get()
+
+    MongoDBStore.insertDBObject(dbObject, imEvents)
+    event
   }
 
-  def findIMEventByID(id: String): Option[IMEventModel] = {
-    MongoDBStore.findBy(IMEventNames.id, id, imEvents, MongoDBIMEvent.fromDBObject)
+  def findIMEventByID(id: String) = {
+    val dbObjectOpt = MongoDBStore.findOneByAttribute(imEvents, MongoDBStore.JsonNames.id, id)
+    for {
+      dbObject ← dbObjectOpt
+      payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
+      msg = AvroHelpers.specificRecordOfBytes(payload, new IMEventMsg)
+    } yield {
+      msg
+    }
   }
 
 
   /**
    * Find the `CREATE` even for the given user. Note that there must be only one such event.
    */
-  def findCreateIMEventByUserID(userID: String): Option[IMEventModel] = {
+  def findCreateIMEventByUserID(userID: String) = {
     val query = new BasicDBObjectBuilder().
-      add(IMEventNames.userID, userID).
-      add(IMEventNames.eventType, IMEventModel.EventTypeNames.create).get()
+      add(MongoDBStore.JsonNames.userID, userID).
+      add(MongoDBStore.JsonNames.eventType, MessageConstants.IMEventMsg.EventTypes.create).get()
 
     // Normally one such event is allowed ...
-    val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
+    val cursor = imEvents.find(query).sort(new BasicDBObject(MongoDBStore.JsonNames.occurredMillis, 1))
 
-    MongoDBStore.firstResultIfExists(cursor, MongoDBIMEvent.fromDBObject)
-  }
+    val dbObjectOpt = withCloseable(cursor) { cursor ⇒
+      if(cursor.hasNext) {
+        Some(cursor.next())
+      } else {
+        None
+      }
+    }
 
-  def findLatestIMEventByUserID(userID: String): Option[IMEventModel] = {
-    val query = new BasicDBObject(IMEventNames.userID, userID)
-    val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, -1))
-
-    MongoDBStore.firstResultIfExists(cursor, MongoDBIMEvent.fromDBObject)
+    for {
+      dbObject <- dbObjectOpt
+      payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
+      msg = AvroHelpers.specificRecordOfBytes(payload, new IMEventMsg)
+    } yield {
+      msg
+    }
   }
 
   /**
@@ -249,14 +279,17 @@ class MongoDBStore(
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventModel) => Unit) = {
-    val query = new BasicDBObject(IMEventNames.userID, userID)
-    val cursor = imEvents.find(query).sort(new BasicDBObject(IMEventNames.occurredMillis, 1))
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventMsg) ⇒ Unit) = {
+    val query = new BasicDBObject(MongoDBStore.JsonNames.userID, userID)
+    val cursor = imEvents.find(query).sort(new BasicDBObject(MongoDBStore.JsonNames.occurredMillis, 1))
 
     withCloseable(cursor) { cursor ⇒
       while(cursor.hasNext) {
-        val model = MongoDBIMEvent.fromDBObject(cursor.next())
-        f(model)
+        val dbObject = cursor.next()
+        val payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
+        val msg = AvroHelpers.specificRecordOfBytes(payload, new IMEventMsg)
+
+        f(msg)
       }
     }
   }
@@ -293,7 +326,7 @@ class MongoDBStore(
     // FIXME Inefficient
     var _policies = immutable.TreeSet[PolicyMsg]()(OrderingHelpers.DefaultPolicyMsgOrdering)
     foreachPolicy(_policies += _)
-    _policies.to(DummyHelpers.dummyPolicyMsgAt(atMillis)).lastOption
+    _policies.to(MessageFactory.newDummyPolicyMsgAt(atMillis)).lastOption
   }
 
   def loadSortedPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyMsg] = {
@@ -302,8 +335,8 @@ class MongoDBStore(
     foreachPolicy(_policies += _)
 
     immutable.SortedMap(_policies.
-      from(DummyHelpers.dummyPolicyMsgAt(fromMillis)).
-      to(DummyHelpers.dummyPolicyMsgAt(toMillis)).toSeq.
+      from(MessageFactory.newDummyPolicyMsgAt(fromMillis)).
+      to(MessageFactory.newDummyPolicyMsgAt(toMillis)).toSeq.
       map(p ⇒ (Timeslot(p.getValidFromMillis, p.getValidToMillis), p)): _*
     )
   }
@@ -311,45 +344,15 @@ class MongoDBStore(
 }
 
 object MongoDBStore {
-  object JsonNames {
-    final val payload = "payload"
-    final val _id = "_id"
-    final val occuredMillis = "occuredMillis"
-    final val receivedMillis = "receivedMillis"
-    final val validFromMillis = "validFromMillis"
-    final val validToMillis = "validToMillis"
-  }
+  final val JsonNames = gr.grnet.aquarium.util.json.JsonNames
 
-  /**
-   * Collection holding the [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]s.
-   *
-   * Resource events are coming from all systems handling billable resources.
-   */
-  final val RESOURCE_EVENTS_COLLECTION = "resevents"
+  final val ResourceEventCollection = "resevents"
 
-  /**
-   * Collection holding the snapshots of [[gr.grnet.aquarium.charging.state.UserStateModel]].
-   *
-   * [[gr.grnet.aquarium.charging.state.UserStateModel]] is held internally within
-   * [[gr.grnet.aquarium.actor.service.user.UserActor]]s.
-   */
-  final val USER_STATES_COLLECTION = "userstates"
+  final val UserStateCollection = "userstates"
 
-  /**
-   * Collection holding [[gr.grnet.aquarium.event.model.im.IMEventModel]]s.
-   *
-   * User events are coming from the IM module (external).
-   */
-  final val IM_EVENTS_COLLECTION = "imevents"
+  final val IMEventCollection = "imevents"
 
-  /**
-   * Collection holding [[gr.grnet.aquarium.policy.PolicyModel]]s.
-   */
-  final val POLICY_COLLECTION = "policies"
-
-  def dbObjectToUserState(dbObj: DBObject): MongoDBUserState = {
-    MongoDBUserState.fromJSONString(JSON.serialize(dbObj))
-  }
+  final val PolicyCollection = "policies"
 
   def firstResultIfExists[A](cursor: DBCursor, f: DBObject ⇒ A): Option[A] = {
     withCloseable(cursor) { cursor ⇒
@@ -366,77 +369,37 @@ object MongoDBStore {
     mongo.isLocked
   }
 
-  def findBy[A >: Null <: AnyRef](name: String,
-                                  value: String,
-                                  collection: DBCollection,
-                                  deserializer: (DBObject) => A) : Option[A] = {
-    val query = new BasicDBObject(name, value)
-    val cursor = collection find query
-
+  def findOneByAttribute(
+      collection: DBCollection,
+      attributeName: String,
+      attributeValue: String,
+      sortByOpt: Option[DBObject] = None
+  ): Option[DBObject] =  {
+    val query = new BasicDBObject(attributeName, attributeValue)
+    val cursor = sortByOpt match {
+      case None         ⇒ collection find query
+      case Some(sortBy) ⇒ collection find query sort sortBy
+    }
     withCloseable(cursor) { cursor ⇒
-      if(cursor.hasNext)
-        Some(deserializer apply cursor.next)
-      else
-        None
+      if(cursor.hasNext) Some(cursor.next()) else None
     }
-  }
-
-  def runQuery[A <: ExternalEventModel](query: DBObject, collection: DBCollection, orderBy: DBObject = null)
-                                  (deserializer: (DBObject) => A)
-                                  (sortWith: Option[(A, A) => Boolean]): List[A] = {
-    val cursor0 = collection find query
-    val cursor = if(orderBy ne null) {
-      cursor0 sort orderBy
-    } else {
-      cursor0
-    } // I really know that docs say that it is the same cursor.
-
-    if(!cursor.hasNext) {
-      cursor.close()
-      Nil
-    } else {
-      val buff = new ListBuffer[A]()
-
-      while(cursor.hasNext) {
-        buff += deserializer apply cursor.next
-      }
-
-      cursor.close()
-
-      sortWith match {
-        case Some(sorter) => buff.toList.sortWith(sorter)
-        case None => buff.toList
-      }
-    }
-  }
-
-  def insertObject[A <: AnyRef](obj: A, collection: DBCollection, serializer: A ⇒ DBObject) : A = {
-    collection.insert(serializer apply obj, WriteConcern.JOURNAL_SAFE)
-    obj
   }
 
   def insertDBObject(dbObj: DBObject, collection: DBCollection) {
     collection.insert(dbObj, WriteConcern.JOURNAL_SAFE)
   }
 
+  def findNextPayloadRecord[R <: SpecificRecord](cursor: DBCursor, fresh: R): Option[R] = {
+    for {
+      dbObject <- if(cursor.hasNext) Some(cursor.next()) else None
+      payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
+      msg = AvroHelpers.specificRecordOfBytes(payload, fresh)
+    } yield {
+      msg
+    }
+  }
+
   def jsonSupportToDBObject(jsonSupport: JsonSupport) = {
     StdConverters.AllConverters.convertEx[DBObject](jsonSupport)
-  }
-
-  final def isLocalIMEvent(event: IMEventModel) = event match {
-    case _: MongoDBIMEvent ⇒ true
-    case _ ⇒ false
-  }
-
-  final def createIMEventFromJson(json: String) = {
-    MongoDBIMEvent.fromJsonString(json)
-  }
-
-  final def createIMEventFromOther(event: IMEventModel) = {
-    MongoDBIMEvent.fromOther(event, new ObjectId().toStringMongod)
-  }
-
-  final def createIMEventFromJsonBytes(jsonBytes: Array[Byte]) = {
-    MongoDBIMEvent.fromJsonBytes(jsonBytes)
   }
 }

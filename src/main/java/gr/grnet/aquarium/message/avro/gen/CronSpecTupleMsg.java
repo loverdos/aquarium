@@ -6,9 +6,9 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]}");
-  @Deprecated public java.lang.CharSequence a;
-  @Deprecated public java.lang.CharSequence b;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
+  @Deprecated public java.lang.String a;
+  @Deprecated public java.lang.String b;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -22,8 +22,8 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: a = (java.lang.CharSequence)value$; break;
-    case 1: b = (java.lang.CharSequence)value$; break;
+    case 0: a = (java.lang.String)value$; break;
+    case 1: b = (java.lang.String)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -31,7 +31,7 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
   /**
    * Gets the value of the 'a' field.
    */
-  public java.lang.CharSequence getA() {
+  public java.lang.String getA() {
     return a;
   }
 
@@ -39,14 +39,14 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'a' field.
    * @param value the value to set.
    */
-  public void setA(java.lang.CharSequence value) {
+  public void setA(java.lang.String value) {
     this.a = value;
   }
 
   /**
    * Gets the value of the 'b' field.
    */
-  public java.lang.CharSequence getB() {
+  public java.lang.String getB() {
     return b;
   }
 
@@ -54,7 +54,7 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'b' field.
    * @param value the value to set.
    */
-  public void setB(java.lang.CharSequence value) {
+  public void setB(java.lang.String value) {
     this.b = value;
   }
 
@@ -79,8 +79,8 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<CronSpecTupleMsg>
     implements org.apache.avro.data.RecordBuilder<CronSpecTupleMsg> {
 
-    private java.lang.CharSequence a;
-    private java.lang.CharSequence b;
+    private java.lang.String a;
+    private java.lang.String b;
 
     /** Creates a new Builder */
     private Builder() {
@@ -96,22 +96,22 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
     private Builder(gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.a)) {
-        this.a = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.a);
+        this.a = (java.lang.String) data().deepCopy(fields()[0].schema(), other.a);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.b)) {
-        this.b = (java.lang.CharSequence) data().deepCopy(fields()[1].schema(), other.b);
+        this.b = (java.lang.String) data().deepCopy(fields()[1].schema(), other.b);
         fieldSetFlags()[1] = true;
       }
     }
 
     /** Gets the value of the 'a' field */
-    public java.lang.CharSequence getA() {
+    public java.lang.String getA() {
       return a;
     }
     
     /** Sets the value of the 'a' field */
-    public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder setA(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder setA(java.lang.String value) {
       validate(fields()[0], value);
       this.a = value;
       fieldSetFlags()[0] = true;
@@ -131,12 +131,12 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
     }
 
     /** Gets the value of the 'b' field */
-    public java.lang.CharSequence getB() {
+    public java.lang.String getB() {
       return b;
     }
     
     /** Sets the value of the 'b' field */
-    public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder setB(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg.Builder setB(java.lang.String value) {
       validate(fields()[1], value);
       this.b = value;
       fieldSetFlags()[1] = true;
@@ -159,8 +159,8 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
     public CronSpecTupleMsg build() {
       try {
         CronSpecTupleMsg record = new CronSpecTupleMsg();
-        record.a = fieldSetFlags()[0] ? this.a : (java.lang.CharSequence) defaultValue(fields()[0]);
-        record.b = fieldSetFlags()[1] ? this.b : (java.lang.CharSequence) defaultValue(fields()[1]);
+        record.a = fieldSetFlags()[0] ? this.a : (java.lang.String) defaultValue(fields()[0]);
+        record.b = fieldSetFlags()[1] ? this.b : (java.lang.String) defaultValue(fields()[1]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

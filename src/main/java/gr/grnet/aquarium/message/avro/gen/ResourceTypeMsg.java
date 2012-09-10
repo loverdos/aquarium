@@ -6,10 +6,10 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}");
-  @Deprecated public java.lang.CharSequence name;
-  @Deprecated public java.lang.CharSequence unit;
-  @Deprecated public java.lang.CharSequence chargingBehaviorClass;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"name\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unit\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"chargingBehaviorClass\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
+  @Deprecated public java.lang.String name;
+  @Deprecated public java.lang.String unit;
+  @Deprecated public java.lang.String chargingBehaviorClass;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -24,9 +24,9 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: name = (java.lang.CharSequence)value$; break;
-    case 1: unit = (java.lang.CharSequence)value$; break;
-    case 2: chargingBehaviorClass = (java.lang.CharSequence)value$; break;
+    case 0: name = (java.lang.String)value$; break;
+    case 1: unit = (java.lang.String)value$; break;
+    case 2: chargingBehaviorClass = (java.lang.String)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -34,7 +34,7 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
   /**
    * Gets the value of the 'name' field.
    */
-  public java.lang.CharSequence getName() {
+  public java.lang.String getName() {
     return name;
   }
 
@@ -42,14 +42,14 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
    * Sets the value of the 'name' field.
    * @param value the value to set.
    */
-  public void setName(java.lang.CharSequence value) {
+  public void setName(java.lang.String value) {
     this.name = value;
   }
 
   /**
    * Gets the value of the 'unit' field.
    */
-  public java.lang.CharSequence getUnit() {
+  public java.lang.String getUnit() {
     return unit;
   }
 
@@ -57,14 +57,14 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
    * Sets the value of the 'unit' field.
    * @param value the value to set.
    */
-  public void setUnit(java.lang.CharSequence value) {
+  public void setUnit(java.lang.String value) {
     this.unit = value;
   }
 
   /**
    * Gets the value of the 'chargingBehaviorClass' field.
    */
-  public java.lang.CharSequence getChargingBehaviorClass() {
+  public java.lang.String getChargingBehaviorClass() {
     return chargingBehaviorClass;
   }
 
@@ -72,7 +72,7 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
    * Sets the value of the 'chargingBehaviorClass' field.
    * @param value the value to set.
    */
-  public void setChargingBehaviorClass(java.lang.CharSequence value) {
+  public void setChargingBehaviorClass(java.lang.String value) {
     this.chargingBehaviorClass = value;
   }
 
@@ -97,9 +97,9 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<ResourceTypeMsg>
     implements org.apache.avro.data.RecordBuilder<ResourceTypeMsg> {
 
-    private java.lang.CharSequence name;
-    private java.lang.CharSequence unit;
-    private java.lang.CharSequence chargingBehaviorClass;
+    private java.lang.String name;
+    private java.lang.String unit;
+    private java.lang.String chargingBehaviorClass;
 
     /** Creates a new Builder */
     private Builder() {
@@ -115,26 +115,26 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
     private Builder(gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.name)) {
-        this.name = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.name);
+        this.name = (java.lang.String) data().deepCopy(fields()[0].schema(), other.name);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.unit)) {
-        this.unit = (java.lang.CharSequence) data().deepCopy(fields()[1].schema(), other.unit);
+        this.unit = (java.lang.String) data().deepCopy(fields()[1].schema(), other.unit);
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.chargingBehaviorClass)) {
-        this.chargingBehaviorClass = (java.lang.CharSequence) data().deepCopy(fields()[2].schema(), other.chargingBehaviorClass);
+        this.chargingBehaviorClass = (java.lang.String) data().deepCopy(fields()[2].schema(), other.chargingBehaviorClass);
         fieldSetFlags()[2] = true;
       }
     }
 
     /** Gets the value of the 'name' field */
-    public java.lang.CharSequence getName() {
+    public java.lang.String getName() {
       return name;
     }
     
     /** Sets the value of the 'name' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg.Builder setName(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg.Builder setName(java.lang.String value) {
       validate(fields()[0], value);
       this.name = value;
       fieldSetFlags()[0] = true;
@@ -154,12 +154,12 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
     }
 
     /** Gets the value of the 'unit' field */
-    public java.lang.CharSequence getUnit() {
+    public java.lang.String getUnit() {
       return unit;
     }
     
     /** Sets the value of the 'unit' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg.Builder setUnit(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg.Builder setUnit(java.lang.String value) {
       validate(fields()[1], value);
       this.unit = value;
       fieldSetFlags()[1] = true;
@@ -179,12 +179,12 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
     }
 
     /** Gets the value of the 'chargingBehaviorClass' field */
-    public java.lang.CharSequence getChargingBehaviorClass() {
+    public java.lang.String getChargingBehaviorClass() {
       return chargingBehaviorClass;
     }
     
     /** Sets the value of the 'chargingBehaviorClass' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg.Builder setChargingBehaviorClass(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg.Builder setChargingBehaviorClass(java.lang.String value) {
       validate(fields()[2], value);
       this.chargingBehaviorClass = value;
       fieldSetFlags()[2] = true;
@@ -207,9 +207,9 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
     public ResourceTypeMsg build() {
       try {
         ResourceTypeMsg record = new ResourceTypeMsg();
-        record.name = fieldSetFlags()[0] ? this.name : (java.lang.CharSequence) defaultValue(fields()[0]);
-        record.unit = fieldSetFlags()[1] ? this.unit : (java.lang.CharSequence) defaultValue(fields()[1]);
-        record.chargingBehaviorClass = fieldSetFlags()[2] ? this.chargingBehaviorClass : (java.lang.CharSequence) defaultValue(fields()[2]);
+        record.name = fieldSetFlags()[0] ? this.name : (java.lang.String) defaultValue(fields()[0]);
+        record.unit = fieldSetFlags()[1] ? this.unit : (java.lang.String) defaultValue(fields()[1]);
+        record.chargingBehaviorClass = fieldSetFlags()[2] ? this.chargingBehaviorClass : (java.lang.String) defaultValue(fields()[2]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

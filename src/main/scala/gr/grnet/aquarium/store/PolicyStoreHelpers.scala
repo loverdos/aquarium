@@ -36,9 +36,9 @@
 package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.message.avro.ModelFactory
 import gr.grnet.aquarium.policy.PolicyModel
 import scala.collection.immutable.{SortedMap, SortedSet}
+import gr.grnet.aquarium.message.avro.ModelFactory
 
 /**
  * Provides helper methods for the policy store.

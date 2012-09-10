@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.actor.message
 
 import gr.grnet.aquarium.AquariumInternalError
-import gr.grnet.aquarium.charging.wallet.WalletEntry
+import gr.grnet.aquarium.message.avro.gen.WalletEntriesMsg
 
 /**
  *
@@ -56,4 +56,4 @@ extends UserActorResponseMessage(state, suggestedHTTPStatus) {
   }
 }
 
-case class GetUserWalletResponseData(userID: String, credits: Double, walletEntries: List[WalletEntry])
+case class GetUserWalletResponseData(userID: String, credits: Double, walletEntries: WalletEntriesMsg)

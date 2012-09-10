@@ -40,13 +40,33 @@ package gr.grnet.aquarium.charging
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object VMChargingBehaviorValues {
-  final val DESTROY = 2.0
-  final val ON      = 1.0
-  final val OFF     = 0.0
+final object VMChargingBehaviorValues {
+  final val DESTROY     = "2"
+  final val DESTROY_INT = DESTROY.toInt
+  final val ON      = "1"
+  final val ON_INT  = ON.toInt
+  final val OFF     = "0"
+  final val OFF_INT = OFF.toInt
 
-  @inline final def isDESTROYValue(value: Double) = value == DESTROY
-  @inline final def isONValue     (value: Double) = value == ON
-  @inline final def isOFFValue    (value: Double) = value == OFF
+  final def isDESTROYValue(value: String) = {
+    (value == DESTROY) || {
+      try value.toInt == DESTROY_INT
+      catch { case _ ⇒ false}
+    }
+  }
+
+  final def isONValue(value: String) = {
+    (value == ON) || {
+      try value.toInt == ON_INT
+      catch { case _ ⇒ false}
+    }
+  }
+
+  final def isOFFValue(value: String) = {
+    (value == OFF) || {
+      try value.toInt == OFF_INT
+      catch { case _ ⇒ false}
+    }
+  }
 }
 

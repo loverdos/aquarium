@@ -35,10 +35,12 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.{AquariumInternalError, Timespan}
+import gr.grnet.aquarium.message.avro.ModelFactory
+import gr.grnet.aquarium.message.avro.gen.{FullPriceTableMsg, PolicyMsg}
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.charging.ChargingBehavior
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.immutable
+import gr.grnet.aquarium.AquariumInternalError
 
 /**
  * A policy is the fundamental business-related configuration of Aquarium.
@@ -50,7 +52,33 @@ import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait PolicyModel extends Ordered[PolicyModel] with JsonSupport {
+case class PolicyModel(
+    msg: PolicyMsg
+) extends Ordered[PolicyModel] with JsonSupport {
+
+  /**
+   * Each role is mapped to a full price table.
+   */
+  val roleMapping = ModelFactory.newRoleMapping(msg.getRoleMapping)
+
+  /**
+   * All known charging behaviors for the policy's validity period. These are the fully
+   * qualified class names that implement [[gr.grnet.aquarium.charging.ChargingBehavior]]<p/>
+   * Note than since a charging behavior is semantically attached to an implementation,
+   * a change in the set of known charging behaviors normally means a change in the
+   * implementation of Aquarium.
+   */
+  val chargingBehaviors = immutable.Set(msg.getChargingBehaviors().asScala.toSeq: _*)
+
+  /**
+   * All known resource types for the policy's validity period.
+   */
+  val resourceTypes = immutable.Set(msg.getResourceTypes().asScala.map(ModelFactory.newResourceType).toSeq: _*)
+
+  def validFromMillis = msg.getValidFromMillis: Long
+
+  def validToMillis = msg.getValidToMillis: Long
+
   final def compare(that: PolicyModel): Int = {
     if(this.validFromMillis < that.validFromMillis) {
       -1
@@ -61,77 +89,16 @@ trait PolicyModel extends Ordered[PolicyModel] with JsonSupport {
     }
   }
 
-  def originalID: String
-
-  def parentID: Option[String]
-
-  def inStoreID: Option[String]
-
-  def validFromMillis: Long
-  def validToMillis: Long
-  /**
-   * The time period within which this policy is valid.
-   */
-  def validityTimespan: Timespan = Timespan(validFromMillis, validToMillis)
-
-  /**
-   * All known resource types for the policy's validity period.
-   */
-  def resourceTypes: Set[ResourceType]
-
-  /**
-   * All known charging behaviors for the policy's validity period.<p/>
-   *
-   * Note than since a charging behavior is semantically attached to an implementation, a change in the set
-   * of known charging behaviors normally means a change in the implementation of Aquarium.
-   */
-  def chargingBehaviors: Set[String/*ImplementationClassName*/]
-
-  /**
-   * Each role is mapped to a full price table.
-   */
-  def roleMapping: Map[String/*Role*/, FullPriceTable]
-
-
   /**
    * All the known roles for the policy's validity period.
    * These names must be common between all communicating parties, i.e. the IM component that sends
-   * [[gr.grnet.aquarium.event.model.im.IMEventModel]] events.
+   * [[gr.grnet.aquarium.message.avro.gen.IMEventMsg]] events.
    *
    * This is a derived set, from the keys of `roleMapping`
    */
-  def roles: Set[String] = roleMapping.keySet
+  val roles = roleMapping.keySet
 
-  def resourceTypesMap: Map[String, ResourceType] = Map(resourceTypes.map(rt ⇒ (rt.name, rt)).toSeq: _*)
+  val resourceTypesMap = immutable.Map(resourceTypes.map(rt ⇒ (rt.name, rt)).toSeq: _*)
 
-  def resourceTypeByName(resource: String): Option[ResourceType] = resourceTypes.find(_.name == resource)
-}
-
-object PolicyModel {
-  def fromJsonString(json: String): StdPolicy = {
-    StdConverters.AllConverters.convertEx[StdPolicy](JsonTextFormat(json))
-  }
-
-  def apply(
-      originalID: String,
-      inStoreID: Option[String],
-      parentID: Option[String],
-      validFromMillis: Long,
-      validToMillis: Long,
-      resourceTypes: Set[ResourceType],
-      chargingBehaviors: Set[String],
-      roleMapping: Map[String /* role name */, FullPriceTable]
-  ): PolicyModel = {
-
-    StdPolicy(
-      originalID,
-      inStoreID,
-      parentID,
-      validFromMillis,
-      validToMillis,
-      resourceTypes,
-      chargingBehaviors,
-      roleMapping
-    )
-  }
+  def resourceTypeByName(resource: String) = resourceTypes.find(_.name == resource)
 }

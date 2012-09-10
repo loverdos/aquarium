@@ -37,7 +37,7 @@ package gr.grnet.aquarium.policy
 
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.avro.gen.PolicyMsg
-import gr.grnet.aquarium.message.avro.{DummyHelpers, OrderingHelpers}
+import gr.grnet.aquarium.message.avro.{MessageFactory, OrderingHelpers}
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.util.Lock
 import scala.collection.immutable
@@ -77,8 +77,8 @@ class CachingPolicyStore(defaultPolicy: PolicyMsg, policyStore: PolicyStore) ext
 
   def loadSortedPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyMsg] = {
     immutable.SortedMap(_policies.
-      from(DummyHelpers.dummyPolicyMsgAt(fromMillis)).
-      to(DummyHelpers.dummyPolicyMsgAt(toMillis)).toSeq.
+      from(MessageFactory.newDummyPolicyMsgAt(fromMillis)).
+      to(MessageFactory.newDummyPolicyMsgAt(toMillis)).toSeq.
       map(p ⇒ (Timeslot(p.getValidFromMillis, p.getValidToMillis), p)): _*
     )
   }
@@ -94,7 +94,7 @@ class CachingPolicyStore(defaultPolicy: PolicyMsg, policyStore: PolicyStore) ext
     // Take the subset of all ordered policies up to the one with less than or equal start time
     // and then return the last item. This should be the policy right before the given time.
     // TODO: optimize the creation of the fake StdPolicy
-      _policies.to(DummyHelpers.dummyPolicyMsgAt(atMillis)).lastOption
+      _policies.to(MessageFactory.newDummyPolicyMsgAt(atMillis)).lastOption
     }
 
 

@@ -53,7 +53,12 @@ final class BillingMonthInfo(
     /**
      * The billing month, in the range from 1 to 12.
      */
-    final val month: Int) extends Ordered[BillingMonthInfo] {
+    final val month: Int,
+
+    /**
+     * The month day, starting from 1.
+     */
+    final val day: Int) extends Ordered[BillingMonthInfo] {
 
   final val (monthStartMillis, monthStopMillis) = {
     val mdc = new MutableDateCalc(year, month, 1)
@@ -79,21 +84,24 @@ final class BillingMonthInfo(
 
 
   override def equals(any: Any) = any match {
-    case BillingMonthInfo(thatYear, thatMonth) ⇒
-      this.year == thatYear && this.month == thatMonth // normally everything else MUST be the same by construction
+    case BillingMonthInfo(thatYear, thatMonth, thatDay) ⇒
+      this.year == thatYear &&
+      this.month == thatMonth &&
+      this.day   == thatDay  // normally everything else MUST be the same by construction
+
     case _ ⇒
       false
   }
 
   override def hashCode() = {
-    31 * year + month
+    31 * (31 * year + month) + day
   }
 
-  override def toString = "%s(%s-%02d-01)".format(shortClassNameOf(this), year, month)
+  override def toString = "%s(%s-%02d-%02d)".format(shortClassNameOf(this), year, month, day)
 
   def toDebugString = toString
 
-  def toShortDebugString = "%s-%02d-01".format(year, month)
+  def toShortDebugString = "%s-%02d-%02d".format(year, month, day)
 }
 
 object BillingMonthInfo {
@@ -104,11 +112,12 @@ object BillingMonthInfo {
   def fromDateCalc(mdc: MutableDateCalc): BillingMonthInfo = {
     val year = mdc.getYear
     val month = mdc.getMonthOfYear
+    val day = mdc.getDayOfMonth
 
-    new BillingMonthInfo(year, month)
+    new BillingMonthInfo(year, month, day)
   }
 
-  def unapply(bmi: BillingMonthInfo): Option[(Int, Int)] = {
-    Some((bmi.year, bmi.month))
+  def unapply(bmi: BillingMonthInfo): Option[(Int, Int, Int)] = {
+    Some((bmi.year, bmi.month, bmi.day))
   }
 }

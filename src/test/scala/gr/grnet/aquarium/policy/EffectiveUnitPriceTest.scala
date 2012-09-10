@@ -4,7 +4,7 @@ import gr.grnet.aquarium.util.TestMethods
 import org.junit.Test
 import java.util
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.policy.{EffectiveUnitPrice, CronSpec}
+import gr.grnet.aquarium.policy.{EffectiveUnitPriceModel, CronSpec}
 
 /*
  * Copyright 2011-2012 GRNET S.A. All rights reserved.
@@ -48,7 +48,7 @@ import gr.grnet.aquarium.policy.{EffectiveUnitPrice, CronSpec}
  */
 class EffectiveUnitPriceTest extends TestMethods {
 
-  private type EFU = EffectiveUnitPrice
+  private type EFU = EffectiveUnitPriceModel
   private type Intervals = List[Timeslot]
 
   private val printScreen = false
@@ -81,7 +81,7 @@ class EffectiveUnitPriceTest extends TestMethods {
       {cronEnd0=new CronSpec(cronEnd);cronEnd0}))
     val ts=Timeslot(start,end)
     if(printScreen) Console.err.println("Timeslot: " + ts)
-    val efu = new EffectiveUnitPrice(v,opt)
+    val efu = new EffectiveUnitPriceModel(v,opt)
     val (l1,l2) =  efu.splitTimeslot(ts)
     noOverlap(l1,l2)
     singleT(ts,l1,l2)

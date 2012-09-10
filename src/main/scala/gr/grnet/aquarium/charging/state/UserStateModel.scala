@@ -35,58 +35,130 @@
 
 package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.message.avro.gen.UserStateMsg
 import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.event.CreditsModel
 
 /**
+ *
+ * A wrapper around [[gr.grnet.aquarium.message.avro.gen.UserStateMsg]] with convenient (sorted)
+ * user agreement history.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UserStateModel extends JsonSupport {
-  def id: String
+final case class UserStateModel(
+    msg: UserStateMsg,
+    var userAgreementHistoryModel: UserAgreementHistoryModel
+) extends JsonSupport {
 
-  def idInStore: String = id
-
-  def parentIDInStore: Option[String]
-
-  def userID: String
-
-  def occurredMillis: Long // When this user state was computed
-
-  def latestResourceEventOccurredMillis: Long
-
-  def totalCredits: Double
-
-  /**
-   * True iff this user state represents a full billing month.
-   */
-  def isFullBillingMonth: Boolean
-
-  def billingYear: Int
-
-  def billingMonth: Int
-
-  def stateOfResources: Map[String, ResourcesChargingState]
-
-  def billingPeriodOutOfSyncResourceEventsCounter: Long
-
-  def agreementHistory: AgreementHistory
-
-  def walletEntries: List[WalletEntry]
-
-  def toWorkingUserState(resourceTypesMap: Map[String, ResourceType]): WorkingUserState
-}
-
-object UserStateModel {
-  trait NamesT {
-    final val userID = "userID"
-    final val occurredMillis = "occurredMillis"
-    final val isFullBillingMonth = "isFullBillingMonth"
-    final val billingYear = "billingYear"
-    final val billingMonth = "billingMonth"
+  def updateLatestResourceEventOccurredMillis(millis: Long): Unit = {
+    if(millis > this.msg.getLatestResourceEventOccurredMillis) {
+      this.msg.setLatestResourceEventOccurredMillis(millis)
+    }
   }
 
-  object Names extends NamesT
+  def userID = msg.getUserID
+
+  def latestResourceEventOccurredMillis = this.msg.getLatestResourceEventOccurredMillis
+
+  def subtractCredits(credits: CreditsModel.Type) {
+    val oldTotal = CreditsModel.from(msg.getTotalCredits)
+    val newTotal = CreditsModel.-(oldTotal, credits)
+    msg.setTotalCredits(CreditsModel.toTypeInMessage(newTotal))
+  }
+
+  @inline final def totalCredits: CreditsModel.Type = {
+    CreditsModel.from(msg.getTotalCredits)
+  }
+
+//  def newForImplicitEndsAsPreviousEvents(
+//      previousResourceEvents: mutable.Map[(String, String), ResourceEventModel]
+//  ) = {
+//
+//    new WorkingUserState(
+//      this.userID,
+//      this.parentUserStateIDInStore,
+//      this.chargingReason,
+//      this.resourceTypesMap,
+//      previousResourceEvents,
+//      this.implicitlyIssuedStartEventOfResourceInstance,
+//      this.accumulatingAmountOfResourceInstance,
+//      this.chargingDataOfResourceInstance,
+//      this.totalCredits,
+//      this.workingAgreementHistory,
+//      this.latestUpdateMillis,
+//      this.latestResourceEventOccurredMillis,
+//      this.billingPeriodOutOfSyncResourceEventsCounter,
+//      this.walletEntries
+//    )
+//  }
+
+//  def getChargingDataForResourceEvent(resourceAndInstanceInfo: (String, String)): mutable.Map[String, Any] = {
+//    chargingDataOfResourceInstance.get(resourceAndInstanceInfo) match {
+//      case Some(map) ⇒
+//        map
+//
+//      case None ⇒
+//        val map = mutable.Map[String, Any]()
+//        chargingDataOfResourceInstance(resourceAndInstanceInfo) = map
+//        map
+//
+//    }
+//  }
+
+//  def setChargingDataForResourceEvent(
+//      resourceAndInstanceInfo: (String, String),
+//      data: mutable.Map[String, Any]
+//  ): Unit = {
+//    chargingDataOfResourceInstance(resourceAndInstanceInfo) = data
+//  }
+
+  /**
+  * Find those events from `implicitlyIssuedStartEvents` and `previousResourceEvents` that will generate implicit
+  * end events along with those implicitly issued events. Before returning, remove the events that generated the
+  * implicit ends from the internal state of this instance.
+  *
+  * @see [[gr.grnet.aquarium.charging.ChargingBehavior]]
+  */
+// def findAndRemoveGeneratorsOfImplicitEndEvents(
+//     chargingBehaviorOfResourceType: ResourceType ⇒ ChargingBehavior,
+//     /**
+//      * The `occurredMillis` that will be recorded in the synthetic implicit OFFs.
+//      * Normally, this will be the end of a billing month.
+//      */
+//     newOccuredMillis: Long
+// ): (List[ResourceEventModel], List[ResourceEventModel]) = {
+//
+//   val buffer = mutable.ListBuffer[(ResourceEventModel, ResourceEventModel)]()
+//   val checkSet = mutable.Set[ResourceEventModel]()
+//
+//   def doItFor(map: mutable.Map[(String, String), ResourceEventModel]): Unit = {
+//     val resourceEvents = map.valuesIterator
+//     for {
+//       resourceEvent ← resourceEvents
+//       resourceType ← resourceTypesMap.get(resourceEvent.safeResource)
+//       chargingBehavior = chargingBehaviorOfResourceType.apply(resourceType)
+//     } {
+//       if(chargingBehavior.supportsImplicitEvents) {
+//         if(chargingBehavior.mustConstructImplicitEndEventFor(resourceEvent)) {
+//           val implicitEnd = chargingBehavior.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
+//
+//           if(!checkSet.contains(resourceEvent)) {
+//             checkSet.add(resourceEvent)
+//             buffer append ((resourceEvent, implicitEnd))
+//           }
+//
+//           // remove it anyway
+//           map.remove((resourceEvent.safeResource, resourceEvent.safeInstanceID))
+//         }
+//       }
+//     }
+//   }
+//
+//   doItFor(previousEventOfResourceInstance) // we give priority for previous events
+//   doItFor(implicitlyIssuedStartEventOfResourceInstance) // ... over implicitly issued ones ...
+//
+//   (buffer.view.map(_._1).toList, buffer.view.map(_._2).toList)
+// }
 }

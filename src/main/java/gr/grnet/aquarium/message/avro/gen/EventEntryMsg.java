@@ -6,8 +6,8 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class EventEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EventEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"eventType\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"unitPrice\",\"type\":\"string\"},{\"name\":\"startTime\",\"type\":\"string\"},{\"name\":\"endTime\",\"type\":\"string\"},{\"name\":\"ellapsedTime\",\"type\":\"string\"},{\"name\":\"credits\",\"type\":\"string\"}]}}}]}");
-  @Deprecated public java.lang.CharSequence eventType;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EventEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"eventType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"ellapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"credits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}}}]}");
+  @Deprecated public java.lang.String eventType;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg> details;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
@@ -22,7 +22,7 @@ public class EventEntryMsg extends org.apache.avro.specific.SpecificRecordBase i
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: eventType = (java.lang.CharSequence)value$; break;
+    case 0: eventType = (java.lang.String)value$; break;
     case 1: details = (java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
@@ -31,7 +31,7 @@ public class EventEntryMsg extends org.apache.avro.specific.SpecificRecordBase i
   /**
    * Gets the value of the 'eventType' field.
    */
-  public java.lang.CharSequence getEventType() {
+  public java.lang.String getEventType() {
     return eventType;
   }
 
@@ -39,7 +39,7 @@ public class EventEntryMsg extends org.apache.avro.specific.SpecificRecordBase i
    * Sets the value of the 'eventType' field.
    * @param value the value to set.
    */
-  public void setEventType(java.lang.CharSequence value) {
+  public void setEventType(java.lang.String value) {
     this.eventType = value;
   }
 
@@ -79,7 +79,7 @@ public class EventEntryMsg extends org.apache.avro.specific.SpecificRecordBase i
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<EventEntryMsg>
     implements org.apache.avro.data.RecordBuilder<EventEntryMsg> {
 
-    private java.lang.CharSequence eventType;
+    private java.lang.String eventType;
     private java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg> details;
 
     /** Creates a new Builder */
@@ -96,7 +96,7 @@ public class EventEntryMsg extends org.apache.avro.specific.SpecificRecordBase i
     private Builder(gr.grnet.aquarium.message.avro.gen.EventEntryMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.EventEntryMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.eventType)) {
-        this.eventType = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.eventType);
+        this.eventType = (java.lang.String) data().deepCopy(fields()[0].schema(), other.eventType);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.details)) {
@@ -106,12 +106,12 @@ public class EventEntryMsg extends org.apache.avro.specific.SpecificRecordBase i
     }
 
     /** Gets the value of the 'eventType' field */
-    public java.lang.CharSequence getEventType() {
+    public java.lang.String getEventType() {
       return eventType;
     }
     
     /** Sets the value of the 'eventType' field */
-    public gr.grnet.aquarium.message.avro.gen.EventEntryMsg.Builder setEventType(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.EventEntryMsg.Builder setEventType(java.lang.String value) {
       validate(fields()[0], value);
       this.eventType = value;
       fieldSetFlags()[0] = true;
@@ -159,7 +159,7 @@ public class EventEntryMsg extends org.apache.avro.specific.SpecificRecordBase i
     public EventEntryMsg build() {
       try {
         EventEntryMsg record = new EventEntryMsg();
-        record.eventType = fieldSetFlags()[0] ? this.eventType : (java.lang.CharSequence) defaultValue(fields()[0]);
+        record.eventType = fieldSetFlags()[0] ? this.eventType : (java.lang.String) defaultValue(fields()[0]);
         record.details = fieldSetFlags()[1] ? this.details : (java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg>) defaultValue(fields()[1]);
         return record;
       } catch (Exception e) {

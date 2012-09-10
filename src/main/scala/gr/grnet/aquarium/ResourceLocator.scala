@@ -35,20 +35,18 @@
 
 package gr.grnet.aquarium
 
-import com.ckkloverdos.maybe.{Maybe, NoVal}
-import com.ckkloverdos.sys.{SysEnv, SysProp}
-import java.io.File
-
-import gr.grnet.aquarium.util.justForSure
-import com.ckkloverdos.resource.{FileStreamResource, StreamResource, CompositeStreamResourceContext, ClassLoaderStreamResourceContext, FileStreamResourceContext}
-import com.ckkloverdos.props.Props
-import com.ckkloverdos.maybe.Just
-import com.ckkloverdos.maybe.Failed
 import com.ckkloverdos.convert.Converters
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
-import gr.grnet.aquarium.policy.StdPolicy
+import com.ckkloverdos.maybe.Failed
+import com.ckkloverdos.maybe.Just
+import com.ckkloverdos.maybe.{Maybe, NoVal}
+import com.ckkloverdos.props.Props
+import com.ckkloverdos.resource.{FileStreamResource, StreamResource, CompositeStreamResourceContext, ClassLoaderStreamResourceContext, FileStreamResourceContext}
+import com.ckkloverdos.sys.{SysEnv, SysProp}
 import gr.grnet.aquarium.message.avro.AvroHelpers
 import gr.grnet.aquarium.message.avro.gen.PolicyMsg
+import gr.grnet.aquarium.util.justForSure
+import java.io.File
+
 
 /**
  * Locates resources.
@@ -320,7 +318,6 @@ object ResourceLocator {
         }
     }
   }
-
 
   def getResource(what: String): Maybe[StreamResource] = {
     ResourceContexts.MasterResourceContext.getResource(what)

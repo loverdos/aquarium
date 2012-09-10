@@ -36,11 +36,10 @@
 package gr.grnet.aquarium.store
 
 import gr.grnet.aquarium.Aquarium
-import java.io.{FileOutputStream, File}
-import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace, makeBytes, UTF_8_Charset}
+import gr.grnet.aquarium.message.avro.gen.{IMEventMsg, ResourceEventMsg}
 import gr.grnet.aquarium.util.date.{TimeHelpers, MutableDateCalc}
-import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.util.{Loggable, stringOfStackTrace, makeBytes, UTF_8_Charset}
+import java.io.{FileOutputStream, File}
 
 /**
  * This is used whenever the property `events.store.folder` is setup in aquarium configuration.
@@ -53,11 +52,14 @@ import gr.grnet.aquarium.event.model.resource.ResourceEventModel
 object LocalFSEventStore extends Loggable {
   private[this] final val NewLine  = makeBytes("\n", UTF_8_Charset) // super-fluous!
 
-  private[this] def writeToFile(file: File,
-                                dataHeader: String,
-                                data: Array[Byte],
-                                dataFooter: String,
-                                appendString: Option[String] = None): Unit = {
+  private[this] def writeToFile(
+      file: File,
+      dataHeader: String,
+      data: Array[Byte],
+      dataFooter: String,
+      appendString: Option[String] = None
+  ): Unit = {
+
     val out = new FileOutputStream(file)
 
     out.write(makeBytes(dataHeader, UTF_8_Charset))
@@ -95,13 +97,16 @@ object LocalFSEventStore extends Loggable {
     folder
   }
 
-  private[this] def writeJson(tag: String,
-                              folder: File,
-                              jsonPayload: Array[Byte],
-                              occurredString: String,
-                              extraName: Option[String],
-                              isParsed: Boolean,
-                              appendString: Option[String]): Unit = {
+  private[this] def writeJson(
+      tag: String,
+      folder: File,
+      jsonPayload: Array[Byte],
+      occurredString: String,
+      extraName: Option[String],
+      isParsed: Boolean,
+      appendString: Option[String]
+  ): Unit = {
+
     val file = new File(
       folder,
       "%s-%s%s.%s.json".format(
@@ -136,7 +141,7 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeResourceEvent(aquarium: Aquarium, event: ResourceEventModel, initialPayload: Array[Byte]): Unit = {
+  def storeResourceEvent(aquarium: Aquarium, event: ResourceEventMsg, initialPayload: Array[Byte]): Unit = {
     if(!aquarium.saveResourceEventsToEventsStoreFolder) {
       return
     }
@@ -144,7 +149,7 @@ object LocalFSEventStore extends Loggable {
     require(event ne null, "Resource event must be not null")
 
     for(root <- aquarium.eventsStoreFolder) {
-      val occurredMDC = new MutableDateCalc(event.occurredMillis)
+      val occurredMDC = new MutableDateCalc(event.getOccurredMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val rcEventsFolder = createResourceEventsFolder(root)
 
@@ -155,10 +160,10 @@ object LocalFSEventStore extends Loggable {
         initialPayload,
         occurredString,
         Some("[%s]-[%s]-[%s]-[%s]".format(
-          event.id,
-          event.userID,
-          event.resource,
-          event.instanceID)),
+          event.getOriginalID,
+          event.getUserID,
+          event.getResource,
+          event.getInstanceID)),
         true,
         None
       )
@@ -176,7 +181,7 @@ object LocalFSEventStore extends Loggable {
     }
   }
 
-  def storeIMEvent(aquarium: Aquarium, event: IMEventModel, initialPayload: Array[Byte]): Unit = {
+  def storeIMEvent(aquarium: Aquarium, event: IMEventMsg, initialPayload: Array[Byte]): Unit = {
     if(!aquarium.saveIMEventsToEventsStoreFolder) {
       return
     }
@@ -184,7 +189,7 @@ object LocalFSEventStore extends Loggable {
     require(event ne null, "IM event must be not null")
 
     for(root <- aquarium.eventsStoreFolder) {
-      val occurredMDC = new MutableDateCalc(event.occurredMillis)
+      val occurredMDC = new MutableDateCalc(event.getOccurredMillis)
       val occurredString = occurredMDC.toFilename_YYYYMMDDHHMMSSSSS
       val imEventsFolder = createIMEventsFolder(root)
 
@@ -193,7 +198,7 @@ object LocalFSEventStore extends Loggable {
         imEventsFolder,
         initialPayload,
         occurredString,
-        Some("[%s]-[%s]".format(event.id, event.userID)),
+        Some("[%s]-[%s]".format(event.getOriginalID, event.getUserID)),
         true,
         None
       )

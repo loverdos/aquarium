@@ -44,7 +44,10 @@ import collection.mutable
  * @author Prodromos Gerakios <pgerakios@grnet.gr>
  */
 
-case class EffectiveUnitPrice(unitPrice: Double, when: Option[(CronSpec,CronSpec)] = None) {
+case class EffectiveUnitPriceModel(
+    unitPrice: Double,
+    when: Option[(CronSpec, CronSpec)] = None
+) {
 
   /* Split a timeslot T into two *sets* S and S2 consisting of timeslots such that
    *  (a) each element in S1,S2 is contained in T

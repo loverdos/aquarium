@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.message.avro
 
-import gr.grnet.aquarium.message.avro.gen.PolicyMsg
+import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
 
 /**
  *
@@ -44,10 +44,61 @@ import gr.grnet.aquarium.message.avro.gen.PolicyMsg
 object OrderingHelpers {
   final val DefaultPolicyMsgOrdering = new Ordering[PolicyMsg] {
     def compare(x: PolicyMsg, y: PolicyMsg): Int = {
-      if(x.getValidFromMillis < y.getValidFromMillis) {
+      val x_getValidFromMillis = x.getValidFromMillis
+      val y_getValidFromMillis = y.getValidFromMillis
+
+      if(x_getValidFromMillis < y_getValidFromMillis) {
         -1
       }
-      else if (x.getValidFromMillis == y.getValidFromMillis) {
+      else if (x_getValidFromMillis == y_getValidFromMillis) {
+        0
+      } else {
+        1
+      }
+    }
+  }
+
+  final val DefaultResourceEventMsgOrdering = new Ordering[ResourceEventMsg] {
+    def compare(x: ResourceEventMsg, y: ResourceEventMsg): Int = {
+      val x_getOccurredMillis = x.getOccurredMillis
+      val y_getOccurredMillis = y.getOccurredMillis
+
+      if(x_getOccurredMillis < y_getOccurredMillis) {
+        -1
+      }
+      else if (x_getOccurredMillis == y_getOccurredMillis) {
+        0
+      } else {
+        1
+      }
+    }
+  }
+
+  final val DefaultIMEventMsgOrdering = new Ordering[IMEventMsg] {
+    def compare(x: IMEventMsg, y: IMEventMsg): Int = {
+      val x_getOccurredMillis = x.getOccurredMillis
+      val y_getOccurredMillis = y.getOccurredMillis
+
+      if(x_getOccurredMillis < y_getOccurredMillis) {
+        -1
+      }
+      else if(x_getOccurredMillis == y_getOccurredMillis) {
+        0
+      } else {
+        1
+      }
+    }
+  }
+
+  final val DefaultUserStateMsgOrdering = new Ordering[UserStateMsg] {
+    def compare(x: UserStateMsg, y: UserStateMsg): Int = {
+      val x_getValidFromMillis = x.getAgreementHistory().getAgreements().get(0).getValidFromMillis
+      val y_getValidFromMillis = y.getAgreementHistory().getAgreements().get(0).getValidFromMillis
+
+      if(x_getValidFromMillis < y_getValidFromMillis) {
+        -1
+      }
+      else if(x_getValidFromMillis == y_getValidFromMillis) {
         0
       } else {
         1

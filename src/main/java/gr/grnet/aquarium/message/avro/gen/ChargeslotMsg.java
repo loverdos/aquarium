@@ -6,11 +6,11 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\"}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\",\"default\":0.0}]}");
   @Deprecated public long startMillis;
   @Deprecated public long stopMillis;
   @Deprecated public double unitPrice;
-  @Deprecated public java.lang.CharSequence explanation;
+  @Deprecated public java.lang.String explanation;
   @Deprecated public double creditsToSubtract;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
@@ -31,7 +31,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
     case 0: startMillis = (java.lang.Long)value$; break;
     case 1: stopMillis = (java.lang.Long)value$; break;
     case 2: unitPrice = (java.lang.Double)value$; break;
-    case 3: explanation = (java.lang.CharSequence)value$; break;
+    case 3: explanation = (java.lang.String)value$; break;
     case 4: creditsToSubtract = (java.lang.Double)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
@@ -85,7 +85,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
   /**
    * Gets the value of the 'explanation' field.
    */
-  public java.lang.CharSequence getExplanation() {
+  public java.lang.String getExplanation() {
     return explanation;
   }
 
@@ -93,7 +93,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
    * Sets the value of the 'explanation' field.
    * @param value the value to set.
    */
-  public void setExplanation(java.lang.CharSequence value) {
+  public void setExplanation(java.lang.String value) {
     this.explanation = value;
   }
 
@@ -136,7 +136,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
     private long startMillis;
     private long stopMillis;
     private double unitPrice;
-    private java.lang.CharSequence explanation;
+    private java.lang.String explanation;
     private double creditsToSubtract;
 
     /** Creates a new Builder */
@@ -165,7 +165,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
         fieldSetFlags()[2] = true;
       }
       if (isValidValue(fields()[3], other.explanation)) {
-        this.explanation = (java.lang.CharSequence) data().deepCopy(fields()[3].schema(), other.explanation);
+        this.explanation = (java.lang.String) data().deepCopy(fields()[3].schema(), other.explanation);
         fieldSetFlags()[3] = true;
       }
       if (isValidValue(fields()[4], other.creditsToSubtract)) {
@@ -247,12 +247,12 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
     }
 
     /** Gets the value of the 'explanation' field */
-    public java.lang.CharSequence getExplanation() {
+    public java.lang.String getExplanation() {
       return explanation;
     }
     
     /** Sets the value of the 'explanation' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setExplanation(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setExplanation(java.lang.String value) {
       validate(fields()[3], value);
       this.explanation = value;
       fieldSetFlags()[3] = true;
@@ -302,7 +302,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
         record.startMillis = fieldSetFlags()[0] ? this.startMillis : (java.lang.Long) defaultValue(fields()[0]);
         record.stopMillis = fieldSetFlags()[1] ? this.stopMillis : (java.lang.Long) defaultValue(fields()[1]);
         record.unitPrice = fieldSetFlags()[2] ? this.unitPrice : (java.lang.Double) defaultValue(fields()[2]);
-        record.explanation = fieldSetFlags()[3] ? this.explanation : (java.lang.CharSequence) defaultValue(fields()[3]);
+        record.explanation = fieldSetFlags()[3] ? this.explanation : (java.lang.String) defaultValue(fields()[3]);
         record.creditsToSubtract = fieldSetFlags()[4] ? this.creditsToSubtract : (java.lang.Double) defaultValue(fields()[4]);
         return record;
       } catch (Exception e) {

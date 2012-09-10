@@ -1,28 +1,3 @@
-package gr.grnet.aquarium.charging.bill
-
-import gr.grnet.aquarium.charging.state.WorkingUserState
-import gr.grnet.aquarium.util.json.JsonSupport
-import com.ckkloverdos.resource.FileStreamResource
-import java.io.File
-import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.converter.{CompactJsonTextFormat, PrettyJsonTextFormat, StdConverters}
-import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder}
-import gr.grnet.aquarium.store.memory.MemStoreProvider
-import gr.grnet.aquarium.converter.StdConverters._
-import scala._
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import java.util.concurrent.atomic.AtomicLong
-import java.util.{Date, Calendar, GregorianCalendar}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import scala.collection.parallel.mutable
-import scala.collection.mutable.ListBuffer
-import gr.grnet.aquarium.Aquarium.EnvKeys
-import gr.grnet.aquarium.charging.Chargeslot
-import scala.collection.immutable.TreeMap
-import scala.Some
-import gr.grnet.aquarium.charging.Chargeslot
-
-
 /*
 * Copyright 2011-2012 GRNET S.A. All rights reserved.
 *
@@ -57,6 +32,22 @@ import gr.grnet.aquarium.charging.Chargeslot
 * interpreted as representing official policies, either expressed
 * or implied, of GRNET S.A.
 */
+
+package gr.grnet.aquarium.charging.bill
+
+import com.ckkloverdos.props.Props
+import com.ckkloverdos.resource.FileStreamResource
+import gr.grnet.aquarium.converter.{CompactJsonTextFormat, StdConverters}
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.message.avro.MessageHelpers
+import gr.grnet.aquarium.message.avro.gen.{ChargeslotMsg, WalletEntryMsg, UserStateMsg}
+import gr.grnet.aquarium.store.memory.MemStoreProvider
+import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder}
+import java.io.File
+import java.util.concurrent.atomic.AtomicLong
+import scala.collection.immutable.TreeMap
+import scala.collection.mutable.ListBuffer
 
 
 /*
@@ -115,41 +106,41 @@ object AbstractBillEntry {
    Timeslot(dstart,dend)
   } */
 
-  private[this] def toChargeEntry(c:Chargeslot) : ChargeEntry = {
-    val unitPrice = c.unitPrice.toString
-    val startTime = c.startMillis.toString
-    val endTime   = c.stopMillis.toString
-    val difTime   = (c.stopMillis - c.startMillis).toString
-    val credits   = c.creditsToSubtract.toString
+  private[this] def toChargeEntry(c:ChargeslotMsg) : ChargeEntry = {
+    val unitPrice = c.getUnitPrice.toString
+    val startTime = c.getStartMillis.toString
+    val endTime   = c.getStopMillis.toString
+    val difTime   = (c.getStopMillis - c.getStartMillis).toString
+    val credits   = c.getCreditsToSubtract.toString
     new ChargeEntry(counter.getAndIncrement.toString,unitPrice,
                     startTime,endTime,difTime,credits)
   }
 
-  private[this] def toEventEntry(eventType:String,c:Chargeslot) : EventEntry =
+  private[this] def toEventEntry(eventType:String,c:ChargeslotMsg) : EventEntry =
     new EventEntry(eventType,List(toChargeEntry(c)))
 
 
-  private[this] def toResourceEntry(w:WalletEntry) : ResourceEntry = {
-    assert(w.sumOfCreditsToSubtract==0.0 || w.chargslotCount > 0)
-    val rcType =  w.resourceType.name
+  private[this] def toResourceEntry(w:WalletEntryMsg) : ResourceEntry = {
+    assert(w.getSumOfCreditsToSubtract==0.0 || MessageHelpers.chargeslotCountOf(w) > 0)
+    val rcType =  w.getResourceType.getName
     val rcName = rcType match {
             case "diskspace" =>
-              w.currentResourceEvent.details("path")
+              String.valueOf(MessageHelpers.currentResourceEventOf(w).getDetails.get("path"))
             case _ =>
-              w.currentResourceEvent.instanceID
+              MessageHelpers.currentResourceEventOf(w).getInstanceID
         }
-    val rcUnitName = w.resourceType.unit
+    val rcUnitName = w.getResourceType.getUnit
     val eventEntry = new ListBuffer[EventEntry]
-    val credits = w.sumOfCreditsToSubtract
+    val credits = w.getSumOfCreditsToSubtract
     val eventType = //TODO: This is hardcoded; find a better solution
         rcType match {
           case "diskspace" =>
-            val action = w.currentResourceEvent.details("action")
-            val path = w.currentResourceEvent.details("path")
+            val action = MessageHelpers.currentResourceEventOf(w).getDetails.get("action")
+            val path = MessageHelpers.currentResourceEventOf(w).getDetails.get("path")
             //"%s@%s".format(action,path)
             action
           case "vmtime" =>
-            w.currentResourceEvent.value.toInt match {
+            MessageHelpers.currentResourceEventOf(w).getValue.toInt match {
               case 0 => // OFF
                   "offOn"
               case 1 =>  // ON
@@ -163,8 +154,9 @@ object AbstractBillEntry {
             "once"
         }
 
-    for { c <- w.chargeslots }{
-      if(c.creditsToSubtract != 0.0) {
+    import scala.collection.JavaConverters.asScalaBufferConverter
+    for { c <- w.getChargeslots.asScala }{
+      if(c.getCreditsToSubtract != 0.0) {
         //Console.err.println("c.creditsToSubtract : " + c.creditsToSubtract)
         eventEntry += toEventEntry(eventType.toString,c)
         //credits += c.creditsToSubtract
@@ -174,19 +166,21 @@ object AbstractBillEntry {
     new ResourceEntry(rcName,rcType,rcUnitName,credits.toString,eventEntry.toList)
   }
 
-  private[this] def resourceEntriesAt(t:Timeslot,w:WorkingUserState) : (List[ResourceEntry],Double) = {
+  private[this] def resourceEntriesAt(t:Timeslot,w:UserStateMsg) : (List[ResourceEntry],Double) = {
     val ret = new ListBuffer[ResourceEntry]
     var sum = 0.0
     //Console.err.println("Wallet entries: " + w.walletEntries)
-    val walletEntries = w.walletEntries
+    import scala.collection.JavaConverters.asScalaBufferConverter
+    val walletEntries = w.getWalletEntries.asScala
     /*Console.err.println("Wallet entries ")
     for { i <- walletEntries }
       Console.err.println("WALLET ENTRY\n%s\nEND WALLET ENTRY".format(i.toJsonString))
     Console.err.println("End wallet entries")*/
     for { i <- walletEntries} {
-      if(t.contains(i.referenceTimeslot) && i.sumOfCreditsToSubtract != 0.0){
+      val referenceTimeslot = MessageHelpers.referenceTimeslotOf(i)
+      if(t.contains(referenceTimeslot) && i.getSumOfCreditsToSubtract.toDouble != 0.0){
         /*Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)*/
-        if(i.sumOfCreditsToSubtract > 0.0D) sum += i.sumOfCreditsToSubtract
+        if(i.getSumOfCreditsToSubtract.toDouble > 0.0D) sum += i.getSumOfCreditsToSubtract.toDouble
         ret += toResourceEntry(i)
       } else {
         /*Console.err.println("WALLET ENTERY : " + i.toJsonString + "\n" +
@@ -211,7 +205,7 @@ object AbstractBillEntry {
     }.values.toList
   }
 
-  def fromWorkingUserState(t:Timeslot,userID:String,w:Option[WorkingUserState]) : AbstractBillEntry = {
+  def fromWorkingUserState(t:Timeslot,userID:String,w:Option[UserStateMsg]) : AbstractBillEntry = {
     val ret = w match {
       case None =>
           new BillEntry(counter.getAndIncrement.toString,
@@ -226,7 +220,7 @@ object AbstractBillEntry {
         Console.err.println("Working user state: %s".format(w.toString))
         new BillEntry(counter.getAndIncrement.toString,
                       userID,"ok",
-                      w.totalCredits.toString,
+                      w.getTotalCredits.toString,
                       rcEntriesCredits.toString,
                       t.from.getTime.toString,t.to.getTime.toString,
                       resMap)

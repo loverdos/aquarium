@@ -35,14 +35,13 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.{Aquarium, AquariumException}
-import scala.collection.mutable
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.policy.{ResourceType, FullPriceTable}
+import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.charging.state.UserStateModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, AgreementHistoryModel, WorkingResourcesChargingState}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
+import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.message.avro.gen.{WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.policy.FullPriceTableModel
+import gr.grnet.aquarium.message.MessageConstants
 
 /**
  * A charging behavior for which resource events just carry a credit amount that will be added to the total one.
@@ -53,76 +52,81 @@ import gr.grnet.aquarium.charging.wallet.WalletEntry
  */
 final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
   def computeCreditsToSubtract(
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      oldCredits: Double,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      oldCredits: CreditsModel.Type,
       timeDeltaMillis: Long,
-      unitPrice: Double
-  ): (Double /* credits */, String /* explanation */) = {
+      unitPrice: CreditsModel.Type
+  ): (CreditsModel.Type, String /* explanation */) = {
 
-    val currentValue = workingResourceInstanceChargingState.currentValue
+    val currentValue = CreditsModel.from(resourceInstanceChargingState.getCurrentValue)
     // Always remember to multiply with the `unitPrice`, since it scales the credits, depending on
     // the particular resource type tha applies.
-    val credits = currentValue * unitPrice
+    val credits = CreditsModel.mul(currentValue, unitPrice)
     val explanation = "Value(%s) * UnitPrice(%s)".format(currentValue, unitPrice)
 
     (credits, explanation)
   }
 
   def computeSelectorPath(
-      workingChargingBehaviorDetails: mutable.Map[String, Any],
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      currentResourceEvent: ResourceEventModel,
-      referenceTimeslot: Timeslot,
-      totalCredits: Double
+      chargingBehaviorDetails: DetailsModel.Type,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      currentResourceEvent: ResourceEventMsg,
+      referenceFromMillis: Long,
+      referenceToMillis: Long,
+      totalCredits: CreditsModel.Type
   ): List[String] = {
-    List(FullPriceTable.DefaultSelectorKey)
+    List(MessageConstants.DefaultSelectorKey)
   }
 
   override def processResourceEvent(
       aquarium: Aquarium,
-      resourceEvent: ResourceEventModel,
-      resourceType: ResourceType,
+      resourceEvent: ResourceEventMsg,
+      resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
-      workingResourcesChargingState: WorkingResourcesChargingState,
-      userAgreements: AgreementHistoryModel,
-      totalCredits: Double,
-      walletEntryRecorder: WalletEntry ⇒ Unit
+      resourcesChargingState: ResourcesChargingStateMsg,
+      userStateModel: UserStateModel,
+      walletEntryRecorder: WalletEntryMsg ⇒ Unit
   ): (Int, Double) = {
     // The credits are given in the value
     // But we cannot just apply them, since we also need to take into account the unit price.
     // Normally, the unit price is 1.0 but we have the flexibility to allow more stuff).
 
     // 1. Ensure proper initial state per resource and per instance
-    ensureInitializedWorkingState(workingResourcesChargingState, resourceEvent)
+    ensureInitializedWorkingState(resourcesChargingState,resourceEvent)
 
     // 2. Fill in data from the new event
-    val stateOfResourceInstance = workingResourcesChargingState.stateOfResourceInstance
-    val workingResourcesChargingStateDetails = workingResourcesChargingState.details
-    val instanceID = resourceEvent.instanceID
-    val workingResourceInstanceChargingState = stateOfResourceInstance(instanceID)
-    fillWorkingResourceInstanceChargingStateFromEvent(workingResourceInstanceChargingState, resourceEvent)
+    val stateOfResourceInstance = resourcesChargingState.getStateOfResourceInstance
+    val resourcesChargingStateDetails = resourcesChargingState.getDetails
+    val instanceID = resourceEvent.getInstanceID
+    val resourceInstanceChargingState = stateOfResourceInstance.get(instanceID)
+    fillWorkingResourceInstanceChargingStateFromEvent(resourceInstanceChargingState, resourceEvent)
+
+    val userAgreementHistoryModel = userStateModel.userAgreementHistoryModel
 
     computeWalletEntriesForNewEvent(
       resourceEvent,
       resourceType,
       billingMonthInfo,
-      totalCredits,
-      Timeslot(resourceEvent.occurredMillis, resourceEvent.occurredMillis + 1), // single point in time
-      userAgreements.agreementByTimeslot,
-      workingResourcesChargingStateDetails,
-      workingResourceInstanceChargingState,
-      aquarium.policyStore,
+      userStateModel.totalCredits,
+      resourceEvent.getOccurredMillis,
+      resourceEvent.getOccurredMillis + 1, // single point in time
+      userAgreementHistoryModel.agreementByTimeslot,
+      resourcesChargingStateDetails,
+      resourceInstanceChargingState,
+      aquarium,
       walletEntryRecorder
     )
   }
 
-  def initialChargingDetails: Map[String, Any] = Map()
+  def initialChargingDetails = {
+    DetailsModel.make
+  }
 
   def computeNewAccumulatingAmount(
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      eventDetails: Map[String, String]
-  ): Double = {
-    workingResourceInstanceChargingState.oldAccumulatingAmount
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      eventDetails: DetailsModel.Type
+  ): CreditsModel.Type = {
+    CreditsModel.from(resourceInstanceChargingState.getOldAccumulatingAmount)
   }
 
   def createVirtualEventsForRealtimeComputation(
@@ -130,16 +134,10 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       resourceTypeName: String,
       resourceInstanceID: String,
       eventOccurredMillis: Long,
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState
-  ): List[ResourceEventModel] = {
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg
+  ): List[ResourceEventMsg] = {
 
     // We optimize and generate no virtual event
     Nil
   }
-}
-
-object OnceChargingBehavior {
-  private[this] final val TheOne = new OnceChargingBehavior
-
-  def apply(): OnceChargingBehavior = TheOne
 }

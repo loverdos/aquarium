@@ -35,8 +35,7 @@
 
 package gr.grnet.aquarium.store
 
-import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.util.makeString
+import gr.grnet.aquarium.message.avro.gen.IMEventMsg
 
 /**
  * Store for external user events
@@ -45,32 +44,22 @@ import gr.grnet.aquarium.util.makeString
  * @author Georgios Gousios <gousiosg@gmail.com>
  */
 trait IMEventStore {
-  def createIMEventFromJson(json: String): IMEventModel
-
-  def createIMEventFromJsonBytes(jsonBytes: Array[Byte]) = {
-    createIMEventFromJson(makeString(jsonBytes))
-  }
-
-  def createIMEventFromOther(event: IMEventModel): IMEventModel
-
   def pingIMEventStore(): Unit
 
   /**
    * Insert a new event into the store.
    */
-  def insertIMEvent(event: IMEventModel): IMEventModel
+  def insertIMEvent(event: IMEventMsg): IMEventMsg
 
   /**
    * Find an event by its ID
    */
-  def findIMEventByID(id: String): Option[IMEventModel]
+  def findIMEventByID(id: String): Option[IMEventMsg]
 
   /**
    * Find the `CREATE` even for the given user. Note that there must be only one such event.
    */
-  def findCreateIMEventByUserID(userID: String): Option[IMEventModel]
-
-  def findLatestIMEventByUserID(userID: String): Option[IMEventModel]
+  def findCreateIMEventByUserID(userID: String): Option[IMEventMsg]
 
   /**
    * Scans events for the given user, sorted by `occurredMillis` in ascending order and runs them through
@@ -78,5 +67,5 @@ trait IMEventStore {
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: IMEventModel ⇒ Unit): Unit
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: IMEventMsg ⇒ Unit): Unit
 }

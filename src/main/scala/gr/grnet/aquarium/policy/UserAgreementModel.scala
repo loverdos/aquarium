@@ -35,34 +35,37 @@
 
 package gr.grnet.aquarium.policy
 
-import gr.grnet.aquarium.{AquariumInternalError, Timespan}
-import gr.grnet.aquarium.charging.ChargingBehavior
+import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.message.avro.gen.UserAgreementMsg
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-trait UserAgreementModel extends Ordered[UserAgreementModel] {
-  /**
-   * By convention, the id is the id of the IMEvent that made the agreement change.
-   * @return
-   */
-  def id: String
+final case class UserAgreementModel(
+    msg: UserAgreementMsg,
+    fullPriceTableRef: FullPriceTableRef
+) extends Ordered[UserAgreementModel] {
 
-  def relatedIMEventID: Option[String]
+  def userID = msg.getUserID
 
-  def validityTimespan = Timespan(validFromMillis, validToMillis)
+  def timeslot = Timeslot(validFromMillis, validToMillis)
 
-  def role: String
+  // By convention, the id is the id of the IMEvent that made the agreement change.
+  def id = msg.getId
 
-  def fullPriceTableRef: FullPriceTableRef
+  def relatedIMEventID = msg.getRelatedIMEventOriginalID match {
+    case null ⇒ None
+    case x    ⇒ Some(x)
+  }
 
-  def timeslot = validityTimespan.toTimeslot
+  def validFromMillis = msg.getValidFromMillis
 
-  def validFromMillis: Long
+  def validToMillis = msg.getValidToMillis
 
-  def validToMillis: Long
+  def role = msg.getRole
 
   def compare(that: UserAgreementModel): Int = {
     if(this.validFromMillis < that.validFromMillis) {
@@ -76,9 +79,9 @@ trait UserAgreementModel extends Ordered[UserAgreementModel] {
     }
   }
 
-  def computeFullPriceTable(policy: PolicyModel): FullPriceTable = {
+  def computeFullPriceTable(policy: PolicyModel): FullPriceTableModel = {
     this.fullPriceTableRef match {
-      case PolicyDefinedFullPriceTableRef() ⇒
+      case PolicyDefinedFullPriceTableRef ⇒
         policy.roleMapping.get(role) match {
           case Some(fullPriceTable) ⇒
             fullPriceTable

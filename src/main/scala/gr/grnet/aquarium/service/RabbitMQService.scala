@@ -50,7 +50,7 @@ import gr.grnet.aquarium.connector.handler.{SynchronousPayloadHandlerExecutor, R
 import gr.grnet.aquarium.util.json.JsonSupport
 
 /**
- * The service that is responsible to handle `RabbitMQ` connecrivity.
+ * The service that is responsible to handle `RabbitMQ` connectivity.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */

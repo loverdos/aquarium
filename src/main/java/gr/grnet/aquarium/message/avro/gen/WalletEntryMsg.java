@@ -6,8 +6,8 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"WalletEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"sumOfCreditsToSubtract\",\"type\":\"double\"},{\"name\":\"oldTotalCredits\",\"type\":\"double\"},{\"name\":\"newTotalCredits\",\"type\":\"double\"},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":\"string\",\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\"}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":\"string\",\"aliases\":[\"id\"]},{\"name\":\"inStoreID\",\"type\":[\"string\",\"null\"],\"aliases\":[\"_id\",\"idInStore\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"clientID\",\"type\":\"string\"},{\"name\":\"eventVersion\",\"type\":\"string\",\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":\"string\",\"aliases\":[\"resourceType\"]},{\"name\":\"instanceID\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}}}]}}},{\"name\":\"resourceType\",\"type\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"unit\",\"type\":\"string\"},{\"name\":\"chargingBehaviorClass\",\"type\":\"string\"}]}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false}]}");
-  @Deprecated public java.lang.CharSequence userID;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"WalletEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"sumOfCreditsToSubtract\",\"type\":\"double\"},{\"name\":\"oldTotalCredits\",\"type\":\"double\"},{\"name\":\"newTotalCredits\",\"type\":\"double\"},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingMonthDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\",\"default\":0.0}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}}]}}},{\"name\":\"resourceType\",\"type\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unit\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"chargingBehaviorClass\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false}]}");
+  @Deprecated public java.lang.String userID;
   @Deprecated public double sumOfCreditsToSubtract;
   @Deprecated public double oldTotalCredits;
   @Deprecated public double newTotalCredits;
@@ -16,7 +16,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   @Deprecated public long referenceStopMillis;
   @Deprecated public int billingYear;
   @Deprecated public int billingMonth;
-  @Deprecated public int billingDay;
+  @Deprecated public int billingMonthDay;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> chargeslots;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> resourceEvents;
   @Deprecated public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg resourceType;
@@ -34,7 +34,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     case 6: return referenceStopMillis;
     case 7: return billingYear;
     case 8: return billingMonth;
-    case 9: return billingDay;
+    case 9: return billingMonthDay;
     case 10: return chargeslots;
     case 11: return resourceEvents;
     case 12: return resourceType;
@@ -46,7 +46,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: userID = (java.lang.CharSequence)value$; break;
+    case 0: userID = (java.lang.String)value$; break;
     case 1: sumOfCreditsToSubtract = (java.lang.Double)value$; break;
     case 2: oldTotalCredits = (java.lang.Double)value$; break;
     case 3: newTotalCredits = (java.lang.Double)value$; break;
@@ -55,7 +55,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     case 6: referenceStopMillis = (java.lang.Long)value$; break;
     case 7: billingYear = (java.lang.Integer)value$; break;
     case 8: billingMonth = (java.lang.Integer)value$; break;
-    case 9: billingDay = (java.lang.Integer)value$; break;
+    case 9: billingMonthDay = (java.lang.Integer)value$; break;
     case 10: chargeslots = (java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg>)value$; break;
     case 11: resourceEvents = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>)value$; break;
     case 12: resourceType = (gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg)value$; break;
@@ -67,7 +67,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   /**
    * Gets the value of the 'userID' field.
    */
-  public java.lang.CharSequence getUserID() {
+  public java.lang.String getUserID() {
     return userID;
   }
 
@@ -75,7 +75,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
    * Sets the value of the 'userID' field.
    * @param value the value to set.
    */
-  public void setUserID(java.lang.CharSequence value) {
+  public void setUserID(java.lang.String value) {
     this.userID = value;
   }
 
@@ -200,18 +200,18 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   }
 
   /**
-   * Gets the value of the 'billingDay' field.
+   * Gets the value of the 'billingMonthDay' field.
    */
-  public java.lang.Integer getBillingDay() {
-    return billingDay;
+  public java.lang.Integer getBillingMonthDay() {
+    return billingMonthDay;
   }
 
   /**
-   * Sets the value of the 'billingDay' field.
+   * Sets the value of the 'billingMonthDay' field.
    * @param value the value to set.
    */
-  public void setBillingDay(java.lang.Integer value) {
-    this.billingDay = value;
+  public void setBillingMonthDay(java.lang.Integer value) {
+    this.billingMonthDay = value;
   }
 
   /**
@@ -295,7 +295,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<WalletEntryMsg>
     implements org.apache.avro.data.RecordBuilder<WalletEntryMsg> {
 
-    private java.lang.CharSequence userID;
+    private java.lang.String userID;
     private double sumOfCreditsToSubtract;
     private double oldTotalCredits;
     private double newTotalCredits;
@@ -304,7 +304,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     private long referenceStopMillis;
     private int billingYear;
     private int billingMonth;
-    private int billingDay;
+    private int billingMonthDay;
     private java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> chargeslots;
     private java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> resourceEvents;
     private gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg resourceType;
@@ -324,7 +324,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     private Builder(gr.grnet.aquarium.message.avro.gen.WalletEntryMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.userID)) {
-        this.userID = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.userID);
+        this.userID = (java.lang.String) data().deepCopy(fields()[0].schema(), other.userID);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.sumOfCreditsToSubtract)) {
@@ -359,8 +359,8 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
         this.billingMonth = (java.lang.Integer) data().deepCopy(fields()[8].schema(), other.billingMonth);
         fieldSetFlags()[8] = true;
       }
-      if (isValidValue(fields()[9], other.billingDay)) {
-        this.billingDay = (java.lang.Integer) data().deepCopy(fields()[9].schema(), other.billingDay);
+      if (isValidValue(fields()[9], other.billingMonthDay)) {
+        this.billingMonthDay = (java.lang.Integer) data().deepCopy(fields()[9].schema(), other.billingMonthDay);
         fieldSetFlags()[9] = true;
       }
       if (isValidValue(fields()[10], other.chargeslots)) {
@@ -382,12 +382,12 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     }
 
     /** Gets the value of the 'userID' field */
-    public java.lang.CharSequence getUserID() {
+    public java.lang.String getUserID() {
       return userID;
     }
     
     /** Sets the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setUserID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setUserID(java.lang.String value) {
       validate(fields()[0], value);
       this.userID = value;
       fieldSetFlags()[0] = true;
@@ -598,26 +598,26 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
       return this;
     }
 
-    /** Gets the value of the 'billingDay' field */
-    public java.lang.Integer getBillingDay() {
-      return billingDay;
+    /** Gets the value of the 'billingMonthDay' field */
+    public java.lang.Integer getBillingMonthDay() {
+      return billingMonthDay;
     }
     
-    /** Sets the value of the 'billingDay' field */
-    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setBillingDay(int value) {
+    /** Sets the value of the 'billingMonthDay' field */
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setBillingMonthDay(int value) {
       validate(fields()[9], value);
-      this.billingDay = value;
+      this.billingMonthDay = value;
       fieldSetFlags()[9] = true;
       return this; 
     }
     
-    /** Checks whether the 'billingDay' field has been set */
-    public boolean hasBillingDay() {
+    /** Checks whether the 'billingMonthDay' field has been set */
+    public boolean hasBillingMonthDay() {
       return fieldSetFlags()[9];
     }
     
-    /** Clears the value of the 'billingDay' field */
-    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearBillingDay() {
+    /** Clears the value of the 'billingMonthDay' field */
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearBillingMonthDay() {
       fieldSetFlags()[9] = false;
       return this;
     }
@@ -725,7 +725,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     public WalletEntryMsg build() {
       try {
         WalletEntryMsg record = new WalletEntryMsg();
-        record.userID = fieldSetFlags()[0] ? this.userID : (java.lang.CharSequence) defaultValue(fields()[0]);
+        record.userID = fieldSetFlags()[0] ? this.userID : (java.lang.String) defaultValue(fields()[0]);
         record.sumOfCreditsToSubtract = fieldSetFlags()[1] ? this.sumOfCreditsToSubtract : (java.lang.Double) defaultValue(fields()[1]);
         record.oldTotalCredits = fieldSetFlags()[2] ? this.oldTotalCredits : (java.lang.Double) defaultValue(fields()[2]);
         record.newTotalCredits = fieldSetFlags()[3] ? this.newTotalCredits : (java.lang.Double) defaultValue(fields()[3]);
@@ -734,7 +734,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
         record.referenceStopMillis = fieldSetFlags()[6] ? this.referenceStopMillis : (java.lang.Long) defaultValue(fields()[6]);
         record.billingYear = fieldSetFlags()[7] ? this.billingYear : (java.lang.Integer) defaultValue(fields()[7]);
         record.billingMonth = fieldSetFlags()[8] ? this.billingMonth : (java.lang.Integer) defaultValue(fields()[8]);
-        record.billingDay = fieldSetFlags()[9] ? this.billingDay : (java.lang.Integer) defaultValue(fields()[9]);
+        record.billingMonthDay = fieldSetFlags()[9] ? this.billingMonthDay : (java.lang.Integer) defaultValue(fields()[9]);
         record.chargeslots = fieldSetFlags()[10] ? this.chargeslots : (java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg>) defaultValue(fields()[10]);
         record.resourceEvents = fieldSetFlags()[11] ? this.resourceEvents : (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>) defaultValue(fields()[11]);
         record.resourceType = fieldSetFlags()[12] ? this.resourceType : (gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg) defaultValue(fields()[12]);

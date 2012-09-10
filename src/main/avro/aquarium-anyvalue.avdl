@@ -43,7 +43,9 @@ protocol AquariumAny {
       boolean,
       double,
       bytes,
-      string
+      string,
+      array<AnyValueMsg>,
+      map<AnyValueMsg>
     } anyValue;
   }
 }

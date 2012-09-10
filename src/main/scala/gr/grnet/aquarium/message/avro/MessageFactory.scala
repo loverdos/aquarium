@@ -35,7 +35,12 @@
 
 package gr.grnet.aquarium.message.avro
 
+import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
 import gr.grnet.aquarium.message.avro.gen._
+import java.{util ⇒ ju}
+import org.apache.avro.generic.GenericData
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
@@ -45,6 +50,18 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object MessageFactory {
+  def anyValueMsgOfBoolean(x: Boolean) = {
+    val av = new AnyValueMsg
+    av.setAnyValue(x: java.lang.Boolean)
+    av
+  }
+
+  def anyValueMsgOfString(x: String) = {
+    val av = new AnyValueMsg
+    av.setAnyValue(x)
+    av
+  }
+
   def newEffectiveUnitPriceMsg(unitPrice: Double, whenOpt: Option[CronSpecTupleMsg] = None) = {
     EffectiveUnitPriceMsg.newBuilder().
       setUnitPrice(unitPrice).
@@ -64,19 +81,19 @@ object MessageFactory {
     build()
   }
 
-  def newSelectorValueMsg(map: Map[CharSequence, SelectorValueMsg]): SelectorValueMsg = {
+  def newSelectorValueMsg(map: Map[String, SelectorValueMsg]): SelectorValueMsg = {
     SelectorValueMsg.newBuilder().
       setSelectorValue(map.asJava).
     build()
   }
 
-  def newSelectorValueMsg(pairs: (CharSequence, SelectorValueMsg)*): SelectorValueMsg = {
+  def newSelectorValueMsg(pairs: (String, SelectorValueMsg)*): SelectorValueMsg = {
     SelectorValueMsg.newBuilder().
       setSelectorValue(Map(pairs:_*).asJava).
     build()
   }
 
-  def newFullPriceTableMsg(perResource: (CharSequence, Map[CharSequence, SelectorValueMsg])*) = {
+  def newFullPriceTableMsg(perResource: (String, Map[String, SelectorValueMsg])*) = {
     FullPriceTableMsg.newBuilder().
       setPerResource(
         Map((for((k, v) ← perResource) yield (k, v.asJava)):_*).asJava
@@ -84,15 +101,15 @@ object MessageFactory {
     build()
   }
 
-  def newRoleMappingMsg(map: Map[CharSequence, FullPriceTableMsg]): java.util.Map[CharSequence, FullPriceTableMsg] = {
+  def newRoleMappingMsg(map: Map[String, FullPriceTableMsg]): java.util.Map[String, FullPriceTableMsg] = {
     map.asJava
   }
 
-  def newRoleMappingMsg(pairs: (CharSequence, FullPriceTableMsg)*): java.util.Map[CharSequence, FullPriceTableMsg] = {
+  def newRoleMappingMsg(pairs: (String, FullPriceTableMsg)*): java.util.Map[String, FullPriceTableMsg] = {
     Map(pairs:_*).asJava
   }
 
-  def newResourceTypeMsg(name: CharSequence, unit: CharSequence, chargingBehavior: CharSequence) = {
+  def newResourceTypeMsg(name: String, unit: String, chargingBehavior: String) = {
     ResourceTypeMsg.newBuilder().
       setName(name).
       setUnit(unit).
@@ -104,16 +121,202 @@ object MessageFactory {
     rts.asJava
   }
 
-  def newChargingBehaviorMsgs(cbs: CharSequence*) = {
-    val ret = cbs.asJava
-    println(cbs.toList)
-    println("========")
-    var i = 0
-    while(i < ret.size()) {
-      println(ret.get(i))
-      i += 1
-    }
-
-    ret
+  def newChargingBehaviorMsgs(cbs: String*) = {
+    cbs.asJava
   }
+
+  def newBooleanDetail(name: String, value: Boolean) = {
+    (name, anyValueMsgOfBoolean(value))
+  }
+
+  def newStringDetail(name: String, value: String) = {
+    (name, anyValueMsgOfString(value))
+  }
+
+  def newDetails(details: (String, AnyValueMsg)*): DetailsModel.Type = {
+    DetailsModel.fromScalaTuples(details:_*)
+  }
+
+  def newResourceEventMsg(
+      originalID: String,
+      occurredMillis: Long,
+      receivedMillis: Long,
+      userID: String,
+      clientID: String,
+      resource: String,
+      instanceID: String,
+      value: String,
+      eventVersion: String,
+      details: DetailsModel.Type = newDetails(),
+      inStoreID: String = null
+  ) = {
+    ResourceEventMsg.newBuilder().
+      setOriginalID(originalID).
+      setOccurredMillis(occurredMillis).
+      setReceivedMillis(receivedMillis).
+      setUserID(userID).
+      setClientID(clientID).
+      setResource(resource).
+      setInstanceID(instanceID).
+      setValue(value).
+      setEventVersion(eventVersion).
+      setDetails(details).
+      setInStoreID(inStoreID).
+    build()
+  }
+
+  def newIMEventMsg(
+      originalID: String,
+      occurredMillis: Long,
+      receivedMillis: Long,
+      userID: String,
+      clientID: String,
+      isActive: Boolean,
+      role: String,
+      eventVersion: String,
+      eventType: String,
+      details: DetailsModel.Type = newDetails()
+  ) = {
+    IMEventMsg.newBuilder().
+      setOriginalID(originalID).
+      setInStoreID(null).
+      setOccurredMillis(occurredMillis).
+      setReceivedMillis(receivedMillis).
+      setUserID(userID).
+      setClientID(clientID).
+      setIsActive(isActive).
+      setRole(role).
+      setEventVersion(eventVersion).
+      setEventType(eventType).
+      setDetails(details).
+    build()
+  }
+
+  def newWalletEntryMsg(
+      userID: String,
+      sumOfCreditsToSubtract: CreditsModel.Type,
+      oldTotalCredits: CreditsModel.Type,
+      newTotalCredits: CreditsModel.Type,
+      whenComputedMillis: Long,
+      referenceStartMillis: Long,
+      referenceStopMillis: Long,
+      billingYear: Int,
+      billingMonth: Int,
+      billingMonthDay: Int,
+      chargeslots: ju.List[ChargeslotMsg],
+      resourceEvents: ju.List[ResourceEventMsg],
+      resourceType: ResourceTypeMsg,
+      isSynthetic: Boolean
+  ): WalletEntryMsg = {
+    WalletEntryMsg.newBuilder().
+      setUserID(userID).
+      setSumOfCreditsToSubtract(CreditsModel.toTypeInMessage(sumOfCreditsToSubtract)).
+      setOldTotalCredits(CreditsModel.toTypeInMessage(oldTotalCredits)).
+      setNewTotalCredits(CreditsModel.toTypeInMessage(newTotalCredits)).
+      setWhenComputedMillis(whenComputedMillis).
+      setReferenceStartMillis(referenceStartMillis).
+      setReferenceStopMillis(referenceStopMillis).
+      setBillingYear(billingYear).
+      setBillingMonth(billingMonth).
+      setBillingMonthDay(billingMonthDay).
+      setChargeslots(chargeslots).
+      setResourceEvents(resourceEvents).
+      setResourceType(resourceType).
+      setIsSynthetic(isSynthetic).
+    build()
+  }
+
+  def newResourceInstanceChargingStateMsg(
+      details: DetailsModel.Type,
+      previousEvents: ju.List[ResourceEventMsg],
+      implicitlyIssuedStartEvents: ju.List[ResourceEventMsg],
+      oldAccumulatingAmount: Double,
+      accumulatingAmount: Double,
+      previousValue: Double,
+      currentValue: Double
+  ): ResourceInstanceChargingStateMsg = {
+
+    val msg = new ResourceInstanceChargingStateMsg
+    msg.setDetails(details)
+    msg.setPreviousEvents(previousEvents)
+    msg.setImplicitlyIssuedStartEvents(implicitlyIssuedStartEvents)
+    msg.setOldAccumulatingAmount(oldAccumulatingAmount)
+    msg.setAccumulatingAmount(accumulatingAmount)
+    msg.setPreviousValue(previousValue)
+    msg.setCurrentValue(currentValue)
+    msg
+  }
+
+  def newEmptyUserAgreementHistoryMsg() = {
+    val msg = new UserAgreementHistoryMsg
+    msg.setAgreements(new ju.ArrayList[UserAgreementMsg]())
+    msg
+  }
+
+  def newInitialUserAgreementHistoryMsg(initialAgreement: UserAgreementMsg) = {
+    val msg = new UserAgreementHistoryMsg
+    val list = new GenericData.Array[UserAgreementMsg](1, initialAgreement.getSchema)
+    list.add(initialAgreement)
+    msg.setAgreements(list)
+    msg
+  }
+
+  def newUserAgreementFromIMEventMsg(
+      imEvent: IMEventMsg,
+      id: String = MessageHelpers.UserAgreementMsgIDGenerator.nextUID()
+  ) = {
+
+    val msg = new UserAgreementMsg
+
+    msg.setId(id)
+    msg.setRelatedIMEventOriginalID(imEvent.getOriginalID)
+    msg.setRole(imEvent.getRole)
+    msg.setValidFromMillis(imEvent.getOccurredMillis)
+    msg.setValidToMillis(Long.MaxValue)
+    msg.setFullPriceTableRef(null) // get from current (= @imEvent.getOccurredMillis) policy
+
+    msg
+  }
+
+  def newWalletEntriesMsg(entries: ju.List[WalletEntryMsg] = new ju.ArrayList[WalletEntryMsg]()) = {
+    val msg = new WalletEntriesMsg
+    msg.setEntries(entries)
+    msg
+  }
+
+  def newDummyPolicyMsgAt(millis: Long) : PolicyMsg = {
+    PolicyMsg.newBuilder().
+      setOriginalID("").
+      setInStoreID(null).
+      setParentID(null).
+      setValidFromMillis(millis).
+      setValidToMillis(Long.MaxValue).
+      setChargingBehaviors(new ju.ArrayList[String]()).
+      setResourceTypes(new ju.ArrayList[ResourceTypeMsg]()).
+      setRoleMapping(new ju.HashMap[String, FullPriceTableMsg]()).
+      build()
+  }
+
+  def createInitialUserStateMsg(
+      usb: UserStateBootstrap,
+      occurredMillis: Long
+  ): UserStateMsg = {
+
+    val bmi = BillingMonthInfo.fromMillis(occurredMillis)
+    val msg = new UserStateMsg
+
+    msg.setUserID(usb.userID)
+    msg.setOccurredMillis(occurredMillis)
+    msg.setBillingYear(bmi.year)
+    msg.setBillingMonth(bmi.month)
+    msg.setBillingMonthDay(bmi.day)
+    msg.setTotalCredits(CreditsModel.toTypeInMessage(usb.initialCredits))
+    msg.setAgreementHistory(newInitialUserAgreementHistoryMsg(usb.initialAgreement.msg))
+    msg.setLatestUpdateMillis(occurredMillis)
+    msg.setInStoreID(null)
+    msg.setOriginalID("") // FIXME get a counter here
+
+    msg
+  }
+
 }

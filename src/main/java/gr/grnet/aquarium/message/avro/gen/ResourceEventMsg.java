@@ -6,18 +6,19 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"originalID\",\"type\":\"string\",\"aliases\":[\"id\"]},{\"name\":\"inStoreID\",\"type\":[\"string\",\"null\"],\"aliases\":[\"_id\",\"idInStore\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"clientID\",\"type\":\"string\"},{\"name\":\"eventVersion\",\"type\":\"string\",\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":\"string\",\"aliases\":[\"resourceType\"]},{\"name\":\"instanceID\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",\"string\"]}]}}}]}");
-  @Deprecated public java.lang.CharSequence originalID;
-  @Deprecated public java.lang.CharSequence inStoreID;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}}]}");
+  @Deprecated public java.lang.String originalID;
+  @Deprecated public java.lang.String inStoreID;
   @Deprecated public long occurredMillis;
   @Deprecated public long receivedMillis;
-  @Deprecated public java.lang.CharSequence userID;
-  @Deprecated public java.lang.CharSequence clientID;
-  @Deprecated public java.lang.CharSequence eventVersion;
-  @Deprecated public java.lang.CharSequence resource;
-  @Deprecated public java.lang.CharSequence instanceID;
-  @Deprecated public java.lang.CharSequence value;
-  @Deprecated public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
+  @Deprecated public java.lang.String userID;
+  @Deprecated public java.lang.String clientID;
+  @Deprecated public java.lang.String eventVersion;
+  @Deprecated public java.lang.String resource;
+  @Deprecated public java.lang.String instanceID;
+  @Deprecated public java.lang.String value;
+  @Deprecated public boolean isSynthetic;
+  @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -32,7 +33,8 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     case 7: return resource;
     case 8: return instanceID;
     case 9: return value;
-    case 10: return details;
+    case 10: return isSynthetic;
+    case 11: return details;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -40,17 +42,18 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: originalID = (java.lang.CharSequence)value$; break;
-    case 1: inStoreID = (java.lang.CharSequence)value$; break;
+    case 0: originalID = (java.lang.String)value$; break;
+    case 1: inStoreID = (java.lang.String)value$; break;
     case 2: occurredMillis = (java.lang.Long)value$; break;
     case 3: receivedMillis = (java.lang.Long)value$; break;
-    case 4: userID = (java.lang.CharSequence)value$; break;
-    case 5: clientID = (java.lang.CharSequence)value$; break;
-    case 6: eventVersion = (java.lang.CharSequence)value$; break;
-    case 7: resource = (java.lang.CharSequence)value$; break;
-    case 8: instanceID = (java.lang.CharSequence)value$; break;
-    case 9: value = (java.lang.CharSequence)value$; break;
-    case 10: details = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg>)value$; break;
+    case 4: userID = (java.lang.String)value$; break;
+    case 5: clientID = (java.lang.String)value$; break;
+    case 6: eventVersion = (java.lang.String)value$; break;
+    case 7: resource = (java.lang.String)value$; break;
+    case 8: instanceID = (java.lang.String)value$; break;
+    case 9: value = (java.lang.String)value$; break;
+    case 10: isSynthetic = (java.lang.Boolean)value$; break;
+    case 11: details = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -58,7 +61,7 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
   /**
    * Gets the value of the 'originalID' field.
    */
-  public java.lang.CharSequence getOriginalID() {
+  public java.lang.String getOriginalID() {
     return originalID;
   }
 
@@ -66,14 +69,14 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'originalID' field.
    * @param value the value to set.
    */
-  public void setOriginalID(java.lang.CharSequence value) {
+  public void setOriginalID(java.lang.String value) {
     this.originalID = value;
   }
 
   /**
    * Gets the value of the 'inStoreID' field.
    */
-  public java.lang.CharSequence getInStoreID() {
+  public java.lang.String getInStoreID() {
     return inStoreID;
   }
 
@@ -81,7 +84,7 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'inStoreID' field.
    * @param value the value to set.
    */
-  public void setInStoreID(java.lang.CharSequence value) {
+  public void setInStoreID(java.lang.String value) {
     this.inStoreID = value;
   }
 
@@ -118,7 +121,7 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
   /**
    * Gets the value of the 'userID' field.
    */
-  public java.lang.CharSequence getUserID() {
+  public java.lang.String getUserID() {
     return userID;
   }
 
@@ -126,14 +129,14 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'userID' field.
    * @param value the value to set.
    */
-  public void setUserID(java.lang.CharSequence value) {
+  public void setUserID(java.lang.String value) {
     this.userID = value;
   }
 
   /**
    * Gets the value of the 'clientID' field.
    */
-  public java.lang.CharSequence getClientID() {
+  public java.lang.String getClientID() {
     return clientID;
   }
 
@@ -141,14 +144,14 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'clientID' field.
    * @param value the value to set.
    */
-  public void setClientID(java.lang.CharSequence value) {
+  public void setClientID(java.lang.String value) {
     this.clientID = value;
   }
 
   /**
    * Gets the value of the 'eventVersion' field.
    */
-  public java.lang.CharSequence getEventVersion() {
+  public java.lang.String getEventVersion() {
     return eventVersion;
   }
 
@@ -156,14 +159,14 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'eventVersion' field.
    * @param value the value to set.
    */
-  public void setEventVersion(java.lang.CharSequence value) {
+  public void setEventVersion(java.lang.String value) {
     this.eventVersion = value;
   }
 
   /**
    * Gets the value of the 'resource' field.
    */
-  public java.lang.CharSequence getResource() {
+  public java.lang.String getResource() {
     return resource;
   }
 
@@ -171,14 +174,14 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'resource' field.
    * @param value the value to set.
    */
-  public void setResource(java.lang.CharSequence value) {
+  public void setResource(java.lang.String value) {
     this.resource = value;
   }
 
   /**
    * Gets the value of the 'instanceID' field.
    */
-  public java.lang.CharSequence getInstanceID() {
+  public java.lang.String getInstanceID() {
     return instanceID;
   }
 
@@ -186,14 +189,14 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'instanceID' field.
    * @param value the value to set.
    */
-  public void setInstanceID(java.lang.CharSequence value) {
+  public void setInstanceID(java.lang.String value) {
     this.instanceID = value;
   }
 
   /**
    * Gets the value of the 'value' field.
    */
-  public java.lang.CharSequence getValue() {
+  public java.lang.String getValue() {
     return value;
   }
 
@@ -201,14 +204,29 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'value' field.
    * @param value the value to set.
    */
-  public void setValue(java.lang.CharSequence value) {
+  public void setValue(java.lang.String value) {
     this.value = value;
+  }
+
+  /**
+   * Gets the value of the 'isSynthetic' field.
+   */
+  public java.lang.Boolean getIsSynthetic() {
+    return isSynthetic;
+  }
+
+  /**
+   * Sets the value of the 'isSynthetic' field.
+   * @param value the value to set.
+   */
+  public void setIsSynthetic(java.lang.Boolean value) {
+    this.isSynthetic = value;
   }
 
   /**
    * Gets the value of the 'details' field.
    */
-  public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> getDetails() {
+  public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> getDetails() {
     return details;
   }
 
@@ -216,7 +234,7 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'details' field.
    * @param value the value to set.
    */
-  public void setDetails(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> value) {
+  public void setDetails(java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> value) {
     this.details = value;
   }
 
@@ -241,17 +259,18 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<ResourceEventMsg>
     implements org.apache.avro.data.RecordBuilder<ResourceEventMsg> {
 
-    private java.lang.CharSequence originalID;
-    private java.lang.CharSequence inStoreID;
+    private java.lang.String originalID;
+    private java.lang.String inStoreID;
     private long occurredMillis;
     private long receivedMillis;
-    private java.lang.CharSequence userID;
-    private java.lang.CharSequence clientID;
-    private java.lang.CharSequence eventVersion;
-    private java.lang.CharSequence resource;
-    private java.lang.CharSequence instanceID;
-    private java.lang.CharSequence value;
-    private java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
+    private java.lang.String userID;
+    private java.lang.String clientID;
+    private java.lang.String eventVersion;
+    private java.lang.String resource;
+    private java.lang.String instanceID;
+    private java.lang.String value;
+    private boolean isSynthetic;
+    private java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
 
     /** Creates a new Builder */
     private Builder() {
@@ -267,11 +286,11 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     private Builder(gr.grnet.aquarium.message.avro.gen.ResourceEventMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.originalID)) {
-        this.originalID = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.originalID);
+        this.originalID = (java.lang.String) data().deepCopy(fields()[0].schema(), other.originalID);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.inStoreID)) {
-        this.inStoreID = (java.lang.CharSequence) data().deepCopy(fields()[1].schema(), other.inStoreID);
+        this.inStoreID = (java.lang.String) data().deepCopy(fields()[1].schema(), other.inStoreID);
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.occurredMillis)) {
@@ -283,42 +302,46 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
         fieldSetFlags()[3] = true;
       }
       if (isValidValue(fields()[4], other.userID)) {
-        this.userID = (java.lang.CharSequence) data().deepCopy(fields()[4].schema(), other.userID);
+        this.userID = (java.lang.String) data().deepCopy(fields()[4].schema(), other.userID);
         fieldSetFlags()[4] = true;
       }
       if (isValidValue(fields()[5], other.clientID)) {
-        this.clientID = (java.lang.CharSequence) data().deepCopy(fields()[5].schema(), other.clientID);
+        this.clientID = (java.lang.String) data().deepCopy(fields()[5].schema(), other.clientID);
         fieldSetFlags()[5] = true;
       }
       if (isValidValue(fields()[6], other.eventVersion)) {
-        this.eventVersion = (java.lang.CharSequence) data().deepCopy(fields()[6].schema(), other.eventVersion);
+        this.eventVersion = (java.lang.String) data().deepCopy(fields()[6].schema(), other.eventVersion);
         fieldSetFlags()[6] = true;
       }
       if (isValidValue(fields()[7], other.resource)) {
-        this.resource = (java.lang.CharSequence) data().deepCopy(fields()[7].schema(), other.resource);
+        this.resource = (java.lang.String) data().deepCopy(fields()[7].schema(), other.resource);
         fieldSetFlags()[7] = true;
       }
       if (isValidValue(fields()[8], other.instanceID)) {
-        this.instanceID = (java.lang.CharSequence) data().deepCopy(fields()[8].schema(), other.instanceID);
+        this.instanceID = (java.lang.String) data().deepCopy(fields()[8].schema(), other.instanceID);
         fieldSetFlags()[8] = true;
       }
       if (isValidValue(fields()[9], other.value)) {
-        this.value = (java.lang.CharSequence) data().deepCopy(fields()[9].schema(), other.value);
+        this.value = (java.lang.String) data().deepCopy(fields()[9].schema(), other.value);
         fieldSetFlags()[9] = true;
       }
-      if (isValidValue(fields()[10], other.details)) {
-        this.details = (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg>) data().deepCopy(fields()[10].schema(), other.details);
+      if (isValidValue(fields()[10], other.isSynthetic)) {
+        this.isSynthetic = (java.lang.Boolean) data().deepCopy(fields()[10].schema(), other.isSynthetic);
         fieldSetFlags()[10] = true;
+      }
+      if (isValidValue(fields()[11], other.details)) {
+        this.details = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg>) data().deepCopy(fields()[11].schema(), other.details);
+        fieldSetFlags()[11] = true;
       }
     }
 
     /** Gets the value of the 'originalID' field */
-    public java.lang.CharSequence getOriginalID() {
+    public java.lang.String getOriginalID() {
       return originalID;
     }
     
     /** Sets the value of the 'originalID' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setOriginalID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setOriginalID(java.lang.String value) {
       validate(fields()[0], value);
       this.originalID = value;
       fieldSetFlags()[0] = true;
@@ -338,12 +361,12 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     }
 
     /** Gets the value of the 'inStoreID' field */
-    public java.lang.CharSequence getInStoreID() {
+    public java.lang.String getInStoreID() {
       return inStoreID;
     }
     
     /** Sets the value of the 'inStoreID' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setInStoreID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setInStoreID(java.lang.String value) {
       validate(fields()[1], value);
       this.inStoreID = value;
       fieldSetFlags()[1] = true;
@@ -411,12 +434,12 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     }
 
     /** Gets the value of the 'userID' field */
-    public java.lang.CharSequence getUserID() {
+    public java.lang.String getUserID() {
       return userID;
     }
     
     /** Sets the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setUserID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setUserID(java.lang.String value) {
       validate(fields()[4], value);
       this.userID = value;
       fieldSetFlags()[4] = true;
@@ -436,12 +459,12 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     }
 
     /** Gets the value of the 'clientID' field */
-    public java.lang.CharSequence getClientID() {
+    public java.lang.String getClientID() {
       return clientID;
     }
     
     /** Sets the value of the 'clientID' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setClientID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setClientID(java.lang.String value) {
       validate(fields()[5], value);
       this.clientID = value;
       fieldSetFlags()[5] = true;
@@ -461,12 +484,12 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     }
 
     /** Gets the value of the 'eventVersion' field */
-    public java.lang.CharSequence getEventVersion() {
+    public java.lang.String getEventVersion() {
       return eventVersion;
     }
     
     /** Sets the value of the 'eventVersion' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setEventVersion(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setEventVersion(java.lang.String value) {
       validate(fields()[6], value);
       this.eventVersion = value;
       fieldSetFlags()[6] = true;
@@ -486,12 +509,12 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     }
 
     /** Gets the value of the 'resource' field */
-    public java.lang.CharSequence getResource() {
+    public java.lang.String getResource() {
       return resource;
     }
     
     /** Sets the value of the 'resource' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setResource(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setResource(java.lang.String value) {
       validate(fields()[7], value);
       this.resource = value;
       fieldSetFlags()[7] = true;
@@ -511,12 +534,12 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     }
 
     /** Gets the value of the 'instanceID' field */
-    public java.lang.CharSequence getInstanceID() {
+    public java.lang.String getInstanceID() {
       return instanceID;
     }
     
     /** Sets the value of the 'instanceID' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setInstanceID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setInstanceID(java.lang.String value) {
       validate(fields()[8], value);
       this.instanceID = value;
       fieldSetFlags()[8] = true;
@@ -536,12 +559,12 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     }
 
     /** Gets the value of the 'value' field */
-    public java.lang.CharSequence getValue() {
+    public java.lang.String getValue() {
       return value;
     }
     
     /** Sets the value of the 'value' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setValue(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setValue(java.lang.String value) {
       validate(fields()[9], value);
       this.value = value;
       fieldSetFlags()[9] = true;
@@ -560,28 +583,52 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
       return this;
     }
 
+    /** Gets the value of the 'isSynthetic' field */
+    public java.lang.Boolean getIsSynthetic() {
+      return isSynthetic;
+    }
+    
+    /** Sets the value of the 'isSynthetic' field */
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setIsSynthetic(boolean value) {
+      validate(fields()[10], value);
+      this.isSynthetic = value;
+      fieldSetFlags()[10] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'isSynthetic' field has been set */
+    public boolean hasIsSynthetic() {
+      return fieldSetFlags()[10];
+    }
+    
+    /** Clears the value of the 'isSynthetic' field */
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder clearIsSynthetic() {
+      fieldSetFlags()[10] = false;
+      return this;
+    }
+
     /** Gets the value of the 'details' field */
-    public java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> getDetails() {
+    public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> getDetails() {
       return details;
     }
     
     /** Sets the value of the 'details' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setDetails(java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> value) {
-      validate(fields()[10], value);
+    public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder setDetails(java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> value) {
+      validate(fields()[11], value);
       this.details = value;
-      fieldSetFlags()[10] = true;
+      fieldSetFlags()[11] = true;
       return this; 
     }
     
     /** Checks whether the 'details' field has been set */
     public boolean hasDetails() {
-      return fieldSetFlags()[10];
+      return fieldSetFlags()[11];
     }
     
     /** Clears the value of the 'details' field */
     public gr.grnet.aquarium.message.avro.gen.ResourceEventMsg.Builder clearDetails() {
       details = null;
-      fieldSetFlags()[10] = false;
+      fieldSetFlags()[11] = false;
       return this;
     }
 
@@ -589,17 +636,18 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
     public ResourceEventMsg build() {
       try {
         ResourceEventMsg record = new ResourceEventMsg();
-        record.originalID = fieldSetFlags()[0] ? this.originalID : (java.lang.CharSequence) defaultValue(fields()[0]);
-        record.inStoreID = fieldSetFlags()[1] ? this.inStoreID : (java.lang.CharSequence) defaultValue(fields()[1]);
+        record.originalID = fieldSetFlags()[0] ? this.originalID : (java.lang.String) defaultValue(fields()[0]);
+        record.inStoreID = fieldSetFlags()[1] ? this.inStoreID : (java.lang.String) defaultValue(fields()[1]);
         record.occurredMillis = fieldSetFlags()[2] ? this.occurredMillis : (java.lang.Long) defaultValue(fields()[2]);
         record.receivedMillis = fieldSetFlags()[3] ? this.receivedMillis : (java.lang.Long) defaultValue(fields()[3]);
-        record.userID = fieldSetFlags()[4] ? this.userID : (java.lang.CharSequence) defaultValue(fields()[4]);
-        record.clientID = fieldSetFlags()[5] ? this.clientID : (java.lang.CharSequence) defaultValue(fields()[5]);
-        record.eventVersion = fieldSetFlags()[6] ? this.eventVersion : (java.lang.CharSequence) defaultValue(fields()[6]);
-        record.resource = fieldSetFlags()[7] ? this.resource : (java.lang.CharSequence) defaultValue(fields()[7]);
-        record.instanceID = fieldSetFlags()[8] ? this.instanceID : (java.lang.CharSequence) defaultValue(fields()[8]);
-        record.value = fieldSetFlags()[9] ? this.value : (java.lang.CharSequence) defaultValue(fields()[9]);
-        record.details = fieldSetFlags()[10] ? this.details : (java.util.Map<java.lang.CharSequence,gr.grnet.aquarium.message.avro.gen.AnyValueMsg>) defaultValue(fields()[10]);
+        record.userID = fieldSetFlags()[4] ? this.userID : (java.lang.String) defaultValue(fields()[4]);
+        record.clientID = fieldSetFlags()[5] ? this.clientID : (java.lang.String) defaultValue(fields()[5]);
+        record.eventVersion = fieldSetFlags()[6] ? this.eventVersion : (java.lang.String) defaultValue(fields()[6]);
+        record.resource = fieldSetFlags()[7] ? this.resource : (java.lang.String) defaultValue(fields()[7]);
+        record.instanceID = fieldSetFlags()[8] ? this.instanceID : (java.lang.String) defaultValue(fields()[8]);
+        record.value = fieldSetFlags()[9] ? this.value : (java.lang.String) defaultValue(fields()[9]);
+        record.isSynthetic = fieldSetFlags()[10] ? this.isSynthetic : (java.lang.Boolean) defaultValue(fields()[10]);
+        record.details = fieldSetFlags()[11] ? this.details : (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg>) defaultValue(fields()[11]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

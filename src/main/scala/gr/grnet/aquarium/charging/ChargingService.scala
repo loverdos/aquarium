@@ -35,17 +35,18 @@
 
 package gr.grnet.aquarium.charging
 
-import scala.collection.mutable
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserStateBootstrap}
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.charging.state.{WorkingResourcesChargingState, UserStateBootstrap, WorkingUserState, UserStateModel, StdUserState}
+import gr.grnet.aquarium.message.avro.gen.{ResourcesChargingStateMsg, UserStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.{ModelFactory, MessageFactory, AvroHelpers}
 import gr.grnet.aquarium.policy.ResourceType
-import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import gr.grnet.aquarium.util.LogHelpers.DebugSeq
 import gr.grnet.aquarium.util.LogHelpers.Warn
 import gr.grnet.aquarium.util.date.{MutableDateCalc, TimeHelpers}
+import gr.grnet.aquarium.util.{Lifecycle, Loggable}
 import gr.grnet.aquarium.{AquariumInternalError, AquariumAwareSkeleton}
+import java.util.{HashMap ⇒ JHashMap}
 
 /**
  *
@@ -63,40 +64,40 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
   def stop() {}
   //- Lifecycle
 
-
-  //+ Utility methods
-  protected def rcDebugInfo(rcEvent: ResourceEventModel) = {
-    rcEvent.toDebugString
-  }
-  //- Utility methods
-
-  def calculateRealtimeWorkingUserState(
-      workingUserState: WorkingUserState,
+  def calculateRealtimeUserState(
+      userState: UserStateModel,
       billingMonthInfo: BillingMonthInfo,
       realtimeMillis: Long
   ) {
-    for( (resourceTypeName, workingResourcesState) ← workingUserState.workingStateOfResources) {
-      workingUserState.findResourceType(resourceTypeName) match {
-        case None ⇒
+
+    import scala.collection.JavaConverters.mapAsScalaMapConverter
+
+    val stateOfResources = userState.msg.getStateOfResources.asScala
+    val resourceTypesMap = userState.msg.getResourceTypesMap.asScala
+
+    for( (resourceTypeName, workingResourcesState) ← stateOfResources) {
+      userState.msg.getResourceTypesMap.get(resourceTypeName) match {
+        case null ⇒
           // Ignore
 
-        case Some(resourceType) ⇒
+        case resourceType ⇒
           val chargingBehavior = aquarium.chargingBehaviorOf(resourceType)
+          val stateOfResourceInstance = workingResourcesState.getStateOfResourceInstance.asScala
 
-          for((resourceInstanceID, workingResourceInstanceState) ← workingResourcesState.stateOfResourceInstance) {
+          for((resourceInstanceID, resourceInstanceState) ← stateOfResourceInstance) {
             Debug(logger, "Realtime calculation for %s, %s", resourceTypeName, resourceInstanceID)
             val virtualEvents = chargingBehavior.createVirtualEventsForRealtimeComputation(
-              workingUserState.userID,
+              userState.userID,
               resourceTypeName,
               resourceInstanceID,
               realtimeMillis,
-              workingResourceInstanceState
+              resourceInstanceState
             )
             DebugSeq(logger, "virtualEvents", virtualEvents, 1)
 
             processResourceEvents(
               virtualEvents,
-              workingUserState,
+              userState,
               billingMonthInfo,
               realtimeMillis
             )
@@ -109,30 +110,30 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       billingMonthInfo: BillingMonthInfo,
       userStateBootstrap: UserStateBootstrap,
       defaultResourceTypesMap: Map[String, ResourceType],
-      userStateRecorder: UserStateModel ⇒ UserStateModel
-  ): WorkingUserState = {
+      userStateRecorder: UserStateMsg ⇒ UserStateMsg
+  ): UserStateModel = {
 
-    def computeFullMonthBillingAndSaveState(): WorkingUserState = {
-      val workingUserState = replayFullMonthBilling(
+    def computeFullMonthBillingAndSaveState(): UserStateModel = {
+      val fullMonthUserState = replayFullMonthBilling(
         userStateBootstrap,
         billingMonthInfo,
         defaultResourceTypesMap,
         userStateRecorder
       )
 
-      val monthlyUserState0 = workingUserState.toUserState(
-        true,
-        billingMonthInfo.year,
-        billingMonthInfo.month,
-        ""
-      )
+      val monthlyUserState0 = UserStateMsg.newBuilder(fullMonthUserState.msg).
+        setIsFullBillingMonth(true).
+        setBillingYear(billingMonthInfo.year).
+        setBillingMonth(billingMonthInfo.month). // FIXME What about the billingMonthDay?
+        setOriginalID("").
+        build()
 
       // We always save the state when it is a full month billing
       val monthlyUserState1 = userStateRecorder.apply(monthlyUserState0)
 
-      Debug(logger, "Stored full %s %s", billingMonthInfo.toDebugString, monthlyUserState1.toJsonString)
+      Debug(logger, "Stored full %s %s", billingMonthInfo.toDebugString, AvroHelpers.jsonStringOfSpecificRecord(monthlyUserState1))
 
-      workingUserState
+      ModelFactory.newUserStateModel(monthlyUserState1)
     }
 
     val userID = userStateBootstrap.userID
@@ -147,7 +148,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
 
       // TODO: The initial user state might have already been created.
       //       First ask if it exists and compute only if not
-      val initialUserState0 = StdUserState.createInitialUserStateFromBootstrap(
+      val initialUserState0 = MessageFactory.createInitialUserStateMsg(
         userStateBootstrap,
         TimeHelpers.nowMillis()
       )
@@ -157,9 +158,9 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       // We always save the initial state
       val initialUserState1 = userStateRecorder.apply(initialUserState0)
 
-      Debug(logger, "Stored initial state = %s", initialUserState1.toJsonString)
+      Debug(logger, "Stored initial state = %s", AvroHelpers.jsonStringOfSpecificRecord(initialUserState1))
 
-      return initialUserState1.toWorkingUserState(defaultResourceTypesMap)
+      return ModelFactory.newUserStateModel(initialUserState1)
     }
 
     // Ask DB cache for the latest known user state for this billing period
@@ -176,7 +177,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       case Some(latestUserState) ⇒
         // Found a "latest" user state but need to see if it is indeed the true and one latest.
         // For this reason, we must count the events again.
-        val latestStateOOSEventsCounter = latestUserState.billingPeriodOutOfSyncResourceEventsCounter
+        val latestStateOOSEventsCounter = latestUserState.getBillingPeriodOutOfSyncResourceEventsCounter
         val actualOOSEventsCounter = resourceEventStore.countOutOfSyncResourceEventsForBillingPeriod(
           userID,
           billingMonthStartMillis,
@@ -187,7 +188,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
           // ZERO, we are OK!
           case 0 ⇒
             // NOTE: Keep the caller's calculation reason
-            latestUserState.toWorkingUserState(defaultResourceTypesMap)
+            ModelFactory.newUserStateModel(latestUserState)
 
           // We had more, so must recompute
           case n if n > 0 ⇒
@@ -207,38 +208,36 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
    * Processes one resource event and computes relevant, incremental charges.
    *
    * @param resourceEvent
-   * @param workingUserState
+   * @param userStateModel
    * @param billingMonthInfo
    */
   def processResourceEvent(
-      resourceEvent: ResourceEventModel,
-      workingUserState: WorkingUserState,
+      resourceEvent: ResourceEventMsg,
+      userStateModel: UserStateModel,
       billingMonthInfo: BillingMonthInfo,
       updateLatestMillis: Boolean
   ): Boolean = {
 
-    val resourceTypeName = resourceEvent.resource
-    val resourceTypeOpt = workingUserState.findResourceType(resourceTypeName)
-    if(resourceTypeOpt.isEmpty) {
+    val resourceTypeName = resourceEvent.getResource
+    val resourceType = userStateModel.msg.getResourceTypesMap.get(resourceTypeName)
+    if(resourceType eq null) {
       // Unknown (yet) resource, ignoring event.
       return false
     }
-    val resourceType = resourceTypeOpt.get
 
     val chargingBehavior = aquarium.chargingBehaviorOf(resourceType)
-    val workingResourcesState = workingUserState.workingStateOfResources.get(resourceTypeName) match {
-      case Some(existingState) ⇒
+    val resourcesChargingState = userStateModel.msg.getStateOfResources.get(resourceTypeName) match {
+      case null ⇒
+        // First time for this ChargingBehavior.
+        val newState = new ResourcesChargingStateMsg
+        newState.setResource(resourceTypeName)
+        newState.setDetails(chargingBehavior.initialChargingDetails)
+        newState.setStateOfResourceInstance(new JHashMap())
+        newState
+
+      case existingState ⇒
         existingState
 
-      case None ⇒
-        // First time for this ChargingBehavior.
-        val newState = new WorkingResourcesChargingState(
-          details = mutable.Map(chargingBehavior.initialChargingDetails.toSeq:_*),
-          stateOfResourceInstance = mutable.Map()
-        )
-
-        workingUserState.workingStateOfResources(resourceTypeName) = newState
-        newState
     }
 
     val m0 = TimeHelpers.nowMillis()
@@ -247,26 +246,25 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       resourceEvent,
       resourceType,
       billingMonthInfo,
-      workingResourcesState,
-      workingUserState.workingAgreementHistory,
-      workingUserState.totalCredits,
-      workingUserState.walletEntries += _
+      resourcesChargingState,
+      userStateModel,
+      msg ⇒ userStateModel.msg.getWalletEntries.add(msg)
     )
     val m1 = TimeHelpers.nowMillis()
 
     if(updateLatestMillis) {
-      workingUserState.latestUpdateMillis = m1
+      userStateModel.msg.setLatestUpdateMillis(m1)
     }
 
-    workingUserState.updateLatestResourceEventOccurredMillis(resourceEvent.occurredMillis)
-    workingUserState.totalCredits -= creditsToSubtract
+    userStateModel.updateLatestResourceEventOccurredMillis(resourceEvent.getOccurredMillis)
+    userStateModel.subtractCredits(creditsToSubtract)
 
     true
   }
 
   def processResourceEvents(
-      resourceEvents: Traversable[ResourceEventModel],
-      workingUserState: WorkingUserState,
+      resourceEvents: Traversable[ResourceEventMsg],
+      userState: UserStateModel,
       billingMonthInfo: BillingMonthInfo,
       latestUpdateMillis: Long
   ): Unit = {
@@ -275,7 +273,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     for(currentResourceEvent ← resourceEvents) {
       processResourceEvent(
         currentResourceEvent,
-        workingUserState,
+        userState,
         billingMonthInfo,
         false
       )
@@ -284,7 +282,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     }
 
     if(_counter > 0) {
-      workingUserState.latestUpdateMillis = latestUpdateMillis
+      userState.msg.setLatestUpdateMillis(latestUpdateMillis)
     }
   }
 
@@ -292,8 +290,8 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       userStateBootstrap: UserStateBootstrap,
       billingMonthInfo: BillingMonthInfo,
       defaultResourceTypesMap: Map[String, ResourceType],
-      userStateRecorder: UserStateModel ⇒ UserStateModel
-  ): WorkingUserState = {
+      userStateRecorder: UserStateMsg ⇒ UserStateMsg
+  ): UserStateModel = {
 
     replayMonthChargingUpTo(
       billingMonthInfo,
@@ -320,15 +318,15 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       billingEndTimeMillis: Long,
       userStateBootstrap: UserStateBootstrap,
       resourceTypesMap: Map[String, ResourceType],
-      userStateRecorder: UserStateModel ⇒ UserStateModel
-  ): WorkingUserState = {
+      userStateRecorder: UserStateMsg ⇒ UserStateMsg
+  ): UserStateModel = {
 
     val isFullMonthBilling = billingEndTimeMillis == billingMonthInfo.monthStopMillis
     val userID = userStateBootstrap.userID
 
     // In order to replay the full month, we start with the state at the beginning of the month.
     val previousBillingMonthInfo = billingMonthInfo.previousMonth
-    val workingUserState = findOrCalculateWorkingUserStateAtEndOfBillingMonth(
+    val userState = findOrCalculateWorkingUserStateAtEndOfBillingMonth(
       previousBillingMonthInfo,
       userStateBootstrap,
       resourceTypesMap,
@@ -340,10 +338,10 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     // specified in the parameters.
     // NOTE: The calculation reason is not the one we get from the previous user state but the one our caller specifies
 
-    Debug(logger, "workingUserState=%s", workingUserState)
+    Debug(logger, "workingUserState=%s", userState)
     Debug(logger, "previousBillingMonthUserState(%s) = %s",
       previousBillingMonthInfo.toShortDebugString,
-      workingUserState
+      userState
     )
 
     var _rcEventsCounter = 0
@@ -357,7 +355,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
 
       processResourceEvent(
         currentResourceEvent,
-        workingUserState,
+        userState,
         billingMonthInfo,
         false
       )
@@ -366,7 +364,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
     }
 
     if(_rcEventsCounter > 0) {
-      workingUserState.latestUpdateMillis = TimeHelpers.nowMillis()
+      userState.msg.setLatestUpdateMillis(TimeHelpers.nowMillis())
     }
 
     Debug(logger, "Found %s resource events for month %s",
@@ -407,6 +405,6 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       workingUserState.totalCredits    = specialWorkingUserState.totalCredits
     }*/
 
-    workingUserState
+    userState
   }
 }

@@ -36,22 +36,22 @@
 package gr.grnet.aquarium.connector.handler
 
 import gr.grnet.aquarium.Aquarium
-import gr.grnet.aquarium.actor.message.event.ProcessResourceEvent
 import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
+import gr.grnet.aquarium.message.avro.AvroHelpers
+import gr.grnet.aquarium.message.avro.gen.ResourceEventMsg
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util._
 import org.slf4j.Logger
 
 /**
  * A [[gr.grnet.aquarium.connector.handler.PayloadHandler]] for
- * [[gr.grnet.aquarium.event.model.resource.ResourceEventModel]]s.
+ * [[gr.grnet.aquarium.message.avro.gen.ResourceEventMsg]]s.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
-  extends GenericPayloadHandler[ResourceEventModel](
+  extends GenericPayloadHandler[ResourceEventMsg](
       // jsonParser: Array[Byte] ⇒ JsonTextFormat
       payload ⇒ {
         aquarium.converters.convertEx[JsonTextFormat](payload)
@@ -72,7 +72,7 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
       // eventParser: JsonTextFormat ⇒ E
       jsonTextFormat ⇒ {
-        StdResourceEvent.fromJsonTextFormat(jsonTextFormat)
+        AvroHelpers.specificRecordOfJsonString(jsonTextFormat.value, new ResourceEventMsg)
       },
 
       // onEventParserSuccess: (Array[Byte], E) ⇒ Unit
@@ -92,7 +92,7 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
       // preSaveAction: E ⇒ Option[HandlerResult]
       rcEvent ⇒ {
         val className = shortClassNameOf(rcEvent)
-        val id = rcEvent.id
+        val id = rcEvent.getOriginalID
 
         // Let's decide if it is OK to store the event
         // Remember that OK == None as the returning result
@@ -121,6 +121,6 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
       // forwardAction: S ⇒ Unit
       rcEvent ⇒ {
-        aquarium.akkaService.getOrCreateUserActor(rcEvent.userID) ! ProcessResourceEvent(rcEvent)
+        aquarium.akkaService.getOrCreateUserActor(rcEvent.getUserID) ! rcEvent
       }
     )

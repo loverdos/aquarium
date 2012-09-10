@@ -41,14 +41,18 @@ protocol AquariumUserState {
 
   record UserAgreementMsg {
     string id;
-    union {string, null} relatedIMEventID;
+    union {string, null} relatedIMEventOriginalID;
+    string userID;
     long @order("ascending") validFromMillis;
     long validToMillis;
     string role;
     union {FullPriceTableMsg, null} fullPriceTableRef; // If null, then get from aquarium policy
   }
 
-  record WorkingResourceInstanceChargingStateMsg {
+  record ResourceInstanceChargingStateMsg {
+    string clientID; // who sent me?
+    string resource; // what kind of resource am I?
+    string instanceID; // who am I?
     map<AnyValueMsg> details;
     array<ResourceEventMsg> previousEvents;
     array<ResourceEventMsg> implicitlyIssuedStartEvents;
@@ -58,12 +62,13 @@ protocol AquariumUserState {
     double currentValue;
   }
 
-  record WorkingResourcesChargingStateMsg {
+  record ResourcesChargingStateMsg {
+    string resource; // who am I?
     map<AnyValueMsg> details;
-    map<WorkingResourceInstanceChargingStateMsg> stateOfResourceInstance;
+    map<ResourceInstanceChargingStateMsg> stateOfResourceInstance;
   }
 
-  record WorkingAgreementHistoryMsg {
+  record UserAgreementHistoryMsg {
     array<UserAgreementMsg> agreements;
   }
 
@@ -72,36 +77,51 @@ protocol AquariumUserState {
     long stopMillis;
     double unitPrice;
     string explanation = "";
-    double creditsToSubtract;
+    double creditsToSubtract = 0.0;
   }
 
+  // The following equation must hold (within a very small error):
+  //   `newTotalCredits = oldTotalCredits - sumOfCreditsToSubtract`.
   record WalletEntryMsg {
-    string userID;
-    double sumOfCreditsToSubtract;
+    string userID; // The user ID this wallet entry is related to.
+    double sumOfCreditsToSubtract; // The credit amount generated for this wallet entry.
     double oldTotalCredits;
     double newTotalCredits;
-    long whenComputedMillis;
+    long whenComputedMillis; // When the computation took place
     long referenceStartMillis;
     long referenceStopMillis;
     int billingYear;
     int billingMonth;
-    int billingDay;
-    array<ChargeslotMsg> chargeslots;
+    int billingMonthDay;
+    array<ChargeslotMsg> chargeslots; // The details of the credit computation
     array<ResourceEventMsg> resourceEvents; // current is the last one
     ResourceTypeMsg resourceType;
     boolean isSynthetic = false;
   }
 
-  record WorkingUserStateMsg {
+  // convenient wrapper for a list of wallet entries
+  record WalletEntriesMsg {
+    array<WalletEntryMsg> entries;
+  }
+
+  record UserStateMsg {
+    string @aliases(["id"]) originalID; // internal Aquarium ID
+    union {string, null} @aliases(["_id", "idInStore"]) inStoreID; // From Aquarium store
     string userID;
-    union {string, null} parentUserStateIDInStore;
+    long occurredMillis; // When we created the event
+    union {string, null} parentOriginalID;
+    union {string, null} parentInStoreID;
     map<ResourceTypeMsg> resourceTypesMap;
-    map<WorkingResourcesChargingStateMsg> workingStateOfResources;
-    double totalCredits;
-    WorkingAgreementHistoryMsg workingAgreementHistory;
-    long latestUpdateMillis;
+    map<ResourcesChargingStateMsg> stateOfResources; // key is resourceType.name
+    double totalCredits = 0.0;
+    UserAgreementHistoryMsg agreementHistory;
+    long latestUpdateMillis; // // last update of this working user state
     long latestResourceEventOccurredMillis;
-    long billingPeriodOutOfSyncResourceEventsCounter;
+    long billingPeriodOutOfSyncResourceEventsCounter = 0;
+    int billingYear;
+    int billingMonth;
+    int billingMonthDay;
+    boolean isFullBillingMonth = false;
     array<WalletEntryMsg> walletEntries;
   }
 }

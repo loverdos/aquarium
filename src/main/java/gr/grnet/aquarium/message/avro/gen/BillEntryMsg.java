@@ -6,14 +6,14 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"BillEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"userID\",\"type\":\"string\"},{\"name\":\"status\",\"type\":\"string\"},{\"name\":\"remainingCredits\",\"type\":\"string\"},{\"name\":\"deductedCredits\",\"type\":\"string\"},{\"name\":\"startTime\",\"type\":\"string\"},{\"name\":\"endTime\",\"type\":\"string\"},{\"name\":\"bill\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEntryMsg\",\"fields\":[{\"name\":\"resourceName\",\"type\":\"string\"},{\"name\":\"resourceType\",\"type\":\"string\"},{\"name\":\"unitName\",\"type\":\"string\"},{\"name\":\"totalCredits\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EventEntryMsg\",\"fields\":[{\"name\":\"eventType\",\"type\":\"string\"},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"unitPrice\",\"type\":\"string\"},{\"name\":\"startTime\",\"type\":\"string\"},{\"name\":\"endTime\",\"type\":\"string\"},{\"name\":\"ellapsedTime\",\"type\":\"string\"},{\"name\":\"credits\",\"type\":\"string\"}]}}}]}}}]}}}]}");
-  @Deprecated public java.lang.CharSequence id;
-  @Deprecated public java.lang.CharSequence userID;
-  @Deprecated public java.lang.CharSequence status;
-  @Deprecated public java.lang.CharSequence remainingCredits;
-  @Deprecated public java.lang.CharSequence deductedCredits;
-  @Deprecated public java.lang.CharSequence startTime;
-  @Deprecated public java.lang.CharSequence endTime;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"BillEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"status\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"remainingCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"deductedCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"bill\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEntryMsg\",\"fields\":[{\"name\":\"resourceName\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"resourceType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitName\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EventEntryMsg\",\"fields\":[{\"name\":\"eventType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"ellapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"credits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}}}]}}}]}}}]}");
+  @Deprecated public java.lang.String id;
+  @Deprecated public java.lang.String userID;
+  @Deprecated public java.lang.String status;
+  @Deprecated public java.lang.String remainingCredits;
+  @Deprecated public java.lang.String deductedCredits;
+  @Deprecated public java.lang.String startTime;
+  @Deprecated public java.lang.String endTime;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> bill;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
@@ -34,13 +34,13 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: id = (java.lang.CharSequence)value$; break;
-    case 1: userID = (java.lang.CharSequence)value$; break;
-    case 2: status = (java.lang.CharSequence)value$; break;
-    case 3: remainingCredits = (java.lang.CharSequence)value$; break;
-    case 4: deductedCredits = (java.lang.CharSequence)value$; break;
-    case 5: startTime = (java.lang.CharSequence)value$; break;
-    case 6: endTime = (java.lang.CharSequence)value$; break;
+    case 0: id = (java.lang.String)value$; break;
+    case 1: userID = (java.lang.String)value$; break;
+    case 2: status = (java.lang.String)value$; break;
+    case 3: remainingCredits = (java.lang.String)value$; break;
+    case 4: deductedCredits = (java.lang.String)value$; break;
+    case 5: startTime = (java.lang.String)value$; break;
+    case 6: endTime = (java.lang.String)value$; break;
     case 7: bill = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
@@ -49,7 +49,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
   /**
    * Gets the value of the 'id' field.
    */
-  public java.lang.CharSequence getId() {
+  public java.lang.String getId() {
     return id;
   }
 
@@ -57,14 +57,14 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'id' field.
    * @param value the value to set.
    */
-  public void setId(java.lang.CharSequence value) {
+  public void setId(java.lang.String value) {
     this.id = value;
   }
 
   /**
    * Gets the value of the 'userID' field.
    */
-  public java.lang.CharSequence getUserID() {
+  public java.lang.String getUserID() {
     return userID;
   }
 
@@ -72,14 +72,14 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'userID' field.
    * @param value the value to set.
    */
-  public void setUserID(java.lang.CharSequence value) {
+  public void setUserID(java.lang.String value) {
     this.userID = value;
   }
 
   /**
    * Gets the value of the 'status' field.
    */
-  public java.lang.CharSequence getStatus() {
+  public java.lang.String getStatus() {
     return status;
   }
 
@@ -87,14 +87,14 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'status' field.
    * @param value the value to set.
    */
-  public void setStatus(java.lang.CharSequence value) {
+  public void setStatus(java.lang.String value) {
     this.status = value;
   }
 
   /**
    * Gets the value of the 'remainingCredits' field.
    */
-  public java.lang.CharSequence getRemainingCredits() {
+  public java.lang.String getRemainingCredits() {
     return remainingCredits;
   }
 
@@ -102,14 +102,14 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'remainingCredits' field.
    * @param value the value to set.
    */
-  public void setRemainingCredits(java.lang.CharSequence value) {
+  public void setRemainingCredits(java.lang.String value) {
     this.remainingCredits = value;
   }
 
   /**
    * Gets the value of the 'deductedCredits' field.
    */
-  public java.lang.CharSequence getDeductedCredits() {
+  public java.lang.String getDeductedCredits() {
     return deductedCredits;
   }
 
@@ -117,14 +117,14 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'deductedCredits' field.
    * @param value the value to set.
    */
-  public void setDeductedCredits(java.lang.CharSequence value) {
+  public void setDeductedCredits(java.lang.String value) {
     this.deductedCredits = value;
   }
 
   /**
    * Gets the value of the 'startTime' field.
    */
-  public java.lang.CharSequence getStartTime() {
+  public java.lang.String getStartTime() {
     return startTime;
   }
 
@@ -132,14 +132,14 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'startTime' field.
    * @param value the value to set.
    */
-  public void setStartTime(java.lang.CharSequence value) {
+  public void setStartTime(java.lang.String value) {
     this.startTime = value;
   }
 
   /**
    * Gets the value of the 'endTime' field.
    */
-  public java.lang.CharSequence getEndTime() {
+  public java.lang.String getEndTime() {
     return endTime;
   }
 
@@ -147,7 +147,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'endTime' field.
    * @param value the value to set.
    */
-  public void setEndTime(java.lang.CharSequence value) {
+  public void setEndTime(java.lang.String value) {
     this.endTime = value;
   }
 
@@ -187,13 +187,13 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<BillEntryMsg>
     implements org.apache.avro.data.RecordBuilder<BillEntryMsg> {
 
-    private java.lang.CharSequence id;
-    private java.lang.CharSequence userID;
-    private java.lang.CharSequence status;
-    private java.lang.CharSequence remainingCredits;
-    private java.lang.CharSequence deductedCredits;
-    private java.lang.CharSequence startTime;
-    private java.lang.CharSequence endTime;
+    private java.lang.String id;
+    private java.lang.String userID;
+    private java.lang.String status;
+    private java.lang.String remainingCredits;
+    private java.lang.String deductedCredits;
+    private java.lang.String startTime;
+    private java.lang.String endTime;
     private java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> bill;
 
     /** Creates a new Builder */
@@ -210,31 +210,31 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     private Builder(gr.grnet.aquarium.message.avro.gen.BillEntryMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.BillEntryMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.id)) {
-        this.id = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.id);
+        this.id = (java.lang.String) data().deepCopy(fields()[0].schema(), other.id);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.userID)) {
-        this.userID = (java.lang.CharSequence) data().deepCopy(fields()[1].schema(), other.userID);
+        this.userID = (java.lang.String) data().deepCopy(fields()[1].schema(), other.userID);
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.status)) {
-        this.status = (java.lang.CharSequence) data().deepCopy(fields()[2].schema(), other.status);
+        this.status = (java.lang.String) data().deepCopy(fields()[2].schema(), other.status);
         fieldSetFlags()[2] = true;
       }
       if (isValidValue(fields()[3], other.remainingCredits)) {
-        this.remainingCredits = (java.lang.CharSequence) data().deepCopy(fields()[3].schema(), other.remainingCredits);
+        this.remainingCredits = (java.lang.String) data().deepCopy(fields()[3].schema(), other.remainingCredits);
         fieldSetFlags()[3] = true;
       }
       if (isValidValue(fields()[4], other.deductedCredits)) {
-        this.deductedCredits = (java.lang.CharSequence) data().deepCopy(fields()[4].schema(), other.deductedCredits);
+        this.deductedCredits = (java.lang.String) data().deepCopy(fields()[4].schema(), other.deductedCredits);
         fieldSetFlags()[4] = true;
       }
       if (isValidValue(fields()[5], other.startTime)) {
-        this.startTime = (java.lang.CharSequence) data().deepCopy(fields()[5].schema(), other.startTime);
+        this.startTime = (java.lang.String) data().deepCopy(fields()[5].schema(), other.startTime);
         fieldSetFlags()[5] = true;
       }
       if (isValidValue(fields()[6], other.endTime)) {
-        this.endTime = (java.lang.CharSequence) data().deepCopy(fields()[6].schema(), other.endTime);
+        this.endTime = (java.lang.String) data().deepCopy(fields()[6].schema(), other.endTime);
         fieldSetFlags()[6] = true;
       }
       if (isValidValue(fields()[7], other.bill)) {
@@ -244,12 +244,12 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     }
 
     /** Gets the value of the 'id' field */
-    public java.lang.CharSequence getId() {
+    public java.lang.String getId() {
       return id;
     }
     
     /** Sets the value of the 'id' field */
-    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setId(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setId(java.lang.String value) {
       validate(fields()[0], value);
       this.id = value;
       fieldSetFlags()[0] = true;
@@ -269,12 +269,12 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     }
 
     /** Gets the value of the 'userID' field */
-    public java.lang.CharSequence getUserID() {
+    public java.lang.String getUserID() {
       return userID;
     }
     
     /** Sets the value of the 'userID' field */
-    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setUserID(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setUserID(java.lang.String value) {
       validate(fields()[1], value);
       this.userID = value;
       fieldSetFlags()[1] = true;
@@ -294,12 +294,12 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     }
 
     /** Gets the value of the 'status' field */
-    public java.lang.CharSequence getStatus() {
+    public java.lang.String getStatus() {
       return status;
     }
     
     /** Sets the value of the 'status' field */
-    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setStatus(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setStatus(java.lang.String value) {
       validate(fields()[2], value);
       this.status = value;
       fieldSetFlags()[2] = true;
@@ -319,12 +319,12 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     }
 
     /** Gets the value of the 'remainingCredits' field */
-    public java.lang.CharSequence getRemainingCredits() {
+    public java.lang.String getRemainingCredits() {
       return remainingCredits;
     }
     
     /** Sets the value of the 'remainingCredits' field */
-    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setRemainingCredits(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setRemainingCredits(java.lang.String value) {
       validate(fields()[3], value);
       this.remainingCredits = value;
       fieldSetFlags()[3] = true;
@@ -344,12 +344,12 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     }
 
     /** Gets the value of the 'deductedCredits' field */
-    public java.lang.CharSequence getDeductedCredits() {
+    public java.lang.String getDeductedCredits() {
       return deductedCredits;
     }
     
     /** Sets the value of the 'deductedCredits' field */
-    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setDeductedCredits(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setDeductedCredits(java.lang.String value) {
       validate(fields()[4], value);
       this.deductedCredits = value;
       fieldSetFlags()[4] = true;
@@ -369,12 +369,12 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     }
 
     /** Gets the value of the 'startTime' field */
-    public java.lang.CharSequence getStartTime() {
+    public java.lang.String getStartTime() {
       return startTime;
     }
     
     /** Sets the value of the 'startTime' field */
-    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setStartTime(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setStartTime(java.lang.String value) {
       validate(fields()[5], value);
       this.startTime = value;
       fieldSetFlags()[5] = true;
@@ -394,12 +394,12 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     }
 
     /** Gets the value of the 'endTime' field */
-    public java.lang.CharSequence getEndTime() {
+    public java.lang.String getEndTime() {
       return endTime;
     }
     
     /** Sets the value of the 'endTime' field */
-    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setEndTime(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setEndTime(java.lang.String value) {
       validate(fields()[6], value);
       this.endTime = value;
       fieldSetFlags()[6] = true;
@@ -447,13 +447,13 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     public BillEntryMsg build() {
       try {
         BillEntryMsg record = new BillEntryMsg();
-        record.id = fieldSetFlags()[0] ? this.id : (java.lang.CharSequence) defaultValue(fields()[0]);
-        record.userID = fieldSetFlags()[1] ? this.userID : (java.lang.CharSequence) defaultValue(fields()[1]);
-        record.status = fieldSetFlags()[2] ? this.status : (java.lang.CharSequence) defaultValue(fields()[2]);
-        record.remainingCredits = fieldSetFlags()[3] ? this.remainingCredits : (java.lang.CharSequence) defaultValue(fields()[3]);
-        record.deductedCredits = fieldSetFlags()[4] ? this.deductedCredits : (java.lang.CharSequence) defaultValue(fields()[4]);
-        record.startTime = fieldSetFlags()[5] ? this.startTime : (java.lang.CharSequence) defaultValue(fields()[5]);
-        record.endTime = fieldSetFlags()[6] ? this.endTime : (java.lang.CharSequence) defaultValue(fields()[6]);
+        record.id = fieldSetFlags()[0] ? this.id : (java.lang.String) defaultValue(fields()[0]);
+        record.userID = fieldSetFlags()[1] ? this.userID : (java.lang.String) defaultValue(fields()[1]);
+        record.status = fieldSetFlags()[2] ? this.status : (java.lang.String) defaultValue(fields()[2]);
+        record.remainingCredits = fieldSetFlags()[3] ? this.remainingCredits : (java.lang.String) defaultValue(fields()[3]);
+        record.deductedCredits = fieldSetFlags()[4] ? this.deductedCredits : (java.lang.String) defaultValue(fields()[4]);
+        record.startTime = fieldSetFlags()[5] ? this.startTime : (java.lang.String) defaultValue(fields()[5]);
+        record.endTime = fieldSetFlags()[6] ? this.endTime : (java.lang.String) defaultValue(fields()[6]);
         record.bill = fieldSetFlags()[7] ? this.bill : (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg>) defaultValue(fields()[7]);
         return record;
       } catch (Exception e) {

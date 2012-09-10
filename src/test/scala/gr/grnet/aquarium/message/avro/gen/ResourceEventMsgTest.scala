@@ -36,11 +36,11 @@
 package gr.grnet.aquarium.message.avro.gen
 
 import java.io.ByteArrayOutputStream
-import org.apache.avro.io.{EncoderFactory, Encoder, JsonEncoder}
-import org.apache.avro.specific.SpecificDatumWriter
-import org.junit.{Assert, Test}
 import java.util
+import org.apache.avro.io.EncoderFactory
+import org.apache.avro.specific.SpecificDatumWriter
 import org.codehaus.jackson.{JsonEncoding, JsonFactory}
+import org.junit.{Assert, Test}
 
 /**
  *
@@ -120,7 +120,7 @@ class ResourceEventMsgTest {
       setOccurredMillis(1000L).
       setUserID("foouser").
       setValue("123.32").
-      setDetails(new util.HashMap[CharSequence, AnyValueMsg]()).
+      setDetails(new util.HashMap[String, AnyValueMsg]()).
       build()
 
     val schema = rcEvent.getSchema

@@ -33,20 +33,43 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.actor.message.event
+package gr.grnet.aquarium.event
 
-import gr.grnet.aquarium.actor.message.{UserActorRequestMessage, ActorMessage}
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.message.avro.MessageFactory
+import gr.grnet.aquarium.message.avro.gen.{DetailsMsg, AnyValueMsg}
+import java.{util ⇒ ju}
+import org.apache.avro.generic.IndexedRecord
+import org.apache.avro.specific.SpecificData
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 /**
- * A message that triggers the resource event processing pipeline.
- *
- * Note that the prefix `Process` means that no reply is created or needed.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class ProcessResourceEvent(rcEvent: ResourceEventModel) extends ActorMessage with UserActorRequestMessage {
-  def userID = rcEvent.userID
+object DetailsModel {
+  type Type = ju.Map[String, AnyValueMsg] // This is from Avro messages
 
-  def referenceTimeMillis = rcEvent.occurredMillis
+  def make: Type = new ju.HashMap()
+
+  def setBoolean(msgDetails: Type, name: String, value: Boolean = true) {
+    msgDetails.put(name, MessageFactory.anyValueMsgOfBoolean(value))
+  }
+
+  def setString(msgDetails: Type, name: String, value: String) {
+    msgDetails.put(name, MessageFactory.anyValueMsgOfString(value))
+  }
+
+  def fromScalaMap(map: scala.collection.Map[String, AnyValueMsg]): Type = {
+    map.asJava
+  }
+
+  def fromScalaTuples(tuples: (String, AnyValueMsg)*): Type = {
+    fromScalaMap(Map(tuples:_*))
+  }
+
+  def copyOf(details: Type): Type = {
+    val wrapper = DetailsMsg.newBuilder().setDetails(details).build()
+    val copy = SpecificData.get().deepCopy(wrapper.getSchema, wrapper)
+    copy.asInstanceOf[IndexedRecord].get(0).asInstanceOf[Type]
+  }
 }

@@ -35,63 +35,83 @@
 
 package gr.grnet.aquarium.charging.state
 
-import scala.collection.immutable
-import gr.grnet.aquarium.policy.{PolicyDefinedFullPriceTableRef, StdUserAgreement, UserAgreementModel}
-import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.policy.UserAgreementModel
+import gr.grnet.aquarium.util.json.JsonSupport
+import scala.collection.immutable
+import gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg
+import gr.grnet.aquarium.message.avro.ModelFactory
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final case class WorkingAgreementHistory(
-    var agreements: immutable.SortedSet[UserAgreementModel] = immutable.SortedSet[UserAgreementModel]()
-) extends AgreementHistoryModel with JsonSupport {
+final case class UserAgreementHistoryModel(
+    msg: UserAgreementHistoryMsg
+) extends JsonSupport {
 
-  def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel] = {
-    immutable.TreeMap(agreements.map(ag ⇒ (ag.timeslot, ag)).toSeq: _*)
+  private var _userAgreementModels: immutable.SortedSet[UserAgreementModel] = {
+    var userAgreementModels = immutable.SortedSet[UserAgreementModel]()
+    val userAgreements = msg.getAgreements.iterator()
+    while(userAgreements.hasNext) {
+      val userAgreement = userAgreements.next()
+      val userAgreementModel = ModelFactory.newUserAgreementModel(userAgreement)
+      this._userAgreementModels += userAgreementModel
+    }
+
+    userAgreementModels
   }
 
-  def setFrom(that: WorkingAgreementHistory): this.type = {
-    this.agreements = that.agreements
+  def size: Int = msg.getAgreements.size()
+
+  def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel] = {
+    immutable.TreeMap(_userAgreementModels.map(ag ⇒ (ag.timeslot, ag)).toSeq: _*)
+  }
+
+  def setFrom(that: UserAgreementHistoryModel): this.type = {
+    this._userAgreementModels = that._userAgreementModels
     this
   }
 
   def +(userAgreement: UserAgreementModel): this.type = {
-    agreements += userAgreement
+    msg.getAgreements.add(userAgreement.msg)
+    _userAgreementModels += userAgreement
     this
   }
 
   def +=(userAgreement: UserAgreementModel): Unit = {
-    agreements += userAgreement
+    msg.getAgreements.add(userAgreement.msg)
+    _userAgreementModels += userAgreement
   }
 
   def ++(userAgreements: Traversable[UserAgreementModel]): this.type = {
-    agreements ++= userAgreements
+    for(userAgreement ← userAgreements) {
+      msg.getAgreements.add(userAgreement.msg)
+    }
+    _userAgreementModels ++= userAgreements
     this
   }
 
   def ++=(userAgreements: Traversable[UserAgreementModel]): Unit = {
-    agreements ++= userAgreements
+    for(userAgreement ← userAgreements) {
+      msg.getAgreements.add(userAgreement.msg)
+    }
+    _userAgreementModels ++= userAgreements
   }
 
-  def oldestAgreement: Option[UserAgreementModel] = {
-    agreements.headOption
+  def oldestAgreementModel: Option[UserAgreementModel] = {
+    _userAgreementModels.headOption
   }
 
-  def newestAgreement: Option[UserAgreementModel] = {
-    agreements.lastOption
+  def newestAgreementModel: Option[UserAgreementModel] = {
+    _userAgreementModels.lastOption
   }
 
-  def agreementInEffectWhen(whenMillis: Long): Option[UserAgreementModel] = {
-    agreements.to(
-      StdUserAgreement("", None, whenMillis, Long.MaxValue, "", PolicyDefinedFullPriceTableRef())
-    ).lastOption
-  }
-
-  def toAgreementHistory = {
-    AgreementHistory(agreements.toList)
-  }
+//  def agreementInEffectWhen(whenMillis: Long): Option[UserAgreementModel] = {
+//    agreements.to(
+//      UserAgreementModel("", None, whenMillis, Long.MaxValue, "", PolicyDefinedFullPriceTableRef())
+//    ).lastOption
+//  }
 }
 

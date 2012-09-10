@@ -36,22 +36,22 @@
 package gr.grnet.aquarium.connector.handler
 
 import gr.grnet.aquarium.Aquarium
-import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
 import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
+import gr.grnet.aquarium.message.avro.gen.IMEventMsg
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util.{LogHelpers, Tags}
 import org.slf4j.Logger
+import gr.grnet.aquarium.message.avro.{MessageHelpers, AvroHelpers}
 
 /**
  * A [[gr.grnet.aquarium.connector.handler.PayloadHandler]] for
- * [[gr.grnet.aquarium.event.model.im.IMEventModel]]s.
+ * [[gr.grnet.aquarium.message.avro.gen.IMEventMsg]]s.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
 class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
-  extends GenericPayloadHandler[IMEventModel](
+  extends GenericPayloadHandler[IMEventMsg](
       // jsonParser: Array[Byte] ⇒ JsonTextFormat
       payload ⇒ {
         aquarium.converters.convertEx[JsonTextFormat](payload)
@@ -71,7 +71,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
       // eventParser: JsonTextFormat ⇒ E
       jsonTextFormat ⇒ {
-        StdIMEvent.fromJsonTextFormat(jsonTextFormat)
+        AvroHelpers.specificRecordOfJsonString(jsonTextFormat.value, new IMEventMsg)
       },
 
       // onEventParserSuccess: (Array[Byte], E) ⇒ Unit
@@ -89,7 +89,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
       // preSaveAction: E ⇒ Option[HandlerResult]
       imEvent ⇒ {
-        val id = imEvent.id
+        val id = imEvent.getOriginalID
 
         // Let's decide if it is OK to store the event
         // Remember that OK == None as the returning result
@@ -102,7 +102,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
         //    It is a requirement that this ID is unique.
         val store = aquarium.imEventStore
 
-        val imEventDebugString = imEvent.toDebugString
+        val imEventDebugString = AvroHelpers.jsonStringOfSpecificRecord(imEvent)
 
         store.findIMEventByID(id) match {
           case Some(_) ⇒
@@ -112,10 +112,10 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
           case None ⇒
             // No duplicate. Find the CREATE event if any
-            val userID = imEvent.userID
+            val userID = imEvent.getUserID
             val createIMEventOpt = store.findCreateIMEventByUserID(userID)
             val userHasBeenCreated = createIMEventOpt.isDefined
-            val isCreateUser = imEvent.isCreateUser
+            val isCreateUser = MessageHelpers.isIMEventCreate(imEvent)
 
             (userHasBeenCreated, isCreateUser) match {
               case (true, true) ⇒
@@ -128,10 +128,10 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
                 // (User CREATEd, MODIFY event)
                 // Everything BEFORE the CREATE event is rejected
                 val createIMEvent = createIMEventOpt.get
-                if(imEvent.occurredMillis < createIMEvent.occurredMillis) {
+                if(imEvent.getOccurredMillis < createIMEvent.getOccurredMillis) {
                   val reason = "IMEvent(id=%s) is before the creation event (id=%s). Rejecting".format(
-                    imEvent.id,
-                    createIMEvent.id
+                    imEvent.getOriginalID,
+                    createIMEvent.getOriginalID
                   )
                   logger.warn(reason)
                   Some(HandlerResultReject(reason))
@@ -142,7 +142,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
               case (false, true) ⇒
                 // (User not CREATEd, CREATE event)
-                logger.info("User created by %s".format(imEventDebugString))
+                logger.info("Got user CREATE %s".format(imEventDebugString))
                 None
 
               case (false, false) ⇒
@@ -161,6 +161,6 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
       // forwardAction: S ⇒ Unit
       imEvent ⇒ {
-        aquarium.akkaService.getOrCreateUserActor(imEvent.userID) ! ProcessIMEvent(imEvent)
+        aquarium.akkaService.getOrCreateUserActor(imEvent.getUserID) ! imEvent
       }
     )

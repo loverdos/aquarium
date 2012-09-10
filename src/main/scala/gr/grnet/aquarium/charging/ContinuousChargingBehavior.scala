@@ -35,17 +35,15 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
-import gr.grnet.aquarium.charging.state.{AgreementHistoryModel, WorkingResourcesChargingState, WorkingResourceInstanceChargingState}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.policy.{FullPriceTable, ResourceType}
+import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.message.MessageConstants
+import gr.grnet.aquarium.message.avro.gen.{WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.{MessageHelpers, AvroHelpers, MessageFactory}
+import gr.grnet.aquarium.policy.FullPriceTableModel
 import gr.grnet.aquarium.util.LogHelpers.Debug
-import scala.collection.mutable
-import gr.grnet.aquarium.event.model.EventModel
-import java.util.Date
+import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel}
 
 /**
  * In practice a resource usage will be charged for the total amount of usage
@@ -58,13 +56,13 @@ import java.util.Date
 final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
   def computeCreditsToSubtract(
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
       oldCredits: Double,
       timeDeltaMillis: Long,
       unitPrice: Double
   ): (Double /* credits */, String /* explanation */) = {
 
-    val oldAccumulatingAmount = workingResourceInstanceChargingState.oldAccumulatingAmount
+    val oldAccumulatingAmount = resourceInstanceChargingState.getOldAccumulatingAmount
     val credits = HrsOfMillis(timeDeltaMillis) * oldAccumulatingAmount * unitPrice
     val explanation = "Hours(%s) * MBs(%s) * UnitPrice(%s)".format(
       HrsOfMillis(timeDeltaMillis),
@@ -76,105 +74,112 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
   }
 
   def computeSelectorPath(
-      workingChargingBehaviorDetails: mutable.Map[String, Any],
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      currentResourceEvent: ResourceEventModel,
-      referenceTimeslot: Timeslot,
+      chargingBehaviorDetails: DetailsModel.Type,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      currentResourceEvent: ResourceEventMsg,
+      referenceStartMillis: Long,
+      referenceStopMillis: Long,
       totalCredits: Double
   ): List[String] = {
-    List(FullPriceTable.DefaultSelectorKey)
+    List(MessageConstants.DefaultSelectorKey)
   }
 
-  def initialChargingDetails: Map[String, Any] = Map()
+  def initialChargingDetails = {
+    DetailsModel.make
+  }
 
   def computeNewAccumulatingAmount(
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      eventDetails: Map[String, String]
-  ): Double = {
-    workingResourceInstanceChargingState.oldAccumulatingAmount +
-    workingResourceInstanceChargingState.currentValue
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      eventDetails: DetailsModel.Type
+  ) = {
+
+    val oldAccumulatingAmount = CreditsModel.from(resourceInstanceChargingState.getOldAccumulatingAmount)
+    val currentValue = CreditsModel.from(resourceInstanceChargingState.getCurrentValue)
+
+    CreditsModel.add(oldAccumulatingAmount, currentValue)
   }
 
-  def constructImplicitEndEventFor(resourceEvent: ResourceEventModel, newOccurredMillis: Long) = {
-    val details = resourceEvent.details
-    val newDetails = ResourceEventModel.setAquariumSyntheticAndImplicitEnd(details)
+  def constructImplicitEndEventFor(resourceEvent: ResourceEventMsg, newOccurredMillis: Long) = {
+    val details = resourceEvent.getDetails
+    val newDetails = DetailsModel.copyOf(details)
+    MessageHelpers.setAquariumSyntheticAndImplicitEnd(newDetails)
 
-    resourceEvent.withDetails(newDetails, newOccurredMillis)
+    // FIXME: What value ?
+    ResourceEventMsg.newBuilder(resourceEvent).
+      setDetails(newDetails).
+      setOccurredMillis(newOccurredMillis).
+      setReceivedMillis(newOccurredMillis).
+      build()
   }
 
-  override def processResourceEvent(
+  def processResourceEvent(
        aquarium: Aquarium,
-       resourceEvent: ResourceEventModel,
-       resourceType: ResourceType,
+       resourceEvent: ResourceEventMsg,
+       resourceType: ResourceTypeMsg,
        billingMonthInfo: BillingMonthInfo,
-       workingResourcesChargingState: WorkingResourcesChargingState,
-       userAgreements: AgreementHistoryModel,
-       totalCredits: Double,
-       walletEntryRecorder: WalletEntry ⇒ Unit
-   ): (Int, Double) = {
+       resourcesChargingState: ResourcesChargingStateMsg,
+       userStateModel: UserStateModel,
+       walletEntryRecorder: WalletEntryMsg ⇒ Unit
+   ): (Int, CreditsModel.Type) = {
 
     // 1. Ensure proper initial state per resource and per instance
-    ensureInitializedWorkingState(workingResourcesChargingState, resourceEvent)
+    ensureInitializedWorkingState(resourcesChargingState, resourceEvent)
 
     // 2. Fill in data from the new event
-    val stateOfResourceInstance = workingResourcesChargingState.stateOfResourceInstance
-    val workingResourcesChargingStateDetails = workingResourcesChargingState.details
-    val instanceID = resourceEvent.instanceID
-    val workingResourceInstanceChargingState = stateOfResourceInstance(instanceID)
-    fillWorkingResourceInstanceChargingStateFromEvent(workingResourceInstanceChargingState, resourceEvent)
+    val stateOfResourceInstance = resourcesChargingState.getStateOfResourceInstance
+    val resourcesChargingStateDetails = resourcesChargingState.getDetails
+    val instanceID = resourceEvent.getInstanceID
+    val resourceInstanceChargingState = stateOfResourceInstance.get(instanceID)
+    fillWorkingResourceInstanceChargingStateFromEvent(resourceInstanceChargingState, resourceEvent)
 
-    val previousEvent = workingResourceInstanceChargingState.previousEvents.headOption match {
-      case Some(previousEvent) ⇒
-        Debug(logger, "I have previous event %s", previousEvent.toDebugString)
-        previousEvent
-
-
-      case None ⇒
+    val userAgreementHistoryModel = userStateModel.userAgreementHistoryModel
+    val previousEvents = resourceInstanceChargingState.getPreviousEvents
+    val previousEvent = previousEvents.size() match {
+      case 0 ⇒
         // We do not have the needed previous event, so this must be the first resource event of its kind, ever.
         // Let's see if we can create a dummy previous event.
-        Debug(logger, "First event of its kind %s", resourceEvent.toDebugString)
+        Debug(logger, "First event of its kind %s", AvroHelpers.jsonStringOfSpecificRecord(resourceEvent))
 
-        val dummyFirstEventDetails = Map(
-            ResourceEventModel.Names.details_aquarium_is_synthetic   -> "true",
-            ResourceEventModel.Names.details_aquarium_is_dummy_first -> "true",
-            ResourceEventModel.Names.details_aquarium_reference_event_id -> resourceEvent.id,
-            ResourceEventModel.Names.details_aquarium_reference_event_id_in_store -> resourceEvent.stringIDInStoreOrEmpty
-        )
+        val dummyFirstEventValue = "0.0" // TODO ? From configuration
 
-        val dummyFirstEventValue = 0.0 // TODO From configuration
-
-        val millis = userAgreements.agreementByTimeslot.headOption match {
+        val millis = userAgreementHistoryModel.agreementByTimeslot.headOption match {
           case None =>
-            throw new AquariumInternalError("No agreement!!!")
+            throw new AquariumInternalError("No agreement!!!") // FIXME Better explanation
           case Some((_,aggr)) =>
             val millisAgg = aggr.timeslot.from.getTime
             val millisMon = billingMonthInfo.monthStartMillis
             if(millisAgg>millisMon) millisAgg else millisMon
         }
 
-        val dummyFirstEvent = resourceEvent.withDetailsAndValue(
-            dummyFirstEventDetails,
-            dummyFirstEventValue,
-            millis)
-        Debug(logger, "Dummy first event %s", dummyFirstEvent.toDebugString)
+        val dummyFirstEvent = constructDummyFirstEventFor(resourceEvent, millis, dummyFirstEventValue)
+
+        Debug(logger, "Dummy first event %s", AvroHelpers.jsonStringOfSpecificRecord(dummyFirstEvent))
         dummyFirstEvent
+
+
+      case _ ⇒
+        val previousEvent = previousEvents.get(0) // head is most recent
+        Debug(logger, "I have previous event %s", AvroHelpers.jsonStringOfSpecificRecord(previousEvent))
+        previousEvent
+
     }
 
     val retval = computeWalletEntriesForNewEvent(
       resourceEvent,
       resourceType,
       billingMonthInfo,
-      totalCredits,
-      Timeslot(previousEvent.occurredMillis, resourceEvent.occurredMillis),
-      userAgreements.agreementByTimeslot,
-      workingResourcesChargingStateDetails,
-      workingResourceInstanceChargingState,
-      aquarium.policyStore,
+      userStateModel.totalCredits,
+      previousEvent.getOccurredMillis,
+      resourceEvent.getOccurredMillis,
+      userAgreementHistoryModel.agreementByTimeslot,
+      resourcesChargingStateDetails,
+      resourceInstanceChargingState,
+      aquarium,
       walletEntryRecorder
     )
 
     // We need just one previous event, so we update it
-    workingResourceInstanceChargingState.setOnePreviousEvent(resourceEvent)
+    MessageHelpers.setOnePreviousEvent(resourceInstanceChargingState, resourceEvent)
 
     retval
   }
@@ -184,9 +189,9 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       resourceTypeName: String,
       resourceInstanceID: String,
       eventOccurredMillis: Long,
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState
-  ): List[ResourceEventModel] = {
-    StdResourceEvent(
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg
+  ): List[ResourceEventMsg] = {
+    MessageFactory.newResourceEventMsg(
       ChargingBehavior.VirtualEventsIDGen.nextUID(),
       eventOccurredMillis,
       eventOccurredMillis,
@@ -194,11 +199,11 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       "aquarium",
       resourceTypeName,
       resourceInstanceID,
-      0.0,
-      EventModel.EventVersion_1_0,
-      Map(
-        ResourceEventModel.Names.details_aquarium_is_synthetic   -> "true",
-        ResourceEventModel.Names.details_aquarium_is_realtime_virtual -> "true"
+      "0.0",
+      MessageConstants.EventVersion_1_0,
+      MessageFactory.newDetails(
+        MessageFactory.newBooleanDetail(MessageConstants.DetailsKeys.aquarium_is_synthetic, true),
+        MessageFactory.newBooleanDetail(MessageConstants.DetailsKeys.aquarium_is_realtime_virtual, true)
       )
     ) :: Nil
   }

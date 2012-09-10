@@ -33,35 +33,24 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.charging.state
-
-import org.junit.Test
-import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.computation.BillingMonthInfo
+package gr.grnet.aquarium.util.json
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-class StdUserStateTest {
-  @Test
-  def testJson() {
-    val now = TimeHelpers.nowMillis()
-    val bmi = BillingMonthInfo.fromMillis(now)
-    val state = StdUserState(
-      "id-1", None, "user@grnet.gr",
-      now, 0, 1000.0, false,
-      bmi.year, bmi.month,
-      Map(),
-      0L,
-      AgreementHistory.Empty,
-      Nil
-    )
-
-    val json = state.toJsonString
-    println(json)
-    val obj = StdUserState.fromJsonString(json)
-
-    assert(state == obj)
-  }
+object JsonNames {
+  final val billingMonth = "billingMonth"
+  final val billingMonthDay = "billingMonthDay"
+  final val billingYear = "billingYear"
+  final val isFullBillingMonth = "isFullBillingMonth"
+  final val eventType = "eventType"
+  final val userID = "userID"
+  final val id = "id"
+  final val payload = "payload"
+  final val _id = "_id"
+  final val occurredMillis = "occurredMillis"
+  final val receivedMillis = "receivedMillis"
+  final val validFromMillis = "validFromMillis"
+  final val validToMillis = "validToMillis"
 }

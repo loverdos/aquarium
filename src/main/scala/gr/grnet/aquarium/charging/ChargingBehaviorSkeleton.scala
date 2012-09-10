@@ -35,18 +35,21 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, WorkingResourcesChargingState, AgreementHistoryModel}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
+import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
 import gr.grnet.aquarium.computation.{TimeslotComputations, BillingMonthInfo}
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
+import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.policy.{FullPriceTable, EffectivePriceTable, UserAgreementModel, ResourceType}
+import gr.grnet.aquarium.message.avro.gen.{EffectivePriceTableMsg, FullPriceTableMsg, ResourceTypeMsg, WalletEntryMsg, ResourceInstanceChargingStateMsg, ResourcesChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.{MessageHelpers, AvroHelpers, MessageFactory}
+import gr.grnet.aquarium.policy.{PolicyModel, EffectivePriceTableModel, FullPriceTableModel, UserAgreementModel}
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
+import java.{util ⇒ ju}
+import java.util.{List ⇒ JList, ArrayList ⇒ JArrayList}
 import scala.collection.immutable
 import scala.collection.mutable
+import gr.grnet.aquarium.message.MessageConstants
 
 
 /**
@@ -60,25 +63,37 @@ abstract class ChargingBehaviorSkeleton(
     final val selectorLabelsHierarchy: List[String]
 ) extends ChargingBehavior with Loggable {
 
-  protected def HrsOfMillis(millis: Double) = {
-    val hours = millis / (1000 * 60 * 60).toDouble
-    val roundedHours = hours
-    roundedHours
+  final val HourMillis = CreditsModel.from(1000L * 60 * 60)
+  final val HourMillisInverse = CreditsModel.inv(HourMillis)
+  final val MB = CreditsModel.from(1024L * 1024L)
+  final val MBInverse = CreditsModel.inv(MB)
+  final val GB = CreditsModel.from(1024L * 1024L * 1024L)
+  final val GBInverse = CreditsModel.inv(GB)
+
+  @inline final def HrsOfMillis(timeDeltaMillis: Long): CreditsModel.Type = {
+    CreditsModel.*(
+      HourMillisInverse,
+      CreditsModel.from(timeDeltaMillis)
+    )
   }
 
-  protected def MBsOfBytes(bytes: Double) = {
-    bytes / (1024 * 1024).toDouble
+  @inline final def MBsOfBytes(bytes: Double): CreditsModel.Type = {
+    CreditsModel.*(
+      MBInverse,
+      CreditsModel.from(bytes)
+    )
   }
 
-  protected def rcDebugInfo(rcEvent: ResourceEventModel) = {
-    rcEvent.toDebugString
+  @inline final protected def rcDebugInfo(rcEvent: ResourceEventMsg) = {
+    AvroHelpers.jsonStringOfSpecificRecord(rcEvent)
   }
 
-  protected def newWorkingResourceInstanceChargingState() = {
-    new WorkingResourceInstanceChargingState(
-      mutable.Map(),
-      Nil,
-      Nil,
+  protected def newResourceInstanceChargingStateMsg() = {
+    MessageFactory.newResourceInstanceChargingStateMsg(
+
+      DetailsModel.make,
+      new JArrayList[ResourceEventMsg](),
+      new JArrayList[ResourceEventMsg](),
       0.0,
       0.0,
       0.0,
@@ -87,122 +102,133 @@ abstract class ChargingBehaviorSkeleton(
   }
 
   final protected def ensureInitializedWorkingState(
-      workingResourcesChargingState: WorkingResourcesChargingState,
-      resourceEvent: ResourceEventModel
+      resourcesChargingState: ResourcesChargingStateMsg,
+      resourceEvent: ResourceEventMsg
   ) {
-    ensureInitializedResourcesChargingStateDetails(workingResourcesChargingState.details)
-    ensureInitializedResourceInstanceChargingState(workingResourcesChargingState, resourceEvent)
+    ensureInitializedResourcesChargingStateDetails(resourcesChargingState.getDetails)
+    ensureInitializedResourceInstanceChargingState(resourcesChargingState, resourceEvent)
   }
 
-  protected def ensureInitializedResourcesChargingStateDetails(details: mutable.Map[String, Any]) {}
+  protected def ensureInitializedResourcesChargingStateDetails(details: DetailsModel.Type) {}
 
   protected def ensureInitializedResourceInstanceChargingState(
-      workingResourcesChargingState: WorkingResourcesChargingState,
-      resourceEvent: ResourceEventModel
+      resourcesChargingState: ResourcesChargingStateMsg,
+      resourceEvent: ResourceEventMsg
   ) {
 
-    val instanceID = resourceEvent.instanceID
-    val stateOfResourceInstance = workingResourcesChargingState.stateOfResourceInstance
+    val instanceID = resourceEvent.getInstanceID
+    val stateOfResourceInstance = resourcesChargingState.getStateOfResourceInstance
 
     stateOfResourceInstance.get(instanceID) match {
-      case None ⇒
-        stateOfResourceInstance(instanceID) = newWorkingResourceInstanceChargingState()
+      case null ⇒
+        stateOfResourceInstance.put(instanceID, newResourceInstanceChargingStateMsg())
 
       case _ ⇒
     }
   }
 
   protected def fillWorkingResourceInstanceChargingStateFromEvent(
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      resourceEvent: ResourceEventModel
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      resourceEvent: ResourceEventMsg
   ) {
 
-    workingResourceInstanceChargingState.currentValue = resourceEvent.value
+    resourceInstanceChargingState.setCurrentValue(resourceEvent.getValue.toString.toDouble)
   }
 
   protected def computeWalletEntriesForNewEvent(
-      resourceEvent: ResourceEventModel,
-      resourceType: ResourceType,
+      resourceEvent: ResourceEventMsg,
+      resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
       totalCredits: Double,
-      referenceTimeslot: Timeslot,
+      referenceStartMillis: Long,
+      referenceStopMillis: Long,
       agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel],
-      workingResourcesChargingStateDetails: mutable.Map[String, Any],
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      policyStore: PolicyStore,
-      walletEntryRecorder: WalletEntry ⇒ Unit
+      workingResourcesChargingStateDetails: DetailsModel.Type,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      aquarium: Aquarium,
+      walletEntryRecorder: WalletEntryMsg ⇒ Unit
   ): (Int, Double) = {
 
-    val userID = resourceEvent.userID
-    val resourceEventDetails = resourceEvent.details
+    val userID = resourceEvent.getUserID
+    val resourceEventDetails = resourceEvent.getDetails
 
     var _oldTotalCredits = totalCredits
 
-    var _newAccumulatingAmount = computeNewAccumulatingAmount(workingResourceInstanceChargingState, resourceEventDetails)
+    var _newAccumulatingAmount = computeNewAccumulatingAmount(resourceInstanceChargingState, resourceEventDetails)
     // It will also update the old one inside the data structure.
-    workingResourceInstanceChargingState.setNewAccumulatingAmount(_newAccumulatingAmount)
+    resourceInstanceChargingState.setAccumulatingAmount(_newAccumulatingAmount)
 
-    val policyByTimeslot = policyStore.loadSortedPolicyModelsWithin(
-      referenceTimeslot.from.getTime,
-      referenceTimeslot.to.getTime
+    val policyByTimeslot = aquarium.policyStore.loadSortedPolicyModelsWithin(
+      referenceStartMillis,
+      referenceStopMillis
     )
 
-    val effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable = fullPriceTable ⇒ {
-      this.selectEffectivePriceTable(
+    val effectivePriceTableModelSelector: FullPriceTableModel ⇒ EffectivePriceTableModel = fullPriceTable ⇒ {
+      this.selectEffectivePriceTableModel(
         fullPriceTable,
         workingResourcesChargingStateDetails,
-        workingResourceInstanceChargingState,
+        resourceInstanceChargingState,
         resourceEvent,
-        referenceTimeslot,
+        referenceStartMillis,
+        referenceStopMillis,
         totalCredits
       )
     }
 
+    val fullPriceTableModelGetter = aquarium.unsafeFullPriceTableModelForAgreement(_,_)
+
     val initialChargeslots = TimeslotComputations.computeInitialChargeslots(
-      referenceTimeslot,
+      Timeslot(referenceStartMillis, referenceStopMillis),
       policyByTimeslot,
       agreementByTimeslot,
-      effectivePriceTableSelector
+      fullPriceTableModelGetter,
+      effectivePriceTableModelSelector
     )
 
-    val fullChargeslots = initialChargeslots.map {
-      case chargeslot@Chargeslot(startMillis, stopMillis, unitPrice, _, _) ⇒
-        val timeDeltaMillis = stopMillis - startMillis
+    val fullChargeslots = initialChargeslots.map { cs ⇒
+      val timeDeltaMillis = cs.getStopMillis - cs.getStartMillis
 
-        val (creditsToSubtract, explanation) = this.computeCreditsToSubtract(
-          workingResourceInstanceChargingState,
-          _oldTotalCredits, // FIXME ??? Should recalculate ???
-          timeDeltaMillis,
-          unitPrice
-        )
+      val (creditsToSubtract, explanation) = this.computeCreditsToSubtract(
+        resourceInstanceChargingState,
+        _oldTotalCredits, // FIXME ??? Should recalculate ???
+        timeDeltaMillis,
+        cs.getUnitPrice
+      )
 
-        val newChargeslot = chargeslot.copyWithCreditsToSubtract(creditsToSubtract, explanation)
-        newChargeslot
+      cs.setCreditsToSubtract(creditsToSubtract)
+      cs.setExplanation(explanation)
+
+      cs
     }
 
     if(fullChargeslots.length == 0) {
-      throw new AquariumInternalError("No chargeslots computed for resource event %s".format(resourceEvent.id))
+      throw new AquariumInternalError("No chargeslots computed for resource event %s".format(resourceEvent.getOriginalID))
     }
 
-    val sumOfCreditsToSubtract = fullChargeslots.map(_.creditsToSubtract).sum
+    val sumOfCreditsToSubtract = fullChargeslots.map(_.getCreditsToSubtract.toDouble).sum
     val newTotalCredits = _oldTotalCredits - sumOfCreditsToSubtract
 
-    val newWalletEntry = WalletEntry(
+    val eventsForWallet = new ju.ArrayList[ResourceEventMsg](resourceInstanceChargingState.getPreviousEvents)
+    eventsForWallet.add(0, resourceEvent)
+    import scala.collection.JavaConverters.seqAsJavaListConverter
+    val newWalletEntry = MessageFactory.newWalletEntryMsg(
       userID,
-      sumOfCreditsToSubtract,
-      _oldTotalCredits,
-      newTotalCredits,
+      CreditsModel.from(sumOfCreditsToSubtract),
+      CreditsModel.from(_oldTotalCredits),
+      CreditsModel.from(newTotalCredits),
       TimeHelpers.nowMillis(),
-      referenceTimeslot,
+      referenceStartMillis,
+      referenceStopMillis,
       billingMonthInfo.year,
       billingMonthInfo.month,
-      fullChargeslots,
-      resourceEvent :: workingResourceInstanceChargingState.previousEvents,
+      billingMonthInfo.day,
+      fullChargeslots.asJava,
+      eventsForWallet,
       resourceType,
-      resourceEvent.isSynthetic
+      resourceEvent.getIsSynthetic
     )
 
-    logger.debug("newWalletEntry = {}", newWalletEntry.toJsonString)
+    logger.debug("newWalletEntry = {}", AvroHelpers.jsonStringOfSpecificRecord(newWalletEntry))
 
     walletEntryRecorder.apply(newWalletEntry)
 
@@ -210,45 +236,49 @@ abstract class ChargingBehaviorSkeleton(
   }
 
 
-  def selectEffectivePriceTable(
-      fullPriceTable: FullPriceTable,
-      workingChargingBehaviorDetails: mutable.Map[String, Any],
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      currentResourceEvent: ResourceEventModel,
-      referenceTimeslot: Timeslot,
+  def selectEffectivePriceTableModel(
+      fullPriceTable: FullPriceTableModel,
+      chargingBehaviorDetails: DetailsModel.Type,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      currentResourceEvent: ResourceEventMsg,
+      referenceStartMillis: Long,
+      referenceStopMillis: Long,
       totalCredits: Double
-  ): EffectivePriceTable = {
+  ): EffectivePriceTableModel = {
 
     val selectorPath = computeSelectorPath(
-      workingChargingBehaviorDetails,
-      workingResourceInstanceChargingState,
+      chargingBehaviorDetails,
+      resourceInstanceChargingState,
       currentResourceEvent,
-      referenceTimeslot,
+      referenceStartMillis,
+      referenceStopMillis,
       totalCredits
     )
 
-    fullPriceTable.effectivePriceTableOfSelectorForResource(selectorPath, currentResourceEvent.safeResource, logger)
+    fullPriceTable.effectivePriceTableOfSelectorForResource(
+      selectorPath,
+      currentResourceEvent.getResource,
+      logger
+    )
   }
 
-  /**
-   * Given the charging state of a resource instance and the details of the incoming message, compute the new
-   * accumulating amount.
-   */
-  def computeNewAccumulatingAmount(
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      eventDetails: Map[String, String]
-  ): Double
+  final protected def constructDummyFirstEventFor(
+      actualFirst: ResourceEventMsg,
+      newOccurredMillis: Long,
+      value: String
+  ): ResourceEventMsg = {
 
+    val dm = DetailsModel.make
+    DetailsModel.setBoolean(dm, MessageConstants.DetailsKeys.aquarium_is_synthetic)
+    DetailsModel.setBoolean(dm, MessageConstants.DetailsKeys.aquarium_is_dummy_first)
+    DetailsModel.setString(dm, MessageConstants.DetailsKeys.aquarium_reference_event_id, actualFirst.getOriginalID)
+    DetailsModel.setString(dm, MessageConstants.DetailsKeys.aquarium_reference_event_id_in_store, actualFirst.getInStoreID)
 
-  def constructDummyFirstEventFor(actualFirst: ResourceEventModel, newOccurredMillis: Long): ResourceEventModel = {
-
-    val newDetails = Map(
-      ResourceEventModel.Names.details_aquarium_is_synthetic   -> "true",
-      ResourceEventModel.Names.details_aquarium_is_dummy_first -> "true",
-      ResourceEventModel.Names.details_aquarium_reference_event_id -> actualFirst.id,
-      ResourceEventModel.Names.details_aquarium_reference_event_id_in_store -> actualFirst.stringIDInStoreOrEmpty
-    )
-
-    actualFirst.withDetailsAndValue(newDetails, 0.0, newOccurredMillis)
+    ResourceEventMsg.newBuilder(actualFirst).
+      setDetails(dm).
+      setValue(value).
+      setOccurredMillis(newOccurredMillis).
+      setReceivedMillis(newOccurredMillis).
+    build
   }
 }

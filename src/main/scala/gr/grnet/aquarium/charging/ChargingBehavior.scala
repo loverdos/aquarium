@@ -36,14 +36,12 @@
 package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.Aquarium
-import gr.grnet.aquarium.charging.state.{WorkingResourceInstanceChargingState, AgreementHistoryModel, WorkingResourcesChargingState}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
+import gr.grnet.aquarium.charging.state.UserStateModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.model.resource.ResourceEventModel
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.policy.{ResourceType, EffectivePriceTable, FullPriceTable}
-import gr.grnet.aquarium.uid.{PrefixedUIDGenerator, ConcurrentVMLocalUIDGenerator, UIDGenerator}
-import scala.collection.mutable
+import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.message.avro.gen.{WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.uid.{PrefixedUIDGenerator, ConcurrentVMLocalUIDGenerator}
+import gr.grnet.aquarium.policy.{EffectivePriceTableModel, FullPriceTableModel}
 
 /**
  * A charging behavior indicates how charging for a resource will be done
@@ -53,30 +51,32 @@ import scala.collection.mutable
  */
 
 trait ChargingBehavior {
-  def selectorLabelsHierarchy: List[CharSequence]
+  def selectorLabelsHierarchy: List[String]
 
   /**
    * Provides some initial charging details that will be part of the mutable charging state
-   * ([[gr.grnet.aquarium.charging.state.WorkingResourcesChargingState]]).
+   * ([[gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg]]).
    */
-  def initialChargingDetails: Map[String, Any]
+  def initialChargingDetails: DetailsModel.Type
 
   def computeSelectorPath(
-      workingChargingBehaviorDetails: mutable.Map[String, Any],
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      currentResourceEvent: ResourceEventModel,
-      referenceTimeslot: Timeslot,
-      totalCredits: Double
+      ChargingBehaviorDetails: DetailsModel.Type,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      currentResourceEvent: ResourceEventMsg,
+      referenceStartMillis: Long,
+      referenceStopMillis: Long,
+      totalCredits: CreditsModel.Type
   ): List[String]
 
-  def selectEffectivePriceTable(
-      fullPriceTable: FullPriceTable,
-      workingChargingBehaviorDetails: mutable.Map[String, Any],
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      currentResourceEvent: ResourceEventModel,
-      referenceTimeslot: Timeslot,
+  def selectEffectivePriceTableModel(
+      fullPriceTable: FullPriceTableModel,
+      chargingBehaviorDetails: DetailsModel.Type,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      currentResourceEvent: ResourceEventMsg,
+      referenceStartMillis: Long,
+      referenceStopMillis: Long,
       totalCredits: Double
-  ): EffectivePriceTable
+  ): EffectivePriceTableModel
 
   /**
    *
@@ -85,38 +85,37 @@ trait ChargingBehavior {
    */
   def processResourceEvent(
       aquarium: Aquarium,
-      currentResourceEvent: ResourceEventModel,
-      resourceType: ResourceType,
+      resourceEvent: ResourceEventMsg,
+      resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
-      workingResourcesChargingState: WorkingResourcesChargingState,
-      userAgreements: AgreementHistoryModel,
-      totalCredits: Double,
-      walletEntryRecorder: WalletEntry ⇒ Unit
-  ): (Int, Double)
+      resourcesChargingState: ResourcesChargingStateMsg,
+      userStateModel: UserStateModel,
+      walletEntryRecorder: WalletEntryMsg ⇒ Unit
+  ): (Int, CreditsModel.Type)
 
   def computeCreditsToSubtract(
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      oldCredits: Double,
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      oldCredits: CreditsModel.Type,
       timeDeltaMillis: Long,
       unitPrice: Double
-  ): (Double /* credits */, String /* explanation */)
+  ): (CreditsModel.Type, String /* explanation */)
 
   /**
    * Given the charging state of a resource instance and the details of the incoming message, compute the new
    * accumulating amount.
    */
   def computeNewAccumulatingAmount(
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState,
-      eventDetails: Map[String, String]
-  ): Double
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
+      eventDetails: DetailsModel.Type
+  ): CreditsModel.Type
 
   def createVirtualEventsForRealtimeComputation(
       userID: String,
       resourceTypeName: String,
       resourceInstanceID: String,
       eventOccurredMillis: Long,
-      workingResourceInstanceChargingState: WorkingResourceInstanceChargingState
-  ): List[ResourceEventModel]
+      resourceInstanceChargingState: ResourceInstanceChargingStateMsg
+  ): List[ResourceEventMsg]
 }
 
 object ChargingBehavior {

@@ -514,6 +514,7 @@
               <excludes>
                 <exclude>**/mapred/tether/**</exclude>
               </excludes>
+              <stringType>String</stringType>
               <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
               <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
               <!--<outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>-->

@@ -37,34 +37,28 @@ package gr.grnet.aquarium.actor
 package service
 package user
 
-import gr.grnet.aquarium.util.date.TimeHelpers
-import gr.grnet.aquarium.service.event.BalanceEvent
-import gr.grnet.aquarium.event.model.im.IMEventModel
-import gr.grnet.aquarium.actor.message.config.AquariumPropertiesLoaded
-import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
-import gr.grnet.aquarium.actor.message.event.ProcessIMEvent
-import gr.grnet.aquarium.actor.message.event.ProcessResourceEvent
-import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
 import gr.grnet.aquarium.AquariumInternalError
-import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.charging.state.{WorkingUserState, UserStateModel}
-import gr.grnet.aquarium.policy.PolicyDefinedFullPriceTableRef
-import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
 import gr.grnet.aquarium.actor.message.GetUserBalanceRequest
 import gr.grnet.aquarium.actor.message.GetUserBalanceResponse
 import gr.grnet.aquarium.actor.message.GetUserBalanceResponseData
+import gr.grnet.aquarium.actor.message.GetUserBillRequest
+import gr.grnet.aquarium.actor.message.GetUserBillResponse
+import gr.grnet.aquarium.actor.message.GetUserBillResponseData
 import gr.grnet.aquarium.actor.message.GetUserStateRequest
 import gr.grnet.aquarium.actor.message.GetUserStateResponse
 import gr.grnet.aquarium.actor.message.GetUserWalletRequest
 import gr.grnet.aquarium.actor.message.GetUserWalletResponse
 import gr.grnet.aquarium.actor.message.GetUserWalletResponseData
-import gr.grnet.aquarium.actor.message.GetUserBillRequest
-import gr.grnet.aquarium.actor.message.GetUserBillResponse
-import gr.grnet.aquarium.actor.message.GetUserBillResponseData
-import gr.grnet.aquarium.charging.state.WorkingAgreementHistory
-import gr.grnet.aquarium.policy.StdUserAgreement
-import gr.grnet.aquarium.charging.state.UserStateBootstrap
-import gr.grnet.aquarium.charging.bill.{AbstractBillEntry, BillEntry}
+import gr.grnet.aquarium.actor.message.config.AquariumPropertiesLoaded
+import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
+import gr.grnet.aquarium.charging.bill.AbstractBillEntry
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel, UserStateBootstrap}
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.message.avro.gen.{IMEventMsg, ResourceEventMsg, UserStateMsg}
+import gr.grnet.aquarium.message.avro.{ModelFactory, MessageFactory, MessageHelpers, AvroHelpers}
+import gr.grnet.aquarium.service.event.BalanceEvent
+import gr.grnet.aquarium.util.date.TimeHelpers
+import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
 
 /**
  *
@@ -73,11 +67,11 @@ import gr.grnet.aquarium.charging.bill.{AbstractBillEntry, BillEntry}
 
 class UserActor extends ReflectiveRoleableActor {
   private[this] var _userID: String = "<?>"
-  private[this] var _workingUserState: WorkingUserState = _
-  private[this] var _userCreationIMEvent: IMEventModel = _
-  private[this] val _workingAgreementHistory: WorkingAgreementHistory = new WorkingAgreementHistory
-  private[this] var _latestIMEventID: String = ""
-  private[this] var _latestResourceEventID: String = ""
+  private[this] var _userState: UserStateModel = _
+  private[this] var _userCreationIMEvent: IMEventMsg = _
+  private[this] var _userAgreementHistoryModel: UserAgreementHistoryModel = _
+  private[this] var _latestIMEventOriginalID: String = ""
+  private[this] var _latestResourceEventOriginalID: String = ""
   private[this] var _userStateBootstrap: UserStateBootstrap = _
 
   def unsafeUserID = {
@@ -110,7 +104,7 @@ class UserActor extends ReflectiveRoleableActor {
 
   private[this] def chargingService = aquarium.chargingService
 
-  private[this] def stdUserStateStoreFunc = (userState: UserStateModel) ⇒ {
+  private[this] def stdUserStateStoreFunc = (userState: UserStateMsg) ⇒ {
     aquarium.userStateStore.insertUserState(userState)
   }
 
@@ -126,53 +120,48 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   @inline private[this] def haveAgreements = {
-    this._workingAgreementHistory.size > 0
+    this._userAgreementHistoryModel.size > 0
   }
 
   @inline private[this] def haveWorkingUserState = {
-    this._workingUserState ne null
+    this._userState ne null
   }
 
   @inline private[this] def haveUserStateBootstrap = {
     this._userStateBootstrap ne null
   }
 
-  private[this] def updateAgreementHistoryFrom(imEvent: IMEventModel): Unit = {
-    if(imEvent.isCreateUser) {
+  private[this] def updateAgreementHistoryFrom(imEvent: IMEventMsg): Unit = {
+    val isCreateUser = MessageHelpers.isIMEventCreate(imEvent)
+    if(isCreateUser) {
       if(haveUserCreationIMEvent) {
         throw new AquariumInternalError(
           "Got user creation event (id=%s) but I already have one (id=%s)",
-            this._userCreationIMEvent.id,
-            imEvent.id
+            this._userCreationIMEvent.getOriginalID,
+            imEvent.getOriginalID
         )
       }
 
       this._userCreationIMEvent = imEvent
     }
 
-    val effectiveFromMillis = imEvent.occurredMillis
-    val role = imEvent.role
+    val effectiveFromMillis = imEvent.getOccurredMillis
+    val role = imEvent.getRole
     // calling unsafe just for the side-effect
-    assert(null ne aquarium.unsafePriceTableForRoleAt(role, effectiveFromMillis))
+    assert(null ne aquarium.unsafeFullPriceTableForRoleAt(role, effectiveFromMillis))
 
-    val newAgreement = StdUserAgreement(
-      imEvent.id,
-      Some(imEvent.id),
-      effectiveFromMillis,
-      Long.MaxValue,
-      role,
-      PolicyDefinedFullPriceTableRef()
-    )
+    val newUserAgreementModel = ModelFactory.newUserAgreementModelFromIMEvent(imEvent, imEvent.getOriginalID)
 
-    this._workingAgreementHistory += newAgreement
+    // add to model (will update the underlying messages as well)
+    this._userAgreementHistoryModel += newUserAgreementModel
   }
 
-  private[this] def updateLatestIMEventIDFrom(imEvent: IMEventModel): Unit = {
-    this._latestIMEventID = imEvent.id
+  private[this] def updateLatestIMEventIDFrom(imEvent: IMEventMsg): Unit = {
+    this._latestIMEventOriginalID = imEvent.getOriginalID
   }
 
-  private[this] def updateLatestResourceEventIDFrom(rcEvent: ResourceEventModel): Unit = {
-    this._latestResourceEventID = rcEvent.id
+  private[this] def updateLatestResourceEventIDFrom(rcEvent: ResourceEventMsg): Unit = {
+    this._latestResourceEventOriginalID = rcEvent.getOriginalID
   }
 
   /**
@@ -188,7 +177,7 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     if(haveAgreements) {
-      DEBUG("Initial agreement history %s", this._workingAgreementHistory.toJsonString)
+      DEBUG("Initial agreement history %s", this._userAgreementHistoryModel.toJsonString)
       logSeparator()
     }
   }
@@ -205,21 +194,12 @@ class UserActor extends ReflectiveRoleableActor {
     assert(this.haveAgreements, "this.haveAgreements")
     assert(this.haveUserCreationIMEvent, "this.haveUserCreationIMEvent")
 
-    val userCreationMillis = this._userCreationIMEvent.occurredMillis
-    val userCreationRole = this._userCreationIMEvent.role // initial role
-    val userCreationIMEventID = this._userCreationIMEvent.id
-
     if(!haveUserStateBootstrap) {
-      this._userStateBootstrap = UserStateBootstrap(
-        this._userID,
-        userCreationMillis,
-        aquarium.initialUserAgreement(userCreationRole, userCreationMillis, Some(userCreationIMEventID)),
-        aquarium.initialUserBalance(userCreationRole, userCreationMillis)
-      )
+      this._userStateBootstrap = aquarium.getUserStateBootstrap(this._userCreationIMEvent)
     }
 
     val now = TimeHelpers.nowMillis()
-    this._workingUserState = chargingService.replayMonthChargingUpTo(
+    this._userState = chargingService.replayMonthChargingUpTo(
       BillingMonthInfo.fromMillis(now),
       now,
       this._userStateBootstrap,
@@ -231,8 +211,8 @@ class UserActor extends ReflectiveRoleableActor {
     // The assumption is that all agreement changes go via IMEvents, so the
     // state this._workingAgreementHistory is always the authoritative source.
     if(haveWorkingUserState) {
-      this._workingUserState.workingAgreementHistory.setFrom(this._workingAgreementHistory)
-      DEBUG("Computed working user state %s", this._workingUserState.toJsonString)
+      this._userState.userAgreementHistoryModel = this._userAgreementHistoryModel
+      DEBUG("Computed working user state %s", AvroHelpers.jsonStringOfSpecificRecord(this._userState.msg))
     }
   }
 
@@ -251,7 +231,7 @@ class UserActor extends ReflectiveRoleableActor {
     loadWorkingUserStateAndUpdateAgreementHistory()
 
     if(haveWorkingUserState) {
-      DEBUG("Initial working user state %s", this._workingUserState.toJsonString)
+      DEBUG("Initial working user state %s", AvroHelpers.jsonStringOfSpecificRecord(this._userState.msg))
       logSeparator()
     }
   }
@@ -265,40 +245,32 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   /**
-   * Process [[gr.grnet.aquarium.event.model.im.IMEventModel]]s.
+   * Process [[gr.grnet.aquarium.message.avro.gen.IMEventMsg]]s.
    * When this method is called, we assume that all proper checks have been made and it
    * is OK to proceed with the event processing.
    */
-  def onProcessIMEvent(processEvent: ProcessIMEvent): Unit = {
-    val imEvent = processEvent.imEvent
+  def onIMEventMsg(imEvent: IMEventMsg): Unit = {
     val hadUserCreationIMEvent = haveUserCreationIMEvent
 
     if(!haveAgreements) {
       // This IMEvent has arrived after any ResourceEvents
-      INFO("Arrived after any ResourceEvent: %s", imEvent.toDebugString)
+      INFO("Arrived after any ResourceEvent: %s", AvroHelpers.jsonStringOfSpecificRecord(imEvent))
       initializeStateOfIMEvents()
     }
     else {
-      if(this._latestIMEventID == imEvent.id) {
+      if(this._latestIMEventOriginalID == imEvent.getOriginalID) {
         // This happens when the actor is brought to life, then immediately initialized, and then
         // sent the first IM event. But from the initialization procedure, this IM event will have
         // already been loaded from DB!
-        INFO("Ignoring first %s", imEvent.toDebugString)
+        INFO("Ignoring first %s", AvroHelpers.jsonStringOfSpecificRecord(imEvent))
         logSeparator()
 
         //this._latestIMEventID = imEvent.id
         return
       }
-      if(imEvent.isAddCredits)  {
-        if(!hadUserCreationIMEvent && haveUserCreationIMEvent)
-        loadWorkingUserStateAndUpdateAgreementHistory()
-        onHandleAddCreditsEvent(imEvent)
 
-      } else {
       updateAgreementHistoryFrom(imEvent)
       updateLatestIMEventIDFrom(imEvent)
-        //Thread.sleep(3000)
-      }
     }
 
     // Must also update user state if we know when in history the life of a user begins
@@ -310,39 +282,11 @@ class UserActor extends ReflectiveRoleableActor {
     logSeparator()
   }
 
-  /* Convert astakos message for adding credits
-    to a regular RESOURCE message */
-  def onHandleAddCreditsEvent(imEvent : IMEventModel) = {
-    DEBUG("Got %s", imEvent.toJsonString)
-
-    val credits = imEvent.details(IMEventModel.DetailsNames.credits).toInt.toDouble
-    val event = new StdResourceEvent(
-      imEvent.id,
-      imEvent.occurredMillis,
-      imEvent.receivedMillis,
-      imEvent.userID,
-      imEvent.clientID,
-      imEvent.eventType,
-      imEvent.eventType,
-      credits,
-      imEvent.eventVersion,
-      imEvent.details
-    )
-    DEBUG("Transformed to %s", event)
-    DEBUG("Total credits before: %s", _workingUserState.totalCredits)
-    aquarium.resourceEventStore.insertResourceEvent(event)
-    onProcessResourceEvent(new ProcessResourceEvent(event))
-    DEBUG("Total credits after: %s", _workingUserState.totalCredits)
-    //Console.err.println("OK.")
-  }
-
-  def onProcessResourceEvent(event: ProcessResourceEvent): Unit = {
-    val rcEvent = event.rcEvent
-
+  def onResourceEventMsg(rcEvent: ResourceEventMsg): Unit = {
     if(!shouldProcessResourceEvents) {
       // This means the user has not been created (at least, as far as Aquarium is concerned).
       // So, we do not process any resource event
-      DEBUG("Not processing %s", rcEvent.toJsonString)
+      DEBUG("Not processing %s", AvroHelpers.jsonStringOfSpecificRecord(rcEvent))
       logSeparator()
 
       return
@@ -352,8 +296,8 @@ class UserActor extends ReflectiveRoleableActor {
     // we do not need to query the store. Just query the in-memory state.
     // Note: This is a similar situation with the first IMEvent received right after the user
     //       actor is created.
-    if(this._latestResourceEventID == rcEvent.id) {
-      INFO("Ignoring first %s", rcEvent.toDebugString)
+    if(this._latestResourceEventOriginalID == rcEvent.getOriginalID) {
+      INFO("Ignoring first %s", AvroHelpers.jsonStringOfSpecificRecord(rcEvent))
       logSeparator()
 
       return
@@ -369,14 +313,14 @@ class UserActor extends ReflectiveRoleableActor {
     val nowYear = nowBillingMonthInfo.year
     val nowMonth = nowBillingMonthInfo.month
 
-    val eventOccurredMillis = rcEvent.occurredMillis
+    val eventOccurredMillis = rcEvent.getOccurredMillis
     val eventBillingMonthInfo = BillingMonthInfo.fromMillis(eventOccurredMillis)
     val eventYear = eventBillingMonthInfo.year
     val eventMonth = eventBillingMonthInfo.month
 
     def computeBatch(): Unit = {
       DEBUG("Going for out of sync charging")
-      this._workingUserState = chargingService.replayMonthChargingUpTo(
+      this._userState = chargingService.replayMonthChargingUpTo(
         nowBillingMonthInfo,
         // Take into account that the event may be out-of-sync.
         // TODO: Should we use this._latestResourceEventOccurredMillis instead of now?
@@ -393,7 +337,7 @@ class UserActor extends ReflectiveRoleableActor {
       DEBUG("Going for in sync charging")
       chargingService.processResourceEvent(
         rcEvent,
-        this._workingUserState,
+        this._userState,
         nowBillingMonthInfo,
         true
       )
@@ -402,8 +346,8 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     val oldTotalCredits =
-      if(this._workingUserState!=null)
-        this._workingUserState.totalCredits
+      if(this._userState!=null)
+        this._userState.totalCredits
       else
         0.0D
     // FIXME check these
@@ -415,30 +359,30 @@ class UserActor extends ReflectiveRoleableActor {
       )
       computeBatch()
     }
-    else if(this._workingUserState.latestResourceEventOccurredMillis < rcEvent.occurredMillis) {
+    else if(this._userState.latestResourceEventOccurredMillis < rcEvent.getOccurredMillis) {
       DEBUG("this._workingUserState.latestResourceEventOccurredMillis < rcEvent.occurredMillis")
       DEBUG(
         "%s < %s",
-        TimeHelpers.toYYYYMMDDHHMMSSSSS(this._workingUserState.latestResourceEventOccurredMillis),
-        TimeHelpers.toYYYYMMDDHHMMSSSSS(rcEvent.occurredMillis)
+        TimeHelpers.toYYYYMMDDHHMMSSSSS(this._userState.latestResourceEventOccurredMillis),
+        TimeHelpers.toYYYYMMDDHHMMSSSSS(rcEvent.getOccurredMillis)
       )
       computeRealtime()
     }
     else {
       computeBatch()
     }
-    val newTotalCredits = this._workingUserState.totalCredits
+    val newTotalCredits = this._userState.totalCredits
     if(oldTotalCredits * newTotalCredits < 0)
-      aquarium.eventBus ! new BalanceEvent(this._workingUserState.userID,
+      aquarium.eventBus ! new BalanceEvent(this._userState.userID,
                                            newTotalCredits>=0)
-    DEBUG("Updated %s", this._workingUserState)
+    DEBUG("Updated %s", this._userState)
     logSeparator()
   }
 
   def onGetUserBillRequest(event: GetUserBillRequest): Unit = {
     try{
       val timeslot = event.timeslot
-      val state= if(haveWorkingUserState) Some(this._workingUserState) else None
+      val state= if(haveWorkingUserState) Some(this._userState.msg) else None
       val billEntry = AbstractBillEntry.fromWorkingUserState(timeslot,this._userID,state)
       val billData = GetUserBillResponseData(this._userID,billEntry)
       sender ! GetUserBillResponse(Right(billData))
@@ -456,13 +400,13 @@ class UserActor extends ReflectiveRoleableActor {
       case (true, true) ⇒
         // (User CREATEd, with balance state)
         val realtimeMillis = TimeHelpers.nowMillis()
-        chargingService.calculateRealtimeWorkingUserState(
-          this._workingUserState,
+        chargingService.calculateRealtimeUserState(
+          this._userState,
           BillingMonthInfo.fromMillis(realtimeMillis),
           realtimeMillis
         )
 
-        sender ! GetUserBalanceResponse(Right(GetUserBalanceResponseData(this._userID, this._workingUserState.totalCredits)))
+        sender ! GetUserBalanceResponse(Right(GetUserBalanceResponseData(this._userID, this._userState.totalCredits)))
 
       case (true, false) ⇒
         // (User CREATEd, no balance state)
@@ -471,7 +415,7 @@ class UserActor extends ReflectiveRoleableActor {
           Right(
             GetUserBalanceResponseData(
               this._userID,
-              aquarium.initialUserBalance(this._userCreationIMEvent.role, this._userCreationIMEvent.occurredMillis)
+              aquarium.initialUserBalance(this._userCreationIMEvent.getRole, this._userCreationIMEvent.getOccurredMillis)
         )))
 
       case (false, true) ⇒
@@ -490,13 +434,13 @@ class UserActor extends ReflectiveRoleableActor {
     haveWorkingUserState match {
       case true ⇒
         val realtimeMillis = TimeHelpers.nowMillis()
-        chargingService.calculateRealtimeWorkingUserState(
-          this._workingUserState,
+        chargingService.calculateRealtimeUserState(
+          this._userState,
           BillingMonthInfo.fromMillis(realtimeMillis),
           realtimeMillis
         )
 
-        sender ! GetUserStateResponse(Right(this._workingUserState))
+        sender ! GetUserStateResponse(Right(this._userState.msg))
 
       case false ⇒
         sender ! GetUserStateResponse(Left("No state for user %s [AQU-STA-0006]".format(event.userID)), 404)
@@ -508,8 +452,8 @@ class UserActor extends ReflectiveRoleableActor {
       case true ⇒
         DEBUG("haveWorkingUserState: %s", event)
         val realtimeMillis = TimeHelpers.nowMillis()
-        chargingService.calculateRealtimeWorkingUserState(
-          this._workingUserState,
+        chargingService.calculateRealtimeUserState(
+          this._userState,
           BillingMonthInfo.fromMillis(realtimeMillis),
           realtimeMillis
         )
@@ -518,8 +462,8 @@ class UserActor extends ReflectiveRoleableActor {
           Right(
             GetUserWalletResponseData(
               this._userID,
-              this._workingUserState.totalCredits,
-              this._workingUserState.walletEntries.toList
+              this._userState.totalCredits,
+              MessageFactory.newWalletEntriesMsg(this._userState.msg.getWalletEntries)
         )))
 
       case false ⇒
@@ -531,8 +475,8 @@ class UserActor extends ReflectiveRoleableActor {
               Right(
                 GetUserWalletResponseData(
                   this._userID,
-                  aquarium.initialUserBalance(this._userCreationIMEvent.role, this._userCreationIMEvent.occurredMillis),
-                  Nil
+                  aquarium.initialUserBalance(this._userCreationIMEvent.getRole, this._userCreationIMEvent.getOccurredMillis),
+                  MessageFactory.newWalletEntriesMsg()
             )))
 
           case false ⇒

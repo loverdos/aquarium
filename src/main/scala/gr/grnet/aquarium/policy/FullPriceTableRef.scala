@@ -50,10 +50,10 @@ sealed trait FullPriceTableRef {
  * Refers to an existing full price table that belongs to the given role. The role is implied from the user agreement
  * that contains this instance and must be used to retrieve the exact full price table from the Aquarium policy.
  */
-case class PolicyDefinedFullPriceTableRef() extends FullPriceTableRef {
+case object PolicyDefinedFullPriceTableRef extends FullPriceTableRef {
   def isAdHoc: Boolean = false
 }
 
-case class AdHocFullPriceTableRef(adhocPriceTable: FullPriceTable) extends FullPriceTableRef {
+case class AdHocFullPriceTableRef(adhocPriceTable: FullPriceTableModel) extends FullPriceTableRef {
   def isAdHoc: Boolean = true
 }

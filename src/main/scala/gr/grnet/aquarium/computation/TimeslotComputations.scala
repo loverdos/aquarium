@@ -40,8 +40,8 @@ import gr.grnet.aquarium.util.Loggable
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy._
 import collection.immutable
-import gr.grnet.aquarium.policy.EffectiveUnitPrice
-import gr.grnet.aquarium.charging.Chargeslot
+import gr.grnet.aquarium.policy.EffectiveUnitPriceModel
+import gr.grnet.aquarium.message.avro.gen.{EffectiveUnitPriceMsg, PolicyMsg, UserAgreementMsg, FullPriceTableMsg, EffectivePriceTableMsg, ChargeslotMsg}
 
 /**
  * Methods for converting accounting events to wallet entries.
@@ -59,8 +59,7 @@ object TimeslotComputations extends Loggable {
    * @param agreementTimeslots
    * @return
    */
-  protected
-  def splitTimeslotByPoliciesAndAgreements(
+  private[this] def splitTimeslotByPoliciesAndAgreements(
       referenceTimeslot: Timeslot,
       policyTimeslots: List[Timeslot],
       agreementTimeslots: List[Timeslot]
@@ -80,16 +79,21 @@ object TimeslotComputations extends Loggable {
    * algorithm and price unit is in effect.
    *
    */
-  protected
-  def resolveEffectiveUnitPrices(
+  private[this] def resolveEffectiveUnitPrices(
       alignedTimeslot: Timeslot,
       policy: PolicyModel,
       agreement: UserAgreementModel,
-      effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
+      fullPriceTableModelGetter: (UserAgreementModel, PolicyModel) ⇒ FullPriceTableModel,
+      effectivePriceTableModelSelector: FullPriceTableModel ⇒ EffectivePriceTableModel
   ): SortedMap[Timeslot, Double] = {
 
     // Note that most of the code is taken from calcChangeChunks()
-    val ret = resolveEffectiveUnitPricesForTimeslot(alignedTimeslot, policy, agreement, effectivePriceTableSelector)
+    val ret = resolveEffectiveUnitPricesForTimeslot(
+      alignedTimeslot,
+      policy,
+      agreement,
+      fullPriceTableModelGetter,
+      effectivePriceTableModelSelector)
     ret map {case (t,p) => (t,p.unitPrice)}
   }
 
@@ -97,8 +101,9 @@ object TimeslotComputations extends Loggable {
       referenceTimeslot: Timeslot,
       policyByTimeslot: SortedMap[Timeslot, PolicyModel],
       agreementByTimeslot: SortedMap[Timeslot, UserAgreementModel],
-      effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
-  ): List[Chargeslot] = {
+      fullPriceTableModelGetter: (UserAgreementModel, PolicyModel) ⇒ FullPriceTableModel,
+      effectivePriceTableModelSelector: FullPriceTableModel ⇒ EffectivePriceTableModel
+  ): List[ChargeslotMsg] = {
 
     val policyTimeslots = policyByTimeslot.keySet
     val agreementTimeslots = agreementByTimeslot.keySet
@@ -131,18 +136,21 @@ object TimeslotComputations extends Loggable {
         alignedTimeslot,
         policy,
         userAgreement,
-        effectivePriceTableSelector
+        fullPriceTableModelGetter,
+        effectivePriceTableModelSelector
       )
 
       // Now, the timeslots must be the same
       val finegrainedTimeslots = unitPriceByTimeslot.keySet
 
-      val chargeslots = for (finegrainedTimeslot ← finegrainedTimeslots) yield {
-        Chargeslot(
-          finegrainedTimeslot.from.getTime,
-          finegrainedTimeslot.to.getTime,
-          unitPriceByTimeslot(finegrainedTimeslot)
-        )
+      val chargeslots = for(finegrainedTimeslot ← finegrainedTimeslots) yield {
+        val cs = new ChargeslotMsg
+
+        cs.setStartMillis(finegrainedTimeslot.from.getTime)
+        cs.setStopMillis(finegrainedTimeslot.to.getTime)
+        cs.setUnitPrice(unitPriceByTimeslot(finegrainedTimeslot))
+
+        cs
       }
 
       chargeslots.toList
@@ -169,8 +177,10 @@ object TimeslotComputations extends Loggable {
    *
    * result: List(Timeslot(a.from, b.to), Timeslot(b.to, a.to))
    */
-  private[computation] def alignTimeslots(a: List[Timeslot],
-                                    b: List[Timeslot]): List[Timeslot] = {
+  private[this] def alignTimeslots(
+      a: List[Timeslot],
+      b: List[Timeslot]
+  ): List[Timeslot] = {
 
     def safeTail(foo: List[Timeslot]) = foo match {
       case Nil => List()
@@ -194,9 +204,9 @@ object TimeslotComputations extends Loggable {
     }
   }
 
-    type PriceMap =  immutable.SortedMap[Timeslot, EffectiveUnitPrice]
-    private type PriceList = List[EffectiveUnitPrice]
-    private def emptyMap = immutable.SortedMap[Timeslot,EffectiveUnitPrice]()
+    type PriceMap =  immutable.SortedMap[Timeslot, EffectiveUnitPriceModel]
+    private type PriceList = List[EffectiveUnitPriceModel]
+    private def emptyMap = immutable.SortedMap[Timeslot,EffectiveUnitPriceModel]()
 
     /**
      * Resolves the effective price list for each chunk of the
@@ -205,30 +215,31 @@ object TimeslotComputations extends Loggable {
     private[this] def resolveEffectiveUnitPricesForTimeslot(
         alignedTimeslot: Timeslot,
         policy: PolicyModel,
-        agreement: UserAgreementModel,
-        effectivePriceTableSelector: FullPriceTable ⇒ EffectivePriceTable
+        userAgreement: UserAgreementModel,
+        fullPriceTableModelGetter: (UserAgreementModel, PolicyModel) ⇒ FullPriceTableModel,
+        effectivePriceTableModelSelector: FullPriceTableModel ⇒ EffectivePriceTableModel
     ): PriceMap = {
 
-      val fullPriceTable = agreement.computeFullPriceTable(policy)
-      val effectivePriceTable = effectivePriceTableSelector(fullPriceTable)
+      val fullPriceTable = fullPriceTableModelGetter(userAgreement, policy)
+      val effectivePriceTable = effectivePriceTableModelSelector(fullPriceTable)
 
       resolveEffective(alignedTimeslot, effectivePriceTable.priceOverrides)
       //immutable.SortedMap(alignedTimeslot -> effectivePriceTable.priceOverrides.head)
     }
 
-    private def printPriceList(p: PriceList) : Unit = {
+  private[this] def printPriceList(p: PriceList) : Unit = {
       Console.err.println("BEGIN PRICE LIST")
       for { p1 <- p } Console.err.println(p1)
       Console.err.println("END PRICE LIST")
     }
 
-    private def printPriceMap(m: PriceMap) = {
+  private[this] def printPriceMap(m: PriceMap) = {
       Console.err.println("BEGIN PRICE MAP")
       for { (t,p) <- m.toList } Console.err.println("Timeslot " + t + "\t\t" + p)
       Console.err.println("END PRICE MAP")
     }
 
-    private def resolveEffective(alignedTimeslot: Timeslot,p:PriceList): PriceMap = {
+  private[this] def resolveEffective(alignedTimeslot: Timeslot,p:PriceList): PriceMap = {
       //Console.err.println("\n\nInput timeslot: " + alignedTimeslot + "\n\n")
       //printPriceList(p)
       val ret =  resolveEffective3(alignedTimeslot,p) //HERE
@@ -237,7 +248,7 @@ object TimeslotComputations extends Loggable {
     }
 
 
-    private def resolveEffective3(alignedTimeslot: Timeslot, effectiveUnitPrices: PriceList): PriceMap =
+  private[this] def resolveEffective3(alignedTimeslot: Timeslot, effectiveUnitPrices: PriceList): PriceMap =
       effectiveUnitPrices match {
         case Nil =>
           emptyMap

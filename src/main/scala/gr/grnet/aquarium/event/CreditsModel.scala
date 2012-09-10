@@ -33,56 +33,58 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.store.mongodb
+package gr.grnet.aquarium.event
 
-import gr.grnet.aquarium.charging.state.{ResourcesChargingState, UserStateModelSkeleton, AgreementHistory, UserStateModel}
-import gr.grnet.aquarium.charging.wallet.WalletEntry
-import gr.grnet.aquarium.converter.{JsonTextFormat, StdConverters}
+//trait CreditsModel {
+//  /**
+//   * The type of credits
+//   */
+//  type Type
+//
+//  def fromString(s: CharSequence): Type
+//
+//  def toString(credits: Type): CharSequence
+//
+//  def fromDouble(d: Double): Type
+//
+//  def toDouble(credits: Type): Double
+//}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
+object CreditsModel {
+  type Type = Double // A nice value type would be great here.
+  type TypeInMessage = Double
 
-case class MongoDBUserState(
-    _id: String,
-    parentIDInStore: Option[String],
-    userID: String,
-    occurredMillis: Long,
-    latestResourceEventOccurredMillis: Long,
-    totalCredits: Double,
-    isFullBillingMonth: Boolean,
-    billingYear: Int,
-    billingMonth: Int,
-    stateOfResources: Map[String, ResourcesChargingState],
-    billingPeriodOutOfSyncResourceEventsCounter: Long,
-    agreementHistory: AgreementHistory,
-    walletEntries: List[WalletEntry]
-) extends UserStateModelSkeleton {
+  @inline final def from(s: String): Type = s.toString.toDouble
 
-  def id = _id
-}
+  @inline final def from(d: TypeInMessage): Type = d
 
-object MongoDBUserState {
-  def fromJSONString(json: String): MongoDBUserState = {
-    StdConverters.AllConverters.convertEx[MongoDBUserState](JsonTextFormat(json))
-  }
+  @inline final def from(l: Long): Type = l.toDouble
 
-  def fromOther(model: UserStateModel, _id: String): MongoDBUserState = {
-    MongoDBUserState(
-      _id,
-      model.parentIDInStore,
-      model.userID,
-      model.occurredMillis,
-      model.latestResourceEventOccurredMillis,
-      model.totalCredits,
-      model.isFullBillingMonth,
-      model.billingYear,
-      model.billingMonth,
-      model.stateOfResources,
-      model.billingPeriodOutOfSyncResourceEventsCounter,
-      model.agreementHistory,
-      model.walletEntries
-    )
-  }
+  @inline final def toString(t: Type): String = t.toString
+
+  @inline final def toTypeInMessage(t: Type): TypeInMessage = t
+
+  @inline final def mul(a: Type, b: Type): Type = a * b
+
+  @inline final def *(a: Type, b: Type): Type = a * b
+
+  @inline final def div(a: Type, b: Type): Type = a / b
+
+  @inline final def /(a: Type, b: Type): Type = a / b
+
+  @inline final def add(a: Type, b: Type): Type = a + b
+
+  @inline final def +(a: Type, b: Type): Type = a + b
+
+  @inline final def sub(a: Type, b: Type): Type = a - b
+
+  @inline final def -(a: Type, b: Type): Type = a - b
+
+  @inline final def neg(a: Type): Type = -a
+
+  @inline final def inv(a: Type): Type = 1 / a
 }

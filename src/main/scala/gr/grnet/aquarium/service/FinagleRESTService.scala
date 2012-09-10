@@ -48,12 +48,11 @@ import org.jboss.netty.handler.codec.http.HttpVersion._
 import org.jboss.netty.buffer.ChannelBuffers._
 import org.jboss.netty.util.CharsetUtil._
 import java.net.InetSocketAddress
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{TimeUnit}
 import gr.grnet.aquarium.util.date.TimeHelpers
 import org.joda.time.format.ISODateTimeFormat
 import gr.grnet.aquarium.actor.message._
 import com.ckkloverdos.resource.StreamResource
-import gr.grnet.aquarium.event.model.ExternalEventModel
 import akka.util.{Timeout ⇒ ATimeout, Duration ⇒ ADuration}
 import akka.dispatch.{Future ⇒ AFuture}
 import gr.grnet.aquarium.util.json.JsonHelpers
@@ -64,6 +63,8 @@ import com.ckkloverdos.maybe.Just
 import gr.grnet.aquarium.actor.message.GetUserBalanceRequest
 import gr.grnet.aquarium.actor.message.GetUserWalletRequest
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import org.apache.avro.specific.SpecificRecord
+import gr.grnet.aquarium.message.avro.AvroHelpers
 
 /**
  *
@@ -121,13 +122,13 @@ class FinagleRESTService extends Lifecycle with AquariumAwareSkeleton with Confi
     }
   }
 
-  def eventInfoResponse[E <: ExternalEventModel](
+  def eventInfoResponse[R <: SpecificRecord](
       eventID: String,
-      getter: String ⇒ Option[E]
+      getter: String ⇒ Option[R]
   ): TFuture[THttpResponse] = {
     getter(eventID) match {
       case Some(event) ⇒
-        stringResponseOK(event.toJsonString, APPLICATION_JSON)
+        stringResponseOK(AvroHelpers.jsonStringOfSpecificRecord(event), APPLICATION_JSON)
 
       case None ⇒
         statusResponse(NOT_FOUND)

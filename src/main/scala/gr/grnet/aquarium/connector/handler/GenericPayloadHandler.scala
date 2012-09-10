@@ -35,25 +35,17 @@
 
 package gr.grnet.aquarium.connector.handler
 
-import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.event.model.ExternalEventModel
 import com.ckkloverdos.maybe.{Just, Failed, MaybeEither}
+import gr.grnet.aquarium.converter.JsonTextFormat
 import gr.grnet.aquarium.util.{LogHelpers, Loggable, safeUnit, shortInfoOf, shortClassNameOf}
 
 /**
  * Generic handler of events arriving to Aquarium.
  *
- * We first parse them to JSON ([[gr.grnet.aquarium.converter.JsonTextFormat]]) and an appropriate event model
- * (`E <:` [[gr.grnet.aquarium.event.model.ExternalEventModel]]),
- * then store them to DB
- * and then forward them to business logic.
- *
- * All the above actions are given polymorphically via appropriate functions.
- *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-class GenericPayloadHandler[E <: ExternalEventModel](
+class GenericPayloadHandler[E <: AnyRef: ClassManifest](
     /**
      * Parses payload bytes to a JSON string.
      * The incoming payload must be in UTF-8.

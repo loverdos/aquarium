@@ -6,23 +6,25 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"UserAgreementMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"relatedIMEventID\",\"type\":[\"string\",\"null\"]},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"role\",\"type\":\"string\"},{\"name\":\"fullPriceTableRef\",\"type\":[{\"type\":\"record\",\"name\":\"FullPriceTableMsg\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"SelectorValueMsg\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"string\"}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"SelectorValueMsg\"}]}]}}}}]},\"null\"]}]}");
-  @Deprecated public java.lang.CharSequence id;
-  @Deprecated public java.lang.CharSequence relatedIMEventID;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"UserAgreementMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"relatedIMEventOriginalID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"role\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"fullPriceTableRef\",\"type\":[{\"type\":\"record\",\"name\":\"FullPriceTableMsg\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"SelectorValueMsg\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"SelectorValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"},\"avro.java.string\":\"String\"}}]},\"null\"]}]}");
+  @Deprecated public java.lang.String id;
+  @Deprecated public java.lang.String relatedIMEventOriginalID;
+  @Deprecated public java.lang.String userID;
   @Deprecated public long validFromMillis;
   @Deprecated public long validToMillis;
-  @Deprecated public java.lang.CharSequence role;
+  @Deprecated public java.lang.String role;
   @Deprecated public gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg fullPriceTableRef;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
     switch (field$) {
     case 0: return id;
-    case 1: return relatedIMEventID;
-    case 2: return validFromMillis;
-    case 3: return validToMillis;
-    case 4: return role;
-    case 5: return fullPriceTableRef;
+    case 1: return relatedIMEventOriginalID;
+    case 2: return userID;
+    case 3: return validFromMillis;
+    case 4: return validToMillis;
+    case 5: return role;
+    case 6: return fullPriceTableRef;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -30,12 +32,13 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: id = (java.lang.CharSequence)value$; break;
-    case 1: relatedIMEventID = (java.lang.CharSequence)value$; break;
-    case 2: validFromMillis = (java.lang.Long)value$; break;
-    case 3: validToMillis = (java.lang.Long)value$; break;
-    case 4: role = (java.lang.CharSequence)value$; break;
-    case 5: fullPriceTableRef = (gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg)value$; break;
+    case 0: id = (java.lang.String)value$; break;
+    case 1: relatedIMEventOriginalID = (java.lang.String)value$; break;
+    case 2: userID = (java.lang.String)value$; break;
+    case 3: validFromMillis = (java.lang.Long)value$; break;
+    case 4: validToMillis = (java.lang.Long)value$; break;
+    case 5: role = (java.lang.String)value$; break;
+    case 6: fullPriceTableRef = (gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -43,7 +46,7 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
   /**
    * Gets the value of the 'id' field.
    */
-  public java.lang.CharSequence getId() {
+  public java.lang.String getId() {
     return id;
   }
 
@@ -51,23 +54,38 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'id' field.
    * @param value the value to set.
    */
-  public void setId(java.lang.CharSequence value) {
+  public void setId(java.lang.String value) {
     this.id = value;
   }
 
   /**
-   * Gets the value of the 'relatedIMEventID' field.
+   * Gets the value of the 'relatedIMEventOriginalID' field.
    */
-  public java.lang.CharSequence getRelatedIMEventID() {
-    return relatedIMEventID;
+  public java.lang.String getRelatedIMEventOriginalID() {
+    return relatedIMEventOriginalID;
   }
 
   /**
-   * Sets the value of the 'relatedIMEventID' field.
+   * Sets the value of the 'relatedIMEventOriginalID' field.
    * @param value the value to set.
    */
-  public void setRelatedIMEventID(java.lang.CharSequence value) {
-    this.relatedIMEventID = value;
+  public void setRelatedIMEventOriginalID(java.lang.String value) {
+    this.relatedIMEventOriginalID = value;
+  }
+
+  /**
+   * Gets the value of the 'userID' field.
+   */
+  public java.lang.String getUserID() {
+    return userID;
+  }
+
+  /**
+   * Sets the value of the 'userID' field.
+   * @param value the value to set.
+   */
+  public void setUserID(java.lang.String value) {
+    this.userID = value;
   }
 
   /**
@@ -103,7 +121,7 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
   /**
    * Gets the value of the 'role' field.
    */
-  public java.lang.CharSequence getRole() {
+  public java.lang.String getRole() {
     return role;
   }
 
@@ -111,7 +129,7 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
    * Sets the value of the 'role' field.
    * @param value the value to set.
    */
-  public void setRole(java.lang.CharSequence value) {
+  public void setRole(java.lang.String value) {
     this.role = value;
   }
 
@@ -151,11 +169,12 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<UserAgreementMsg>
     implements org.apache.avro.data.RecordBuilder<UserAgreementMsg> {
 
-    private java.lang.CharSequence id;
-    private java.lang.CharSequence relatedIMEventID;
+    private java.lang.String id;
+    private java.lang.String relatedIMEventOriginalID;
+    private java.lang.String userID;
     private long validFromMillis;
     private long validToMillis;
-    private java.lang.CharSequence role;
+    private java.lang.String role;
     private gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg fullPriceTableRef;
 
     /** Creates a new Builder */
@@ -172,38 +191,42 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
     private Builder(gr.grnet.aquarium.message.avro.gen.UserAgreementMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.id)) {
-        this.id = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.id);
+        this.id = (java.lang.String) data().deepCopy(fields()[0].schema(), other.id);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.relatedIMEventID)) {
-        this.relatedIMEventID = (java.lang.CharSequence) data().deepCopy(fields()[1].schema(), other.relatedIMEventID);
+      if (isValidValue(fields()[1], other.relatedIMEventOriginalID)) {
+        this.relatedIMEventOriginalID = (java.lang.String) data().deepCopy(fields()[1].schema(), other.relatedIMEventOriginalID);
         fieldSetFlags()[1] = true;
       }
-      if (isValidValue(fields()[2], other.validFromMillis)) {
-        this.validFromMillis = (java.lang.Long) data().deepCopy(fields()[2].schema(), other.validFromMillis);
+      if (isValidValue(fields()[2], other.userID)) {
+        this.userID = (java.lang.String) data().deepCopy(fields()[2].schema(), other.userID);
         fieldSetFlags()[2] = true;
       }
-      if (isValidValue(fields()[3], other.validToMillis)) {
-        this.validToMillis = (java.lang.Long) data().deepCopy(fields()[3].schema(), other.validToMillis);
+      if (isValidValue(fields()[3], other.validFromMillis)) {
+        this.validFromMillis = (java.lang.Long) data().deepCopy(fields()[3].schema(), other.validFromMillis);
         fieldSetFlags()[3] = true;
       }
-      if (isValidValue(fields()[4], other.role)) {
-        this.role = (java.lang.CharSequence) data().deepCopy(fields()[4].schema(), other.role);
+      if (isValidValue(fields()[4], other.validToMillis)) {
+        this.validToMillis = (java.lang.Long) data().deepCopy(fields()[4].schema(), other.validToMillis);
         fieldSetFlags()[4] = true;
       }
-      if (isValidValue(fields()[5], other.fullPriceTableRef)) {
-        this.fullPriceTableRef = (gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg) data().deepCopy(fields()[5].schema(), other.fullPriceTableRef);
+      if (isValidValue(fields()[5], other.role)) {
+        this.role = (java.lang.String) data().deepCopy(fields()[5].schema(), other.role);
         fieldSetFlags()[5] = true;
+      }
+      if (isValidValue(fields()[6], other.fullPriceTableRef)) {
+        this.fullPriceTableRef = (gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg) data().deepCopy(fields()[6].schema(), other.fullPriceTableRef);
+        fieldSetFlags()[6] = true;
       }
     }
 
     /** Gets the value of the 'id' field */
-    public java.lang.CharSequence getId() {
+    public java.lang.String getId() {
       return id;
     }
     
     /** Sets the value of the 'id' field */
-    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setId(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setId(java.lang.String value) {
       validate(fields()[0], value);
       this.id = value;
       fieldSetFlags()[0] = true;
@@ -222,28 +245,53 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
       return this;
     }
 
-    /** Gets the value of the 'relatedIMEventID' field */
-    public java.lang.CharSequence getRelatedIMEventID() {
-      return relatedIMEventID;
+    /** Gets the value of the 'relatedIMEventOriginalID' field */
+    public java.lang.String getRelatedIMEventOriginalID() {
+      return relatedIMEventOriginalID;
     }
     
-    /** Sets the value of the 'relatedIMEventID' field */
-    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setRelatedIMEventID(java.lang.CharSequence value) {
+    /** Sets the value of the 'relatedIMEventOriginalID' field */
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setRelatedIMEventOriginalID(java.lang.String value) {
       validate(fields()[1], value);
-      this.relatedIMEventID = value;
+      this.relatedIMEventOriginalID = value;
       fieldSetFlags()[1] = true;
       return this; 
     }
     
-    /** Checks whether the 'relatedIMEventID' field has been set */
-    public boolean hasRelatedIMEventID() {
+    /** Checks whether the 'relatedIMEventOriginalID' field has been set */
+    public boolean hasRelatedIMEventOriginalID() {
       return fieldSetFlags()[1];
     }
     
-    /** Clears the value of the 'relatedIMEventID' field */
-    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder clearRelatedIMEventID() {
-      relatedIMEventID = null;
+    /** Clears the value of the 'relatedIMEventOriginalID' field */
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder clearRelatedIMEventOriginalID() {
+      relatedIMEventOriginalID = null;
       fieldSetFlags()[1] = false;
+      return this;
+    }
+
+    /** Gets the value of the 'userID' field */
+    public java.lang.String getUserID() {
+      return userID;
+    }
+    
+    /** Sets the value of the 'userID' field */
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setUserID(java.lang.String value) {
+      validate(fields()[2], value);
+      this.userID = value;
+      fieldSetFlags()[2] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'userID' field has been set */
+    public boolean hasUserID() {
+      return fieldSetFlags()[2];
+    }
+    
+    /** Clears the value of the 'userID' field */
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder clearUserID() {
+      userID = null;
+      fieldSetFlags()[2] = false;
       return this;
     }
 
@@ -254,20 +302,20 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
     
     /** Sets the value of the 'validFromMillis' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setValidFromMillis(long value) {
-      validate(fields()[2], value);
+      validate(fields()[3], value);
       this.validFromMillis = value;
-      fieldSetFlags()[2] = true;
+      fieldSetFlags()[3] = true;
       return this; 
     }
     
     /** Checks whether the 'validFromMillis' field has been set */
     public boolean hasValidFromMillis() {
-      return fieldSetFlags()[2];
+      return fieldSetFlags()[3];
     }
     
     /** Clears the value of the 'validFromMillis' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder clearValidFromMillis() {
-      fieldSetFlags()[2] = false;
+      fieldSetFlags()[3] = false;
       return this;
     }
 
@@ -278,45 +326,45 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
     
     /** Sets the value of the 'validToMillis' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setValidToMillis(long value) {
-      validate(fields()[3], value);
+      validate(fields()[4], value);
       this.validToMillis = value;
-      fieldSetFlags()[3] = true;
+      fieldSetFlags()[4] = true;
       return this; 
     }
     
     /** Checks whether the 'validToMillis' field has been set */
     public boolean hasValidToMillis() {
-      return fieldSetFlags()[3];
+      return fieldSetFlags()[4];
     }
     
     /** Clears the value of the 'validToMillis' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder clearValidToMillis() {
-      fieldSetFlags()[3] = false;
+      fieldSetFlags()[4] = false;
       return this;
     }
 
     /** Gets the value of the 'role' field */
-    public java.lang.CharSequence getRole() {
+    public java.lang.String getRole() {
       return role;
     }
     
     /** Sets the value of the 'role' field */
-    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setRole(java.lang.CharSequence value) {
-      validate(fields()[4], value);
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setRole(java.lang.String value) {
+      validate(fields()[5], value);
       this.role = value;
-      fieldSetFlags()[4] = true;
+      fieldSetFlags()[5] = true;
       return this; 
     }
     
     /** Checks whether the 'role' field has been set */
     public boolean hasRole() {
-      return fieldSetFlags()[4];
+      return fieldSetFlags()[5];
     }
     
     /** Clears the value of the 'role' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder clearRole() {
       role = null;
-      fieldSetFlags()[4] = false;
+      fieldSetFlags()[5] = false;
       return this;
     }
 
@@ -327,21 +375,21 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
     
     /** Sets the value of the 'fullPriceTableRef' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder setFullPriceTableRef(gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg value) {
-      validate(fields()[5], value);
+      validate(fields()[6], value);
       this.fullPriceTableRef = value;
-      fieldSetFlags()[5] = true;
+      fieldSetFlags()[6] = true;
       return this; 
     }
     
     /** Checks whether the 'fullPriceTableRef' field has been set */
     public boolean hasFullPriceTableRef() {
-      return fieldSetFlags()[5];
+      return fieldSetFlags()[6];
     }
     
     /** Clears the value of the 'fullPriceTableRef' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementMsg.Builder clearFullPriceTableRef() {
       fullPriceTableRef = null;
-      fieldSetFlags()[5] = false;
+      fieldSetFlags()[6] = false;
       return this;
     }
 
@@ -349,12 +397,13 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
     public UserAgreementMsg build() {
       try {
         UserAgreementMsg record = new UserAgreementMsg();
-        record.id = fieldSetFlags()[0] ? this.id : (java.lang.CharSequence) defaultValue(fields()[0]);
-        record.relatedIMEventID = fieldSetFlags()[1] ? this.relatedIMEventID : (java.lang.CharSequence) defaultValue(fields()[1]);
-        record.validFromMillis = fieldSetFlags()[2] ? this.validFromMillis : (java.lang.Long) defaultValue(fields()[2]);
-        record.validToMillis = fieldSetFlags()[3] ? this.validToMillis : (java.lang.Long) defaultValue(fields()[3]);
-        record.role = fieldSetFlags()[4] ? this.role : (java.lang.CharSequence) defaultValue(fields()[4]);
-        record.fullPriceTableRef = fieldSetFlags()[5] ? this.fullPriceTableRef : (gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg) defaultValue(fields()[5]);
+        record.id = fieldSetFlags()[0] ? this.id : (java.lang.String) defaultValue(fields()[0]);
+        record.relatedIMEventOriginalID = fieldSetFlags()[1] ? this.relatedIMEventOriginalID : (java.lang.String) defaultValue(fields()[1]);
+        record.userID = fieldSetFlags()[2] ? this.userID : (java.lang.String) defaultValue(fields()[2]);
+        record.validFromMillis = fieldSetFlags()[3] ? this.validFromMillis : (java.lang.Long) defaultValue(fields()[3]);
+        record.validToMillis = fieldSetFlags()[4] ? this.validToMillis : (java.lang.Long) defaultValue(fields()[4]);
+        record.role = fieldSetFlags()[5] ? this.role : (java.lang.String) defaultValue(fields()[5]);
+        record.fullPriceTableRef = fieldSetFlags()[6] ? this.fullPriceTableRef : (gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg) defaultValue(fields()[6]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

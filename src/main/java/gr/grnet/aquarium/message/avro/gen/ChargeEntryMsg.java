@@ -6,13 +6,13 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"unitPrice\",\"type\":\"string\"},{\"name\":\"startTime\",\"type\":\"string\"},{\"name\":\"endTime\",\"type\":\"string\"},{\"name\":\"ellapsedTime\",\"type\":\"string\"},{\"name\":\"credits\",\"type\":\"string\"}]}");
-  @Deprecated public java.lang.CharSequence id;
-  @Deprecated public java.lang.CharSequence unitPrice;
-  @Deprecated public java.lang.CharSequence startTime;
-  @Deprecated public java.lang.CharSequence endTime;
-  @Deprecated public java.lang.CharSequence ellapsedTime;
-  @Deprecated public java.lang.CharSequence credits;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"ellapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"credits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
+  @Deprecated public java.lang.String id;
+  @Deprecated public java.lang.String unitPrice;
+  @Deprecated public java.lang.String startTime;
+  @Deprecated public java.lang.String endTime;
+  @Deprecated public java.lang.String ellapsedTime;
+  @Deprecated public java.lang.String credits;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -30,12 +30,12 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: id = (java.lang.CharSequence)value$; break;
-    case 1: unitPrice = (java.lang.CharSequence)value$; break;
-    case 2: startTime = (java.lang.CharSequence)value$; break;
-    case 3: endTime = (java.lang.CharSequence)value$; break;
-    case 4: ellapsedTime = (java.lang.CharSequence)value$; break;
-    case 5: credits = (java.lang.CharSequence)value$; break;
+    case 0: id = (java.lang.String)value$; break;
+    case 1: unitPrice = (java.lang.String)value$; break;
+    case 2: startTime = (java.lang.String)value$; break;
+    case 3: endTime = (java.lang.String)value$; break;
+    case 4: ellapsedTime = (java.lang.String)value$; break;
+    case 5: credits = (java.lang.String)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -43,7 +43,7 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   /**
    * Gets the value of the 'id' field.
    */
-  public java.lang.CharSequence getId() {
+  public java.lang.String getId() {
     return id;
   }
 
@@ -51,14 +51,14 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
    * Sets the value of the 'id' field.
    * @param value the value to set.
    */
-  public void setId(java.lang.CharSequence value) {
+  public void setId(java.lang.String value) {
     this.id = value;
   }
 
   /**
    * Gets the value of the 'unitPrice' field.
    */
-  public java.lang.CharSequence getUnitPrice() {
+  public java.lang.String getUnitPrice() {
     return unitPrice;
   }
 
@@ -66,14 +66,14 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
    * Sets the value of the 'unitPrice' field.
    * @param value the value to set.
    */
-  public void setUnitPrice(java.lang.CharSequence value) {
+  public void setUnitPrice(java.lang.String value) {
     this.unitPrice = value;
   }
 
   /**
    * Gets the value of the 'startTime' field.
    */
-  public java.lang.CharSequence getStartTime() {
+  public java.lang.String getStartTime() {
     return startTime;
   }
 
@@ -81,14 +81,14 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
    * Sets the value of the 'startTime' field.
    * @param value the value to set.
    */
-  public void setStartTime(java.lang.CharSequence value) {
+  public void setStartTime(java.lang.String value) {
     this.startTime = value;
   }
 
   /**
    * Gets the value of the 'endTime' field.
    */
-  public java.lang.CharSequence getEndTime() {
+  public java.lang.String getEndTime() {
     return endTime;
   }
 
@@ -96,14 +96,14 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
    * Sets the value of the 'endTime' field.
    * @param value the value to set.
    */
-  public void setEndTime(java.lang.CharSequence value) {
+  public void setEndTime(java.lang.String value) {
     this.endTime = value;
   }
 
   /**
    * Gets the value of the 'ellapsedTime' field.
    */
-  public java.lang.CharSequence getEllapsedTime() {
+  public java.lang.String getEllapsedTime() {
     return ellapsedTime;
   }
 
@@ -111,14 +111,14 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
    * Sets the value of the 'ellapsedTime' field.
    * @param value the value to set.
    */
-  public void setEllapsedTime(java.lang.CharSequence value) {
+  public void setEllapsedTime(java.lang.String value) {
     this.ellapsedTime = value;
   }
 
   /**
    * Gets the value of the 'credits' field.
    */
-  public java.lang.CharSequence getCredits() {
+  public java.lang.String getCredits() {
     return credits;
   }
 
@@ -126,7 +126,7 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
    * Sets the value of the 'credits' field.
    * @param value the value to set.
    */
-  public void setCredits(java.lang.CharSequence value) {
+  public void setCredits(java.lang.String value) {
     this.credits = value;
   }
 
@@ -151,12 +151,12 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<ChargeEntryMsg>
     implements org.apache.avro.data.RecordBuilder<ChargeEntryMsg> {
 
-    private java.lang.CharSequence id;
-    private java.lang.CharSequence unitPrice;
-    private java.lang.CharSequence startTime;
-    private java.lang.CharSequence endTime;
-    private java.lang.CharSequence ellapsedTime;
-    private java.lang.CharSequence credits;
+    private java.lang.String id;
+    private java.lang.String unitPrice;
+    private java.lang.String startTime;
+    private java.lang.String endTime;
+    private java.lang.String ellapsedTime;
+    private java.lang.String credits;
 
     /** Creates a new Builder */
     private Builder() {
@@ -172,38 +172,38 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     private Builder(gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.id)) {
-        this.id = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.id);
+        this.id = (java.lang.String) data().deepCopy(fields()[0].schema(), other.id);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.unitPrice)) {
-        this.unitPrice = (java.lang.CharSequence) data().deepCopy(fields()[1].schema(), other.unitPrice);
+        this.unitPrice = (java.lang.String) data().deepCopy(fields()[1].schema(), other.unitPrice);
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.startTime)) {
-        this.startTime = (java.lang.CharSequence) data().deepCopy(fields()[2].schema(), other.startTime);
+        this.startTime = (java.lang.String) data().deepCopy(fields()[2].schema(), other.startTime);
         fieldSetFlags()[2] = true;
       }
       if (isValidValue(fields()[3], other.endTime)) {
-        this.endTime = (java.lang.CharSequence) data().deepCopy(fields()[3].schema(), other.endTime);
+        this.endTime = (java.lang.String) data().deepCopy(fields()[3].schema(), other.endTime);
         fieldSetFlags()[3] = true;
       }
       if (isValidValue(fields()[4], other.ellapsedTime)) {
-        this.ellapsedTime = (java.lang.CharSequence) data().deepCopy(fields()[4].schema(), other.ellapsedTime);
+        this.ellapsedTime = (java.lang.String) data().deepCopy(fields()[4].schema(), other.ellapsedTime);
         fieldSetFlags()[4] = true;
       }
       if (isValidValue(fields()[5], other.credits)) {
-        this.credits = (java.lang.CharSequence) data().deepCopy(fields()[5].schema(), other.credits);
+        this.credits = (java.lang.String) data().deepCopy(fields()[5].schema(), other.credits);
         fieldSetFlags()[5] = true;
       }
     }
 
     /** Gets the value of the 'id' field */
-    public java.lang.CharSequence getId() {
+    public java.lang.String getId() {
       return id;
     }
     
     /** Sets the value of the 'id' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setId(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setId(java.lang.String value) {
       validate(fields()[0], value);
       this.id = value;
       fieldSetFlags()[0] = true;
@@ -223,12 +223,12 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     }
 
     /** Gets the value of the 'unitPrice' field */
-    public java.lang.CharSequence getUnitPrice() {
+    public java.lang.String getUnitPrice() {
       return unitPrice;
     }
     
     /** Sets the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setUnitPrice(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setUnitPrice(java.lang.String value) {
       validate(fields()[1], value);
       this.unitPrice = value;
       fieldSetFlags()[1] = true;
@@ -248,12 +248,12 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     }
 
     /** Gets the value of the 'startTime' field */
-    public java.lang.CharSequence getStartTime() {
+    public java.lang.String getStartTime() {
       return startTime;
     }
     
     /** Sets the value of the 'startTime' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setStartTime(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setStartTime(java.lang.String value) {
       validate(fields()[2], value);
       this.startTime = value;
       fieldSetFlags()[2] = true;
@@ -273,12 +273,12 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     }
 
     /** Gets the value of the 'endTime' field */
-    public java.lang.CharSequence getEndTime() {
+    public java.lang.String getEndTime() {
       return endTime;
     }
     
     /** Sets the value of the 'endTime' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setEndTime(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setEndTime(java.lang.String value) {
       validate(fields()[3], value);
       this.endTime = value;
       fieldSetFlags()[3] = true;
@@ -298,12 +298,12 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     }
 
     /** Gets the value of the 'ellapsedTime' field */
-    public java.lang.CharSequence getEllapsedTime() {
+    public java.lang.String getEllapsedTime() {
       return ellapsedTime;
     }
     
     /** Sets the value of the 'ellapsedTime' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setEllapsedTime(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setEllapsedTime(java.lang.String value) {
       validate(fields()[4], value);
       this.ellapsedTime = value;
       fieldSetFlags()[4] = true;
@@ -323,12 +323,12 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     }
 
     /** Gets the value of the 'credits' field */
-    public java.lang.CharSequence getCredits() {
+    public java.lang.String getCredits() {
       return credits;
     }
     
     /** Sets the value of the 'credits' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setCredits(java.lang.CharSequence value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setCredits(java.lang.String value) {
       validate(fields()[5], value);
       this.credits = value;
       fieldSetFlags()[5] = true;
@@ -351,12 +351,12 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     public ChargeEntryMsg build() {
       try {
         ChargeEntryMsg record = new ChargeEntryMsg();
-        record.id = fieldSetFlags()[0] ? this.id : (java.lang.CharSequence) defaultValue(fields()[0]);
-        record.unitPrice = fieldSetFlags()[1] ? this.unitPrice : (java.lang.CharSequence) defaultValue(fields()[1]);
-        record.startTime = fieldSetFlags()[2] ? this.startTime : (java.lang.CharSequence) defaultValue(fields()[2]);
-        record.endTime = fieldSetFlags()[3] ? this.endTime : (java.lang.CharSequence) defaultValue(fields()[3]);
-        record.ellapsedTime = fieldSetFlags()[4] ? this.ellapsedTime : (java.lang.CharSequence) defaultValue(fields()[4]);
-        record.credits = fieldSetFlags()[5] ? this.credits : (java.lang.CharSequence) defaultValue(fields()[5]);
+        record.id = fieldSetFlags()[0] ? this.id : (java.lang.String) defaultValue(fields()[0]);
+        record.unitPrice = fieldSetFlags()[1] ? this.unitPrice : (java.lang.String) defaultValue(fields()[1]);
+        record.startTime = fieldSetFlags()[2] ? this.startTime : (java.lang.String) defaultValue(fields()[2]);
+        record.endTime = fieldSetFlags()[3] ? this.endTime : (java.lang.String) defaultValue(fields()[3]);
+        record.ellapsedTime = fieldSetFlags()[4] ? this.ellapsedTime : (java.lang.String) defaultValue(fields()[4]);
+        record.credits = fieldSetFlags()[5] ? this.credits : (java.lang.String) defaultValue(fields()[5]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

@@ -33,14 +33,38 @@
  * or implied, of GRNET S.A.
  */
 
-package gr.grnet.aquarium.policy
-
-import gr.grnet.aquarium.Timespan
+package gr.grnet.aquarium.message
 
 /**
+ * Provides constants for known values expected in message objects.
  *
- * @param validityPeriod The period when this price table is valid.
- * @param prices         A map from resource to its unit price.
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-case class PolicyUnitPrices(validityPeriod: Timespan, prices: Map[String, Double]) {
+object MessageConstants {
+  final val EventVersion_1_0 = "1.0"
+  final val DefaultSelectorKey = "default"
+
+  final object DetailsKeys {
+    // This is set in the details map to indicate a synthetic resource event (ie not a real one).
+    // Examples of synthetic resource events are those that are implicitly generated at the
+    // end of the billing period (e.g. `OFF`s).
+    final val aquarium_is_synthetic    = "__aquarium_is_synthetic__"
+
+    final val aquarium_is_implicit_end = "__aquarium_is_implicit_end__"
+
+    final val aquarium_is_dummy_first = "__aquarium_is_dummy_first__"
+
+    final val aquarium_is_realtime_virtual = "__aquarium_is_realtime_virtual__"
+
+    final val aquarium_reference_event_id = "__aquarium_reference_event_id__"
+
+    final val aquarium_reference_event_id_in_store = "__aquarium_reference_event_id_in_store__"
+  }
+
+  final object IMEventMsg {
+    final object EventTypes {
+      final val create = "create"
+      final val modify = "modify"
+    }
+  }
 }

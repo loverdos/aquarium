@@ -36,39 +36,54 @@
 package gr.grnet.aquarium.policy
 
 import gr.grnet.aquarium.AquariumInternalError
-import gr.grnet.aquarium.util.shortNameOfType
+import gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg
 import gr.grnet.aquarium.util.LogHelpers.Debug
+import gr.grnet.aquarium.util.shortNameOfType
 import org.slf4j.Logger
 import scala.annotation.tailrec
+import scala.collection.JavaConverters.mapAsScalaMapConverter
+import gr.grnet.aquarium.message.avro.ModelFactory
+
 
 /**
  * A full price table provides detailed pricing information for all resource types.
  *
- * @param perResource The key is some [[gr.grnet.aquarium.policy.ResourceType]]`.name`.
- *                    The value is a Map from selector to either an [[gr.grnet.aquarium.policy.EffectivePriceTable]]
- *                    or another Map (that designates another level of search path).
- *                    See `policy.json` for samples.
  *
- *@author Christos KK Loverdos <loverdos@gmail.com>
+ * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class FullPriceTable(
-    perResource: Map[String /* The key is some ResourceType.name */,
-                     Map[String /* Use "default" for the simple cases */, Any]]
-) {
+case class FullPriceTableModel(msg: FullPriceTableMsg ) {
+  /**
+   * The key is some [[gr.grnet.aquarium.policy.ResourceType]]`.name`.
+   * The value is a Map from selector to either an [[gr.grnet.aquarium.policy.EffectivePriceTableModel]]
+   * or another Map (that designates another level of search path).
+   * See `policy.json` for samples.
+   */
+  val perResource: Map[String /* The key is some ResourceType.name */,
+                       Map[String /* Use "default" for the simple cases */, Any]] = {
+    Map(msg.getPerResource().asScala.map { case (k, v) ⇒
+      val k2 = k
+      val v2 = v.asScala.map {
+        case (k, v) ⇒
+          (k, ModelFactory.newSelectorValue(v))
+      }.toMap // make immutable map
+
+      (k2, v2)
+    }.toSeq: _*)
+  }
 
   def effectivePriceTableOfSelectorForResource(
       selectorPath: List[String],
       resource: String,
       logger: Logger
-  ): EffectivePriceTable = {
+  ): EffectivePriceTableModel = {
 
     // Most of the code is for exceptional cases, which we identify in detail.
     @tailrec
     def find(
         partialSelectorPath: List[String],
         partialSelectorData: Any
-    ): EffectivePriceTable = {
+    ): EffectivePriceTableModel = {
 
       Debug(logger, "find: ")
       Debug(logger, "  partialSelectorPath = %s", partialSelectorPath.mkString("/"))
@@ -81,7 +96,7 @@ case class FullPriceTable(
             case selectorMap: Map[_,_] ⇒
               // The selectorData is a map indeed
               selectorMap.asInstanceOf[Map[String, _]].get(selector) match {
-                case Some(selected: EffectivePriceTable) ⇒
+                case Some(selected: EffectivePriceTableModel) ⇒
                   // Yes, it is a map of the right type (OK, we assume keys are always Strings)
                   // (we only check the value type)
                   selected
@@ -93,7 +108,7 @@ case class FullPriceTable(
                       selectorPath.mkString("/"),
                       resource,
                       badSelected,
-                      shortNameOfType[EffectivePriceTable],
+                      shortNameOfType[EffectivePriceTableModel],
                       partialSelectorPath.mkString("/")
                     )
                   )
@@ -178,7 +193,7 @@ case class FullPriceTable(
     Debug(logger, "effectivePriceTableOfSelectorForResource:")
     Debug(logger, "  selectorPath = %s", selectorPath.mkString("/"))
 
-    val selectorDataOpt = perResource.get(resource)
+    val selectorDataOpt = perResource.get(resource.toString)
     if(selectorDataOpt.isEmpty) {
       throw new AquariumInternalError("Unknown resource type '%s'", resource)
     }
@@ -187,8 +202,4 @@ case class FullPriceTable(
     Debug(logger, "  selectorData = %s", selectorData)
     find(selectorPath, selectorData)
   }
-}
-
-object FullPriceTable {
-  final val DefaultSelectorKey = "default"
 }

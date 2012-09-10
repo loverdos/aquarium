@@ -36,8 +36,8 @@
 package gr.grnet.aquarium.util.json
 
 import java.io.{ByteArrayOutputStream, OutputStream}
-import org.codehaus.jackson.{JsonParser, JsonEncoding, JsonFactory, JsonGenerator}
 import org.codehaus.jackson.map.ObjectMapper
+import org.codehaus.jackson.{JsonEncoding, JsonFactory, JsonGenerator}
 
 /**
  *

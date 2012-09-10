@@ -37,6 +37,11 @@
 protocol AquariumEvents {
   import idl "aquarium-anyvalue.avdl";
 
+  // standalone details message
+  record DetailsMsg {
+    map<AnyValueMsg> details;
+  }
+
   record ResourceEventMsg {
     string @aliases(["id"]) originalID; // From message creator
     union {string, null} @aliases(["_id", "idInStore"]) inStoreID; // From Aquarium (message recipient)
@@ -48,6 +53,7 @@ protocol AquariumEvents {
     string @aliases(["resourceType"]) resource;
     string instanceID;
     string value;
+    boolean isSynthetic = false;
     map<AnyValueMsg> details;
   }
 
@@ -59,8 +65,10 @@ protocol AquariumEvents {
     string userID;
     string clientID;
     string eventVersion = "1.0";
+    string eventType;
     boolean isActive;
     string role;
+    boolean isSynthetic = false;
     map<AnyValueMsg> details;
   }
 }

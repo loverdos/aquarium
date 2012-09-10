@@ -35,24 +35,16 @@
 
 package gr.grnet.aquarium.store.memory
 
-import com.ckkloverdos.props.Props
-import gr.grnet.aquarium.store._
-import scala.collection.JavaConversions._
-import collection.mutable.ConcurrentMap
-import java.util.concurrent.ConcurrentHashMap
-import gr.grnet.aquarium.Configurable
-import gr.grnet.aquarium.event.model.im.{StdIMEvent, IMEventModel}
-import gr.grnet.aquarium.event.model.resource.{StdResourceEvent, ResourceEventModel}
-import gr.grnet.aquarium.util.{Loggable, Tags}
-import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.policy.{PolicyModel, StdPolicy}
-import collection.immutable.SortedMap
-import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import collection.immutable
-import java.util.Date
-import gr.grnet.aquarium.charging.state.{UserStateModel, StdUserState}
-import gr.grnet.aquarium.message.avro.gen.PolicyMsg
-import gr.grnet.aquarium.message.avro.{DummyHelpers, OrderingHelpers}
+import collection.immutable.SortedMap
+import com.ckkloverdos.props.Props
+import gr.grnet.aquarium.Configurable
+import gr.grnet.aquarium.computation.BillingMonthInfo
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
+import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
+import gr.grnet.aquarium.message.avro.{MessageFactory, MessageHelpers, OrderingHelpers}
+import gr.grnet.aquarium.store._
+import gr.grnet.aquarium.util.{Loggable, Tags}
 
 /**
  * An implementation of various stores that persists parts in memory.
@@ -73,12 +65,10 @@ extends StoreProvider
    with IMEventStore
    with Loggable {
 
-  private[this] var _userStates = List[UserStateModel]()
+  private[this] var _userStates = immutable.TreeSet[UserStateMsg]()(OrderingHelpers.DefaultUserStateMsgOrdering)
   private[this] var _policies = immutable.TreeSet[PolicyMsg]()(OrderingHelpers.DefaultPolicyMsgOrdering)
-  private[this] var _resourceEvents = List[ResourceEventModel]()
-
-  private[this] val imEventById: ConcurrentMap[String, MemIMEvent] = new ConcurrentHashMap[String, MemIMEvent]()
-
+  private[this] var _resourceEvents = immutable.TreeSet[ResourceEventMsg]()(OrderingHelpers.DefaultResourceEventMsgOrdering)
+  private[this] var _imEvents = immutable.TreeSet[IMEventMsg]()(OrderingHelpers.DefaultIMEventMsgOrdering)
 
   def propertyPrefix = None
 
@@ -89,7 +79,7 @@ extends StoreProvider
     val map = Map(
       Tags.UserStateTag     -> _userStates.size,
       Tags.ResourceEventTag -> _resourceEvents.size,
-      Tags.IMEventTag       -> imEventById.size,
+      Tags.IMEventTag       -> _imEvents.size,
       "PolicyEntry"         -> _policies.size
     )
 
@@ -108,118 +98,47 @@ extends StoreProvider
 
 
   //+ UserStateStore
-  def createUserStateFromOther(model: UserStateModel): UserStateModel = {
-    logger.info("createUserStateFromOther(%s)".format(model))
-
-    if(model.isInstanceOf[StdUserState]) {
-      model.asInstanceOf[StdUserState]
-    }
-    else {
-      new StdUserState(
-        model.id,
-        model.parentIDInStore,
-        model.userID,
-        model.occurredMillis,
-        model.latestResourceEventOccurredMillis,
-        model.totalCredits,
-        model.isFullBillingMonth,
-        model.billingYear,
-        model.billingMonth,
-        model.stateOfResources,
-        model.billingPeriodOutOfSyncResourceEventsCounter,
-        model.agreementHistory,
-        model.walletEntries
-      )
-    }
-  }
-
-  def insertUserState(userState: UserStateModel): UserStateModel = {
-    val localUserState = createUserStateFromOther(userState)
-    _userStates ::= localUserState
-    localUserState
+  def insertUserState(event: UserStateMsg) = {
+    event.setInStoreID(event.getOriginalID)
+    _userStates += event
+    event
   }
 
   def findUserStateByUserID(userID: String) = {
-    _userStates.find(_.userID == userID)
+    _userStates.find(_.getUserID == userID)
   }
 
-  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserStateModel] = {
-    val goodOnes = _userStates.filter { userState ⇒
-      userState.userID == userID &&
-      userState.isFullBillingMonth &&
-      userState.billingYear == bmi.year &&
-      userState.billingMonth == bmi.month
-    }
-    
-    goodOnes.sortWith {
-      case (us1, us2) ⇒
-        us1.occurredMillis > us2.occurredMillis
-    } match {
-      case head :: _ ⇒
-        Some(head)
-      case _ ⇒
-        None
-    }
+  def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo) = {
+    _userStates.filter { userState ⇒
+      userState.getUserID == userID &&
+      userState.getIsFullBillingMonth &&
+      userState.getBillingYear == bmi.year &&
+      userState.getBillingMonth == bmi.month
+    }.lastOption
   }
   //- UserStateStore
 
   //+ ResourceEventStore
-  def createResourceEventFromOther(event: ResourceEventModel): ResourceEventModel = {
-    if(event.isInstanceOf[MemResourceEvent]) event.asInstanceOf[MemResourceEvent]
-    else {
-      import event._
-      new StdResourceEvent(
-        id,
-        occurredMillis,
-        receivedMillis,
-        userID,
-        clientID,
-        resource,
-        instanceID,
-        value,
-        eventVersion,
-        details
-      ): MemResourceEvent
-    }
-  }
-
-  override def clearResourceEvents() = {
-    _resourceEvents = Nil
-  }
-
   def pingResourceEventStore(): Unit = {
     // We are always live and kicking...
   }
 
-  def insertResourceEvent(event: ResourceEventModel) = {
-    val localEvent = createResourceEventFromOther(event)
-    _resourceEvents ::= localEvent
-    localEvent
+  def insertResourceEvent(event: ResourceEventMsg) = {
+    event.setInStoreID(event.getOriginalID)
+    _resourceEvents += event
+    event
   }
 
   def findResourceEventByID(id: String) = {
-    _resourceEvents.find(ev ⇒ ev.id == id)
-  }
-
-  def findResourceEventsByUserID(userId: String)
-                                (sortWith: Option[(ResourceEventModel, ResourceEventModel) => Boolean]): List[ResourceEventModel] = {
-    val byUserId = _resourceEvents.filter(_.userID == userId).toArray
-    val sorted = sortWith match {
-      case Some(sorter) ⇒
-        byUserId.sortWith(sorter)
-      case None ⇒
-        byUserId
-    }
-
-    sorted.toList
+    _resourceEvents.find(_.getOriginalID == id)
   }
 
   def countOutOfSyncResourceEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long = {
     _resourceEvents.filter { case ev ⇒
-      ev.userID == userID &&
+      ev.getUserID == userID &&
       // out of sync events are those that were received in the billing month but occurred in previous (or next?)
       // months
-      ev.isOutOfSyncForBillingPeriod(startMillis, stopMillis)
+      MessageHelpers.isOutOfSyncForBillingPeriod(ev, startMillis, stopMillis)
     }.size.toLong
   }
   //- ResourceEventStore
@@ -228,51 +147,36 @@ extends StoreProvider
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEventModel ⇒ Unit): Unit = {
+  )(f: ResourceEventMsg ⇒ Unit): Unit = {
     _resourceEvents.filter { case ev ⇒
-      ev.userID == userID &&
-      ev.isOccurredWithinMillis(startMillis, stopMillis)
+      ev.getUserID == userID &&
+      MessageHelpers.isOccurredWithinMillis(ev, startMillis, stopMillis)
     }.foreach(f)
   }
 
   //+ IMEventStore
-  def createIMEventFromJson(json: String) = {
-    StdIMEvent.fromJsonString(json)
-  }
-
-  def createIMEventFromOther(event: IMEventModel) = {
-    StdIMEvent.fromOther(event)
-  }
-
   def pingIMEventStore(): Unit = {
   }
 
 
-  def insertIMEvent(event: IMEventModel) = {
-    val localEvent = createIMEventFromOther(event)
-    imEventById += (event.id -> localEvent)
-    localEvent
+  def insertIMEvent(event: IMEventMsg) = {
+    event.setInStoreID(event.getOriginalID)
+    _imEvents += event
+    event
   }
 
-  def findIMEventByID(id: String) = imEventById.get(id)
+  def findIMEventByID(id: String) = {
+    _imEvents.find(_.getOriginalID == id)
+  }
 
 
   /**
    * Find the `CREATE` even for the given user. Note that there must be only one such event.
    */
-  def findCreateIMEventByUserID(userID: String): Option[IMEventModel] = {
-    imEventById.valuesIterator.filter { e ⇒
-      e.userID == userID && e.isCreateUser
-    }.toList.sortWith { case (e1, e2) ⇒
-      e1.occurredMillis < e2.occurredMillis
-    } headOption
-  }
-
-  def findLatestIMEventByUserID(userID: String): Option[IMEventModel] = {
-    imEventById.valuesIterator.filter(_.userID == userID).toList.sortWith {
-      case (us1, us2) ⇒
-        us1.occurredMillis > us2.occurredMillis
-    } headOption
+  def findCreateIMEventByUserID(userID: String) = {
+    _imEvents.find { event ⇒
+      event.getUserID() == userID && MessageHelpers.isIMEventCreate(event)
+    }
   }
 
   /**
@@ -281,28 +185,30 @@ extends StoreProvider
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventModel) => Unit) = {
-    imEventById.valuesIterator.filter(_.userID == userID).toSeq.sortWith {
-      case (ev1, ev2) ⇒ ev1.occurredMillis <= ev2.occurredMillis
-    } foreach(f)
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventMsg) ⇒ Unit) = {
+    for {
+      msg <- _imEvents
+    } {
+      f(msg)
+    }
   }
   //- IMEventStore
 
   //+ PolicyStore
   def insertPolicy(policy: PolicyMsg): PolicyMsg = synchronized {
+    policy.setInStoreID(policy.getOriginalID)
     _policies += policy
-
     policy
   }
 
   def loadPolicyAt(atMillis: Long): Option[PolicyMsg] = synchronized {
-    _policies.to(DummyHelpers.dummyPolicyMsgAt(atMillis)).lastOption
+    _policies.to(MessageFactory.newDummyPolicyMsgAt(atMillis)).lastOption
   }
 
   def loadSortedPoliciesWithin(fromMillis: Long, toMillis: Long): SortedMap[Timeslot, PolicyMsg] = {
     immutable.SortedMap(_policies.
-      from(DummyHelpers.dummyPolicyMsgAt(fromMillis)).
-      to(DummyHelpers.dummyPolicyMsgAt(toMillis)).toSeq.
+      from(MessageFactory.newDummyPolicyMsgAt(fromMillis)).
+      to(MessageFactory.newDummyPolicyMsgAt(toMillis)).toSeq.
       map(p ⇒ (Timeslot(p.getValidFromMillis, p.getValidToMillis), p)): _*
     )
   }
@@ -311,11 +217,4 @@ extends StoreProvider
     _policies.foreach(f)
   }
   //- PolicyStore
-}
-
-object MemStoreProvider {
-  final def isLocalIMEvent(event: IMEventModel) = event match {
-    case _: MemIMEvent ⇒ true
-    case _ ⇒ false
-  }
 }

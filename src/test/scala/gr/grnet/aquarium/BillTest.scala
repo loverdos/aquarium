@@ -1,17 +1,3 @@
-package gr.grnet.aquarium
-
-import com.ckkloverdos.resource.FileStreamResource
-import converter.StdConverters
-import event.model.im.StdIMEvent
-import event.model.resource.StdResourceEvent
-import java.io.{InputStreamReader, BufferedReader, File}
-import com.ckkloverdos.props.Props
-import store.memory.MemStoreProvider
-import java.util.concurrent.atomic.AtomicLong
-import java.text.SimpleDateFormat
-import java.net.{URLConnection, URL}
-import util.Loggable
-
 /*
 * Copyright 2011-2012 GRNET S.A. All rights reserved.
 *
@@ -46,6 +32,18 @@ import util.Loggable
 * interpreted as representing official policies, either expressed
 * or implied, of GRNET S.A.
 */
+
+package gr.grnet.aquarium
+
+import com.ckkloverdos.props.Props
+import com.ckkloverdos.resource.FileStreamResource
+import converter.StdConverters
+import gr.grnet.aquarium.message.avro.{AvroHelpers, MessageFactory}
+import java.io.{InputStreamReader, BufferedReader, File}
+import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.concurrent.atomic.AtomicLong
+import util.Loggable
 
 
 /*
@@ -118,9 +116,10 @@ object BillTest extends Loggable {
     val role = "default"
     val eventVersion = "1.0"
     val eventType = "create"
-    (new StdIMEvent(id,occurredMillis,receivedMillis,userID,
-                   clientID,isActive,role,eventVersion,eventType,
-                   Map()).toJsonString,mid)
+
+    val msg = MessageFactory.newIMEventMsg(id,occurredMillis,receivedMillis,userID, clientID, isActive,role,eventVersion,eventType)
+    val json = AvroHelpers.jsonStringOfSpecificRecord(msg)
+    (json, mid)
   }
 
   private [this] def addCredits(date:DATE,uid:UID,amount:Long) : JSON = {
@@ -131,12 +130,13 @@ object BillTest extends Loggable {
     val userID = "user%d@grnet.gr".format(uid)
     val clientID = "astakos"
     val isActive = false
-    val role = "default"
     val eventVersion = "1.0"
-    val eventType = "addcredits"
-    new StdIMEvent(id,occurredMillis,receivedMillis,userID,
-                   clientID,isActive,role,eventVersion,eventType,
-                   Map("credits" -> amount.toString)).toJsonString
+    val resource = "addcredits"
+    val instanceID = "addcredits"
+
+    val msg = MessageFactory.newResourceEventMsg(id, occurredMillis, receivedMillis, userID, clientID, resource, instanceID, amount.toString, eventVersion)
+    val json = AvroHelpers.jsonStringOfSpecificRecord(msg)
+    json
   }
 
   private [this] def makePithos(date:DATE,uid:UID,path:String,
@@ -150,12 +150,16 @@ object BillTest extends Loggable {
     val resource ="diskspace"
     val instanceID = "1"
     val eventVersion = "1.0"
-    val details = Map("action" -> "object %s".format(action),
-                      "total"  -> "0.0",
-                      "user"   -> userID,
-                      "path"   -> path)
-    new StdResourceEvent(id,occurredMillis,receivedMillis,userID,clientID,
-                         resource,instanceID,value,eventVersion,details).toJsonString
+    val details = MessageFactory.newDetails(
+      MessageFactory.newStringDetail("action", "object %s".format(action)),
+      MessageFactory.newStringDetail("total", "0.0"),
+      MessageFactory.newStringDetail("user", userID),
+      MessageFactory.newStringDetail("path", path)
+    )
+
+    val msg = MessageFactory.newResourceEventMsg(id, occurredMillis, receivedMillis, userID, clientID, resource, instanceID, value.toString, eventVersion, details)
+    val json = AvroHelpers.jsonStringOfSpecificRecord(msg)
+    json
   }
 
   private[this] def sendCreate(date:DATE) : UID = {

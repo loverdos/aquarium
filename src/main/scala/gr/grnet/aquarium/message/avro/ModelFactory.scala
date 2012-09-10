@@ -35,11 +35,21 @@
 
 package gr.grnet.aquarium.message.avro
 
-import gr.grnet.aquarium.message.avro.gen.{EffectiveUnitPriceMsg, SelectorValueMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceTypeMsg, PolicyMsg}
-import gr.grnet.aquarium.policy.{CronSpec, EffectiveUnitPrice, EffectivePriceTable, FullPriceTable, ResourceType, PolicyModel}
+import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
+import gr.grnet.aquarium.charging.state.UserStateModel
+import gr.grnet.aquarium.message.avro.gen._
+import gr.grnet.aquarium.policy._
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsScalaMapConverter
-import scala.collection.mutable
+import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.policy.PolicyModel
+import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
+import gr.grnet.aquarium.policy.EffectivePriceTableModel
+import gr.grnet.aquarium.policy.CronSpec
+import gr.grnet.aquarium.policy.UserAgreementModel
+import gr.grnet.aquarium.policy.AdHocFullPriceTableRef
+import gr.grnet.aquarium.charging.state.UserStateModel
+import gr.grnet.aquarium.policy.EffectiveUnitPriceModel
 
 /**
  * Provides helper methods that construct model objects, usually from their avro message counterparts.
@@ -47,23 +57,39 @@ import scala.collection.mutable
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 object ModelFactory {
-  def newOptionString(in: CharSequence): Option[String] = {
+  def newOptionString(in: String): Option[String] = {
     in match {
       case null ⇒ None
-      case some ⇒ Some(in.toString)
+      case some ⇒ Some(some)
     }
   }
 
+  //  def scalaModelOfAnyValueMsg(msg: AnyValueMsg): Any = {
+  //    def convert(x: Any): Any = x match {
+  //      case null ⇒ null
+  //      case int: Int ⇒ int
+  //      case long: Long ⇒ long
+  //      case boolean: Boolean ⇒ boolean
+  //      case char: Char ⇒ char
+  //      case charSeq: CharSequence ⇒ charSeq.toString
+  //      case juList: ju.List[_] ⇒ juList.asScala.map(convert).toList
+  //      case juMap: ju.Map[_, _] ⇒ juMap.asScala.map { case (k, v) ⇒ (convert(k), convert(v))}.toMap
+  //      case default ⇒ default
+  //    }
+  //
+  //    convert(msg.getAnyValue)
+  //  }
+
   def newResourceType(msg: ResourceTypeMsg) = {
     ResourceType(
-      msg.getName().toString,
-      msg.getUnit().toString,
-      msg.getChargingBehaviorClass().toString
+      msg.getName(),
+      msg.getUnit(),
+      msg.getChargingBehaviorClass()
     )
   }
 
   def newEffectiveUnitPrice(msg: EffectiveUnitPriceMsg) = {
-    EffectiveUnitPrice(
+    EffectiveUnitPriceModel(
       unitPrice = msg.getUnitPrice(),
       when = msg.getWhen() match {
         case null ⇒
@@ -71,15 +97,15 @@ object ModelFactory {
 
         case cronSpecTupleMsg ⇒
           Some(
-            CronSpec(cronSpecTupleMsg.getA.toString),
-            CronSpec(cronSpecTupleMsg.getB.toString)
+            CronSpec(cronSpecTupleMsg.getA),
+            CronSpec(cronSpecTupleMsg.getB)
           )
       }
     )
   }
 
   def newEffectivePriceTable(msg: EffectivePriceTableMsg) = {
-    EffectivePriceTable(
+    EffectivePriceTableModel(
       priceOverrides = msg.getPriceOverrides.asScala.map(newEffectiveUnitPrice).toList
     )
   }
@@ -90,47 +116,75 @@ object ModelFactory {
         newEffectivePriceTable(effectivePriceTableMsg)
 
       case mapOfSelectorValueMsg: java.util.Map[_, _] ⇒
-        mapOfSelectorValueMsg.asScala.map { case (k, v) ⇒
-          (k.toString, newSelectorValue(v.asInstanceOf[SelectorValueMsg]))
+        mapOfSelectorValueMsg.asScala.map {
+          case (k, v) ⇒
+            (k.toString, newSelectorValue(v.asInstanceOf[SelectorValueMsg]))
         }.toMap // make immutable map
     }
   }
 
   def newFullPriceTable(msg: FullPriceTableMsg) = {
-    FullPriceTable(
-      perResource = Map(msg.getPerResource().asScala.map { case (k, v) ⇒
-        val k2 = k.toString
-        val v2 = v.asInstanceOf[java.util.Map[CharSequence, SelectorValueMsg]].asScala.map { case (k, v) ⇒
-          (k.toString, newSelectorValue(v))
-        }.toMap // make immutable map
-
-        (k2, v2)
-      }.toSeq: _*)
-    )
+    FullPriceTableModel(msg)
   }
 
   def newRoleMapping(
-      roleMapping: java.util.Map[CharSequence, FullPriceTableMsg]
-  ): mutable.Map[String, FullPriceTable] = {
+      roleMapping: java.util.Map[String, FullPriceTableMsg]
+  ): Map[String, FullPriceTableModel] = {
 
-    roleMapping.asScala.map { case (k, v) ⇒
-      val k2 = k.toString
-      val v2 = newFullPriceTable(v)
+    roleMapping.asScala.map {
+      case (k, v) ⇒
+        val k2 = k.toString
+        val v2 = newFullPriceTable(v)
 
-      (k2, v2)
-    }
+        (k2, v2)
+    }.toMap
   }
 
-  def newPolicyModel(msg: PolicyMsg) = {
-    PolicyModel(
-      originalID = msg.getOriginalID().toString,
-      inStoreID = newOptionString(msg.getInStoreID()),
-      parentID = newOptionString(msg.getParentID()),
-      validFromMillis = msg.getValidFromMillis(),
-      validToMillis = msg.getValidToMillis(),
-      resourceTypes = Set(msg.getResourceTypes().asScala.map(newResourceType).toSeq: _*),
-      chargingBehaviors = Set(msg.getChargingBehaviors().asScala.map(_.toString).toSeq: _*),
-      roleMapping = newRoleMapping(msg.getRoleMapping).toMap
+  def newPolicyModel(msg: PolicyMsg) = PolicyModel(msg)
+
+  def newUserAgreementModelFromIMEvent(
+      imEvent: IMEventMsg,
+      id: String = MessageHelpers.UserAgreementMsgIDGenerator.nextUID()
+  ) = {
+
+    UserAgreementModel(
+      MessageFactory.newUserAgreementFromIMEventMsg(imEvent, id),
+      PolicyDefinedFullPriceTableRef
+    )
+  }
+
+  def newUserAgreementModelFromIMEventMsg(
+      imEvent: IMEventMsg,
+      fullPriceTableRef: FullPriceTableRef,
+      id: String = MessageHelpers.UserAgreementMsgIDGenerator.nextUID()
+  ): UserAgreementModel = {
+    UserAgreementModel(
+      MessageFactory.newUserAgreementFromIMEventMsg(imEvent, id),
+      fullPriceTableRef
+    )
+  }
+
+  def newUserAgreementModel(msg: UserAgreementMsg): UserAgreementModel = {
+    UserAgreementModel(
+      msg,
+      msg.getFullPriceTableRef match {
+        case null ⇒
+          PolicyDefinedFullPriceTableRef
+
+        case fullPriceTableMsg ⇒
+          AdHocFullPriceTableRef(newFullPriceTable(fullPriceTableMsg))
+      }
+    )
+  }
+
+  def newUserAgreementHistoryModel(msg: UserAgreementHistoryMsg): UserAgreementHistoryModel = {
+    UserAgreementHistoryModel(msg)
+  }
+
+  def newUserStateModel(msg: UserStateMsg): UserStateModel = {
+    UserStateModel(
+      msg,
+      newUserAgreementHistoryModel(msg.getAgreementHistory)
     )
   }
 }
