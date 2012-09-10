@@ -175,7 +175,8 @@ object MessageFactory {
       role: String,
       eventVersion: String,
       eventType: String,
-      details: DetailsModel.Type = newDetails()
+      details: DetailsModel.Type = newDetails(),
+      inStoreID: String = null
   ) = {
     IMEventMsg.newBuilder().
       setOriginalID(originalID).
@@ -189,6 +190,7 @@ object MessageFactory {
       setEventVersion(eventVersion).
       setEventType(eventType).
       setDetails(details).
+      setInStoreID(inStoreID).
     build()
   }
 

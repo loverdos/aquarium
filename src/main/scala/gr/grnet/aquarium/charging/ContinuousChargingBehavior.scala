@@ -35,15 +35,14 @@
 
 package gr.grnet.aquarium.charging
 
+import gr.grnet.aquarium.charging.state.UserStateModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{AnyValueMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.message.avro.{MessageHelpers, AvroHelpers, MessageFactory}
-import gr.grnet.aquarium.policy.FullPriceTableModel
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
-import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel}
 
 /**
  * In practice a resource usage will be charged for the total amount of usage
@@ -191,8 +190,40 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       eventOccurredMillis: Long,
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg
   ): List[ResourceEventMsg] = {
+    // FIXME This is too adhoc...
+    val path = resourceInstanceChargingState.getPreviousEvents.size() match {
+      case 0 ⇒
+        "unknown" // FIXME This should not happen. Throw?
+
+      case _ ⇒
+        val previousEvent = resourceInstanceChargingState.getPreviousEvents.get(0)
+        previousEvent.getDetails.get(MessageConstants.DetailsKeys.path) match {
+          case null ⇒
+            "unknown" // FIXME This should not happen. Throw?
+
+          case path ⇒
+            MessageHelpers.stringOfAnyValueMsg(path)
+        }
+    }
+
+    // FIXME This is too adhoc...
+    val action = resourceInstanceChargingState.getPreviousEvents.size() match {
+      case 0 ⇒
+        "unknown" // FIXME This should not happen. Throw?
+
+      case _ ⇒
+        val previousEvent = resourceInstanceChargingState.getPreviousEvents.get(0)
+        previousEvent.getDetails.get(MessageConstants.DetailsKeys.action) match {
+          case null ⇒
+            "update"
+
+          case action ⇒
+            MessageHelpers.stringOfAnyValueMsg(action)
+        }
+    }
+
     MessageFactory.newResourceEventMsg(
-      ChargingBehavior.VirtualEventsIDGen.nextUID(),
+      MessageHelpers.VirtualEventsIDGen.nextUID(),
       eventOccurredMillis,
       eventOccurredMillis,
       userID,
@@ -203,7 +234,9 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       MessageConstants.EventVersion_1_0,
       MessageFactory.newDetails(
         MessageFactory.newBooleanDetail(MessageConstants.DetailsKeys.aquarium_is_synthetic, true),
-        MessageFactory.newBooleanDetail(MessageConstants.DetailsKeys.aquarium_is_realtime_virtual, true)
+        MessageFactory.newBooleanDetail(MessageConstants.DetailsKeys.aquarium_is_realtime_virtual, true),
+        MessageFactory.newStringDetail(MessageConstants.DetailsKeys.path, path),
+        MessageFactory.newStringDetail(MessageConstants.DetailsKeys.action, action)
       )
     ) :: Nil
   }

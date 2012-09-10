@@ -39,7 +39,7 @@ import com.ckkloverdos.props.Props
 import com.ckkloverdos.resource.FileStreamResource
 import gr.grnet.aquarium.converter.{CompactJsonTextFormat, StdConverters}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.message.avro.MessageHelpers
+import gr.grnet.aquarium.message.avro.{AvroHelpers, MessageHelpers}
 import gr.grnet.aquarium.message.avro.gen.{ChargeslotMsg, WalletEntryMsg, UserStateMsg}
 import gr.grnet.aquarium.store.memory.MemStoreProvider
 import gr.grnet.aquarium.util.json.JsonSupport
@@ -183,8 +183,10 @@ object AbstractBillEntry {
         if(i.getSumOfCreditsToSubtract.toDouble > 0.0D) sum += i.getSumOfCreditsToSubtract.toDouble
         ret += toResourceEntry(i)
       } else {
-        /*Console.err.println("WALLET ENTERY : " + i.toJsonString + "\n" +
-                     t + "  does not contain " +  i.referenceTimeslot + "  !!!!")*/
+        val ijson = AvroHelpers.jsonStringOfSpecificRecord(i)
+        val itimeslot = MessageHelpers.referenceTimeslotOf(i)
+        Console.err.println("IGNORING WALLET ENTRY : " + ijson + "\n" +
+                     t + "  does not contain " +  itimeslot + "  !!!!")
       }
     }
     (ret.toList,sum)
@@ -205,7 +207,10 @@ object AbstractBillEntry {
     }.values.toList
   }
 
-  def fromWorkingUserState(t:Timeslot,userID:String,w:Option[UserStateMsg]) : AbstractBillEntry = {
+  def fromWorkingUserState(t0:Timeslot,userID:String,w:Option[UserStateMsg]) : AbstractBillEntry = {
+    val t = t0.roundMilliseconds /* we do not care about milliseconds */
+    //Console.err.println("Timeslot: " + t0)
+    //Console.err.println("After rounding timeslot: " + t)
     val ret = w match {
       case None =>
           new BillEntry(counter.getAndIncrement.toString,
@@ -215,9 +220,10 @@ object AbstractBillEntry {
                         t.from.getTime.toString,t.to.getTime.toString,
                         Nil)
       case Some(w) =>
+        val wjson = AvroHelpers.jsonStringOfSpecificRecord(w)
+        Console.err.println("Working user state: %s".format(wjson))
         val (rcEntries,rcEntriesCredits) = resourceEntriesAt(t,w)
         val resMap = aggregateResourceEntries(rcEntries)
-        Console.err.println("Working user state: %s".format(w.toString))
         new BillEntry(counter.getAndIncrement.toString,
                       userID,"ok",
                       w.getTotalCredits.toString,

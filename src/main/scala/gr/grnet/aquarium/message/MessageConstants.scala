@@ -45,6 +45,10 @@ object MessageConstants {
   final val DefaultSelectorKey = "default"
 
   final object DetailsKeys {
+    final val path = "path"
+
+    final val action = "action"
+
     // This is set in the details map to indicate a synthetic resource event (ie not a real one).
     // Examples of synthetic resource events are those that are implicitly generated at the
     // end of the billing period (e.g. `OFF`s).

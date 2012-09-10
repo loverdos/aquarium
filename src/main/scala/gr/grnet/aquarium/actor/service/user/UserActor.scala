@@ -369,6 +369,10 @@ class UserActor extends ReflectiveRoleableActor {
       computeRealtime()
     }
     else {
+      DEBUG("OUT OF ORDER! this._workingUserState.latestResourceEventOccurredMillis=%s  and rcEvent.occurredMillis=%s",
+                TimeHelpers.toYYYYMMDDHHMMSSSSS(this._userState.latestResourceEventOccurredMillis),
+                TimeHelpers.toYYYYMMDDHHMMSSSSS(rcEvent.getOccurredMillis))
+
       computeBatch()
     }
     val newTotalCredits = this._userState.totalCredits

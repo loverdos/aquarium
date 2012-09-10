@@ -117,7 +117,3 @@ trait ChargingBehavior {
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg
   ): List[ResourceEventMsg]
 }
-
-object ChargingBehavior {
-  final val VirtualEventsIDGen = new PrefixedUIDGenerator("virt-", new ConcurrentVMLocalUIDGenerator(0L))
-}

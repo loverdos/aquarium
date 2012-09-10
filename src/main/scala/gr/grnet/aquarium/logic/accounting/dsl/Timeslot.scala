@@ -52,6 +52,11 @@ final case class Timeslot(from: Date, to: Date) extends Ordered[Timeslot] {
   assert(to != null)
   assert(start <= end, "from = %s, to = %s".format(new MutableDateCalc(from), new MutableDateCalc(to)))
 
+  /* remove milliseconds from timeslot */
+  def roundMilliseconds : Timeslot  =
+    Timeslot((from.getTime / 1000)*1000,
+             (to.getTime / 1000) * 1000)
+
   def startsBefore(t: Timeslot) : Boolean =  start < t.start
 
   def startsAfter(t: Timeslot) : Boolean =   start > t.start

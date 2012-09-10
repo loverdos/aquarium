@@ -39,7 +39,7 @@ import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{AnyValueMsg, WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
 import gr.grnet.aquarium.policy.EffectivePriceTableModel
 import gr.grnet.aquarium.uid.UUIDGenerator
 import gr.grnet.aquarium.util.LogHelpers.Debug
@@ -55,6 +55,11 @@ import scala.annotation.tailrec
  */
 final object MessageHelpers {
   final val UserAgreementMsgIDGenerator = UUIDGenerator
+  final val VirtualEventsIDGen = UUIDGenerator
+
+  def stringOfAnyValueMsg(msg: AnyValueMsg): String = {
+    String.valueOf(msg.getAnyValue)
+  }
 
   @inline final def isOccurredWithinMillis(
       event: ResourceEventMsg,

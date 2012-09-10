@@ -196,7 +196,7 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       DetailsModel.setBoolean(dm, MessageConstants.DetailsKeys.aquarium_is_realtime_virtual)
 
       MessageFactory.newResourceEventMsg(
-        ChargingBehavior.VirtualEventsIDGen.nextUID(),
+        MessageHelpers.VirtualEventsIDGen.nextUID(),
         eventOccurredMillis,
         eventOccurredMillis,
         userID,
