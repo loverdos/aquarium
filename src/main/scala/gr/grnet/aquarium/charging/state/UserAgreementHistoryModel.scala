@@ -57,7 +57,7 @@ final case class UserAgreementHistoryModel(
     while(userAgreements.hasNext) {
       val userAgreement = userAgreements.next()
       val userAgreementModel = ModelFactory.newUserAgreementModel(userAgreement)
-      this._userAgreementModels += userAgreementModel
+      userAgreementModels += userAgreementModel
     }
 
     userAgreementModels
