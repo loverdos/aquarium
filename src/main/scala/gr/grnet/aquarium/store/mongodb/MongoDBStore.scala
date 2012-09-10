@@ -301,10 +301,12 @@ class MongoDBStore(
   def foreachPolicy[U](f: PolicyMsg ⇒ U) {
     val cursor = policies.find()
     withCloseable(cursor) { cursor ⇒
-      val dbObject = cursor.next()
-      val payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
-      val policy = AvroHelpers.specificRecordOfBytes(payload, new PolicyMsg)
-      f(policy)
+      while(cursor.hasNext) {
+        val dbObject = cursor.next()
+        val payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
+        val policy = AvroHelpers.specificRecordOfBytes(payload, new PolicyMsg)
+        f(policy)
+      }
     }
   }
 
