@@ -38,18 +38,16 @@ package gr.grnet.aquarium.message.avro
 import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
 import gr.grnet.aquarium.charging.state.UserStateModel
 import gr.grnet.aquarium.message.avro.gen._
+import gr.grnet.aquarium.policy.AdHocFullPriceTableRef
+import gr.grnet.aquarium.policy.CronSpec
+import gr.grnet.aquarium.policy.EffectivePriceTableModel
+import gr.grnet.aquarium.policy.EffectiveUnitPriceModel
+import gr.grnet.aquarium.policy.PolicyModel
+import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.policy.UserAgreementModel
 import gr.grnet.aquarium.policy._
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsScalaMapConverter
-import gr.grnet.aquarium.policy.ResourceType
-import gr.grnet.aquarium.policy.PolicyModel
-import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
-import gr.grnet.aquarium.policy.EffectivePriceTableModel
-import gr.grnet.aquarium.policy.CronSpec
-import gr.grnet.aquarium.policy.UserAgreementModel
-import gr.grnet.aquarium.policy.AdHocFullPriceTableRef
-import gr.grnet.aquarium.charging.state.UserStateModel
-import gr.grnet.aquarium.policy.EffectiveUnitPriceModel
 
 /**
  * Provides helper methods that construct model objects, usually from their avro message counterparts.
@@ -179,6 +177,14 @@ object ModelFactory {
 
   def newUserAgreementHistoryModel(msg: UserAgreementHistoryMsg): UserAgreementHistoryModel = {
     UserAgreementHistoryModel(msg)
+  }
+
+  def newUserAgreementHistoryModelFromIMEvent(imEvent: IMEventMsg, id: String): UserAgreementHistoryModel = {
+    val userAgreementHistory = MessageFactory.newInitialUserAgreementHistoryMsg(
+      MessageFactory.newUserAgreementFromIMEventMsg(imEvent, id)
+    )
+
+    new UserAgreementHistoryModel(userAgreementHistory)
   }
 
   def newUserStateModel(msg: UserStateMsg): UserStateModel = {

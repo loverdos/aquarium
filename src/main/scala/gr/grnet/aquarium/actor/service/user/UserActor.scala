@@ -54,7 +54,7 @@ import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
 import gr.grnet.aquarium.charging.bill.AbstractBillEntry
 import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel, UserStateBootstrap}
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.message.avro.gen.{IMEventMsg, ResourceEventMsg, UserStateMsg}
+import gr.grnet.aquarium.message.avro.gen.{UserAgreementHistoryMsg, IMEventMsg, ResourceEventMsg, UserStateMsg}
 import gr.grnet.aquarium.message.avro.{ModelFactory, MessageFactory, MessageHelpers, AvroHelpers}
 import gr.grnet.aquarium.service.event.BalanceEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
@@ -150,10 +150,13 @@ class UserActor extends ReflectiveRoleableActor {
     // calling unsafe just for the side-effect
     assert(null ne aquarium.unsafeFullPriceTableForRoleAt(role, effectiveFromMillis))
 
-    val newUserAgreementModel = ModelFactory.newUserAgreementModelFromIMEvent(imEvent, imEvent.getOriginalID)
-
     // add to model (will update the underlying messages as well)
-    this._userAgreementHistoryModel += newUserAgreementModel
+    if(this._userAgreementHistoryModel eq null) {
+      this._userAgreementHistoryModel = ModelFactory.newUserAgreementHistoryModelFromIMEvent(imEvent, imEvent.getOriginalID)
+    } else {
+      val newUserAgreementModel = ModelFactory.newUserAgreementModelFromIMEvent(imEvent, imEvent.getOriginalID)
+      this._userAgreementHistoryModel += newUserAgreementModel
+    }
   }
 
   private[this] def updateLatestIMEventIDFrom(imEvent: IMEventMsg): Unit = {
