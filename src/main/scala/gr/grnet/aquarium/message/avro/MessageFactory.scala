@@ -55,7 +55,7 @@ import gr.grnet.aquarium.policy.ResourceType
 object MessageFactory {
   def anyValueMsgOfBoolean(x: Boolean) = {
     val av = new AnyValueMsg
-    av.setAnyValue(x: java.lang.Boolean)
+    av.setAnyValue(java.lang.Boolean.valueOf(x))
     av
   }
 
@@ -257,10 +257,10 @@ object MessageFactory {
     msg.setDetails(details)
     msg.setPreviousEvents(previousEvents)
     msg.setImplicitlyIssuedStartEvents(implicitlyIssuedStartEvents)
-    msg.setOldAccumulatingAmount(oldAccumulatingAmount)
-    msg.setAccumulatingAmount(accumulatingAmount)
-    msg.setPreviousValue(previousValue)
-    msg.setCurrentValue(currentValue)
+    msg.setOldAccumulatingAmount(java.lang.Double.valueOf(oldAccumulatingAmount))
+    msg.setAccumulatingAmount(java.lang.Double.valueOf(accumulatingAmount))
+    msg.setPreviousValue(java.lang.Double.valueOf(previousValue))
+    msg.setCurrentValue(java.lang.Double.valueOf(currentValue))
     msg
   }
 
@@ -290,7 +290,7 @@ object MessageFactory {
     msg.setRelatedIMEventOriginalID(imEvent.getOriginalID)
     msg.setRole(imEvent.getRole)
     msg.setValidFromMillis(imEvent.getOccurredMillis)
-    msg.setValidToMillis(Long.MaxValue)
+    msg.setValidToMillis(java.lang.Long.valueOf(java.lang.Long.MAX_VALUE))
     msg.setFullPriceTableRef(null) // get from current (= @imEvent.getOccurredMillis) policy
 
     msg
@@ -324,13 +324,13 @@ object MessageFactory {
     val msg = new UserStateMsg
 
     msg.setUserID(usb.userID)
-    msg.setOccurredMillis(occurredMillis)
-    msg.setBillingYear(bmi.year)
-    msg.setBillingMonth(bmi.month)
-    msg.setBillingMonthDay(bmi.day)
-    msg.setTotalCredits(CreditsModel.toTypeInMessage(usb.initialCredits))
+    msg.setOccurredMillis(java.lang.Long.valueOf(occurredMillis))
+    msg.setBillingYear(java.lang.Integer.valueOf(bmi.year))
+    msg.setBillingMonth(java.lang.Integer.valueOf(bmi.month))
+    msg.setBillingMonthDay(java.lang.Integer.valueOf(bmi.day))
+    msg.setTotalCredits(java.lang.Double.valueOf(CreditsModel.toTypeInMessage(usb.initialCredits)))
     msg.setAgreementHistory(newInitialUserAgreementHistoryMsg(usb.initialAgreement.msg))
-    msg.setLatestUpdateMillis(occurredMillis)
+    msg.setLatestUpdateMillis(java.lang.Long.valueOf(occurredMillis))
     msg.setInStoreID(null)
     msg.setOriginalID("") // FIXME get a counter here
 
