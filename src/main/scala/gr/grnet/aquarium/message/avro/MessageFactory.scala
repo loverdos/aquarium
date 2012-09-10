@@ -40,6 +40,7 @@ import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
 import gr.grnet.aquarium.message.avro.gen._
 import java.{util ⇒ ju}
+import java.util.{ArrayList ⇒ JArrayList}
 import org.apache.avro.generic.GenericData
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.seqAsJavaListConverter
@@ -257,7 +258,7 @@ object MessageFactory {
 
   def newInitialUserAgreementHistoryMsg(initialAgreement: UserAgreementMsg) = {
     val msg = new UserAgreementHistoryMsg
-    val list = new GenericData.Array[UserAgreementMsg](1, initialAgreement.getSchema)
+    val list = new JArrayList[UserAgreementMsg]()
     list.add(initialAgreement)
     msg.setAgreements(list)
     msg
