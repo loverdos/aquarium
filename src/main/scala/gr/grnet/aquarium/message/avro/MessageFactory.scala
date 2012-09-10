@@ -272,6 +272,7 @@ object MessageFactory {
     val msg = new UserAgreementMsg
 
     msg.setId(id)
+    msg.setUserID(imEvent.getUserID)
     msg.setRelatedIMEventOriginalID(imEvent.getOriginalID)
     msg.setRole(imEvent.getRole)
     msg.setValidFromMillis(imEvent.getOccurredMillis)
