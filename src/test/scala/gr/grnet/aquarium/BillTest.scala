@@ -102,8 +102,9 @@ object Mongo {
 }
 
 object AquariumInstance {
-  val propsfile = new FileStreamResource(new File("aquarium.properties"))
-  var props: Props = Props(propsfile)(StdConverters.AllConverters).getOr(Props()(StdConverters.AllConverters))
+  //val propsfile = new FileStreamResource(new File("aquarium.properties"))
+  var props: Props = ResourceLocator.AquariumProperties
+  // Props(propsfile)(StdConverters.AllConverters).getOr(Props()(StdConverters.AllConverters))
   val aquarium = {
     Mongo.clear
     new AquariumBuilder(props, ResourceLocator.DefaultPolicyMsg).
@@ -542,11 +543,11 @@ object UserTest extends Loggable {
 
    val json =AquariumInstance.run(3000,3000) {
           user.
-                    addCredits(10000,"00 00 14,29 9 ?").
-                    addFiles(1,"update",2000,1000,3000,"00 18 15,30 9 ?").
-                    //addVMs(1,"on","00 18 ? 9 Mon").
-                    //addVMs(5,"on","00 18 ? 9 Tue")
-                    run(true,15000,minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)
+                  //addCredits(10000,"00 00 14,29 9 ?").
+                  addFiles(1,"update",2000,1000,3000,"00 18 15,29,30 9 ?").
+                  //addVMs(1,"on","00 18 ? 9 Mon").
+                  //addVMs(5,"on","00 18 ? 9 Tue")
+                 run(true,15000,minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)
    }
    Thread.sleep(2000)
    Console.err.println("Messages sent:")
