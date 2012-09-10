@@ -126,6 +126,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         setBillingYear(billingMonthInfo.year).
         setBillingMonth(billingMonthInfo.month). // FIXME What about the billingMonthDay?
         setOriginalID("").
+        setResourceTypesMap(MessageFactory.newResourceTypeMsgsMap(defaultResourceTypesMap)).
         build()
 
       // We always save the state when it is a full month billing

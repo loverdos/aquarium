@@ -44,6 +44,8 @@ import java.util.{ArrayList ⇒ JArrayList}
 import org.apache.avro.generic.GenericData
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.seqAsJavaListConverter
+import scala.Predef.Map
+import gr.grnet.aquarium.policy.ResourceType
 
 /**
  * Provides helper methods that construct avro messages.
@@ -118,8 +120,20 @@ object MessageFactory {
     build()
   }
 
+  def newResourceTypeMsg(model: ResourceType): ResourceTypeMsg = {
+    newResourceTypeMsg(model.name, model.unit, model.chargingBehavior)
+  }
+
   def newResourceTypeMsgs(rts: ResourceTypeMsg*) = {
     rts.asJava
+  }
+
+//  def newResourceTypeMsgsMap(rts: ResourceTypeMsg*): java.util.Map[String, ResourceTypeMsg] = {
+//    rts.map(rt ⇒ (rt.getName, rt)).toMap.asJava
+//  }
+
+  def newResourceTypeMsgsMap(resourceTypes: Map[String, ResourceType]): java.util.Map[String, ResourceTypeMsg] = {
+    resourceTypes.map(rtt ⇒ (rtt._1, newResourceTypeMsg(rtt._2))).asJava
   }
 
   def newChargingBehaviorMsgs(cbs: String*) = {
