@@ -54,7 +54,7 @@ import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
 import gr.grnet.aquarium.charging.bill.AbstractBillEntry
 import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel, UserStateBootstrap}
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.message.avro.gen.{UserAgreementHistoryMsg, IMEventMsg, ResourceEventMsg, UserStateMsg}
+import gr.grnet.aquarium.message.avro.gen.{IMEventMsg, ResourceEventMsg, UserStateMsg}
 import gr.grnet.aquarium.message.avro.{ModelFactory, MessageFactory, MessageHelpers, AvroHelpers}
 import gr.grnet.aquarium.service.event.BalanceEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
@@ -123,7 +123,7 @@ class UserActor extends ReflectiveRoleableActor {
     (this._userAgreementHistoryModel ne null) && this._userAgreementHistoryModel.size > 0
   }
 
-  @inline private[this] def haveWorkingUserState = {
+  @inline private[this] def haveUserState = {
     this._userState ne null
   }
 
@@ -193,7 +193,7 @@ class UserActor extends ReflectiveRoleableActor {
     haveUserCreationIMEvent && haveAgreements && haveUserStateBootstrap
   }
 
-  private[this] def loadWorkingUserStateAndUpdateAgreementHistory(): Unit = {
+  private[this] def loadUserStateAndUpdateAgreementHistory(): Unit = {
     assert(this.haveAgreements, "this.haveAgreements")
     assert(this.haveUserCreationIMEvent, "this.haveUserCreationIMEvent")
 
@@ -213,7 +213,7 @@ class UserActor extends ReflectiveRoleableActor {
     // Final touch: Update agreement history in the working user state.
     // The assumption is that all agreement changes go via IMEvents, so the
     // state this._workingAgreementHistory is always the authoritative source.
-    if(haveWorkingUserState) {
+    if(haveUserState) {
       this._userState.userAgreementHistoryModel = this._userAgreementHistoryModel
       DEBUG("Computed working user state %s", AvroHelpers.jsonStringOfSpecificRecord(this._userState.msg))
     }
@@ -231,9 +231,9 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     // We will also need this functionality when receiving IMEvents, so we place it in a method
-    loadWorkingUserStateAndUpdateAgreementHistory()
+    loadUserStateAndUpdateAgreementHistory()
 
-    if(haveWorkingUserState) {
+    if(haveUserState) {
       DEBUG("Initial working user state %s", AvroHelpers.jsonStringOfSpecificRecord(this._userState.msg))
       logSeparator()
     }
@@ -279,7 +279,7 @@ class UserActor extends ReflectiveRoleableActor {
     // Must also update user state if we know when in history the life of a user begins
     if(!hadUserCreationIMEvent && haveUserCreationIMEvent) {
       INFO("Processing user state, since we had a CREATE IMEvent")
-      loadWorkingUserStateAndUpdateAgreementHistory()
+      loadUserStateAndUpdateAgreementHistory()
     }
 
     logSeparator()
@@ -354,7 +354,10 @@ class UserActor extends ReflectiveRoleableActor {
       else
         0.0D
     // FIXME check these
-    if(nowYear != eventYear || nowMonth != eventMonth) {
+    if(this._userState eq null) {
+      computeBatch()
+    }
+    else if(nowYear != eventYear || nowMonth != eventMonth) {
       DEBUG(
         "nowYear(%s) != eventYear(%s) || nowMonth(%s) != eventMonth(%s)",
         nowYear, eventYear,
@@ -389,7 +392,7 @@ class UserActor extends ReflectiveRoleableActor {
   def onGetUserBillRequest(event: GetUserBillRequest): Unit = {
     try{
       val timeslot = event.timeslot
-      val state= if(haveWorkingUserState) Some(this._userState.msg) else None
+      val state= if(haveUserState) Some(this._userState.msg) else None
       val billEntry = AbstractBillEntry.fromWorkingUserState(timeslot,this._userID,state)
       val billData = GetUserBillResponseData(this._userID,billEntry)
       sender ! GetUserBillResponse(Right(billData))
@@ -403,7 +406,7 @@ class UserActor extends ReflectiveRoleableActor {
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
     val userID = event.userID
 
-    (haveUserCreationIMEvent, haveWorkingUserState) match {
+    (haveUserCreationIMEvent, haveUserState) match {
       case (true, true) ⇒
         // (User CREATEd, with balance state)
         val realtimeMillis = TimeHelpers.nowMillis()
@@ -438,7 +441,7 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onGetUserStateRequest(event: GetUserStateRequest): Unit = {
-    haveWorkingUserState match {
+    haveUserState match {
       case true ⇒
         val realtimeMillis = TimeHelpers.nowMillis()
         chargingService.calculateRealtimeUserState(
@@ -455,7 +458,7 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onGetUserWalletRequest(event: GetUserWalletRequest): Unit = {
-    haveWorkingUserState match {
+    haveUserState match {
       case true ⇒
         DEBUG("haveWorkingUserState: %s", event)
         val realtimeMillis = TimeHelpers.nowMillis()
