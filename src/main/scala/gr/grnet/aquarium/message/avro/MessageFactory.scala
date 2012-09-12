@@ -317,6 +317,7 @@ object MessageFactory {
 
   def createInitialUserStateMsg(
       usb: UserStateBootstrap,
+      defaultResourceTypesMap:Map[String, ResourceType],
       occurredMillis: Long
   ): UserStateMsg = {
 
@@ -333,7 +334,9 @@ object MessageFactory {
     msg.setLatestUpdateMillis(java.lang.Long.valueOf(occurredMillis))
     msg.setInStoreID(null)
     msg.setOriginalID("") // FIXME get a counter here
-
+    msg.setResourceTypesMap(newResourceTypeMsgsMap(defaultResourceTypesMap))
+    msg.setStateOfResources(new java.util.HashMap())
+    msg.setWalletEntries(new java.util.ArrayList[WalletEntryMsg]())
     msg
   }
 

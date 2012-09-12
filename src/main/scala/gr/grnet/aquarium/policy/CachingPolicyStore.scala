@@ -41,6 +41,7 @@ import gr.grnet.aquarium.message.avro.{MessageFactory, OrderingHelpers}
 import gr.grnet.aquarium.store.PolicyStore
 import gr.grnet.aquarium.util.Lock
 import scala.collection.immutable
+import gr.grnet.aquarium.Timespan
 
 /**
  * A caching [[gr.grnet.aquarium.store.PolicyStore]].
@@ -51,8 +52,9 @@ import scala.collection.immutable
 
 class CachingPolicyStore(defaultPolicy: PolicyMsg, policyStore: PolicyStore) extends PolicyStore {
   private[this] final val lock = new Lock()
-
   private[this] var _policies = immutable.TreeSet[PolicyMsg]()(OrderingHelpers.DefaultPolicyMsgOrdering)
+  private[this] var _msg = new PolicyMsg
+  private[this] final val EmptyPolicyByTimeslotMap = immutable.SortedMap[Timeslot, PolicyMsg]()
 
   def foreachPolicy[U](f: (PolicyMsg) ⇒ U) {
     ensureLoaded {
@@ -76,12 +78,20 @@ class CachingPolicyStore(defaultPolicy: PolicyMsg, policyStore: PolicyStore) ext
   }
 
   def loadSortedPoliciesWithin(fromMillis: Long, toMillis: Long): immutable.SortedMap[Timeslot, PolicyMsg] = {
-    immutable.SortedMap(_policies.
-      from(MessageFactory.newDummyPolicyMsgAt(fromMillis)).
-      to(MessageFactory.newDummyPolicyMsgAt(toMillis)).toSeq.
-      map(p ⇒ (Timeslot(p.getValidFromMillis, p.getValidToMillis), p)): _*
-    )
+    ensureLoaded {
+      val range = Timeslot(fromMillis,toMillis)
+      _msg.setValidFromMillis(fromMillis)
+      _msg.setValidToMillis(Long.MaxValue) // these assignments affect _model
+      /* ``to'' method: return the subset of all policies.from <= range.to */
+      _policies.to(_msg).foldLeft (EmptyPolicyByTimeslotMap) { (map,p) =>
+        if(p.getValidToMillis >= range.from.getTime)
+          map + ((Timeslot(p.getValidFromMillis,p.getValidToMillis),p))
+        else
+          map
+      }
+    }
   }
+
 
   /**
    * Return the last (ordered) policy that starts before timeMillis

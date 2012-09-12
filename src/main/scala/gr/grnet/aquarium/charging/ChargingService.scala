@@ -151,6 +151,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       //       First ask if it exists and compute only if not
       val initialUserState0 = MessageFactory.createInitialUserStateMsg(
         userStateBootstrap,
+        defaultResourceTypesMap,
         TimeHelpers.nowMillis()
       )
 

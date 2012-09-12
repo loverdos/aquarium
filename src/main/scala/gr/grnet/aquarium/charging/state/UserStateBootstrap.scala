@@ -51,4 +51,6 @@ case class UserStateBootstrap(
   def userID = initialAgreement.msg.getUserID
 
   def userCreationMillis = initialAgreement.msg.getValidFromMillis
+
+  override def toString = "userID = %s".format(userID)
 }

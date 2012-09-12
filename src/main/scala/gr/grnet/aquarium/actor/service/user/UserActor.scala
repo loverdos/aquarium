@@ -200,7 +200,7 @@ class UserActor extends ReflectiveRoleableActor {
     if(!haveUserStateBootstrap) {
       this._userStateBootstrap = aquarium.getUserStateBootstrap(this._userCreationIMEvent)
     }
-
+    logger.debug("#### this._userStateBootStrap %s".format(this._userStateBootstrap.toString))
     val now = TimeHelpers.nowMillis()
     this._userState = chargingService.replayMonthChargingUpTo(
       BillingMonthInfo.fromMillis(now),
