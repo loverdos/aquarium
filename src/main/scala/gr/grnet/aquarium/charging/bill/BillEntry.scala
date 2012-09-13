@@ -136,7 +136,7 @@ object AbstractBillEntry {
         rcType match {
           case "diskspace" =>
             val action = MessageHelpers.currentResourceEventOf(w).getDetails.get("action")
-            val path = MessageHelpers.currentResourceEventOf(w).getDetails.get("path")
+            //val path = MessageHelpers.currentResourceEventOf(w).getDetails.get("path")
             //"%s@%s".format(action,path)
             action
           case "vmtime" =>
@@ -259,7 +259,7 @@ object AbstractBillEntry {
     val propsfile = new FileStreamResource(new File("aquarium.properties"))
     var _props: Props = Props(propsfile)(StdConverters.AllConverters).getOr(Props()(StdConverters.AllConverters))
     val aquarium = new AquariumBuilder(_props, ResourceLocator.DefaultPolicyMsg).
-      update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
+      //update(Aquarium.EnvKeys.storeProvider, new MemStoreProvider).
       update(Aquarium.EnvKeys.eventsStoreFolder,Some(new File(".."))).
       build()
     aquarium.start()

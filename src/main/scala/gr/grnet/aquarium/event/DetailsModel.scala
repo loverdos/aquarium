@@ -63,6 +63,12 @@ object DetailsModel {
     map.asJava
   }
 
+  def fromScalaModelMap(map: scala.collection.Map[String, String]): Type = {
+    map.map {case (s1,s2) =>
+      (s1,MessageFactory.anyValueMsgOfString(s2))
+    }.asJava
+  }
+
   def fromScalaTuples(tuples: (String, AnyValueMsg)*): Type = {
     fromScalaMap(Map(tuples:_*))
   }

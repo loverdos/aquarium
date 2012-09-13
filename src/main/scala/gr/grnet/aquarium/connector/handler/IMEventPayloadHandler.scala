@@ -41,7 +41,9 @@ import gr.grnet.aquarium.message.avro.gen.IMEventMsg
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util.{LogHelpers, Tags}
 import org.slf4j.Logger
-import gr.grnet.aquarium.message.avro.{MessageHelpers, AvroHelpers}
+import gr.grnet.aquarium.message.avro.{MessageFactory, MessageHelpers, AvroHelpers}
+import gr.grnet.aquarium.message.{IMEventModel, ResourceEventModel}
+import gr.grnet.aquarium.event.DetailsModel
 
 /**
  * A [[gr.grnet.aquarium.connector.handler.PayloadHandler]] for
@@ -71,7 +73,26 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
 
       // eventParser: JsonTextFormat ⇒ E
       jsonTextFormat ⇒ {
-        AvroHelpers.specificRecordOfJsonString(jsonTextFormat.value, new IMEventMsg)
+
+        try {
+          AvroHelpers.specificRecordOfJsonString(jsonTextFormat.value, new IMEventMsg)
+        }
+        catch {
+          case e:Throwable =>
+              val model = aquarium.converters.convertEx[IMEventModel](jsonTextFormat)
+              val msg = new IMEventMsg()
+              msg.setOriginalID(model.id)
+              msg.setClientID(model.clientID)
+              msg.setDetails(DetailsModel.fromScalaModelMap(model.details))
+              msg.setEventType(model.eventType)
+              msg.setEventVersion(model.eventVersion)
+              msg.setIsActive(java.lang.Boolean.valueOf(model.isActive))
+              msg.setOccurredMillis(model.occurredMillis)
+              msg.setReceivedMillis(model.receivedMillis)
+              msg.setRole(model.role)
+              msg.setUserID(model.userID)
+              msg
+        }
       },
 
       // onEventParserSuccess: (Array[Byte], E) ⇒ Unit
