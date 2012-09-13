@@ -42,7 +42,7 @@ import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util.{LogHelpers, Tags}
 import org.slf4j.Logger
 import gr.grnet.aquarium.message.avro.{MessageFactory, MessageHelpers, AvroHelpers}
-import gr.grnet.aquarium.message.{IMEventModel, ResourceEventModel}
+import gr.grnet.aquarium.message.{IMEventModel}
 import gr.grnet.aquarium.event.DetailsModel
 
 /**

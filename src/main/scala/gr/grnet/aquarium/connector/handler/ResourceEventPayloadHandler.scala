@@ -38,7 +38,7 @@ package gr.grnet.aquarium.connector.handler
 import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.converter.JsonTextFormat
 import gr.grnet.aquarium.message.avro.AvroHelpers
-import gr.grnet.aquarium.message.avro.gen.{IMEventMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.ResourceEventMsg
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util._
 import org.slf4j.Logger
