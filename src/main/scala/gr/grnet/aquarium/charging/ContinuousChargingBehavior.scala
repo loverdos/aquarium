@@ -129,6 +129,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
     val resourcesChargingStateDetails = resourcesChargingState.getDetails
     val instanceID = resourceEvent.getInstanceID
     val resourceInstanceChargingState = stateOfResourceInstance.get(instanceID)
+
     fillWorkingResourceInstanceChargingStateFromEvent(resourceInstanceChargingState, resourceEvent)
 
     val userAgreementHistoryModel = userStateModel.userAgreementHistoryModel
@@ -179,6 +180,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
     // We need just one previous event, so we update it
     MessageHelpers.setOnePreviousEvent(resourceInstanceChargingState, resourceEvent)
+    assert(resourceInstanceChargingState.getPreviousEvents.size() == 1)
 
     retval
   }

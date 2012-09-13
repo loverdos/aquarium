@@ -219,7 +219,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
       billingMonthInfo: BillingMonthInfo,
       updateLatestMillis: Boolean
   ): Boolean = {
-
+    logger.warn("processResourceEvent:workingUserState=%s".format(userStateModel)) //
     val resourceTypeName = resourceEvent.getResource
     val resourceType = userStateModel.msg.getResourceTypesMap.get(resourceTypeName)
     if(resourceType eq null) {
@@ -235,11 +235,10 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
         newState.setResource(resourceTypeName)
         newState.setDetails(chargingBehavior.initialChargingDetails)
         newState.setStateOfResourceInstance(new JHashMap())
+        userStateModel.msg.getStateOfResources.put(resourceTypeName,newState)
         newState
-
       case existingState ⇒
         existingState
-
     }
 
     val m0 = TimeHelpers.nowMillis()

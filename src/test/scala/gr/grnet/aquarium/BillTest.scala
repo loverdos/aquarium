@@ -243,10 +243,17 @@ abstract class Message {
           case _ =>
             throw new Exception("send cast failed")
         }
+
+        event match {
+          case rcevent: ResourceEventMsg => AquariumInstance.aquarium.resourceEventStore.insertResourceEvent(rcevent)
+          case imevent: IMEventMsg => AquariumInstance.aquarium.imEventStore.insertIMEvent(imevent)
+        }
+        val userActorRef = AquariumInstance.aquarium.akkaService.getOrCreateUserActor(_map("uid"))
+        userActorRef ! event
         val json = AvroHelpers.jsonStringOfSpecificRecord(event)
-        AquariumInstance.aquarium(Aquarium.EnvKeys.rabbitMQProducer).
-        sendMessage(exchangeName,routingKey,json)
-        if(dbg)Console.err.println("Sent message:\n%s - %s\n".format(new Date(millis).toString,json))
+//        AquariumInstance.aquarium(Aquarium.EnvKeys.rabbitMQProducer).
+//        sendMessage(exchangeName,routingKey,json)
+//        if(dbg)Console.err.println("Sent message:\n%s - %s\n".format(new Date(millis).toString,json))
         JsonLog.add(new Date(millis).toString + " ---- " + json)
         _messagesSent += 1
         true
@@ -475,6 +482,7 @@ class User(serverAndPort:String,month:Int) {
 
   def run(ordered:Boolean,wait:Int,minFile:Int,maxFile:Int,minAmount:Int,maxAmount:Int,maxJSONRetry:Int=10) : String =  {
     _creationMessage.send("month"->month.toString,"uid"->uid,"spec"->"0 0 * %d ?".format(month)) // send once!
+    Thread.sleep(4000)
     var iter = _resources.toList
     while(!iter.isEmpty)
       iter = (if(!ordered) iter
@@ -544,7 +552,7 @@ object UserTest extends Loggable {
    val json =AquariumInstance.run(3000,3000) {
           user.
                   //addCredits(10000,"00 00 14,29 9 ?").
-                  addFiles(1,"update",2000,1000,3000,"00 18 15,29,30 9 ?").
+                  addFiles(1,"update",2000,1000,3000,"00 18 15,20,29,30 9 ?").
                   //addVMs(1,"on","00 18 ? 9 Mon").
                   //addVMs(5,"on","00 18 ? 9 Tue")
                  run(true,15000,minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)

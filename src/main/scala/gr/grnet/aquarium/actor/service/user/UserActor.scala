@@ -322,7 +322,7 @@ class UserActor extends ReflectiveRoleableActor {
     val eventMonth = eventBillingMonthInfo.month
 
     def computeBatch(): Unit = {
-      DEBUG("Going for out of sync charging")
+      DEBUG("Going for out of sync charging for %s", rcEvent.getOriginalID)
       this._userState = chargingService.replayMonthChargingUpTo(
         nowBillingMonthInfo,
         // Take into account that the event may be out-of-sync.
@@ -337,7 +337,7 @@ class UserActor extends ReflectiveRoleableActor {
     }
 
     def computeRealtime(): Unit = {
-      DEBUG("Going for in sync charging")
+      DEBUG("Going for in sync charging for %s", rcEvent.getOriginalID)
       chargingService.processResourceEvent(
         rcEvent,
         this._userState,

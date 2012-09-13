@@ -250,7 +250,10 @@ object MessageFactory {
       oldAccumulatingAmount: Double,
       accumulatingAmount: Double,
       previousValue: Double,
-      currentValue: Double
+      currentValue: Double,
+      clientID: String,
+      resource: String,
+      instanceID: String
   ): ResourceInstanceChargingStateMsg = {
 
     val msg = new ResourceInstanceChargingStateMsg
@@ -261,6 +264,9 @@ object MessageFactory {
     msg.setAccumulatingAmount(java.lang.Double.valueOf(accumulatingAmount))
     msg.setPreviousValue(java.lang.Double.valueOf(previousValue))
     msg.setCurrentValue(java.lang.Double.valueOf(currentValue))
+    msg.setClientID(clientID)
+    msg.setResource(resource)
+    msg.setInstanceID(instanceID)
     msg
   }
 

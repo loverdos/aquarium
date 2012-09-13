@@ -88,7 +88,12 @@ abstract class ChargingBehaviorSkeleton(
     AvroHelpers.jsonStringOfSpecificRecord(rcEvent)
   }
 
-  protected def newResourceInstanceChargingStateMsg() = {
+  protected def newResourceInstanceChargingStateMsg(
+      clientID: String,
+      resource: String,
+      instanceID: String
+  ) = {
+
     MessageFactory.newResourceInstanceChargingStateMsg(
 
       DetailsModel.make,
@@ -97,7 +102,10 @@ abstract class ChargingBehaviorSkeleton(
       0.0,
       0.0,
       0.0,
-      0.0
+      0.0,
+      clientID,
+      resource,
+      instanceID
     )
   }
 
@@ -117,11 +125,16 @@ abstract class ChargingBehaviorSkeleton(
   ) {
 
     val instanceID = resourceEvent.getInstanceID
+    val clientID = resourceEvent.getClientID
+    val resource = resourceEvent.getResource
     val stateOfResourceInstance = resourcesChargingState.getStateOfResourceInstance
 
     stateOfResourceInstance.get(instanceID) match {
       case null ⇒
-        stateOfResourceInstance.put(instanceID, newResourceInstanceChargingStateMsg())
+        stateOfResourceInstance.put(
+          instanceID,
+          newResourceInstanceChargingStateMsg(clientID, resource, instanceID)
+        )
 
       case _ ⇒
     }
@@ -156,6 +169,7 @@ abstract class ChargingBehaviorSkeleton(
 
     var _newAccumulatingAmount = computeNewAccumulatingAmount(resourceInstanceChargingState, resourceEventDetails)
     // It will also update the old one inside the data structure.
+    resourceInstanceChargingState.setOldAccumulatingAmount(resourceInstanceChargingState.getAccumulatingAmount)
     resourceInstanceChargingState.setAccumulatingAmount(_newAccumulatingAmount)
 
     val policyByTimeslot = aquarium.policyStore.loadSortedPolicyModelsWithin(
