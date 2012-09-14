@@ -75,6 +75,11 @@ case class ResourceEntry(val resourceName : String,
                          val details : List[EventEntry])
 extends JsonSupport {}
 
+case class ServiceEntry(val serviceName: String,
+                        val totalCredits : String,
+                        val details: List[ResourceEntry]
+                       )
+extends JsonSupport {}
 
 abstract class AbstractBillEntry
  extends JsonSupport {}
@@ -86,7 +91,7 @@ class BillEntry(val id:String,
                 val deductedCredits:String,
                 val startTime:String,
                 val endTime:String,
-                val bill:List[ResourceEntry]
+                val bill:List[ServiceEntry]
               )
  extends AbstractBillEntry {}
 
@@ -192,19 +197,29 @@ object AbstractBillEntry {
     (ret.toList,sum)
   }
 
-  private[this] def aggregateResourceEntries(re:List[ResourceEntry]) : List[ResourceEntry] = {
+  private[this] def aggregateResourceEntries(re:List[ResourceEntry]) : List[ServiceEntry] = {
     def addResourceEntries(a:ResourceEntry,b:ResourceEntry) : ResourceEntry = {
       assert(a.resourceName == b.resourceName)
       val totalCredits = (a.totalCredits.toDouble+b.totalCredits.toDouble).toString
       a.copy(a.resourceName,a.resourceType,a.unitName,totalCredits,a.details ::: b.details)
     }
-    re.foldLeft(TreeMap[String,ResourceEntry]()){ (map,r1) =>
+    val map0 = re.foldLeft(TreeMap[String,ResourceEntry]()){ (map,r1) =>
       map.get(r1.resourceName) match {
         case None => map + ((r1.resourceName,r1))
         case Some(r0) => (map - r0.resourceName) +
                          ((r0.resourceName, addResourceEntries(r0,r1)))
       }
-    }.values.toList
+    }
+    val map1 = map0.foldLeft(TreeMap[String,List[ResourceEntry]]()){ case (map,(_,r1)) =>
+      map.get(r1.resourceType) match {
+        case None =>  map + ((r1.resourceType,List(r1)))
+        case Some(rl) => (map - r1.resourceType) +  ((r1.resourceName,r1::rl))
+      }
+    }
+    map1.foldLeft(List[ServiceEntry]()){ case (ret,(serviceName,resList)) =>
+      val totalCredits = resList.foldLeft(0.0D){ (total,r) => total+r.totalCredits.toDouble}
+      new ServiceEntry(serviceName,totalCredits.toString,resList) :: ret
+    }
   }
 
   def fromWorkingUserState(t0:Timeslot,userID:String,w:Option[UserStateMsg]) : AbstractBillEntry = {
@@ -233,24 +248,6 @@ object AbstractBillEntry {
     }
     //Console.err.println("JSON: " +  ret.toJsonString)
     ret
-  }
-
-  val jsonSample = "{\n  \"id\":\"2\",\n  \"userID\":\"loverdos@grnet.gr\",\n  \"status\":\"ok\",\n  \"remainingCredits\":\"3130.0000027777783\",\n  \"deductedCredits\":\"5739.9999944444435\",\n  \"startTime\":\"1341090000000\",\n  \"endTime\":\"1343768399999\",\n  \"bill\":[{\n    \"resourceName\":\"diskspace\",\n    \"resourceType\":\"diskspace\",\n    \"unitName\":\"MB/Hr\",\n    \"totalCredits\":\"2869.9999972222217\",\n    \"eventType\":\"object update@/Papers/GOTO_HARMFUL.PDF\",\n\t    \"details\":[\n\t     {\"totalCredits\":\"2869.9999972222217\",\n\t      \"details\":[{\n\t      \"id\":\"0\",\n\t      \"unitPrice\":\"0.01\",\n\t      \"startTime\":\"1342735200000\",\n\t      \"endTime\":\"1343768399999\",\n\t      \"ellapsedTime\":\"1033199999\",\n\t      \"credits\":\"2869.9999972222217\"\n\t    \t}]\n\t    }\n\t  ]\n  },{\n    \"resourceName\":\"diskspace\",\n    \"resourceType\":\"diskspace\",\n    \"unitName\":\"MB/Hr\",\n    \"totalCredits\":\"2869.9999972222217\",\n    \"eventType\":\"object update@/Papers/GOTO_HARMFUL.PDF\",\n    \"details\":[\t     {\"totalCredits\":\"2869.9999972222217\",\n\t      \"details\":[{\n\t      \"id\":\"0\",\n\t      \"unitPrice\":\"0.01\",\n\t      \"startTime\":\"1342735200000\",\n\t      \"endTime\":\"1343768399999\",\n\t      \"ellapsedTime\":\"1033199999\",\n\t      \"credits\":\"2869.9999972222217\"\n\t    \t}]\n\t    }\n\t]\n  }]\n}"
-
-  def main0(args: Array[String]) = {
-     val b : BillEntry = StdConverters.AllConverters.convertEx[BillEntry](CompactJsonTextFormat(jsonSample))
-     val l0 = b.bill
-     val l1 = aggregateResourceEntries(l0)
-
-     Console.err.println("Initial resources: ")
-     for{ i <- l0 } Console.err.println("RESOURCE: " + i.toJsonString)
-    Console.err.println("Aggregate resources: ")
-    for{ a <- l1 } {
-      Console.err.println("RESOURCE:  %s\n  %s\nEND RESOURCE".format(a.resourceName,a.toJsonString))
-    }
-
-    val aggr = new BillEntry(b.id,b.userID,b.status,b.remainingCredits,b.deductedCredits,b.startTime,b.endTime,l1)
-    Console.err.println("Aggregate:\n" + aggr.toJsonString)
   }
 
   //
