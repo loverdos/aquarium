@@ -527,8 +527,8 @@ class User(serverAndPort:String,month:Int) {
       if(count > 0) Console.err.println("Retrying for bill request.")
       resp = get()
       if(resp.isEmpty) Thread.sleep(1000)
-      val b = AvroHelpers.specificRecordOfJsonString(resp, new BillEntryMsg)
-      if(b.getStatus == "processing"){
+      //val b = AvroHelpers.specificRecordOfJsonString(resp, new BillEntryMsg)
+      if(resp.indexOf("processing") > -1){
         Thread.sleep(1000)
         resp = ""
       }
@@ -549,13 +549,13 @@ object UserTest extends Loggable {
     val (minUserCredits,maxUserCredits) = (10000,10000)
     //Cron spec  minutes hours day-of-month Month Day-of-Week (we do not specify seconds)
 
-   val json =AquariumInstance.run(3000,3000) {
+   val json =AquariumInstance.run(2000,2000) {
           user.
                   //addCredits(10000,"00 00 14,29 9 ?").
-                  addFiles(1,"update",2000,1000,3000,"00 18 15,20,29,30 9 ?").
+                  addFiles(1,"update",2000,1000,3000,"00 18 15,16,17,18,19,20,29,30 9 ?").
                   //addVMs(1,"on","00 18 ? 9 Mon").
                   //addVMs(5,"on","00 18 ? 9 Tue")
-                 run(true,15000,minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)
+                 run(true,2000,minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)
    }
    Thread.sleep(2000)
    Console.err.println("Messages sent:")
