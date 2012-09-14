@@ -44,8 +44,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.google.common.cache.{CacheStats, RemovalNotification, RemovalListener, CacheBuilder, Cache}
 import com.ckkloverdos.props.{Props ⇒ KKProps}
 import gr.grnet.aquarium.actor.service.user.UserActor
-import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
 import gr.grnet.aquarium.util.date.TimeHelpers
 import java.util.concurrent.{TimeUnit, ConcurrentHashMap, Callable}
 import akka.dispatch.{Await, Future}
@@ -232,9 +230,6 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
 
         // Cache it for subsequent calls
         _userActorCache.put(userID, actorRef)
-
-        // Send the initialization message
-        actorRef ! InitializeUserActorState(userID, TimeHelpers.nowMillis())
 
         actorRef
       }

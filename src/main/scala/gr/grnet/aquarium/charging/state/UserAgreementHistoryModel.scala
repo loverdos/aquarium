@@ -49,7 +49,7 @@ import gr.grnet.aquarium.message.avro.ModelFactory
 
 final case class UserAgreementHistoryModel(
     msg: UserAgreementHistoryMsg
-) extends JsonSupport {
+) {
 
   private var _userAgreementModels: immutable.SortedSet[UserAgreementModel] = {
     var userAgreementModels = immutable.SortedSet[UserAgreementModel]()
@@ -107,6 +107,8 @@ final case class UserAgreementHistoryModel(
   def newestAgreementModel: Option[UserAgreementModel] = {
     _userAgreementModels.lastOption
   }
+
+  def toJsonString = msg.toString
 
 //  def agreementInEffectWhen(whenMillis: Long): Option[UserAgreementModel] = {
 //    agreements.to(
