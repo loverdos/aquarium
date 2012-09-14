@@ -49,6 +49,8 @@ object MessageConstants {
 
     final val action = "action"
 
+    final val versions = "versions"
+
     // This is set in the details map to indicate a synthetic resource event (ie not a real one).
     // Examples of synthetic resource events are those that are implicitly generated at the
     // end of the billing period (e.g. `OFF`s).
