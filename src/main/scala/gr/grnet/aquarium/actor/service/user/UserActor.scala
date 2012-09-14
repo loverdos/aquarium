@@ -265,22 +265,9 @@ class UserActor extends ReflectiveRoleableActor {
     val hadUserCreationIMEvent = haveUserCreationIMEvent
 
     if(!haveAgreements) {
-      // This IMEvent has arrived after any ResourceEvents
-      INFO("Arrived after any ResourceEvent: %s", imEvent)
       initializeStateOfIMEvents()
     }
     else {
-      if(this._latestIMEventOriginalID == imEvent.getOriginalID) {
-        // This happens when the actor is brought to life, then immediately initialized, and then
-        // sent the first IM event. But from the initialization procedure, this IM event will have
-        // already been loaded from DB!
-        INFO("Ignoring first %s", imEvent)
-        logSeparator()
-
-        //this._latestIMEventID = imEvent.id
-        return
-      }
-
       updateAgreementHistoryFrom(imEvent)
       updateLatestIMEventIDFrom(imEvent)
     }
@@ -307,21 +294,6 @@ class UserActor extends ReflectiveRoleableActor {
       // This means the user has not been created (at least, as far as Aquarium is concerned).
       // So, we do not process any resource event
       DEBUG("Not processing %s", AvroHelpers.jsonStringOfSpecificRecord(rcEvent))
-      logSeparator()
-
-      return
-    }
-
-    if(this._rcMsgCount == 0) {
-      // First rcEvent
-    }
-
-    // Since the latest resource event per resource is recorded in the user state,
-    // we do not need to query the store. Just query the in-memory state.
-    // Note: This is a similar situation with the first IMEvent received right after the user
-    //       actor is created.
-    if(this._latestResourceEventOriginalID == rcEvent.getOriginalID) {
-      INFO("Ignoring first %s", AvroHelpers.jsonStringOfSpecificRecord(rcEvent))
       logSeparator()
 
       return
