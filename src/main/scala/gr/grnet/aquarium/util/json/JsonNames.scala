@@ -39,13 +39,24 @@ package gr.grnet.aquarium.util.json
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
-object JsonNames {
+final object JsonNames {
+  final val versions = "versions"
+  final val path = "path"
+  final val action = "action"
+
+  final val details = "details"
+
+  final val value = "value"
+  final val resource = "resource"
+  final val instanceID = "instanceID"
   final val billingMonth = "billingMonth"
   final val billingMonthDay = "billingMonthDay"
   final val billingYear = "billingYear"
   final val isFullBillingMonth = "isFullBillingMonth"
   final val eventType = "eventType"
+  final val eventVersion = "eventVersion"
   final val userID = "userID"
+  final val clientID = "clientID"
   final val id = "id"
   final val payload = "payload"
   final val _id = "_id"

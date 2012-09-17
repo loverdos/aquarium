@@ -35,6 +35,8 @@
 
 package gr.grnet.aquarium.message
 
+import gr.grnet.aquarium.util.json.JsonNames
+
 /**
  * Provides constants for known values expected in message objects.
  *
@@ -45,11 +47,11 @@ object MessageConstants {
   final val DefaultSelectorKey = "default"
 
   final object DetailsKeys {
-    final val path = "path"
+    final val path = JsonNames.path
 
-    final val action = "action"
+    final val action = JsonNames.payload
 
-    final val versions = "versions"
+    final val versions = JsonNames.versions
 
     // This is set in the details map to indicate a synthetic resource event (ie not a real one).
     // Examples of synthetic resource events are those that are implicitly generated at the
