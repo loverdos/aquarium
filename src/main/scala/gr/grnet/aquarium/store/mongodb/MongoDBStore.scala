@@ -74,17 +74,21 @@ class MongoDBStore(
   private[store] lazy val imEvents = getCollection(MongoDBStore.IMEventCollection)
   private[store] lazy val policies = getCollection(MongoDBStore.PolicyCollection)
 
-  private[this] def getCollection(name: String): DBCollection = {
-    val db = mongo.getDB(database)
-    //logger.debug("Authenticating to mongo")
+  private[this] def doAuthenticate(db: DB) {
     if(!db.isAuthenticated && !db.authenticate(username, password.toCharArray)) {
       throw new AquariumException("Could not authenticate user %s".format(username))
     }
+  }
+
+  private[this] def getCollection(name: String): DBCollection = {
+    val db = mongo.getDB(database)
+    doAuthenticate(db)
     db.getCollection(name)
   }
 
   //+ResourceEventStore
   def pingResourceEventStore(): Unit = synchronized {
+    getCollection(MongoDBStore.ResourceEventCollection)
     MongoDBStore.ping(mongo)
   }
 
@@ -213,6 +217,7 @@ class MongoDBStore(
 
   //+IMEventStore
   def pingIMEventStore(): Unit = {
+    getCollection(MongoDBStore.IMEventCollection)
     MongoDBStore.ping(mongo)
   }
 
