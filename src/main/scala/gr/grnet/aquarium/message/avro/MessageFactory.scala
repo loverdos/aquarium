@@ -41,6 +41,7 @@ import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
 import gr.grnet.aquarium.message.avro.gen._
 import java.{util ⇒ ju}
 import java.util.{ArrayList ⇒ JArrayList}
+import java.util.{List ⇒ JList}
 import org.apache.avro.generic.GenericData
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.seqAsJavaListConverter
@@ -62,6 +63,12 @@ object MessageFactory {
   def anyValueMsgOfString(x: String) = {
     val av = new AnyValueMsg
     av.setAnyValue(x)
+    av
+  }
+
+  def anyValueMsgOfList(l: JArrayList[AnyValueMsg]) = {
+    val av = new AnyValueMsg
+    av.setAnyValue(l)
     av
   }
 

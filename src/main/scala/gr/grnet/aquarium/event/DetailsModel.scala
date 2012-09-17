@@ -59,6 +59,10 @@ object DetailsModel {
     msgDetails.put(name, MessageFactory.anyValueMsgOfString(value))
   }
 
+  def setList(msgDetails: Type, name: String, value: ju.ArrayList[AnyValueMsg]) {
+    msgDetails.put(name, MessageFactory.anyValueMsgOfList(value))
+  }
+
   def fromScalaMap(map: scala.collection.Map[String, AnyValueMsg]): Type = {
     map.asJava
   }
