@@ -46,8 +46,7 @@ import event.{BalanceEvent, AquariumCreatedEvent, StoreIsAliveBusEvent, StoreIsD
 import gr.grnet.aquarium.connector.rabbitmq.service.PayloadHandlerPostNotifier
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys.RabbitMQConfKeys
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys
-import gr.grnet.aquarium.connector.handler.{SynchronousPayloadHandlerExecutor, ResourceEventPayloadHandler, IMEventPayloadHandler}
-import gr.grnet.aquarium.util.json.JsonSupport
+import gr.grnet.aquarium.connector.handler.{ResourceEventPayloadHandler, IMEventPayloadHandler}
 
 /**
  * The service that is responsible to handle `RabbitMQ` connectivity.
@@ -98,8 +97,6 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
 
     val imHandler = new IMEventPayloadHandler(aquarium, logger)
 
-    val futureExecutor = new SynchronousPayloadHandlerExecutor
-
     // (e)xchange:(r)outing key:(q)
 
     // These two are to trigger an error if the property does not exist
@@ -144,7 +141,6 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
         aquarium,
         rccc,
         rcHandler,
-        futureExecutor,
         postNotifier
       )
     }
@@ -160,7 +156,6 @@ class RabbitMQService extends Loggable with Lifecycle with Configurable with Aqu
         aquarium,
         imcc,
         imHandler,
-        futureExecutor,
         postNotifier
       )
     }
