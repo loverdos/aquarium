@@ -35,15 +35,20 @@
 
 package gr.grnet.aquarium.connector.handler
 
-import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.{AquariumException, Aquarium}
 import gr.grnet.aquarium.converter.JsonTextFormat
-import gr.grnet.aquarium.message.avro.AvroHelpers
-import gr.grnet.aquarium.message.avro.gen.ResourceEventMsg
+import gr.grnet.aquarium.message.avro.{MessageFactory, AvroHelpers}
+import gr.grnet.aquarium.message.avro.gen.{AnyValueMsg, ResourceEventMsg}
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util._
+import date.TimeHelpers
+import json.JsonNames
 import org.slf4j.Logger
-import gr.grnet.aquarium.message.ResourceEventModel
+import gr.grnet.aquarium.message.{MessageConstants, ResourceEventModel}
 import gr.grnet.aquarium.event.DetailsModel
+import org.codehaus.jackson.map.ObjectMapper
+import org.codehaus.jackson.JsonNode
+import java.util.{ArrayList => JArrayList}
 
 /**
  * A [[gr.grnet.aquarium.connector.handler.PayloadHandler]] for
@@ -78,20 +83,68 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
           AvroHelpers.specificRecordOfJsonString(jsonTextFormat.value, new ResourceEventMsg)
         } catch {
           case e:Throwable =>
-            val model = aquarium.converters.convertEx[ResourceEventModel](jsonTextFormat)
             val msg = new ResourceEventMsg()
-            msg.setOriginalID(model.id)
-            msg.setClientID(model.clientID)
-            msg.setDetails(DetailsModel.fromScalaModelMap(model.details))
-            msg.setEventVersion(model.eventVersion)
-            msg.setOccurredMillis(model.occurredMillis)
-            msg.setReceivedMillis(model.receivedMillis)
-            msg.setUserID(model.userID)
-            msg.setResource(model.resource)
-            msg.setInstanceID(model.instanceID)
-            msg.setValue(model.value.toString)
-            msg
 
+            val mapper = new ObjectMapper()
+            val root = mapper.readValue(jsonTextFormat.value, classOf[JsonNode])
+
+            msg.setOriginalID(root.get(JsonNames.id).getTextValue)
+            msg.setClientID(root.get(JsonNames.clientID).getTextValue)
+            msg.setEventVersion(root.get(JsonNames.eventVersion).getTextValue)
+            msg.setOccurredMillis(root.get(JsonNames.occurredMillis).getLongValue)
+            msg.setReceivedMillis(TimeHelpers.nowMillis())
+            msg.setUserID(root.get(JsonNames.userID).getTextValue)
+            msg.setResource(root.get(JsonNames.resource).getTextValue)
+            msg.setInstanceID(root.get(JsonNames.instanceID).getTextValue)
+            msg.setValue(root.get(JsonNames.value).getValueAsText)
+
+            // Get the details. This is trickier
+            val details = DetailsModel.make
+            val detailsNode = root.get(JsonNames.details)
+            val detailsChildren = detailsNode.getFields
+            while(detailsChildren.hasNext) {
+              val detailsChildEntry = detailsChildren.next()
+              val detailsFieldName = detailsChildEntry.getKey
+              val detailsFieldValue: JsonNode = detailsChildEntry.getValue
+
+              if(detailsFieldName == JsonNames.versions) {
+                if(detailsFieldValue.isArray) {
+                  val jList = new JArrayList[AnyValueMsg]
+                  val versionNodes = detailsFieldValue.getElements
+                  while(versionNodes.hasNext) {
+                    val versionNode = versionNodes.next()
+                    val versionTxt = versionNode.getValueAsText
+                    val versionAnyValueMsg = MessageFactory.anyValueMsgOfString(versionTxt)
+                    jList.add(versionAnyValueMsg)
+                  }
+                  DetailsModel.setList(details, JsonNames.versions, jList)
+                }
+                else if(detailsFieldValue.isTextual) {
+                  val jList = new JArrayList[AnyValueMsg]
+                  val versionsTxt = detailsFieldValue.getTextValue
+                  val versions = versionsTxt.split("""\s*,\s*""").map(_.trim)
+                  for(versionTxt <- versions) {
+                    val versionAnyValueMsg = MessageFactory.anyValueMsgOfString(versionTxt)
+                    jList.add(versionAnyValueMsg)
+                  }
+                  DetailsModel.setList(details, JsonNames.versions, jList)
+                }
+                else {
+                  throw new AquariumException(
+                    "Bad value for %s.%s field: %s",
+                    JsonNames.details,
+                    JsonNames.versions,
+                    detailsFieldValue.toString
+                  )
+                }
+              } else {
+                DetailsModel.setString(details, detailsFieldName, detailsFieldValue.getValueAsText)
+              }
+
+              msg.setDetails(details)
+            }
+
+            msg
         }
       },
 

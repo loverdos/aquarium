@@ -45,7 +45,7 @@ import gr.grnet.aquarium.connector.rabbitmq.eventbus.RabbitMQError
 import gr.grnet.aquarium.service.event.BusEvent
 import java.util.concurrent.atomic.{AtomicReference, AtomicBoolean}
 import com.ckkloverdos.maybe.{Maybe, Just, Failed, MaybeEither}
-import gr.grnet.aquarium.connector.handler.{HandlerResultResend, HandlerResult, PayloadHandlerExecutor, HandlerResultPanic, HandlerResultRequeue, HandlerResultReject, HandlerResultSuccess, PayloadHandler}
+import gr.grnet.aquarium.connector.handler.{HandlerResultResend, HandlerResult, HandlerResultPanic, HandlerResultRequeue, HandlerResultReject, HandlerResultSuccess, PayloadHandler}
 import gr.grnet.aquarium.connector.rabbitmq.conf.RabbitMQKeys.{RabbitMQConKeys, RabbitMQChannelKeys, RabbitMQExchangeKeys, RabbitMQQueueKeys}
 
 /**
@@ -62,11 +62,6 @@ class RabbitMQConsumer(
      * Specifies what we do with the message payload.
      */
     handler: PayloadHandler,
-
-    /**
-     * Specifies how we execute the handler
-     */
-    executor: PayloadHandlerExecutor,
 
     /**
      * After the payload is processed, we call this function with ourselves and the result.
@@ -363,9 +358,14 @@ class RabbitMQConsumer(
 
         val onSuccessF = onSuccessBasicStepF andThen notifierF
 
-        executor.exec(body, handler) (onSuccessF) (onErrorF)
+        try {
+          val result0 = handler.handlePayload(body)
+          val result1 = onSuccessF.apply(result0)
+          result1
+        }
+        catch(onErrorF)
       }
-      catch (onErrorF)
+      catch(onErrorF)
     }
   }
 
