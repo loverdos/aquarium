@@ -140,6 +140,53 @@ object JsonLog {
   private[this] var _sortedMsgs  = SortedMap[Timeslot,(String,String,String)]
 } */
 
+object MessageService {
+  val rabbitMQEnabled = true //false
+  val debugEnabled = false
+
+  def send(event:SpecificRecord) = {
+    val json = AvroHelpers.jsonStringOfSpecificRecord(event)
+    if(rabbitMQEnabled){
+      val (exchangeName,routingKey) = event match {
+        case rc:ResourceEventMsg => rc.getResource match {
+          case "vmtime" =>
+            ("cyclades","cyclades.resource.vmtime")
+          case "diskspace" =>
+            ("pithos","pithos.resource.diskspace")
+          case "addcredits" =>
+            ("astakos","astakos.resource")
+          case x =>
+            throw new Exception("send cast failed: %s".format(x))
+        }
+        case im:IMEventMsg =>
+          ("astakos","astakos.user")
+        case _ =>
+          throw new Exception("send cast failed")
+      }
+      AquariumInstance.aquarium(Aquarium.EnvKeys.rabbitMQProducer).
+        sendMessage(exchangeName,routingKey,json)
+    } else {
+      val uid = event match {
+        case rcevent: ResourceEventMsg =>
+            AquariumInstance.aquarium.resourceEventStore.insertResourceEvent(rcevent)
+            rcevent.getUserID
+        case imevent: IMEventMsg =>
+             AquariumInstance.aquarium.imEventStore.insertIMEvent(imevent)
+             imevent.getUserID
+      }
+      val userActorRef = AquariumInstance.aquarium.akkaService.getOrCreateUserActor(uid)
+      userActorRef ! event
+    }
+    val millis = event match {
+      case rc:ResourceEventMsg => rc.getOccurredMillis
+      case im:IMEventMsg => im.getOccurredMillis
+    }
+    JsonLog.add(/*new Date(millis).toString + " ---- " +*/ json)
+    if(debugEnabled)
+      Console.err.println("Sent message:\n%s - %s\n".format(new Date(millis).toString,json))
+  }
+}
+
 abstract class Message {
   val dbg = true
   val cal =   new GregorianCalendar
@@ -229,32 +276,7 @@ abstract class Message {
       case Some(millis) =>
         updateMap(map)
         val event = makeEvent(millis,_map)
-        val (exchangeName,routingKey) = event match {
-          case rc:ResourceEventMsg => rc.getResource match {
-            case "vmtime" =>
-              ("cyclades","cyclades.resource.vmtime")
-            case "diskspace" =>
-              ("pithos","pithos.resource.diskspace")
-            case _ =>
-              throw new Exception("send cast failed")
-          }
-          case im:IMEventMsg =>
-            ("astakos","astakos.user")
-          case _ =>
-            throw new Exception("send cast failed")
-        }
-
-        event match {
-          case rcevent: ResourceEventMsg => AquariumInstance.aquarium.resourceEventStore.insertResourceEvent(rcevent)
-          case imevent: IMEventMsg => AquariumInstance.aquarium.imEventStore.insertIMEvent(imevent)
-        }
-        val userActorRef = AquariumInstance.aquarium.akkaService.getOrCreateUserActor(_map("uid"))
-        userActorRef ! event
-        val json = AvroHelpers.jsonStringOfSpecificRecord(event)
-//        AquariumInstance.aquarium(Aquarium.EnvKeys.rabbitMQProducer).
-//        sendMessage(exchangeName,routingKey,json)
-//        if(dbg)Console.err.println("Sent message:\n%s - %s\n".format(new Date(millis).toString,json))
-        JsonLog.add(new Date(millis).toString + " ---- " + json)
+        MessageService.send(event)
         _messagesSent += 1
         true
       case None =>
@@ -316,19 +338,19 @@ class VMMessage extends Message {
    *      vmName     -> "My Lab VM"
    *      status     ->  "on", "off" , "destroy"
    */
-  var _status = "off"
+  var _status = "on"
   def nextStatus = {
     if(_status=="off") _status = "on" else _status = "off"
     _status
   }
   def makeEvent(millis:Long,map:Map[String,String]) = {
     val uid    = map("uid")
-    val value  = nextStatus /* map("status") match {
-       case "on" => 1.0
-       case "off" => 0.0
-       case "destroy" => 2.0
+    val value  =  /* map("status")*/nextStatus match {
+       case "on" => "1"
+       case "off" => "0"
+       case "destroy" => "2"
        case x => throw new Exception("VMMessage bad status: %s".format(x))
-      }*/
+      }
     val id = "rc.%d.vmtime".format(nextID)
     val occurredMillis = millis
     val receivedMillis = millis
@@ -551,16 +573,17 @@ object UserTest extends Loggable {
 
    val json =AquariumInstance.run(2000,2000) {
           user.
-                  //addCredits(10000,"00 00 14,29 9 ?").
-                  addFiles(1,"update",2000,1000,3000,"00 18 15,16,17,18,19,20,29,30 9 ?").
-                  //addVMs(1,"on","00 18 ? 9 Mon").
+                  addCredits(100000,"00 00 10,12 9 ?").
+                  addFiles(1,"update",2000,1000,3000,"00 18 15,20,29,30 9 ?").
+                  addVMs(1,"on","00 18 14,17,19,20 9 ?").
                   //addVMs(5,"on","00 18 ? 9 Tue")
                  run(true,2000,minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)
    }
    Thread.sleep(2000)
    Console.err.println("Messages sent:")
    for { m <- JsonLog.get}
-     Console.err.println("\n==============\n%s\n===============".format(m))
+     Console.err.println("%s".format(m)) //"\n==============\n%s\n==============="
+   Console.err.println("\n=========================\n")
    Console.err.println("Response:\n" + json)
  }
 
