@@ -44,6 +44,7 @@ import org.slf4j.Logger
 import gr.grnet.aquarium.message.avro.{MessageFactory, MessageHelpers, AvroHelpers}
 import gr.grnet.aquarium.message.{IMEventModel}
 import gr.grnet.aquarium.event.DetailsModel
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 /**
  * A [[gr.grnet.aquarium.connector.handler.PayloadHandler]] for
@@ -88,7 +89,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
               msg.setEventVersion(model.eventVersion)
               msg.setIsActive(java.lang.Boolean.valueOf(model.isActive))
               msg.setOccurredMillis(model.occurredMillis)
-              msg.setReceivedMillis(model.receivedMillis)
+              msg.setReceivedMillis(TimeHelpers.nowMillis())
               msg.setRole(model.role)
               msg.setUserID(model.userID)
               msg

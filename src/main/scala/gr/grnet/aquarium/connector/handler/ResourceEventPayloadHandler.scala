@@ -41,6 +41,7 @@ import gr.grnet.aquarium.message.avro.AvroHelpers
 import gr.grnet.aquarium.message.avro.gen.ResourceEventMsg
 import gr.grnet.aquarium.store.LocalFSEventStore
 import gr.grnet.aquarium.util._
+import date.TimeHelpers
 import org.slf4j.Logger
 import gr.grnet.aquarium.message.ResourceEventModel
 import gr.grnet.aquarium.event.DetailsModel
@@ -85,7 +86,7 @@ class ResourceEventPayloadHandler(aquarium: Aquarium, logger: Logger)
             msg.setDetails(DetailsModel.fromScalaModelMap(model.details))
             msg.setEventVersion(model.eventVersion)
             msg.setOccurredMillis(model.occurredMillis)
-            msg.setReceivedMillis(model.receivedMillis)
+            msg.setReceivedMillis(TimeHelpers.nowMillis())
             msg.setUserID(model.userID)
             msg.setResource(model.resource)
             msg.setInstanceID(model.instanceID)
