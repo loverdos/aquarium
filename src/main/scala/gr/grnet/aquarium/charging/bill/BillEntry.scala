@@ -58,7 +58,8 @@ case class ChargeEntry(val id:String,
                        val unitPrice:String,
                        val startTime:String,
                        val endTime:String,
-                       val ellapsedTime:String,
+                       val elapsedTime:String,
+                       val units:String,
                        val credits:String)
   extends JsonSupport {}
 
@@ -72,11 +73,15 @@ case class ResourceEntry(val resourceName : String,
                          val resourceType : String,
                          val unitName : String,
                          val totalCredits : String,
+                         val totalElapsedTime : String,
+                         val totalUnits : String,
                          val details : List[EventEntry])
 extends JsonSupport {}
 
 case class ServiceEntry(val serviceName: String,
                         val totalCredits : String,
+                        val totalElapsedTime : String,
+                        val totalUnits:String,
                         val details: List[ResourceEntry]
                        )
 extends JsonSupport {}
@@ -111,18 +116,21 @@ object AbstractBillEntry {
    Timeslot(dstart,dend)
   } */
 
-  private[this] def toChargeEntry(c:ChargeslotMsg) : ChargeEntry = {
+  private[this] def toChargeEntry(c:ChargeslotMsg) : (ChargeEntry,Long,Double) = {
     val unitPrice = c.getUnitPrice.toString
     val startTime = c.getStartMillis.toString
     val endTime   = c.getStopMillis.toString
-    val difTime   = (c.getStopMillis - c.getStartMillis).toString
+    val difTime   = (c.getStopMillis - c.getStartMillis).toLong
+    val unitsD     = (c.getCreditsToSubtract/c.getUnitPrice)
     val credits   = c.getCreditsToSubtract.toString
-    new ChargeEntry(counter.getAndIncrement.toString,unitPrice,
-                    startTime,endTime,difTime,credits)
+    (new ChargeEntry(counter.getAndIncrement.toString,unitPrice,
+                    startTime,endTime,difTime.toString,unitsD.toString,credits),difTime,unitsD)
   }
 
-  private[this] def toEventEntry(eventType:String,c:ChargeslotMsg) : EventEntry =
-    new EventEntry(eventType,List(toChargeEntry(c)))
+  private[this] def toEventEntry(eventType:String,c:ChargeslotMsg) : (EventEntry,Long,Double) = {
+    val (c1,l1,d1) = toChargeEntry(c)
+    (new EventEntry(eventType,List(c1)),l1,d1)
+  }
 
 
   private[this] def toResourceEntry(w:WalletEntryMsg) : ResourceEntry = {
@@ -130,7 +138,7 @@ object AbstractBillEntry {
     val rcType =  w.getResourceType.getName
     val rcName = rcType match {
             case "diskspace" =>
-              String.valueOf(MessageHelpers.currentResourceEventOf(w).getDetails.get("path"))
+              String.valueOf(MessageHelpers.currentResourceEventOf(w).getDetails.get("path").getAnyValue)
             case _ =>
               MessageHelpers.currentResourceEventOf(w).getInstanceID
         }
@@ -140,7 +148,7 @@ object AbstractBillEntry {
     val eventType = //TODO: This is hardcoded; find a better solution
         rcType match {
           case "diskspace" =>
-            val action = MessageHelpers.currentResourceEventOf(w).getDetails.get("action")
+            val action = MessageHelpers.currentResourceEventOf(w).getDetails.get("action").getAnyValue
             //val path = MessageHelpers.currentResourceEventOf(w).getDetails.get("path")
             //"%s@%s".format(action,path)
             action
@@ -158,17 +166,24 @@ object AbstractBillEntry {
           case "addcredits" =>
             "once"
         }
-
+    //w.
     import scala.collection.JavaConverters.asScalaBufferConverter
-    for { c <- w.getChargeslots.asScala }{
-      if(c.getCreditsToSubtract != 0.0) {
-        //Console.err.println("c.creditsToSubtract : " + c.creditsToSubtract)
-        eventEntry += toEventEntry(eventType.toString,c)
-        //credits += c.creditsToSubtract
+    ///FIXME: val elapsedTime = w.getChargeslots.asScala.foldLeft()
+   //c.getStopMillis - c.getStartMillis
+    var totalElapsedTime = 0L
+    var totalUnits = 0.0D
+      for { c <- w.getChargeslots.asScala }{
+        if(c.getCreditsToSubtract != 0.0) {
+          //Console.err.println("c.creditsToSubtract : " + c.creditsToSubtract)
+          val (e,l,u) = toEventEntry(eventType.toString,c)
+          eventEntry +=  e
+          totalElapsedTime += l
+          totalUnits += u
+        }
       }
-    }
     //Console.err.println("TOTAL resource event credits: " + credits)
-    new ResourceEntry(rcName,rcType,rcUnitName,credits.toString,eventEntry.toList)
+    new ResourceEntry(rcName,rcType,rcUnitName,credits.toString,totalElapsedTime.toString,
+                       totalUnits.toString,eventEntry.toList)
   }
 
   private[this] def resourceEntriesAt(t:Timeslot,w:UserStateMsg) : (List[ResourceEntry],Double) = {
@@ -185,7 +200,8 @@ object AbstractBillEntry {
       val referenceTimeslot = MessageHelpers.referenceTimeslotOf(i)
       if(t.contains(referenceTimeslot) && i.getSumOfCreditsToSubtract.toDouble != 0.0){
         /*Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)*/
-        if(i.getSumOfCreditsToSubtract.toDouble > 0.0D) sum += i.getSumOfCreditsToSubtract.toDouble
+        if(i.getSumOfCreditsToSubtract.toDouble > 0.0D)
+          sum += i.getSumOfCreditsToSubtract.toDouble
         ret += toResourceEntry(i)
       } else {
         val ijson = AvroHelpers.jsonStringOfSpecificRecord(i)
@@ -201,7 +217,10 @@ object AbstractBillEntry {
     def addResourceEntries(a:ResourceEntry,b:ResourceEntry) : ResourceEntry = {
       assert(a.resourceName == b.resourceName)
       val totalCredits = (a.totalCredits.toDouble+b.totalCredits.toDouble).toString
-      a.copy(a.resourceName,a.resourceType,a.unitName,totalCredits,a.details ::: b.details)
+      val totalElapsedTime =  (a.totalElapsedTime.toLong+b.totalElapsedTime.toLong).toString
+      val totalUnits =  (a.totalUnits.toDouble+b.totalUnits.toDouble).toString
+      a.copy(a.resourceName,a.resourceType,a.unitName,totalCredits,totalElapsedTime,totalUnits,
+             a.details ::: b.details)
     }
     val map0 = re.foldLeft(TreeMap[String,ResourceEntry]()){ (map,r1) =>
       map.get(r1.resourceName) match {
@@ -217,8 +236,14 @@ object AbstractBillEntry {
       }
     }
     map1.foldLeft(List[ServiceEntry]()){ case (ret,(serviceName,resList)) =>
-      val totalCredits = resList.foldLeft(0.0D){ (total,r) => total+r.totalCredits.toDouble}
-      new ServiceEntry(serviceName,totalCredits.toString,resList) :: ret
+      val (totalCredits,totalElapsedTime,totalUnits) =
+        resList.foldLeft((0.0D,0L,0.0D)){ case ((a,b,c),r) =>
+            (a+r.totalCredits.toDouble,
+             b+r.totalElapsedTime.toLong,
+             c+r.totalUnits.toDouble
+            )}
+      new ServiceEntry(serviceName,totalCredits.toString,
+                       totalElapsedTime.toString,totalUnits.toString,resList) :: ret
     }
   }
 
