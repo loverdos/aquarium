@@ -271,12 +271,13 @@ object AbstractBillEntry {
     //Console.err.println("After rounding timeslot: " + t)
     val ret = w match {
       case None =>
+          val allMissing = addMissingServices(Nil,resourceTypes)
           new BillEntry(counter.getAndIncrement.toString,
                         userID,"processing",
                         "0.0",
                         "0.0",
                         t.from.getTime.toString,t.to.getTime.toString,
-                        Nil)
+                        allMissing)
       case Some(w) =>
         val wjson = AvroHelpers.jsonStringOfSpecificRecord(w)
         Console.err.println("Working user state: %s".format(wjson))

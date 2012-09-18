@@ -141,7 +141,7 @@ object JsonLog {
 } */
 
 object MessageService {
-  val rabbitMQEnabled = true //false
+  val rabbitMQEnabled = false
   val debugEnabled = false
 
   def send(event:SpecificRecord) = {
