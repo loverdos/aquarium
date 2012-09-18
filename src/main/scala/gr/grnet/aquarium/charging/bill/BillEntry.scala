@@ -48,6 +48,7 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable.ListBuffer
+import gr.grnet.aquarium.policy.ResourceType
 
 
 /*
@@ -70,18 +71,22 @@ class EventEntry(val eventType : String,
 
 
 case class ResourceEntry(val resourceName : String,
-                         val resourceType : String,
-                         val unitName : String,
+                         //val resourceType : String,
+                         //val unitName : String,
                          val totalCredits : String,
                          val totalElapsedTime : String,
                          val totalUnits : String,
                          val details : List[EventEntry])
-extends JsonSupport {}
+extends JsonSupport {
+   var unitName = "EMPTY_UNIT_NAME"
+   var resourceType = "EMPTY_RESOURCE_TYPE"
+}
 
 case class ServiceEntry(val serviceName: String,
                         val totalCredits : String,
                         val totalElapsedTime : String,
                         val totalUnits:String,
+                        val unitName:String,
                         val details: List[ResourceEntry]
                        )
 extends JsonSupport {}
@@ -182,8 +187,11 @@ object AbstractBillEntry {
         }
       }
     //Console.err.println("TOTAL resource event credits: " + credits)
-    new ResourceEntry(rcName,rcType,rcUnitName,credits.toString,totalElapsedTime.toString,
+    val re = new ResourceEntry(rcName,/*rcType,rcUnitName,*/credits.toString,totalElapsedTime.toString,
                        totalUnits.toString,eventEntry.toList)
+    re.unitName = rcUnitName
+    re.resourceType = rcType
+    re
   }
 
   private[this] def resourceEntriesAt(t:Timeslot,w:UserStateMsg) : (List[ResourceEntry],Double) = {
@@ -219,8 +227,11 @@ object AbstractBillEntry {
       val totalCredits = (a.totalCredits.toDouble+b.totalCredits.toDouble).toString
       val totalElapsedTime =  (a.totalElapsedTime.toLong+b.totalElapsedTime.toLong).toString
       val totalUnits =  (a.totalUnits.toDouble+b.totalUnits.toDouble).toString
-      a.copy(a.resourceName,a.resourceType,a.unitName,totalCredits,totalElapsedTime,totalUnits,
+      val ab = a.copy(a.resourceName/*,a.resourceType,a.unitName*/,totalCredits,totalElapsedTime,totalUnits,
              a.details ::: b.details)
+      ab.unitName = a.unitName
+      ab.resourceType = a.resourceType
+      ab
     }
     val map0 = re.foldLeft(TreeMap[String,ResourceEntry]()){ (map,r1) =>
       map.get(r1.resourceName) match {
@@ -243,11 +254,18 @@ object AbstractBillEntry {
              c+r.totalUnits.toDouble
             )}
       new ServiceEntry(serviceName,totalCredits.toString,
-                       totalElapsedTime.toString,totalUnits.toString,resList) :: ret
+                       totalElapsedTime.toString,totalUnits.toString,
+                       resList.head.unitName,resList) :: ret
     }
   }
 
-  def fromWorkingUserState(t0:Timeslot,userID:String,w:Option[UserStateMsg]) : AbstractBillEntry = {
+  def addMissingServices(se:List[ServiceEntry],re:Map[String,ResourceType]) : List[ServiceEntry]=
+    se:::(re -- se.map(_.serviceName).toSet).foldLeft(List[ServiceEntry]()) { case (ret,(name,typ:ResourceType)) =>
+      new ServiceEntry(name,"0.0","0","0.0",typ.unit,List[ResourceEntry]()) :: ret
+    }
+
+  def fromWorkingUserState(t0:Timeslot,userID:String,w:Option[UserStateMsg],
+                           resourceTypes:Map[String,ResourceType]) : AbstractBillEntry = {
     val t = t0.roundMilliseconds /* we do not care about milliseconds */
     //Console.err.println("Timeslot: " + t0)
     //Console.err.println("After rounding timeslot: " + t)
@@ -263,13 +281,15 @@ object AbstractBillEntry {
         val wjson = AvroHelpers.jsonStringOfSpecificRecord(w)
         Console.err.println("Working user state: %s".format(wjson))
         val (rcEntries,rcEntriesCredits) = resourceEntriesAt(t,w)
-        val resMap = aggregateResourceEntries(rcEntries)
+        val resList0 = aggregateResourceEntries(rcEntries)
+        val resList1 = addMissingServices(resList0,resourceTypes)
         new BillEntry(counter.getAndIncrement.toString,
                       userID,"ok",
                       w.getTotalCredits.toString,
                       rcEntriesCredits.toString,
-                      t.from.getTime.toString,t.to.getTime.toString,
-                      resMap)
+                      t.from.getTime.toString,
+                      t.to.getTime.toString,
+                      resList1)
     }
     //Console.err.println("JSON: " +  ret.toJsonString)
     ret
