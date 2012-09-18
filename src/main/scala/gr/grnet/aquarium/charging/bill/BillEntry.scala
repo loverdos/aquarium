@@ -243,7 +243,7 @@ object AbstractBillEntry {
     val map1 = map0.foldLeft(TreeMap[String,List[ResourceEntry]]()){ case (map,(_,r1)) =>
       map.get(r1.resourceType) match {
         case None =>  map + ((r1.resourceType,List(r1)))
-        case Some(rl) => (map - r1.resourceType) +  ((r1.resourceName,r1::rl))
+        case Some(rl) => (map - r1.resourceType) +  ((r1.resourceType,r1::rl))
       }
     }
     map1.foldLeft(List[ServiceEntry]()){ case (ret,(serviceName,resList)) =>
