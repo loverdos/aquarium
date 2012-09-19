@@ -185,12 +185,14 @@ extends StoreProvider
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventMsg) ⇒ Unit) = {
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventMsg) ⇒ Boolean) = {
+    var _shouldContinue = true
     for {
-      msg <- _imEvents
+      msg <- _imEvents if _shouldContinue
     } {
-      f(msg)
+      _shouldContinue = f(msg)
     }
+    _shouldContinue
   }
   //- IMEventStore
 

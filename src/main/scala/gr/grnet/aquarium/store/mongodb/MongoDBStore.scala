@@ -284,19 +284,22 @@ class MongoDBStore(
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventMsg) ⇒ Unit) = {
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventMsg) ⇒ Boolean) = {
     val query = new BasicDBObject(MongoDBStore.JsonNames.userID, userID)
     val cursor = imEvents.find(query).sort(new BasicDBObject(MongoDBStore.JsonNames.occurredMillis, 1))
 
+    var _shouldContinue = true
     withCloseable(cursor) { cursor ⇒
-      while(cursor.hasNext) {
+      while(_shouldContinue && cursor.hasNext) {
         val dbObject = cursor.next()
         val payload = dbObject.get(MongoDBStore.JsonNames.payload).asInstanceOf[Array[Byte]]
         val msg = AvroHelpers.specificRecordOfBytes(payload, new IMEventMsg)
 
-        f(msg)
+        _shouldContinue = f(msg)
       }
     }
+
+    _shouldContinue
   }
   //-IMEventStore
 

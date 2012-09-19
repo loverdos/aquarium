@@ -44,10 +44,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.google.common.cache.{CacheStats, RemovalNotification, RemovalListener, CacheBuilder, Cache}
 import com.ckkloverdos.props.{Props ⇒ KKProps}
 import gr.grnet.aquarium.actor.service.user.UserActor
-import gr.grnet.aquarium.util.date.TimeHelpers
 import java.util.concurrent.{TimeUnit, ConcurrentHashMap, Callable}
 import akka.dispatch.{Await, Future}
 import akka.util.Duration
+import gr.grnet.aquarium.actor.message.config.SetUserActorUserID
 
 /**
  * A wrapper around Akka, so that it is uniformly treated as an Aquarium service.
@@ -231,6 +231,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
         // Cache it for subsequent calls
         _userActorCache.put(userID, actorRef)
 
+        actorRef ! SetUserActorUserID(userID)
         actorRef
       }
     })
