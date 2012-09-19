@@ -58,6 +58,7 @@ import gr.grnet.aquarium.message.avro.{ModelFactory, MessageFactory, MessageHelp
 import gr.grnet.aquarium.service.event.BalanceEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
+import gr.grnet.aquarium.policy.{ResourceType, PolicyModel}
 
 /**
  *
@@ -385,8 +386,15 @@ class UserActor extends ReflectiveRoleableActor {
   def onGetUserBillRequest(event: GetUserBillRequest): Unit = {
     try{
       val timeslot = event.timeslot
+      val resourceTypes = aquarium.policyStore.
+                          loadSortedPolicyModelsWithin(timeslot.from.getTime,
+                                                       timeslot.to.getTime).
+                          values.headOption match {
+          case None => Map[String,ResourceType]()
+          case Some(policy:PolicyModel) => policy.resourceTypesMap
+      }
       val state= if(haveUserState) Some(this._userState.msg) else None
-      val billEntry = AbstractBillEntry.fromWorkingUserState(timeslot,this._userID,state)
+      val billEntry = AbstractBillEntry.fromWorkingUserState(timeslot,this._userID,state,resourceTypes)
       val billData = GetUserBillResponseData(this._userID,billEntry)
       sender ! GetUserBillResponse(Right(billData))
     } catch {

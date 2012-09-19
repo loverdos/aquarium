@@ -8,7 +8,7 @@
   "resourceTypes":[
     {
       "name":"diskspace",
-      "unit":"MB/Hr",
+      "unit":"MB-Hr",
       "chargingBehaviorClass":"gr.grnet.aquarium.charging.ContinuousChargingBehavior"
     },
     {
