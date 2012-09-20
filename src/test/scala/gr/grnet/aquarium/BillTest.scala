@@ -508,6 +508,7 @@ class User(serverAndPort:String,month:Int) {
 
   def addFiles(no:Int,action:String/*,value:Int,minVal:Int,maxVal:Int*/,spec:String) : User =
     add(no,"disk",{i =>
+       Console.err.println("Adding file : " + "/Papers/file_%d.PDF".format(i))
        Map("action" -> action,
            "path"->"/Papers/file_%d.PDF".format(i),
            //"value"->UID.random(minVal,maxVal).toString,

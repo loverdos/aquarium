@@ -36,9 +36,7 @@
 package gr.grnet.aquarium.actor.message
 
 import gr.grnet.aquarium.AquariumInternalError
-import gr.grnet.aquarium.charging.bill.{AbstractBillEntry, BillEntry}
 import gr.grnet.aquarium.message.avro.gen.BillEntryMsg
-import gr.grnet.aquarium.converter.{PrettyJsonTextFormat, StdConverters}
 import gr.grnet.aquarium.message.avro.AvroHelpers
 
 /**

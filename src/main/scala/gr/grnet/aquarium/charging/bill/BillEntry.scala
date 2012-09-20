@@ -55,7 +55,7 @@ import java.util
 /*
 * @author Prodromos Gerakios <pgerakios@grnet.gr>
 */
-
+/*
 case class ChargeEntry(val id:String,
                        val unitPrice:String,
                        val startTime:String,
@@ -103,9 +103,9 @@ class BillEntry(val id:String,
                 val bill:List[ServiceEntry]
               )
  extends JsonSupport {}
+*/
 
-
-object BillEntry {
+object BillEntryMsg {
 
   private[this] val counter = new AtomicLong(0L)
   private[this] def nextUIDObject() = counter.getAndIncrement

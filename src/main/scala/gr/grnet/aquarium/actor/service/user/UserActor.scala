@@ -51,7 +51,6 @@ import gr.grnet.aquarium.actor.message.GetUserWalletResponse
 import gr.grnet.aquarium.actor.message.GetUserWalletResponseData
 import gr.grnet.aquarium.actor.message.config.AquariumPropertiesLoaded
 import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
-import gr.grnet.aquarium.charging.bill.{BillEntry, AbstractBillEntry}
 import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel, UserStateBootstrap}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.message.avro.gen.{IMEventMsg, ResourceEventMsg, UserStateMsg}
@@ -60,6 +59,7 @@ import gr.grnet.aquarium.service.event.BalanceEvent
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.util.{LogHelpers, shortClassNameOf}
 import gr.grnet.aquarium.policy.{ResourceType, PolicyModel}
+import gr.grnet.aquarium.charging.bill.BillEntryMsg
 
 /**
  *
@@ -401,7 +401,7 @@ class UserActor extends ReflectiveRoleableActor {
           case Some(policy:PolicyModel) => policy.resourceTypesMap
       }
       val state= if(haveUserState) Some(this._userState.msg) else None
-      val billEntryMsg = BillEntry.fromWorkingUserState(timeslot,this._userID,state,resourceTypes)
+      val billEntryMsg = BillEntryMsg.fromWorkingUserState(timeslot,this._userID,state,resourceTypes)
       //val billEntryMsg = MessageFactory.createBillEntryMsg(billEntry)
       //logger.debug("BILL ENTRY MSG: " + billEntryMsg.toString)
       val billData = GetUserBillResponseData(this._userID,billEntryMsg)
