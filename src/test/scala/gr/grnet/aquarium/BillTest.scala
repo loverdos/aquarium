@@ -111,14 +111,18 @@ object AquariumInstance {
       update(Aquarium.EnvKeys.eventsStoreFolder,Some(new File(".."))).
       build()
   }
+
+  private[this] val count=new java.util.concurrent.atomic.AtomicLong()
   def run(billWait:Int, stop:Int)(f : => Unit) = {
-    aquarium.start
+    if(count.addAndGet(1) == 1)
+      aquarium.start
     Thread.sleep(billWait)
     try{
       f
     } finally {
       Console.err.println("Stopping aquarium")
-      aquarium.stop
+      if(count.addAndGet(-1) == 0)
+        aquarium.stop
       Thread.sleep(stop)
       Console.err.println("Stopping aquarium --- DONE")
     }
@@ -505,7 +509,7 @@ class User(serverAndPort:String,month:Int) {
 
   def addFiles(no:Int,action:String/*,value:Int,minVal:Int,maxVal:Int*/,spec:String) : User =
     add(no,"disk",{i =>
-       Console.err.println("Adding file : " + "/Papers/file_%d.PDF".format(i))
+       //Console.err.println("Adding file : " + "/Papers/file_%d.PDF".format(i))
        Map("action" -> action,
            "path"->"/Papers/file_%d.PDF".format(i),
            //"value"->UID.random(minVal,maxVal).toString,
