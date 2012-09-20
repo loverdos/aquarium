@@ -49,6 +49,8 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy.CronSpec
 import gr.grnet.aquarium.message.avro.gen.{BillEntryMsg, IMEventMsg, ResourceEventMsg}
 import org.apache.avro.specific.SpecificRecord
+import util.json.JsonSupport
+import actors.Future
 
 
 /*
@@ -112,19 +114,17 @@ object AquariumInstance {
       update(Aquarium.EnvKeys.eventsStoreFolder,Some(new File(".."))).
       build()
   }
-  def run(billWait:Int, stop:Int)(f : => String) : String = {
-    var _ret = ""
+  def run(billWait:Int, stop:Int)(f : => Unit) = {
     aquarium.start
     Thread.sleep(billWait)
     try{
-      _ret = f
+      f
     } finally {
       Console.err.println("Stopping aquarium")
+      aquarium.stop
       Thread.sleep(stop)
       Console.err.println("Stopping aquarium --- DONE")
-      aquarium.stop
     }
-    _ret
   }
 }
 
@@ -141,10 +141,8 @@ object JsonLog {
 } */
 
 object MessageService {
-  val rabbitMQEnabled = false
-  val debugEnabled = false
 
-  def send(event:SpecificRecord) = {
+  def send(event:SpecificRecord, rabbitMQEnabled : Boolean = false, debugEnabled:Boolean =false) = {
     val json = AvroHelpers.jsonStringOfSpecificRecord(event)
     if(rabbitMQEnabled){
       val (exchangeName,routingKey) = event match {
@@ -276,7 +274,9 @@ abstract class Message {
       case Some(millis) =>
         updateMap(map)
         val event = makeEvent(millis,_map)
-        MessageService.send(event)
+        val ren = _map.getOrElse("rabbitMQEnabled","false").toBoolean
+        val rdb = _map.getOrElse("debugEnabled","false").toBoolean
+        MessageService.send(event,ren,rdb)
         _messagesSent += 1
         true
       case None =>
@@ -447,14 +447,15 @@ object Message {
   def apply(typ:String,args:Tuple2[String,String]*) : Message =
     apply(typ,args.foldLeft(Map[String,String]())({(map,arg)=> map + arg}))
 
+  val msgMap = Map[String,()=>Message](
+    "vm"      -> (() => new VMMessage),
+    "disk"    -> (() => new DiskMessage),
+    "create"  -> (() => new CreationMessage),
+    "credits" -> (() => new AddCreditsMessage)
+  )
+
   def apply(typ:String,map:Map[String,String]) : Message = {
-    val msg =  typ match {
-      case "vm" => new VMMessage
-      case "disk" =>   new DiskMessage
-      case "create" => new CreationMessage
-      case "credits" => new AddCreditsMessage
-      case _ => throw new Exception("unknown type")
-    }
+    val msg = msgMap.getOrElse(typ,throw new Exception("Invalid type : "+typ))()
     msg.updateMap(map)
     msg
   }
@@ -465,8 +466,24 @@ class User(serverAndPort:String,month:Int) {
   val uid = "user%d@grnet.gr".format(UID.next)
   val _creationMessage  : Message = Message("create","uid"->uid,"month"->month.toString,"spec"->"")
   var _resources : List[Message] = Nil
+  var _billEntryMsg :Option[BillEntryMsg] = None
 
+  override def toString() = uid
 
+  def validateResults() : Boolean = {
+    throw new Exception("Not implemented !!!!")
+  }
+
+  def printResults() = {
+    Console.err.println("Messages sent:")
+    for { m <- JsonLog.get}
+      Console.err.println("%s".format(m)) //"\n==============\n%s\n==============="
+    Console.err.println("\n=========================\n")
+    Console.err.println("Response:\n" + (_billEntryMsg match {
+      case None => "NONE!!!!"
+      case Some(r) => AvroHelpers.jsonStringOfSpecificRecord(r)
+    }))
+  }
 
   def add(no:Int,typ:String,args:Tuple2[String,String]*) : User =
     add(no,typ,args.foldLeft(Map[String,String]())({(map,arg)=> map + arg}))
@@ -482,29 +499,31 @@ class User(serverAndPort:String,month:Int) {
     this
   }
 
-  def addVMs(no:Int,status:String,cronSpec:String) : User =
+  def addVMs(no:Int,cronSpec:String) : User =
     add(no,"vm",{i =>
          Map("instanceID"->"cyclades.vm.%d".format(i),
          "vmName"  -> "Virtual Machine #%d".format(i),
-         "status"  -> status,
+         "status"  -> "on", // initially "on" msg
          "spec"    -> cronSpec)})
 
-  def addFiles(no:Int,action:String,value:Int,minVal:Int,maxVal:Int,spec:String) : User =
+  def addFiles(no:Int,action:String/*,value:Int,minVal:Int,maxVal:Int*/,spec:String) : User =
     add(no,"disk",{i =>
        Map("action" -> action,
            "path"->"/Papers/file_%d.PDF".format(i),
-           "value"->UID.random(minVal,maxVal).toString,
+           //"value"->UID.random(minVal,maxVal).toString,
            "spec" -> spec
           )
     })
 
-  def addCredits(amount:Int,spec:String) : User = {
-    add(1,"credits","month"->month.toString,"uid"->uid,"spec"->spec,"amount"->amount.toString)
+  def addCredits(no:Int,spec:String) : User = {
+    add(no,"credits",/*"month"->month.toString,"uid"->uid,*/"spec"->spec/*,"amount"->amount.toString*/)
   }
 
-  def run(ordered:Boolean,wait:Int,minFile:Int,maxFile:Int,minAmount:Int,maxAmount:Int,maxJSONRetry:Int=10) : String =  {
+  def run(ordered:Boolean,wait:Int,minFile:Int,maxFile:Int,minAmount:Int,maxAmount:Int,maxJSONRetry :Int,
+          sendViaRabbitMQ:Boolean, sendDebugEnabled : Boolean)  =  {
+    var _messagesSent : List[Message] = Nil
     _creationMessage.send("month"->month.toString,"uid"->uid,"spec"->"0 0 * %d ?".format(month)) // send once!
-    Thread.sleep(4000)
+    //Thread.sleep(2000)
     var iter = _resources.toList
     while(!iter.isEmpty)
       iter = (if(!ordered) iter
@@ -513,16 +532,19 @@ class User(serverAndPort:String,month:Int) {
         case (None,None) => true
         case (None,Some(l)) => true
         case (Some(l),None) => false
-      }}).filter(_.send("value"->UID.random(minFile,maxFile).toString,
-          "amount"->UID.random(minAmount,maxAmount).toString //,
-          //"status" -> UID.random(List("off","on"))
-        ))
-
+      }}).filter({m =>
+        _messagesSent = _messagesSent ::: List(m)
+        m.send("value"->UID.random(minFile,maxFile).toString,
+               "amount"->UID.random(minAmount,maxAmount).toString,
+               "rabbitMQEnabled" -> sendViaRabbitMQ.toString,
+               "debugEnabled" -> sendDebugEnabled.toString
+                //"status" -> UID.random(List("off","on"))
+        )})
     Thread.sleep(wait)
-    getJSON(maxJSONRetry)
+    _billEntryMsg = getBillResponse(maxJSONRetry)
   }
 
-  def getJSON(max:Int=10) : String = {
+  private[this] def getBillResponse(max:Int) : Option[BillEntryMsg] = {
     def get () : String = {
       val fromMillis = _creationMessage._range.from.getTime
       val toMillis   = _creationMessage._range.to.getTime
@@ -545,37 +567,176 @@ class User(serverAndPort:String,month:Int) {
     }
     var resp = ""
     var count = 0
+    var ret : Option[BillEntryMsg] = None
     while(resp.isEmpty && count < max){
       if(count > 0) Console.err.println("Retrying for bill request.")
       resp = get()
       if(resp.isEmpty) Thread.sleep(1000)
-      //val b = AvroHelpers.specificRecordOfJsonString(resp, new BillEntryMsg)
-      if(resp.indexOf("processing") > -1){
-        Thread.sleep(1000)
-        resp = ""
+      else {
+        try{
+          var b = AvroHelpers.specificRecordOfJsonString(resp, new BillEntryMsg)
+          ret = Some(b)
+          if(b.getStatus().equals("processing")){
+            Thread.sleep(1000)
+            resp = ""
+          }
+        }  catch {
+          case e:Exception =>
+              e.printStackTrace
+              resp = ""
+        }
       }
       //sleep(1000L)
       count += 1
     }
-    resp
+    ret
   }
+}
+
+class Resource(
+   val resType  : String, // Message.msgMap.keys
+   val instances: Long,
+   val cronSpec : String
+ )
+extends JsonSupport {}
+
+class Scenario(
+  val ignoreScenario : Boolean,
+  val host : String,
+  val port : Long,
+  val sendOrdered : Boolean,
+  val sendViaRabbitMQ : Boolean,
+  val sendDebugEnabled : Boolean,
+  val validationEnabled : Boolean,
+  val billingMonth: Long,
+  val aquariumStartWaitMillis : Long,
+  val aquariumStopWaitMillis : Long,
+  val billResponseWaitMillis : Long,
+  val numberOfUsers  : Long,
+  val numberOfResponseRetries : Long,
+  val minFileCredits : Long,
+  val maxFileCredits : Long,
+  val minUserCredits : Long,
+  val maxUserCredits : Long,
+  val resources : List[Resource]
+)
+extends JsonSupport {}
+
+class Scenarios(
+   val scenarios : List[Scenario] )
+extends JsonSupport {}
+
+object ScenarioRunner {
+  val aquarium  = AquariumInstance.aquarium
+
+  def parseScenario(txt:String) : Scenario =
+    StdConverters.AllConverters.convertEx[Scenario](txt)
+
+  def parseScenarios(txt:String) : Scenarios =
+    StdConverters.AllConverters.convertEx[Scenarios](txt)
+
+  def runScenario(txt:String) : Unit = runScenario(parseScenario(txt))
+
+  private[this] def runUser(s:Scenario) : User = {
+    val user = new User("%s:%d".format(s.host,s.port),s.billingMonth.toInt)
+    val (minFileCredits,maxFileCredits) = (s.minFileCredits,s.maxFileCredits)
+    val (minUserCredits,maxUserCredits) = (s.maxUserCredits,s.maxUserCredits)
+    //Cron spec  minutes hours day-of-month Month Day-of-Week (we do not specify seconds)
+    AquariumInstance.run(s.aquariumStartWaitMillis.toInt,s.aquariumStopWaitMillis.toInt) {
+      for{ r <- s.resources}  // create messages
+        r.resType match {
+          case "vm" =>
+            user.addVMs(r.instances.toInt,r.cronSpec)
+          case "disk" =>
+            user.addFiles(r.instances.toInt,"update",r.cronSpec)
+          case "credits" =>
+            user.addCredits(r.instances.toInt,r.cronSpec)
+        }
+      // run scenario
+      user.run(s.sendOrdered,s.billResponseWaitMillis.toInt,s.minFileCredits.toInt,
+               s.maxFileCredits.toInt,s.minUserCredits.toInt,s.maxUserCredits.toInt,
+               s.numberOfResponseRetries.toInt,s.sendViaRabbitMQ,s.sendDebugEnabled)
+    }
+    user
+  }
+
+  def runScenario(s:Scenario): Unit = {
+    if(s.ignoreScenario == false) {
+      Console.err.println("=================\nRunning scenario:\n %s\n=======================\n".format(s.toJsonString))
+      val tasks = for { u <- 1 to s.numberOfUsers.toInt}
+                  yield scala.actors.Futures.future(runUser(s))
+      val users = for { u <- tasks}  yield u()
+      users.foreach {u =>
+         u.printResults()
+         if(s.validationEnabled && u.validateResults() == false)
+           Console.err.println("Validation FAILED for user " + u)
+      }
+      Console.err.println("\n=========================\nStopping scenario\n=======================")
+    }
+  }
+
+  def runScenarios(txt:String) : Unit = runScenarios(parseScenarios(txt))
+
+  def runScenarios(ss:Scenarios) = {
+    Console.err.println("=================\nScenarios:\n %s\n=======================\n".format(ss.toJsonString))
+    ss.scenarios.foreach(runScenario(_))
+  }
+
 }
 
 object UserTest extends Loggable {
 
- val aquarium  = AquariumInstance.aquarium
+   //vm,disk,credits
+  //add(1,"credits","month"->month.toString,"uid"->uid,"spec"->spec,"amount"->amount.toString)
+  /*
+    val host : String,
+  val port : Long,
+  val sendOrdered : Boolean,
+  val sendViaRabbitMQ : Boolean,
+  val sendDebugEnabled : Boolean,
+  val validationEnabled : Boolean,
+  val billingMonth: Long,
+  val aquariumStartWaitMillis : Long,
+  val aquariumStopWaitMillis : Long,
+  val billResponseWaitMillis : Long,
+  val numberOfUsers  : Long,
+  val numberOfResponseRetries : Long,
+  val minFileCredits : Long,
+  val maxFileCredits : Long,
+  val minUserCredits : Long,
+  val maxUserCredits : Long,
+  val resources : List[Resource]
+
+   */
+ val basic = new Scenario(false,"localhost",8888,true,false,false,false,9,2000,2000,2000,
+                          1,10,2000,5000,10000,50000,List[Resource](
+                          new Resource("credits",1, "00 00 10,12 9 ?"),
+                          new Resource("disk",1,"00 18 15,20,29,30 9 ?"),
+                          new Resource("vm",1,"00 18 14,17,19,20 9 ?")
+                        ))
 
  def main(args: Array[String]) = {
-    val user = new User("localhost:8888",9)
+
+   try{
+     val lines = scala.io.Source.fromFile(args.head).mkString
+     ScenarioRunner.runScenarios(new Scenarios(List(basic)))
+   } catch {
+     case e:Exception =>
+       e.printStackTrace()
+       ScenarioRunner.runScenarios(new Scenarios(List(basic)))
+   }
+
+
+/*    val user = new User("localhost:8888",9)
     val (minFileCredits,maxFileCredits) = (2000,5000)
     val (minUserCredits,maxUserCredits) = (10000,10000)
     //Cron spec  minutes hours day-of-month Month Day-of-Week (we do not specify seconds)
 
    val json =AquariumInstance.run(2000,2000) {
           user.
-                  addCredits(100000,"00 00 10,12 9 ?").
+                  addCredits(1,"00 00 10,12 9 ?").
                   addFiles(1,"update",2000,1000,3000,"00 18 15,20,29,30 9 ?").
-                  addVMs(1,"on","00 18 14,17,19,20 9 ?").
+                  addVMs(1,"00 18 14,17,19,20 9 ?").
                   //addVMs(5,"on","00 18 ? 9 Tue")
                  run(true,2000,minFileCredits,maxFileCredits,minUserCredits,maxUserCredits)
    }
@@ -584,13 +745,13 @@ object UserTest extends Loggable {
    for { m <- JsonLog.get}
      Console.err.println("%s".format(m)) //"\n==============\n%s\n==============="
    Console.err.println("\n=========================\n")
-   Console.err.println("Response:\n" + json)
+   Console.err.println("Response:\n" + json)*/
  }
 
 }
 
 
-
+/*
 object BillTest extends Loggable {
 
   type JSON = String
@@ -838,3 +999,4 @@ object BillTest extends Loggable {
     runTestCase(testCase1)
   }
 }
+*/

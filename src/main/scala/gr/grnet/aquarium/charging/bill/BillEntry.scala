@@ -37,18 +37,19 @@ package gr.grnet.aquarium.charging.bill
 
 import com.ckkloverdos.props.Props
 import com.ckkloverdos.resource.FileStreamResource
-import gr.grnet.aquarium.converter.{CompactJsonTextFormat, StdConverters}
+import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.avro.{AvroHelpers, MessageHelpers}
-import gr.grnet.aquarium.message.avro.gen.{ChargeslotMsg, WalletEntryMsg, UserStateMsg}
-import gr.grnet.aquarium.store.memory.MemStoreProvider
+import gr.grnet.aquarium.message.avro.gen._
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder}
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable.ListBuffer
+import scala.Some
 import gr.grnet.aquarium.policy.ResourceType
+import java.util
 
 
 /*
@@ -71,15 +72,15 @@ class EventEntry(val eventType : String,
 
 
 case class ResourceEntry(val resourceName : String,
-                         //val resourceType : String,
-                         //val unitName : String,
+                         val resourceType : String,
+                         val unitName : String,
                          val totalCredits : String,
                          val totalElapsedTime : String,
                          val totalUnits : String,
                          val details : List[EventEntry])
 extends JsonSupport {
-   var unitName = "EMPTY_UNIT_NAME"
-   var resourceType = "EMPTY_RESOURCE_TYPE"
+   //var unitName = "EMPTY_UNIT_NAME"
+   //var resourceType = "EMPTY_RESOURCE_TYPE"
 }
 
 case class ServiceEntry(val serviceName: String,
@@ -91,8 +92,6 @@ case class ServiceEntry(val serviceName: String,
                        )
 extends JsonSupport {}
 
-abstract class AbstractBillEntry
- extends JsonSupport {}
 
 class BillEntry(val id:String,
                 val userID : String,
@@ -103,10 +102,10 @@ class BillEntry(val id:String,
                 val endTime:String,
                 val bill:List[ServiceEntry]
               )
- extends AbstractBillEntry {}
+ extends JsonSupport {}
 
 
-object AbstractBillEntry {
+object BillEntry {
 
   private[this] val counter = new AtomicLong(0L)
   private[this] def nextUIDObject() = counter.getAndIncrement
@@ -120,25 +119,117 @@ object AbstractBillEntry {
     val dend = cal.getTime
    Timeslot(dstart,dend)
   } */
+  private [this] def newChargeEntry(id:String,
+                                    unitPrice:String,
+                                    startTime:String,
+                                    endTime:String,
+                                    elapsedTime:String,
+                                    units:String,
+                                    credits:String) : ChargeEntryMsg = {
+    val msg = new ChargeEntryMsg
+    msg.setId(id)
+    msg.setUnitPrice(unitPrice)
+    msg.setStartTime(startTime)
+    msg.setEndTime(endTime)
+    msg.setElapsedTime(elapsedTime)
+    msg.setUnits(units)
+    msg.setCredits(credits)
+    msg
+  }
+  
+  private[this] def newEventEntry(eventType : String,
+                                  details   : java.util.List[ChargeEntryMsg]) : EventEntryMsg = {
 
-  private[this] def toChargeEntry(c:ChargeslotMsg) : (ChargeEntry,Long,Double) = {
+    val msg = new EventEntryMsg
+    msg.setEventType(eventType)
+    msg.setDetails(details)
+    msg
+  }
+  
+  private [this] def newResourceEntry( resourceName : String,
+                            resourceType : String,
+                            unitName : String,
+                            totalCredits : String,
+                            totalElapsedTime : String,
+                            totalUnits : String,
+                            details : java.util.List[EventEntryMsg]) : ResourceEntryMsg = {
+    val msg = new ResourceEntryMsg
+    msg.setResourceName(resourceName)
+    msg.setResourceType(resourceType)
+    msg.setUnitName(unitName)
+    msg.setTotalCredits(totalCredits)
+    msg.setTotalElapsedTime(totalElapsedTime)
+    msg.setTotalUnits(totalUnits)
+    msg.setDetails(details)
+    msg
+  }
+
+  private[this] def newServiceEntry( serviceName: String,
+                           totalCredits : String,
+                           totalElapsedTime : String,
+                           totalUnits:String,
+                           unitName:String,
+                           details: java.util.List[ResourceEntryMsg]
+                           ) : ServiceEntryMsg =  {
+    val msg = new ServiceEntryMsg
+    msg.setServiceName(serviceName)
+    msg.setTotalCredits(totalCredits)
+    msg.setTotalElapsedTime(totalElapsedTime)
+    msg.setTotalUnits(totalUnits)
+    msg.setUnitName(unitName)
+    msg.setDetails(details)
+    msg
+ }
+
+
+  private[this] def newBillEntry( id:String,
+                   userID : String,
+                   status : String,
+                   remainingCredits:String,
+                   deductedCredits:String,
+                   startTime:String,
+                   endTime:String,
+                   bill: java.util.List[ServiceEntryMsg]
+                   ) : BillEntryMsg =  {
+    val msg = new BillEntryMsg
+    msg.setId(id)
+    msg.setUserID(userID)
+    msg.setStatus(status)
+    msg.setRemainingCredits(remainingCredits)
+    msg.setDeductedCredits(deductedCredits)
+    msg.setStartTime(startTime)
+    msg.setEndTime(endTime)
+    msg.setBill(bill)
+    msg
+  }
+
+  private[this] def javaList[A](l:A*) : java.util.List[A] = {
+    val al = new java.util.ArrayList[A]()
+    l.foreach(al.add(_))
+    al
+  }
+
+
+  private[this] def toChargeEntry(c:ChargeslotMsg) : (ChargeEntryMsg,Long,Double) = {
     val unitPrice = c.getUnitPrice.toString
     val startTime = c.getStartMillis.toString
     val endTime   = c.getStopMillis.toString
     val difTime   = (c.getStopMillis - c.getStartMillis).toLong
     val unitsD     = (c.getCreditsToSubtract/c.getUnitPrice)
     val credits   = c.getCreditsToSubtract.toString
-    (new ChargeEntry(counter.getAndIncrement.toString,unitPrice,
+    (newChargeEntry(counter.getAndIncrement.toString,unitPrice,
                     startTime,endTime,difTime.toString,unitsD.toString,credits),difTime,unitsD)
   }
 
-  private[this] def toEventEntry(eventType:String,c:ChargeslotMsg) : (EventEntry,Long,Double) = {
+
+
+  private[this] def toEventEntry(eventType:String,c:ChargeslotMsg) : (EventEntryMsg,Long,Double) = {
     val (c1,l1,d1) = toChargeEntry(c)
-    (new EventEntry(eventType,List(c1)),l1,d1)
+    (newEventEntry(eventType,javaList(c1)),l1,d1)
   }
 
 
-  private[this] def toResourceEntry(w:WalletEntryMsg) : ResourceEntry = {
+  private[this] def toResourceEntry(w:WalletEntryMsg) : ResourceEntryMsg = {
     assert(w.getSumOfCreditsToSubtract==0.0 || MessageHelpers.chargeslotCountOf(w) > 0)
     val rcType =  w.getResourceType.getName
     val rcName = rcType match {
@@ -148,7 +239,6 @@ object AbstractBillEntry {
               MessageHelpers.currentResourceEventOf(w).getInstanceID
         }
     val rcUnitName = w.getResourceType.getUnit
-    val eventEntry = new ListBuffer[EventEntry]
     val credits = w.getSumOfCreditsToSubtract
     val eventType = //TODO: This is hardcoded; find a better solution
         rcType match {
@@ -177,25 +267,25 @@ object AbstractBillEntry {
    //c.getStopMillis - c.getStartMillis
     var totalElapsedTime = 0L
     var totalUnits = 0.0D
+    val eventEntry = new java.util.ArrayList[EventEntryMsg]() //new ListBuffer[EventEntry]
       for { c <- w.getChargeslots.asScala }{
         if(c.getCreditsToSubtract != 0.0) {
           //Console.err.println("c.creditsToSubtract : " + c.creditsToSubtract)
           val (e,l,u) = toEventEntry(eventType.toString,c)
-          eventEntry +=  e
+          eventEntry.add(e) //eventEntry +=  e
           totalElapsedTime += l
           totalUnits += u
         }
       }
     //Console.err.println("TOTAL resource event credits: " + credits)
-    val re = new ResourceEntry(rcName,/*rcType,rcUnitName,*/credits.toString,totalElapsedTime.toString,
-                       totalUnits.toString,eventEntry.toList)
-    re.unitName = rcUnitName
-    re.resourceType = rcType
-    re
+    /*val re =*/ newResourceEntry(rcName,rcType,rcUnitName,credits.toString,totalElapsedTime.toString,
+                       totalUnits.toString,eventEntry)
+    //re.unitName = rcUnitName
+    //re.resourceType = rcType
+    //re
   }
 
-  private[this] def resourceEntriesAt(t:Timeslot,w:UserStateMsg) : (List[ResourceEntry],Double) = {
-    val ret = new ListBuffer[ResourceEntry]
+  private[this] def resourceEntriesAt(t:Timeslot,w:UserStateMsg) : (java.util.List[ResourceEntryMsg],Double) = {
     var sum = 0.0
     //Console.err.println("Wallet entries: " + w.walletEntries)
     import scala.collection.JavaConverters.asScalaBufferConverter
@@ -204,75 +294,95 @@ object AbstractBillEntry {
     for { i <- walletEntries }
       Console.err.println("WALLET ENTRY\n%s\nEND WALLET ENTRY".format(i.toJsonString))
     Console.err.println("End wallet entries")*/
+    val ret = new java.util.ArrayList[ResourceEntryMsg]()//new ListBuffer[ResourceEntry]
     for { i <- walletEntries} {
       val referenceTimeslot = MessageHelpers.referenceTimeslotOf(i)
       if(t.contains(referenceTimeslot) && i.getSumOfCreditsToSubtract.toDouble != 0.0){
         /*Console.err.println("i.sumOfCreditsToSubtract : " + i.sumOfCreditsToSubtract)*/
         if(i.getSumOfCreditsToSubtract.toDouble > 0.0D)
           sum += i.getSumOfCreditsToSubtract.toDouble
-        ret += toResourceEntry(i)
+          ret.add(toResourceEntry(i)) //ret += toResourceEntry(i)
       } else {
         val ijson = AvroHelpers.jsonStringOfSpecificRecord(i)
         val itimeslot = MessageHelpers.referenceTimeslotOf(i)
-        Console.err.println("IGNORING WALLET ENTRY : " + ijson + "\n" +
-                     t + "  does not contain " +  itimeslot + "  !!!!")
+       // Console.err.println("IGNORING WALLET ENTRY : " + ijson + "\n" +
+       //              t + "  does not contain " +  itimeslot + "  !!!!")
       }
     }
-    (ret.toList,sum)
+    (ret,sum)
   }
 
-  private[this] def aggregateResourceEntries(re:List[ResourceEntry]) : List[ServiceEntry] = {
-    def addResourceEntries(a:ResourceEntry,b:ResourceEntry) : ResourceEntry = {
-      assert(a.resourceName == b.resourceName)
-      val totalCredits = (a.totalCredits.toDouble+b.totalCredits.toDouble).toString
-      val totalElapsedTime =  (a.totalElapsedTime.toLong+b.totalElapsedTime.toLong).toString
-      val totalUnits =  (a.totalUnits.toDouble+b.totalUnits.toDouble).toString
-      val ab = a.copy(a.resourceName/*,a.resourceType,a.unitName*/,totalCredits,totalElapsedTime,totalUnits,
-             a.details ::: b.details)
-      ab.unitName = a.unitName
-      ab.resourceType = a.resourceType
-      ab
+  private[this] def aggregateResourceEntries(re:java.util.List[ResourceEntryMsg]) : java.util.List[ServiceEntryMsg] = {
+    def addResourceEntries(a:ResourceEntryMsg,b:ResourceEntryMsg) : ResourceEntryMsg = {
+      assert(a.getResourceName == b.getResourceName)
+      val totalCredits = (a.getTotalCredits.toDouble+b.getTotalCredits.toDouble).toString
+      val totalElapsedTime =  (a.getTotalElapsedTime.toLong+b.getTotalElapsedTime.toLong).toString
+      val totalUnits =  (a.getTotalUnits.toDouble+b.getTotalUnits.toDouble).toString
+      val msg = new ResourceEntryMsg
+
+      val details = new java.util.ArrayList[EventEntryMsg](a.getDetails)
+      details.addAll(b.getDetails)
+      msg.setResourceName(a.getResourceName)
+      msg.setResourceType(a.getResourceType)
+      msg.setUnitName(a.getUnitName)
+      msg.setTotalCredits(totalCredits)
+      msg.setTotalElapsedTime(totalElapsedTime)
+      msg.setTotalUnits(totalUnits)
+      msg.setDetails(details)
+      msg
+      /*/*val ab =*/ a.copy(a.getResourceName,a.getResourceType,a.getUnitName,totalCredits,totalElapsedTime,totalUnits,
+                    {a.getDetails.addAll(b.details); a})
+      //ab.unitName = a.unitName
+      //ab.resourceType = a.resourceType
+      //ab*/
     }
-    val map0 = re.foldLeft(TreeMap[String,ResourceEntry]()){ (map,r1) =>
-      map.get(r1.resourceName) match {
-        case None => map + ((r1.resourceName,r1))
-        case Some(r0) => (map - r0.resourceName) +
-                         ((r0.resourceName, addResourceEntries(r0,r1)))
+    import scala.collection.JavaConverters.asScalaBufferConverter
+    val map0 = re.asScala.foldLeft(TreeMap[String,ResourceEntryMsg]()){ (map,r1) =>
+      map.get(r1.getResourceName) match {
+        case None => map + ((r1.getResourceName,r1))
+        case Some(r0) => (map - r0.getResourceName) +
+                         ((r0.getResourceName, addResourceEntries(r0,r1)))
       }
     }
-    val map1 = map0.foldLeft(TreeMap[String,List[ResourceEntry]]()){ case (map,(_,r1)) =>
-      map.get(r1.resourceType) match {
-        case None =>  map + ((r1.resourceType,List(r1)))
-        case Some(rl) => (map - r1.resourceType) +  ((r1.resourceType,r1::rl))
+    val map1 = map0.foldLeft(TreeMap[String,List[ResourceEntryMsg]]()){ case (map,(_,r1)) =>
+      map.get(r1.getResourceType) match {
+        case None =>  map + ((r1.getResourceType,List(r1)))
+        case Some(rl) => (map - r1.getResourceType) +  ((r1.getResourceType,r1::rl))
       }
     }
-    map1.foldLeft(List[ServiceEntry]()){ case (ret,(serviceName,resList)) =>
+    import scala.collection.JavaConverters.seqAsJavaListConverter
+    map1.foldLeft(List[ServiceEntryMsg]()){ case (ret,(serviceName,resList)) =>
       val (totalCredits,totalElapsedTime,totalUnits) =
         resList.foldLeft((0.0D,0L,0.0D)){ case ((a,b,c),r) =>
-            (a+r.totalCredits.toDouble,
-             b+r.totalElapsedTime.toLong,
-             c+r.totalUnits.toDouble
+            (a+r.getTotalCredits.toDouble,
+             b+r.getTotalElapsedTime.toLong,
+             c+r.getTotalUnits.toDouble
             )}
-      new ServiceEntry(serviceName,totalCredits.toString,
+      newServiceEntry(serviceName,totalCredits.toString,
                        totalElapsedTime.toString,totalUnits.toString,
-                       resList.head.unitName,resList) :: ret
-    }
+                       resList.head.getUnitName,resList.asJava) :: ret
+    }.asJava
   }
 
-  def addMissingServices(se:List[ServiceEntry],re:Map[String,ResourceType]) : List[ServiceEntry]=
-    se:::(re -- se.map(_.serviceName).toSet).foldLeft(List[ServiceEntry]()) { case (ret,(name,typ:ResourceType)) =>
-      new ServiceEntry(name,"0.0","0","0.0",typ.unit,List[ResourceEntry]()) :: ret
-    }
+  def addMissingServices(se0:java.util.List[ServiceEntryMsg],re:Map[String,ResourceType]) :
+   java.util.List[ServiceEntryMsg]= {
+    import scala.collection.JavaConverters.asScalaBufferConverter
+    val se = se0.asScala.toList
+    import scala.collection.JavaConverters.seqAsJavaListConverter
+    (se :::(re -- se.map(_.getServiceName).toSet).foldLeft(List[ServiceEntryMsg]()) { case (ret,(name,typ:ResourceType)) =>
+      newServiceEntry(name,"0.0","0","0.0",typ.unit,new java.util.ArrayList[ResourceEntryMsg]()) :: ret
+    }).asJava
+  }
 
   def fromWorkingUserState(t0:Timeslot,userID:String,w:Option[UserStateMsg],
-                           resourceTypes:Map[String,ResourceType]) : AbstractBillEntry = {
+                           resourceTypes:Map[String,ResourceType]) : BillEntryMsg = {
     val t = t0.roundMilliseconds /* we do not care about milliseconds */
     //Console.err.println("Timeslot: " + t0)
     //Console.err.println("After rounding timeslot: " + t)
     val ret = w match {
       case None =>
-          val allMissing = addMissingServices(Nil,resourceTypes)
-          new BillEntry(counter.getAndIncrement.toString,
+          val allMissing = addMissingServices(new util.ArrayList[ServiceEntryMsg](),resourceTypes)
+          newBillEntry(counter.getAndIncrement.toString,
                         userID,"processing",
                         "0.0",
                         "0.0",
@@ -280,11 +390,11 @@ object AbstractBillEntry {
                         allMissing)
       case Some(w) =>
         val wjson = AvroHelpers.jsonStringOfSpecificRecord(w)
-        Console.err.println("Working user state: %s".format(wjson))
+        //Console.err.println("Working user state: %s".format(wjson))
         val (rcEntries,rcEntriesCredits) = resourceEntriesAt(t,w)
         val resList0 = aggregateResourceEntries(rcEntries)
         val resList1 = addMissingServices(resList0,resourceTypes)
-        new BillEntry(counter.getAndIncrement.toString,
+        newBillEntry(counter.getAndIncrement.toString,
                       userID,"ok",
                       w.getTotalCredits.toString,
                       rcEntriesCredits.toString,
@@ -292,7 +402,7 @@ object AbstractBillEntry {
                       t.to.getTime.toString,
                       resList1)
     }
-    //Console.err.println("JSON: " +  ret.toJsonString)
+    //Console.err.println("JSON: " +  AvroHelpers.jsonStringOfSpecificRecord(ret))
     ret
   }
 

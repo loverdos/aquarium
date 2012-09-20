@@ -41,7 +41,8 @@ protocol AquariumBill {
     string unitPrice;
     string startTime;
     string endTime;
-    string ellapsedTime;
+    string elapsedTime;
+    string units;
     string credits;
   }
 
@@ -55,7 +56,18 @@ protocol AquariumBill {
     string resourceType;
     string unitName;
     string totalCredits;
+    string totalElapsedTime;
+    string totalUnits;
     array<EventEntryMsg> details;
+  }
+
+  record ServiceEntryMsg {
+     string serviceName;
+     string totalCredits;
+     string totalElapsedTime;
+     string totalUnits;
+     string unitName;
+     array<ResourceEntryMsg> details;
   }
 
   record BillEntryMsg {
@@ -64,8 +76,8 @@ protocol AquariumBill {
     string status;
     string remainingCredits;
     string deductedCredits;
-    string startTime; // what is this? millis? date?
+    string startTime;
     string endTime;
-    array<ResourceEntryMsg> bill;
+    array<ServiceEntryMsg> bill;
   }
 }

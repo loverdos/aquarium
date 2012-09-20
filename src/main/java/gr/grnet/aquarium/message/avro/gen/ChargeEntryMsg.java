@@ -6,12 +6,13 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"ellapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"credits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"elapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"units\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"credits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
   @Deprecated public java.lang.String id;
   @Deprecated public java.lang.String unitPrice;
   @Deprecated public java.lang.String startTime;
   @Deprecated public java.lang.String endTime;
-  @Deprecated public java.lang.String ellapsedTime;
+  @Deprecated public java.lang.String elapsedTime;
+  @Deprecated public java.lang.String units;
   @Deprecated public java.lang.String credits;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
@@ -21,8 +22,9 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     case 1: return unitPrice;
     case 2: return startTime;
     case 3: return endTime;
-    case 4: return ellapsedTime;
-    case 5: return credits;
+    case 4: return elapsedTime;
+    case 5: return units;
+    case 6: return credits;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -34,8 +36,9 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     case 1: unitPrice = (java.lang.String)value$; break;
     case 2: startTime = (java.lang.String)value$; break;
     case 3: endTime = (java.lang.String)value$; break;
-    case 4: ellapsedTime = (java.lang.String)value$; break;
-    case 5: credits = (java.lang.String)value$; break;
+    case 4: elapsedTime = (java.lang.String)value$; break;
+    case 5: units = (java.lang.String)value$; break;
+    case 6: credits = (java.lang.String)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -101,18 +104,33 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   }
 
   /**
-   * Gets the value of the 'ellapsedTime' field.
+   * Gets the value of the 'elapsedTime' field.
    */
-  public java.lang.String getEllapsedTime() {
-    return ellapsedTime;
+  public java.lang.String getElapsedTime() {
+    return elapsedTime;
   }
 
   /**
-   * Sets the value of the 'ellapsedTime' field.
+   * Sets the value of the 'elapsedTime' field.
    * @param value the value to set.
    */
-  public void setEllapsedTime(java.lang.String value) {
-    this.ellapsedTime = value;
+  public void setElapsedTime(java.lang.String value) {
+    this.elapsedTime = value;
+  }
+
+  /**
+   * Gets the value of the 'units' field.
+   */
+  public java.lang.String getUnits() {
+    return units;
+  }
+
+  /**
+   * Sets the value of the 'units' field.
+   * @param value the value to set.
+   */
+  public void setUnits(java.lang.String value) {
+    this.units = value;
   }
 
   /**
@@ -155,7 +173,8 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     private java.lang.String unitPrice;
     private java.lang.String startTime;
     private java.lang.String endTime;
-    private java.lang.String ellapsedTime;
+    private java.lang.String elapsedTime;
+    private java.lang.String units;
     private java.lang.String credits;
 
     /** Creates a new Builder */
@@ -187,13 +206,17 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
         this.endTime = (java.lang.String) data().deepCopy(fields()[3].schema(), other.endTime);
         fieldSetFlags()[3] = true;
       }
-      if (isValidValue(fields()[4], other.ellapsedTime)) {
-        this.ellapsedTime = (java.lang.String) data().deepCopy(fields()[4].schema(), other.ellapsedTime);
+      if (isValidValue(fields()[4], other.elapsedTime)) {
+        this.elapsedTime = (java.lang.String) data().deepCopy(fields()[4].schema(), other.elapsedTime);
         fieldSetFlags()[4] = true;
       }
-      if (isValidValue(fields()[5], other.credits)) {
-        this.credits = (java.lang.String) data().deepCopy(fields()[5].schema(), other.credits);
+      if (isValidValue(fields()[5], other.units)) {
+        this.units = (java.lang.String) data().deepCopy(fields()[5].schema(), other.units);
         fieldSetFlags()[5] = true;
+      }
+      if (isValidValue(fields()[6], other.credits)) {
+        this.credits = (java.lang.String) data().deepCopy(fields()[6].schema(), other.credits);
+        fieldSetFlags()[6] = true;
       }
     }
 
@@ -297,28 +320,53 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
       return this;
     }
 
-    /** Gets the value of the 'ellapsedTime' field */
-    public java.lang.String getEllapsedTime() {
-      return ellapsedTime;
+    /** Gets the value of the 'elapsedTime' field */
+    public java.lang.String getElapsedTime() {
+      return elapsedTime;
     }
     
-    /** Sets the value of the 'ellapsedTime' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setEllapsedTime(java.lang.String value) {
+    /** Sets the value of the 'elapsedTime' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setElapsedTime(java.lang.String value) {
       validate(fields()[4], value);
-      this.ellapsedTime = value;
+      this.elapsedTime = value;
       fieldSetFlags()[4] = true;
       return this; 
     }
     
-    /** Checks whether the 'ellapsedTime' field has been set */
-    public boolean hasEllapsedTime() {
+    /** Checks whether the 'elapsedTime' field has been set */
+    public boolean hasElapsedTime() {
       return fieldSetFlags()[4];
     }
     
-    /** Clears the value of the 'ellapsedTime' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearEllapsedTime() {
-      ellapsedTime = null;
+    /** Clears the value of the 'elapsedTime' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearElapsedTime() {
+      elapsedTime = null;
       fieldSetFlags()[4] = false;
+      return this;
+    }
+
+    /** Gets the value of the 'units' field */
+    public java.lang.String getUnits() {
+      return units;
+    }
+    
+    /** Sets the value of the 'units' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setUnits(java.lang.String value) {
+      validate(fields()[5], value);
+      this.units = value;
+      fieldSetFlags()[5] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'units' field has been set */
+    public boolean hasUnits() {
+      return fieldSetFlags()[5];
+    }
+    
+    /** Clears the value of the 'units' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearUnits() {
+      units = null;
+      fieldSetFlags()[5] = false;
       return this;
     }
 
@@ -329,21 +377,21 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     
     /** Sets the value of the 'credits' field */
     public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setCredits(java.lang.String value) {
-      validate(fields()[5], value);
+      validate(fields()[6], value);
       this.credits = value;
-      fieldSetFlags()[5] = true;
+      fieldSetFlags()[6] = true;
       return this; 
     }
     
     /** Checks whether the 'credits' field has been set */
     public boolean hasCredits() {
-      return fieldSetFlags()[5];
+      return fieldSetFlags()[6];
     }
     
     /** Clears the value of the 'credits' field */
     public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearCredits() {
       credits = null;
-      fieldSetFlags()[5] = false;
+      fieldSetFlags()[6] = false;
       return this;
     }
 
@@ -355,8 +403,9 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
         record.unitPrice = fieldSetFlags()[1] ? this.unitPrice : (java.lang.String) defaultValue(fields()[1]);
         record.startTime = fieldSetFlags()[2] ? this.startTime : (java.lang.String) defaultValue(fields()[2]);
         record.endTime = fieldSetFlags()[3] ? this.endTime : (java.lang.String) defaultValue(fields()[3]);
-        record.ellapsedTime = fieldSetFlags()[4] ? this.ellapsedTime : (java.lang.String) defaultValue(fields()[4]);
-        record.credits = fieldSetFlags()[5] ? this.credits : (java.lang.String) defaultValue(fields()[5]);
+        record.elapsedTime = fieldSetFlags()[4] ? this.elapsedTime : (java.lang.String) defaultValue(fields()[4]);
+        record.units = fieldSetFlags()[5] ? this.units : (java.lang.String) defaultValue(fields()[5]);
+        record.credits = fieldSetFlags()[6] ? this.credits : (java.lang.String) defaultValue(fields()[6]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

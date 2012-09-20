@@ -6,7 +6,7 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"BillEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"status\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"remainingCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"deductedCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"bill\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEntryMsg\",\"fields\":[{\"name\":\"resourceName\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"resourceType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitName\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EventEntryMsg\",\"fields\":[{\"name\":\"eventType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"ellapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"credits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}}}]}}}]}}}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"BillEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"status\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"remainingCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"deductedCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"bill\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ServiceEntryMsg\",\"fields\":[{\"name\":\"serviceName\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalElapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalUnits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitName\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEntryMsg\",\"fields\":[{\"name\":\"resourceName\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"resourceType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitName\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalElapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalUnits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EventEntryMsg\",\"fields\":[{\"name\":\"eventType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"elapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"units\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"credits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}}}]}}}]}}}]}}}]}");
   @Deprecated public java.lang.String id;
   @Deprecated public java.lang.String userID;
   @Deprecated public java.lang.String status;
@@ -14,7 +14,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
   @Deprecated public java.lang.String deductedCredits;
   @Deprecated public java.lang.String startTime;
   @Deprecated public java.lang.String endTime;
-  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> bill;
+  @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg> bill;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -41,7 +41,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     case 4: deductedCredits = (java.lang.String)value$; break;
     case 5: startTime = (java.lang.String)value$; break;
     case 6: endTime = (java.lang.String)value$; break;
-    case 7: bill = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg>)value$; break;
+    case 7: bill = (java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -154,7 +154,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
   /**
    * Gets the value of the 'bill' field.
    */
-  public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> getBill() {
+  public java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg> getBill() {
     return bill;
   }
 
@@ -162,7 +162,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'bill' field.
    * @param value the value to set.
    */
-  public void setBill(java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> value) {
+  public void setBill(java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg> value) {
     this.bill = value;
   }
 
@@ -194,7 +194,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     private java.lang.String deductedCredits;
     private java.lang.String startTime;
     private java.lang.String endTime;
-    private java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> bill;
+    private java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg> bill;
 
     /** Creates a new Builder */
     private Builder() {
@@ -238,7 +238,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
         fieldSetFlags()[6] = true;
       }
       if (isValidValue(fields()[7], other.bill)) {
-        this.bill = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg>) data().deepCopy(fields()[7].schema(), other.bill);
+        this.bill = (java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg>) data().deepCopy(fields()[7].schema(), other.bill);
         fieldSetFlags()[7] = true;
       }
     }
@@ -419,12 +419,12 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
     }
 
     /** Gets the value of the 'bill' field */
-    public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> getBill() {
+    public java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg> getBill() {
       return bill;
     }
     
     /** Sets the value of the 'bill' field */
-    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setBill(java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> value) {
+    public gr.grnet.aquarium.message.avro.gen.BillEntryMsg.Builder setBill(java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg> value) {
       validate(fields()[7], value);
       this.bill = value;
       fieldSetFlags()[7] = true;
@@ -454,7 +454,7 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
         record.deductedCredits = fieldSetFlags()[4] ? this.deductedCredits : (java.lang.String) defaultValue(fields()[4]);
         record.startTime = fieldSetFlags()[5] ? this.startTime : (java.lang.String) defaultValue(fields()[5]);
         record.endTime = fieldSetFlags()[6] ? this.endTime : (java.lang.String) defaultValue(fields()[6]);
-        record.bill = fieldSetFlags()[7] ? this.bill : (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg>) defaultValue(fields()[7]);
+        record.bill = fieldSetFlags()[7] ? this.bill : (java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg>) defaultValue(fields()[7]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);
