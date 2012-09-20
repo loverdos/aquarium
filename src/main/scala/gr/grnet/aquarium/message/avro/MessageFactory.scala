@@ -47,6 +47,12 @@ import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.Predef.Map
 import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.charging.bill._
+import gr.grnet.aquarium.charging.bill.ChargeEntry
+import gr.grnet.aquarium.policy.ResourceType
+import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import gr.grnet.aquarium.charging.bill.ResourceEntry
+import gr.grnet.aquarium.charging.bill.ServiceEntry
 
 /**
  * Provides helper methods that construct avro messages.
@@ -353,4 +359,63 @@ object MessageFactory {
     msg
   }
 
+  def toJavaList[A](l:List[A]) : java.util.List[A] = {
+    val al = new java.util.ArrayList[A]()
+    l.foreach(al.add(_))
+    al
+  }
+
+  def chargeEntryMsg(chargeEntry:ChargeEntry) : ChargeEntryMsg = {
+    val msg = new ChargeEntryMsg
+    msg.setId(chargeEntry.id)
+    msg.setUnitPrice(chargeEntry.unitPrice)
+    msg.setStartTime(chargeEntry.startTime)
+    msg.setEndTime(chargeEntry.endTime)
+    msg.setElapsedTime(chargeEntry.elapsedTime)
+    msg.setUnits(chargeEntry.units)
+    msg.setCredits(chargeEntry.credits)
+    msg
+  }
+
+  def eventEntryMsg(eventEntry:EventEntry) : EventEntryMsg = {
+    val msg = new EventEntryMsg
+    msg.setEventType(eventEntry.eventType)
+    msg.setDetails(toJavaList(eventEntry.details.map(chargeEntryMsg(_))))
+    msg
+  }
+
+  def resourceEntryMsg(resourceEntry:ResourceEntry) : ResourceEntryMsg = {
+    val msg = new ResourceEntryMsg
+    msg.setResourceName(resourceEntry.resourceName)
+    msg.setResourceType(resourceEntry.resourceType)
+    msg.setUnitName(resourceEntry.unitName)
+    msg.setTotalCredits(resourceEntry.totalCredits)
+    msg.setTotalElapsedTime(resourceEntry.totalElapsedTime)
+    msg.setTotalUnits(resourceEntry.totalUnits)
+    msg.setDetails(toJavaList(resourceEntry.details.map(eventEntryMsg(_))))
+    msg
+  }
+
+  def createServiceEntryMsg(serviceEntry:ServiceEntry) : ServiceEntryMsg = {
+    val msg = new ServiceEntryMsg
+    msg.setServiceName(serviceEntry.serviceName)
+    msg.setTotalCredits(serviceEntry.totalCredits)
+    msg.setTotalElapsedTime(serviceEntry.totalElapsedTime)
+    msg.setTotalUnits(serviceEntry.totalUnits)
+    msg.setUnitName(serviceEntry.unitName)
+    msg.setDetails(toJavaList(serviceEntry.details.map(resourceEntryMsg(_))))
+    msg
+  }
+  def createBillEntryMsg(billEntry:BillEntry) : BillEntryMsg = {
+    val msg = new BillEntryMsg
+    msg.setId(billEntry.id)
+    msg.setUserID(billEntry.userID)
+    msg.setStatus(billEntry.status)
+    msg.setRemainingCredits(billEntry.remainingCredits)
+    msg.setDeductedCredits(billEntry.deductedCredits)
+    msg.setStartTime(billEntry.startTime)
+    msg.setEndTime(billEntry.endTime)
+    msg.setBill(toJavaList(billEntry.bill.map(createServiceEntryMsg(_))))
+    msg
+  }
 }

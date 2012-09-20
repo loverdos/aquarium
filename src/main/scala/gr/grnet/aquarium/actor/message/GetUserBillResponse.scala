@@ -36,7 +36,8 @@
 package gr.grnet.aquarium.actor.message
 
 import gr.grnet.aquarium.AquariumInternalError
-import gr.grnet.aquarium.charging.bill.{AbstractBillEntry, BillEntry}
+import gr.grnet.aquarium.message.avro.gen.BillEntryMsg
+import gr.grnet.aquarium.message.avro.AvroHelpers
 
 /**
  *
@@ -57,6 +58,13 @@ case class GetUserBillResponse(
     case Right(data) ⇒
       data.userID
   }
+
+  override def responseToJsonString = {
+    response.fold(
+      _    ⇒ "", // No JSON response on error
+      data ⇒ AvroHelpers.jsonStringOfSpecificRecord(data)
+    )
+  }
 }
 
-case class GetUserBillResponseData(userID: String, billEntry: AbstractBillEntry)
+case class GetUserBillResponseData(userID: String, billEntry: BillEntryMsg)
