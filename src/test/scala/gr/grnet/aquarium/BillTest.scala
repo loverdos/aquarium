@@ -36,12 +36,10 @@
 package gr.grnet.aquarium
 
 import com.ckkloverdos.props.Props
-import com.ckkloverdos.resource.FileStreamResource
-import gr.grnet.aquarium.converter.{StdConverters}
+import converter.{JsonTextFormat, StdConverters}
 import gr.grnet.aquarium.message.avro.{AvroHelpers, MessageFactory}
 import java.io.{InputStreamReader, BufferedReader, File}
 import java.net.URL
-import java.text.SimpleDateFormat
 import java.util.concurrent.atomic.AtomicLong
 import gr.grnet.aquarium.util.{Lock, Loggable}
 import java.util.{Date, Calendar, GregorianCalendar}
@@ -50,7 +48,6 @@ import gr.grnet.aquarium.policy.CronSpec
 import gr.grnet.aquarium.message.avro.gen.{BillEntryMsg, IMEventMsg, ResourceEventMsg}
 import org.apache.avro.specific.SpecificRecord
 import util.json.JsonSupport
-import actors.Future
 
 
 /*
@@ -594,14 +591,14 @@ class User(serverAndPort:String,month:Int) {
   }
 }
 
-class Resource(
+case class Resource(
    val resType  : String, // Message.msgMap.keys
    val instances: Long,
    val cronSpec : String
  )
 extends JsonSupport {}
 
-class Scenario(
+case class Scenario(
   val ignoreScenario : Boolean,
   val host : String,
   val port : Long,
@@ -623,7 +620,7 @@ class Scenario(
 )
 extends JsonSupport {}
 
-class Scenarios(
+case class Scenarios(
    val scenarios : List[Scenario] )
 extends JsonSupport {}
 
@@ -631,10 +628,10 @@ object ScenarioRunner {
   val aquarium  = AquariumInstance.aquarium
 
   def parseScenario(txt:String) : Scenario =
-    StdConverters.AllConverters.convertEx[Scenario](txt)
+    StdConverters.AllConverters.convertEx[Scenario](JsonTextFormat(txt))
 
   def parseScenarios(txt:String) : Scenarios =
-    StdConverters.AllConverters.convertEx[Scenarios](txt)
+    StdConverters.AllConverters.convertEx[Scenarios](JsonTextFormat(txt))
 
   def runScenario(txt:String) : Unit = runScenario(parseScenario(txt))
 
@@ -720,7 +717,7 @@ object UserTest extends Loggable {
 
    try{
      val lines = scala.io.Source.fromFile(args.head).mkString
-     ScenarioRunner.runScenarios(new Scenarios(List(basic)))
+     ScenarioRunner.runScenarios(lines)
    } catch {
      case e:Exception =>
        e.printStackTrace()
