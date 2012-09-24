@@ -43,10 +43,12 @@ protocol AquariumUserState {
     string id;
     union {string, null} relatedIMEventOriginalID;
     string userID;
+    long occurredMillis = 0; // when was this agreement created inside Aquarium
     long @order("ascending") validFromMillis;
     long validToMillis;
     string role;
     union {FullPriceTableMsg, null} fullPriceTableRef; // If null, then get from aquarium policy
+    union {IMEventMsg, null} relatedIMEventMsg; // non-null if there is a related IMEvent
   }
 
   record ResourceInstanceChargingStateMsg {
@@ -69,6 +71,11 @@ protocol AquariumUserState {
   }
 
   record UserAgreementHistoryMsg {
+    string originalID;
+    union {string, null} inStoreID;
+    string userID;
+    long latestOccurredMillis; // the latest occurredMillis of all underlying agreements
+    long latestValidFromMillis; // the latest validFromMillis of all underlying agreements
     array<UserAgreementMsg> agreements;
   }
 
@@ -105,14 +112,14 @@ protocol AquariumUserState {
   }
 
   record UserStateMsg {
-    string @aliases(["id"]) originalID; // internal Aquarium ID
-    union {string, null} @aliases(["_id", "idInStore"]) inStoreID; // From Aquarium store
+    string originalID; // internal Aquarium ID
+    union {string, null} inStoreID; // From Aquarium store
     string userID;
     long occurredMillis; // When we created the event
     union {string, null} parentOriginalID;
     union {string, null} parentInStoreID;
-    map<ResourceTypeMsg> resourceTypesMap;
-    map<ResourcesChargingStateMsg> stateOfResources; // key is resourceType.name
+    map<ResourceTypeMsg> resourceTypesMap; // Map[ResourceTypeMsg.name.type, ResourceTypeMsg]
+    map<ResourcesChargingStateMsg> stateOfResources; // Map[ResourceTypeMsg.name.type, ]
     double totalCredits = 0.0;
     UserAgreementHistoryMsg agreementHistory;
     long latestUpdateMillis; // // last update of this working user state
