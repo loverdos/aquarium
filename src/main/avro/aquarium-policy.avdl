@@ -36,9 +36,9 @@
 @namespace("gr.grnet.aquarium.message.avro.gen")
 protocol AquariumPolicy {
   record ResourceTypeMsg {
-    string name;
-    string unit;
-    string chargingBehaviorClass;
+    string name; // name of resource type
+    string unit; // name of the charging unit
+    string chargingBehaviorClass; // the charging behavior implementation
   }
 
   record CronSpecTupleMsg {
@@ -47,7 +47,7 @@ protocol AquariumPolicy {
   }
 
   record EffectiveUnitPriceMsg {
-    double unitPrice;
+    double unitPrice; // credits per unit (see ResourceTypeMsg.unit)
     union {CronSpecTupleMsg, null} when;
   }
 
@@ -67,13 +67,13 @@ protocol AquariumPolicy {
   }
 
   record PolicyMsg {
-    string @aliases(["id"]) originalID; // From message creator (e.g. this is present for the default policy.json)
-    union {string, null} @aliases(["_id", "idInStore"]) inStoreID; // From Aquarium (message recipient)
-    union {string, null} parentID;
+    string originalID; // From message creator (e.g. this is present for the default policy.json)
+    union {string, null} inStoreID; // From Aquarium (message recipient)
+    union {string, null} parentID; // FIXME: parentOriginalID and parentInStoreID
     long validFromMillis;
     long validToMillis;
-    array<ResourceTypeMsg> resourceTypes;
-    array<string> chargingBehaviors;
-    map<FullPriceTableMsg> roleMapping;
+    array<ResourceTypeMsg> resourceTypes; // the known resource types
+    array<string> chargingBehaviors;      // the known charging behavior implementations
+    map<FullPriceTableMsg> roleMapping;   // the pricing "plan" per role
   }
 }
