@@ -49,7 +49,7 @@ import gr.grnet.aquarium.event.CreditsModel
 
 final case class UserStateModel(
     msg: UserStateMsg,
-    var userAgreementHistoryModel: UserAgreementHistoryModel
+    userAgreementHistoryModel: UserAgreementHistoryModel
 ) extends JsonSupport {
 
   def updateLatestResourceEventOccurredMillis(millis: Long): Unit = {

@@ -46,6 +46,7 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.Predef.Map
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import gr.grnet.aquarium.util.date.TimeHelpers
 
 
 /**
@@ -283,29 +284,40 @@ object MessageFactory {
     msg
   }
 
-  def newInitialUserAgreementHistoryMsg(initialAgreement: UserAgreementMsg) = {
-    val msg = new UserAgreementHistoryMsg
-    val list = new JArrayList[UserAgreementMsg]()
-    list.add(initialAgreement)
-    msg.setAgreements(list)
-    msg
+  def newInitialUserAgreementHistoryMsg(
+      initialAgreement: UserAgreementMsg,
+      originalID: String = MessageHelpers.UserAgreementHistoryMsgIDGenerator.nextUID()
+  ) = {
+    val historyMsg = new UserAgreementHistoryMsg
+    historyMsg.setOriginalID(originalID)
+    MessageHelpers.insertUserAgreement(historyMsg, initialAgreement)
+    historyMsg
   }
 
   def newUserAgreementFromIMEventMsg(
       imEvent: IMEventMsg,
-      id: String = MessageHelpers.UserAgreementMsgIDGenerator.nextUID()
+      agreementOriginalID: String = MessageHelpers.UserAgreementMsgIDGenerator.nextUID()
   ) = {
 
     val msg = new UserAgreementMsg
 
-    msg.setId(id)
+    msg.setId(agreementOriginalID)
     msg.setUserID(imEvent.getUserID)
     msg.setRelatedIMEventOriginalID(imEvent.getOriginalID)
     msg.setRole(imEvent.getRole)
     msg.setValidFromMillis(imEvent.getOccurredMillis)
     msg.setValidToMillis(java.lang.Long.valueOf(java.lang.Long.MAX_VALUE))
     msg.setFullPriceTableRef(null) // get from current (= @imEvent.getOccurredMillis) policy
+    msg.setOccurredMillis(TimeHelpers.nowMillis())
+    msg.setRelatedIMEventMsg(imEvent)
 
+    msg
+  }
+
+  def newUserAgreementHistoryMsg(userID: String): UserAgreementHistoryMsg = {
+    val msg = new UserAgreementHistoryMsg
+    msg.setOriginalID(MessageHelpers.UserAgreementHistoryMsgIDGenerator.nextUID())
+    msg.setUserID(userID)
     msg
   }
 
@@ -328,9 +340,9 @@ object MessageFactory {
       build()
   }
 
-  def createInitialUserStateMsg(
+  def newInitialUserStateMsg(
       usb: UserStateBootstrap,
-      defaultResourceTypesMap:Map[String, ResourceType],
+      defaultResourceTypesMap: Map[String, ResourceType],
       occurredMillis: Long
   ): UserStateMsg = {
 
@@ -346,7 +358,7 @@ object MessageFactory {
     msg.setAgreementHistory(newInitialUserAgreementHistoryMsg(usb.initialAgreement.msg))
     msg.setLatestUpdateMillis(java.lang.Long.valueOf(occurredMillis))
     msg.setInStoreID(null)
-    msg.setOriginalID("") // FIXME get a counter here
+    msg.setOriginalID(MessageHelpers.UserStateMsgIDGenerator.nextUID())
     msg.setResourceTypesMap(newResourceTypeMsgsMap(defaultResourceTypesMap))
     msg.setStateOfResources(new java.util.HashMap())
     msg.setWalletEntries(new java.util.ArrayList[WalletEntryMsg]())
