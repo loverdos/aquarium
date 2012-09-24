@@ -39,12 +39,13 @@ import gr.grnet.aquarium.AquariumInternalError
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{AnyValueMsg, WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{UserAgreementMsg, UserAgreementHistoryMsg, AnyValueMsg, WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
 import gr.grnet.aquarium.policy.EffectivePriceTableModel
 import gr.grnet.aquarium.uid.UUIDGenerator
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import gr.grnet.aquarium.util.shortNameOfType
 import java.util.{Map ⇒ JMap}
+import java.util.{ArrayList ⇒ JArrayList}
 import org.slf4j.Logger
 import scala.annotation.tailrec
 
@@ -54,7 +55,9 @@ import scala.annotation.tailrec
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 final object MessageHelpers {
+  final val UserStateMsgIDGenerator = UUIDGenerator
   final val UserAgreementMsgIDGenerator = UUIDGenerator
+  final val UserAgreementHistoryMsgIDGenerator = UUIDGenerator
   final val VirtualEventsIDGen = UUIDGenerator
 
   def stringOfAnyValueMsg(msg: AnyValueMsg): String = {
@@ -272,6 +275,65 @@ final object MessageHelpers {
       case n if n >= 1 ⇒ resourceEvents.get(0)
       case _ ⇒ throw new AquariumInternalError("No resource events in wallet entry")
     }
+  }
+
+  final def latestValidFromMillisOf(msg: UserAgreementHistoryMsg): Long = {
+    val userAgreements = msg.getAgreements
+    val size = userAgreements.size()
+    assert(userAgreements.size() > 0, "userAgreements.size() > 0")
+    var _index = 0
+    var _time = userAgreements.get(_index).getValidFromMillis
+    _index += 1
+    while(_index < size) {
+      val nextValidFromMillis = userAgreements.get(_index).getValidFromMillis
+      if(nextValidFromMillis > _time) {
+        _time = nextValidFromMillis
+      }
+      _index += 1
+    }
+
+    _time
+  }
+
+  final def latestOccurredMillisOf(msg: UserAgreementHistoryMsg): Long = {
+    val userAgreements = msg.getAgreements
+    val size = userAgreements.size()
+    assert(userAgreements.size() > 0, "userAgreements.size() > 0")
+    var _index = 0
+    var _time = userAgreements.get(_index).getOccurredMillis
+    _index += 1
+    while(_index < size) {
+      val nextValidFromMillis = userAgreements.get(_index).getOccurredMillis
+      if(nextValidFromMillis > _time) {
+        _time = nextValidFromMillis
+      }
+      _index += 1
+    }
+
+    _time
+  }
+
+  def insertUserAgreement(history: UserAgreementHistoryMsg, agreement: UserAgreementMsg) {
+    history.getAgreements match {
+      case null ⇒
+        val list = new JArrayList[UserAgreementMsg]()
+        list.add(agreement)
+        history.setAgreements(list)
+
+      case list ⇒
+        list.add(agreement)
+    }
+
+    history.setLatestOccurredMillis(latestOccurredMillisOf(history))
+    history.setLatestValidFromMillis(latestValidFromMillisOf(history))
+  }
+
+  /**
+   *
+   * @param history Can be null here, so beware
+   */
+  def isAgreementChangingIMEventMsg(history: UserAgreementHistoryMsg, event: IMEventMsg): Boolean = {
+    true
   }
 
 //  final def splitEffectiveUnitPriceTimeslot(
