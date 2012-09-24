@@ -47,30 +47,17 @@ import gr.grnet.aquarium.event.CreditsModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final case class UserStateModel(
-    msg: UserStateMsg,
-    userAgreementHistoryModel: UserAgreementHistoryModel
-) extends JsonSupport {
-
-  def updateLatestResourceEventOccurredMillis(millis: Long): Unit = {
-    if(millis > this.msg.getLatestResourceEventOccurredMillis) {
-      this.msg.setLatestResourceEventOccurredMillis(millis)
-    }
-  }
+final class UserStateModel(msg: UserStateMsg) {
 
   def userID = msg.getUserID
 
   def latestResourceEventOccurredMillis = this.msg.getLatestResourceEventOccurredMillis
 
-  def subtractCredits(credits: CreditsModel.Type) {
-    val oldTotal = CreditsModel.from(msg.getTotalCredits)
-    val newTotal = CreditsModel.-(oldTotal, credits)
-    msg.setTotalCredits(CreditsModel.toTypeInMessage(newTotal))
-  }
-
   @inline final def totalCredits: CreditsModel.Type = {
     CreditsModel.from(msg.getTotalCredits)
   }
+
+  override def toString = msg.toString
 
 //  def newForImplicitEndsAsPreviousEvents(
 //      previousResourceEvents: mutable.Map[(String, String), ResourceEventModel]

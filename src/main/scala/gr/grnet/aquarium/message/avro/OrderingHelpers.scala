@@ -92,13 +92,10 @@ object OrderingHelpers {
 
   final val DefaultUserStateMsgOrdering = new Ordering[UserStateMsg] {
     def compare(x: UserStateMsg, y: UserStateMsg): Int = {
-      val x_getValidFromMillis = x.getAgreementHistory().getAgreements().get(0).getValidFromMillis
-      val y_getValidFromMillis = y.getAgreementHistory().getAgreements().get(0).getValidFromMillis
-
-      if(x_getValidFromMillis < y_getValidFromMillis) {
+      if(x.getOccurredMillis < y.getOccurredMillis) {
         -1
       }
-      else if(x_getValidFromMillis == y_getValidFromMillis) {
+      else if(x.getOccurredMillis == y.getOccurredMillis) {
         0
       } else {
         1

@@ -76,6 +76,7 @@ protocol AquariumUserState {
     string userID;
     long latestOccurredMillis; // the latest occurredMillis of all underlying agreements
     long latestValidFromMillis; // the latest validFromMillis of all underlying agreements
+    long userCreationTimeMillis = 0;
     array<UserAgreementMsg> agreements;
   }
 
@@ -118,10 +119,9 @@ protocol AquariumUserState {
     long occurredMillis; // When we created the event
     union {string, null} parentOriginalID;
     union {string, null} parentInStoreID;
-    map<ResourceTypeMsg> resourceTypesMap; // Map[ResourceTypeMsg.name.type, ResourceTypeMsg]
+//    map<ResourceTypeMsg> resourceTypesMap; // Map[ResourceTypeMsg.name.type, ResourceTypeMsg]
     map<ResourcesChargingStateMsg> stateOfResources; // Map[ResourceTypeMsg.name.type, ]
     double totalCredits = 0.0;
-    UserAgreementHistoryMsg agreementHistory;
     long latestUpdateMillis; // // last update of this working user state
     long latestResourceEventOccurredMillis;
     long billingPeriodOutOfSyncResourceEventsCounter = 0;

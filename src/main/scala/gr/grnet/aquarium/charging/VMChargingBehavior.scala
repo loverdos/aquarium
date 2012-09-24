@@ -37,12 +37,12 @@ package gr.grnet.aquarium.charging
 
 import VMChargingBehavior.SelectorLabels.PowerStatus
 import VMChargingBehavior.Selectors.Power
-import gr.grnet.aquarium.charging.state.UserStateModel
+import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.CreditsModel
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{WalletEntryMsg, ResourceTypeMsg, ResourcesChargingStateMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourceTypeMsg, ResourcesChargingStateMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.message.avro.{AvroHelpers, MessageHelpers, MessageFactory}
 import gr.grnet.aquarium.util.LogHelpers._
 import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
@@ -137,7 +137,8 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
       resourcesChargingState: ResourcesChargingStateMsg,
-      userStateModel: UserStateModel,
+      userAgreementHistoryModel: UserAgreementHistoryModel,
+      userStateMsg: UserStateMsg,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
   ): (Int, CreditsModel.Type) = {
 
@@ -151,7 +152,6 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
     val resourceInstanceChargingState = stateOfResourceInstance.get(instanceID)
     fillWorkingResourceInstanceChargingStateFromEvent(resourceInstanceChargingState, resourceEvent)
 
-    val userAgreementHistoryModel = userStateModel.userAgreementHistoryModel
     val previousEvents = resourceInstanceChargingState.getPreviousEvents
     val retVal = previousEvents.size() match {
       case 0 ⇒
@@ -165,7 +165,7 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
           resourceEvent,
           resourceType,
           billingMonthInfo,
-          userStateModel.totalCredits,
+          userStateMsg.getTotalCredits,
           previousEvent.getOccurredMillis,
           resourceEvent.getOccurredMillis,
           userAgreementHistoryModel.agreementByTimeslot,

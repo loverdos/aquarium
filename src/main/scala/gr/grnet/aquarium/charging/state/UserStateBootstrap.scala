@@ -44,7 +44,7 @@ import gr.grnet.aquarium.event.CreditsModel
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-case class UserStateBootstrap(
+final case class UserStateBootstrap(
     initialAgreement: UserAgreementModel,
     initialCredits: CreditsModel.Type
 ) {

@@ -83,11 +83,17 @@ final class UserAgreementHistoryModel(msg: UserAgreementHistoryMsg) {
     }
   }
 
+  def userID = this.msg.getUserID
+
   def latestIMEventOccurredMillis = this._latestIMEventOccurredMillis
 
   def hasUserCreationEvent = this._userCreationIMEventMsgOpt.isDefined
 
   def userCreationIMEvent = this._userCreationIMEventMsgOpt
+
+  def unsafeUserCreationIMEvent = this._userCreationIMEventMsgOpt.get
+
+  def unsafeUserCreationMillis = unsafeUserCreationIMEvent.getOccurredMillis
 
   def size: Int = msg.getAgreements.size()
 

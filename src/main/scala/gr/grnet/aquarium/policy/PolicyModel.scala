@@ -36,11 +36,11 @@
 package gr.grnet.aquarium.policy
 
 import gr.grnet.aquarium.message.avro.ModelFactory
-import gr.grnet.aquarium.message.avro.gen.{FullPriceTableMsg, PolicyMsg}
+import gr.grnet.aquarium.message.avro.gen.PolicyMsg
 import gr.grnet.aquarium.util.json.JsonSupport
 import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.immutable
-import gr.grnet.aquarium.AquariumInternalError
 
 /**
  * A policy is the fundamental business-related configuration of Aquarium.
@@ -73,7 +73,7 @@ case class PolicyModel(
   /**
    * All known resource types for the policy's validity period.
    */
-  val resourceTypes = immutable.Set(msg.getResourceTypes().asScala.map(ModelFactory.newResourceType).toSeq: _*)
+  val resourceTypes = immutable.Set(msg.getResourceMapping().asScala.valuesIterator.toSeq.map(ModelFactory.newResourceType).toSeq: _*)
 
   def validFromMillis = msg.getValidFromMillis: Long
 
@@ -98,7 +98,9 @@ case class PolicyModel(
    */
   val roles = roleMapping.keySet
 
-  val resourceTypesMap = immutable.Map(resourceTypes.map(rt ⇒ (rt.name, rt)).toSeq: _*)
+  val resourceTypesMap: Map[String, ResourceType] = {
+    msg.getResourceMapping.asScala.map(kv ⇒ (kv._1, ModelFactory.newResourceType(kv._2))).toMap
+  }
 
   def resourceTypeByName(resource: String) = resourceTypes.find(_.name == resource)
 }

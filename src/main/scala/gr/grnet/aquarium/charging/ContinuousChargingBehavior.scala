@@ -35,11 +35,11 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.charging.state.UserStateModel
+import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{AnyValueMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.message.avro.{MessageHelpers, AvroHelpers, MessageFactory}
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
@@ -117,7 +117,8 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
        resourceType: ResourceTypeMsg,
        billingMonthInfo: BillingMonthInfo,
        resourcesChargingState: ResourcesChargingStateMsg,
-       userStateModel: UserStateModel,
+       userAgreementHistoryModel: UserAgreementHistoryModel,
+       userStateMsg: UserStateMsg,
        walletEntryRecorder: WalletEntryMsg ⇒ Unit
    ): (Int, CreditsModel.Type) = {
 
@@ -132,7 +133,6 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
     fillWorkingResourceInstanceChargingStateFromEvent(resourceInstanceChargingState, resourceEvent)
 
-    val userAgreementHistoryModel = userStateModel.userAgreementHistoryModel
     val previousEvents = resourceInstanceChargingState.getPreviousEvents
     val previousEvent = previousEvents.size() match {
       case 0 ⇒
@@ -168,7 +168,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       resourceEvent,
       resourceType,
       billingMonthInfo,
-      userStateModel.totalCredits,
+      userStateMsg.getTotalCredits,
       previousEvent.getOccurredMillis,
       resourceEvent.getOccurredMillis,
       userAgreementHistoryModel.agreementByTimeslot,

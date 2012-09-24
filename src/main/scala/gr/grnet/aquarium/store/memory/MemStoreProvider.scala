@@ -41,7 +41,7 @@ import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.Configurable
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
+import gr.grnet.aquarium.message.avro.gen.{UserAgreementHistoryMsg, UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
 import gr.grnet.aquarium.message.avro.{MessageFactory, MessageHelpers, OrderingHelpers}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.util.{Loggable, Tags}
@@ -97,6 +97,7 @@ extends StoreProvider
   //- StoreProvider
 
 
+
   //+ UserStateStore
   def insertUserState(event: UserStateMsg) = {
     event.setInStoreID(event.getOriginalID)
@@ -115,6 +116,10 @@ extends StoreProvider
       userState.getBillingYear == bmi.year &&
       userState.getBillingMonth == bmi.month
     }.lastOption
+  }
+
+  def findLatestUserState(userID: String) = {
+    _userStates.filter(_.getUserID == userID).lastOption
   }
   //- UserStateStore
 

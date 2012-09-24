@@ -6,12 +6,13 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"UserAgreementHistoryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"latestOccurredMillis\",\"type\":\"long\"},{\"name\":\"latestValidFromMillis\",\"type\":\"long\"},{\"name\":\"agreements\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"UserAgreementMsg\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"relatedIMEventOriginalID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"occurredMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"role\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"fullPriceTableRef\",\"type\":[{\"type\":\"record\",\"name\":\"FullPriceTableMsg\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"SelectorValueMsg\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"SelectorValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"},\"avro.java.string\":\"String\"}}]},\"null\"]},{\"name\":\"relatedIMEventMsg\",\"type\":[{\"type\":\"record\",\"name\":\"IMEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"eventType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"role\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"UserAgreementHistoryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"latestOccurredMillis\",\"type\":\"long\"},{\"name\":\"latestValidFromMillis\",\"type\":\"long\"},{\"name\":\"userCreationTimeMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"agreements\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"UserAgreementMsg\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"relatedIMEventOriginalID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"occurredMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"role\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"fullPriceTableRef\",\"type\":[{\"type\":\"record\",\"name\":\"FullPriceTableMsg\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"SelectorValueMsg\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"SelectorValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"},\"avro.java.string\":\"String\"}}]},\"null\"]},{\"name\":\"relatedIMEventMsg\",\"type\":[{\"type\":\"record\",\"name\":\"IMEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"eventType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"role\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]}");
   @Deprecated public java.lang.String originalID;
   @Deprecated public java.lang.String inStoreID;
   @Deprecated public java.lang.String userID;
   @Deprecated public long latestOccurredMillis;
   @Deprecated public long latestValidFromMillis;
+  @Deprecated public long userCreationTimeMillis;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg> agreements;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
@@ -22,7 +23,8 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
     case 2: return userID;
     case 3: return latestOccurredMillis;
     case 4: return latestValidFromMillis;
-    case 5: return agreements;
+    case 5: return userCreationTimeMillis;
+    case 6: return agreements;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -35,7 +37,8 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
     case 2: userID = (java.lang.String)value$; break;
     case 3: latestOccurredMillis = (java.lang.Long)value$; break;
     case 4: latestValidFromMillis = (java.lang.Long)value$; break;
-    case 5: agreements = (java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg>)value$; break;
+    case 5: userCreationTimeMillis = (java.lang.Long)value$; break;
+    case 6: agreements = (java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -116,6 +119,21 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
   }
 
   /**
+   * Gets the value of the 'userCreationTimeMillis' field.
+   */
+  public java.lang.Long getUserCreationTimeMillis() {
+    return userCreationTimeMillis;
+  }
+
+  /**
+   * Sets the value of the 'userCreationTimeMillis' field.
+   * @param value the value to set.
+   */
+  public void setUserCreationTimeMillis(java.lang.Long value) {
+    this.userCreationTimeMillis = value;
+  }
+
+  /**
    * Gets the value of the 'agreements' field.
    */
   public java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg> getAgreements() {
@@ -156,6 +174,7 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
     private java.lang.String userID;
     private long latestOccurredMillis;
     private long latestValidFromMillis;
+    private long userCreationTimeMillis;
     private java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg> agreements;
 
     /** Creates a new Builder */
@@ -191,9 +210,13 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
         this.latestValidFromMillis = (java.lang.Long) data().deepCopy(fields()[4].schema(), other.latestValidFromMillis);
         fieldSetFlags()[4] = true;
       }
-      if (isValidValue(fields()[5], other.agreements)) {
-        this.agreements = (java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg>) data().deepCopy(fields()[5].schema(), other.agreements);
+      if (isValidValue(fields()[5], other.userCreationTimeMillis)) {
+        this.userCreationTimeMillis = (java.lang.Long) data().deepCopy(fields()[5].schema(), other.userCreationTimeMillis);
         fieldSetFlags()[5] = true;
+      }
+      if (isValidValue(fields()[6], other.agreements)) {
+        this.agreements = (java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg>) data().deepCopy(fields()[6].schema(), other.agreements);
+        fieldSetFlags()[6] = true;
       }
     }
 
@@ -320,6 +343,30 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
       return this;
     }
 
+    /** Gets the value of the 'userCreationTimeMillis' field */
+    public java.lang.Long getUserCreationTimeMillis() {
+      return userCreationTimeMillis;
+    }
+    
+    /** Sets the value of the 'userCreationTimeMillis' field */
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg.Builder setUserCreationTimeMillis(long value) {
+      validate(fields()[5], value);
+      this.userCreationTimeMillis = value;
+      fieldSetFlags()[5] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'userCreationTimeMillis' field has been set */
+    public boolean hasUserCreationTimeMillis() {
+      return fieldSetFlags()[5];
+    }
+    
+    /** Clears the value of the 'userCreationTimeMillis' field */
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg.Builder clearUserCreationTimeMillis() {
+      fieldSetFlags()[5] = false;
+      return this;
+    }
+
     /** Gets the value of the 'agreements' field */
     public java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg> getAgreements() {
       return agreements;
@@ -327,21 +374,21 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
     
     /** Sets the value of the 'agreements' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg.Builder setAgreements(java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg> value) {
-      validate(fields()[5], value);
+      validate(fields()[6], value);
       this.agreements = value;
-      fieldSetFlags()[5] = true;
+      fieldSetFlags()[6] = true;
       return this; 
     }
     
     /** Checks whether the 'agreements' field has been set */
     public boolean hasAgreements() {
-      return fieldSetFlags()[5];
+      return fieldSetFlags()[6];
     }
     
     /** Clears the value of the 'agreements' field */
     public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg.Builder clearAgreements() {
       agreements = null;
-      fieldSetFlags()[5] = false;
+      fieldSetFlags()[6] = false;
       return this;
     }
 
@@ -354,7 +401,8 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
         record.userID = fieldSetFlags()[2] ? this.userID : (java.lang.String) defaultValue(fields()[2]);
         record.latestOccurredMillis = fieldSetFlags()[3] ? this.latestOccurredMillis : (java.lang.Long) defaultValue(fields()[3]);
         record.latestValidFromMillis = fieldSetFlags()[4] ? this.latestValidFromMillis : (java.lang.Long) defaultValue(fields()[4]);
-        record.agreements = fieldSetFlags()[5] ? this.agreements : (java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg>) defaultValue(fields()[5]);
+        record.userCreationTimeMillis = fieldSetFlags()[5] ? this.userCreationTimeMillis : (java.lang.Long) defaultValue(fields()[5]);
+        record.agreements = fieldSetFlags()[6] ? this.agreements : (java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg>) defaultValue(fields()[6]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

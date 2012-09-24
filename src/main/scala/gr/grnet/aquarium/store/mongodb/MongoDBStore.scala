@@ -41,8 +41,8 @@ import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.converter.StdConverters
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
-import gr.grnet.aquarium.message.avro.{MessageFactory, OrderingHelpers, AvroHelpers}
+import gr.grnet.aquarium.message.avro.gen.{UserAgreementHistoryMsg, UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
+import gr.grnet.aquarium.message.avro.{MessageHelpers, MessageFactory, OrderingHelpers, AvroHelpers}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.util._
 import gr.grnet.aquarium.util.json.JsonSupport
@@ -192,6 +192,21 @@ class MongoDBStore(
     }
   }
 
+  def findLatestUserState(userID: String) = {
+    val query = new BasicDBObjectBuilder().
+      add(MongoDBStore.JsonNames.userID, userID).
+      get()
+
+    // Descending order, so that the latest comes first
+    val sorter = new BasicDBObject(MongoDBStore.JsonNames.occurredMillis, -1)
+
+    val cursor = userStates.find(query).sort(sorter)
+
+    withCloseable(cursor) { cursor ⇒
+      MongoDBStore.findNextPayloadRecord(cursor, new UserStateMsg)
+    }
+  }
+
   /**
    * Stores a user state.
    */
@@ -303,8 +318,6 @@ class MongoDBStore(
   }
   //-IMEventStore
 
-
-
   //+PolicyStore
   def foreachPolicy[U](f: PolicyMsg ⇒ U) {
     val cursor = policies.find()
@@ -359,6 +372,8 @@ object MongoDBStore {
   final val ResourceEventCollection = "resevents"
 
   final val UserStateCollection = "userstates"
+
+  final val UserAgreementHistoryCollection = "useragreementhistory"
 
   final val IMEventCollection = "imevents"
 

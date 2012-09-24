@@ -36,11 +36,10 @@
 package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.Aquarium
-import gr.grnet.aquarium.charging.state.UserStateModel
+import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
-import gr.grnet.aquarium.message.avro.gen.{WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
-import gr.grnet.aquarium.uid.{PrefixedUIDGenerator, ConcurrentVMLocalUIDGenerator}
+import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.policy.{EffectivePriceTableModel, FullPriceTableModel}
 
 /**
@@ -89,7 +88,8 @@ trait ChargingBehavior {
       resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
       resourcesChargingState: ResourcesChargingStateMsg,
-      userStateModel: UserStateModel,
+      userAgreementHistoryModel: UserAgreementHistoryModel,
+      userStateMsg: UserStateMsg,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
   ): (Int, CreditsModel.Type)
 

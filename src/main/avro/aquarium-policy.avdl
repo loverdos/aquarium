@@ -72,7 +72,7 @@ protocol AquariumPolicy {
     union {string, null} parentID; // FIXME: parentOriginalID and parentInStoreID
     long validFromMillis;
     long validToMillis;
-    array<ResourceTypeMsg> resourceTypes; // the known resource types
+    map<ResourceTypeMsg> resourceMapping; // Map[ResourceTypeMsg.name.type, ResourceTypeMsg] the known resource types
     array<string> chargingBehaviors;      // the known charging behavior implementations
     map<FullPriceTableMsg> roleMapping;   // the pricing "plan" per role
   }

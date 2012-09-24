@@ -41,6 +41,7 @@ import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
 import gr.grnet.aquarium.message.avro.gen._
 import java.{util ⇒ ju}
 import java.util.{ArrayList ⇒ JArrayList}
+import java.util.{HashMap ⇒ JHashMap}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.Predef.Map
@@ -278,6 +279,17 @@ object MessageFactory {
     msg
   }
 
+  def newResourcesChargingStateMsg(
+    resourceName: String,
+    initialChargingDetails: DetailsModel.Type
+  ): ResourcesChargingStateMsg = {
+    val msg = new ResourcesChargingStateMsg
+    msg.setResource(resourceName)
+    msg.setDetails(initialChargingDetails)
+    msg.setStateOfResourceInstance(new JHashMap())
+    msg
+  }
+
   def newEmptyUserAgreementHistoryMsg() = {
     val msg = new UserAgreementHistoryMsg
     msg.setAgreements(new ju.ArrayList[UserAgreementMsg]())
@@ -308,7 +320,7 @@ object MessageFactory {
     msg.setValidFromMillis(imEvent.getOccurredMillis)
     msg.setValidToMillis(java.lang.Long.valueOf(java.lang.Long.MAX_VALUE))
     msg.setFullPriceTableRef(null) // get from current (= @imEvent.getOccurredMillis) policy
-    msg.setOccurredMillis(TimeHelpers.nowMillis())
+    msg.setOccurredMillis(java.lang.Long.valueOf(TimeHelpers.nowMillis()))
     msg.setRelatedIMEventMsg(imEvent)
 
     msg
@@ -335,31 +347,30 @@ object MessageFactory {
       setValidFromMillis(millis).
       setValidToMillis(Long.MaxValue).
       setChargingBehaviors(new ju.ArrayList[String]()).
-      setResourceTypes(new ju.ArrayList[ResourceTypeMsg]()).
+      setResourceMapping(new JHashMap()).
       setRoleMapping(new ju.HashMap[String, FullPriceTableMsg]()).
       build()
   }
 
   def newInitialUserStateMsg(
-      usb: UserStateBootstrap,
-      defaultResourceTypesMap: Map[String, ResourceType],
-      occurredMillis: Long
+      userID: String,
+      initialCredits: CreditsModel.Type,
+      occurredMillis: Long,
+      originalID: String = MessageHelpers.UserStateMsgIDGenerator.nextUID()
   ): UserStateMsg = {
 
     val bmi = BillingMonthInfo.fromMillis(occurredMillis)
     val msg = new UserStateMsg
 
-    msg.setUserID(usb.userID)
+    msg.setUserID(userID)
     msg.setOccurredMillis(java.lang.Long.valueOf(occurredMillis))
     msg.setBillingYear(java.lang.Integer.valueOf(bmi.year))
     msg.setBillingMonth(java.lang.Integer.valueOf(bmi.month))
     msg.setBillingMonthDay(java.lang.Integer.valueOf(bmi.day))
-    msg.setTotalCredits(java.lang.Double.valueOf(CreditsModel.toTypeInMessage(usb.initialCredits)))
-    msg.setAgreementHistory(newInitialUserAgreementHistoryMsg(usb.initialAgreement.msg))
+    msg.setTotalCredits(java.lang.Double.valueOf(CreditsModel.toTypeInMessage(initialCredits)))
     msg.setLatestUpdateMillis(java.lang.Long.valueOf(occurredMillis))
     msg.setInStoreID(null)
-    msg.setOriginalID(MessageHelpers.UserStateMsgIDGenerator.nextUID())
-    msg.setResourceTypesMap(newResourceTypeMsgsMap(defaultResourceTypesMap))
+    msg.setOriginalID(originalID)
     msg.setStateOfResources(new java.util.HashMap())
     msg.setWalletEntries(new java.util.ArrayList[WalletEntryMsg]())
     msg

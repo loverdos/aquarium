@@ -192,9 +192,6 @@ object ModelFactory {
   }
 
   def newUserStateModel(msg: UserStateMsg): UserStateModel = {
-    UserStateModel(
-      msg,
-      newUserAgreementHistoryModel(msg.getAgreementHistory)
-    )
+    new UserStateModel(msg)
   }
 }

@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.slf4j.{LoggerFactory, Logger}
 import gr.grnet.aquarium.event.CreditsModel
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import java.util.{Map ⇒ JMap}
 
 /**
  *
@@ -232,16 +233,36 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   }
 
-  def currentResourceTypesMap: Map[String, ResourceType] = {
-    val policyMspOpt = policyStore.loadPolicyAt(TimeHelpers.nowMillis())
+  def resourceMappingAtMillis(millis: Long): JMap[String, ResourceTypeMsg] = {
+    val policyMspOpt = policyStore.loadPolicyAt(millis)
     if(policyMspOpt.isEmpty) {
-      throw new AquariumInternalError("Not even the default policy found")
+      throw new AquariumInternalError(
+        "Cannot get resource mapping. Not even the default policy found for time %s",
+        TimeHelpers.toYYYYMMDDHHMMSSSSS(millis)
+      )
     }
 
     val policyMsg = policyMspOpt.get
-    // TODO optimize
-    ModelFactory.newPolicyModel(policyMsg).resourceTypesMap
+    policyMsg.getResourceMapping
   }
+
+//  def resourceTypesMapAtMillis(millis: Long): Map[String, ResourceType] = {
+//    val policyMspOpt = policyStore.loadPolicyAt(millis)
+//    if(policyMspOpt.isEmpty) {
+//      throw new AquariumInternalError(
+//        "Cannot get resource types map. Not even the default policy found for time %s",
+//        TimeHelpers.toYYYYMMDDHHMMSSSSS(millis)
+//      )
+//    }
+//
+//    val policyMsg = policyMspOpt.get
+//    // TODO optimize
+//    ModelFactory.newPolicyModel(policyMsg).resourceTypesMap
+//  }
+//
+//  def currentResourceTypesMap: Map[String, ResourceType] = {
+//    resourceTypesMapAtMillis(TimeHelpers.nowMillis())
+//  }
 
   def unsafeValidPolicyModelAt(referenceTimeMillis: Long): PolicyModel = {
     policyStore.loadPolicyAt(referenceTimeMillis) match {

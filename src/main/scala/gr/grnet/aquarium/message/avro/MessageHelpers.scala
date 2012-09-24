@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.message.avro
 
 import gr.grnet.aquarium.AquariumInternalError
-import gr.grnet.aquarium.event.DetailsModel
+import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.MessageConstants
 import gr.grnet.aquarium.message.avro.gen.{UserAgreementMsg, UserAgreementHistoryMsg, AnyValueMsg, WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
@@ -102,13 +102,6 @@ final object MessageHelpers {
 
   @inline final def isIMEventModify(msg: IMEventMsg) = {
     msg.getEventType().toLowerCase() == MessageConstants.IMEventMsg.EventTypes.modify
-  }
-
-  @inline final def findResourceType(msg: UserStateMsg, name: String) = {
-    msg.getResourceTypesMap.get(name) match {
-      case null         ⇒ None
-      case resourceType ⇒ Some(resourceType)
-    }
   }
 
   final def setOnePreviousEvent(
@@ -313,6 +306,9 @@ final object MessageHelpers {
     _time
   }
 
+  /**
+   * Use this to update the agreement history. Do not add manually!!
+   */
   def insertUserAgreement(history: UserAgreementHistoryMsg, agreement: UserAgreementMsg) {
     history.getAgreements match {
       case null ⇒
@@ -326,6 +322,13 @@ final object MessageHelpers {
 
     history.setLatestOccurredMillis(latestOccurredMillisOf(history))
     history.setLatestValidFromMillis(latestValidFromMillisOf(history))
+    agreement.getRelatedIMEventMsg match {
+      case null ⇒
+      case imEvent ⇒
+        if(isIMEventCreate(imEvent)) {
+          history.setUserCreationTimeMillis(imEvent.getOccurredMillis)
+        }
+    }
   }
 
   /**
@@ -336,7 +339,21 @@ final object MessageHelpers {
     true
   }
 
-//  final def splitEffectiveUnitPriceTimeslot(
+  def updateLatestResourceEventOccurredMillis(msg: UserStateMsg, millis: Long): Unit = {
+    if(millis > msg.getLatestResourceEventOccurredMillis) {
+      msg.setLatestResourceEventOccurredMillis(millis)
+    }
+  }
+
+  def subtractCredits(msg: UserStateMsg, credits: CreditsModel.Type) {
+    val oldTotal = CreditsModel.from(msg.getTotalCredits)
+    val newTotal = CreditsModel.-(oldTotal, credits)
+    msg.setTotalCredits(CreditsModel.toTypeInMessage(newTotal))
+  }
+
+
+
+  //  final def splitEffectiveUnitPriceTimeslot(
 //      effectiveUnitPrice: EffectiveUnitPriceMsg,
 //      t: Timeslot
 //  ): (List[Timeslot], List[Timeslot]) = {
