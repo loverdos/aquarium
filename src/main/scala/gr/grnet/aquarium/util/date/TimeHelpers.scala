@@ -36,6 +36,7 @@
 package gr.grnet.aquarium.util.date
 
 import java.util.Date
+import org.joda.time.MutableDateTime
 
 
 /**
@@ -52,14 +53,30 @@ object TimeHelpers {
 
   def secDiffOfMillis(ms0: Long, ms1: Long) = (ms1 - ms0).toDouble / 1000.0
 
-  def timed[U](f: ⇒U): (Long, Long, U) = {
+  def timed[U](f: ⇒ U): (Long, Long, U) = {
     val ms0 = nowMillis()
     val u = f
     val ms1 = nowMillis()
     (ms0, ms1, u)
   }
 
- def toYYYYMMDDHHMMSSSSS(millis: Long): String = {
-   new MutableDateCalc(millis).toYYYYMMDDHHMMSSSSS
- }
+  def toYYYYMMDDHHMMSSSSS(millis: Long): String = {
+    new MutableDateCalc(millis).toYYYYMMDDHHMMSSSSS
+  }
+
+  def calcCalendarMonthDiff(fromMillis: Long, toMillis: Long): Int = {
+    val fromDate = new MutableDateTime(fromMillis)
+    val toDate = new MutableDateTime(toMillis)
+
+    val fromYear  = fromDate.getYear
+    val fromMonth = fromDate.getMonthOfYear
+
+    val toYear = toDate.getYear
+    val toMonth = toDate.getMonthOfYear
+
+    val _from = fromYear * 12 + fromMonth
+    val _to = toYear * 12 + toMonth
+
+    _to - _from
+  }
 }
