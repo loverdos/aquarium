@@ -210,6 +210,7 @@ final class ChargingService extends AquariumAwareSkeleton with Lifecycle with Lo
   }
   /**
    * Processes one resource event and computes relevant, incremental charges.
+   * If needed, it may go back in time and recompute stuff.
    *
    * @param resourceEvent
    * @param userStateMsg

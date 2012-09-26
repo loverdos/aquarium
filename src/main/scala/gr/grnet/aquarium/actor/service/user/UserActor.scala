@@ -142,7 +142,6 @@ class UserActor extends ReflectiveRoleableActor {
     val historyMsg = MessageFactory.newUserAgreementHistoryMsg(this._userID)
     this._userAgreementHistoryModel = ModelFactory.newUserAgreementHistoryModel(historyMsg)
 
-    // NOTE: this._userID is already set up our caller
     var _imcounter = 0
 
     val hadCreateEvent = aquarium.imEventStore.foreachIMEventInOccurrenceOrder(this._userID) { imEvent ⇒

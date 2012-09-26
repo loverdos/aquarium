@@ -57,6 +57,7 @@ import org.slf4j.{LoggerFactory, Logger}
 import gr.grnet.aquarium.event.CreditsModel
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import java.util.{Map ⇒ JMap}
+import java.util.{HashMap ⇒ JHashMap}
 
 /**
  *
@@ -68,6 +69,9 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   import Aquarium.EnvKeys
 
   @volatile private[this] var _chargingBehaviorMap = Map[String, ChargingBehavior]()
+
+  // Caching value for the latest resource mapping
+  @volatile private[this] var _resourceMapping = apply(EnvKeys.defaultPolicyMsg).getResourceMapping
 
   private[this] lazy val cachingPolicyStore = new CachingPolicyStore(
     apply(EnvKeys.defaultPolicyMsg),
@@ -233,6 +237,9 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   }
 
+  /**
+   * @deprecated Use `currentResourceMapping` instead
+   */
   def resourceMappingAtMillis(millis: Long): JMap[String, ResourceTypeMsg] = {
     val policyMspOpt = policyStore.loadPolicyAt(millis)
     if(policyMspOpt.isEmpty) {
@@ -246,7 +253,17 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     policyMsg.getResourceMapping
   }
 
-//  def resourceTypesMapAtMillis(millis: Long): Map[String, ResourceType] = {
+  /**
+   * Provides the current resource mapping. This value is cached.
+   *
+   * NOTE: The assumption is that the resource mapping is always updated with new keys,
+   *       that is we allow only the addition of new resource types.
+   */
+  def currentResourceMapping = {
+    this._resourceMapping synchronized this._resourceMapping
+  }
+
+  //  def resourceTypesMapAtMillis(millis: Long): Map[String, ResourceType] = {
 //    val policyMspOpt = policyStore.loadPolicyAt(millis)
 //    if(policyMspOpt.isEmpty) {
 //      throw new AquariumInternalError(
