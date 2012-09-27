@@ -35,11 +35,11 @@
 
 package gr.grnet.aquarium.message.avro
 
-import gr.grnet.aquarium.AquariumInternalError
-import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.{Real, AquariumInternalError}
+import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{UserAgreementMsg, UserAgreementHistoryMsg, AnyValueMsg, WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{ResourcesChargingStateMsg, UserAgreementMsg, UserAgreementHistoryMsg, AnyValueMsg, WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
 import gr.grnet.aquarium.policy.EffectivePriceTableModel
 import gr.grnet.aquarium.uid.UUIDGenerator
 import gr.grnet.aquarium.util.LogHelpers.Debug
@@ -345,12 +345,30 @@ final object MessageHelpers {
     }
   }
 
-  def subtractCredits(msg: UserStateMsg, credits: CreditsModel.Type) {
-    val oldTotal = CreditsModel.from(msg.getTotalCredits)
-    val newTotal = CreditsModel.-(oldTotal, credits)
-    msg.setTotalCredits(CreditsModel.toTypeInMessage(newTotal))
+  def subtractCredits(msg: UserStateMsg, credits: Real) {
+    val oldTotal = Real(msg.getTotalCredits)
+    val newTotal = oldTotal - credits
+    msg.setTotalCredits(Real.toMsgField(newTotal))
   }
 
+  def getOrInitializeResourcesChargingState(
+      userStateMsg: UserStateMsg,
+      resourceName: String,
+      initialChargingDetails: DetailsModel.Type
+  ): ResourcesChargingStateMsg = {
+    userStateMsg.getStateOfResources.get(resourceName) match {
+      case null ⇒
+        // First time for this ChargingBehavior.
+        val newState = MessageFactory.newResourcesChargingStateMsg(
+          resourceName,
+          initialChargingDetails
+        )
+        userStateMsg.getStateOfResources.put(resourceName, newState)
+        newState
+      case existingState ⇒
+        existingState
+    }
+  }
 
 
   //  final def splitEffectiveUnitPriceTimeslot(

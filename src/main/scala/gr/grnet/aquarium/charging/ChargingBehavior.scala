@@ -36,9 +36,10 @@
 package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.Real
 import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.policy.{EffectivePriceTableModel, FullPriceTableModel}
 
@@ -64,7 +65,7 @@ trait ChargingBehavior {
       currentResourceEvent: ResourceEventMsg,
       referenceStartMillis: Long,
       referenceStopMillis: Long,
-      totalCredits: CreditsModel.Type
+      totalCredits: Real
   ): List[String]
 
   def selectEffectivePriceTableModel(
@@ -74,7 +75,7 @@ trait ChargingBehavior {
       currentResourceEvent: ResourceEventMsg,
       referenceStartMillis: Long,
       referenceStopMillis: Long,
-      totalCredits: Double
+      totalCredits: Real
   ): EffectivePriceTableModel
 
   /**
@@ -91,14 +92,14 @@ trait ChargingBehavior {
       userAgreementHistoryModel: UserAgreementHistoryModel,
       userStateMsg: UserStateMsg,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
-  ): (Int, CreditsModel.Type)
+  ): (Int, Real)
 
   def computeCreditsToSubtract(
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
-      oldCredits: CreditsModel.Type,
+      oldCredits: Real,
       timeDeltaMillis: Long,
-      unitPrice: Double
-  ): (CreditsModel.Type, String /* explanation */)
+      unitPrice: Real
+  ): (Real, String /* explanation */)
 
   /**
    * Given the charging state of a resource instance and the details of the incoming message, compute the new
@@ -107,7 +108,7 @@ trait ChargingBehavior {
   def computeNewAccumulatingAmount(
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
       eventDetails: DetailsModel.Type
-  ): CreditsModel.Type
+  ): Real
 
   def createVirtualEventsForRealtimeComputation(
       userID: String,

@@ -47,7 +47,7 @@ protocol AquariumPolicy {
   }
 
   record EffectiveUnitPriceMsg {
-    double unitPrice; // credits per unit (see ResourceTypeMsg.unit)
+    string unitPrice; // credits per unit (see ResourceTypeMsg.unit)
     union {CronSpecTupleMsg, null} when;
   }
 

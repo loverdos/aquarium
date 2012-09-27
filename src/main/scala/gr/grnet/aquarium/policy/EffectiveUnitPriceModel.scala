@@ -45,7 +45,7 @@ import collection.mutable
  */
 
 case class EffectiveUnitPriceModel(
-    unitPrice: Double,
+    unitPrice: String,
     when: Option[(CronSpec, CronSpec)] = None
 ) {
 

@@ -35,10 +35,10 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.Aquarium
+import gr.grnet.aquarium.{Real, Aquarium}
 import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.message.MessageConstants
 
@@ -52,15 +52,15 @@ import gr.grnet.aquarium.message.MessageConstants
 final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
   def computeCreditsToSubtract(
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
-      oldCredits: CreditsModel.Type,
+      oldCredits: Real,
       timeDeltaMillis: Long,
-      unitPrice: CreditsModel.Type
-  ): (CreditsModel.Type, String /* explanation */) = {
+      unitPrice: Real
+  ): (Real, String /* explanation */) = {
 
-    val currentValue = CreditsModel.from(resourceInstanceChargingState.getCurrentValue)
+    val currentValue = Real(resourceInstanceChargingState.getCurrentValue)
     // Always remember to multiply with the `unitPrice`, since it scales the credits, depending on
     // the particular resource type tha applies.
-    val credits = CreditsModel.mul(currentValue, unitPrice)
+    val credits = currentValue * unitPrice
     val explanation = "Value(%s) * UnitPrice(%s)".format(currentValue, unitPrice)
 
     (credits, explanation)
@@ -72,7 +72,7 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       currentResourceEvent: ResourceEventMsg,
       referenceFromMillis: Long,
       referenceToMillis: Long,
-      totalCredits: CreditsModel.Type
+      totalCredits: Real
   ): List[String] = {
     List(MessageConstants.DefaultSelectorKey)
   }
@@ -86,7 +86,7 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       userAgreementHistoryModel: UserAgreementHistoryModel,
       userStateMsg: UserStateMsg,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
-  ): (Int, Double) = {
+  ): (Int, Real) = {
     // The credits are given in the value
     // But we cannot just apply them, since we also need to take into account the unit price.
     // Normally, the unit price is 1.0 but we have the flexibility to allow more stuff).
@@ -105,7 +105,7 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       resourceEvent,
       resourceType,
       billingMonthInfo,
-      userStateMsg.getTotalCredits,
+      Real(userStateMsg.getTotalCredits),
       resourceEvent.getOccurredMillis,
       resourceEvent.getOccurredMillis + 1, // single point in time
       userAgreementHistoryModel.agreementByTimeslot,
@@ -123,8 +123,8 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
   def computeNewAccumulatingAmount(
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
       eventDetails: DetailsModel.Type
-  ): CreditsModel.Type = {
-    CreditsModel.from(resourceInstanceChargingState.getOldAccumulatingAmount)
+  ): Real = {
+    Real(resourceInstanceChargingState.getOldAccumulatingAmount)
   }
 
   def createVirtualEventsForRealtimeComputation(

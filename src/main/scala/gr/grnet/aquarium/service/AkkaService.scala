@@ -157,8 +157,8 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
   }
 
   def notifyUserActorPostStop(userActor: UserActor): Unit = {
-    logger.debug("Removing UserActor %s from stopping set (after postStop())".format(userActor.unsafeUserID))
-    this.stoppingUserActors.remove(userActor.unsafeUserID)
+    logger.debug("Removing UserActor %s from stopping set (after postStop())".format(userActor.userID))
+    this.stoppingUserActors.remove(userActor.userID)
   }
 
   private[this] def gracefullyStopUserActor(userID: String, actorRef: ActorRef): Unit = {
@@ -174,7 +174,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
       return
     }
 
-    val userID = userActor.unsafeUserID
+    val userID = userActor.userID
     val actorRef = userActor.self
 
     this._userActorCache.invalidate(userID)

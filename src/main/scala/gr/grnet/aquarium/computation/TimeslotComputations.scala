@@ -85,7 +85,7 @@ object TimeslotComputations extends Loggable {
       agreement: UserAgreementModel,
       fullPriceTableModelGetter: (UserAgreementModel, PolicyModel) ⇒ FullPriceTableModel,
       effectivePriceTableModelSelector: FullPriceTableModel ⇒ EffectivePriceTableModel
-  ): SortedMap[Timeslot, Double] = {
+  ): SortedMap[Timeslot, String] = {
 
     // Note that most of the code is taken from calcChangeChunks()
     val ret = resolveEffectiveUnitPricesForTimeslot(

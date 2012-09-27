@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.charging.state
 
 import gr.grnet.aquarium.policy.UserAgreementModel
-import gr.grnet.aquarium.event.CreditsModel
+import gr.grnet.aquarium.Real
 
 /**
  * This is used to bootstrap the [[gr.grnet.aquarium.charging.state.UserStateModel]].
@@ -46,7 +46,7 @@ import gr.grnet.aquarium.event.CreditsModel
 
 final case class UserStateBootstrap(
     initialAgreement: UserAgreementModel,
-    initialCredits: CreditsModel.Type
+    initialCredits: Real
 ) {
   def userID = initialAgreement.msg.getUserID
 

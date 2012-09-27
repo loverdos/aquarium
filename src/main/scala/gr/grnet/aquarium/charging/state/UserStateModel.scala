@@ -36,8 +36,7 @@
 package gr.grnet.aquarium.charging.state
 
 import gr.grnet.aquarium.message.avro.gen.UserStateMsg
-import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.event.CreditsModel
+import gr.grnet.aquarium.Real
 
 /**
  *
@@ -53,8 +52,8 @@ final class UserStateModel(msg: UserStateMsg) {
 
   def latestResourceEventOccurredMillis = this.msg.getLatestResourceEventOccurredMillis
 
-  @inline final def totalCredits: CreditsModel.Type = {
-    CreditsModel.from(msg.getTotalCredits)
+  @inline final def totalCredits: Real = {
+    Real(msg.getTotalCredits)
   }
 
   override def toString = msg.toString

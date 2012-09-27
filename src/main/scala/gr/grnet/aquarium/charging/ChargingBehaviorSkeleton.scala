@@ -35,9 +35,9 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
+import gr.grnet.aquarium.{Real, Aquarium, AquariumInternalError}
 import gr.grnet.aquarium.computation.{TimeslotComputations, BillingMonthInfo}
-import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.avro.gen.{EffectivePriceTableMsg, FullPriceTableMsg, ResourceTypeMsg, WalletEntryMsg, ResourceInstanceChargingStateMsg, ResourcesChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.message.avro.{MessageHelpers, AvroHelpers, MessageFactory}
@@ -63,27 +63,6 @@ abstract class ChargingBehaviorSkeleton(
     final val selectorLabelsHierarchy: List[String]
 ) extends ChargingBehavior with Loggable {
 
-  final val HourMillis = CreditsModel.from(1000L * 60 * 60)
-  final val HourMillisInverse = CreditsModel.inv(HourMillis)
-  final val MB = CreditsModel.from(1024L * 1024L)
-  final val MBInverse = CreditsModel.inv(MB)
-  final val GB = CreditsModel.from(1024L * 1024L * 1024L)
-  final val GBInverse = CreditsModel.inv(GB)
-
-  @inline final def HrsOfMillis(timeDeltaMillis: Long): CreditsModel.Type = {
-    CreditsModel.*(
-      HourMillisInverse,
-      CreditsModel.from(timeDeltaMillis)
-    )
-  }
-
-  @inline final def MBsOfBytes(bytes: Double): CreditsModel.Type = {
-    CreditsModel.*(
-      MBInverse,
-      CreditsModel.from(bytes)
-    )
-  }
-
   @inline final protected def rcDebugInfo(rcEvent: ResourceEventMsg) = {
     AvroHelpers.jsonStringOfSpecificRecord(rcEvent)
   }
@@ -99,10 +78,10 @@ abstract class ChargingBehaviorSkeleton(
       DetailsModel.make,
       new JArrayList[ResourceEventMsg](),
       new JArrayList[ResourceEventMsg](),
-      0.0,
-      0.0,
-      0.0,
-      0.0,
+      Real.toMsgField(0.0),
+      Real.toMsgField(0.0),
+      Real.toMsgField(0.0),
+      Real.toMsgField(0.0),
       clientID,
       resource,
       instanceID
@@ -145,14 +124,14 @@ abstract class ChargingBehaviorSkeleton(
       resourceEvent: ResourceEventMsg
   ) {
 
-    resourceInstanceChargingState.setCurrentValue(resourceEvent.getValue.toString.toDouble)
+    resourceInstanceChargingState.setCurrentValue(resourceEvent.getValue)
   }
 
   protected def computeWalletEntriesForNewEvent(
       resourceEvent: ResourceEventMsg,
       resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
-      totalCredits: Double,
+      totalCredits: Real,
       referenceStartMillis: Long,
       referenceStopMillis: Long,
       agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel],
@@ -160,17 +139,17 @@ abstract class ChargingBehaviorSkeleton(
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
       aquarium: Aquarium,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
-  ): (Int, Double) = {
+  ): (Int, Real) = {
 
     val userID = resourceEvent.getUserID
     val resourceEventDetails = resourceEvent.getDetails
 
-    var _oldTotalCredits = totalCredits
+    var _oldTotalReal = totalCredits
 
     var _newAccumulatingAmount = computeNewAccumulatingAmount(resourceInstanceChargingState, resourceEventDetails)
     // It will also update the old one inside the data structure.
     resourceInstanceChargingState.setOldAccumulatingAmount(resourceInstanceChargingState.getAccumulatingAmount)
-    resourceInstanceChargingState.setAccumulatingAmount(_newAccumulatingAmount)
+    resourceInstanceChargingState.setAccumulatingAmount(Real.toMsgField(_newAccumulatingAmount))
 
     val policyByTimeslot = aquarium.policyStore.loadSortedPolicyModelsWithin(
       referenceStartMillis,
@@ -204,12 +183,12 @@ abstract class ChargingBehaviorSkeleton(
 
       val (creditsToSubtract, explanation) = this.computeCreditsToSubtract(
         resourceInstanceChargingState,
-        _oldTotalCredits, // FIXME ??? Should recalculate ???
+        _oldTotalReal, // FIXME ??? Should recalculate ???
         timeDeltaMillis,
-        cs.getUnitPrice
+        Real(cs.getUnitPrice)
       )
 
-      cs.setCreditsToSubtract(creditsToSubtract)
+      cs.setCreditsToSubtract(creditsToSubtract.toString())
       cs.setExplanation(explanation)
 
       cs
@@ -219,17 +198,17 @@ abstract class ChargingBehaviorSkeleton(
       throw new AquariumInternalError("No chargeslots computed for resource event %s".format(resourceEvent.getOriginalID))
     }
 
-    val sumOfCreditsToSubtract = fullChargeslots.map(_.getCreditsToSubtract.toDouble).sum
-    val newTotalCredits = _oldTotalCredits - sumOfCreditsToSubtract
+    val sumOfRealToSubtract = fullChargeslots.map(x ⇒ Real(x.getCreditsToSubtract)).sum
+    val newTotalReal = _oldTotalReal - sumOfRealToSubtract
 
     val eventsForWallet = new ju.ArrayList[ResourceEventMsg](resourceInstanceChargingState.getPreviousEvents)
     eventsForWallet.add(0, resourceEvent)
     import scala.collection.JavaConverters.seqAsJavaListConverter
     val newWalletEntry = MessageFactory.newWalletEntryMsg(
       userID,
-      CreditsModel.from(sumOfCreditsToSubtract),
-      CreditsModel.from(_oldTotalCredits),
-      CreditsModel.from(newTotalCredits),
+      Real.toMsgField(sumOfRealToSubtract),
+      Real.toMsgField(_oldTotalReal),
+      Real.toMsgField(newTotalReal),
       TimeHelpers.nowMillis(),
       referenceStartMillis,
       referenceStopMillis,
@@ -246,7 +225,7 @@ abstract class ChargingBehaviorSkeleton(
 
     walletEntryRecorder.apply(newWalletEntry)
 
-    (1, sumOfCreditsToSubtract)
+    (1, sumOfRealToSubtract)
   }
 
 
@@ -257,7 +236,7 @@ abstract class ChargingBehaviorSkeleton(
       currentResourceEvent: ResourceEventMsg,
       referenceStartMillis: Long,
       referenceStopMillis: Long,
-      totalCredits: Double
+      totalCredits: Real
   ): EffectivePriceTableModel = {
 
     val selectorPath = computeSelectorPath(

@@ -35,20 +35,15 @@
 
 package gr.grnet.aquarium.message.avro
 
-import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.avro.gen._
-import java.{util ⇒ ju}
-import java.util.{ArrayList ⇒ JArrayList}
-import java.util.{HashMap ⇒ JHashMap}
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.Predef.Map
 import gr.grnet.aquarium.policy.ResourceType
-import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import gr.grnet.aquarium.util.date.TimeHelpers
-
+import gr.grnet.aquarium.Real
 
 /**
  * Provides helper methods that construct avro messages.
@@ -68,18 +63,31 @@ object MessageFactory {
     av
   }
 
-  def anyValueMsgOfList(l: JArrayList[AnyValueMsg]) = {
+  def anyValueMsgOfList(l: java.util.List[AnyValueMsg]) = {
     val av = new AnyValueMsg
     av.setAnyValue(l)
     av
   }
 
-  def newEffectiveUnitPriceMsg(unitPrice: Double, whenOpt: Option[CronSpecTupleMsg] = None) = {
+  def newEffectiveUnitPriceMsg(
+      unitPrice: String,
+      whenOpt: Option[CronSpecTupleMsg]
+  ): EffectiveUnitPriceMsg = {
     EffectiveUnitPriceMsg.newBuilder().
       setUnitPrice(unitPrice).
       setWhen(whenOpt.getOrElse(null)).
     build()
   }
+
+  def newEffectiveUnitPriceMsg(
+      unitPrice: Double,
+      whenOpt: Option[CronSpecTupleMsg]
+  ): EffectiveUnitPriceMsg = {
+    newEffectiveUnitPriceMsg(unitPrice.toString, whenOpt)
+  }
+
+  def newJList[T]   = new java.util.ArrayList[T]()
+  def newJMap[K, V] = new java.util.HashMap[K, V]()
 
   def newEffectivePriceTableMsg(priceOverrides: EffectiveUnitPriceMsg*) = {
     EffectivePriceTableMsg.newBuilder().
@@ -220,25 +228,25 @@ object MessageFactory {
 
   def newWalletEntryMsg(
       userID: String,
-      sumOfCreditsToSubtract: CreditsModel.Type,
-      oldTotalCredits: CreditsModel.Type,
-      newTotalCredits: CreditsModel.Type,
+      sumOfCreditsToSubtract: String,
+      oldTotalCredits: String,
+      newTotalCredits: String,
       whenComputedMillis: Long,
       referenceStartMillis: Long,
       referenceStopMillis: Long,
       billingYear: Int,
       billingMonth: Int,
       billingMonthDay: Int,
-      chargeslots: ju.List[ChargeslotMsg],
-      resourceEvents: ju.List[ResourceEventMsg],
+      chargeslots: java.util.List[ChargeslotMsg],
+      resourceEvents: java.util.List[ResourceEventMsg],
       resourceType: ResourceTypeMsg,
       isSynthetic: Boolean
   ): WalletEntryMsg = {
     WalletEntryMsg.newBuilder().
       setUserID(userID).
-      setSumOfCreditsToSubtract(CreditsModel.toTypeInMessage(sumOfCreditsToSubtract)).
-      setOldTotalCredits(CreditsModel.toTypeInMessage(oldTotalCredits)).
-      setNewTotalCredits(CreditsModel.toTypeInMessage(newTotalCredits)).
+      setSumOfCreditsToSubtract(sumOfCreditsToSubtract).
+      setOldTotalCredits(oldTotalCredits).
+      setNewTotalCredits(newTotalCredits).
       setWhenComputedMillis(whenComputedMillis).
       setReferenceStartMillis(referenceStartMillis).
       setReferenceStopMillis(referenceStopMillis).
@@ -254,12 +262,12 @@ object MessageFactory {
 
   def newResourceInstanceChargingStateMsg(
       details: DetailsModel.Type,
-      previousEvents: ju.List[ResourceEventMsg],
-      implicitlyIssuedStartEvents: ju.List[ResourceEventMsg],
-      oldAccumulatingAmount: Double,
-      accumulatingAmount: Double,
-      previousValue: Double,
-      currentValue: Double,
+      previousEvents: java.util.List[ResourceEventMsg],
+      implicitlyIssuedStartEvents: java.util.List[ResourceEventMsg],
+      oldAccumulatingAmount: String,
+      accumulatingAmount: String,
+      previousValue: String,
+      currentValue: String,
       clientID: String,
       resource: String,
       instanceID: String
@@ -269,10 +277,10 @@ object MessageFactory {
     msg.setDetails(details)
     msg.setPreviousEvents(previousEvents)
     msg.setImplicitlyIssuedStartEvents(implicitlyIssuedStartEvents)
-    msg.setOldAccumulatingAmount(java.lang.Double.valueOf(oldAccumulatingAmount))
-    msg.setAccumulatingAmount(java.lang.Double.valueOf(accumulatingAmount))
-    msg.setPreviousValue(java.lang.Double.valueOf(previousValue))
-    msg.setCurrentValue(java.lang.Double.valueOf(currentValue))
+    msg.setOldAccumulatingAmount(oldAccumulatingAmount)
+    msg.setAccumulatingAmount(accumulatingAmount)
+    msg.setPreviousValue(previousValue)
+    msg.setCurrentValue(currentValue)
     msg.setClientID(clientID)
     msg.setResource(resource)
     msg.setInstanceID(instanceID)
@@ -286,13 +294,13 @@ object MessageFactory {
     val msg = new ResourcesChargingStateMsg
     msg.setResource(resourceName)
     msg.setDetails(initialChargingDetails)
-    msg.setStateOfResourceInstance(new JHashMap())
+    msg.setStateOfResourceInstance(newJMap)
     msg
   }
 
   def newEmptyUserAgreementHistoryMsg() = {
     val msg = new UserAgreementHistoryMsg
-    msg.setAgreements(new ju.ArrayList[UserAgreementMsg]())
+    msg.setAgreements(newJList[UserAgreementMsg])
     msg
   }
 
@@ -333,7 +341,7 @@ object MessageFactory {
     msg
   }
 
-  def newWalletEntriesMsg(entries: ju.List[WalletEntryMsg] = new ju.ArrayList[WalletEntryMsg]()) = {
+  def newWalletEntriesMsg(entries: java.util.List[WalletEntryMsg] = newJList[WalletEntryMsg]) = {
     val msg = new WalletEntriesMsg
     msg.setEntries(entries)
     msg
@@ -346,15 +354,15 @@ object MessageFactory {
       setParentID(null).
       setValidFromMillis(millis).
       setValidToMillis(Long.MaxValue).
-      setChargingBehaviors(new ju.ArrayList[String]()).
-      setResourceMapping(new JHashMap()).
-      setRoleMapping(new ju.HashMap[String, FullPriceTableMsg]()).
+      setChargingBehaviors(newJList).
+      setResourceMapping(newJMap).
+      setRoleMapping(newJMap).
       build()
   }
 
   def newInitialUserStateMsg(
       userID: String,
-      initialCredits: CreditsModel.Type,
+      initialCredits: Real,
       occurredMillis: Long,
       originalID: String = MessageHelpers.UserStateMsgIDGenerator.nextUID()
   ): UserStateMsg = {
@@ -367,7 +375,7 @@ object MessageFactory {
     msg.setBillingYear(java.lang.Integer.valueOf(bmi.year))
     msg.setBillingMonth(java.lang.Integer.valueOf(bmi.month))
     msg.setBillingMonthDay(java.lang.Integer.valueOf(bmi.day))
-    msg.setTotalCredits(java.lang.Double.valueOf(CreditsModel.toTypeInMessage(initialCredits)))
+    msg.setTotalCredits(Real.toMsgField(initialCredits))
     msg.setLatestUpdateMillis(java.lang.Long.valueOf(occurredMillis))
     msg.setInStoreID(null)
     msg.setOriginalID(originalID)

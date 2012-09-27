@@ -54,7 +54,6 @@ import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import org.slf4j.{LoggerFactory, Logger}
-import gr.grnet.aquarium.event.CreditsModel
 import gr.grnet.aquarium.charging.state.UserStateBootstrap
 import java.util.{Map ⇒ JMap}
 import java.util.{HashMap ⇒ JHashMap}
@@ -424,9 +423,9 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     ModelFactory.newUserAgreementModelFromIMEvent(imEvent)
   }
 
-  def initialUserBalance(role: String, referenceTimeMillis: Long): CreditsModel.Type = {
+  def initialUserBalance(role: String, referenceTimeMillis: Long): Real = {
     // FIXME: Where is the mapping?
-    CreditsModel.from(0.0)
+    Real.Zero
   }
 
   def getUserStateBootstrap(imEvent: IMEventMsg): UserStateBootstrap = {

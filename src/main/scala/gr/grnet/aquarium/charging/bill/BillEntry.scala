@@ -42,7 +42,7 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.avro.{AvroHelpers, MessageHelpers}
 import gr.grnet.aquarium.message.avro.gen._
 import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.{Aquarium, ResourceLocator, AquariumBuilder}
+import gr.grnet.aquarium.{Real, Aquarium, ResourceLocator, AquariumBuilder}
 import java.io.File
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.immutable.TreeMap
@@ -210,12 +210,12 @@ object BillEntryMsg {
   }
 
 
-  private[this] def toChargeEntry(c:ChargeslotMsg) : (ChargeEntryMsg,Long,Double) = {
+  private[this] def toChargeEntry(c:ChargeslotMsg) : (ChargeEntryMsg,Long,Real) = {
     val unitPrice = c.getUnitPrice.toString
     val startTime = c.getStartMillis.toString
     val endTime   = c.getStopMillis.toString
     val difTime   = (c.getStopMillis - c.getStartMillis).toLong
-    val unitsD     = (c.getCreditsToSubtract/c.getUnitPrice)
+    val unitsD     = (Real(c.getCreditsToSubtract)/Real(c.getUnitPrice))
     val credits   = c.getCreditsToSubtract.toString
     (newChargeEntry(counter.getAndIncrement.toString,unitPrice,
                     startTime,endTime,difTime.toString,unitsD.toString,credits),difTime,unitsD)
@@ -223,7 +223,7 @@ object BillEntryMsg {
 
 
 
-  private[this] def toEventEntry(eventType:String,c:ChargeslotMsg) : (EventEntryMsg,Long,Double) = {
+  private[this] def toEventEntry(eventType:String,c:ChargeslotMsg) : (EventEntryMsg,Long,Real) = {
     val (c1,l1,d1) = toChargeEntry(c)
     (newEventEntry(eventType,javaList(c1)),l1,d1)
   }
@@ -266,7 +266,7 @@ object BillEntryMsg {
     ///FIXME: val elapsedTime = w.getChargeslots.asScala.foldLeft()
    //c.getStopMillis - c.getStartMillis
     var totalElapsedTime = 0L
-    var totalUnits = 0.0D
+    var totalUnits = Real.Zero
     val eventEntry = new java.util.ArrayList[EventEntryMsg]() //new ListBuffer[EventEntry]
       for { c <- w.getChargeslots.asScala }{
         if(c.getCreditsToSubtract != 0.0) {

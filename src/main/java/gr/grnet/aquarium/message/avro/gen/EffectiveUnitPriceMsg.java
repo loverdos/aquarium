@@ -6,8 +6,8 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}");
-  @Deprecated public double unitPrice;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}");
+  @Deprecated public java.lang.String unitPrice;
   @Deprecated public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg when;
 
   /**
@@ -18,7 +18,7 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
   /**
    * All-args constructor.
    */
-  public EffectiveUnitPriceMsg(java.lang.Double unitPrice, gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg when) {
+  public EffectiveUnitPriceMsg(java.lang.String unitPrice, gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg when) {
     this.unitPrice = unitPrice;
     this.when = when;
   }
@@ -36,7 +36,7 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: unitPrice = (java.lang.Double)value$; break;
+    case 0: unitPrice = (java.lang.String)value$; break;
     case 1: when = (gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
@@ -45,7 +45,7 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
   /**
    * Gets the value of the 'unitPrice' field.
    */
-  public java.lang.Double getUnitPrice() {
+  public java.lang.String getUnitPrice() {
     return unitPrice;
   }
 
@@ -53,7 +53,7 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
    * Sets the value of the 'unitPrice' field.
    * @param value the value to set.
    */
-  public void setUnitPrice(java.lang.Double value) {
+  public void setUnitPrice(java.lang.String value) {
     this.unitPrice = value;
   }
 
@@ -93,7 +93,7 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<EffectiveUnitPriceMsg>
     implements org.apache.avro.data.RecordBuilder<EffectiveUnitPriceMsg> {
 
-    private double unitPrice;
+    private java.lang.String unitPrice;
     private gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg when;
 
     /** Creates a new Builder */
@@ -110,7 +110,7 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
     private Builder(gr.grnet.aquarium.message.avro.gen.EffectiveUnitPriceMsg other) {
             super(gr.grnet.aquarium.message.avro.gen.EffectiveUnitPriceMsg.SCHEMA$);
       if (isValidValue(fields()[0], other.unitPrice)) {
-        this.unitPrice = (java.lang.Double) data().deepCopy(fields()[0].schema(), other.unitPrice);
+        this.unitPrice = (java.lang.String) data().deepCopy(fields()[0].schema(), other.unitPrice);
         fieldSetFlags()[0] = true;
       }
       if (isValidValue(fields()[1], other.when)) {
@@ -120,12 +120,12 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
     }
 
     /** Gets the value of the 'unitPrice' field */
-    public java.lang.Double getUnitPrice() {
+    public java.lang.String getUnitPrice() {
       return unitPrice;
     }
     
     /** Sets the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro.gen.EffectiveUnitPriceMsg.Builder setUnitPrice(double value) {
+    public gr.grnet.aquarium.message.avro.gen.EffectiveUnitPriceMsg.Builder setUnitPrice(java.lang.String value) {
       validate(fields()[0], value);
       this.unitPrice = value;
       fieldSetFlags()[0] = true;
@@ -139,6 +139,7 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
     
     /** Clears the value of the 'unitPrice' field */
     public gr.grnet.aquarium.message.avro.gen.EffectiveUnitPriceMsg.Builder clearUnitPrice() {
+      unitPrice = null;
       fieldSetFlags()[0] = false;
       return this;
     }
@@ -172,7 +173,7 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
     public EffectiveUnitPriceMsg build() {
       try {
         EffectiveUnitPriceMsg record = new EffectiveUnitPriceMsg();
-        record.unitPrice = fieldSetFlags()[0] ? this.unitPrice : (java.lang.Double) defaultValue(fields()[0]);
+        record.unitPrice = fieldSetFlags()[0] ? this.unitPrice : (java.lang.String) defaultValue(fields()[0]);
         record.when = fieldSetFlags()[1] ? this.when : (gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg) defaultValue(fields()[1]);
         return record;
       } catch (Exception e) {
