@@ -6,14 +6,14 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"elapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"units\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"credits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"startTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"endTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalElapsedTime\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"totalUnits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
   @Deprecated public java.lang.String id;
   @Deprecated public java.lang.String unitPrice;
   @Deprecated public java.lang.String startTime;
   @Deprecated public java.lang.String endTime;
-  @Deprecated public java.lang.String elapsedTime;
-  @Deprecated public java.lang.String units;
-  @Deprecated public java.lang.String credits;
+  @Deprecated public java.lang.String totalCredits;
+  @Deprecated public java.lang.String totalElapsedTime;
+  @Deprecated public java.lang.String totalUnits;
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -22,9 +22,9 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     case 1: return unitPrice;
     case 2: return startTime;
     case 3: return endTime;
-    case 4: return elapsedTime;
-    case 5: return units;
-    case 6: return credits;
+    case 4: return totalCredits;
+    case 5: return totalElapsedTime;
+    case 6: return totalUnits;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -36,9 +36,9 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     case 1: unitPrice = (java.lang.String)value$; break;
     case 2: startTime = (java.lang.String)value$; break;
     case 3: endTime = (java.lang.String)value$; break;
-    case 4: elapsedTime = (java.lang.String)value$; break;
-    case 5: units = (java.lang.String)value$; break;
-    case 6: credits = (java.lang.String)value$; break;
+    case 4: totalCredits = (java.lang.String)value$; break;
+    case 5: totalElapsedTime = (java.lang.String)value$; break;
+    case 6: totalUnits = (java.lang.String)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -104,48 +104,48 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   }
 
   /**
-   * Gets the value of the 'elapsedTime' field.
+   * Gets the value of the 'totalCredits' field.
    */
-  public java.lang.String getElapsedTime() {
-    return elapsedTime;
+  public java.lang.String getTotalCredits() {
+    return totalCredits;
   }
 
   /**
-   * Sets the value of the 'elapsedTime' field.
+   * Sets the value of the 'totalCredits' field.
    * @param value the value to set.
    */
-  public void setElapsedTime(java.lang.String value) {
-    this.elapsedTime = value;
+  public void setTotalCredits(java.lang.String value) {
+    this.totalCredits = value;
   }
 
   /**
-   * Gets the value of the 'units' field.
+   * Gets the value of the 'totalElapsedTime' field.
    */
-  public java.lang.String getUnits() {
-    return units;
+  public java.lang.String getTotalElapsedTime() {
+    return totalElapsedTime;
   }
 
   /**
-   * Sets the value of the 'units' field.
+   * Sets the value of the 'totalElapsedTime' field.
    * @param value the value to set.
    */
-  public void setUnits(java.lang.String value) {
-    this.units = value;
+  public void setTotalElapsedTime(java.lang.String value) {
+    this.totalElapsedTime = value;
   }
 
   /**
-   * Gets the value of the 'credits' field.
+   * Gets the value of the 'totalUnits' field.
    */
-  public java.lang.String getCredits() {
-    return credits;
+  public java.lang.String getTotalUnits() {
+    return totalUnits;
   }
 
   /**
-   * Sets the value of the 'credits' field.
+   * Sets the value of the 'totalUnits' field.
    * @param value the value to set.
    */
-  public void setCredits(java.lang.String value) {
-    this.credits = value;
+  public void setTotalUnits(java.lang.String value) {
+    this.totalUnits = value;
   }
 
   /** Creates a new ChargeEntryMsg RecordBuilder */
@@ -173,9 +173,9 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     private java.lang.String unitPrice;
     private java.lang.String startTime;
     private java.lang.String endTime;
-    private java.lang.String elapsedTime;
-    private java.lang.String units;
-    private java.lang.String credits;
+    private java.lang.String totalCredits;
+    private java.lang.String totalElapsedTime;
+    private java.lang.String totalUnits;
 
     /** Creates a new Builder */
     private Builder() {
@@ -206,16 +206,16 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
         this.endTime = (java.lang.String) data().deepCopy(fields()[3].schema(), other.endTime);
         fieldSetFlags()[3] = true;
       }
-      if (isValidValue(fields()[4], other.elapsedTime)) {
-        this.elapsedTime = (java.lang.String) data().deepCopy(fields()[4].schema(), other.elapsedTime);
+      if (isValidValue(fields()[4], other.totalCredits)) {
+        this.totalCredits = (java.lang.String) data().deepCopy(fields()[4].schema(), other.totalCredits);
         fieldSetFlags()[4] = true;
       }
-      if (isValidValue(fields()[5], other.units)) {
-        this.units = (java.lang.String) data().deepCopy(fields()[5].schema(), other.units);
+      if (isValidValue(fields()[5], other.totalElapsedTime)) {
+        this.totalElapsedTime = (java.lang.String) data().deepCopy(fields()[5].schema(), other.totalElapsedTime);
         fieldSetFlags()[5] = true;
       }
-      if (isValidValue(fields()[6], other.credits)) {
-        this.credits = (java.lang.String) data().deepCopy(fields()[6].schema(), other.credits);
+      if (isValidValue(fields()[6], other.totalUnits)) {
+        this.totalUnits = (java.lang.String) data().deepCopy(fields()[6].schema(), other.totalUnits);
         fieldSetFlags()[6] = true;
       }
     }
@@ -320,77 +320,77 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
       return this;
     }
 
-    /** Gets the value of the 'elapsedTime' field */
-    public java.lang.String getElapsedTime() {
-      return elapsedTime;
+    /** Gets the value of the 'totalCredits' field */
+    public java.lang.String getTotalCredits() {
+      return totalCredits;
     }
     
-    /** Sets the value of the 'elapsedTime' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setElapsedTime(java.lang.String value) {
+    /** Sets the value of the 'totalCredits' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setTotalCredits(java.lang.String value) {
       validate(fields()[4], value);
-      this.elapsedTime = value;
+      this.totalCredits = value;
       fieldSetFlags()[4] = true;
       return this; 
     }
     
-    /** Checks whether the 'elapsedTime' field has been set */
-    public boolean hasElapsedTime() {
+    /** Checks whether the 'totalCredits' field has been set */
+    public boolean hasTotalCredits() {
       return fieldSetFlags()[4];
     }
     
-    /** Clears the value of the 'elapsedTime' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearElapsedTime() {
-      elapsedTime = null;
+    /** Clears the value of the 'totalCredits' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearTotalCredits() {
+      totalCredits = null;
       fieldSetFlags()[4] = false;
       return this;
     }
 
-    /** Gets the value of the 'units' field */
-    public java.lang.String getUnits() {
-      return units;
+    /** Gets the value of the 'totalElapsedTime' field */
+    public java.lang.String getTotalElapsedTime() {
+      return totalElapsedTime;
     }
     
-    /** Sets the value of the 'units' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setUnits(java.lang.String value) {
+    /** Sets the value of the 'totalElapsedTime' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setTotalElapsedTime(java.lang.String value) {
       validate(fields()[5], value);
-      this.units = value;
+      this.totalElapsedTime = value;
       fieldSetFlags()[5] = true;
       return this; 
     }
     
-    /** Checks whether the 'units' field has been set */
-    public boolean hasUnits() {
+    /** Checks whether the 'totalElapsedTime' field has been set */
+    public boolean hasTotalElapsedTime() {
       return fieldSetFlags()[5];
     }
     
-    /** Clears the value of the 'units' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearUnits() {
-      units = null;
+    /** Clears the value of the 'totalElapsedTime' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearTotalElapsedTime() {
+      totalElapsedTime = null;
       fieldSetFlags()[5] = false;
       return this;
     }
 
-    /** Gets the value of the 'credits' field */
-    public java.lang.String getCredits() {
-      return credits;
+    /** Gets the value of the 'totalUnits' field */
+    public java.lang.String getTotalUnits() {
+      return totalUnits;
     }
     
-    /** Sets the value of the 'credits' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setCredits(java.lang.String value) {
+    /** Sets the value of the 'totalUnits' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder setTotalUnits(java.lang.String value) {
       validate(fields()[6], value);
-      this.credits = value;
+      this.totalUnits = value;
       fieldSetFlags()[6] = true;
       return this; 
     }
     
-    /** Checks whether the 'credits' field has been set */
-    public boolean hasCredits() {
+    /** Checks whether the 'totalUnits' field has been set */
+    public boolean hasTotalUnits() {
       return fieldSetFlags()[6];
     }
     
-    /** Clears the value of the 'credits' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearCredits() {
-      credits = null;
+    /** Clears the value of the 'totalUnits' field */
+    public gr.grnet.aquarium.message.avro.gen.ChargeEntryMsg.Builder clearTotalUnits() {
+      totalUnits = null;
       fieldSetFlags()[6] = false;
       return this;
     }
@@ -403,9 +403,9 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
         record.unitPrice = fieldSetFlags()[1] ? this.unitPrice : (java.lang.String) defaultValue(fields()[1]);
         record.startTime = fieldSetFlags()[2] ? this.startTime : (java.lang.String) defaultValue(fields()[2]);
         record.endTime = fieldSetFlags()[3] ? this.endTime : (java.lang.String) defaultValue(fields()[3]);
-        record.elapsedTime = fieldSetFlags()[4] ? this.elapsedTime : (java.lang.String) defaultValue(fields()[4]);
-        record.units = fieldSetFlags()[5] ? this.units : (java.lang.String) defaultValue(fields()[5]);
-        record.credits = fieldSetFlags()[6] ? this.credits : (java.lang.String) defaultValue(fields()[6]);
+        record.totalCredits = fieldSetFlags()[4] ? this.totalCredits : (java.lang.String) defaultValue(fields()[4]);
+        record.totalElapsedTime = fieldSetFlags()[5] ? this.totalElapsedTime : (java.lang.String) defaultValue(fields()[5]);
+        record.totalUnits = fieldSetFlags()[6] ? this.totalUnits : (java.lang.String) defaultValue(fields()[6]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

@@ -119,7 +119,8 @@ object BillEntryMsg {
     val dend = cal.getTime
    Timeslot(dstart,dend)
   } */
-  private [this] def newChargeEntry(id:String,
+  //private[this] val emptyJavaList = new java.util.ArrayList[String]()
+  private[this] def newChargeEntry(id:String,
                                     unitPrice:String,
                                     startTime:String,
                                     endTime:String,
@@ -131,9 +132,10 @@ object BillEntryMsg {
     msg.setUnitPrice(unitPrice)
     msg.setStartTime(startTime)
     msg.setEndTime(endTime)
-    msg.setElapsedTime(elapsedTime)
-    msg.setUnits(units)
-    msg.setCredits(credits)
+    msg.setTotalElapsedTime(elapsedTime)
+    msg.setTotalUnits(units)
+    msg.setTotalCredits(credits)
+    //msg.setDetails(emptyJavaList)
     msg
   }
   
@@ -199,7 +201,7 @@ object BillEntryMsg {
     msg.setDeductedCredits(deductedCredits)
     msg.setStartTime(startTime)
     msg.setEndTime(endTime)
-    msg.setBill(bill)
+    msg.setDetails(bill)
     msg
   }
 

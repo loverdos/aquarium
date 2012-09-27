@@ -41,9 +41,9 @@ protocol AquariumBill {
     string unitPrice;
     string startTime;
     string endTime;
-    string elapsedTime;
-    string units;
-    string credits;
+    string totalCredits;
+    string totalElapsedTime;
+    string totalUnits;
   }
 
   record EventEntryMsg {
@@ -78,6 +78,6 @@ protocol AquariumBill {
     string deductedCredits;
     string startTime;
     string endTime;
-    array<ServiceEntryMsg> bill;
+    array<ServiceEntryMsg> details;
   }
 }

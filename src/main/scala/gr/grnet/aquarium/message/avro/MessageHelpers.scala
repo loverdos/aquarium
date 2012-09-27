@@ -242,7 +242,7 @@ final object MessageHelpers {
     }
 
     Debug(logger, "effectivePriceTableOfSelectorForResource:")
-    Debug(logger, "  selectorPath = %s", selectorPath.mkString("/"))
+    Debug(logger, "selectorPath = %s", selectorPath.mkString("/"))
 
     val perResource = fullPriceTable.getPerResource
     val selectorData = perResource.get(resource)
