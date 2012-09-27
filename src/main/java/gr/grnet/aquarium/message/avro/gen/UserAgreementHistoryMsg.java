@@ -14,6 +14,25 @@ public class UserAgreementHistoryMsg extends org.apache.avro.specific.SpecificRe
   @Deprecated public long latestValidFromMillis;
   @Deprecated public long userCreationTimeMillis;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg> agreements;
+
+  /**
+   * Default constructor.
+   */
+  public UserAgreementHistoryMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public UserAgreementHistoryMsg(java.lang.String originalID, java.lang.String inStoreID, java.lang.String userID, java.lang.Long latestOccurredMillis, java.lang.Long latestValidFromMillis, java.lang.Long userCreationTimeMillis, java.util.List<gr.grnet.aquarium.message.avro.gen.UserAgreementMsg> agreements) {
+    this.originalID = originalID;
+    this.inStoreID = inStoreID;
+    this.userID = userID;
+    this.latestOccurredMillis = latestOccurredMillis;
+    this.latestValidFromMillis = latestValidFromMillis;
+    this.userCreationTimeMillis = userCreationTimeMillis;
+    this.agreements = agreements;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

@@ -16,6 +16,27 @@ public class UserAgreementMsg extends org.apache.avro.specific.SpecificRecordBas
   @Deprecated public java.lang.String role;
   @Deprecated public gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg fullPriceTableRef;
   @Deprecated public gr.grnet.aquarium.message.avro.gen.IMEventMsg relatedIMEventMsg;
+
+  /**
+   * Default constructor.
+   */
+  public UserAgreementMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public UserAgreementMsg(java.lang.String id, java.lang.String relatedIMEventOriginalID, java.lang.String userID, java.lang.Long occurredMillis, java.lang.Long validFromMillis, java.lang.Long validToMillis, java.lang.String role, gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg fullPriceTableRef, gr.grnet.aquarium.message.avro.gen.IMEventMsg relatedIMEventMsg) {
+    this.id = id;
+    this.relatedIMEventOriginalID = relatedIMEventOriginalID;
+    this.userID = userID;
+    this.occurredMillis = occurredMillis;
+    this.validFromMillis = validFromMillis;
+    this.validToMillis = validToMillis;
+    this.role = role;
+    this.fullPriceTableRef = fullPriceTableRef;
+    this.relatedIMEventMsg = relatedIMEventMsg;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

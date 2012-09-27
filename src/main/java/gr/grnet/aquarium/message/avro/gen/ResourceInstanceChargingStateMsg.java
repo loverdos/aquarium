@@ -6,17 +6,39 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ResourceInstanceChargingStateMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}},{\"name\":\"previousEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}}]}}},{\"name\":\"implicitlyIssuedStartEvents\",\"type\":{\"type\":\"array\",\"items\":\"ResourceEventMsg\"}},{\"name\":\"accumulatingAmount\",\"type\":\"double\"},{\"name\":\"oldAccumulatingAmount\",\"type\":\"double\"},{\"name\":\"previousValue\",\"type\":\"double\"},{\"name\":\"currentValue\",\"type\":\"double\"}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ResourceInstanceChargingStateMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}},{\"name\":\"previousEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}}]}}},{\"name\":\"implicitlyIssuedStartEvents\",\"type\":{\"type\":\"array\",\"items\":\"ResourceEventMsg\"}},{\"name\":\"accumulatingAmount\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"oldAccumulatingAmount\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"previousValue\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"currentValue\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
   @Deprecated public java.lang.String clientID;
   @Deprecated public java.lang.String resource;
   @Deprecated public java.lang.String instanceID;
   @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> previousEvents;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> implicitlyIssuedStartEvents;
-  @Deprecated public double accumulatingAmount;
-  @Deprecated public double oldAccumulatingAmount;
-  @Deprecated public double previousValue;
-  @Deprecated public double currentValue;
+  @Deprecated public java.lang.String accumulatingAmount;
+  @Deprecated public java.lang.String oldAccumulatingAmount;
+  @Deprecated public java.lang.String previousValue;
+  @Deprecated public java.lang.String currentValue;
+
+  /**
+   * Default constructor.
+   */
+  public ResourceInstanceChargingStateMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public ResourceInstanceChargingStateMsg(java.lang.String clientID, java.lang.String resource, java.lang.String instanceID, java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details, java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> previousEvents, java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> implicitlyIssuedStartEvents, java.lang.String accumulatingAmount, java.lang.String oldAccumulatingAmount, java.lang.String previousValue, java.lang.String currentValue) {
+    this.clientID = clientID;
+    this.resource = resource;
+    this.instanceID = instanceID;
+    this.details = details;
+    this.previousEvents = previousEvents;
+    this.implicitlyIssuedStartEvents = implicitlyIssuedStartEvents;
+    this.accumulatingAmount = accumulatingAmount;
+    this.oldAccumulatingAmount = oldAccumulatingAmount;
+    this.previousValue = previousValue;
+    this.currentValue = currentValue;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -44,10 +66,10 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
     case 3: details = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg>)value$; break;
     case 4: previousEvents = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>)value$; break;
     case 5: implicitlyIssuedStartEvents = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>)value$; break;
-    case 6: accumulatingAmount = (java.lang.Double)value$; break;
-    case 7: oldAccumulatingAmount = (java.lang.Double)value$; break;
-    case 8: previousValue = (java.lang.Double)value$; break;
-    case 9: currentValue = (java.lang.Double)value$; break;
+    case 6: accumulatingAmount = (java.lang.String)value$; break;
+    case 7: oldAccumulatingAmount = (java.lang.String)value$; break;
+    case 8: previousValue = (java.lang.String)value$; break;
+    case 9: currentValue = (java.lang.String)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -145,7 +167,7 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
   /**
    * Gets the value of the 'accumulatingAmount' field.
    */
-  public java.lang.Double getAccumulatingAmount() {
+  public java.lang.String getAccumulatingAmount() {
     return accumulatingAmount;
   }
 
@@ -153,14 +175,14 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
    * Sets the value of the 'accumulatingAmount' field.
    * @param value the value to set.
    */
-  public void setAccumulatingAmount(java.lang.Double value) {
+  public void setAccumulatingAmount(java.lang.String value) {
     this.accumulatingAmount = value;
   }
 
   /**
    * Gets the value of the 'oldAccumulatingAmount' field.
    */
-  public java.lang.Double getOldAccumulatingAmount() {
+  public java.lang.String getOldAccumulatingAmount() {
     return oldAccumulatingAmount;
   }
 
@@ -168,14 +190,14 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
    * Sets the value of the 'oldAccumulatingAmount' field.
    * @param value the value to set.
    */
-  public void setOldAccumulatingAmount(java.lang.Double value) {
+  public void setOldAccumulatingAmount(java.lang.String value) {
     this.oldAccumulatingAmount = value;
   }
 
   /**
    * Gets the value of the 'previousValue' field.
    */
-  public java.lang.Double getPreviousValue() {
+  public java.lang.String getPreviousValue() {
     return previousValue;
   }
 
@@ -183,14 +205,14 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
    * Sets the value of the 'previousValue' field.
    * @param value the value to set.
    */
-  public void setPreviousValue(java.lang.Double value) {
+  public void setPreviousValue(java.lang.String value) {
     this.previousValue = value;
   }
 
   /**
    * Gets the value of the 'currentValue' field.
    */
-  public java.lang.Double getCurrentValue() {
+  public java.lang.String getCurrentValue() {
     return currentValue;
   }
 
@@ -198,7 +220,7 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
    * Sets the value of the 'currentValue' field.
    * @param value the value to set.
    */
-  public void setCurrentValue(java.lang.Double value) {
+  public void setCurrentValue(java.lang.String value) {
     this.currentValue = value;
   }
 
@@ -229,10 +251,10 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
     private java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
     private java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> previousEvents;
     private java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> implicitlyIssuedStartEvents;
-    private double accumulatingAmount;
-    private double oldAccumulatingAmount;
-    private double previousValue;
-    private double currentValue;
+    private java.lang.String accumulatingAmount;
+    private java.lang.String oldAccumulatingAmount;
+    private java.lang.String previousValue;
+    private java.lang.String currentValue;
 
     /** Creates a new Builder */
     private Builder() {
@@ -272,19 +294,19 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
         fieldSetFlags()[5] = true;
       }
       if (isValidValue(fields()[6], other.accumulatingAmount)) {
-        this.accumulatingAmount = (java.lang.Double) data().deepCopy(fields()[6].schema(), other.accumulatingAmount);
+        this.accumulatingAmount = (java.lang.String) data().deepCopy(fields()[6].schema(), other.accumulatingAmount);
         fieldSetFlags()[6] = true;
       }
       if (isValidValue(fields()[7], other.oldAccumulatingAmount)) {
-        this.oldAccumulatingAmount = (java.lang.Double) data().deepCopy(fields()[7].schema(), other.oldAccumulatingAmount);
+        this.oldAccumulatingAmount = (java.lang.String) data().deepCopy(fields()[7].schema(), other.oldAccumulatingAmount);
         fieldSetFlags()[7] = true;
       }
       if (isValidValue(fields()[8], other.previousValue)) {
-        this.previousValue = (java.lang.Double) data().deepCopy(fields()[8].schema(), other.previousValue);
+        this.previousValue = (java.lang.String) data().deepCopy(fields()[8].schema(), other.previousValue);
         fieldSetFlags()[8] = true;
       }
       if (isValidValue(fields()[9], other.currentValue)) {
-        this.currentValue = (java.lang.Double) data().deepCopy(fields()[9].schema(), other.currentValue);
+        this.currentValue = (java.lang.String) data().deepCopy(fields()[9].schema(), other.currentValue);
         fieldSetFlags()[9] = true;
       }
     }
@@ -440,12 +462,12 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
     }
 
     /** Gets the value of the 'accumulatingAmount' field */
-    public java.lang.Double getAccumulatingAmount() {
+    public java.lang.String getAccumulatingAmount() {
       return accumulatingAmount;
     }
     
     /** Sets the value of the 'accumulatingAmount' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder setAccumulatingAmount(double value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder setAccumulatingAmount(java.lang.String value) {
       validate(fields()[6], value);
       this.accumulatingAmount = value;
       fieldSetFlags()[6] = true;
@@ -459,17 +481,18 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
     
     /** Clears the value of the 'accumulatingAmount' field */
     public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder clearAccumulatingAmount() {
+      accumulatingAmount = null;
       fieldSetFlags()[6] = false;
       return this;
     }
 
     /** Gets the value of the 'oldAccumulatingAmount' field */
-    public java.lang.Double getOldAccumulatingAmount() {
+    public java.lang.String getOldAccumulatingAmount() {
       return oldAccumulatingAmount;
     }
     
     /** Sets the value of the 'oldAccumulatingAmount' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder setOldAccumulatingAmount(double value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder setOldAccumulatingAmount(java.lang.String value) {
       validate(fields()[7], value);
       this.oldAccumulatingAmount = value;
       fieldSetFlags()[7] = true;
@@ -483,17 +506,18 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
     
     /** Clears the value of the 'oldAccumulatingAmount' field */
     public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder clearOldAccumulatingAmount() {
+      oldAccumulatingAmount = null;
       fieldSetFlags()[7] = false;
       return this;
     }
 
     /** Gets the value of the 'previousValue' field */
-    public java.lang.Double getPreviousValue() {
+    public java.lang.String getPreviousValue() {
       return previousValue;
     }
     
     /** Sets the value of the 'previousValue' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder setPreviousValue(double value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder setPreviousValue(java.lang.String value) {
       validate(fields()[8], value);
       this.previousValue = value;
       fieldSetFlags()[8] = true;
@@ -507,17 +531,18 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
     
     /** Clears the value of the 'previousValue' field */
     public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder clearPreviousValue() {
+      previousValue = null;
       fieldSetFlags()[8] = false;
       return this;
     }
 
     /** Gets the value of the 'currentValue' field */
-    public java.lang.Double getCurrentValue() {
+    public java.lang.String getCurrentValue() {
       return currentValue;
     }
     
     /** Sets the value of the 'currentValue' field */
-    public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder setCurrentValue(double value) {
+    public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder setCurrentValue(java.lang.String value) {
       validate(fields()[9], value);
       this.currentValue = value;
       fieldSetFlags()[9] = true;
@@ -531,6 +556,7 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
     
     /** Clears the value of the 'currentValue' field */
     public gr.grnet.aquarium.message.avro.gen.ResourceInstanceChargingStateMsg.Builder clearCurrentValue() {
+      currentValue = null;
       fieldSetFlags()[9] = false;
       return this;
     }
@@ -545,10 +571,10 @@ public class ResourceInstanceChargingStateMsg extends org.apache.avro.specific.S
         record.details = fieldSetFlags()[3] ? this.details : (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg>) defaultValue(fields()[3]);
         record.previousEvents = fieldSetFlags()[4] ? this.previousEvents : (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>) defaultValue(fields()[4]);
         record.implicitlyIssuedStartEvents = fieldSetFlags()[5] ? this.implicitlyIssuedStartEvents : (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>) defaultValue(fields()[5]);
-        record.accumulatingAmount = fieldSetFlags()[6] ? this.accumulatingAmount : (java.lang.Double) defaultValue(fields()[6]);
-        record.oldAccumulatingAmount = fieldSetFlags()[7] ? this.oldAccumulatingAmount : (java.lang.Double) defaultValue(fields()[7]);
-        record.previousValue = fieldSetFlags()[8] ? this.previousValue : (java.lang.Double) defaultValue(fields()[8]);
-        record.currentValue = fieldSetFlags()[9] ? this.currentValue : (java.lang.Double) defaultValue(fields()[9]);
+        record.accumulatingAmount = fieldSetFlags()[6] ? this.accumulatingAmount : (java.lang.String) defaultValue(fields()[6]);
+        record.oldAccumulatingAmount = fieldSetFlags()[7] ? this.oldAccumulatingAmount : (java.lang.String) defaultValue(fields()[7]);
+        record.previousValue = fieldSetFlags()[8] ? this.previousValue : (java.lang.String) defaultValue(fields()[8]);
+        record.currentValue = fieldSetFlags()[9] ? this.currentValue : (java.lang.String) defaultValue(fields()[9]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

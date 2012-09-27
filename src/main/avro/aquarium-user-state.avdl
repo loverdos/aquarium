@@ -58,10 +58,10 @@ protocol AquariumUserState {
     map<AnyValueMsg> details;
     array<ResourceEventMsg> previousEvents;
     array<ResourceEventMsg> implicitlyIssuedStartEvents;
-    double accumulatingAmount;
-    double oldAccumulatingAmount;
-    double previousValue;
-    double currentValue;
+   string accumulatingAmount;
+   string oldAccumulatingAmount;
+   string previousValue;
+   string currentValue;
   }
 
   record ResourcesChargingStateMsg {
@@ -83,18 +83,18 @@ protocol AquariumUserState {
   record ChargeslotMsg {
     long startMillis;
     long stopMillis;
-    double unitPrice;
+   string unitPrice;
     string explanation = "";
-    double creditsToSubtract = 0.0;
+   string creditsToSubtract = 0.0;
   }
 
   // The following equation must hold (within a very small error):
   //   `newTotalCredits = oldTotalCredits - sumOfCreditsToSubtract`.
   record WalletEntryMsg {
     string userID; // The user ID this wallet entry is related to.
-    double sumOfCreditsToSubtract; // The credit amount generated for this wallet entry.
-    double oldTotalCredits;
-    double newTotalCredits;
+    string sumOfCreditsToSubtract; // The credit amount generated for this wallet entry.
+    string oldTotalCredits;
+    string newTotalCredits;
     long whenComputedMillis; // When the computation took place
     long referenceStartMillis;
     long referenceStopMillis;
@@ -119,9 +119,9 @@ protocol AquariumUserState {
     long occurredMillis; // When we created the event
     union {string, null} parentOriginalID;
     union {string, null} parentInStoreID;
-//    map<ResourceTypeMsg> resourceTypesMap; // Map[ResourceTypeMsg.name.type, ResourceTypeMsg]
+    boolean isFirst = false; // True only for the very first user state
     map<ResourcesChargingStateMsg> stateOfResources; // Map[ResourceTypeMsg.name.type, ]
-    double totalCredits = 0.0;
+    string totalCredits = 0.0;
     long latestUpdateMillis; // // last update of this working user state
     long latestResourceEventOccurredMillis;
     long billingPeriodOutOfSyncResourceEventsCounter = 0;

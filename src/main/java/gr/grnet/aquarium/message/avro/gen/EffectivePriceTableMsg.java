@@ -8,6 +8,19 @@ package gr.grnet.aquarium.message.avro.gen;
 public class EffectivePriceTableMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]}");
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.EffectiveUnitPriceMsg> priceOverrides;
+
+  /**
+   * Default constructor.
+   */
+  public EffectivePriceTableMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public EffectivePriceTableMsg(java.util.List<gr.grnet.aquarium.message.avro.gen.EffectiveUnitPriceMsg> priceOverrides) {
+    this.priceOverrides = priceOverrides;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

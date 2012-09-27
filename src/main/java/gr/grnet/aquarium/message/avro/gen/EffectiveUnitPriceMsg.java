@@ -9,6 +9,20 @@ public class EffectiveUnitPriceMsg extends org.apache.avro.specific.SpecificReco
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}");
   @Deprecated public double unitPrice;
   @Deprecated public gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg when;
+
+  /**
+   * Default constructor.
+   */
+  public EffectiveUnitPriceMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public EffectiveUnitPriceMsg(java.lang.Double unitPrice, gr.grnet.aquarium.message.avro.gen.CronSpecTupleMsg when) {
+    this.unitPrice = unitPrice;
+    this.when = when;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

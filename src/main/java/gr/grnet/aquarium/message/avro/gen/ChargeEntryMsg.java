@@ -14,6 +14,25 @@ public class ChargeEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   @Deprecated public java.lang.String elapsedTime;
   @Deprecated public java.lang.String units;
   @Deprecated public java.lang.String credits;
+
+  /**
+   * Default constructor.
+   */
+  public ChargeEntryMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public ChargeEntryMsg(java.lang.String id, java.lang.String unitPrice, java.lang.String startTime, java.lang.String endTime, java.lang.String elapsedTime, java.lang.String units, java.lang.String credits) {
+    this.id = id;
+    this.unitPrice = unitPrice;
+    this.startTime = startTime;
+    this.endTime = endTime;
+    this.elapsedTime = elapsedTime;
+    this.units = units;
+    this.credits = credits;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

@@ -8,6 +8,19 @@ package gr.grnet.aquarium.message.avro.gen;
 public class AnyValueMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]}");
   @Deprecated public java.lang.Object anyValue;
+
+  /**
+   * Default constructor.
+   */
+  public AnyValueMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public AnyValueMsg(java.lang.Object anyValue) {
+    this.anyValue = anyValue;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

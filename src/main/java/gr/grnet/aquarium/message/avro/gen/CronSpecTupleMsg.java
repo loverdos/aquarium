@@ -9,6 +9,20 @@ public class CronSpecTupleMsg extends org.apache.avro.specific.SpecificRecordBas
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
   @Deprecated public java.lang.String a;
   @Deprecated public java.lang.String b;
+
+  /**
+   * Default constructor.
+   */
+  public CronSpecTupleMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public CronSpecTupleMsg(java.lang.String a, java.lang.String b) {
+    this.a = a;
+    this.b = b;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

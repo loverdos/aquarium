@@ -19,6 +19,30 @@ public class ResourceEventMsg extends org.apache.avro.specific.SpecificRecordBas
   @Deprecated public java.lang.String value;
   @Deprecated public boolean isSynthetic;
   @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
+
+  /**
+   * Default constructor.
+   */
+  public ResourceEventMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public ResourceEventMsg(java.lang.String originalID, java.lang.String inStoreID, java.lang.Long occurredMillis, java.lang.Long receivedMillis, java.lang.String userID, java.lang.String clientID, java.lang.String eventVersion, java.lang.String resource, java.lang.String instanceID, java.lang.String value, java.lang.Boolean isSynthetic, java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details) {
+    this.originalID = originalID;
+    this.inStoreID = inStoreID;
+    this.occurredMillis = occurredMillis;
+    this.receivedMillis = receivedMillis;
+    this.userID = userID;
+    this.clientID = clientID;
+    this.eventVersion = eventVersion;
+    this.resource = resource;
+    this.instanceID = instanceID;
+    this.value = value;
+    this.isSynthetic = isSynthetic;
+    this.details = details;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

@@ -6,12 +6,29 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\",\"default\":0.0}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"explanation\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":0.0}]}");
   @Deprecated public long startMillis;
   @Deprecated public long stopMillis;
-  @Deprecated public double unitPrice;
+  @Deprecated public java.lang.String unitPrice;
   @Deprecated public java.lang.String explanation;
-  @Deprecated public double creditsToSubtract;
+  @Deprecated public java.lang.String creditsToSubtract;
+
+  /**
+   * Default constructor.
+   */
+  public ChargeslotMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public ChargeslotMsg(java.lang.Long startMillis, java.lang.Long stopMillis, java.lang.String unitPrice, java.lang.String explanation, java.lang.String creditsToSubtract) {
+    this.startMillis = startMillis;
+    this.stopMillis = stopMillis;
+    this.unitPrice = unitPrice;
+    this.explanation = explanation;
+    this.creditsToSubtract = creditsToSubtract;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -30,9 +47,9 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
     switch (field$) {
     case 0: startMillis = (java.lang.Long)value$; break;
     case 1: stopMillis = (java.lang.Long)value$; break;
-    case 2: unitPrice = (java.lang.Double)value$; break;
+    case 2: unitPrice = (java.lang.String)value$; break;
     case 3: explanation = (java.lang.String)value$; break;
-    case 4: creditsToSubtract = (java.lang.Double)value$; break;
+    case 4: creditsToSubtract = (java.lang.String)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -70,7 +87,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
   /**
    * Gets the value of the 'unitPrice' field.
    */
-  public java.lang.Double getUnitPrice() {
+  public java.lang.String getUnitPrice() {
     return unitPrice;
   }
 
@@ -78,7 +95,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
    * Sets the value of the 'unitPrice' field.
    * @param value the value to set.
    */
-  public void setUnitPrice(java.lang.Double value) {
+  public void setUnitPrice(java.lang.String value) {
     this.unitPrice = value;
   }
 
@@ -100,7 +117,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
   /**
    * Gets the value of the 'creditsToSubtract' field.
    */
-  public java.lang.Double getCreditsToSubtract() {
+  public java.lang.String getCreditsToSubtract() {
     return creditsToSubtract;
   }
 
@@ -108,7 +125,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
    * Sets the value of the 'creditsToSubtract' field.
    * @param value the value to set.
    */
-  public void setCreditsToSubtract(java.lang.Double value) {
+  public void setCreditsToSubtract(java.lang.String value) {
     this.creditsToSubtract = value;
   }
 
@@ -135,9 +152,9 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
 
     private long startMillis;
     private long stopMillis;
-    private double unitPrice;
+    private java.lang.String unitPrice;
     private java.lang.String explanation;
-    private double creditsToSubtract;
+    private java.lang.String creditsToSubtract;
 
     /** Creates a new Builder */
     private Builder() {
@@ -161,7 +178,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
         fieldSetFlags()[1] = true;
       }
       if (isValidValue(fields()[2], other.unitPrice)) {
-        this.unitPrice = (java.lang.Double) data().deepCopy(fields()[2].schema(), other.unitPrice);
+        this.unitPrice = (java.lang.String) data().deepCopy(fields()[2].schema(), other.unitPrice);
         fieldSetFlags()[2] = true;
       }
       if (isValidValue(fields()[3], other.explanation)) {
@@ -169,7 +186,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
         fieldSetFlags()[3] = true;
       }
       if (isValidValue(fields()[4], other.creditsToSubtract)) {
-        this.creditsToSubtract = (java.lang.Double) data().deepCopy(fields()[4].schema(), other.creditsToSubtract);
+        this.creditsToSubtract = (java.lang.String) data().deepCopy(fields()[4].schema(), other.creditsToSubtract);
         fieldSetFlags()[4] = true;
       }
     }
@@ -223,12 +240,12 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
     }
 
     /** Gets the value of the 'unitPrice' field */
-    public java.lang.Double getUnitPrice() {
+    public java.lang.String getUnitPrice() {
       return unitPrice;
     }
     
     /** Sets the value of the 'unitPrice' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setUnitPrice(double value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setUnitPrice(java.lang.String value) {
       validate(fields()[2], value);
       this.unitPrice = value;
       fieldSetFlags()[2] = true;
@@ -242,6 +259,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
     
     /** Clears the value of the 'unitPrice' field */
     public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder clearUnitPrice() {
+      unitPrice = null;
       fieldSetFlags()[2] = false;
       return this;
     }
@@ -272,12 +290,12 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
     }
 
     /** Gets the value of the 'creditsToSubtract' field */
-    public java.lang.Double getCreditsToSubtract() {
+    public java.lang.String getCreditsToSubtract() {
       return creditsToSubtract;
     }
     
     /** Sets the value of the 'creditsToSubtract' field */
-    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setCreditsToSubtract(double value) {
+    public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder setCreditsToSubtract(java.lang.String value) {
       validate(fields()[4], value);
       this.creditsToSubtract = value;
       fieldSetFlags()[4] = true;
@@ -291,6 +309,7 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
     
     /** Clears the value of the 'creditsToSubtract' field */
     public gr.grnet.aquarium.message.avro.gen.ChargeslotMsg.Builder clearCreditsToSubtract() {
+      creditsToSubtract = null;
       fieldSetFlags()[4] = false;
       return this;
     }
@@ -301,9 +320,9 @@ public class ChargeslotMsg extends org.apache.avro.specific.SpecificRecordBase i
         ChargeslotMsg record = new ChargeslotMsg();
         record.startMillis = fieldSetFlags()[0] ? this.startMillis : (java.lang.Long) defaultValue(fields()[0]);
         record.stopMillis = fieldSetFlags()[1] ? this.stopMillis : (java.lang.Long) defaultValue(fields()[1]);
-        record.unitPrice = fieldSetFlags()[2] ? this.unitPrice : (java.lang.Double) defaultValue(fields()[2]);
+        record.unitPrice = fieldSetFlags()[2] ? this.unitPrice : (java.lang.String) defaultValue(fields()[2]);
         record.explanation = fieldSetFlags()[3] ? this.explanation : (java.lang.String) defaultValue(fields()[3]);
-        record.creditsToSubtract = fieldSetFlags()[4] ? this.creditsToSubtract : (java.lang.Double) defaultValue(fields()[4]);
+        record.creditsToSubtract = fieldSetFlags()[4] ? this.creditsToSubtract : (java.lang.String) defaultValue(fields()[4]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

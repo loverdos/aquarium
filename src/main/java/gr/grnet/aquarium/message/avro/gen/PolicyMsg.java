@@ -15,6 +15,26 @@ public class PolicyMsg extends org.apache.avro.specific.SpecificRecordBase imple
   @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> resourceMapping;
   @Deprecated public java.util.List<java.lang.String> chargingBehaviors;
   @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg> roleMapping;
+
+  /**
+   * Default constructor.
+   */
+  public PolicyMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public PolicyMsg(java.lang.String originalID, java.lang.String inStoreID, java.lang.String parentID, java.lang.Long validFromMillis, java.lang.Long validToMillis, java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> resourceMapping, java.util.List<java.lang.String> chargingBehaviors, java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.FullPriceTableMsg> roleMapping) {
+    this.originalID = originalID;
+    this.inStoreID = inStoreID;
+    this.parentID = parentID;
+    this.validFromMillis = validFromMillis;
+    this.validToMillis = validToMillis;
+    this.resourceMapping = resourceMapping;
+    this.chargingBehaviors = chargingBehaviors;
+    this.roleMapping = roleMapping;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

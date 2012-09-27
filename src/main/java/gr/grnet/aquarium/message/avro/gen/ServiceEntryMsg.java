@@ -13,6 +13,24 @@ public class ServiceEntryMsg extends org.apache.avro.specific.SpecificRecordBase
   @Deprecated public java.lang.String totalUnits;
   @Deprecated public java.lang.String unitName;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> details;
+
+  /**
+   * Default constructor.
+   */
+  public ServiceEntryMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public ServiceEntryMsg(java.lang.String serviceName, java.lang.String totalCredits, java.lang.String totalElapsedTime, java.lang.String totalUnits, java.lang.String unitName, java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEntryMsg> details) {
+    this.serviceName = serviceName;
+    this.totalCredits = totalCredits;
+    this.totalElapsedTime = totalElapsedTime;
+    this.totalUnits = totalUnits;
+    this.unitName = unitName;
+    this.details = details;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

@@ -19,6 +19,30 @@ public class IMEventMsg extends org.apache.avro.specific.SpecificRecordBase impl
   @Deprecated public java.lang.String role;
   @Deprecated public boolean isSynthetic;
   @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
+
+  /**
+   * Default constructor.
+   */
+  public IMEventMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public IMEventMsg(java.lang.String originalID, java.lang.String inStoreID, java.lang.Long occurredMillis, java.lang.Long receivedMillis, java.lang.String userID, java.lang.String clientID, java.lang.String eventVersion, java.lang.String eventType, java.lang.Boolean isActive, java.lang.String role, java.lang.Boolean isSynthetic, java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details) {
+    this.originalID = originalID;
+    this.inStoreID = inStoreID;
+    this.occurredMillis = occurredMillis;
+    this.receivedMillis = receivedMillis;
+    this.userID = userID;
+    this.clientID = clientID;
+    this.eventVersion = eventVersion;
+    this.eventType = eventType;
+    this.isActive = isActive;
+    this.role = role;
+    this.isSynthetic = isSynthetic;
+    this.details = details;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
