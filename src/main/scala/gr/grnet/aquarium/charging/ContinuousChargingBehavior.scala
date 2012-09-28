@@ -35,7 +35,7 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.MessageConstants
@@ -123,10 +123,11 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
        resourceType: ResourceTypeMsg,
        billingMonthInfo: BillingMonthInfo,
        resourcesChargingState: ResourcesChargingStateMsg,
-       userAgreementHistoryModel: UserAgreementHistoryModel,
-       userStateMsg: UserStateMsg,
+       userStateModel: UserStateModel,
        walletEntryRecorder: WalletEntryMsg ⇒ Unit
    ): (Int, Real) = {
+
+    val userStateMsg = userStateModel.userStateMsg
 
     // 1. Ensure proper initial state per resource and per instance
     ensureInitializedWorkingState(resourcesChargingState, resourceEvent)
@@ -148,7 +149,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
         val dummyFirstEventValue = "0.0" // TODO ? From configuration
 
-        val millis = userAgreementHistoryModel.agreementByTimeslot.headOption match {
+        val millis = userStateModel.agreementByTimeslot.headOption match {
           case None =>
             throw new AquariumInternalError("No agreement!!!") // FIXME Better explanation
           case Some((_,aggr)) =>
@@ -177,7 +178,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       Real(userStateMsg.getTotalCredits),
       previousEvent.getOccurredMillis,
       resourceEvent.getOccurredMillis,
-      userAgreementHistoryModel.agreementByTimeslot,
+      userStateModel.agreementByTimeslot,
       resourcesChargingStateDetails,
       resourceInstanceChargingState,
       aquarium,

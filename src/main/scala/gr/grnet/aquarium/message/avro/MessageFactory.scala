@@ -360,6 +360,15 @@ object MessageFactory {
       build()
   }
 
+  /**
+   * Creates the initial (from the UserActor's perspective) user state.
+   * This may not be the very first user state ever, so we do not set `isFirst`.
+   * @param userID
+   * @param initialCredits
+   * @param occurredMillis
+   * @param originalID
+   * @return
+   */
   def newInitialUserStateMsg(
       userID: String,
       initialCredits: Real,
@@ -379,8 +388,8 @@ object MessageFactory {
     msg.setLatestUpdateMillis(java.lang.Long.valueOf(occurredMillis))
     msg.setInStoreID(null)
     msg.setOriginalID(originalID)
-    msg.setStateOfResources(new java.util.HashMap())
-    msg.setWalletEntries(new java.util.ArrayList[WalletEntryMsg]())
+    msg.setStateOfResources(newJMap)
+    msg.setWalletEntries(newJList)
     msg
   }
 }

@@ -112,7 +112,7 @@ extends StoreProvider
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo) = {
     _userStates.filter { userState ⇒
       userState.getUserID == userID &&
-      userState.getIsFullBillingMonth &&
+      userState.getIsForFullMonth &&
       userState.getBillingYear == bmi.year &&
       userState.getBillingMonth == bmi.month
     }.lastOption

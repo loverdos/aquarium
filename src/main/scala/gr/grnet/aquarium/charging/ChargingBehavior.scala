@@ -37,7 +37,7 @@ package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.Aquarium
 import gr.grnet.aquarium.Real
-import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
@@ -89,8 +89,7 @@ trait ChargingBehavior {
       resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
       resourcesChargingState: ResourcesChargingStateMsg,
-      userAgreementHistoryModel: UserAgreementHistoryModel,
-      userStateMsg: UserStateMsg,
+      userStateModel: UserStateModel,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
   ): (Int, Real)
 

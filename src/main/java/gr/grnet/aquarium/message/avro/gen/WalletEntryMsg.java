@@ -6,7 +6,7 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"WalletEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"sumOfCreditsToSubtract\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"oldTotalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"newTotalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingMonthDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"explanation\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":0.0}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}}]}}},{\"name\":\"resourceType\",\"type\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unit\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"chargingBehaviorClass\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"WalletEntryMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"sumOfCreditsToSubtract\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"oldTotalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"newTotalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingMonthDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"explanation\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":0.0}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}}]}}},{\"name\":\"resourceType\",\"type\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unit\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"chargingBehaviorClass\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"isForRealtimeCalc\",\"type\":\"boolean\",\"default\":false}]}");
   @Deprecated public java.lang.String userID;
   @Deprecated public java.lang.String sumOfCreditsToSubtract;
   @Deprecated public java.lang.String oldTotalCredits;
@@ -21,6 +21,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> resourceEvents;
   @Deprecated public gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg resourceType;
   @Deprecated public boolean isSynthetic;
+  @Deprecated public boolean isForRealtimeCalc;
 
   /**
    * Default constructor.
@@ -30,7 +31,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
   /**
    * All-args constructor.
    */
-  public WalletEntryMsg(java.lang.String userID, java.lang.String sumOfCreditsToSubtract, java.lang.String oldTotalCredits, java.lang.String newTotalCredits, java.lang.Long whenComputedMillis, java.lang.Long referenceStartMillis, java.lang.Long referenceStopMillis, java.lang.Integer billingYear, java.lang.Integer billingMonth, java.lang.Integer billingMonthDay, java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> chargeslots, java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> resourceEvents, gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg resourceType, java.lang.Boolean isSynthetic) {
+  public WalletEntryMsg(java.lang.String userID, java.lang.String sumOfCreditsToSubtract, java.lang.String oldTotalCredits, java.lang.String newTotalCredits, java.lang.Long whenComputedMillis, java.lang.Long referenceStartMillis, java.lang.Long referenceStopMillis, java.lang.Integer billingYear, java.lang.Integer billingMonth, java.lang.Integer billingMonthDay, java.util.List<gr.grnet.aquarium.message.avro.gen.ChargeslotMsg> chargeslots, java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> resourceEvents, gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg resourceType, java.lang.Boolean isSynthetic, java.lang.Boolean isForRealtimeCalc) {
     this.userID = userID;
     this.sumOfCreditsToSubtract = sumOfCreditsToSubtract;
     this.oldTotalCredits = oldTotalCredits;
@@ -45,6 +46,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     this.resourceEvents = resourceEvents;
     this.resourceType = resourceType;
     this.isSynthetic = isSynthetic;
+    this.isForRealtimeCalc = isForRealtimeCalc;
   }
 
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
@@ -65,6 +67,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     case 11: return resourceEvents;
     case 12: return resourceType;
     case 13: return isSynthetic;
+    case 14: return isForRealtimeCalc;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -86,6 +89,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     case 11: resourceEvents = (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>)value$; break;
     case 12: resourceType = (gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg)value$; break;
     case 13: isSynthetic = (java.lang.Boolean)value$; break;
+    case 14: isForRealtimeCalc = (java.lang.Boolean)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -300,6 +304,21 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     this.isSynthetic = value;
   }
 
+  /**
+   * Gets the value of the 'isForRealtimeCalc' field.
+   */
+  public java.lang.Boolean getIsForRealtimeCalc() {
+    return isForRealtimeCalc;
+  }
+
+  /**
+   * Sets the value of the 'isForRealtimeCalc' field.
+   * @param value the value to set.
+   */
+  public void setIsForRealtimeCalc(java.lang.Boolean value) {
+    this.isForRealtimeCalc = value;
+  }
+
   /** Creates a new WalletEntryMsg RecordBuilder */
   public static gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder newBuilder() {
     return new gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder();
@@ -335,6 +354,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
     private java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg> resourceEvents;
     private gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg resourceType;
     private boolean isSynthetic;
+    private boolean isForRealtimeCalc;
 
     /** Creates a new Builder */
     private Builder() {
@@ -404,6 +424,10 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
       if (isValidValue(fields()[13], other.isSynthetic)) {
         this.isSynthetic = (java.lang.Boolean) data().deepCopy(fields()[13].schema(), other.isSynthetic);
         fieldSetFlags()[13] = true;
+      }
+      if (isValidValue(fields()[14], other.isForRealtimeCalc)) {
+        this.isForRealtimeCalc = (java.lang.Boolean) data().deepCopy(fields()[14].schema(), other.isForRealtimeCalc);
+        fieldSetFlags()[14] = true;
       }
     }
 
@@ -750,6 +774,30 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
       return this;
     }
 
+    /** Gets the value of the 'isForRealtimeCalc' field */
+    public java.lang.Boolean getIsForRealtimeCalc() {
+      return isForRealtimeCalc;
+    }
+    
+    /** Sets the value of the 'isForRealtimeCalc' field */
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder setIsForRealtimeCalc(boolean value) {
+      validate(fields()[14], value);
+      this.isForRealtimeCalc = value;
+      fieldSetFlags()[14] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'isForRealtimeCalc' field has been set */
+    public boolean hasIsForRealtimeCalc() {
+      return fieldSetFlags()[14];
+    }
+    
+    /** Clears the value of the 'isForRealtimeCalc' field */
+    public gr.grnet.aquarium.message.avro.gen.WalletEntryMsg.Builder clearIsForRealtimeCalc() {
+      fieldSetFlags()[14] = false;
+      return this;
+    }
+
     @Override
     public WalletEntryMsg build() {
       try {
@@ -768,6 +816,7 @@ public class WalletEntryMsg extends org.apache.avro.specific.SpecificRecordBase 
         record.resourceEvents = fieldSetFlags()[11] ? this.resourceEvents : (java.util.List<gr.grnet.aquarium.message.avro.gen.ResourceEventMsg>) defaultValue(fields()[11]);
         record.resourceType = fieldSetFlags()[12] ? this.resourceType : (gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg) defaultValue(fields()[12]);
         record.isSynthetic = fieldSetFlags()[13] ? this.isSynthetic : (java.lang.Boolean) defaultValue(fields()[13]);
+        record.isForRealtimeCalc = fieldSetFlags()[14] ? this.isForRealtimeCalc : (java.lang.Boolean) defaultValue(fields()[14]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

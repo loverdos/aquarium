@@ -95,16 +95,17 @@ protocol AquariumUserState {
     string sumOfCreditsToSubtract; // The credit amount generated for this wallet entry.
     string oldTotalCredits;
     string newTotalCredits;
-    long whenComputedMillis; // When the computation took place
-    long referenceStartMillis;
-    long referenceStopMillis;
+    long whenComputedMillis;   // When the computation took place
+    long referenceStartMillis; // start of period this entry refers to
+    long referenceStopMillis;  // end of period this entry refers to
     int billingYear;
     int billingMonth;
     int billingMonthDay;
     array<ChargeslotMsg> chargeslots; // The details of the credit computation
-    array<ResourceEventMsg> resourceEvents; // current is the last one
+    array<ResourceEventMsg> resourceEvents; // The events used to make this computation. The current is the last one
     ResourceTypeMsg resourceType;
     boolean isSynthetic = false;
+    boolean isForRealtimeCalc = false;
   }
 
   // convenient wrapper for a list of wallet entries
@@ -120,15 +121,16 @@ protocol AquariumUserState {
     union {string, null} parentOriginalID;
     union {string, null} parentInStoreID;
     boolean isFirst = false; // True only for the very first user state
+    boolean isForFullMonth = false; // True when computed as a reference for a month's billing state
     map<ResourcesChargingStateMsg> stateOfResources; // Map[ResourceTypeMsg.name.type, ]
     string totalCredits = "0";
     long latestUpdateMillis; // // last update of this working user state
     long latestResourceEventOccurredMillis;
     long billingPeriodOutOfSyncResourceEventsCounter = 0;
-    int billingYear;
-    int billingMonth;
+    int billingYear; // The billing year this snapshot refers to
+    int billingMonth; //  The billing month this year refers to
     int billingMonthDay;
-    boolean isFullBillingMonth = false;
+    UserAgreementHistoryMsg userAgreementHistory;
     array<WalletEntryMsg> walletEntries;
   }
 }

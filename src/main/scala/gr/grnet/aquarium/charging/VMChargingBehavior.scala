@@ -37,7 +37,7 @@ package gr.grnet.aquarium.charging
 
 import VMChargingBehavior.SelectorLabels.PowerStatus
 import VMChargingBehavior.Selectors.Power
-import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.MessageConstants
@@ -138,10 +138,11 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
       resourcesChargingState: ResourcesChargingStateMsg,
-      userAgreementHistoryModel: UserAgreementHistoryModel,
-      userStateMsg: UserStateMsg,
+      userStateModel: UserStateModel,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
   ): (Int, Real) = {
+
+    val userStateMsg = userStateModel.userStateMsg
 
     // 1. Ensure proper initial state per resource and per instance
     ensureInitializedWorkingState(resourcesChargingState,resourceEvent)
@@ -169,7 +170,7 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
           Real(userStateMsg.getTotalCredits),
           previousEvent.getOccurredMillis,
           resourceEvent.getOccurredMillis,
-          userAgreementHistoryModel.agreementByTimeslot,
+          userStateModel.agreementByTimeslot,
           resourcesChargingStateDetails,
           resourceInstanceChargingState,
           aquarium,

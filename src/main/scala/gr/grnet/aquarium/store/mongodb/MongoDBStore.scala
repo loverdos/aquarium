@@ -177,7 +177,7 @@ class MongoDBStore(
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo) = {
     val query = new BasicDBObjectBuilder().
       add(MongoDBStore.JsonNames.userID, userID).
-      add(MongoDBStore.JsonNames.isFullBillingMonth, true).
+      add(MongoDBStore.JsonNames.isForFullMonth, true).
       add(MongoDBStore.JsonNames.billingYear, bmi.year).
       add(MongoDBStore.JsonNames.billingMonth, bmi.month).
       get()
@@ -219,7 +219,7 @@ class MongoDBStore(
       add(MongoDBStore.JsonNames.payload, AvroHelpers.bytesOfSpecificRecord(event)).
       add(MongoDBStore.JsonNames.userID, event.getUserID).
       add(MongoDBStore.JsonNames.occurredMillis, event.getOccurredMillis).
-      add(MongoDBStore.JsonNames.isFullBillingMonth, event.getIsFullBillingMonth).
+      add(MongoDBStore.JsonNames.isForFullMonth, event.getIsForFullMonth).
       add(MongoDBStore.JsonNames.billingYear, event.getBillingYear).
       add(MongoDBStore.JsonNames.billingMonth, event.getBillingMonth).
       add(MongoDBStore.JsonNames.billingMonthDay, event.getBillingMonthDay).

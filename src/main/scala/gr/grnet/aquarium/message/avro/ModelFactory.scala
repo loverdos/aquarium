@@ -48,6 +48,7 @@ import gr.grnet.aquarium.policy.UserAgreementModel
 import gr.grnet.aquarium.policy._
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsScalaMapConverter
+import gr.grnet.aquarium.Real
 
 /**
  * Provides helper methods that construct model objects, usually from their avro message counterparts.
@@ -191,7 +192,14 @@ object ModelFactory {
     new UserAgreementHistoryModel(historyMsg)
   }
 
-  def newUserStateModel(msg: UserStateMsg): UserStateModel = {
-    new UserStateModel(msg)
+  def newInitialUserStateModel(
+      userID: String,
+      initialCredits: Real,
+      occurredMillis: Long
+  ): UserStateModel = {
+    val userStateMsg = MessageFactory.newInitialUserStateMsg(userID, initialCredits, occurredMillis)
+    val userAgreementHistoryMsg = MessageFactory.newUserAgreementHistoryMsg(userID)
+
+    new UserStateModel(userStateMsg, userAgreementHistoryMsg)
   }
 }

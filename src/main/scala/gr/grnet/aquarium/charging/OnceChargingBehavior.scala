@@ -36,7 +36,7 @@
 package gr.grnet.aquarium.charging
 
 import gr.grnet.aquarium.{Real, Aquarium}
-import gr.grnet.aquarium.charging.state.UserAgreementHistoryModel
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel}
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
@@ -83,10 +83,11 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       resourceType: ResourceTypeMsg,
       billingMonthInfo: BillingMonthInfo,
       resourcesChargingState: ResourcesChargingStateMsg,
-      userAgreementHistoryModel: UserAgreementHistoryModel,
-      userStateMsg: UserStateMsg,
+      userStateModel: UserStateModel,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
   ): (Int, Real) = {
+    val userStateMsg = userStateModel.userStateMsg
+
     // The credits are given in the value
     // But we cannot just apply them, since we also need to take into account the unit price.
     // Normally, the unit price is 1.0 but we have the flexibility to allow more stuff).
@@ -108,7 +109,7 @@ final class OnceChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       Real(userStateMsg.getTotalCredits),
       resourceEvent.getOccurredMillis,
       resourceEvent.getOccurredMillis + 1, // single point in time
-      userAgreementHistoryModel.agreementByTimeslot,
+      userStateModel.agreementByTimeslot,
       resourcesChargingStateDetails,
       resourceInstanceChargingState,
       aquarium,

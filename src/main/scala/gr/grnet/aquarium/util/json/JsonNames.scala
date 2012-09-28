@@ -52,7 +52,7 @@ final object JsonNames {
   final val billingMonth = "billingMonth"
   final val billingMonthDay = "billingMonthDay"
   final val billingYear = "billingYear"
-  final val isFullBillingMonth = "isFullBillingMonth"
+  final val isForFullMonth = "isForFullMonth"
   final val eventType = "eventType"
   final val eventVersion = "eventVersion"
   final val userID = "userID"
