@@ -121,7 +121,7 @@ protocol AquariumUserState {
     union {string, null} parentInStoreID;
     boolean isFirst = false; // True only for the very first user state
     map<ResourcesChargingStateMsg> stateOfResources; // Map[ResourceTypeMsg.name.type, ]
-    string totalCredits = 0.0;
+    string totalCredits = "0";
     long latestUpdateMillis; // // last update of this working user state
     long latestResourceEventOccurredMillis;
     long billingPeriodOutOfSyncResourceEventsCounter = 0;
