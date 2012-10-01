@@ -44,7 +44,7 @@ import scala.Predef.Map
 import gr.grnet.aquarium.policy.ResourceType
 import gr.grnet.aquarium.util.date.TimeHelpers
 import gr.grnet.aquarium.Real
-
+import gr.grnet.aquarium.util.JavaFactory.{newJList, newJMap}
 /**
  * Provides helper methods that construct avro messages.
  *
@@ -85,9 +85,6 @@ object MessageFactory {
   ): EffectiveUnitPriceMsg = {
     newEffectiveUnitPriceMsg(unitPrice.toString, whenOpt)
   }
-
-  def newJList[T]   = new java.util.ArrayList[T]()
-  def newJMap[K, V] = new java.util.HashMap[K, V]()
 
   def newEffectivePriceTableMsg(priceOverrides: EffectiveUnitPriceMsg*) = {
     EffectivePriceTableMsg.newBuilder().
