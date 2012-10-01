@@ -58,6 +58,7 @@ final class UserStateModel(
   require(this._userStateMsg ne null, "this._userStateMsg ne null")
   require(this._userAgreementHistoryMsg ne null, "this._userAgreementHistoryMsg ne null")
 
+  private[this] var _isInitial = true
   private[this] var _latestIMEventOccurredMillis = 0L
   private[this] var _userCreationIMEventMsgOpt: Option[IMEventMsg] = None
 
@@ -90,9 +91,12 @@ final class UserStateModel(
   }
 
   private[this] def updateOtherVars(imEvent: IMEventMsg) {
+    this._isInitial = false
     checkUserCreationIMEvent(imEvent)
     checkLatestIMEventOccurredMillis(imEvent)
   }
+
+  def isInitial = this._isInitial
 
   def userID = this._userAgreementHistoryMsg.getUserID
 
@@ -112,12 +116,14 @@ final class UserStateModel(
 
   def updateUserStateMsg(msg: UserStateMsg) {
     this._userStateMsg = msg
+    this._isInitial = false
   }
 
   def userAgreementHistoryMsg = this._userAgreementHistoryMsg
 
   def updateUserAgreementHistoryMsg(msg: UserAgreementHistoryMsg) {
     this._userAgreementHistoryMsg = msg
+    this._isInitial = false
   }
 
   def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel] = {

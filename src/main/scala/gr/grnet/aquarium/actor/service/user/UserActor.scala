@@ -118,6 +118,8 @@ class UserActor extends ReflectiveRoleableActor {
     (this._userStateModel ne null)
   }
 
+  private[this] def isInitial = this._userStateModel.isInitial
+
   /**
    * Creates the agreement history from all the stored IMEvents.
    *
@@ -187,11 +189,32 @@ class UserActor extends ReflectiveRoleableActor {
         this._userStateModel.updateUserAgreementHistoryMsg(historyMsg)
     }
   }
+
+  private[this] def checkInitial(nextThing: () ⇒ Any = () ⇒ {}): Boolean = {
+    if(!isInitial) {
+      return false
+    }
+
+    val (userCreated, imEventsCount) = createUserAgreementHistoryFromIMEvents(userID)
+
+    if(userCreated) {
+      loadLastKnownUserStateAndUpdateAgreements(this._userStateModel.userAgreementHistoryMsg)
+    }
+
+    nextThing()
+
+    true
+  }
+
   /**
    * Processes [[gr.grnet.aquarium.message.avro.gen.IMEventMsg]]s that come directly from the
    * messaging hub (rabbitmq).
    */
   def onIMEventMsg(imEvent: IMEventMsg) {
+    if(checkInitial()) {
+      return
+    }
+
     // Check for out of sync (regarding IMEvents)
     val isOutOfSyncIM = imEvent.getOccurredMillis < this._userStateModel.latestIMEventOccurredMillis
     if(isOutOfSyncIM) {
@@ -221,6 +244,10 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onResourceEventMsg(rcEvent: ResourceEventMsg) {
+    if(checkInitial()) {
+      return
+    }
+
     if(!haveUserCreationEvent) {
       DEBUG("No agreements. Ignoring %s", rcEvent)
 
@@ -249,6 +276,8 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onGetUserBillRequest(event: GetUserBillRequest): Unit = {
+    checkInitial()
+
     try{
       val timeslot = event.timeslot
       val resourceTypes: Map[String, ResourceType] = aquarium.policyStore.
@@ -272,6 +301,8 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onGetUserBalanceRequest(event: GetUserBalanceRequest): Unit = {
+    checkInitial()
+
     val userID = event.userID
 
     (haveAgreements, haveUserState) match {
@@ -309,6 +340,8 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onGetUserStateRequest(event: GetUserStateRequest): Unit = {
+    checkInitial()
+
     haveUserState match {
       case true ⇒
         val realtimeMillis = TimeHelpers.nowMillis()
@@ -326,6 +359,8 @@ class UserActor extends ReflectiveRoleableActor {
   }
 
   def onGetUserWalletRequest(event: GetUserWalletRequest): Unit = {
+    checkInitial()
+
     haveUserState match {
       case true ⇒
         DEBUG("haveWorkingUserState: %s", event)
@@ -377,10 +412,7 @@ class UserActor extends ReflectiveRoleableActor {
       TimeHelpers.nowMillis()
     )
 
-    val (userCreated, imEventsCount) = createUserAgreementHistoryFromIMEvents(userID)
-    if(userCreated) {
-      loadLastKnownUserStateAndUpdateAgreements(this._userStateModel.userAgreementHistoryMsg)
-    }
+    require(this._userStateModel.isInitial, "this._userStateModel.isInitial")
   }
 
   private[this] def D_userID = {
