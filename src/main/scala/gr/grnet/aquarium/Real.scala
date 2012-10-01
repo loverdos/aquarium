@@ -37,16 +37,18 @@
 
 package gr.grnet.aquarium
 
-import java.math.MathContext
+import java.math.{RoundingMode, MathContext}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 final object Real {
-  final val Zero = this(0)
-  final val One  = this(1)
-  final val _1K  = this(1024)
+  final val DefaultMathContext = new java.math.MathContext(50, RoundingMode.HALF_UP)
+
+  final val Zero = Real(0)
+  final val One  = Real(1)
+  final val _1K  = Real(1024)
   final val _1M  = _1K * _1K
   final val _1G  = _1M * _1K
 
@@ -58,17 +60,17 @@ final object Real {
   final val GBInverse = One / GB
 
 
-  @inline final def apply(v: java.math.BigDecimal) = {
-    new BigDecimal(v, MathContext.UNLIMITED)
+  @inline final def apply(v: java.math.BigDecimal): Real = {
+    new scala.math.BigDecimal(v, DefaultMathContext)
   }
 
-  @inline final def apply(v: String): Real = this(new java.math.BigDecimal(v))
+  @inline final def apply(v: String): Real = Real apply (new java.math.BigDecimal(v))
 
-  @inline final def apply(v: Double): Real = this(new java.math.BigDecimal(v))
+  @inline final def apply(v: Double): Real = Real apply (new java.math.BigDecimal(v))
 
-  @inline final def apply(v: Long): Real = this(new java.math.BigDecimal(v))
+  @inline final def apply(v: Long): Real = Real apply (new java.math.BigDecimal(v))
 
-  @inline final def apply(v: Int): Real = this(new java.math.BigDecimal(v))
+  @inline final def apply(v: Int): Real = Real apply (new java.math.BigDecimal(v))
 
   @inline final def toMsgField(v: Real): String = v.toString()
 

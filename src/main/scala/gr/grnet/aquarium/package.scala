@@ -42,7 +42,7 @@ package gr.grnet
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 package object aquarium {
-  final type Real = BigDecimal
+  final type Real = scala.math.BigDecimal
 
   @inline final def HrsOfMillis(timeDeltaMillis: Long): Real = {
     Real.HourMillisInverse * timeDeltaMillis

@@ -334,10 +334,14 @@ object MessageFactory {
     msg
   }
 
-  def newUserAgreementHistoryMsg(userID: String): UserAgreementHistoryMsg = {
+  def newUserAgreementHistoryMsg(
+      userID: String,
+      originalID: String = MessageHelpers.UserAgreementHistoryMsgIDGenerator.nextUID()
+  ): UserAgreementHistoryMsg = {
     val msg = new UserAgreementHistoryMsg
-    msg.setOriginalID(MessageHelpers.UserAgreementHistoryMsgIDGenerator.nextUID())
+    msg.setOriginalID(originalID)
     msg.setUserID(userID)
+    msg.setAgreements(newJList)
     msg
   }
 
@@ -390,6 +394,7 @@ object MessageFactory {
     msg.setOriginalID(originalID)
     msg.setStateOfResources(newJMap)
     msg.setWalletEntries(newJList)
+    msg.setUserAgreementHistory(newUserAgreementHistoryMsg(userID))
     msg
   }
 }
