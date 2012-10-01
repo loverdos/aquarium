@@ -180,7 +180,7 @@ extends StoreProvider
    */
   def findCreateIMEventByUserID(userID: String) = {
     _imEvents.find { event ⇒
-      event.getUserID() == userID && MessageHelpers.isIMEventCreate(event)
+      event.getUserID() == userID && MessageHelpers.isUserCreationIMEvent(event)
     }
   }
 

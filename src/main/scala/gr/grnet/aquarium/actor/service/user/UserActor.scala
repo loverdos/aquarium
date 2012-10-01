@@ -136,7 +136,7 @@ class UserActor extends ReflectiveRoleableActor {
       _imcounter += 1
       DEBUG("Replaying [%s/%s] %s", shortClassNameOf(imEvent), _imcounter, imEvent)
 
-      if(_imcounter == 1 && !MessageHelpers.isIMEventCreate(imEvent)) {
+      if(_imcounter == 1 && !MessageHelpers.isUserCreationIMEvent(imEvent)) {
         // The very first event must be a CREATE event. Otherwise we abort initialization.
         // This will normally happen during devops :)
         INFO("Ignoring first %s since it is not CREATE", shortClassNameOf(imEvent))
@@ -176,18 +176,26 @@ class UserActor extends ReflectiveRoleableActor {
     )
   }
 
-  private[this] def loadLastKnownUserStateAndUpdateAgreements(historyMsg: UserAgreementHistoryMsg) {
-    val userID = historyMsg.getUserID
-    val latestUserStateOpt = aquarium.userStateStore.findLatestUserState(userID)
-    latestUserStateOpt match {
+  private[this] def loadLastKnownUserStateAndUpdateAgreements() {
+    val userID = this._userStateModel.userID
+    aquarium.userStateStore.findLatestUserState(userID) match {
       case None ⇒
         // First user state ever
         saveFirstUserState(userID)
 
       case Some(latestUserState) ⇒
         this._userStateModel.updateUserStateMsg(latestUserState)
-        this._userStateModel.updateUserAgreementHistoryMsg(historyMsg)
     }
+  }
+
+  private[this] def processResourceEventsAfterLastKnownUserState() {
+    // Update the user state snapshot with fresh (ie not previously processed) events.
+
+  }
+
+  private[this] def makeUserStateMsgUpToDate() {
+    loadLastKnownUserStateAndUpdateAgreements()
+    processResourceEventsAfterLastKnownUserState()
   }
 
   private[this] def checkInitial(nextThing: () ⇒ Any = () ⇒ {}): Boolean = {
@@ -198,7 +206,7 @@ class UserActor extends ReflectiveRoleableActor {
     val (userCreated, imEventsCount) = createUserAgreementHistoryFromIMEvents(userID)
 
     if(userCreated) {
-      loadLastKnownUserStateAndUpdateAgreements(this._userStateModel.userAgreementHistoryMsg)
+      makeUserStateMsgUpToDate()
     }
 
     nextThing()
@@ -236,8 +244,8 @@ class UserActor extends ReflectiveRoleableActor {
     this._userStateModel.insertUserAgreementMsgFromIMEvent(imEvent)
     this._imMsgCount += 1
 
-    if(haveUserCreationEvent) {
-      loadLastKnownUserStateAndUpdateAgreements(this._userStateModel.userAgreementHistoryMsg)
+    if(MessageHelpers.isUserCreationIMEvent(imEvent)) {
+      makeUserStateMsgUpToDate()
     }
 
     DEBUG("Agreements: %s", this._userStateModel.userAgreementHistoryMsg)

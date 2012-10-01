@@ -68,7 +68,7 @@ final class UserAgreementHistoryModel(val userAgreementHistoryMsg: UserAgreement
   }
 
   private[this] def checkUserCreationIMEvent(imEvent: IMEventMsg) {
-    if(MessageHelpers.isIMEventCreate(imEvent)) {
+    if(MessageHelpers.isUserCreationIMEvent(imEvent)) {
       this._userCreationIMEventMsgOpt = Some(imEvent)
     }
   }

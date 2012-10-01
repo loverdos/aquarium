@@ -411,7 +411,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
    * @param imEvent       The IMEvent that creates the user
    */
   def initialUserAgreement(imEvent: IMEventMsg): UserAgreementModel = {
-    require(MessageHelpers.isIMEventCreate(imEvent))
+    require(MessageHelpers.isUserCreationIMEvent(imEvent))
 
     val role = imEvent.getRole
     val referenceTimeMillis = imEvent.getOccurredMillis

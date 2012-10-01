@@ -83,9 +83,9 @@ protocol AquariumUserState {
   record ChargeslotMsg {
     long startMillis;
     long stopMillis;
-   string unitPrice;
+    string unitPrice;
     string explanation = "";
-   string creditsToSubtract = 0.0;
+    string creditsToSubtract = 0.0;
   }
 
   // The following equation must hold (within a very small error):

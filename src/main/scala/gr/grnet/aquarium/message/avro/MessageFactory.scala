@@ -392,6 +392,7 @@ object MessageFactory {
     msg.setStateOfResources(newJMap)
     msg.setWalletEntries(newJList)
     msg.setUserAgreementHistory(newUserAgreementHistoryMsg(userID))
+    msg.setStateOfResources(newJMap)
     msg
   }
 }

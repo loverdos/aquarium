@@ -96,11 +96,11 @@ final object MessageHelpers {
     !isOccurredWithinMillis(event, billingStartMillis, billingStopMillis)
   }
 
-  @inline final def isIMEventCreate(msg: IMEventMsg) = {
+  @inline final def isUserCreationIMEvent(msg: IMEventMsg) = {
     msg.getEventType().toLowerCase() == MessageConstants.IMEventMsg.EventTypes.create
   }
 
-  @inline final def isIMEventModify(msg: IMEventMsg) = {
+  @inline final def isUserModificationIMEvent(msg: IMEventMsg) = {
     msg.getEventType().toLowerCase() == MessageConstants.IMEventMsg.EventTypes.modify
   }
 
@@ -325,7 +325,7 @@ final object MessageHelpers {
     agreement.getRelatedIMEventMsg match {
       case null ⇒
       case imEvent ⇒
-        if(isIMEventCreate(imEvent)) {
+        if(isUserCreationIMEvent(imEvent)) {
           history.setUserCreationTimeMillis(imEvent.getOccurredMillis)
         }
     }

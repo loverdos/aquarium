@@ -137,7 +137,7 @@ class IMEventPayloadHandler(aquarium: Aquarium, logger: Logger)
             val userID = imEvent.getUserID
             val createIMEventOpt = store.findCreateIMEventByUserID(userID)
             val userHasBeenCreated = createIMEventOpt.isDefined
-            val isCreateUser = MessageHelpers.isIMEventCreate(imEvent)
+            val isCreateUser = MessageHelpers.isUserCreationIMEvent(imEvent)
 
             (userHasBeenCreated, isCreateUser) match {
               case (true, true) ⇒
