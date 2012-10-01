@@ -152,11 +152,17 @@ extends StoreProvider
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEventMsg ⇒ Unit): Unit = {
+  )(f: ResourceEventMsg ⇒ Unit): Long = {
+    var _counter= 0L
     _resourceEvents.filter { case ev ⇒
       ev.getUserID == userID &&
       MessageHelpers.isOccurredWithinMillis(ev, startMillis, stopMillis)
-    }.foreach(f)
+    } foreach { rcEvent ⇒
+      f(rcEvent)
+      _counter += 1
+    }
+
+    _counter
   }
 
   //+ IMEventStore

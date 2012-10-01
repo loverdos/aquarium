@@ -139,8 +139,8 @@ class MongoDBStore(
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEventMsg ⇒ Unit): Unit = {
-
+  )(f: ResourceEventMsg ⇒ Unit): Long = {
+    var _counter= 0L
     val query = new BasicDBObjectBuilder().
       add(MongoDBStore.JsonNames.userID, userID).
       add(MongoDBStore.JsonNames.occurredMillis, new BasicDBObject("$gte", startMillis)).
@@ -157,8 +157,11 @@ class MongoDBStore(
         val nextEvent = AvroHelpers.specificRecordOfBytes(payload, new ResourceEventMsg)
 
         f(nextEvent)
+        _counter += 1
       }
     }
+
+    _counter
   }
   //-ResourceEventStore
 

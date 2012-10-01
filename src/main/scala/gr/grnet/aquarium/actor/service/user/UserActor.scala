@@ -190,7 +190,6 @@ class UserActor extends ReflectiveRoleableActor {
 
   private[this] def processResourceEventsAfterLastKnownUserState() {
     // Update the user state snapshot with fresh (ie not previously processed) events.
-
   }
 
   private[this] def makeUserStateMsgUpToDate() {
