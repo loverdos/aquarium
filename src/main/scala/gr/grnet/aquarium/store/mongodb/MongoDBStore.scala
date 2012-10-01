@@ -45,6 +45,7 @@ import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, IMEventMsg, ResourceEve
 import gr.grnet.aquarium.message.avro.{MessageFactory, OrderingHelpers, AvroHelpers}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.util._
+import gr.grnet.aquarium.util.Once
 import gr.grnet.aquarium.util.json.JsonSupport
 import gr.grnet.aquarium.{Aquarium, AquariumException}
 import org.apache.avro.specific.SpecificRecord
@@ -74,6 +75,33 @@ class MongoDBStore(
   private[store] lazy val imEvents = getCollection(MongoDBStore.IMEventCollection)
   private[store] lazy val policies = getCollection(MongoDBStore.PolicyCollection)
 
+  private[store] lazy val indicesMap = {
+   val resev=  new BasicDBObjectBuilder().
+                      add(MongoDBStore.JsonNames.id,1).
+                      add(MongoDBStore.JsonNames.userID,1).
+                      add(MongoDBStore.JsonNames.occurredMillis,1).
+                      add(MongoDBStore.JsonNames.receivedMillis,1).get
+   val imev =  new BasicDBObjectBuilder().
+                 add(MongoDBStore.JsonNames.userID,1).
+                 add(MongoDBStore.JsonNames.eventType,"").
+                 add(MongoDBStore.JsonNames.occurredMillis,1).get
+   val policy = new BasicDBObjectBuilder().
+                 add("validFromMillis",1).
+                 add("validToMillis",1).get
+   val user = new BasicDBObjectBuilder().
+              add( "occurredMillis",1).
+              add("isFullBillingMonth",false).
+              add("billingYear",1).
+              add("billingMonth",1).
+              add("billingMonthDay",1).get
+    Map(MongoDBStore.ResourceEventCollection -> resev,
+        MongoDBStore.IMEventCollection-> imev,
+        MongoDBStore.PolicyCollection-> policy,
+        MongoDBStore.UserStateCollection-> user
+       )
+  }
+  private[this] val once = new Once()
+
   private[this] def doAuthenticate(db: DB) {
     if(!db.isAuthenticated && !db.authenticate(username, password.toCharArray)) {
       throw new AquariumException("Could not authenticate user %s".format(username))
@@ -83,6 +111,11 @@ class MongoDBStore(
   private[this] def getCollection(name: String): DBCollection = {
     val db = mongo.getDB(database)
     doAuthenticate(db)
+    once.run { /* this code is thread-safe and will run exactly once*/
+      indicesMap.foreach { case (collection,obj) =>
+        mongo.getDB(database).getCollection(collection).createIndex(obj)
+      }
+    }
     db.getCollection(name)
   }
 
@@ -353,13 +386,15 @@ class MongoDBStore(
 object MongoDBStore {
   final val JsonNames = gr.grnet.aquarium.util.json.JsonNames
 
-  final val ResourceEventCollection = "resevents"
+  final val collections = List("resevents","userstates","imevents","policies")
 
-  final val UserStateCollection = "userstates"
+  final val ResourceEventCollection = collections(0)
 
-  final val IMEventCollection = "imevents"
+  final val UserStateCollection = collections(1)
 
-  final val PolicyCollection = "policies"
+  final val IMEventCollection = collections(2)
+
+  final val PolicyCollection = collections(3)
 
   def firstResultIfExists[A](cursor: DBCursor, f: DBObject ⇒ A): Option[A] = {
     withCloseable(cursor) { cursor ⇒
