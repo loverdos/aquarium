@@ -94,7 +94,7 @@ object AvroHelpers {
   def bytesOfSpecificRecord[R <: SpecificRecord](r: R): Array[Byte] = {
     val schema = r.getSchema
     val out = new ByteArrayOutputStream()
-    val encoder = EncoderFactory.get().binaryEncoder(out, null)
+    val encoder = DefaultEncoderFactory.binaryEncoder(out, null)
     val writer = new SpecificDatumWriter[R](schema)
 
     writer.write(r, encoder)
