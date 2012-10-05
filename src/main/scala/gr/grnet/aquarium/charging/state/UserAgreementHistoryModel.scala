@@ -39,65 +39,85 @@ import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.policy.UserAgreementModel
 import gr.grnet.aquarium.util.json.JsonSupport
 import scala.collection.immutable
-import gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg
-import gr.grnet.aquarium.message.avro.ModelFactory
+import gr.grnet.aquarium.message.avro.gen.{UserAgreementMsg, IMEventMsg, UserAgreementHistoryMsg}
+import gr.grnet.aquarium.message.avro.{MessageFactory, MessageHelpers, ModelFactory}
 
 /**
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final case class UserAgreementHistoryModel(
-    msg: UserAgreementHistoryMsg
-) extends JsonSupport {
+final class UserAgreementHistoryModel(val userAgreementHistoryMsg: UserAgreementHistoryMsg) {
 
-  private var _userAgreementModels: immutable.SortedSet[UserAgreementModel] = {
+  private[this] var _latestIMEventOccurredMillis = 0L
+  private[this] var _userCreationIMEventMsgOpt: Option[IMEventMsg] = None
+
+  private[this] var _userAgreementModels: immutable.SortedSet[UserAgreementModel] = {
     var userAgreementModels = immutable.SortedSet[UserAgreementModel]()
-    val userAgreements = msg.getAgreements.iterator()
+    val userAgreements = userAgreementHistoryMsg.getAgreements.iterator()
     while(userAgreements.hasNext) {
       val userAgreement = userAgreements.next()
       val userAgreementModel = ModelFactory.newUserAgreementModel(userAgreement)
       userAgreementModels += userAgreementModel
+
+      checkUserCreationIMEvent(userAgreement.getRelatedIMEventMsg)
+      checkLatestIMEventOccurredMillis(userAgreement.getRelatedIMEventMsg)
     }
 
     userAgreementModels
   }
 
-  def size: Int = msg.getAgreements.size()
+  private[this] def checkUserCreationIMEvent(imEvent: IMEventMsg) {
+    if(MessageHelpers.isUserCreationIMEvent(imEvent)) {
+      this._userCreationIMEventMsgOpt = Some(imEvent)
+    }
+  }
+  private[this] def checkLatestIMEventOccurredMillis(imEvent: IMEventMsg) {
+    if(imEvent ne null) {
+      if(this._latestIMEventOccurredMillis < imEvent.getOccurredMillis) {
+        this._latestIMEventOccurredMillis = imEvent.getOccurredMillis
+      }
+    }
+  }
+
+  private[this] def updateOtherVars(imEvent: IMEventMsg) {
+    checkUserCreationIMEvent(imEvent)
+    checkLatestIMEventOccurredMillis(imEvent)
+  }
+
+  def userID = this.userAgreementHistoryMsg.getUserID
+
+  def latestIMEventOccurredMillis = this._latestIMEventOccurredMillis
+
+  def hasUserCreationEvent = this._userCreationIMEventMsgOpt.isDefined
+
+  def userCreationIMEventOpt = this._userCreationIMEventMsgOpt
+
+  def unsafeUserCreationIMEvent = this._userCreationIMEventMsgOpt.get
+
+  def unsafeUserCreationMillis = unsafeUserCreationIMEvent.getOccurredMillis
+
+  def size: Int = userAgreementHistoryMsg.getAgreements.size()
 
   def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel] = {
     immutable.TreeMap(_userAgreementModels.map(ag ⇒ (ag.timeslot, ag)).toSeq: _*)
   }
 
-  def setFrom(that: UserAgreementHistoryModel): this.type = {
-    this._userAgreementModels = that._userAgreementModels
-    this
+  def insertUserAgreementModel(userAgreement: UserAgreementModel) {
+    MessageHelpers.insertUserAgreement(this.userAgreementHistoryMsg, userAgreement.msg)
+
+    this._userAgreementModels += userAgreement
+
+    updateOtherVars(userAgreement.msg.getRelatedIMEventMsg)
   }
 
-  def +(userAgreement: UserAgreementModel): this.type = {
-    msg.getAgreements.add(userAgreement.msg)
-    _userAgreementModels += userAgreement
-    this
+  def insertUserAgreementMsg(userAgreementMsg: UserAgreementMsg) {
+    insertUserAgreementModel(ModelFactory.newUserAgreementModel(userAgreementMsg))
   }
 
-  def +=(userAgreement: UserAgreementModel): Unit = {
-    msg.getAgreements.add(userAgreement.msg)
-    _userAgreementModels += userAgreement
-  }
-
-  def ++(userAgreements: Traversable[UserAgreementModel]): this.type = {
-    for(userAgreement ← userAgreements) {
-      msg.getAgreements.add(userAgreement.msg)
-    }
-    _userAgreementModels ++= userAgreements
-    this
-  }
-
-  def ++=(userAgreements: Traversable[UserAgreementModel]): Unit = {
-    for(userAgreement ← userAgreements) {
-      msg.getAgreements.add(userAgreement.msg)
-    }
-    _userAgreementModels ++= userAgreements
+  def insertUserAgreementMsgFromIMEvent(imEvent: IMEventMsg) {
+    val userAgreementMsg = MessageFactory.newUserAgreementFromIMEventMsg(imEvent)
+    insertUserAgreementMsg(userAgreementMsg)
   }
 
   def oldestAgreementModel: Option[UserAgreementModel] = {
@@ -108,10 +128,6 @@ final case class UserAgreementHistoryModel(
     _userAgreementModels.lastOption
   }
 
-//  def agreementInEffectWhen(whenMillis: Long): Option[UserAgreementModel] = {
-//    agreements.to(
-//      UserAgreementModel("", None, whenMillis, Long.MaxValue, "", PolicyDefinedFullPriceTableRef())
-//    ).lastOption
-//  }
+  override def toString = userAgreementHistoryMsg.toString
 }
 

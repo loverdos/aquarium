@@ -57,9 +57,17 @@ trait ResourceEventStore {
    */
   def countOutOfSyncResourceEventsForBillingPeriod(userID: String, startMillis: Long, stopMillis: Long): Long
 
+  /**
+   *
+   * @param userID
+   * @param startMillis
+   * @param stopMillis
+   * @param f
+   * @return The number of resource events processed.
+   */
   def foreachResourceEventOccurredInPeriod(
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEventMsg ⇒ Unit): Unit
+  )(f: ResourceEventMsg ⇒ Unit): Long
 }

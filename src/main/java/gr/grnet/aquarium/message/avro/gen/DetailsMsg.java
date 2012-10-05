@@ -8,6 +8,19 @@ package gr.grnet.aquarium.message.avro.gen;
 public class DetailsMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
   public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"DetailsMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}}]}");
   @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details;
+
+  /**
+   * Default constructor.
+   */
+  public DetailsMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public DetailsMsg(java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.AnyValueMsg> details) {
+    this.details = details;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

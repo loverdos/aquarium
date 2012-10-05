@@ -44,12 +44,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.google.common.cache.{CacheStats, RemovalNotification, RemovalListener, CacheBuilder, Cache}
 import com.ckkloverdos.props.{Props ⇒ KKProps}
 import gr.grnet.aquarium.actor.service.user.UserActor
-import gr.grnet.aquarium.service.event.AquariumCreatedEvent
-import gr.grnet.aquarium.actor.message.config.InitializeUserActorState
-import gr.grnet.aquarium.util.date.TimeHelpers
 import java.util.concurrent.{TimeUnit, ConcurrentHashMap, Callable}
 import akka.dispatch.{Await, Future}
 import akka.util.Duration
+import gr.grnet.aquarium.actor.message.config.SetUserActorUserID
 
 /**
  * A wrapper around Akka, so that it is uniformly treated as an Aquarium service.
@@ -159,8 +157,8 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
   }
 
   def notifyUserActorPostStop(userActor: UserActor): Unit = {
-    logger.debug("Removing UserActor %s from stopping set (after postStop())".format(userActor.unsafeUserID))
-    this.stoppingUserActors.remove(userActor.unsafeUserID)
+    logger.debug("Removing UserActor %s from stopping set (after postStop())".format(userActor.userID))
+    this.stoppingUserActors.remove(userActor.userID)
   }
 
   private[this] def gracefullyStopUserActor(userID: String, actorRef: ActorRef): Unit = {
@@ -176,7 +174,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
       return
     }
 
-    val userID = userActor.unsafeUserID
+    val userID = userActor.userID
     val actorRef = userActor.self
 
     this._userActorCache.invalidate(userID)
@@ -233,9 +231,7 @@ final class AkkaService extends AquariumAwareSkeleton with Configurable with Lif
         // Cache it for subsequent calls
         _userActorCache.put(userID, actorRef)
 
-        // Send the initialization message
-        actorRef ! InitializeUserActorState(userID, TimeHelpers.nowMillis())
-
+        actorRef ! SetUserActorUserID(userID)
         actorRef
       }
     })

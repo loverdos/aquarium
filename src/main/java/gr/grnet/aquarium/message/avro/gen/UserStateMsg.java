@@ -6,25 +6,55 @@
 package gr.grnet.aquarium.message.avro.gen;  
 @SuppressWarnings("all")
 public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"UserStateMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"parentOriginalID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"parentInStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"resourceTypesMap\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unit\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"chargingBehaviorClass\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"avro.java.string\":\"String\"}},{\"name\":\"stateOfResources\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"ResourcesChargingStateMsg\",\"fields\":[{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}},{\"name\":\"stateOfResourceInstance\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"ResourceInstanceChargingStateMsg\",\"fields\":[{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}},{\"name\":\"previousEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}}]}}},{\"name\":\"implicitlyIssuedStartEvents\",\"type\":{\"type\":\"array\",\"items\":\"ResourceEventMsg\"}},{\"name\":\"accumulatingAmount\",\"type\":\"double\"},{\"name\":\"oldAccumulatingAmount\",\"type\":\"double\"},{\"name\":\"previousValue\",\"type\":\"double\"},{\"name\":\"currentValue\",\"type\":\"double\"}]},\"avro.java.string\":\"String\"}}]},\"avro.java.string\":\"String\"}},{\"name\":\"totalCredits\",\"type\":\"double\",\"default\":0.0},{\"name\":\"agreementHistory\",\"type\":{\"type\":\"record\",\"name\":\"UserAgreementHistoryMsg\",\"fields\":[{\"name\":\"agreements\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"UserAgreementMsg\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"relatedIMEventOriginalID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"role\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"fullPriceTableRef\",\"type\":[{\"type\":\"record\",\"name\":\"FullPriceTableMsg\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"SelectorValueMsg\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"SelectorValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"},\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]}},{\"name\":\"latestUpdateMillis\",\"type\":\"long\"},{\"name\":\"latestResourceEventOccurredMillis\",\"type\":\"long\"},{\"name\":\"billingPeriodOutOfSyncResourceEventsCounter\",\"type\":\"long\",\"default\":0},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingMonthDay\",\"type\":\"int\"},{\"name\":\"isFullBillingMonth\",\"type\":\"boolean\",\"default\":false},{\"name\":\"walletEntries\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"WalletEntryMsg\",\"fields\":[{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"sumOfCreditsToSubtract\",\"type\":\"double\"},{\"name\":\"oldTotalCredits\",\"type\":\"double\"},{\"name\":\"newTotalCredits\",\"type\":\"double\"},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingMonthDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":\"double\"},{\"name\":\"explanation\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":\"double\",\"default\":0.0}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":\"ResourceEventMsg\"}},{\"name\":\"resourceType\",\"type\":\"ResourceTypeMsg\"},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false}]}}}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"UserStateMsg\",\"namespace\":\"gr.grnet.aquarium.message.avro.gen\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"parentOriginalID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"parentInStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"isFirst\",\"type\":\"boolean\",\"default\":false},{\"name\":\"isForFullMonth\",\"type\":\"boolean\",\"default\":false},{\"name\":\"stateOfResources\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"ResourcesChargingStateMsg\",\"fields\":[{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"AnyValueMsg\",\"fields\":[{\"name\":\"anyValue\",\"type\":[\"null\",\"int\",\"long\",\"boolean\",\"double\",\"bytes\",{\"type\":\"string\",\"avro.java.string\":\"String\"},{\"type\":\"array\",\"items\":\"AnyValueMsg\"},{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"}},{\"name\":\"stateOfResourceInstance\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"ResourceInstanceChargingStateMsg\",\"fields\":[{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}},{\"name\":\"previousEvents\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ResourceEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"resource\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"instanceID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}}]}}},{\"name\":\"implicitlyIssuedStartEvents\",\"type\":{\"type\":\"array\",\"items\":\"ResourceEventMsg\"}},{\"name\":\"accumulatingAmount\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"oldAccumulatingAmount\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"previousValue\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"currentValue\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"avro.java.string\":\"String\"}}]},\"avro.java.string\":\"String\"}},{\"name\":\"totalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"0\"},{\"name\":\"latestUpdateMillis\",\"type\":\"long\"},{\"name\":\"latestResourceEventOccurredMillis\",\"type\":\"long\"},{\"name\":\"billingPeriodOutOfSyncResourceEventsCounter\",\"type\":\"long\",\"default\":0},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingMonthDay\",\"type\":\"int\"},{\"name\":\"userAgreementHistory\",\"type\":{\"type\":\"record\",\"name\":\"UserAgreementHistoryMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"latestOccurredMillis\",\"type\":\"long\"},{\"name\":\"latestValidFromMillis\",\"type\":\"long\"},{\"name\":\"userCreationTimeMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"agreements\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"UserAgreementMsg\",\"fields\":[{\"name\":\"id\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"relatedIMEventOriginalID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"occurredMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"validFromMillis\",\"type\":\"long\"},{\"name\":\"validToMillis\",\"type\":\"long\"},{\"name\":\"role\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"fullPriceTableRef\",\"type\":[{\"type\":\"record\",\"name\":\"FullPriceTableMsg\",\"fields\":[{\"name\":\"perResource\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"SelectorValueMsg\",\"fields\":[{\"name\":\"selectorValue\",\"type\":[{\"type\":\"record\",\"name\":\"EffectivePriceTableMsg\",\"fields\":[{\"name\":\"priceOverrides\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"EffectiveUnitPriceMsg\",\"fields\":[{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"when\",\"type\":[{\"type\":\"record\",\"name\":\"CronSpecTupleMsg\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"b\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]},{\"type\":\"map\",\"values\":\"SelectorValueMsg\",\"avro.java.string\":\"String\"}]}]},\"avro.java.string\":\"String\"},\"avro.java.string\":\"String\"}}]},\"null\"]},{\"name\":\"relatedIMEventMsg\",\"type\":[{\"type\":\"record\",\"name\":\"IMEventMsg\",\"fields\":[{\"name\":\"originalID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"inStoreID\",\"type\":[{\"type\":\"string\",\"avro.java.string\":\"String\"},\"null\"]},{\"name\":\"occurredMillis\",\"type\":\"long\"},{\"name\":\"receivedMillis\",\"type\":\"long\",\"default\":0},{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"clientID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"eventVersion\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"1.0\"},{\"name\":\"eventType\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isActive\",\"type\":\"boolean\"},{\"name\":\"role\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"details\",\"type\":{\"type\":\"map\",\"values\":\"AnyValueMsg\",\"avro.java.string\":\"String\"}}]},\"null\"]}]}}}]}},{\"name\":\"walletEntries\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"WalletEntryMsg\",\"fields\":[{\"name\":\"userID\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"sumOfCreditsToSubtract\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"oldTotalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"newTotalCredits\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"whenComputedMillis\",\"type\":\"long\"},{\"name\":\"referenceStartMillis\",\"type\":\"long\"},{\"name\":\"referenceStopMillis\",\"type\":\"long\"},{\"name\":\"billingYear\",\"type\":\"int\"},{\"name\":\"billingMonth\",\"type\":\"int\"},{\"name\":\"billingMonthDay\",\"type\":\"int\"},{\"name\":\"chargeslots\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"ChargeslotMsg\",\"fields\":[{\"name\":\"startMillis\",\"type\":\"long\"},{\"name\":\"stopMillis\",\"type\":\"long\"},{\"name\":\"unitPrice\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"explanation\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"\"},{\"name\":\"creditsToSubtract\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":0.0}]}}},{\"name\":\"resourceEvents\",\"type\":{\"type\":\"array\",\"items\":\"ResourceEventMsg\"}},{\"name\":\"resourceType\",\"type\":{\"type\":\"record\",\"name\":\"ResourceTypeMsg\",\"fields\":[{\"name\":\"name\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"unit\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"chargingBehaviorClass\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}},{\"name\":\"isSynthetic\",\"type\":\"boolean\",\"default\":false},{\"name\":\"isForRealtimeCalc\",\"type\":\"boolean\",\"default\":false}]}}}]}");
   @Deprecated public java.lang.String originalID;
   @Deprecated public java.lang.String inStoreID;
   @Deprecated public java.lang.String userID;
   @Deprecated public long occurredMillis;
   @Deprecated public java.lang.String parentOriginalID;
   @Deprecated public java.lang.String parentInStoreID;
-  @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> resourceTypesMap;
+  @Deprecated public boolean isFirst;
+  @Deprecated public boolean isForFullMonth;
   @Deprecated public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg> stateOfResources;
-  @Deprecated public double totalCredits;
-  @Deprecated public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg agreementHistory;
+  @Deprecated public java.lang.String totalCredits;
   @Deprecated public long latestUpdateMillis;
   @Deprecated public long latestResourceEventOccurredMillis;
   @Deprecated public long billingPeriodOutOfSyncResourceEventsCounter;
   @Deprecated public int billingYear;
   @Deprecated public int billingMonth;
   @Deprecated public int billingMonthDay;
-  @Deprecated public boolean isFullBillingMonth;
+  @Deprecated public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg userAgreementHistory;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> walletEntries;
+
+  /**
+   * Default constructor.
+   */
+  public UserStateMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public UserStateMsg(java.lang.String originalID, java.lang.String inStoreID, java.lang.String userID, java.lang.Long occurredMillis, java.lang.String parentOriginalID, java.lang.String parentInStoreID, java.lang.Boolean isFirst, java.lang.Boolean isForFullMonth, java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg> stateOfResources, java.lang.String totalCredits, java.lang.Long latestUpdateMillis, java.lang.Long latestResourceEventOccurredMillis, java.lang.Long billingPeriodOutOfSyncResourceEventsCounter, java.lang.Integer billingYear, java.lang.Integer billingMonth, java.lang.Integer billingMonthDay, gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg userAgreementHistory, java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> walletEntries) {
+    this.originalID = originalID;
+    this.inStoreID = inStoreID;
+    this.userID = userID;
+    this.occurredMillis = occurredMillis;
+    this.parentOriginalID = parentOriginalID;
+    this.parentInStoreID = parentInStoreID;
+    this.isFirst = isFirst;
+    this.isForFullMonth = isForFullMonth;
+    this.stateOfResources = stateOfResources;
+    this.totalCredits = totalCredits;
+    this.latestUpdateMillis = latestUpdateMillis;
+    this.latestResourceEventOccurredMillis = latestResourceEventOccurredMillis;
+    this.billingPeriodOutOfSyncResourceEventsCounter = billingPeriodOutOfSyncResourceEventsCounter;
+    this.billingYear = billingYear;
+    this.billingMonth = billingMonth;
+    this.billingMonthDay = billingMonthDay;
+    this.userAgreementHistory = userAgreementHistory;
+    this.walletEntries = walletEntries;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {
@@ -35,17 +65,17 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
     case 3: return occurredMillis;
     case 4: return parentOriginalID;
     case 5: return parentInStoreID;
-    case 6: return resourceTypesMap;
-    case 7: return stateOfResources;
-    case 8: return totalCredits;
-    case 9: return agreementHistory;
+    case 6: return isFirst;
+    case 7: return isForFullMonth;
+    case 8: return stateOfResources;
+    case 9: return totalCredits;
     case 10: return latestUpdateMillis;
     case 11: return latestResourceEventOccurredMillis;
     case 12: return billingPeriodOutOfSyncResourceEventsCounter;
     case 13: return billingYear;
     case 14: return billingMonth;
     case 15: return billingMonthDay;
-    case 16: return isFullBillingMonth;
+    case 16: return userAgreementHistory;
     case 17: return walletEntries;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
@@ -60,17 +90,17 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
     case 3: occurredMillis = (java.lang.Long)value$; break;
     case 4: parentOriginalID = (java.lang.String)value$; break;
     case 5: parentInStoreID = (java.lang.String)value$; break;
-    case 6: resourceTypesMap = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>)value$; break;
-    case 7: stateOfResources = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg>)value$; break;
-    case 8: totalCredits = (java.lang.Double)value$; break;
-    case 9: agreementHistory = (gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg)value$; break;
+    case 6: isFirst = (java.lang.Boolean)value$; break;
+    case 7: isForFullMonth = (java.lang.Boolean)value$; break;
+    case 8: stateOfResources = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg>)value$; break;
+    case 9: totalCredits = (java.lang.String)value$; break;
     case 10: latestUpdateMillis = (java.lang.Long)value$; break;
     case 11: latestResourceEventOccurredMillis = (java.lang.Long)value$; break;
     case 12: billingPeriodOutOfSyncResourceEventsCounter = (java.lang.Long)value$; break;
     case 13: billingYear = (java.lang.Integer)value$; break;
     case 14: billingMonth = (java.lang.Integer)value$; break;
     case 15: billingMonthDay = (java.lang.Integer)value$; break;
-    case 16: isFullBillingMonth = (java.lang.Boolean)value$; break;
+    case 16: userAgreementHistory = (gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg)value$; break;
     case 17: walletEntries = (java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg>)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
@@ -167,18 +197,33 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
   }
 
   /**
-   * Gets the value of the 'resourceTypesMap' field.
+   * Gets the value of the 'isFirst' field.
    */
-  public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> getResourceTypesMap() {
-    return resourceTypesMap;
+  public java.lang.Boolean getIsFirst() {
+    return isFirst;
   }
 
   /**
-   * Sets the value of the 'resourceTypesMap' field.
+   * Sets the value of the 'isFirst' field.
    * @param value the value to set.
    */
-  public void setResourceTypesMap(java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> value) {
-    this.resourceTypesMap = value;
+  public void setIsFirst(java.lang.Boolean value) {
+    this.isFirst = value;
+  }
+
+  /**
+   * Gets the value of the 'isForFullMonth' field.
+   */
+  public java.lang.Boolean getIsForFullMonth() {
+    return isForFullMonth;
+  }
+
+  /**
+   * Sets the value of the 'isForFullMonth' field.
+   * @param value the value to set.
+   */
+  public void setIsForFullMonth(java.lang.Boolean value) {
+    this.isForFullMonth = value;
   }
 
   /**
@@ -199,7 +244,7 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
   /**
    * Gets the value of the 'totalCredits' field.
    */
-  public java.lang.Double getTotalCredits() {
+  public java.lang.String getTotalCredits() {
     return totalCredits;
   }
 
@@ -207,23 +252,8 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
    * Sets the value of the 'totalCredits' field.
    * @param value the value to set.
    */
-  public void setTotalCredits(java.lang.Double value) {
+  public void setTotalCredits(java.lang.String value) {
     this.totalCredits = value;
-  }
-
-  /**
-   * Gets the value of the 'agreementHistory' field.
-   */
-  public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg getAgreementHistory() {
-    return agreementHistory;
-  }
-
-  /**
-   * Sets the value of the 'agreementHistory' field.
-   * @param value the value to set.
-   */
-  public void setAgreementHistory(gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg value) {
-    this.agreementHistory = value;
   }
 
   /**
@@ -317,18 +347,18 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
   }
 
   /**
-   * Gets the value of the 'isFullBillingMonth' field.
+   * Gets the value of the 'userAgreementHistory' field.
    */
-  public java.lang.Boolean getIsFullBillingMonth() {
-    return isFullBillingMonth;
+  public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg getUserAgreementHistory() {
+    return userAgreementHistory;
   }
 
   /**
-   * Sets the value of the 'isFullBillingMonth' field.
+   * Sets the value of the 'userAgreementHistory' field.
    * @param value the value to set.
    */
-  public void setIsFullBillingMonth(java.lang.Boolean value) {
-    this.isFullBillingMonth = value;
+  public void setUserAgreementHistory(gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg value) {
+    this.userAgreementHistory = value;
   }
 
   /**
@@ -373,17 +403,17 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
     private long occurredMillis;
     private java.lang.String parentOriginalID;
     private java.lang.String parentInStoreID;
-    private java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> resourceTypesMap;
+    private boolean isFirst;
+    private boolean isForFullMonth;
     private java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg> stateOfResources;
-    private double totalCredits;
-    private gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg agreementHistory;
+    private java.lang.String totalCredits;
     private long latestUpdateMillis;
     private long latestResourceEventOccurredMillis;
     private long billingPeriodOutOfSyncResourceEventsCounter;
     private int billingYear;
     private int billingMonth;
     private int billingMonthDay;
-    private boolean isFullBillingMonth;
+    private gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg userAgreementHistory;
     private java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg> walletEntries;
 
     /** Creates a new Builder */
@@ -423,20 +453,20 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
         this.parentInStoreID = (java.lang.String) data().deepCopy(fields()[5].schema(), other.parentInStoreID);
         fieldSetFlags()[5] = true;
       }
-      if (isValidValue(fields()[6], other.resourceTypesMap)) {
-        this.resourceTypesMap = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>) data().deepCopy(fields()[6].schema(), other.resourceTypesMap);
+      if (isValidValue(fields()[6], other.isFirst)) {
+        this.isFirst = (java.lang.Boolean) data().deepCopy(fields()[6].schema(), other.isFirst);
         fieldSetFlags()[6] = true;
       }
-      if (isValidValue(fields()[7], other.stateOfResources)) {
-        this.stateOfResources = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg>) data().deepCopy(fields()[7].schema(), other.stateOfResources);
+      if (isValidValue(fields()[7], other.isForFullMonth)) {
+        this.isForFullMonth = (java.lang.Boolean) data().deepCopy(fields()[7].schema(), other.isForFullMonth);
         fieldSetFlags()[7] = true;
       }
-      if (isValidValue(fields()[8], other.totalCredits)) {
-        this.totalCredits = (java.lang.Double) data().deepCopy(fields()[8].schema(), other.totalCredits);
+      if (isValidValue(fields()[8], other.stateOfResources)) {
+        this.stateOfResources = (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg>) data().deepCopy(fields()[8].schema(), other.stateOfResources);
         fieldSetFlags()[8] = true;
       }
-      if (isValidValue(fields()[9], other.agreementHistory)) {
-        this.agreementHistory = (gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg) data().deepCopy(fields()[9].schema(), other.agreementHistory);
+      if (isValidValue(fields()[9], other.totalCredits)) {
+        this.totalCredits = (java.lang.String) data().deepCopy(fields()[9].schema(), other.totalCredits);
         fieldSetFlags()[9] = true;
       }
       if (isValidValue(fields()[10], other.latestUpdateMillis)) {
@@ -463,8 +493,8 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
         this.billingMonthDay = (java.lang.Integer) data().deepCopy(fields()[15].schema(), other.billingMonthDay);
         fieldSetFlags()[15] = true;
       }
-      if (isValidValue(fields()[16], other.isFullBillingMonth)) {
-        this.isFullBillingMonth = (java.lang.Boolean) data().deepCopy(fields()[16].schema(), other.isFullBillingMonth);
+      if (isValidValue(fields()[16], other.userAgreementHistory)) {
+        this.userAgreementHistory = (gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg) data().deepCopy(fields()[16].schema(), other.userAgreementHistory);
         fieldSetFlags()[16] = true;
       }
       if (isValidValue(fields()[17], other.walletEntries)) {
@@ -622,28 +652,51 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
       return this;
     }
 
-    /** Gets the value of the 'resourceTypesMap' field */
-    public java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> getResourceTypesMap() {
-      return resourceTypesMap;
+    /** Gets the value of the 'isFirst' field */
+    public java.lang.Boolean getIsFirst() {
+      return isFirst;
     }
     
-    /** Sets the value of the 'resourceTypesMap' field */
-    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setResourceTypesMap(java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg> value) {
+    /** Sets the value of the 'isFirst' field */
+    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setIsFirst(boolean value) {
       validate(fields()[6], value);
-      this.resourceTypesMap = value;
+      this.isFirst = value;
       fieldSetFlags()[6] = true;
       return this; 
     }
     
-    /** Checks whether the 'resourceTypesMap' field has been set */
-    public boolean hasResourceTypesMap() {
+    /** Checks whether the 'isFirst' field has been set */
+    public boolean hasIsFirst() {
       return fieldSetFlags()[6];
     }
     
-    /** Clears the value of the 'resourceTypesMap' field */
-    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder clearResourceTypesMap() {
-      resourceTypesMap = null;
+    /** Clears the value of the 'isFirst' field */
+    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder clearIsFirst() {
       fieldSetFlags()[6] = false;
+      return this;
+    }
+
+    /** Gets the value of the 'isForFullMonth' field */
+    public java.lang.Boolean getIsForFullMonth() {
+      return isForFullMonth;
+    }
+    
+    /** Sets the value of the 'isForFullMonth' field */
+    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setIsForFullMonth(boolean value) {
+      validate(fields()[7], value);
+      this.isForFullMonth = value;
+      fieldSetFlags()[7] = true;
+      return this; 
+    }
+    
+    /** Checks whether the 'isForFullMonth' field has been set */
+    public boolean hasIsForFullMonth() {
+      return fieldSetFlags()[7];
+    }
+    
+    /** Clears the value of the 'isForFullMonth' field */
+    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder clearIsForFullMonth() {
+      fieldSetFlags()[7] = false;
       return this;
     }
 
@@ -654,69 +707,45 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
     
     /** Sets the value of the 'stateOfResources' field */
     public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setStateOfResources(java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg> value) {
-      validate(fields()[7], value);
+      validate(fields()[8], value);
       this.stateOfResources = value;
-      fieldSetFlags()[7] = true;
+      fieldSetFlags()[8] = true;
       return this; 
     }
     
     /** Checks whether the 'stateOfResources' field has been set */
     public boolean hasStateOfResources() {
-      return fieldSetFlags()[7];
+      return fieldSetFlags()[8];
     }
     
     /** Clears the value of the 'stateOfResources' field */
     public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder clearStateOfResources() {
       stateOfResources = null;
-      fieldSetFlags()[7] = false;
+      fieldSetFlags()[8] = false;
       return this;
     }
 
     /** Gets the value of the 'totalCredits' field */
-    public java.lang.Double getTotalCredits() {
+    public java.lang.String getTotalCredits() {
       return totalCredits;
     }
     
     /** Sets the value of the 'totalCredits' field */
-    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setTotalCredits(double value) {
-      validate(fields()[8], value);
+    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setTotalCredits(java.lang.String value) {
+      validate(fields()[9], value);
       this.totalCredits = value;
-      fieldSetFlags()[8] = true;
+      fieldSetFlags()[9] = true;
       return this; 
     }
     
     /** Checks whether the 'totalCredits' field has been set */
     public boolean hasTotalCredits() {
-      return fieldSetFlags()[8];
+      return fieldSetFlags()[9];
     }
     
     /** Clears the value of the 'totalCredits' field */
     public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder clearTotalCredits() {
-      fieldSetFlags()[8] = false;
-      return this;
-    }
-
-    /** Gets the value of the 'agreementHistory' field */
-    public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg getAgreementHistory() {
-      return agreementHistory;
-    }
-    
-    /** Sets the value of the 'agreementHistory' field */
-    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setAgreementHistory(gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg value) {
-      validate(fields()[9], value);
-      this.agreementHistory = value;
-      fieldSetFlags()[9] = true;
-      return this; 
-    }
-    
-    /** Checks whether the 'agreementHistory' field has been set */
-    public boolean hasAgreementHistory() {
-      return fieldSetFlags()[9];
-    }
-    
-    /** Clears the value of the 'agreementHistory' field */
-    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder clearAgreementHistory() {
-      agreementHistory = null;
+      totalCredits = null;
       fieldSetFlags()[9] = false;
       return this;
     }
@@ -865,26 +894,27 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
       return this;
     }
 
-    /** Gets the value of the 'isFullBillingMonth' field */
-    public java.lang.Boolean getIsFullBillingMonth() {
-      return isFullBillingMonth;
+    /** Gets the value of the 'userAgreementHistory' field */
+    public gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg getUserAgreementHistory() {
+      return userAgreementHistory;
     }
     
-    /** Sets the value of the 'isFullBillingMonth' field */
-    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setIsFullBillingMonth(boolean value) {
+    /** Sets the value of the 'userAgreementHistory' field */
+    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder setUserAgreementHistory(gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg value) {
       validate(fields()[16], value);
-      this.isFullBillingMonth = value;
+      this.userAgreementHistory = value;
       fieldSetFlags()[16] = true;
       return this; 
     }
     
-    /** Checks whether the 'isFullBillingMonth' field has been set */
-    public boolean hasIsFullBillingMonth() {
+    /** Checks whether the 'userAgreementHistory' field has been set */
+    public boolean hasUserAgreementHistory() {
       return fieldSetFlags()[16];
     }
     
-    /** Clears the value of the 'isFullBillingMonth' field */
-    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder clearIsFullBillingMonth() {
+    /** Clears the value of the 'userAgreementHistory' field */
+    public gr.grnet.aquarium.message.avro.gen.UserStateMsg.Builder clearUserAgreementHistory() {
+      userAgreementHistory = null;
       fieldSetFlags()[16] = false;
       return this;
     }
@@ -924,17 +954,17 @@ public class UserStateMsg extends org.apache.avro.specific.SpecificRecordBase im
         record.occurredMillis = fieldSetFlags()[3] ? this.occurredMillis : (java.lang.Long) defaultValue(fields()[3]);
         record.parentOriginalID = fieldSetFlags()[4] ? this.parentOriginalID : (java.lang.String) defaultValue(fields()[4]);
         record.parentInStoreID = fieldSetFlags()[5] ? this.parentInStoreID : (java.lang.String) defaultValue(fields()[5]);
-        record.resourceTypesMap = fieldSetFlags()[6] ? this.resourceTypesMap : (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourceTypeMsg>) defaultValue(fields()[6]);
-        record.stateOfResources = fieldSetFlags()[7] ? this.stateOfResources : (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg>) defaultValue(fields()[7]);
-        record.totalCredits = fieldSetFlags()[8] ? this.totalCredits : (java.lang.Double) defaultValue(fields()[8]);
-        record.agreementHistory = fieldSetFlags()[9] ? this.agreementHistory : (gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg) defaultValue(fields()[9]);
+        record.isFirst = fieldSetFlags()[6] ? this.isFirst : (java.lang.Boolean) defaultValue(fields()[6]);
+        record.isForFullMonth = fieldSetFlags()[7] ? this.isForFullMonth : (java.lang.Boolean) defaultValue(fields()[7]);
+        record.stateOfResources = fieldSetFlags()[8] ? this.stateOfResources : (java.util.Map<java.lang.String,gr.grnet.aquarium.message.avro.gen.ResourcesChargingStateMsg>) defaultValue(fields()[8]);
+        record.totalCredits = fieldSetFlags()[9] ? this.totalCredits : (java.lang.String) defaultValue(fields()[9]);
         record.latestUpdateMillis = fieldSetFlags()[10] ? this.latestUpdateMillis : (java.lang.Long) defaultValue(fields()[10]);
         record.latestResourceEventOccurredMillis = fieldSetFlags()[11] ? this.latestResourceEventOccurredMillis : (java.lang.Long) defaultValue(fields()[11]);
         record.billingPeriodOutOfSyncResourceEventsCounter = fieldSetFlags()[12] ? this.billingPeriodOutOfSyncResourceEventsCounter : (java.lang.Long) defaultValue(fields()[12]);
         record.billingYear = fieldSetFlags()[13] ? this.billingYear : (java.lang.Integer) defaultValue(fields()[13]);
         record.billingMonth = fieldSetFlags()[14] ? this.billingMonth : (java.lang.Integer) defaultValue(fields()[14]);
         record.billingMonthDay = fieldSetFlags()[15] ? this.billingMonthDay : (java.lang.Integer) defaultValue(fields()[15]);
-        record.isFullBillingMonth = fieldSetFlags()[16] ? this.isFullBillingMonth : (java.lang.Boolean) defaultValue(fields()[16]);
+        record.userAgreementHistory = fieldSetFlags()[16] ? this.userAgreementHistory : (gr.grnet.aquarium.message.avro.gen.UserAgreementHistoryMsg) defaultValue(fields()[16]);
         record.walletEntries = fieldSetFlags()[17] ? this.walletEntries : (java.util.List<gr.grnet.aquarium.message.avro.gen.WalletEntryMsg>) defaultValue(fields()[17]);
         return record;
       } catch (Exception e) {

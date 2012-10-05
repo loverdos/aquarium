@@ -35,14 +35,17 @@
 
 package gr.grnet.aquarium.charging
 
-import gr.grnet.aquarium.charging.state.UserStateModel
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel}
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.{CreditsModel, DetailsModel}
+import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{AnyValueMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourcesChargingStateMsg, ResourceTypeMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.message.avro.{MessageHelpers, AvroHelpers, MessageFactory}
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import gr.grnet.aquarium.{AquariumInternalError, Aquarium}
+import gr.grnet.aquarium.Real
+import gr.grnet.aquarium.HrsOfMillis
+import gr.grnet.aquarium.MBsOfBytes
 
 /**
  * In practice a resource usage will be charged for the total amount of usage
@@ -56,16 +59,19 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
   def computeCreditsToSubtract(
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
-      oldCredits: Double,
+      oldCredits: Real,
       timeDeltaMillis: Long,
-      unitPrice: Double
-  ): (Double /* credits */, String /* explanation */) = {
+      unitPrice: Real
+  ): (Real /* credits */, String /* explanation */) = {
 
-    val oldAccumulatingAmount = resourceInstanceChargingState.getOldAccumulatingAmount
-    val credits = HrsOfMillis(timeDeltaMillis) * oldAccumulatingAmount * unitPrice
+    val bytes = Real(resourceInstanceChargingState.getOldAccumulatingAmount)
+    val MBs = MBsOfBytes(bytes)
+    val Hrs = HrsOfMillis(timeDeltaMillis)
+
+    val credits = Hrs * MBs * unitPrice
     val explanation = "Hours(%s) * MBs(%s) * UnitPrice(%s)".format(
-      HrsOfMillis(timeDeltaMillis),
-      MBsOfBytes(oldAccumulatingAmount),
+      Hrs,
+      MBs,
       unitPrice
     )
 
@@ -78,7 +84,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       currentResourceEvent: ResourceEventMsg,
       referenceStartMillis: Long,
       referenceStopMillis: Long,
-      totalCredits: Double
+      totalCredits: Real
   ): List[String] = {
     List(MessageConstants.DefaultSelectorKey)
   }
@@ -92,10 +98,10 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       eventDetails: DetailsModel.Type
   ) = {
 
-    val oldAccumulatingAmount = CreditsModel.from(resourceInstanceChargingState.getOldAccumulatingAmount)
-    val currentValue = CreditsModel.from(resourceInstanceChargingState.getCurrentValue)
+    val oldAccumulatingAmount = Real(resourceInstanceChargingState.getOldAccumulatingAmount)
+    val currentValue = Real(resourceInstanceChargingState.getCurrentValue)
 
-    CreditsModel.add(oldAccumulatingAmount, currentValue)
+    oldAccumulatingAmount + currentValue
   }
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEventMsg, newOccurredMillis: Long) = {
@@ -119,7 +125,9 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
        resourcesChargingState: ResourcesChargingStateMsg,
        userStateModel: UserStateModel,
        walletEntryRecorder: WalletEntryMsg ⇒ Unit
-   ): (Int, CreditsModel.Type) = {
+   ): (Int, Real) = {
+
+    val userStateMsg = userStateModel.userStateMsg
 
     // 1. Ensure proper initial state per resource and per instance
     ensureInitializedWorkingState(resourcesChargingState, resourceEvent)
@@ -132,7 +140,6 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
     fillWorkingResourceInstanceChargingStateFromEvent(resourceInstanceChargingState, resourceEvent)
 
-    val userAgreementHistoryModel = userStateModel.userAgreementHistoryModel
     val previousEvents = resourceInstanceChargingState.getPreviousEvents
     val previousEvent = previousEvents.size() match {
       case 0 ⇒
@@ -142,7 +149,7 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
 
         val dummyFirstEventValue = "0.0" // TODO ? From configuration
 
-        val millis = userAgreementHistoryModel.agreementByTimeslot.headOption match {
+        val millis = userStateModel.agreementByTimeslot.headOption match {
           case None =>
             throw new AquariumInternalError("No agreement!!!") // FIXME Better explanation
           case Some((_,aggr)) =>
@@ -168,10 +175,10 @@ final class ContinuousChargingBehavior extends ChargingBehaviorSkeleton(Nil) {
       resourceEvent,
       resourceType,
       billingMonthInfo,
-      userStateModel.totalCredits,
+      Real(userStateMsg.getTotalCredits),
       previousEvent.getOccurredMillis,
       resourceEvent.getOccurredMillis,
-      userAgreementHistoryModel.agreementByTimeslot,
+      userStateModel.agreementByTimeslot,
       resourcesChargingStateDetails,
       resourceInstanceChargingState,
       aquarium,

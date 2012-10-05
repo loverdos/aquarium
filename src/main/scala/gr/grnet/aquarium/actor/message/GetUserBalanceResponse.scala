@@ -55,4 +55,4 @@ extends UserActorResponseMessage(balance, suggestedHTTPStatus) {
   }
 }
 
-case class GetUserBalanceResponseData(userID: String, balance: Double)
+case class GetUserBalanceResponseData(userID: String, balance: String)

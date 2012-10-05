@@ -56,4 +56,4 @@ extends UserActorResponseMessage(state, suggestedHTTPStatus) {
   }
 }
 
-case class GetUserWalletResponseData(userID: String, credits: Double, walletEntries: WalletEntriesMsg)
+case class GetUserWalletResponseData(userID: String, credits: String, walletEntries: WalletEntriesMsg)

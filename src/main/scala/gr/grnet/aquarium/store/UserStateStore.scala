@@ -61,4 +61,6 @@ trait UserStateStore {
    * Finds the most up-to-date user state for the particular billing period.
    */
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo): Option[UserStateMsg]
+
+  def findLatestUserState(userID: String): Option[UserStateMsg]
 }

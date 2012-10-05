@@ -81,7 +81,7 @@ class EffectiveUnitPriceTest extends TestMethods {
       {cronEnd0=new CronSpec(cronEnd);cronEnd0}))
     val ts=Timeslot(start,end)
     if(printScreen) Console.err.println("Timeslot: " + ts)
-    val efu = new EffectiveUnitPriceModel(v,opt)
+    val efu = new EffectiveUnitPriceModel(v.toString,opt)
     val (l1,l2) =  efu.splitTimeslot(ts)
     noOverlap(l1,l2)
     singleT(ts,l1,l2)

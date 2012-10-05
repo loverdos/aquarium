@@ -35,16 +35,17 @@
 
 package gr.grnet.aquarium.message.avro
 
-import gr.grnet.aquarium.AquariumInternalError
+import gr.grnet.aquarium.{Real, AquariumInternalError}
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{AnyValueMsg, WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{ResourcesChargingStateMsg, UserAgreementMsg, UserAgreementHistoryMsg, AnyValueMsg, WalletEntryMsg, EffectivePriceTableMsg, FullPriceTableMsg, ResourceInstanceChargingStateMsg, UserStateMsg, IMEventMsg, ResourceEventMsg}
 import gr.grnet.aquarium.policy.EffectivePriceTableModel
 import gr.grnet.aquarium.uid.UUIDGenerator
 import gr.grnet.aquarium.util.LogHelpers.Debug
 import gr.grnet.aquarium.util.shortNameOfType
 import java.util.{Map ⇒ JMap}
+import java.util.{ArrayList ⇒ JArrayList}
 import org.slf4j.Logger
 import scala.annotation.tailrec
 
@@ -54,7 +55,9 @@ import scala.annotation.tailrec
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 final object MessageHelpers {
+  final val UserStateMsgIDGenerator = UUIDGenerator
   final val UserAgreementMsgIDGenerator = UUIDGenerator
+  final val UserAgreementHistoryMsgIDGenerator = UUIDGenerator
   final val VirtualEventsIDGen = UUIDGenerator
 
   def stringOfAnyValueMsg(msg: AnyValueMsg): String = {
@@ -93,19 +96,12 @@ final object MessageHelpers {
     !isOccurredWithinMillis(event, billingStartMillis, billingStopMillis)
   }
 
-  @inline final def isIMEventCreate(msg: IMEventMsg) = {
+  @inline final def isUserCreationIMEvent(msg: IMEventMsg) = {
     msg.getEventType().toLowerCase() == MessageConstants.IMEventMsg.EventTypes.create
   }
 
-  @inline final def isIMEventModify(msg: IMEventMsg) = {
+  @inline final def isUserModificationIMEvent(msg: IMEventMsg) = {
     msg.getEventType().toLowerCase() == MessageConstants.IMEventMsg.EventTypes.modify
-  }
-
-  @inline final def findResourceType(msg: UserStateMsg, name: String) = {
-    msg.getResourceTypesMap.get(name) match {
-      case null         ⇒ None
-      case resourceType ⇒ Some(resourceType)
-    }
   }
 
   final def setOnePreviousEvent(
@@ -274,7 +270,108 @@ final object MessageHelpers {
     }
   }
 
-//  final def splitEffectiveUnitPriceTimeslot(
+  final def latestValidFromMillisOf(msg: UserAgreementHistoryMsg): Long = {
+    val userAgreements = msg.getAgreements
+    val size = userAgreements.size()
+    assert(userAgreements.size() > 0, "userAgreements.size() > 0")
+    var _index = 0
+    var _time = userAgreements.get(_index).getValidFromMillis
+    _index += 1
+    while(_index < size) {
+      val nextValidFromMillis = userAgreements.get(_index).getValidFromMillis
+      if(nextValidFromMillis > _time) {
+        _time = nextValidFromMillis
+      }
+      _index += 1
+    }
+
+    _time
+  }
+
+  final def latestOccurredMillisOf(msg: UserAgreementHistoryMsg): Long = {
+    val userAgreements = msg.getAgreements
+    val size = userAgreements.size()
+    assert(userAgreements.size() > 0, "userAgreements.size() > 0")
+    var _index = 0
+    var _time = userAgreements.get(_index).getOccurredMillis
+    _index += 1
+    while(_index < size) {
+      val nextValidFromMillis = userAgreements.get(_index).getOccurredMillis
+      if(nextValidFromMillis > _time) {
+        _time = nextValidFromMillis
+      }
+      _index += 1
+    }
+
+    _time
+  }
+
+  /**
+   * Use this to update the agreement history. Do not add manually!!
+   */
+  def insertUserAgreement(history: UserAgreementHistoryMsg, agreement: UserAgreementMsg) {
+    history.getAgreements match {
+      case null ⇒
+        val list = new JArrayList[UserAgreementMsg]()
+        list.add(agreement)
+        history.setAgreements(list)
+
+      case list ⇒
+        list.add(agreement)
+    }
+
+    history.setLatestOccurredMillis(latestOccurredMillisOf(history))
+    history.setLatestValidFromMillis(latestValidFromMillisOf(history))
+    agreement.getRelatedIMEventMsg match {
+      case null ⇒
+      case imEvent ⇒
+        if(isUserCreationIMEvent(imEvent)) {
+          history.setUserCreationTimeMillis(imEvent.getOccurredMillis)
+        }
+    }
+  }
+
+  /**
+   *
+   * @param history Can be null here, so beware
+   */
+  def isAgreementChangingIMEventMsg(history: UserAgreementHistoryMsg, event: IMEventMsg): Boolean = {
+    true
+  }
+
+  def updateLatestResourceEventOccurredMillis(msg: UserStateMsg, millis: Long): Unit = {
+    if(millis > msg.getLatestResourceEventOccurredMillis) {
+      msg.setLatestResourceEventOccurredMillis(millis)
+    }
+  }
+
+  def subtractCredits(msg: UserStateMsg, credits: Real) {
+    val oldTotal = Real(msg.getTotalCredits)
+    val newTotal = oldTotal - credits
+    msg.setTotalCredits(Real.toMsgField(newTotal))
+  }
+
+  def getOrInitializeResourcesChargingState(
+      userStateMsg: UserStateMsg,
+      resourceName: String,
+      initialChargingDetails: DetailsModel.Type
+  ): ResourcesChargingStateMsg = {
+    userStateMsg.getStateOfResources.get(resourceName) match {
+      case null ⇒
+        // First time for this ChargingBehavior.
+        val newState = MessageFactory.newResourcesChargingStateMsg(
+          resourceName,
+          initialChargingDetails
+        )
+        userStateMsg.getStateOfResources.put(resourceName, newState)
+        newState
+      case existingState ⇒
+        existingState
+    }
+  }
+
+
+  //  final def splitEffectiveUnitPriceTimeslot(
 //      effectiveUnitPrice: EffectiveUnitPriceMsg,
 //      t: Timeslot
 //  ): (List[Timeslot], List[Timeslot]) = {

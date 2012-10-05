@@ -67,5 +67,5 @@ trait IMEventStore {
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: IMEventMsg ⇒ Unit): Unit
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: IMEventMsg ⇒ Boolean): Boolean
 }

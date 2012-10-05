@@ -35,130 +35,134 @@
 
 package gr.grnet.aquarium.charging.state
 
-import gr.grnet.aquarium.message.avro.gen.UserStateMsg
-import gr.grnet.aquarium.util.json.JsonSupport
-import gr.grnet.aquarium.event.CreditsModel
+import gr.grnet.aquarium.message.avro.gen.{UserAgreementMsg, IMEventMsg, UserAgreementHistoryMsg, UserStateMsg}
+import gr.grnet.aquarium.Real
+import scala.collection.immutable
+import gr.grnet.aquarium.policy.UserAgreementModel
+import gr.grnet.aquarium.message.avro.{MessageFactory, MessageHelpers, ModelFactory}
+import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
 
 /**
  *
- * A wrapper around [[gr.grnet.aquarium.message.avro.gen.UserStateMsg]] with convenient (sorted)
+ * A wrapper around [[gr.grnet.aquarium.message.avro.gen.UserStateMsg]] and
+ * [[]] with convenient (sorted)
  * user agreement history.
  *
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-final case class UserStateModel(
-    msg: UserStateMsg,
-    var userAgreementHistoryModel: UserAgreementHistoryModel
-) extends JsonSupport {
+final class UserStateModel(
+    private[this] var _userStateMsg: UserStateMsg,
+    private[this] var _userAgreementHistoryMsg: UserAgreementHistoryMsg
+) {
+  require(this._userStateMsg ne null, "this._userStateMsg ne null")
+  require(this._userAgreementHistoryMsg ne null, "this._userAgreementHistoryMsg ne null")
 
-  def updateLatestResourceEventOccurredMillis(millis: Long): Unit = {
-    if(millis > this.msg.getLatestResourceEventOccurredMillis) {
-      this.msg.setLatestResourceEventOccurredMillis(millis)
+  private[this] var _isInitial = true
+  private[this] var _latestIMEventOccurredMillis = 0L
+  private[this] var _userCreationIMEventMsgOpt: Option[IMEventMsg] = None
+
+  private[this] var _userAgreementModels: immutable.SortedSet[UserAgreementModel] = {
+    var userAgreementModels = immutable.SortedSet[UserAgreementModel]()
+    val userAgreements = _userAgreementHistoryMsg.getAgreements.iterator()
+    while(userAgreements.hasNext) {
+      val userAgreement = userAgreements.next()
+      val userAgreementModel = ModelFactory.newUserAgreementModel(userAgreement)
+      userAgreementModels += userAgreementModel
+
+      checkUserCreationIMEvent(userAgreement.getRelatedIMEventMsg)
+      checkLatestIMEventOccurredMillis(userAgreement.getRelatedIMEventMsg)
+    }
+
+    userAgreementModels
+  }
+
+  private[this] def checkUserCreationIMEvent(imEvent: IMEventMsg) {
+    if(MessageHelpers.isUserCreationIMEvent(imEvent)) {
+      this._userCreationIMEventMsgOpt = Some(imEvent)
+    }
+  }
+  private[this] def checkLatestIMEventOccurredMillis(imEvent: IMEventMsg) {
+    if(imEvent ne null) {
+      if(this._latestIMEventOccurredMillis < imEvent.getOccurredMillis) {
+        this._latestIMEventOccurredMillis = imEvent.getOccurredMillis
+      }
     }
   }
 
-  def userID = msg.getUserID
-
-  def latestResourceEventOccurredMillis = this.msg.getLatestResourceEventOccurredMillis
-
-  def subtractCredits(credits: CreditsModel.Type) {
-    val oldTotal = CreditsModel.from(msg.getTotalCredits)
-    val newTotal = CreditsModel.-(oldTotal, credits)
-    msg.setTotalCredits(CreditsModel.toTypeInMessage(newTotal))
+  private[this] def updateOtherVars(imEvent: IMEventMsg) {
+    this._isInitial = false
+    checkUserCreationIMEvent(imEvent)
+    checkLatestIMEventOccurredMillis(imEvent)
   }
 
-  @inline final def totalCredits: CreditsModel.Type = {
-    CreditsModel.from(msg.getTotalCredits)
+  def isInitial = this._isInitial
+
+  def userID = this._userAgreementHistoryMsg.getUserID
+
+  def latestIMEventOccurredMillis = this._latestIMEventOccurredMillis
+
+  def hasUserCreationEvent = this._userCreationIMEventMsgOpt.isDefined
+
+  def userCreationIMEventOpt = this._userCreationIMEventMsgOpt
+
+  def unsafeUserCreationIMEvent = this._userCreationIMEventMsgOpt.get
+
+  def unsafeUserCreationMillis = unsafeUserCreationIMEvent.getOccurredMillis
+
+  def size: Int = _userAgreementHistoryMsg.getAgreements.size()
+
+  def userStateMsg = this._userStateMsg
+
+  def updateUserStateMsg(msg: UserStateMsg) {
+    this._userStateMsg = msg
+    this._isInitial = false
   }
 
-//  def newForImplicitEndsAsPreviousEvents(
-//      previousResourceEvents: mutable.Map[(String, String), ResourceEventModel]
-//  ) = {
-//
-//    new WorkingUserState(
-//      this.userID,
-//      this.parentUserStateIDInStore,
-//      this.chargingReason,
-//      this.resourceTypesMap,
-//      previousResourceEvents,
-//      this.implicitlyIssuedStartEventOfResourceInstance,
-//      this.accumulatingAmountOfResourceInstance,
-//      this.chargingDataOfResourceInstance,
-//      this.totalCredits,
-//      this.workingAgreementHistory,
-//      this.latestUpdateMillis,
-//      this.latestResourceEventOccurredMillis,
-//      this.billingPeriodOutOfSyncResourceEventsCounter,
-//      this.walletEntries
-//    )
-//  }
+  def userAgreementHistoryMsg = this._userAgreementHistoryMsg
 
-//  def getChargingDataForResourceEvent(resourceAndInstanceInfo: (String, String)): mutable.Map[String, Any] = {
-//    chargingDataOfResourceInstance.get(resourceAndInstanceInfo) match {
-//      case Some(map) ⇒
-//        map
-//
-//      case None ⇒
-//        val map = mutable.Map[String, Any]()
-//        chargingDataOfResourceInstance(resourceAndInstanceInfo) = map
-//        map
-//
-//    }
-//  }
+  def updateUserAgreementHistoryMsg(msg: UserAgreementHistoryMsg) {
+    this._userAgreementHistoryMsg = msg
+    this._isInitial = false
+  }
 
-//  def setChargingDataForResourceEvent(
-//      resourceAndInstanceInfo: (String, String),
-//      data: mutable.Map[String, Any]
-//  ): Unit = {
-//    chargingDataOfResourceInstance(resourceAndInstanceInfo) = data
-//  }
+  def agreementByTimeslot: immutable.SortedMap[Timeslot, UserAgreementModel] = {
+    immutable.TreeMap(_userAgreementModels.map(ag ⇒ (ag.timeslot, ag)).toSeq: _*)
+  }
 
-  /**
-  * Find those events from `implicitlyIssuedStartEvents` and `previousResourceEvents` that will generate implicit
-  * end events along with those implicitly issued events. Before returning, remove the events that generated the
-  * implicit ends from the internal state of this instance.
-  *
-  * @see [[gr.grnet.aquarium.charging.ChargingBehavior]]
-  */
-// def findAndRemoveGeneratorsOfImplicitEndEvents(
-//     chargingBehaviorOfResourceType: ResourceType ⇒ ChargingBehavior,
-//     /**
-//      * The `occurredMillis` that will be recorded in the synthetic implicit OFFs.
-//      * Normally, this will be the end of a billing month.
-//      */
-//     newOccuredMillis: Long
-// ): (List[ResourceEventModel], List[ResourceEventModel]) = {
-//
-//   val buffer = mutable.ListBuffer[(ResourceEventModel, ResourceEventModel)]()
-//   val checkSet = mutable.Set[ResourceEventModel]()
-//
-//   def doItFor(map: mutable.Map[(String, String), ResourceEventModel]): Unit = {
-//     val resourceEvents = map.valuesIterator
-//     for {
-//       resourceEvent ← resourceEvents
-//       resourceType ← resourceTypesMap.get(resourceEvent.safeResource)
-//       chargingBehavior = chargingBehaviorOfResourceType.apply(resourceType)
-//     } {
-//       if(chargingBehavior.supportsImplicitEvents) {
-//         if(chargingBehavior.mustConstructImplicitEndEventFor(resourceEvent)) {
-//           val implicitEnd = chargingBehavior.constructImplicitEndEventFor(resourceEvent, newOccuredMillis)
-//
-//           if(!checkSet.contains(resourceEvent)) {
-//             checkSet.add(resourceEvent)
-//             buffer append ((resourceEvent, implicitEnd))
-//           }
-//
-//           // remove it anyway
-//           map.remove((resourceEvent.safeResource, resourceEvent.safeInstanceID))
-//         }
-//       }
-//     }
-//   }
-//
-//   doItFor(previousEventOfResourceInstance) // we give priority for previous events
-//   doItFor(implicitlyIssuedStartEventOfResourceInstance) // ... over implicitly issued ones ...
-//
-//   (buffer.view.map(_._1).toList, buffer.view.map(_._2).toList)
-// }
+  def insertUserAgreementModel(userAgreement: UserAgreementModel) {
+    MessageHelpers.insertUserAgreement(this._userAgreementHistoryMsg, userAgreement.msg)
+
+    this._userAgreementModels += userAgreement
+
+    updateOtherVars(userAgreement.msg.getRelatedIMEventMsg)
+  }
+
+  def insertUserAgreementMsg(userAgreementMsg: UserAgreementMsg) {
+    insertUserAgreementModel(ModelFactory.newUserAgreementModel(userAgreementMsg))
+  }
+
+  def insertUserAgreementMsgFromIMEvent(imEvent: IMEventMsg) {
+    val userAgreementMsg = MessageFactory.newUserAgreementFromIMEventMsg(imEvent)
+    insertUserAgreementMsg(userAgreementMsg)
+  }
+
+  def oldestAgreementModel: Option[UserAgreementModel] = {
+    _userAgreementModels.headOption
+  }
+
+  def newestAgreementModel: Option[UserAgreementModel] = {
+    _userAgreementModels.lastOption
+  }
+
+  def latestResourceEventOccurredMillis = {
+    this._userStateMsg.getLatestResourceEventOccurredMillis
+  }
+
+  @inline final def totalCreditsAsReal: Real = Real(this._userStateMsg.getTotalCredits)
+
+  @inline final def totalCredits: String = this._userStateMsg.getTotalCredits
+
+  override def toString = _userStateMsg.toString
+
 }

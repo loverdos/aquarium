@@ -15,6 +15,26 @@ public class BillEntryMsg extends org.apache.avro.specific.SpecificRecordBase im
   @Deprecated public java.lang.String startTime;
   @Deprecated public java.lang.String endTime;
   @Deprecated public java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg> details;
+
+  /**
+   * Default constructor.
+   */
+  public BillEntryMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public BillEntryMsg(java.lang.String id, java.lang.String userID, java.lang.String status, java.lang.String remainingCredits, java.lang.String deductedCredits, java.lang.String startTime, java.lang.String endTime, java.util.List<gr.grnet.aquarium.message.avro.gen.ServiceEntryMsg> details) {
+    this.id = id;
+    this.userID = userID;
+    this.status = status;
+    this.remainingCredits = remainingCredits;
+    this.deductedCredits = deductedCredits;
+    this.startTime = startTime;
+    this.endTime = endTime;
+    this.details = details;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

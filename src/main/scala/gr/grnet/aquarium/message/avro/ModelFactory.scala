@@ -48,6 +48,7 @@ import gr.grnet.aquarium.policy.UserAgreementModel
 import gr.grnet.aquarium.policy._
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsScalaMapConverter
+import gr.grnet.aquarium.Real
 
 /**
  * Provides helper methods that construct model objects, usually from their avro message counterparts.
@@ -142,11 +143,11 @@ object ModelFactory {
 
   def newUserAgreementModelFromIMEvent(
       imEvent: IMEventMsg,
-      id: String = MessageHelpers.UserAgreementMsgIDGenerator.nextUID()
+      agreementOriginalID: String = MessageHelpers.UserAgreementMsgIDGenerator.nextUID()
   ) = {
 
     UserAgreementModel(
-      MessageFactory.newUserAgreementFromIMEventMsg(imEvent, id),
+      MessageFactory.newUserAgreementFromIMEventMsg(imEvent, agreementOriginalID),
       PolicyDefinedFullPriceTableRef
     )
   }
@@ -176,21 +177,29 @@ object ModelFactory {
   }
 
   def newUserAgreementHistoryModel(msg: UserAgreementHistoryMsg): UserAgreementHistoryModel = {
-    UserAgreementHistoryModel(msg)
+    new UserAgreementHistoryModel(msg)
   }
 
-  def newUserAgreementHistoryModelFromIMEvent(imEvent: IMEventMsg, id: String): UserAgreementHistoryModel = {
-    val userAgreementHistory = MessageFactory.newInitialUserAgreementHistoryMsg(
-      MessageFactory.newUserAgreementFromIMEventMsg(imEvent, id)
+  def newUserAgreementHistoryModelFromIMEvent(
+      imEvent: IMEventMsg,
+      historyOriginalID: String = MessageHelpers.UserAgreementHistoryMsgIDGenerator.nextUID(),
+      agreementOriginalID: String = MessageHelpers.UserAgreementMsgIDGenerator.nextUID()
+  ): UserAgreementHistoryModel = {
+    val historyMsg = MessageFactory.newInitialUserAgreementHistoryMsg(
+      MessageFactory.newUserAgreementFromIMEventMsg(imEvent, agreementOriginalID),
+      historyOriginalID
     )
-
-    new UserAgreementHistoryModel(userAgreementHistory)
+    new UserAgreementHistoryModel(historyMsg)
   }
 
-  def newUserStateModel(msg: UserStateMsg): UserStateModel = {
-    UserStateModel(
-      msg,
-      newUserAgreementHistoryModel(msg.getAgreementHistory)
-    )
+  def newInitialUserStateModel(
+      userID: String,
+      initialCredits: Real,
+      occurredMillis: Long
+  ): UserStateModel = {
+    val userStateMsg = MessageFactory.newInitialUserStateMsg(userID, initialCredits, occurredMillis)
+    val userAgreementHistoryMsg = MessageFactory.newUserAgreementHistoryMsg(userID)
+
+    new UserStateModel(userStateMsg, userAgreementHistoryMsg)
   }
 }

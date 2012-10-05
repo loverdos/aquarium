@@ -37,16 +37,17 @@ package gr.grnet.aquarium.charging
 
 import VMChargingBehavior.SelectorLabels.PowerStatus
 import VMChargingBehavior.Selectors.Power
-import gr.grnet.aquarium.charging.state.UserStateModel
+import gr.grnet.aquarium.charging.state.{UserStateModel, UserAgreementHistoryModel}
 import gr.grnet.aquarium.computation.BillingMonthInfo
-import gr.grnet.aquarium.event.CreditsModel
 import gr.grnet.aquarium.event.DetailsModel
 import gr.grnet.aquarium.message.MessageConstants
-import gr.grnet.aquarium.message.avro.gen.{WalletEntryMsg, ResourceTypeMsg, ResourcesChargingStateMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
+import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, WalletEntryMsg, ResourceTypeMsg, ResourcesChargingStateMsg, ResourceInstanceChargingStateMsg, ResourceEventMsg}
 import gr.grnet.aquarium.message.avro.{AvroHelpers, MessageHelpers, MessageFactory}
 import gr.grnet.aquarium.util.LogHelpers._
 import gr.grnet.aquarium.{Aquarium, AquariumInternalError}
 import scala.collection.JavaConverters.asScalaBufferConverter
+import gr.grnet.aquarium.Real
+import gr.grnet.aquarium.HrsOfMillis
 
 /**
  * The new [[gr.grnet.aquarium.charging.ChargingBehavior]] for VMs usage.
@@ -56,10 +57,10 @@ import scala.collection.JavaConverters.asScalaBufferConverter
 final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus)) {
   def computeCreditsToSubtract(
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
-      oldCredits: CreditsModel.Type,
+      oldCredits: Real,
       timeDeltaMillis: Long,
-      unitPrice: Double
-  ): (CreditsModel.Type, String /* explanation */) = {
+      unitPrice: Real
+  ): (Real, String /* explanation */) = {
 
     val credits = HrsOfMillis(timeDeltaMillis) * unitPrice
     val explanation = "Hours(%s) * UnitPrice(%s)".format(HrsOfMillis(timeDeltaMillis), unitPrice)
@@ -74,7 +75,7 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       currentResourceEvent: ResourceEventMsg,
       referenceFromMillis: Long,
       referenceToMillis: Long,
-      totalCredits: CreditsModel.Type
+      totalCredits: Real
   ): List[String] = {
     val previousEvents = resourceInstanceChargingState.getPreviousEvents.asScala.toList
     (currentResourceEvent.getValue.toInt,previousEvents) match {
@@ -105,7 +106,7 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       resourceInstanceChargingState: ResourceInstanceChargingStateMsg,
       eventDetails: DetailsModel.Type
   ) = {
-    CreditsModel.from(resourceInstanceChargingState.getCurrentValue)
+    Real(resourceInstanceChargingState.getCurrentValue)
   }
 
   def constructImplicitEndEventFor(resourceEvent: ResourceEventMsg, newOccurredMillis: Long) = {
@@ -119,7 +120,7 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       setDetails(newDetails).
       setOccurredMillis(newOccurredMillis).
       setReceivedMillis(newOccurredMillis).
-      setValue(VMChargingBehaviorValues.OFF.toString).
+      setValue(VMChargingBehaviorValues.OFF).
       build()
   }
 
@@ -139,7 +140,9 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
       resourcesChargingState: ResourcesChargingStateMsg,
       userStateModel: UserStateModel,
       walletEntryRecorder: WalletEntryMsg ⇒ Unit
-  ): (Int, CreditsModel.Type) = {
+  ): (Int, Real) = {
+
+    val userStateMsg = userStateModel.userStateMsg
 
     // 1. Ensure proper initial state per resource and per instance
     ensureInitializedWorkingState(resourcesChargingState,resourceEvent)
@@ -151,11 +154,10 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
     val resourceInstanceChargingState = stateOfResourceInstance.get(instanceID)
     fillWorkingResourceInstanceChargingStateFromEvent(resourceInstanceChargingState, resourceEvent)
 
-    val userAgreementHistoryModel = userStateModel.userAgreementHistoryModel
     val previousEvents = resourceInstanceChargingState.getPreviousEvents
     val retVal = previousEvents.size() match {
       case 0 ⇒
-        (0,0.0D)
+        (0, Real.Zero)
 
       case _ ⇒
         val previousEvent = previousEvents.get(0) // head is most recent
@@ -165,10 +167,10 @@ final class VMChargingBehavior extends ChargingBehaviorSkeleton(List(PowerStatus
           resourceEvent,
           resourceType,
           billingMonthInfo,
-          userStateModel.totalCredits,
+          Real(userStateMsg.getTotalCredits),
           previousEvent.getOccurredMillis,
           resourceEvent.getOccurredMillis,
-          userAgreementHistoryModel.agreementByTimeslot,
+          userStateModel.agreementByTimeslot,
           resourcesChargingStateDetails,
           resourceInstanceChargingState,
           aquarium,

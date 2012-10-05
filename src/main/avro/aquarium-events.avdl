@@ -43,8 +43,8 @@ protocol AquariumEvents {
   }
 
   record ResourceEventMsg {
-    string @aliases(["id"]) originalID; // From message creator
-    union {string, null} @aliases(["_id", "idInStore"]) inStoreID; // From Aquarium (message recipient)
+    string originalID; // From message creator
+    union {string, null} inStoreID; // From Aquarium (message recipient)
     long occurredMillis;
     long receivedMillis = 0;
     string userID;
@@ -58,8 +58,8 @@ protocol AquariumEvents {
   }
 
   record IMEventMsg {
-    string @aliases(["id"]) originalID; // From message creator
-    union {string, null} @aliases(["_id", "idInStore"]) inStoreID; // From Aquarium (message recipient)
+    string originalID; // From message creator
+    union {string, null} inStoreID; // From Aquarium (message recipient)
     long occurredMillis;
     long receivedMillis = 0;
     string userID;

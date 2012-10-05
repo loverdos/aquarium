@@ -48,42 +48,42 @@ import gr.grnet.aquarium.message.avro.AvroHelpers
 class PolicyMsgTest {
   @Test
   def testOne() {
-    val policyConf = PolicyMsg.newBuilder().
-      setOriginalID("default-policy").
-      setInStoreID(null).
-      setParentID(null).
-      setValidFromMillis(0L).
-      setValidToMillis(Long.MaxValue).
-      setResourceTypes(newResourceTypeMsgs(
-        newResourceTypeMsg("diskspace", "MB/Hr", nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior]),
-        newResourceTypeMsg("vmtime", "Hr", nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior]),
-        newResourceTypeMsg("addcredits", "Credits", nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior]))
-      ).
-      setChargingBehaviors(newChargingBehaviorMsgs(
-        nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior],
-        nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior],
-        nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior])
-      ).
-      setRoleMapping(newRoleMappingMsg(
-      "default" -> newFullPriceTableMsg(
-        "diskspace" -> Map(
-          "default" -> newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.01)))
-        ),
-
-        "vmtime" -> Map(
-          VMChargingBehavior.Selectors.Power.powerOff ->
-            newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.001))),
-          VMChargingBehavior.Selectors.Power.powerOn ->
-            newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.01)))
-        ),
-        "addcredits" -> Map(
-          "default" -> newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(-1.0)))
-        )
-      )
-    )).
-      build()
-
-    val generatedJSON = AvroHelpers.jsonStringOfSpecificRecord(policyConf)
-    println(generatedJSON)
+//    val policyConf = PolicyMsg.newBuilder().
+//      setOriginalID("default-policy").
+//      setInStoreID(null).
+//      setParentID(null).
+//      setValidFromMillis(0L).
+//      setValidToMillis(Long.MaxValue).
+//      setResourceTypes(newResourceTypeMsgs(
+//        newResourceTypeMsg("diskspace", "MB/Hr", nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior]),
+//        newResourceTypeMsg("vmtime", "Hr", nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior]),
+//        newResourceTypeMsg("addcredits", "Credits", nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior]))
+//      ).
+//      setChargingBehaviors(newChargingBehaviorMsgs(
+//        nameOfClass[gr.grnet.aquarium.charging.VMChargingBehavior],
+//        nameOfClass[gr.grnet.aquarium.charging.ContinuousChargingBehavior],
+//        nameOfClass[gr.grnet.aquarium.charging.OnceChargingBehavior])
+//      ).
+//      setRoleMapping(newRoleMappingMsg(
+//      "default" -> newFullPriceTableMsg(
+//        "diskspace" -> Map(
+//          "default" -> newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.01)))
+//        ),
+//
+//        "vmtime" -> Map(
+//          VMChargingBehavior.Selectors.Power.powerOff ->
+//            newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.001))),
+//          VMChargingBehavior.Selectors.Power.powerOn ->
+//            newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(0.01)))
+//        ),
+//        "addcredits" -> Map(
+//          "default" -> newSelectorValueMsg(newEffectivePriceTableMsg(newEffectiveUnitPriceMsg(-1.0)))
+//        )
+//      )
+//    )).
+//      build()
+//
+//    val generatedJSON = AvroHelpers.jsonStringOfSpecificRecord(policyConf)
+//    println(generatedJSON)
   }
 }

@@ -10,6 +10,21 @@ public class ResourceTypeMsg extends org.apache.avro.specific.SpecificRecordBase
   @Deprecated public java.lang.String name;
   @Deprecated public java.lang.String unit;
   @Deprecated public java.lang.String chargingBehaviorClass;
+
+  /**
+   * Default constructor.
+   */
+  public ResourceTypeMsg() {}
+
+  /**
+   * All-args constructor.
+   */
+  public ResourceTypeMsg(java.lang.String name, java.lang.String unit, java.lang.String chargingBehaviorClass) {
+    this.name = name;
+    this.unit = unit;
+    this.chargingBehaviorClass = chargingBehaviorClass;
+  }
+
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
   // Used by DatumWriter.  Applications should not call. 
   public java.lang.Object get(int field$) {

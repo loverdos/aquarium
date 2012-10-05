@@ -41,7 +41,7 @@ import com.ckkloverdos.props.Props
 import gr.grnet.aquarium.Configurable
 import gr.grnet.aquarium.computation.BillingMonthInfo
 import gr.grnet.aquarium.logic.accounting.dsl.Timeslot
-import gr.grnet.aquarium.message.avro.gen.{UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
+import gr.grnet.aquarium.message.avro.gen.{UserAgreementHistoryMsg, UserStateMsg, IMEventMsg, ResourceEventMsg, PolicyMsg}
 import gr.grnet.aquarium.message.avro.{MessageFactory, MessageHelpers, OrderingHelpers}
 import gr.grnet.aquarium.store._
 import gr.grnet.aquarium.util.{Loggable, Tags}
@@ -97,6 +97,7 @@ extends StoreProvider
   //- StoreProvider
 
 
+
   //+ UserStateStore
   def insertUserState(event: UserStateMsg) = {
     event.setInStoreID(event.getOriginalID)
@@ -111,10 +112,14 @@ extends StoreProvider
   def findLatestUserStateForFullMonthBilling(userID: String, bmi: BillingMonthInfo) = {
     _userStates.filter { userState ⇒
       userState.getUserID == userID &&
-      userState.getIsFullBillingMonth &&
+      userState.getIsForFullMonth &&
       userState.getBillingYear == bmi.year &&
       userState.getBillingMonth == bmi.month
     }.lastOption
+  }
+
+  def findLatestUserState(userID: String) = {
+    _userStates.filter(_.getUserID == userID).lastOption
   }
   //- UserStateStore
 
@@ -147,11 +152,17 @@ extends StoreProvider
       userID: String,
       startMillis: Long,
       stopMillis: Long
-  )(f: ResourceEventMsg ⇒ Unit): Unit = {
+  )(f: ResourceEventMsg ⇒ Unit): Long = {
+    var _counter= 0L
     _resourceEvents.filter { case ev ⇒
       ev.getUserID == userID &&
       MessageHelpers.isOccurredWithinMillis(ev, startMillis, stopMillis)
-    }.foreach(f)
+    } foreach { rcEvent ⇒
+      f(rcEvent)
+      _counter += 1
+    }
+
+    _counter
   }
 
   //+ IMEventStore
@@ -175,7 +186,7 @@ extends StoreProvider
    */
   def findCreateIMEventByUserID(userID: String) = {
     _imEvents.find { event ⇒
-      event.getUserID() == userID && MessageHelpers.isIMEventCreate(event)
+      event.getUserID() == userID && MessageHelpers.isUserCreationIMEvent(event)
     }
   }
 
@@ -185,12 +196,14 @@ extends StoreProvider
    *
    * Any exception is propagated to the caller. The underlying DB resources are properly disposed in any case.
    */
-  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventMsg) ⇒ Unit) = {
+  def foreachIMEventInOccurrenceOrder(userID: String)(f: (IMEventMsg) ⇒ Boolean) = {
+    var _shouldContinue = true
     for {
-      msg <- _imEvents
+      msg <- _imEvents if _shouldContinue
     } {
-      f(msg)
+      _shouldContinue = f(msg)
     }
+    _shouldContinue
   }
   //- IMEventStore
 

@@ -54,8 +54,8 @@ import gr.grnet.aquarium.util.{Loggable, Lifecycle}
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import org.slf4j.{LoggerFactory, Logger}
-import gr.grnet.aquarium.event.CreditsModel
-import gr.grnet.aquarium.charging.state.UserStateBootstrap
+import java.util.{Map ⇒ JMap}
+import java.util.{HashMap ⇒ JHashMap}
 
 /**
  *
@@ -67,6 +67,9 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
   import Aquarium.EnvKeys
 
   @volatile private[this] var _chargingBehaviorMap = Map[String, ChargingBehavior]()
+
+  // Caching value for the latest resource mapping
+  @volatile private[this] var _resourceMapping = apply(EnvKeys.defaultPolicyMsg).getResourceMapping
 
   private[this] lazy val cachingPolicyStore = new CachingPolicyStore(
     apply(EnvKeys.defaultPolicyMsg),
@@ -232,16 +235,49 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
 
   }
 
-  def currentResourceTypesMap: Map[String, ResourceType] = {
-    val policyMspOpt = policyStore.loadPolicyAt(TimeHelpers.nowMillis())
+  /**
+   * @deprecated Use `currentResourceMapping` instead
+   */
+  def resourceMappingAtMillis(millis: Long): JMap[String, ResourceTypeMsg] = {
+    val policyMspOpt = policyStore.loadPolicyAt(millis)
     if(policyMspOpt.isEmpty) {
-      throw new AquariumInternalError("Not even the default policy found")
+      throw new AquariumInternalError(
+        "Cannot get resource mapping. Not even the default policy found for time %s",
+        TimeHelpers.toYYYYMMDDHHMMSSSSS(millis)
+      )
     }
 
     val policyMsg = policyMspOpt.get
-    // TODO optimize
-    ModelFactory.newPolicyModel(policyMsg).resourceTypesMap
+    policyMsg.getResourceMapping
   }
+
+  /**
+   * Provides the current resource mapping. This value is cached.
+   *
+   * NOTE: The assumption is that the resource mapping is always updated with new keys,
+   *       that is we allow only the addition of new resource types.
+   */
+  def currentResourceMapping = {
+    this._resourceMapping synchronized this._resourceMapping
+  }
+
+  //  def resourceTypesMapAtMillis(millis: Long): Map[String, ResourceType] = {
+//    val policyMspOpt = policyStore.loadPolicyAt(millis)
+//    if(policyMspOpt.isEmpty) {
+//      throw new AquariumInternalError(
+//        "Cannot get resource types map. Not even the default policy found for time %s",
+//        TimeHelpers.toYYYYMMDDHHMMSSSSS(millis)
+//      )
+//    }
+//
+//    val policyMsg = policyMspOpt.get
+//    // TODO optimize
+//    ModelFactory.newPolicyModel(policyMsg).resourceTypesMap
+//  }
+//
+//  def currentResourceTypesMap: Map[String, ResourceType] = {
+//    resourceTypesMapAtMillis(TimeHelpers.nowMillis())
+//  }
 
   def unsafeValidPolicyModelAt(referenceTimeMillis: Long): PolicyModel = {
     policyStore.loadPolicyAt(referenceTimeMillis) match {
@@ -375,7 +411,7 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
    * @param imEvent       The IMEvent that creates the user
    */
   def initialUserAgreement(imEvent: IMEventMsg): UserAgreementModel = {
-    require(MessageHelpers.isIMEventCreate(imEvent))
+    require(MessageHelpers.isUserCreationIMEvent(imEvent))
 
     val role = imEvent.getRole
     val referenceTimeMillis = imEvent.getOccurredMillis
@@ -386,16 +422,9 @@ final class Aquarium(env: Env) extends Lifecycle with Loggable {
     ModelFactory.newUserAgreementModelFromIMEvent(imEvent)
   }
 
-  def initialUserBalance(role: String, referenceTimeMillis: Long): CreditsModel.Type = {
+  def initialUserBalance(role: String, referenceTimeMillis: Long): Real = {
     // FIXME: Where is the mapping?
-    CreditsModel.from(0.0)
-  }
-
-  def getUserStateBootstrap(imEvent: IMEventMsg): UserStateBootstrap = {
-    UserStateBootstrap(
-      this.initialUserAgreement(imEvent),
-      this.initialUserBalance(imEvent.getRole, imEvent.getOccurredMillis)
-    )
+    Real.Zero
   }
 
   def chargingBehaviorOf(resourceType: ResourceTypeMsg): ChargingBehavior = {

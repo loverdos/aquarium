@@ -119,6 +119,7 @@ class MongoDBStoreProvider extends StoreProvider with Configurable with Loggable
   def resourceEventStore = _mongoDBStore
   def imEventStore = _mongoDBStore
   def policyStore = _mongoDBStore
+  def userAgreementHistoryStore = _mongoDBStore
 }
 
 /**
