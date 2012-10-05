@@ -155,7 +155,9 @@ final class UserStateModel(
     _userAgreementModels.lastOption
   }
 
-  def latestResourceEventOccurredMillis = this._userStateMsg.getLatestResourceEventOccurredMillis
+  def latestResourceEventOccurredMillis = {
+    this._userStateMsg.getLatestResourceEventOccurredMillis
+  }
 
   @inline final def totalCreditsAsReal: Real = Real(this._userStateMsg.getTotalCredits)
 

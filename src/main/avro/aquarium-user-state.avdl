@@ -58,10 +58,10 @@ protocol AquariumUserState {
     map<AnyValueMsg> details;
     array<ResourceEventMsg> previousEvents;
     array<ResourceEventMsg> implicitlyIssuedStartEvents;
-   string accumulatingAmount;
-   string oldAccumulatingAmount;
-   string previousValue;
-   string currentValue;
+    string accumulatingAmount;
+    string oldAccumulatingAmount;
+    string previousValue;
+    string currentValue;
   }
 
   record ResourcesChargingStateMsg {

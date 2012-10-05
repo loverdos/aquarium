@@ -44,12 +44,12 @@ import org.joda.time.MutableDateTime
  * @author Christos KK Loverdos <loverdos@gmail.com>
  */
 
-object TimeHelpers {
+final object TimeHelpers {
   @inline
-  def nowMillis() = System.currentTimeMillis()
+  final def nowMillis() = System.currentTimeMillis()
 
   @inline
-  def nowDate = new Date(nowMillis())
+  final def nowDate = new Date(nowMillis())
 
   def secDiffOfMillis(ms0: Long, ms1: Long) = (ms1 - ms0).toDouble / 1000.0
 

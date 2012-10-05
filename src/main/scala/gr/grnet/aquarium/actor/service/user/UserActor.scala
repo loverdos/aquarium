@@ -190,6 +190,11 @@ class UserActor extends ReflectiveRoleableActor {
 
   private[this] def processResourceEventsAfterLastKnownUserState() {
     // Update the user state snapshot with fresh (ie not previously processed) events.
+    aquarium.resourceEventStore.foreachResourceEventOccurredInPeriod(
+      this._userStateModel.userID,
+      this._userStateModel.latestResourceEventOccurredMillis,
+      TimeHelpers.nowMillis()
+    )
   }
 
   private[this] def makeUserStateMsgUpToDate() {
